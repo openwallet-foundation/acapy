@@ -14,7 +14,12 @@ from ..ld_proofs import (
     DocumentVerificationResult,
     LinkedDataProofException,
 )
+from ..ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    CREDENTIALS_CONTEXT_V2_URL,
+)
 from .models.credential import VerifiableCredentialSchema
+from .models.credentialv2 import VerifiableCredentialV2Schema
 from .validation_result import PresentationVerificationResult
 
 
@@ -28,7 +33,10 @@ async def _verify_credential(
     """Verify credential structure, proof purpose and signature."""
 
     # Validate credential structure
-    errors = VerifiableCredentialSchema().validate(credential)
+    if credential['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+        errors = VerifiableCredentialSchema().validate(credential)
+    elif credential['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+        errors = VerifiableCredentialV2Schema().validate(credential)
     if len(errors) > 0:
         raise LinkedDataProofException(
             f"Unable to verify credential with invalid structure: {errors}"

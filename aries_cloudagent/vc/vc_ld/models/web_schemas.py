@@ -2,6 +2,7 @@
 
 from marshmallow import fields
 from ....messaging.models.openapi import OpenAPISchema
+from typing import Union
 
 from ..validation_result import (
     PresentationVerificationResultSchema,
@@ -10,6 +11,10 @@ from .options import LDProofVCOptionsSchema
 from .credential import (
     CredentialSchema,
     VerifiableCredentialSchema,
+)
+from .credentialv2 import (
+    CredentialV2Schema,
+    VerifiableCredentialV2Schema,
 )
 from .presentation import (
     PresentationSchema,
@@ -32,20 +37,20 @@ class FetchCredentialResponse(OpenAPISchema):
 class IssueCredentialRequest(OpenAPISchema):
     """Request schema for issuing a credential."""
 
-    credential = fields.Nested(CredentialSchema)
+    credential = fields.Nested(CredentialV2Schema)
     options = fields.Nested(LDProofVCOptionsSchema)
 
 
 class IssueCredentialResponse(OpenAPISchema):
     """Request schema for issuing a credential."""
 
-    verifiableCredential = fields.Nested(VerifiableCredentialSchema)
+    verifiableCredential = fields.Nested(VerifiableCredentialV2Schema)
 
 
 class VerifyCredentialRequest(OpenAPISchema):
     """Request schema for verifying a credential."""
 
-    verifiableCredential = fields.Nested(VerifiableCredentialSchema)
+    verifiableCredential = fields.Nested(VerifiableCredentialV2Schema)
     options = fields.Nested(LDProofVCOptionsSchema)
 
 

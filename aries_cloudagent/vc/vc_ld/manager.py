@@ -14,6 +14,8 @@ from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import BLS12381G2, ED25519, KeyType
 from ..ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    CREDENTIALS_CONTEXT_V2_URL,
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
@@ -33,6 +35,7 @@ from ..vc_ld.validation_result import PresentationVerificationResult
 from .external_suite import ExternalSuiteNotFoundError, ExternalSuiteProvider
 from .issue import issue as ldp_issue
 from .models.credential import VerifiableCredential
+from .models.credentialv2 import VerifiableCredentialV2
 from .models.linked_data_proof import LDProof
 from .models.options import LDProofVCOptions
 from .prove import sign_presentation
@@ -315,10 +318,10 @@ class VcLdpManager:
 
     async def _get_suite_for_document(
         self,
-        document: Union[VerifiableCredential, VerifiablePresentation],
+        document: Union[VerifiableCredential, VerifiableCredentialV2, VerifiablePresentation],
         options: LDProofVCOptions,
     ) -> LinkedDataProof:
-        if isinstance(document, VerifiableCredential):
+        if isinstance(document, VerifiableCredential) or isinstance(document, VerifiableCredentialV2):
             issuer_id = document.issuer_id
         elif isinstance(document, VerifiablePresentation):
             issuer_id = document.holder_id
@@ -384,8 +387,8 @@ class VcLdpManager:
         ]
 
     async def issue(
-        self, credential: VerifiableCredential, options: LDProofVCOptions
-    ) -> VerifiableCredential:
+        self, credential:  Union[VerifiableCredential, VerifiableCredentialV2], options: LDProofVCOptions
+    ) -> Union[VerifiableCredential, VerifiableCredentialV2]:
         """Sign a VC with a Linked Data Proof."""
         credential = await self.prepare_credential(credential, options)
 
@@ -404,11 +407,14 @@ class VcLdpManager:
             document_loader=document_loader,
             purpose=proof_purpose,
         )
-        return VerifiableCredential.deserialize(vc)
+        if vc['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+            return VerifiableCredential.deserialize(vc)
+        elif vc['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+            return VerifiableCredentialV2.deserialize(vc)
 
     async def store_credential(
-        self, vc: VerifiableCredential, options: LDProofVCOptions, cred_id: str = None
-    ) -> VerifiableCredential:
+        self, vc: Union[VerifiableCredential, VerifiableCredentialV2], options: LDProofVCOptions, cred_id: str = None
+    ) -> Union[VerifiableCredential, VerifiableCredentialV2]:
         """Store a verifiable credential."""
 
         # Saving expanded type as a cred_tag
@@ -439,7 +445,7 @@ class VcLdpManager:
             await vc_holder.store_credential(vc_record)
 
     async def verify_credential(
-        self, vc: VerifiableCredential
+        self, vc: Union[VerifiableCredential, VerifiableCredentialV2]
     ) -> DocumentVerificationResult:
         """Verify a VC with a Linked Data Proof."""
         return await verify_credential(

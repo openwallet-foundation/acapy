@@ -8,7 +8,12 @@ from ..ld_proofs import (
     DocumentLoaderMethod,
     LinkedDataProofException,
 )
+from ..ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    CREDENTIALS_CONTEXT_V2_URL,
+)
 from .models.credential import CredentialSchema
+from .models.credentialv2 import CredentialV2Schema
 
 
 async def issue(
@@ -40,7 +45,10 @@ async def issue(
 
     """
     # Validate credential
-    errors = CredentialSchema().validate(credential)
+    if credential['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+        errors = CredentialSchema().validate(credential)
+    elif credential['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+        errors = CredentialV2Schema().validate(credential)
     if len(errors) > 0:
         raise LinkedDataProofException(
             f"Credential contains invalid structure: {errors}"

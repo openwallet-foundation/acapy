@@ -16,8 +16,13 @@ from ..wallet.error import WalletError
 from .vc_ld.manager import VcLdpManager, VcLdpManagerError
 from .vc_ld.models import web_schemas
 from .vc_ld.models.credential import VerifiableCredential
+from .vc_ld.models.credentialv2 import VerifiableCredentialV2
 from .vc_ld.models.options import LDProofVCOptions
 from .vc_ld.models.presentation import VerifiablePresentation
+from .ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    CREDENTIALS_CONTEXT_V2_URL,
+)
 
 
 @docs(tags=["vc-api"], summary="List credentials")
@@ -92,7 +97,11 @@ async def issue_credential_route(request: web.BaseRequest):
             elif key_type == "bls12381g2":
                 options["proofType"] = "BbsBlsSignature2020"
 
-        credential = VerifiableCredential.deserialize(credential)
+        if credential['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+            credential = VerifiableCredential.deserialize(credential)
+
+        elif credential['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+            credential = VerifiableCredentialV2.deserialize(credential)
         options = LDProofVCOptions.deserialize(options)
 
         vc = await manager.issue(credential, options)
@@ -117,7 +126,12 @@ async def verify_credential_route(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     manager = VcLdpManager(context.profile)
     try:
-        vc = VerifiableCredential.deserialize(body["verifiableCredential"])
+        vc = body["verifiableCredential"]
+        if vc['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+            vc = VerifiableCredential.deserialize(vc)
+        elif vc['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+            vc = VerifiableCredentialV2.deserialize(vc)
+            
         result = await manager.verify_credential(vc)
         result = result.serialize()
         return web.json_response(result)
