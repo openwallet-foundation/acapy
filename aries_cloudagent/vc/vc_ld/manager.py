@@ -318,10 +318,14 @@ class VcLdpManager:
 
     async def _get_suite_for_document(
         self,
-        document: Union[VerifiableCredential, VerifiableCredentialV2, VerifiablePresentation],
+        document: Union[
+            VerifiableCredential, VerifiableCredentialV2, VerifiablePresentation
+        ],
         options: LDProofVCOptions,
     ) -> LinkedDataProof:
-        if isinstance(document, VerifiableCredential) or isinstance(document, VerifiableCredentialV2):
+        if isinstance(document, VerifiableCredential) or isinstance(
+            document, VerifiableCredentialV2
+        ):
             issuer_id = document.issuer_id
         elif isinstance(document, VerifiablePresentation):
             issuer_id = document.holder_id
@@ -387,7 +391,9 @@ class VcLdpManager:
         ]
 
     async def issue(
-        self, credential:  Union[VerifiableCredential, VerifiableCredentialV2], options: LDProofVCOptions
+        self,
+        credential: Union[VerifiableCredential, VerifiableCredentialV2],
+        options: LDProofVCOptions,
     ) -> Union[VerifiableCredential, VerifiableCredentialV2]:
         """Sign a VC with a Linked Data Proof."""
         credential = await self.prepare_credential(credential, options)
@@ -407,13 +413,16 @@ class VcLdpManager:
             document_loader=document_loader,
             purpose=proof_purpose,
         )
-        if vc['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+        if vc["@context"][0] == CREDENTIALS_CONTEXT_V1_URL:
             return VerifiableCredential.deserialize(vc)
-        elif vc['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+        elif vc["@context"][0] == CREDENTIALS_CONTEXT_V2_URL:
             return VerifiableCredentialV2.deserialize(vc)
 
     async def store_credential(
-        self, vc: Union[VerifiableCredential, VerifiableCredentialV2], options: LDProofVCOptions, cred_id: str = None
+        self,
+        vc: Union[VerifiableCredential, VerifiableCredentialV2],
+        options: LDProofVCOptions,
+        cred_id: str = None,
     ) -> Union[VerifiableCredential, VerifiableCredentialV2]:
         """Store a verifiable credential."""
 

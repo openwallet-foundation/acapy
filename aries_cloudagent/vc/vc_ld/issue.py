@@ -45,9 +45,9 @@ async def issue(
 
     """
     # Validate credential
-    if credential['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+    if credential["@context"][0] == CREDENTIALS_CONTEXT_V1_URL:
         errors = CredentialSchema().validate(credential)
-    elif credential['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+    elif credential["@context"][0] == CREDENTIALS_CONTEXT_V2_URL:
         errors = CredentialV2Schema().validate(credential)
     if len(errors) > 0:
         raise LinkedDataProofException(

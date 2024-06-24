@@ -33,9 +33,9 @@ async def _verify_credential(
     """Verify credential structure, proof purpose and signature."""
 
     # Validate credential structure
-    if credential['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+    if credential["@context"][0] == CREDENTIALS_CONTEXT_V1_URL:
         errors = VerifiableCredentialSchema().validate(credential)
-    elif credential['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+    elif credential["@context"][0] == CREDENTIALS_CONTEXT_V2_URL:
         errors = VerifiableCredentialV2Schema().validate(credential)
     if len(errors) > 0:
         raise LinkedDataProofException(

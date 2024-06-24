@@ -97,10 +97,10 @@ async def issue_credential_route(request: web.BaseRequest):
             elif key_type == "bls12381g2":
                 options["proofType"] = "BbsBlsSignature2020"
 
-        if credential['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+        if credential["@context"][0] == CREDENTIALS_CONTEXT_V1_URL:
             credential = VerifiableCredential.deserialize(credential)
 
-        elif credential['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+        elif credential["@context"][0] == CREDENTIALS_CONTEXT_V2_URL:
             credential = VerifiableCredentialV2.deserialize(credential)
         options = LDProofVCOptions.deserialize(options)
 
@@ -127,11 +127,11 @@ async def verify_credential_route(request: web.BaseRequest):
     manager = VcLdpManager(context.profile)
     try:
         vc = body["verifiableCredential"]
-        if vc['@context'][0] == CREDENTIALS_CONTEXT_V1_URL:
+        if vc["@context"][0] == CREDENTIALS_CONTEXT_V1_URL:
             vc = VerifiableCredential.deserialize(vc)
-        elif vc['@context'][0] == CREDENTIALS_CONTEXT_V2_URL:
+        elif vc["@context"][0] == CREDENTIALS_CONTEXT_V2_URL:
             vc = VerifiableCredentialV2.deserialize(vc)
-            
+
         result = await manager.verify_credential(vc)
         result = result.serialize()
         return web.json_response(result)
