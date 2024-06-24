@@ -973,10 +973,10 @@ class DIDXManager(BaseConnectionManager):
                 signed_did = await self.verify_rotate(
                     wallet, response.did_rotate_attach, conn_rec.invitation_key
                 )
-                if their_did != response.did:
+                if their_did != signed_did:
                     raise DIDXManagerError(
                         f"Connection DID {their_did} "
-                        f"does not match singed DID rotate {signed_did}"
+                        f"does not match signed DID rotate {signed_did}"
                     )
 
             self._logger.debug(
