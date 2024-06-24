@@ -41,9 +41,6 @@ class RevRegDefValue(BaseModel):
             max_cred_num: Max. number of Creds
             tails_location: Tails file location
             tails_hash: Tails file hash
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.public_keys = public_keys
@@ -102,9 +99,6 @@ class RevRegDef(BaseModel):
             cred_def_id: Cred Def ID
             tag: Tag
             value: Rev Reg Def Value
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -183,9 +177,6 @@ class RevRegDefState(BaseModel):
             state: State
             revocation_registry_definition_id: Rev Reg Definition ID
             revocation_registry_definition: Rev Reg Definition
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         self.state = state
         self.revocation_registry_definition_id = revocation_registry_definition_id
@@ -247,9 +238,6 @@ class RevRegDefResult(BaseModel):
             revocation_registry_definition_state: Rev Reg Def state
             registration_metadata: Registration metadata
             revocation_registry_definition_metadata: Rev Reg Def metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -311,9 +299,6 @@ class GetRevRegDefResult(BaseModel):
             revocation_registry_id: Revocation Registry ID
             resolution_metadata: Resolution metadata
             revocation_registry_metadata: Revocation Registry metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.revocation_registry = revocation_registry
@@ -362,9 +347,6 @@ class RevList(BaseModel):
             revocation_list: Revocation list
             current_accumulator: Current accumulator
             timestamp: Timestamp
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -453,9 +435,6 @@ class RevListState(BaseModel):
         Args:
             state: State
             revocation_list: Revocation list
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         self.state = state
         self.revocation_list = revocation_list
@@ -508,9 +487,6 @@ class RevListResult(BaseModel):
             revocation_list_state: Revocation list state
             registration_metadata: Registration metadata
             revocation_list_metadata: Revocation list metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -561,9 +537,6 @@ class GetRevListResult(BaseModel):
             revocation_list: Revocation list
             resolution_metadata: Resolution metadata
             revocation_registry_metadata: Rev Reg metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.revocation_list = revocation_list
