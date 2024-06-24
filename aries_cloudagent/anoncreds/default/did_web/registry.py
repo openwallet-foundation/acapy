@@ -25,7 +25,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Initialize an instance.
 
         Args:
-        TODO: update this docstring - Anoncreds-break.
+            None
 
         """
         self._supported_identifiers_regex = re.compile(

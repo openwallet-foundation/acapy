@@ -425,8 +425,10 @@ class TransactionManager:
                 )
 
                 legacy_indy_registry = LegacyIndyRegistry()
-                ledger_response_json = await legacy_indy_registry.txn_submit(
-                    ledger, ledger_transaction, sign=False, taa_accept=False
+                ledger_response_json = await shield(
+                    legacy_indy_registry.txn_submit(
+                        ledger, ledger_transaction, sign=False, taa_accept=False
+                    )
                 )
             else:
                 async with ledger:

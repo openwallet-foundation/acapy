@@ -34,14 +34,15 @@ class CredDefValuePrimary(BaseModel):
         """Initialize an instance.
 
         Args:
-            n: n
-            s: s
-            r: r
-            rctxt: rctxt
-            z: z
-
-        TODO: update this docstring - Anoncreds-break.
-
+            n: is a safe RSA-2048 number.
+            s: is a randomly selected quadratic residue of n.
+            r: is an object that defines a CL-RSA public key fragment
+                for each attribute in the credential.
+            rctxt: is equal to s^(xrctxt), where xrctxt is a randomly selected integer
+                between 2 and p'q'-1.
+            z: is equal to s^(xz), where xz is a randomly selected integer between 2
+                and p'q'-1. This makes up part of the CL-RSA public key, independent of
+                the message blocks being signed.
         """
         super().__init__(**kwargs)
         self.n = n
@@ -92,20 +93,20 @@ class CredDefValueRevocation(BaseModel):
         """Initialize an instance.
 
         Args:
-            g: g
-            g_dash: g_dash
-            h: h
-            h0: h0
-            h1: h1
-            h2: h2
-            htilde: htilde
-            h_cap: h_cap
-            u: u
-            pk: pk
-            y: y
-
-        TODO: update this docstring - Anoncreds-break.
-
+            g: is a generator for the elliptic curve group G1.
+            g_dash: is a generator for the elliptic curve group G2.
+            h: is an elliptic curve point selected uniformly at random from G1.
+            h0: is an elliptic curve point selected uniformly at random from G1.
+            h1: is an elliptic curve point selected uniformly at random from G1.
+            h2: is an elliptic curve point selected uniformly at random from G1.
+            htilde: is an elliptic curve point selected uniformly at random from G1.
+            h_cap: is an elliptic curve point selected uniformly at random from G2.
+            u: is an elliptic curve point selected uniformly at random from G2.
+            pk: is the public key in G1 for the issuer with respect to this accumulator,
+                computed as g^sk (in multiplicative notation), where sk is from
+                r_key above.
+            y: is the an elliptic curve point in G2. computed as h_cap^x
+                (in multiplicative notation), where x is from r_key above
         """
         self.g = g
         self.g_dash = g_dash
@@ -171,9 +172,6 @@ class CredDefValue(BaseModel):
         Args:
             primary: Cred Def value primary
             revocation: Cred Def value revocation
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.primary = primary
@@ -225,9 +223,6 @@ class CredDef(BaseModel):
             type: Type
             tag: Tag
             value: Cred Def value
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -307,9 +302,6 @@ class CredDefState(BaseModel):
             state: State
             credential_definition_id: Cred Def ID
             credential_definition: Cred Def
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         self.state = state
         self.credential_definition_id = credential_definition_id
@@ -370,9 +362,6 @@ class CredDefResult(BaseModel):
             credential_definition_state: Cred Def state
             registration_metadata: Registration metadata
             credential_definition_metadata: Cred Def metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -420,9 +409,6 @@ class GetCredDefResult(BaseModel):
             credential_definition: Cred Def
             resolution_metadata: Resolution metadata
             credential_definition_metadata: Cred Def metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
         """
         super().__init__(**kwargs)
         self.credential_definition_id = credential_definition_id
