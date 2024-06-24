@@ -256,11 +256,11 @@ async def credentials_revoked(request: web.BaseRequest):
 
     async def get_revoked_using_indy(profile: Profile):
         async with profile.session() as session:
-            holder = session.inject(IndyHolder)
-
             ledger = session.inject_or(BaseLedger)
             if not ledger:
                 raise web.HTTPForbidden(reason="No ledger available")
+
+            holder = session.inject(IndyHolder)
 
             async with ledger:
                 try:
