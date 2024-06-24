@@ -111,7 +111,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Initialize an instance.
 
         Args:
-        TODO: update this docstring - Anoncreds-break.
+            None
 
         """
         B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
@@ -621,7 +621,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     endorser_did=endorser_did,
                 )
         except LedgerError as err:
-            raise AnonCredsRegistrationError(err.roll_up) from err
+            LOGGER.error(
+                f"Error registering revocation registry definition {rev_reg_def_id}: {err.roll_up}"  # noqa: E501
+            )
 
         # Didn't need endorsement
         if write_ledger:
@@ -1108,7 +1110,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             )
 
         async with profile.session() as session:
-
             LOGGER.debug(f"revocation_list = {rev_list.revocation_list}")
             LOGGER.debug(f"rev_reg_delta = {rev_reg_delta.get('value')}")
 
@@ -1117,7 +1118,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             )
 
             if not _wallet_accumalator_matches_ledger_list(rev_list, rev_reg_delta):
-
                 recovery_txn = await generate_ledger_rrrecovery_txn(
                     genesis_transactions, rev_list
                 )

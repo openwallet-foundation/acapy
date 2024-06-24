@@ -1169,13 +1169,18 @@ class IndyVdrLedger(BaseLedger):
                 rev_reg_def_req.set_endorser(endorser_did)
 
             legacy_indy_registry = LegacyIndyRegistry()
-            resp = await legacy_indy_registry.txn_submit(
-                self,
-                rev_reg_def_req,
-                sign=True,
-                sign_did=did_info,
-                write_ledger=write_ledger,
-            )
+            try:
+                resp = await legacy_indy_registry.txn_submit(
+                    self,
+                    rev_reg_def_req,
+                    sign=True,
+                    sign_did=did_info,
+                    write_ledger=write_ledger,
+                )
+            except LedgerError as err:
+                raise LedgerError(
+                    "Exception when sending revocation registry definition"
+                ) from err
 
             if not write_ledger:
                 return revoc_reg_def["id"], {"signed_txn": resp}
