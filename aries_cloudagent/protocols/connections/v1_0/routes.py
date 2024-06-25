@@ -19,7 +19,7 @@ from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.models.paginated_query import PaginatedQuerySchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ....messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
@@ -31,7 +31,6 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
-from ....storage.base import DEFAULT_PAGE_SIZE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 from .manager import ConnectionManager, ConnectionManagerError
@@ -470,8 +469,7 @@ async def connections_list(request: web.BaseRequest):
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 
-    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
-    offset = int(request.query.get("offset", 0))
+    limit, offset = get_limit_offset(request)
 
     profile = context.profile
     try:

@@ -16,10 +16,9 @@ from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.models.paginated_query import PaginatedQuerySchema
+from ...messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
-from ...storage.base import DEFAULT_PAGE_SIZE
 from ...storage.error import StorageError, StorageNotFoundError
 from ...utils.endorsement_setup import attempt_auto_author_with_endorser_setup
 from ...utils.profiles import subwallet_type_not_same_as_base_wallet_raise_web_exception
@@ -382,8 +381,7 @@ async def wallets_list(request: web.BaseRequest):
     if wallet_name:
         query["wallet_name"] = wallet_name
 
-    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
-    offset = int(request.query.get("offset", 0))
+    limit, offset = get_limit_offset(request)
 
     try:
         async with profile.session() as session:
