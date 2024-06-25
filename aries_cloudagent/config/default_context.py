@@ -116,11 +116,15 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(PluginRegistry, plugin_registry)
 
         # Register standard protocol plugins
-        plugin_registry.register_package("aries_cloudagent.protocols")
+        if not self.settings.get("transport.disabled"):
+            plugin_registry.register_package("aries_cloudagent.protocols")
 
         # Currently providing admin routes only
         plugin_registry.register_plugin("aries_cloudagent.holder")
-        plugin_registry.register_plugin("aries_cloudagent.ledger")
+
+        if not self.settings.get("ledger.disabled"):
+            plugin_registry.register_plugin("aries_cloudagent.ledger")
+
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.settings")
