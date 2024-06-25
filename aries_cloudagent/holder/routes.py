@@ -4,8 +4,13 @@ import json
 from profile import Profile
 
 from aiohttp import web
-from aiohttp_apispec import (docs, match_info_schema, querystring_schema,
-                             request_schema, response_schema)
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
 from aries_askar import AskarErrorCode
 from marshmallow import fields
 
@@ -17,11 +22,17 @@ from ..indy.models.cred_precis import IndyCredInfoSchema
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import (ENDPOINT_EXAMPLE, ENDPOINT_VALIDATE,
-                               INDY_WQL_EXAMPLE, INDY_WQL_VALIDATE,
-                               NUM_STR_NATURAL_EXAMPLE,
-                               NUM_STR_NATURAL_VALIDATE, NUM_STR_WHOLE_EXAMPLE,
-                               NUM_STR_WHOLE_VALIDATE, UUID4_EXAMPLE)
+from ..messaging.valid import (
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_VALIDATE,
+    INDY_WQL_EXAMPLE,
+    INDY_WQL_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+    UUID4_EXAMPLE,
+)
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecordSchema
