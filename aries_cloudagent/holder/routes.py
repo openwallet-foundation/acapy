@@ -4,13 +4,8 @@ import json
 from profile import Profile
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    match_info_schema,
-    querystring_schema,
-    request_schema,
-    response_schema,
-)
+from aiohttp_apispec import (docs, match_info_schema, querystring_schema,
+                             request_schema, response_schema)
 from aries_askar import AskarErrorCode
 from marshmallow import fields
 
@@ -22,21 +17,17 @@ from ..indy.models.cred_precis import IndyCredInfoSchema
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import (
-    ENDPOINT_EXAMPLE,
-    ENDPOINT_VALIDATE,
-    INDY_WQL_EXAMPLE,
-    INDY_WQL_VALIDATE,
-    NUM_STR_NATURAL_EXAMPLE,
-    NUM_STR_NATURAL_VALIDATE,
-    NUM_STR_WHOLE_EXAMPLE,
-    NUM_STR_WHOLE_VALIDATE,
-    UUID4_EXAMPLE,
-)
+from ..messaging.valid import (ENDPOINT_EXAMPLE, ENDPOINT_VALIDATE,
+                               INDY_WQL_EXAMPLE, INDY_WQL_VALIDATE,
+                               NUM_STR_NATURAL_EXAMPLE,
+                               NUM_STR_NATURAL_VALIDATE, NUM_STR_WHOLE_EXAMPLE,
+                               NUM_STR_WHOLE_VALIDATE, UUID4_EXAMPLE)
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecordSchema
 from ..wallet.error import WalletNotFoundError
+
+wallet_type_config = "wallet.type"
 
 
 class HolderModuleResponseSchema(OpenAPISchema):
@@ -210,7 +201,7 @@ async def credentials_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    if context.settings.get("wallet.type") == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) == "askar-anoncreds":
         holder = AnonCredsHolder(context.profile)
     else:
         holder = context.profile.inject(IndyHolder)
@@ -244,7 +235,7 @@ async def credentials_revoked(request: web.BaseRequest):
     fro = request.query.get("from")
     to = request.query.get("to")
     profile = context.profile
-    wallet_type = profile.settings.get_value("wallet.type")
+    wallet_type = profile.settings.get_value(wallet_type_config)
 
     async def get_revoked_using_anoncreds(profile: Profile):
         holder = AnonCredsHolder(profile)
@@ -301,7 +292,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    if context.settings.get("wallet.type") == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) == "askar-anoncreds":
         holder = AnonCredsHolder(context.profile)
         mime_types = await holder.get_mime_type(credential_id)
     else:
@@ -347,7 +338,7 @@ async def credentials_remove(request: web.BaseRequest):
             except WalletNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    if context.settings.get("wallet.type") == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) == "askar-anoncreds":
         await delete_credential_using_anoncreds(profile)
     else:
         await delete_credential_using_indy(profile)
@@ -388,7 +379,7 @@ async def credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    if context.settings.get("wallet.type") == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) == "askar-anoncreds":
         holder = AnonCredsHolder(context.profile)
         credentials = await holder.get_credentials(start, count, wql)
     else:
