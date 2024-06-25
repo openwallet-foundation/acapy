@@ -15,7 +15,7 @@ repository = "https://github.com/hyperledger/aries-cloudagent-python"
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.12"
 aiohttp="~3.9.4"
 aiohttp-apispec-acapy="~3.0.2"
 aiohttp-cors="~0.7.0"

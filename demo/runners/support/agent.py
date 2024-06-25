@@ -943,7 +943,7 @@ class DemoAgent:
         future = loop.run_in_executor(
             self.thread_pool_executor, self._process, agent_args, my_env, loop
         )
-        self.proc = await asyncio.wait_for(future, 20, loop=loop)
+        self.proc = await asyncio.wait_for(future, 20)
         if wait:
             await asyncio.sleep(1.0)
             await self.detect_process()
