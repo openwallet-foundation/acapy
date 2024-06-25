@@ -103,6 +103,8 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                         "their_public_did": "a_public_did",
                         "invitation_msg_id": "dummy_msg",
                     },
+                    limit=100,
+                    offset=0,
                     post_filter_positive={
                         "their_role": list(ConnRecord.Role.REQUESTER.value),
                         "connection_protocol": "connections/1.0",
