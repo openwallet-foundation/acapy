@@ -191,20 +191,22 @@ class Conductor:
         ):
             LOGGER.warning("No ledger configured")
 
-        # Register all inbound transports
-        self.inbound_transport_manager = InboundTransportManager(
-            self.root_profile, self.inbound_message_router, self.handle_not_returned
-        )
-        await self.inbound_transport_manager.setup()
-        context.injector.bind_instance(
-            InboundTransportManager, self.inbound_transport_manager
-        )
+        if not context.settings.get("transport.disabled"):
+            # Register all inbound transports if enabled
+            self.inbound_transport_manager = InboundTransportManager(
+                self.root_profile, self.inbound_message_router, self.handle_not_returned
+            )
+            await self.inbound_transport_manager.setup()
+            context.injector.bind_instance(
+                InboundTransportManager, self.inbound_transport_manager
+            )
 
-        # Register all outbound transports
-        self.outbound_transport_manager = OutboundTransportManager(
-            self.root_profile, self.handle_not_delivered
-        )
-        await self.outbound_transport_manager.setup()
+        if not context.settings.get("transport.disabled"):
+            # Register all outbound transports
+            self.outbound_transport_manager = OutboundTransportManager(
+                self.root_profile, self.handle_not_delivered
+            )
+            await self.outbound_transport_manager.setup()
 
         # Initialize dispatcher
         self.dispatcher = Dispatcher(self.root_profile)
@@ -286,17 +288,18 @@ class Conductor:
         context = self.root_profile.context
         await self.check_for_valid_wallet_type(self.root_profile)
 
-        # Start up transports
-        try:
-            await self.inbound_transport_manager.start()
-        except Exception:
-            LOGGER.exception("Unable to start inbound transports")
-            raise
-        try:
-            await self.outbound_transport_manager.start()
-        except Exception:
-            LOGGER.exception("Unable to start outbound transports")
-            raise
+        if not context.settings.get("transport.disabled"):
+            # Start up transports if enabled
+            try:
+                await self.inbound_transport_manager.start()
+            except Exception:
+                LOGGER.exception("Unable to start inbound transports")
+                raise
+            try:
+                await self.outbound_transport_manager.start()
+            except Exception:
+                LOGGER.exception("Unable to start outbound transports")
+                raise
 
         # Start up Admin server
         if self.admin_server:
@@ -316,14 +319,23 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        # Show some details about the configuration to the user
-        LoggingConfigurator.print_banner(
-            default_label,
-            self.inbound_transport_manager.registered_transports,
-            self.outbound_transport_manager.registered_transports,
-            self.setup_public_did and self.setup_public_did.did,
-            self.admin_server,
-        )
+        if context.settings.get("transport.disabled"):
+            LoggingConfigurator.print_banner(
+                default_label,
+                None,
+                None,
+                self.setup_public_did and self.setup_public_did.did,
+                self.admin_server,
+            )
+        else:
+            LoggingConfigurator.print_banner(
+                default_label,
+                self.inbound_transport_manager.registered_transports,
+                self.outbound_transport_manager.registered_transports,
+                self.setup_public_did and self.setup_public_did.did,
+                self.admin_server,
+            )
+
         LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
@@ -620,7 +632,11 @@ class Conductor:
     async def get_stats(self) -> dict:
         """Get the current stats tracked by the conductor."""
         stats = {
-            "in_sessions": len(self.inbound_transport_manager.sessions),
+            "in_sessions": (
+                len(self.inbound_transport_manager.sessions)
+                if self.inbound_transport_manager
+                else 0
+            ),
             "out_encode": 0,
             "out_deliver": 0,
             "task_active": self.dispatcher.task_queue.current_active,
@@ -628,11 +644,12 @@ class Conductor:
             "task_failed": self.dispatcher.task_queue.total_failed,
             "task_pending": self.dispatcher.task_queue.current_pending,
         }
-        for m in self.outbound_transport_manager.outbound_buffer:
-            if m.state == QueuedOutboundMessage.STATE_ENCODE:
-                stats["out_encode"] += 1
-            if m.state == QueuedOutboundMessage.STATE_DELIVER:
-                stats["out_deliver"] += 1
+        if self.outbound_transport_manager:
+            for m in self.outbound_transport_manager.outbound_buffer:
+                if m.state == QueuedOutboundMessage.STATE_ENCODE:
+                    stats["out_encode"] += 1
+                if m.state == QueuedOutboundMessage.STATE_DELIVER:
+                    stats["out_deliver"] += 1
         return stats
 
     async def outbound_message_router(
