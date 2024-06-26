@@ -33,8 +33,10 @@ The following is a list of some of the core features needed for a production dep
 Aca-py community provides periodic releases with new features and improvements. Additionally, certain releases are designated as long-term support (LTS) releases. Important fixes will be backported to the most recent LTS release, and to the prior LTS release during periods of LTS release overlap. For more details see the [LTS strategy](./docs/LTS-Strategy.md).
 
 Current LTS releases:
-- [0.12.0](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.12.0)
-- [0.11.1](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.11.1)
+- [0.12.x](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.12.1) **Supported upto January 2025**
+- [0.11.x](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.11.1) **Supported upto August 2024**
+
+Note that the third digit x corresponds to security patches to the LTS releases.
 
 Unless specified otherwise, all releases will be upgradable from the prior minor release.
 Additionally, each LTS release is upgradable to the next LTS release.
