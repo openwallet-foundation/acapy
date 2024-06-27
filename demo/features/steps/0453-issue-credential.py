@@ -98,7 +98,7 @@ def step_impl(context, issuer, credential_data):
     context.cred_exchange = cred_exchange
 
     # delete this immediately, hopefully this is committed before the holder "accepts" it
-    resp = agent_container_DELETE(
+    agent_container_DELETE(
         agent["agent"],
         f"/issue-credential-2.0/records/{cred_exchange['cred_ex_id']}",
     )
