@@ -122,8 +122,7 @@ class DefaultContextBuilder(ContextBuilder):
         # Currently providing admin routes only
         plugin_registry.register_plugin("aries_cloudagent.holder")
 
-        if not self.settings.get("ledger.disabled"):
-            plugin_registry.register_plugin("aries_cloudagent.ledger")
+        plugin_registry.register_plugin("aries_cloudagent.ledger")
 
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
