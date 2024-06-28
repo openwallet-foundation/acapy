@@ -465,16 +465,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
-
-        if dif_proof["proof"]["type"] == "DataIntegrityProof":
-            manager = VcDiManager(self.profile)
-            options = pres_request
-        else:
-            manager = VcLdpManager(self.profile)
-            options = LDProofVCOptions.deserialize(pres_request["options"])
-            if not options.challenge:
-                options.challenge = str(uuid4())
-
         pres_ver_result = None
         if isinstance(dif_proof, Sequence):
             if len(dif_proof) == 0:
@@ -482,6 +472,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     "Presentation exchange record has no presentations to verify"
                 )
             for proof in dif_proof:
+                manager, options = self._get_type_manager_options(proof, pres_request)
                 pres_ver_result = await manager.verify_presentation(
                     vp=VerifiablePresentation.deserialize(proof),
                     options=options,
@@ -489,6 +480,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 if not pres_ver_result.verified:
                     break
         else:
+            manager, options = self._get_type_manager_options(dif_proof, pres_request)
             pres_ver_result = await manager.verify_presentation(
                 vp=VerifiablePresentation.deserialize(dif_proof),
                 options=options,
@@ -497,3 +489,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         assert pres_ver_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
         return pres_ex_record
+
+    def _get_type_manager_options(self, dif_proof: dict, pres_request: dict):
+        """Get the type of manager and options based on the proof type."""
+        if dif_proof["proof"]["type"] == "DataIntegrityProof":
+            manager = VcDiManager(self.profile)
+            options = pres_request
+        else:
+            manager = VcLdpManager(self.profile)
+            options = LDProofVCOptions.deserialize(pres_request["options"])
+            if not options.challenge:
+                options.challenge = str(uuid4())
+        return manager, options
