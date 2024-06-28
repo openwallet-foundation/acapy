@@ -16,6 +16,7 @@ from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
@@ -353,7 +354,7 @@ class WalletListSchema(OpenAPISchema):
     )
 
 
-class WalletListQueryStringSchema(OpenAPISchema):
+class WalletListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for wallet list request query string."""
 
     wallet_name = fields.Str(
@@ -380,9 +381,16 @@ async def wallets_list(request: web.BaseRequest):
     if wallet_name:
         query["wallet_name"] = wallet_name
 
+    limit, offset = get_limit_offset(request)
+
     try:
         async with profile.session() as session:
-            records = await WalletRecord.query(session, tag_filter=query)
+            records = await WalletRecord.query(
+                session,
+                tag_filter=query,
+                limit=limit,
+                offset=offset,
+            )
         results = [format_wallet_record(record) for record in records]
         results.sort(key=lambda w: w["created_at"])
     except (StorageError, BaseModelError) as err:

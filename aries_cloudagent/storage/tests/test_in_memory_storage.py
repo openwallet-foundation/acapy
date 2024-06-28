@@ -9,11 +9,7 @@ from ...storage.error import (
     StorageNotFoundError,
     StorageSearchError,
 )
-from ...storage.in_memory import (
-    InMemoryStorage,
-    tag_value_match,
-    tag_query_match,
-)
+from ...storage.in_memory import InMemoryStorage, tag_query_match, tag_value_match
 from ...storage.record import StorageRecord
 
 
@@ -132,6 +128,32 @@ class TestInMemoryStorage:
         assert found.type == record.type
         assert found.value == record.value
         assert found.tags == record.tags
+
+    @pytest.mark.asyncio
+    async def test_find_paginated_records(self, store, record_factory):
+        stored_records = [record_factory(tags={"index": str(i)}) for i in range(10)]
+        for record in stored_records:
+            await store.add_record(record)
+
+        # retrieve first 5 records
+        rows_1 = await store.find_paginated_records("TYPE", {}, limit=5, offset=0)
+        assert len(rows_1) == 5  # We expect 5 rows to be returned
+        assert all(record in stored_records for record in rows_1)  # All records valid
+
+        # retrieve next 5 records
+        rows_2 = await store.find_paginated_records("TYPE", {}, limit=5, offset=5)
+        assert len(rows_2) == 5
+        assert all(record in stored_records for record in rows_2)  # All records valid
+        assert all(record not in rows_1 for record in rows_2)  # Not repeating records
+
+        # retrieve with limit greater than available records
+        rows_3 = await store.find_paginated_records("TYPE", {}, limit=15, offset=0)
+        assert len(rows_3) == 10  # returns all available records
+        assert all(record in stored_records for record in rows_3)  # All records valid
+
+        # retrieve with offset beyond available records
+        rows_empty = await store.find_paginated_records("TYPE", {}, limit=5, offset=15)
+        assert len(rows_empty) == 0
 
     @pytest.mark.asyncio
     async def test_delete_all(self, store, record_factory):

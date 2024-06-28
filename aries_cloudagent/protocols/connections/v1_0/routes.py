@@ -19,6 +19,7 @@ from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ....messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
@@ -236,7 +237,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     record = fields.Nested(ConnRecordSchema(), required=True)
 
 
-class ConnectionsListQueryStringSchema(OpenAPISchema):
+class ConnectionsListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for connections list request query string."""
 
     alias = fields.Str(
@@ -468,11 +469,18 @@ async def connections_list(request: web.BaseRequest):
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 
+    limit, offset = get_limit_offset(request)
+
     profile = context.profile
     try:
         async with profile.session() as session:
             records = await ConnRecord.query(
-                session, tag_filter, post_filter_positive=post_filter, alt=True
+                session,
+                tag_filter,
+                limit=limit,
+                offset=offset,
+                post_filter_positive=post_filter,
+                alt=True,
             )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)

@@ -26,6 +26,7 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ....messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
@@ -63,7 +64,7 @@ class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
     """Response schema for v2.0 Issue Credential Module."""
 
 
-class V20CredExRecordListQueryStringSchema(OpenAPISchema):
+class V20CredExRecordListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for credential exchange record list query."""
 
     connection_id = fields.Str(
@@ -566,11 +567,15 @@ async def credential_exchange_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
+    limit, offset = get_limit_offset(request)
+
     try:
         async with profile.session() as session:
             cred_ex_records = await V20CredExRecord.query(
                 session=session,
                 tag_filter=tag_filter,
+                limit=limit,
+                offset=offset,
                 post_filter_positive=post_filter,
             )
 

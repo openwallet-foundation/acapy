@@ -683,8 +683,10 @@ class GeneralGroup(ArgumentGroup):
         if args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
-        else:
+
+        elif "no_transport" not in args:
             raise ArgsParseError("-e/--endpoint is required")
+
         if args.profile_endpoint:
             settings["profile_endpoint"] = args.profile_endpoint
 
@@ -1283,6 +1285,19 @@ class TransportGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add transport-specific command line arguments to the parser."""
         parser.add_argument(
+            "--no-transport",
+            dest="no_transport",
+            action="store_true",
+            env_var="ACAPY_NO_TRANSPORT",
+            help=(
+                "Specifies that aca-py will run with no transport configured. "
+                "This must be set if running in no-transport mode.  Overrides any "
+                "specified transport or endpoint configurations.  "
+                "Either this parameter or the "
+                "'--endpoint' parameter MUST be specified. Default: false."
+            ),
+        )
+        parser.add_argument(
             "-it",
             "--inbound-transport",
             dest="inbound_transports",
@@ -1390,28 +1405,33 @@ class TransportGroup(ArgumentGroup):
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
         settings = {}
-        if args.inbound_transports:
-            settings["transport.inbound_configs"] = args.inbound_transports
+        if args.no_transport:
+            settings["transport.disabled"] = True
         else:
-            raise ArgsParseError("-it/--inbound-transport is required")
-        if args.outbound_transports:
-            settings["transport.outbound_configs"] = args.outbound_transports
-        else:
-            raise ArgsParseError("-ot/--outbound-transport is required")
-        settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
+            if args.inbound_transports:
+                settings["transport.inbound_configs"] = args.inbound_transports
+            else:
+                raise ArgsParseError("-it/--inbound-transport is required")
+            if args.outbound_transports:
+                settings["transport.outbound_configs"] = args.outbound_transports
+            else:
+                raise ArgsParseError("-ot/--outbound-transport is required")
+            settings["transport.enable_undelivered_queue"] = (
+                args.enable_undelivered_queue
+            )
+            if args.max_message_size:
+                settings["transport.max_message_size"] = args.max_message_size
+            if args.max_outbound_retry:
+                settings["transport.max_outbound_retry"] = args.max_outbound_retry
+            if args.ws_heartbeat_interval:
+                settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
+            if args.ws_timeout_interval:
+                settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         if args.label:
             settings["default_label"] = args.label
         if args.image_url:
             settings["image_url"] = args.image_url
-        if args.max_message_size:
-            settings["transport.max_message_size"] = args.max_message_size
-        if args.max_outbound_retry:
-            settings["transport.max_outbound_retry"] = args.max_outbound_retry
-        if args.ws_heartbeat_interval:
-            settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
-        if args.ws_timeout_interval:
-            settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         return settings
 

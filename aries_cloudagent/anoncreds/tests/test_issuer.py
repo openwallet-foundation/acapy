@@ -471,7 +471,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 issuer_id="issuer-id",
                 schema_id="schema-id",
                 signature_type="CL",
-                options={"max_cred_num": "100"},  # requires integer
+                options={"support_revocation": "100"},  # requires integer
             )
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
