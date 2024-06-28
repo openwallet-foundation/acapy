@@ -195,7 +195,7 @@ class DIFPresExchHandler:
         else:
             reqd_key_type = ED25519
         for cred in applicable_creds:
-            if cred.cred_value["proof"]["type"] == "DataIntegrityProof":
+            if cred.cred_value.get("proof", {}).get("type") == "DataIntegrityProof":
                 filtered_creds_list.append(cred.cred_value)
                 issuer_id = cred.issuer_id
             elif cred.subject_ids and len(cred.subject_ids) > 0:
