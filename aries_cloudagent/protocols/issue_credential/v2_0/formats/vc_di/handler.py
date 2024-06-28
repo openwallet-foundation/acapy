@@ -7,8 +7,6 @@ import datetime
 import json
 import logging
 from typing import Mapping, Tuple
-from anoncreds import W3cCredential
-from ......revocation.models.revocation_registry import RevocationRegistry
 from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.indy import (
     V20CredExRecordIndy,
