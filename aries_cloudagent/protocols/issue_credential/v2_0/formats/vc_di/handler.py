@@ -8,6 +8,7 @@ import json
 import logging
 from typing import Mapping, Tuple
 from anoncreds import W3cCredential
+from ......revocation.models.revocation_registry import RevocationRegistry
 from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.indy import (
     V20CredExRecordIndy,
@@ -462,7 +463,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             cred_def = await ledger.get_credential_definition(cred_def_id)
-        revocable = cred_def["value"].get("revocation")
+        revocable = True if cred_def["value"].get("revocation") else False
 
         legacy_offer = await self._prepare_legacy_offer(cred_offer, schema_id)
         legacy_request = await self._prepare_legacy_request(cred_request, cred_def_id)
@@ -566,19 +567,11 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         cred_def_result = await anoncreds_registry.get_credential_definition(
             self.profile, cred["proof"][0]["verificationMethod"]
         )
-        # TODO: remove loading of W3cCredential and use the credential directly
-        try:
-            cred_w3c = W3cCredential.load(cred)
-            rev_reg_id = cred_w3c.rev_reg_id
-            rev_reg_index = cred_w3c.rev_reg_index
-        except AnonCredsHolderError as e:
-            LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
-            raise e
-        # argh even with no revocation id (rev_reg_id = None)
-        # the following code gets called and fails
-        # TODO figure this out :-(
-        # (somehow the value is getting set to String "None")
-        if rev_reg_id and rev_reg_id != "None":
+        rev_reg_id = None
+        rev_reg_index = None
+        if cred.get("rev_reg_id"):
+            rev_reg_id = cred["rev_reg_id"]
+            rev_reg_index = cred["cred_rev_id"]
             rev_reg_def_result = (
                 await anoncreds_registry.get_revocation_registry_definition(
                     self.profile, rev_reg_id
