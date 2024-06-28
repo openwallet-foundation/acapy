@@ -70,13 +70,14 @@ class V2PackWireFormat(BaseWireFormat):
                 message_unpack = await messaging.unpack(message_json)
             except CryptoServiceError:
                 LOGGER.debug("Message unpack failed, falling back to JSON")
+                print("HIT CRTYPTO SER ERR EXCEPT BLOC")
             else:
                 # Set message_dict to be the dictionary that we unpacked
                 message_dict = message_unpack.message
 
-        if message_unpack.sender_kid:
-            receipt.sender_verkey = message_unpack.sender_kid
-            receipt.recipient_verkey = message_unpack.recipient_kid
+                if message_unpack.sender_kid:
+                    receipt.sender_verkey = message_unpack.sender_kid
+                    receipt.recipient_verkey = message_unpack.recipient_kid
 
         thid = message_dict.get("thid")
         receipt.thread_id = thid or message_dict.get("id")
