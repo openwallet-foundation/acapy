@@ -39,10 +39,13 @@ class V20CredIssue(AgentMessage):
         """Initialize credential issue object.
 
         Args:
+            _id: The identifier for the credential issue.
+            replacement_id: unique to issuer, to coordinate credential replacement
             comment: optional comment
-            credentials_attach: credentials attachments
             formats: acceptable attachment formats
             filter_attach: list of credential attachments
+            credentials_attach: credentials attachments
+            kwargs: additional key-value arguments to map into message class properties
 
         """
         super().__init__(_id=_id, **kwargs)

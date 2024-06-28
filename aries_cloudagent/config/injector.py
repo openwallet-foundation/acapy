@@ -2,8 +2,8 @@
 
 from typing import Dict, Mapping, Optional, Type
 
-from .base import BaseProvider, BaseInjector, InjectionError, InjectType
-from .provider import InstanceProvider, CachedProvider
+from .base import BaseInjector, BaseProvider, InjectionError, InjectType
+from .provider import CachedProvider, InstanceProvider
 from .settings import Settings
 
 
@@ -118,11 +118,15 @@ class Injector(BaseInjector):
         """Get the provided instance of a given class identifier.
 
         Args:
-            cls: The base class to retrieve an instance of
-            params: An optional dict providing configuration to the provider
+            base_cls (Type[InjectType]): The base class to retrieve an instance of.
+            settings (Optional[Mapping[str, object]]): An optional dictionary providing
+                configuration to the provider.
 
         Returns:
-            An instance of the base class, or None
+            InjectType: An instance of the base class, or None.
+
+        Raises:
+            InjectionError: If no instance is provided for the given class identifier.
 
         """
         result = self.inject_or(base_cls, settings)

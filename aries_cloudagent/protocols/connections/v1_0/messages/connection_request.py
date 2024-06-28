@@ -35,6 +35,8 @@ class ConnectionRequest(AgentMessage):
             connection (ConnectionDetail): Connection details object
             label: Label for this connection request
             image_url: Optional image URL for this connection request
+            kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
         self.connection = connection

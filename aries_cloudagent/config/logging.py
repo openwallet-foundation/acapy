@@ -61,9 +61,12 @@ def load_resource(path: str, encoding: str = None):
     """Open a resource file located in a python package or the local filesystem.
 
     Args:
-        path: The resource path in the form of `dir/file` or `package:dir/file`
+        path (str): The resource path in the form of `dir/file` or `package:dir/file`
+        encoding (str, optional): The encoding to use when reading the resource file.
+            Defaults to None.
+
     Returns:
-        A file-like object representing the resource
+        file-like object: A file-like object representing the resource
     """
     components = path.rsplit(":", 1)
     try:
@@ -458,11 +461,23 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         """Initialize an instance of `TimedRotatingFileMultiProcessHandler`.
 
         Args:
-            filename: log file name with path
-            when: specify when to rotate log file
-            interval: interval when to rotate
-            backupCount: count of backup file, backupCount of 0 will mean
-                no limit on count of backup file [no backup will be deleted]
+            filename (str): The log file name with path.
+            when (str, optional): Specifies when to rotate the log file. Defaults to "h".
+            interval (int, optional): The interval when to rotate. Defaults to 1.
+            backupCount (int, optional): The count of backup files. A backupCount of 0
+                means no limit on the count of backup files (no backup will be deleted).
+                Defaults to 1.
+            encoding (str, optional): The encoding to use for the log file.
+                Defaults to None.
+            delay (bool, optional): Whether to delay file opening until the first log
+                message is emitted. Defaults to False.
+            utc (bool, optional): Whether to use UTC time for log rotation.
+                Defaults to False.
+            atTime (datetime.time, optional): The specific time at which log rotation
+                should occur. Defaults to None.
+
+        Raises:
+            ValueError: If an invalid rollover interval is specified.
 
         """
         BaseRotatingHandler.__init__(
@@ -479,6 +494,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         self.mylogfile = "%s.%08d" % ("/tmp/trfmphanldler", randint(0, 99999999))
         self.interval = interval
 
+        # Set the appropriate suffix and regular expression pattern based on the specified rollover interval # noqa: E501
         if self.when == "S":
             self.interval = 1
             self.suffix = "%Y-%m-%d_%H-%M-%S"

@@ -22,6 +22,7 @@ class NonRevocationInterval(BaseModel):
         Args:
             fro: earliest time of interest
             to: latest time of interest
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)

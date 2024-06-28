@@ -6,7 +6,6 @@ from typing import Union
 from aiohttp import ClientSession, DummyCookieJar
 
 from ...core.profile import Profile
-
 from .base import BaseOutboundTransport
 
 
@@ -46,6 +45,7 @@ class WsTransport(BaseOutboundTransport):
             payload: message payload in string or byte format
             endpoint: URI endpoint for delivery
             metadata: Additional metadata associated with the payload
+            api_key: API key for the endpoint
         """
         # aiohttp should automatically handle websocket sessions
         async with self.client_session.ws_connect(endpoint, headers=metadata) as ws:

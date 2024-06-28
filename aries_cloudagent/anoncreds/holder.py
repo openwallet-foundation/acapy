@@ -479,11 +479,18 @@ class AnonCredsHolder:
     async def credential_revoked(
         self, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
-        """Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by credential id.
 
         Args:
-            credential_id: Credential id to check
+            ledger (BaseLedger): The ledger to check for revocation status.
+            credential_id (str): The ID of the credential to check.
+            fro (int, optional): The earliest timestamp to consider for revocation status.
+                Defaults to None.
+            to (int, optional): The latest timestamp to consider for revocation status.
+                Defaults to None.
 
+        Returns:
+            bool: True if the credential is revoked, False otherwise.
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id
@@ -651,8 +658,8 @@ class AnonCredsHolder:
         Args:
             cred_rev_id: credential revocation id in revocation registry
             rev_reg_def: revocation registry definition
-            rev_reg_delta: revocation delta
-            timestamp: delta timestamp
+            rev_list: revocation registry
+            tails_file_path: path to tails file
 
         Returns:
             the revocation state

@@ -229,6 +229,7 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             record_id: The ID of the record to find
+            for_update: Whether to lock the record for update
         """
 
         storage = session.inject(BaseStorage)
@@ -250,10 +251,12 @@ class BaseRecord(BaseModel):
         """Retrieve a record by tag filter.
 
         Args:
+            cls: The record class
             session: The profile session to use
             tag_filter: The filter dictionary to apply
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
+            for_update: Whether to lock the record for update
         """
 
         storage = session.inject(BaseStorage)
@@ -359,7 +362,7 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             reason: A reason to add to the log
             log_params: Additional parameters to log
-            override: Override configured logging regimen, print to stderr instead
+            log_override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
         """
 

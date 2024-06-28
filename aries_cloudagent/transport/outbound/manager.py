@@ -4,20 +4,16 @@ import asyncio
 import json
 import logging
 import time
-
 from typing import Callable, Type
 from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
 from ...core.profile import Profile
-from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
+from ...utils.classloader import ClassLoader, ClassNotFoundError, ModuleLoadError
 from ...utils.stats import Collector
 from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
-
-from ...utils.tracing import trace_event, get_timer
-
+from ...utils.tracing import get_timer, trace_event
 from ..wire_format import BaseWireFormat
-
 from .base import (
     BaseOutboundTransport,
     OutboundDeliveryError,
@@ -39,7 +35,7 @@ class OutboundTransportManager:
         """Initialize a `OutboundTransportManager` instance.
 
         Args:
-            root_profile: The application root profile
+            profile: The active profile for the request
             handle_not_delivered: An optional handler for undelivered messages
 
         """
@@ -105,13 +101,18 @@ class OutboundTransportManager:
         """Register a new outbound transport class.
 
         Args:
-            transport_class: Transport class to register
+            transport_class (Type[BaseOutboundTransport]): The transport class to
+                register.
+            transport_id (str, optional): The ID of the transport. If not provided, the
+                qualified name of the transport class will be used as the ID.
+
+        Returns:
+            str: The ID of the registered transport.
 
         Raises:
-            OutboundTransportRegistrationError: If the imported class does not
-                specify a schemes attribute
-            OutboundTransportRegistrationError: If the scheme has already been
-                registered
+            OutboundTransportRegistrationError: If the imported class does not specify
+                a `schemes` attribute.
+            OutboundTransportRegistrationError: If the scheme has already been registered.
 
         """
         try:

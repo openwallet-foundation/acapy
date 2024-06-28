@@ -208,7 +208,14 @@ class IndyRevocation:
         """Check ledger for revocation status for a given revocation registry.
 
         Args:
-            rev_reg_id: ID of the revocation registry
+            rev_reg_id (str): ID of the revocation registry
+            fro (int, optional): The sequence number to start from (exclusive).
+                Defaults to None.
+            to (int, optional): The sequence number to end at (inclusive).
+                Defaults to None.
+
+        Returns:
+            dict: The revocation registry delta.
 
         """
         ledger = await self.get_ledger_for_registry(rev_reg_id)

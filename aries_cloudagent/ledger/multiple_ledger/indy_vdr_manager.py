@@ -38,10 +38,14 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         """Initialize MultiIndyLedgerManager.
 
         Args:
-            profile: The base profile for this manager
-            production_ledgers: production IndyVDRLedger mapping
-            non_production_ledgers: non_production IndyVDRLedger mapping
-            cache_ttl: Time in sec to persist did_ledger_id_resolver cache keys
+            profile (Profile): The base profile for this manager.
+            production_ledgers (Optional[OrderedDict]): Mapping of production
+                IndyVDRLedger.
+            non_production_ledgers (Optional[OrderedDict]): Mapping of non-production
+                IndyVDRLedger.
+            writable_ledgers (Optional[set]): Set of writable ledgers.
+            endorser_map (Optional[dict]): Mapping of endorsers.
+            cache_ttl (int): Time in seconds to persist did_ledger_id_resolver cache keys.
 
         """
         self.profile = profile

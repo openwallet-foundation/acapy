@@ -42,6 +42,7 @@ class CredentialOffer(AgentMessage):
             comment: optional human-readable comment
             credential_preview: credential preview
             offers_attach: list of offer attachments
+            kwargs: additional key-value arguments to map into message class properties
 
         """
         super().__init__(_id=_id, **kwargs)

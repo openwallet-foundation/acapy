@@ -1,7 +1,6 @@
 """Utilities to deal with indy."""
 
 from ...indy.holder import IndyHolder
-
 from .pres_preview import IndyPresPreview
 
 
@@ -19,7 +18,7 @@ async def indy_proof_req_preview2indy_requested_creds(
 
     Args:
         indy_proof_req: indy proof request
-        pres_preview: preview from presentation proposal, if applicable
+        preview: preview from presentation proposal, if applicable
         holder: holder injected into current context
 
     """

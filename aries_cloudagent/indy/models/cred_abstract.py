@@ -105,6 +105,7 @@ class IndyCredAbstract(BaseModel):
             cred_def_id: credential definition identifier
             nonce: nonce
             key_correctness_proof: key correctness proof
+            kwargs: aditional keyword arguments
 
         """
         super().__init__(**kwargs)

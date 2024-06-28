@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-
 from typing import List, Optional, Sequence, Tuple, Union, cast
 
 from aries_askar import (
@@ -15,16 +14,14 @@ from aries_askar import (
     SeedMethod,
 )
 
-from .did_parameters_validation import DIDParametersValidation
 from ..askar.didcomm.v1 import pack_message, unpack_message
 from ..askar.profile import AskarProfileSession
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 from ..storage.askar import AskarStorage
-from ..storage.base import StorageRecord, StorageDuplicateError, StorageNotFoundError
-
-from .base import BaseWallet, KeyInfo, DIDInfo
+from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
+from .base import BaseWallet, DIDInfo, KeyInfo
 from .crypto import (
     sign_message,
     validate_seed,
@@ -32,7 +29,8 @@ from .crypto import (
 )
 from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
-from .error import WalletError, WalletDuplicateError, WalletNotFoundError
+from .did_parameters_validation import DIDParametersValidation
+from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, X25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
 
@@ -575,12 +573,25 @@ class AskarWallet(BaseWallet):
         """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
         Args:
-            did: DID for which to set endpoint
-            endpoint: the endpoint to set, None to clear
-            ledger: the ledger to which to send endpoint update if
-                DID is public or posted
-            endpoint_type: the type of the endpoint/service. Only endpoint_type
-                'endpoint' affects local wallet
+            did (str): The DID for which to set the endpoint.
+            endpoint (str): The endpoint to set. Use None to clear the endpoint.
+            ledger (BaseLedger): The ledger to which to send the endpoint update if the
+                DID is public or posted.
+            endpoint_type (EndpointType, optional): The type of the endpoint/service.
+                Only endpoint_type 'endpoint' affects the local wallet. Defaults to None.
+            write_ledger (bool, optional): Whether to write the endpoint update to the
+                ledger. Defaults to True.
+            endorser_did (str, optional): The DID of the endorser. Defaults to None.
+            routing_keys (List[str], optional): The routing keys to be used.
+                Defaults to None.
+
+        Raises:
+            WalletError: If the DID is not of type 'did:sov'.
+            LedgerConfigError: If no ledger is available but the DID is public.
+
+        Returns:
+            dict: The attribute definition if write_ledger is False, otherwise None.
+
         """
         did_info = await self.get_local_did(did)
         if did_info.method != SOV:

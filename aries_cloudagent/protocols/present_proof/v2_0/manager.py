@@ -115,6 +115,7 @@ class V20PresManager:
         Args:
             pres_ex_record: Presentation exchange record for which
                 to create presentation request
+            request_data: Formatted requested attributes and predicates
             comment: Optional human-readable comment pertaining to request creation
 
         Returns:
@@ -227,36 +228,38 @@ class V20PresManager:
         """Create a presentation.
 
         Args:
-            pres_ex_record: record to update
-            requested_credentials: indy formatted requested_credentials
-            comment: optional human-readable comment
-            format_: presentation format
+            pres_ex_record (V20PresExRecord): The record to update.
+            request_data (Optional[dict]): Optional indy formatted
+                requested_credentials.
+            comment (str): Optional human-readable comment.
 
-        Example `requested_credentials` format, mapping proof request referents (uuid)
+        Example `request_data` format, mapping proof request referents (uuid)
         to wallet referents (cred id):
 
-        ::
-
-            {
-                "self_attested_attributes": {
-                    "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
-                },
-                "requested_attributes": {
-                    "6253ffbb-bd35-49b3-934f-46e083106f6c": {
-                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
-                        "revealed": true
-                    }
-                },
-                "requested_predicates": {
-                    "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
-                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
-                    }
+        {
+            "self_attested_attributes": {
+                "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
+            },
+            "requested_attributes": {
+                "6253ffbb-bd35-49b3-934f-46e083106f6c": {
+                    "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
+                    "revealed": true
+                }
+            },
+            "requested_predicates": {
+                "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
+                    "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
                 }
             }
+        }
 
         Returns:
-            A tuple (updated presentation exchange record, presentation message)
+            Tuple[V20PresExRecord, V20Pres]: A tuple containing the updated
+                presentation exchange record and the presentation message.
 
+        Raises:
+            V20PresManagerError: If unable to create the presentation or no supported
+                formats are available.
         """
         proof_request = pres_ex_record.pres_request
         input_formats = proof_request.formats
@@ -378,6 +381,7 @@ class V20PresManager:
         Args:
             pres_ex_record: presentation exchange record
                 with presentation request and presentation to verify
+            responder: base responder
 
         Returns:
             presentation exchange record, updated
@@ -414,6 +418,7 @@ class V20PresManager:
 
         Args:
             pres_ex_record: presentation exchange record with thread id
+            responder: base responder
 
         """
         responder = responder or self._profile.inject_or(BaseResponder)

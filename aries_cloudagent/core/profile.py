@@ -1,7 +1,7 @@
 """Classes for managing profile information within a request context."""
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
 from weakref import ref
 
@@ -84,6 +84,7 @@ class Profile(ABC):
 
         Args:
             cls: The base class to retrieve an instance of
+            base_cls: The base class to retrieve
             settings: An optional mapping providing configuration to the provider
 
         Returns:
@@ -266,11 +267,12 @@ class ProfileSession(ABC):
         If we are in an active transaction, just queue the event, otherwise emit it.
 
         Args:
-            session: The profile session to use
-            payload: The event payload
+            topic (str): The topic of the event.
+            payload (Any): The payload of the event.
+            force_emit (bool, optional): If True, force the event to be emitted even
+                if there is an active transaction. Defaults to False.
         """
 
-        # TODO check transaction, either queue or emit event
         if force_emit or (not self.is_transaction):
             # just emit directly
             await self.profile.notify(topic, payload)
@@ -291,11 +293,15 @@ class ProfileSession(ABC):
         """Get the provided instance of a given class identifier.
 
         Args:
-            cls: The base class to retrieve an instance of
-            settings: An optional mapping providing configuration to the provider
+            base_cls (Type[InjectType]): The base class to retrieve an instance of.
+            settings (Mapping[str, object], optional): An optional mapping providing
+                configuration to the provider.
 
         Returns:
-            An instance of the base class, or None
+            InjectType: An instance of the base class, or None.
+
+        Raises:
+            ProfileSessionInactiveError: If the profile session is inactive.
 
         """
         if not self._active:

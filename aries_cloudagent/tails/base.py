@@ -1,6 +1,6 @@
 """Tails server interface base class."""
 
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Tuple
 
 from ..config.injection_context import InjectionContext
@@ -24,7 +24,7 @@ class BaseTailsServer(ABC, metaclass=ABCMeta):
         Args:
             context: context with configuration settings
             filename: file name given to tails server
-            tails_file: The path to the tails file to upload
+            tails_file_path: path to tails file to upload
             interval: initial interval between attempts
             backoff: exponential backoff in retry interval
             max_attempts: maximum number of attempts to make

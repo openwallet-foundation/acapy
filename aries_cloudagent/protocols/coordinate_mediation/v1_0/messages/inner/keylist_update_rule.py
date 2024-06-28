@@ -28,6 +28,7 @@ class KeylistUpdateRule(BaseModel):
         Args:
             recipient_key: recipient key for the rule
             action: action for the rule
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)

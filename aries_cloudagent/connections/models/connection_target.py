@@ -37,8 +37,9 @@ class ConnectionTarget(BaseModel):
             did: A did for the connection
             endpoint: An endpoint for the connection
             label: A label for the connection
-            recipient_key: A list of recipient keys
+            recipient_keys: A list of recipient keys
             routing_keys: A list of routing keys
+            sender_key: A sender key
         """
         self.did = did
         self.endpoint = endpoint

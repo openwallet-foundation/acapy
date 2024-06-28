@@ -1,8 +1,8 @@
 """Validator methods to check for properties without a context."""
 
 from typing import Sequence, Tuple, Union
-from pyld import jsonld
 
+from pyld import jsonld
 
 from .document_loader import DocumentLoaderMethod
 
@@ -23,6 +23,8 @@ def diff_dict_keys(
         full (dict): The full dict with all keys present
         with_missing (dict): The dict with possibly keys missing
         prefix (str, optional): The prefix. Mostly used for internal recursion.
+        document_loader (DocumentLoaderMethod): The document loader method
+        context: The context of the document
 
     Returns:
         Sequence[str]: List of missing property names in with_missing

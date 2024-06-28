@@ -26,6 +26,7 @@ class V20CredAttrSpec(BaseModel):
             value: attribute value; caller must base64-encode for attributes with
                 non-empty MIME type
             mime_type: MIME type (default null)
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)
@@ -126,6 +127,7 @@ class V20CredPreview(BaseModel):
                     "value": "cG90YXRv"
                 },
             ]
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)

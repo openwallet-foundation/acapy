@@ -158,9 +158,10 @@ class V20CredExRecord(BaseExchangeRecord):
 
         Args:
             session: The profile session to use
+            state: The state to set
             reason: A reason to add to the log
             log_params: Additional parameters to log
-            override: Override configured logging regimen, print to stderr instead
+            log_override: Override configured logging regimen, print to stderr instead
         """
 
         if self._last_state == state:  # already done

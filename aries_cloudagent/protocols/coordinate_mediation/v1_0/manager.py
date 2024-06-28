@@ -131,6 +131,7 @@ class MediationManager:
         """Create a new mediation record to track this request.
 
         Args:
+            connection_id (str): connection ID of mediator
             request (MediationRequest): request message
 
         Returns:
@@ -458,6 +459,7 @@ class MediationManager:
 
         Args:
             record (MediationRecord): record representing the granted mediation request
+            grant (MediationGrant): message from mediator granting request
 
         """
         record.state = MediationRecord.STATE_GRANTED
@@ -473,6 +475,7 @@ class MediationManager:
 
         Args:
             record (MediationRecord): record representing the denied mediation request
+            deny (MediationDeny): message from mediator denying request
 
         """
         record.state = MediationRecord.STATE_DENIED

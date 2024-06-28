@@ -1066,11 +1066,21 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     """Request handler for jws creation using did.
 
     Args:
-        "headers": { ... },
-        "payload": { ... },
-        "did": "did:example:123",
-        "verificationMethod": "did:example:123#keys-1"
-        with did and verification being mutually exclusive.
+        request (web.BaseRequest): The HTTP request object.
+            "headers": { ... },
+            "payload": { ... },
+            "did": "did:example:123",
+            "verificationMethod": "did:example:123#keys-1"
+            with did and verification being mutually exclusive.
+
+    Returns:
+        web.Response: The HTTP response containing the signed JWS.
+
+    Raises:
+        web.HTTPBadRequest: If the provided DID or verification method is invalid.
+        web.HTTPNotFound: If the wallet is not found.
+        web.HTTPBadRequest: If there is an error with the wallet.
+
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
@@ -1103,12 +1113,24 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
     """Request handler for sd-jws creation using did.
 
     Args:
-        "headers": { ... },
-        "payload": { ... },
-        "did": "did:example:123",
-        "verificationMethod": "did:example:123#keys-1"
-        with did and verification being mutually exclusive.
-        "non_sd_list": []
+        request (web.BaseRequest): The HTTP request object.
+            Contains the request context and payload.
+                "headers": { ... },
+                "payload": { ... },
+                "did": "did:example:123",
+                "verificationMethod": "did:example:123#keys-1"
+                with did and verification being mutually exclusive.
+                "non_sd_list": []
+
+    Returns:
+        web.Response: The HTTP response object.
+            Contains the signed sd-jws.
+
+    Raises:
+        web.HTTPBadRequest: If the provided did or verification method is invalid.
+        web.HTTPNotFound: If the wallet is not found.
+        web.HTTPBadRequest: If there is an error with the wallet.
+
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
@@ -1140,7 +1162,17 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     """Request handler for jws validation using did.
 
     Args:
-        "jwt": { ... }
+        request (web.BaseRequest): The HTTP request object.
+            "jwt": { ... }
+
+    Returns:
+        web.Response: The HTTP response containing the validation result.
+
+    Raises:
+        web.HTTPBadRequest: If there is an error with the JWS header or verification
+            method.
+        web.HTTPNotFound: If there is an error resolving the JWS.
+
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
@@ -1174,7 +1206,16 @@ async def wallet_sd_jwt_verify(request: web.BaseRequest):
     """Request handler for sd-jws validation using did.
 
     Args:
-        "sd-jwt": { ... }
+        request: The web request object.
+            "sd-jwt": { ... }
+
+    Returns:
+        A JSON response containing the result of the sd-jwt verification.
+
+    Raises:
+        web.HTTPBadRequest: If there is an error with the JWS header or verification
+            method.
+        web.HTTPNotFound: If there is an error resolving the verification method.
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()

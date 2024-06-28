@@ -76,7 +76,8 @@ class BaseConnectionManager:
         """Initialize a BaseConnectionManager.
 
         Args:
-            session: The profile session for this presentation
+            profile (Profile): The profile object associated with this connection manager.
+
         """
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
@@ -133,12 +134,14 @@ class BaseConnectionManager:
         """Create a did:peer:4 DID for a connection.
 
         Args:
-            svc_endpoints: Custom endpoints for the DID Document
-            mediation_record: The record for mediation that contains routing_keys and
-                service endpoint
+            svc_endpoints (Optional[Sequence[str]]): Custom endpoints for the
+                DID Document.
+            mediation_records (Optional[List[MediationRecord]]): The records for
+                mediation that contain routing keys and service endpoint.
+            metadata (Optional[Dict]): Additional metadata for the DID.
 
         Returns:
-            The new `DIDInfo` instance
+            DIDInfo: The new `DIDInfo` instance representing the created DID.
         """
         routing_keys: List[str] = []
         if mediation_records:
@@ -199,12 +202,14 @@ class BaseConnectionManager:
         """Create a did:peer:2 DID for a connection.
 
         Args:
-            svc_endpoints: Custom endpoints for the DID Document
-            mediation_record: The record for mediation that contains routing_keys and
-                service endpoint
+            svc_endpoints (Optional[Sequence[str]]): Custom endpoints for the
+                DID Document.
+            mediation_records (Optional[List[MediationRecord]]): The records for
+                mediation that contain routing keys and service endpoint.
+            metadata (Optional[Dict]): Additional metadata for the DID.
 
         Returns:
-            The new `DIDInfo` instance
+            DIDInfo: The new `DIDInfo` instance representing the created DID.
         """
         routing_keys: List[str] = []
         if mediation_records:
@@ -302,16 +307,17 @@ class BaseConnectionManager:
         """Create our DID doc for a given DID.
 
         Args:
-            did_info: The DID information (DID and verkey) used in the connection
-            svc_endpoints: Custom endpoints for the DID Document
-            mediation_record: The record for mediation that contains routing_keys and
-                service endpoint
+            did_info (DIDInfo): The DID information (DID and verkey) used in the
+                connection.
+            svc_endpoints (Optional[Sequence[str]]): Custom endpoints for the
+                DID Document.
+            mediation_records (Optional[List[MediationRecord]]): The records for
+                mediation that contain routing keys and service endpoints.
 
         Returns:
-            The prepared `DIDDoc` instance
+            DIDDoc: The prepared `DIDDoc` instance.
 
         """
-
         did_doc = DIDDoc(did=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
@@ -491,7 +497,16 @@ class BaseConnectionManager:
         """Resolve invitation with the DID Resolver.
 
         Args:
-            did: Document ID to resolve
+            did (str): Document ID to resolve.
+            service_accept (Optional[Sequence[Text]]): List of accepted service types.
+
+        Returns:
+            Tuple[str, List[str], List[str]]: A tuple containing the endpoint,
+                recipient keys, and routing keys.
+
+        Raises:
+            BaseConnectionManagerError: If the public DID has no associated
+                DIDComm services.
         """
         doc, didcomm_services = await self.resolve_didcomm_services(did, service_accept)
         if not didcomm_services:
@@ -617,14 +632,18 @@ class BaseConnectionManager:
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets for an invitation.
 
-        This will extract target info for either a connection or OOB invitation.
+        This method extracts target information for either a connection or out-of-band
+            (OOB) invitation.
 
         Args:
-            connection: ConnRecord the invitation is associated with.
-            invitation: Connection or OOB invitation retrieved from conn record.
+            connection (ConnRecord): The connection record associated with the invitation.
+            invitation (Union[ConnectionInvitation, InvitationMessage]): The connection
+                or OOB invitation retrieved from the connection record.
+            sender_verkey (str): The sender's verification key.
 
         Returns:
-            A list of `ConnectionTarget` objects
+            Sequence[ConnectionTarget]: A list of `ConnectionTarget` objects
+                representing the connection targets for the invitation.
         """
         if isinstance(invitation, ConnectionInvitation):
             # conn protocol invitation
@@ -684,6 +703,7 @@ class BaseConnectionManager:
         Args:
             connection: The connection record (with associated `DIDDoc`)
                 used to generate the connection target
+            sender_verkey: The verkey we are using
         Returns:
             A list of `ConnectionTarget` objects
         """
@@ -1069,17 +1089,32 @@ class BaseConnectionManager:
     ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
         """Register a new static connection (for use by the test suite).
 
+        This method is used to create a new static connection. It allows overriding
+        various parameters such as DIDs, seeds, verkeys, endpoints, labels, and aliases.
+        It returns the created connection record along with the associated DID
+        information.
+
         Args:
-            my_did: override the DID used in the connection
-            my_seed: provide a seed used to generate our DID and keys
-            their_did: provide the DID used by the other party
-            their_seed: provide a seed used to generate their DID and keys
-            their_verkey: provide the verkey used by the other party
-            their_endpoint: their URL endpoint for routing messages
-            alias: an alias for this connection record
+            my_did (Optional[str]): Override the DID used in the connection.
+            my_seed (Optional[str]): Provide a seed used to generate our DID and keys.
+            their_did (Optional[str]): Provide the DID used by the other party.
+            their_seed (Optional[str]): Provide a seed used to generate their DID and
+                keys.
+            their_verkey (Optional[str]): Provide the verkey used by the other party.
+            their_endpoint (Optional[str]): Their URL endpoint for routing messages.
+            their_label (Optional[str]): An alias for this connection record.
+            alias (Optional[str]): An alias for this connection record.
+            mediation_id (Optional[str]): The mediation ID for routing through a mediator.
 
         Returns:
-            Tuple: my DIDInfo, their DIDInfo, new `ConnRecord` instance
+            Tuple[DIDInfo, DIDInfo, ConnRecord]: A tuple containing the following:
+                - my DIDInfo: The DID information for the local party.
+                - their DIDInfo: The DID information for the other party.
+                - new `ConnRecord` instance: The newly created connection record.
+
+        Raises:
+            BaseConnectionManagerError: If either a verkey or seed must be provided for
+                the other party.
 
         """
         async with self._profile.session() as session:
