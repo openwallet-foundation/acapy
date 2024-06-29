@@ -125,6 +125,10 @@ async def create_signed_anoncreds_presentation(
             "proof_preds": [],
         }
 
+        if requires_revoc_status:
+            w3c_creds_metadata[entry_idx]["rev_reg_id"] = w3c_cred.rev_reg_index
+            w3c_creds_metadata[entry_idx]["rev_reg_index"] = w3c_cred.rev_reg_index
+
         for field in fields:
             path = field["path"][0]
 
@@ -195,6 +199,7 @@ async def create_signed_anoncreds_presentation(
         rev_reg_entries,
     ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
 
+    # TODO use rev_reg_defs, rev_reg_entries to create revocation states ...
     # TODO possibly refactor this into a couple of methods -
     # one to create the proof request and another to sign it
     # (the holder flag is a bit of a hack)

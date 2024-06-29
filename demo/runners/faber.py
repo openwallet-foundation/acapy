@@ -365,7 +365,7 @@ class FaberAgent(AriesAgent):
                                         ],
                                         "constraints": {
                                             "statuses": {
-                                                "active": {"directive": "required"}
+                                                "active": {"directive": "disallowed"}
                                             },
                                             "limit_disclosure": "required",
                                             "fields": [
@@ -413,6 +413,13 @@ class FaberAgent(AriesAgent):
                         },
                     },
                 }
+
+                if revocation:
+                    proof_request_web_request["presentation_request"]["dif"][
+                        "presentation_definition"
+                    ]["input_descriptors"][0]["constraints"]["statuses"]["active"][
+                        "directive"
+                    ] = "required"
                 if not connectionless:
                     proof_request_web_request["connection_id"] = self.connection_id
                 return proof_request_web_request
