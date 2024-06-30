@@ -8,6 +8,7 @@ import json
 import logging
 from typing import Mapping, Tuple
 from ...models.cred_ex_record import V20CredExRecord
+from anoncreds import W3cCredential
 from ...models.detail.indy import (
     V20CredExRecordIndy,
 )
@@ -560,6 +561,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         cred = cred_ex_record.cred_issue.attachment(VCDICredFormatHandler.format)
         cred = cred["credential"]
 
+        w3cred = W3cCredential.load(cred)
         rev_reg_def = None
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         cred_def_result = await anoncreds_registry.get_credential_definition(
@@ -567,9 +569,10 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         )
         rev_reg_id = None
         rev_reg_index = None
-        if cred.get("rev_reg_id"):
-            rev_reg_id = cred["rev_reg_id"]
-            rev_reg_index = cred["cred_rev_id"]
+        if w3cred.rev_reg_id != "None":
+            rev_reg_id = w3cred.rev_reg_id
+            # rev_reg_index = cred["cred_rev_id"]
+
             rev_reg_def_result = (
                 await anoncreds_registry.get_revocation_registry_definition(
                     self.profile, rev_reg_id

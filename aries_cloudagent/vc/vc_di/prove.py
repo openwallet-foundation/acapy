@@ -126,8 +126,8 @@ async def create_signed_anoncreds_presentation(
         }
 
         if requires_revoc_status:
-            w3c_creds_metadata[entry_idx]["rev_reg_id"] = w3c_cred.rev_reg_index
-            w3c_creds_metadata[entry_idx]["rev_reg_index"] = w3c_cred.rev_reg_index
+            w3c_creds_metadata[entry_idx]["rev_reg_id"] = w3c_cred.rev_reg_id
+            w3c_creds_metadata[entry_idx]["timestamp"] = w3c_cred.timestamp  # missing
 
         for field in fields:
             path = field["path"][0]
