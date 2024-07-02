@@ -5,9 +5,9 @@ from ..non_rev_interval import IndyNonRevocationInterval
 FROM = 1000000000
 TO = 1234567890
 
-INTERVAL_FROM = IndyNonRevocationInterval(timestamp_from=FROM)
-INTERVAL_TO = IndyNonRevocationInterval(timestamp_to=TO)
-INTERVAL = IndyNonRevocationInterval(timestamp_from=FROM, timestamp_to=TO)
+INTERVAL_FROM = IndyNonRevocationInterval(fro=FROM)
+INTERVAL_TO = IndyNonRevocationInterval(to=TO)
+INTERVAL = IndyNonRevocationInterval(fro=FROM, to=TO)
 
 
 class TestInterval(TestCase):
@@ -17,14 +17,11 @@ class TestInterval(TestCase):
         """Test serialization and deserialization."""
         for interval in (INTERVAL_FROM, INTERVAL_TO, INTERVAL):
             non_revo_dict = interval.serialize()
-            assert non_revo_dict.get("from") == interval.timestamp_from
-            assert non_revo_dict.get("to") == interval.timestamp_to
+            assert non_revo_dict.get("from") == interval.fro
+            assert non_revo_dict.get("to") == interval.to
 
             model = IndyNonRevocationInterval.deserialize(non_revo_dict)
-            assert (
-                model.timestamp_from == interval.timestamp_from
-                and model.timestamp_to == interval.timestamp_to
-            )
+            assert model.fro == interval.fro and model.to == interval.to
             assert model.timestamp()
 
     def test_covers(self):

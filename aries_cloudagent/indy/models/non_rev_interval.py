@@ -16,7 +16,7 @@ class IndyNonRevocationInterval(BaseModel):
 
         schema_class = "IndyNonRevocationIntervalSchema"
 
-    def __init__(self, timestamp_from: int = None, timestamp_to: int = None, **kwargs):
+    def __init__(self, fro: int = None, to: int = None, **kwargs):
         """Initialize non-revocation interval.
 
         Args:
@@ -26,8 +26,8 @@ class IndyNonRevocationInterval(BaseModel):
 
         """
         super().__init__(**kwargs)
-        self.timestamp_from = timestamp_from
-        self.timestamp_to = timestamp_to
+        self.fro = fro
+        self.to = to
 
     def covers(self, timestamp: int = None) -> bool:
         """Whether input timestamp (default now) lies within non-revocation interval.
@@ -40,13 +40,11 @@ class IndyNonRevocationInterval(BaseModel):
 
         """
         timestamp = timestamp or int(time())
-        return (
-            (self.timestamp_from or 0) <= timestamp <= (self.timestamp_to or timestamp)
-        )
+        return (self.fro or 0) <= timestamp <= (self.to or timestamp)
 
     def timestamp(self) -> bool:
         """Return a timestamp that the non-revocation interval covers."""
-        return self.timestamp_to or self.timestamp_from or int(time())
+        return self.to or self.fro or int(time())
 
 
 class IndyNonRevocationIntervalSchema(BaseModelSchema):
