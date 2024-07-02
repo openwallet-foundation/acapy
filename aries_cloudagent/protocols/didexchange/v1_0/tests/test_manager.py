@@ -51,6 +51,7 @@ class TestConfig:
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
+    test_did_peer_1 = "did:peer:1zQmNa1NAgFNxoPu5XN7NmUfHk2mF6MnnysiNVDd7X72oPvm"
     test_did_peer_2 = "did:peer:2.Vz6MkeobNdKHDnMXhob5GPWmpEyNx3r9j6gqiKYJQ9J2wEPvx.SeyJpZCI6IiNkaWRjb21tLTAiLCJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJwcmlvcml0eSI6MCwicmVjaXBpZW50S2V5cyI6WyIja2V5LTEiXSwiciI6W10sInMiOiJodHRwOi8vaG9zdC5kb2NrZXIuaW50ZXJuYWw6OTA3MCJ9"
     test_did_peer_4 = "did:peer:4zQmd8CpeFPci817KDsbSAKWcXAE2mjvCQSasRewvbSF54Bd:z2M1k7h4psgp4CmJcnQn2Ljp7Pz7ktsd7oBhMU3dWY5s4fhFNj17qcRTQ427C7QHNT6cQ7T3XfRh35Q2GhaNFZmWHVFq4vL7F8nm36PA9Y96DvdrUiRUaiCuXnBFrn1o7mxFZAx14JL4t8vUWpuDPwQuddVo1T8myRiVH7wdxuoYbsva5x6idEpCQydJdFjiHGCpNc2UtjzPQ8awSXkctGCnBmgkhrj5gto3D4i3EREXYq4Z8r2cWGBr2UzbSmnxW2BuYddFo9Yfm6mKjtJyLpF74ytqrF5xtf84MnGFg1hMBmh1xVx1JwjZ2BeMJs7mNS8DTZhKC7KH38EgqDtUZzfjhpjmmUfkXg2KFEA3EGbbVm1DPqQXayPYKAsYPS9AyKkcQ3fzWafLPP93UfNhtUPL8JW5pMcSV3P8v6j3vPXqnnGknNyBprD6YGUVtgLiAqDBDUF3LSxFQJCVYYtghMTv8WuSw9h1a1SRFrDQLGHE4UrkgoRvwaGWr64aM87T1eVGkP5Dt4L1AbboeK2ceLArPScrdYGTpi3BpTkLwZCdjdiFSfTy9okL1YNRARqUf2wm8DvkVGUU7u5nQA3ZMaXWJAewk6k1YUxKd7LvofGUK4YEDtoxN5vb6r1Q2godrGqaPkjfL3RoYPpDYymf9XhcgG8Kx3DZaA6cyTs24t45KxYAfeCw4wqUpCH9HbpD78TbEUr9PPAsJgXBvBj2VVsxnr7FKbK4KykGcg1W8M1JPz21Z4Y72LWgGQCmixovrkHktcTX1uNHjAvKBqVD5C7XmVfHgXCHj7djCh3vzLNuVLtEED8J1hhqsB1oCBGiuh3xXr7fZ9wUjJCQ1HYHqxLJKdYKtoCiPmgKM7etVftXkmTFETZmpM19aRyih3bao76LdpQtbw636r7a3qt8v4WfxsXJetSL8c7t24SqQBcAY89FBsbEnFNrQCMK3JEseKHVaU388ctvRD45uQfe5GndFxthj4iSDomk4uRFd1uRbywoP1tRuabHTDX42UxPjz"
 
@@ -1677,6 +1678,36 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         conn_rec = ConnRecord(
             connection_id="dummy",
             their_did=TestConfig.test_did_peer_4,
+            state=ConnRecord.State.REQUEST.rfc23,
+        )
+
+        self.profile.context.update_settings({"emit_did_peer_4": False})
+
+        with mock.patch.object(
+            self.manager, "create_did_peer_4", mock.CoroutineMock()
+        ) as mock_create_did_peer_4, mock.patch.object(
+            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+        ) as mock_retrieve_req, mock.patch.object(
+            conn_rec, "save", mock.CoroutineMock()
+        ) as mock_save:
+            mock_create_did_peer_4.return_value = DIDInfo(
+                TestConfig.test_did_peer_4,
+                TestConfig.test_verkey,
+                None,
+                method=PEER4,
+                key_type=ED25519,
+            )
+            response = await self.manager.create_response(
+                conn_rec, "http://10.20.30.40:5060/"
+            )
+            mock_create_did_peer_4.assert_called_once()
+            assert response.did.startswith("did:peer:4")
+
+    async def test_create_response_peer_1_gets_peer_4(self):
+        # created did:peer:4 when receiving a did:peer:4, even if setting is False
+        conn_rec = ConnRecord(
+            connection_id="dummy",
+            their_did=TestConfig.test_did_peer_1,
             state=ConnRecord.State.REQUEST.rfc23,
         )
 
