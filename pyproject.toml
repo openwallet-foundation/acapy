@@ -41,13 +41,13 @@ python-dateutil="~2.8.1"
 python-json-logger="~2.0.7"
 pyyaml="~6.0.1"
 qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
-requests="~2.32.2"
+requests="~2.32.3"
 rlp="4.0.1"
 unflatten="~0.1"
 sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-uuid_utils = "^0.8.0"
+uuid_utils = "^0.9.0"
 
 # askar
 aries-askar= { version = "~0.3.0", optional = true }
@@ -58,10 +58,14 @@ anoncreds= { version = "0.2.0", optional = true }
 # bbs
 ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
+# didcommv2
+didcomm-messaging = {version = "^0.1.1a0", optional = true }
+
+
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.7.0"
 # Sync with version in .pre-commit-config.yaml
-ruff = "0.4.10"
+ruff = "0.5.0"
 # Sync with version in .github/workflows/blackformat.yml
 # Sync with version in .pre-commit-config.yaml
 black = "24.4.2"
@@ -89,6 +93,10 @@ askar = [
 ]
 bbs = [
     "ursa-bbs-signatures"
+]
+
+didcommv2 = [
+    "didcomm-messaging"
 ]
 
 [tool.poetry.scripts]

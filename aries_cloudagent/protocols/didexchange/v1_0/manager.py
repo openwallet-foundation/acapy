@@ -798,6 +798,8 @@ class DIDXManager(BaseConnectionManager):
             use_did_method = "did:peer:2"
         elif conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4"):
             use_did_method = "did:peer:4"
+        elif conn_rec.their_did and conn_rec.their_did.startswith("did:peer:1"):
+            use_did_method = "did:peer:4"
         else:
             use_did_method = None
 

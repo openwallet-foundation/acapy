@@ -55,7 +55,7 @@ from ..wallet.crypto import create_keypair, seed_to_did
 from ..wallet.did_info import INVITATION_REUSE_KEY, DIDInfo, KeyInfo
 from ..wallet.did_method import PEER2, PEER4, SOV, DIDMethod
 from ..wallet.error import WalletNotFoundError
-from ..wallet.key_type import ED25519
+from ..wallet.key_type import ED25519, X25519
 from ..wallet.util import b64_to_bytes, bytes_to_b58
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
@@ -85,9 +85,18 @@ class BaseConnectionManager:
     @staticmethod
     def _key_info_to_multikey(key_info: KeyInfo) -> str:
         """Convert a KeyInfo to a multikey."""
-        return multibase.encode(
-            multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
-        )
+        if key_info.key_type == ED25519:
+            return multibase.encode(
+                multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
+            )
+        elif key_info.key_type == X25519:
+            return multibase.encode(
+                multicodec.wrap("x25519-pub", b58decode(key_info.verkey)), "base58btc"
+            )
+        else:
+            raise BaseConnectionManagerError(
+                "Unsupported key type. Could not convert to multikey."
+            )
 
     def long_did_peer_to_short(self, long_did: str) -> str:
         """Convert did:peer:4 long format to short format and return."""
@@ -222,13 +231,30 @@ class BaseConnectionManager:
                     "serviceEndpoint": endpoint,
                 }
             )
+            if self._profile.settings.get("experiment.didcomm_v2"):
+                services.append(
+                    {
+                        "id": f"#service-{index}",
+                        "type": "DIDCommMessaging",
+                        "serviceEndpoint": {
+                            "uri": endpoint,
+                            "accept": ["didcomm/v2"],
+                            "routingKeys": routing_keys,
+                        },
+                    }
+                )
 
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
+            xk = await wallet.create_key(X25519)
 
             did = generate(
-                [KeySpec.verification(self._key_info_to_multikey(key))], services
+                [
+                    KeySpec.verification(self._key_info_to_multikey(key)),
+                    KeySpec.key_agreement(self._key_info_to_multikey(xk)),
+                ],
+                services,
             )
 
             did_metadata = metadata if metadata else {}
@@ -240,6 +266,8 @@ class BaseConnectionManager:
                 key_type=ED25519,
             )
             await wallet.store_did(did_info)
+            await wallet.assign_kid_to_key(key.verkey, f"{did}#key-1")
+            await wallet.assign_kid_to_key(xk.verkey, f"{did}#key-2")
 
         return did_info
 
