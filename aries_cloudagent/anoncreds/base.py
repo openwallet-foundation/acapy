@@ -126,11 +126,7 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
 
     @abstractmethod
     async def get_revocation_list(
-        self,
-        profile: Profile,
-        revocation_registry_id: str,
-        timestamp_from: Optional[int] = 0,
-        timestamp_to: Optional[int] = None,
+        self, profile: Profile, revocation_registry_id: str, timestamp: int
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
 
