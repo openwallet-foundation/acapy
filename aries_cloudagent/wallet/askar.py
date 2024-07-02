@@ -93,6 +93,7 @@ class AskarWallet(BaseWallet):
             key_type: Key type to create
             seed: Seed for key
             metadata: Optional metadata to store with the keypair
+            kid: Optional key identifier
 
         Returns:
             A `KeyInfo` representing the new record

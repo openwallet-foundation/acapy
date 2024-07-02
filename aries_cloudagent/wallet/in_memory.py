@@ -3,22 +3,21 @@
 import asyncio
 from typing import List, Optional, Sequence, Tuple, Union
 
-from .did_parameters_validation import DIDParametersValidation
 from ..core.in_memory import InMemoryProfile
-
 from .base import BaseWallet
 from .crypto import (
     create_keypair,
-    validate_seed,
-    sign_message,
-    verify_signed_message,
-    encode_pack_message,
     decode_pack_message,
+    encode_pack_message,
+    sign_message,
+    validate_seed,
+    verify_signed_message,
 )
-from .did_info import KeyInfo, DIDInfo
-from .did_posture import DIDPosture
+from .did_info import DIDInfo, KeyInfo
 from .did_method import DIDMethod, DIDMethods
-from .error import WalletError, WalletDuplicateError, WalletNotFoundError
+from .did_parameters_validation import DIDParametersValidation
+from .did_posture import DIDPosture
+from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, random_seed
 
@@ -70,6 +69,7 @@ class InMemoryWallet(BaseWallet):
             key_type: Key type to create
             seed: Seed for key
             metadata: Optional metadata to store with the keypair
+            kid: Key identifier
 
         Returns:
             A `KeyInfo` representing the new record
