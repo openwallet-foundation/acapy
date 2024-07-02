@@ -41,7 +41,7 @@ def diff_dict_keys(
             return (full, with_missing)
 
         # First type is a list. Return first item if len is 1
-        if full_type == list and with_missing_type != list:
+        if full_type is list and with_missing_type is not list:
             return (full, [with_missing])
 
     missing = []

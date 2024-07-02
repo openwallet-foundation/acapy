@@ -20,8 +20,8 @@ class IndyNonRevocationInterval(BaseModel):
         """Initialize non-revocation interval.
 
         Args:
-            timestamp_from: earliest time of interest
-            timestamp_to: latest time of interest
+            fro: earliest time of interest
+            to: latest time of interest
             kwargs: additional attributes
 
         """

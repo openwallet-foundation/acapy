@@ -120,7 +120,6 @@ class V20PresManager:
 
         Returns:
             A tuple (updated presentation exchange record, presentation request message)
-
         """
         proof_proposal = pres_ex_record.pres_proposal
         input_formats = proof_proposal.formats
@@ -236,22 +235,24 @@ class V20PresManager:
         Example `request_data` format, mapping proof request referents (uuid)
         to wallet referents (cred id):
 
-        {
-            "self_attested_attributes": {
-                "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
-            },
-            "requested_attributes": {
-                "6253ffbb-bd35-49b3-934f-46e083106f6c": {
-                    "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
-                    "revealed": true
-                }
-            },
-            "requested_predicates": {
-                "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
-                    "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
+        ::
+
+            {
+                "self_attested_attributes": {
+                    "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
+                },
+                "requested_attributes": {
+                    "6253ffbb-bd35-49b3-934f-46e083106f6c": {
+                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
+                        "revealed": true
+                    }
+                },
+                "requested_predicates": {
+                    "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
+                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
+                    }
                 }
             }
-        }
 
         Returns:
             Tuple[V20PresExRecord, V20Pres]: A tuple containing the updated
@@ -261,6 +262,7 @@ class V20PresManager:
             V20PresManagerError: If unable to create the presentation or no supported
                 formats are available.
         """
+
         proof_request = pres_ex_record.pres_request
         input_formats = proof_request.formats
         request_data = request_data or {}
