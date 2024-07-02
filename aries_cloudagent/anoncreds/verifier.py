@@ -423,7 +423,7 @@ class AnonCredsVerifier:
                         result = await anoncreds_registry.get_revocation_list(
                             self.profile,
                             identifier["rev_reg_id"],
-                            identifier["timestamp"],
+                            timestamp_to=identifier["timestamp"],
                         )
                         rev_lists[identifier["rev_reg_id"]][
                             identifier["timestamp"]
