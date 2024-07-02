@@ -374,17 +374,21 @@ class IndyCredxHolder(IndyHolder):
             raise IndyHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
+        self,
+        ledger: BaseLedger,
+        credential_id: str,
+        timestamp_from: int = None,
+        timestamp_to: int = None,
     ) -> bool:
         """Check ledger for revocation status of credential by cred id.
 
         Args:
             ledger (BaseLedger): The ledger to check for revocation status.
             credential_id (str): The ID of the credential to check.
-            fro (int, optional): The starting sequence number of the revocation registry
-                delta. Defaults to None.
-            to (int, optional): The ending sequence number of the revocation registry
-                delta. Defaults to None.
+            timestamp_from (int, optional): The starting sequence number of the revocation
+                registry delta. Defaults to None.
+            timestamp_to (int, optional): The ending sequence number of the revocation
+                registry delta. Defaults to None.
 
         Returns:
             bool: True if the credential is revoked, False otherwise.
@@ -396,8 +400,8 @@ class IndyCredxHolder(IndyHolder):
             cred_rev_id = cred.rev_reg_index
             (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
                 rev_reg_id,
-                fro,
-                to,
+                timestamp_from,
+                timestamp_to,
             )
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:

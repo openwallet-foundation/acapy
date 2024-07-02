@@ -203,15 +203,15 @@ class IndyRevocation:
             return await IssuerRevRegRecord.query(session)
 
     async def get_issuer_rev_reg_delta(
-        self, rev_reg_id: str, fro: int = None, to: int = None
+        self, rev_reg_id: str, timestamp_from: int = None, timestamp_to: int = None
     ) -> dict:
         """Check ledger for revocation status for a given revocation registry.
 
         Args:
             rev_reg_id (str): ID of the revocation registry
-            fro (int, optional): The sequence number to start from (exclusive).
+            timestamp_from (int, optional): The sequence number to start from (exclusive).
                 Defaults to None.
-            to (int, optional): The sequence number to end at (inclusive).
+            timestamp_to (int, optional): The sequence number to end at (inclusive).
                 Defaults to None.
 
         Returns:
@@ -222,8 +222,8 @@ class IndyRevocation:
         async with ledger:
             (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
                 rev_reg_id,
-                fro,
-                to,
+                timestamp_from,
+                timestamp_to,
             )
 
         return rev_reg_delta

@@ -403,8 +403,8 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         assert (
             await self.holder.credential_revoked(
                 credential_id="cred-id",
-                to=None,
-                fro=None,
+                timestamp_to=None,
+                timestamp_from=None,
             )
             is False
         )

@@ -120,9 +120,9 @@ def indy_proof_req2non_revoc_intervals(indy_proof_req: dict):
                 indy_proof_req.get("non_revoked"),
             )
             if interval:
-                fro = interval.get("from")
-                to = interval.get("to")
-                if (to is not None) and fro == to:
+                timestamp_from = interval.get("from")
+                timestamp_to = interval.get("to")
+                if (timestamp_to is not None) and timestamp_from == timestamp_to:
                     interval["from"] = 0  # accommodate indy-sdk verify=False if fro=to
             non_revoc_intervals[reft] = interval
     return non_revoc_intervals

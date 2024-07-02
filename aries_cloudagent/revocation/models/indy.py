@@ -16,18 +16,18 @@ class NonRevocationInterval(BaseModel):
 
         schema_class = "NonRevocationIntervalSchema"
 
-    def __init__(self, fro: int = None, to: int = None, **kwargs):
+    def __init__(self, timestamp_from: int = None, timestamp_to: int = None, **kwargs):
         """Initialize non-revocation interval.
 
         Args:
-            fro: earliest time of interest
-            to: latest time of interest
+            timestamp_from: earliest time of interest
+            timestamp_to: latest time of interest
             kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)
-        self.fro = fro
-        self.to = to
+        self.timestamp_from = timestamp_from
+        self.timestamp_to = timestamp_to
 
     def covers(self, timestamp: int = None) -> bool:
         """Whether input timestamp (default now) lies within non-revocation interval.
@@ -40,11 +40,13 @@ class NonRevocationInterval(BaseModel):
 
         """
         timestamp = timestamp or int(time())
-        return (self.fro or 0) <= timestamp <= (self.to or timestamp)
+        return (
+            (self.timestamp_from or 0) <= timestamp <= (self.timestamp_to or timestamp)
+        )
 
     def timestamp(self) -> bool:
         """Return a timestamp that the non-revocation interval covers."""
-        return self.to or self.fro or int(time())
+        return self.timestamp_to or self.timestamp_from or int(time())
 
 
 class NonRevocationIntervalSchema(BaseModelSchema):

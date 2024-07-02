@@ -37,17 +37,21 @@ class IndyHolder(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def credential_revoked(
-        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
+        self,
+        ledger: BaseLedger,
+        credential_id: str,
+        timestamp_from: int = None,
+        timestamp_to: int = None,
     ) -> bool:
         """Check ledger for revocation status of credential by cred id.
 
         Args:
             ledger (BaseLedger): The ledger to check for revocation status.
             credential_id (str): The ID of the credential to check.
-            fro (int, optional): The starting time of the revocation status check range.
-                Defaults to None.
-            to (int, optional): The ending time of the revocation status check range.
-                Defaults to None.
+            timestamp_from (int, optional): The starting time of the revocation status
+                check range. Defaults to None.
+            timestamp_to (int, optional): The ending time of the revocation status check
+                range. Defaults to None.
 
         Returns:
             bool: True if the credential is revoked, False otherwise.
