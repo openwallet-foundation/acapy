@@ -6,7 +6,10 @@ from ..cache.in_memory import InMemoryCache
 from ..core.event_bus import EventBus
 from ..core.goal_code_registry import GoalCodeRegistry
 from ..core.plugin_registry import PluginRegistry
-from ..core.profile import ProfileManager, ProfileManagerProvider
+from ..core.profile import (
+    ProfileManager,
+    ProfileManagerProvider,
+)
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
@@ -53,13 +56,26 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(EventBus, EventBus())
 
         # Global did resolver
-        context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        context.injector.bind_instance(DIDResolver, DIDResolver())
         context.injector.bind_instance(AnonCredsRegistry, AnonCredsRegistry())
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(KeyTypes, KeyTypes())
         context.injector.bind_instance(
             BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
+
+        # DIDComm Messaging
+        if context.settings.get("experiment.didcomm_v2"):
+            from didcomm_messaging import (
+                CryptoService,
+                PackagingService,
+                RoutingService,
+            )
+            from didcomm_messaging.crypto.backend.askar import AskarCryptoService
+
+            context.injector.bind_instance(CryptoService, AskarCryptoService())
+            context.injector.bind_instance(PackagingService, PackagingService())
+            context.injector.bind_instance(RoutingService, RoutingService())
 
         await self.bind_providers(context)
         await self.load_plugins(context)

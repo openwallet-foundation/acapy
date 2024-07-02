@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+from ...messaging.base_message import DIDCommVersion
 
 
 class MessageReceipt:
@@ -27,6 +28,7 @@ class MessageReceipt:
         sender_verkey: str = None,
         thread_id: str = None,
         parent_thread_id: str = None,
+        didcomm_version: DIDCommVersion = None
     ):
         """Initialize the message delivery instance."""
         self._connection_id = connection_id
@@ -40,6 +42,7 @@ class MessageReceipt:
         self._sender_verkey = sender_verkey
         self._thread_id = thread_id
         self._parent_thread_id = parent_thread_id
+        self.didcomm_version = didcomm_version
 
     @property
     def connection_id(self) -> str:
