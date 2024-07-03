@@ -241,8 +241,6 @@ The `manage` script is described in detail [here](https://github.com/hyperledger
 
 We use [Ruff](https://github.com/astral-sh/ruff) to enforce a coding style guide.
 
-We use [Black](https://black.readthedocs.io/en/stable/) to automatically format code.
-
 Please write tests for the work that you submit.
 
 Tests should reside in a directory named `tests` alongside the code under test. Generally, there is one test file for each file module under test. Test files _must_ have a name starting with `test_` to be automatically picked up the test runner.

@@ -60,85 +60,64 @@
             ]
         },
         {
-            "name": "ruff - aries_cloudagent",
+            "name": "ruff (lint) - aries_cloudagent",
             "type": "python",
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
-            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", "."]
         },
         {
-            "name": "ruff fix - aries_cloudagent",
+            "name": "ruff fix (lint) - aries_cloudagent",
             "type": "python",
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
-            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", ".", "--fix"]
         },
         {
-            "name": "ruff - current file",
+            "name": "ruff (lint) - current file",
             "type": "python",
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
-            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", ".", "${file}"]
         },
         {
-            "name": "black (check) - aries_cloudagent",
+            "name": "ruff fix (lint) - current file",
             "type": "python",
             "request": "launch",
-            "module": "black",
+            "module": "ruff",
             "console": "integratedTerminal",
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
-            "args": [
-                ".",
-                "--check"
-            ]
+            "args": ["check", ".", "${file}", "--fix"]
         },
         {
-            "name": "black (check) - current file",
+            "name": "ruff (format) - aries_cloudagent",
             "type": "python",
             "request": "launch",
-            "module": "black",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "${file}",
-                "--check"
-            ]
-        },
-        {
-            "name": "black (format) - aries_cloudagent",
-            "type": "python",
-            "request": "launch",
-            "module": "black",
+            "module": "ruff",
             "console": "integratedTerminal",
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
-            "args": [
-                "."
-            ]
+            "args": ["format", "."]
         },
         {
-            "name": "black (format) - current file",
+            "name": "ruff (format) - current file",
             "type": "python",
             "request": "launch",
-            "module": "black",
+            "module": "ruff",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": [
-                "${file}"
-            ]
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["format", ".", "${file}"]
         }
     ]
 }
