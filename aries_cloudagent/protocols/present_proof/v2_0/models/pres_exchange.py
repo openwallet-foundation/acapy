@@ -197,11 +197,11 @@ class V20PresExRecord(BaseExchangeRecord):
         else:
             topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
-        if session.profile.settings.get("debug.webhooks"):
-            if not payload:
-                payload = self.serialize()
-        else:
-            payload = V20PresExRecordWebhook(**self.__dict__)
+        # serialize payload before checking for webhook contents
+        if not payload:
+            payload = self.serialize()
+        if not session.profile.settings.get("debug.webhooks"):
+            payload = V20PresExRecordWebhook(**payload)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)
