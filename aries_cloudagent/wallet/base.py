@@ -184,13 +184,13 @@ class BaseWallet(ABC):
         """Create and store a new public DID.
 
         This method creates a new public DID using the specified DID method and key type.
-        
+
         The optional `seed` parameter can be used to provide a seed for the DID
             generation.
-            
+
         If a `did` is provided, it will be used as the DID instead of generating a new
             one.
-            
+
         The `metadata` parameter can be used to store additional metadata with the DID.
 
         Args:

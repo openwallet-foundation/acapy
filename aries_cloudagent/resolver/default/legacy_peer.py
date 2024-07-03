@@ -31,9 +31,9 @@ class LegacyDocCorrections:
     conventions. This also helps with consistent processing of DID Docs.
 
     Input example:
-    
+
     ::
-    
+
         {
             "@context": "https://w3id.org/did/v1",
             "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
@@ -66,9 +66,9 @@ class LegacyDocCorrections:
         }
 
     Output example:
-    
+
     ::
-    
+
         {
             "@context": "https://w3id.org/did/v1",
             "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
@@ -94,7 +94,7 @@ class LegacyDocCorrections:
                 }
             ]
         }
-        
+
     """
 
     @staticmethod
