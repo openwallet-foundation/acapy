@@ -16,5 +16,3 @@ jobs:
           python-version: "3.9"
       - name: Ruff Format and Lint Check
         uses: chartboost/ruff-action@v1
-        with:
-          changed-files: 'true'
