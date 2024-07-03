@@ -1,13 +1,11 @@
 """Represents a forward message."""
 
 import json
-
 from typing import Union
 
 from marshmallow import EXCLUDE, fields, pre_load
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import FORWARD, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.forward_handler.ForwardHandler"
@@ -29,6 +27,7 @@ class Forward(AgentMessage):
         Args:
             to (str): Recipient DID
             msg (str): Message content
+            kwargs: Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.to = to

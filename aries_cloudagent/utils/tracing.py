@@ -6,7 +6,6 @@ import logging
 import time
 
 import requests
-
 from marshmallow import fields
 
 from ..messaging.agent_message import AgentMessage
@@ -127,7 +126,22 @@ def trace_event(
             context["trace.tag"]: Tag to be included in trace output
         message: the current message, can be an AgentMessage,
             InboundMessage, OutboundMessage or Exchange record
-        event: Dict that will be converted to json and posted to the target
+        handler (optional): The handler name for the trace event. If not provided,
+            it defaults to "aca-py.agent".
+        outcome (optional): The outcome of the trace event.
+        perf_counter (optional): The performance counter value for the trace event.
+        force_trace (optional): If True, forces the trace event to be logged even if
+            tracing is not enabled.
+        raise_errors (optional): If True, raises an exception if there is an error
+            logging the trace event.
+
+    Returns:
+        float: The value of the performance counter.
+
+    Raises:
+        Exception: If there is an error logging the trace event and `raise_errors` is
+            True.
+
     """
 
     ret = time.perf_counter()

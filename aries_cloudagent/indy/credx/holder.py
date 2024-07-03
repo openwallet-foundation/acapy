@@ -374,13 +374,24 @@ class IndyCredxHolder(IndyHolder):
             raise IndyHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
+        self,
+        ledger: BaseLedger,
+        credential_id: str,
+        timestamp_from: int = None,
+        timestamp_to: int = None,
     ) -> bool:
         """Check ledger for revocation status of credential by cred id.
 
         Args:
-            credential_id: Credential id to check
+            ledger (BaseLedger): The ledger to check for revocation status.
+            credential_id (str): The ID of the credential to check.
+            timestamp_from (int, optional): The starting sequence number of the revocation
+                registry delta. Defaults to None.
+            timestamp_to (int, optional): The ending sequence number of the revocation
+                registry delta. Defaults to None.
 
+        Returns:
+            bool: True if the credential is revoked, False otherwise.
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id
@@ -389,8 +400,8 @@ class IndyCredxHolder(IndyHolder):
             cred_rev_id = cred.rev_reg_index
             (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
                 rev_reg_id,
-                fro,
-                to,
+                timestamp_from,
+                timestamp_to,
             )
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:
@@ -537,17 +548,24 @@ class IndyCredxHolder(IndyHolder):
     ) -> str:
         """Create current revocation state for a received credential.
 
+        This method creates the current revocation state for a received credential.
+        It takes the credential revocation ID, revocation registry definition,
+        revocation delta, delta timestamp, and tails file path as input parameters.
+
         Args:
-            cred_rev_id: credential revocation id in revocation registry
-            rev_reg_def: revocation registry definition
-            rev_reg_delta: revocation delta
-            timestamp: delta timestamp
+            cred_rev_id (str): The credential revocation ID in the revocation registry.
+            rev_reg_def (dict): The revocation registry definition.
+            rev_reg_delta (dict): The revocation delta.
+            timestamp (int): The delta timestamp.
+            tails_file_path (str): The path to the tails file.
 
         Returns:
-            the revocation state
+            str: The revocation state.
+
+        Raises:
+            IndyHolderError: If there is an error creating the revocation state.
 
         """
-
         try:
             rev_state = await asyncio.get_event_loop().run_in_executor(
                 None,

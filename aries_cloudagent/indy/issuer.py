@@ -5,7 +5,6 @@ from typing import Sequence, Tuple
 
 from ..core.error import BaseError
 
-
 DEFAULT_CRED_DEF_TAG = "default"
 DEFAULT_SIGNATURE_TYPE = "CL"
 
@@ -87,14 +86,16 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         """Create a new credential definition and store it in the wallet.
 
         Args:
-            origin_did: the DID issuing the credential definition
-            schema_json: the schema used as a basis
-            signature_type: the credential definition signature type (default 'CL')
-            tag: the credential definition tag
-            support_revocation: whether to enable revocation for this credential def
+            origin_did (str): The DID issuing the credential definition.
+            schema (dict): The schema used as a basis.
+            signature_type (str, optional): The credential definition signature type.
+                Defaults to 'CL'.
+            tag (str, optional): The credential definition tag.
+            support_revocation (bool, optional): Whether to enable revocation for this
+                credential definition.
 
         Returns:
-            A tuple of the credential definition ID and JSON
+            Tuple[str, str]: A tuple of the credential definition ID and JSON.
 
         """
 

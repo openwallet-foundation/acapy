@@ -26,6 +26,7 @@ class Perform(AgentMessage):
         Args:
             name: The name of the menu option
             params: Input parameter values
+            kwargs: Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.name = name

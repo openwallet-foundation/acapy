@@ -1,14 +1,13 @@
 """Base classes for Models and Schemas."""
 
-import logging
 import json
-
+import logging
 from abc import ABC
 from collections import namedtuple
 from typing import Mapping, Optional, Type, TypeVar, Union, cast, overload
-from typing_extensions import Literal
 
-from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError, EXCLUDE
+from marshmallow import EXCLUDE, Schema, ValidationError, post_dump, post_load, pre_load
+from typing_extensions import Literal
 
 from ...core.error import BaseError
 from ...utils.classloader import ClassLoader
@@ -49,6 +48,7 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
     """Resolve a meta property.
 
     Args:
+        obj: The object to resolve the property from
         prop_name: The property to resolve
         defval: The default value
 
@@ -224,6 +224,7 @@ class BaseModel(ABC):
 
         Args:
             as_string: Return a string of JSON instead of a dict
+            unknown: Behaviour for unknown attributes
 
         Returns:
             A dict representation of this model, or a JSON string if as_string is True
@@ -274,6 +275,7 @@ class BaseModel(ABC):
 
         Args:
             json_repr: JSON string
+            unknown: Behaviour for unknown attributes
 
         Returns:
             A model instance representation of this JSON
@@ -362,6 +364,7 @@ class BaseModelSchema(Schema):
 
         Args:
             data: The incoming data to clean
+            kwargs: Arbitrary keyword arguments
 
         Returns:
             The modified data

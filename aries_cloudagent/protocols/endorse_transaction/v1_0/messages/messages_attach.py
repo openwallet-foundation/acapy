@@ -40,9 +40,11 @@ class MessagesAttach(AgentMessage):
             author_verkey: The verkey of the author who creates the transaction
             endorser_did: The public did of the endorser who endorses the transaction
             transaction_message: The actual data present in the transaction payload
+            transaction_type: The type of transaction
             mechanism: The mechanism of the latest TAA present on the ledger
             taaDigest: The digest of the latest TAA present on the ledger
             time: The time when the latest TAA was set/enabled
+            kwargs: Additional keyword arguments for the message
         """
 
         super().__init__(**kwargs)

@@ -207,7 +207,7 @@ class MessageReceipt:
         """Setter for the sender DID which corresponds with the verkey.
 
         Args:
-            The new sender did
+            did (str): The new sender DID.
 
         """
         self._sender_did = did

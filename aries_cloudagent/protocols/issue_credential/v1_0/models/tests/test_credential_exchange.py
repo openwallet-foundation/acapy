@@ -1,11 +1,10 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.tests import mock
+
 from ......core.in_memory import InMemoryProfile
-
-from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from ...messages.credential_proposal import CredentialProposal
-
+from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from .. import credential_exchange as test_module
 from ..credential_exchange import V10CredentialExchange
 
@@ -64,10 +63,10 @@ class TestV10CredentialExchange(IsolatedAsyncioTestCase):
                 error_msg=None,
                 trace=False,
             )
-            assert type(cx_rec.credential_proposal_dict) == CredentialProposal
+            assert isinstance(cx_rec.credential_proposal_dict, CredentialProposal)
             ser = cx_rec.serialize()
             deser = V10CredentialExchange.deserialize(ser)
-            assert type(deser.credential_proposal_dict) == CredentialProposal
+            assert isinstance(deser.credential_proposal_dict, CredentialProposal)
 
     async def test_save_error_state(self):
         session = InMemoryProfile.test_session()

@@ -39,6 +39,7 @@ class CredentialIssue(AgentMessage):
         Args:
             comment: optional comment
             credentials_attach: credentials attachments
+            kwargs: additional key-value arguments to map into message class properties
 
         """
         super().__init__(_id=_id, **kwargs)

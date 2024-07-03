@@ -136,6 +136,7 @@ class BaseMultitenantManager(ABC):
             base_context: Base context to extend from
             wallet_record: Wallet record to get the context for
             extra_settings: Any extra context settings
+            provision: Whether to provision the wallet
 
         Returns:
             Profile: Profile for the wallet record

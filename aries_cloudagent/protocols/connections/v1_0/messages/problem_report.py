@@ -42,8 +42,9 @@ class ConnectionProblemReport(ProblemReport):
         """Initialize a ProblemReport message instance.
 
         Args:
-            explain: The localized error explanation
             problem_code: The standard error identifier
+            explain: The localized error explanation
+            kwargs: Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.explain = explain

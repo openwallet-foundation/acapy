@@ -1,7 +1,7 @@
 """Base outbound transport."""
 
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
 from typing import Union
 
 from ...connections.models.connection_target import ConnectionTarget
@@ -108,7 +108,7 @@ class BaseOutboundTransport(ABC):
 
         Args:
             profile: the profile that produced the message
-            payload: message payload in string or byte format
+            outbound_message: the outbound message to handle
             endpoint: URI endpoint for delivery
             metadata: Additional metadata associated with the payload
         """

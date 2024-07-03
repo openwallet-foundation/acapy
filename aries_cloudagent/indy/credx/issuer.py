@@ -2,11 +2,9 @@
 
 import asyncio
 import logging
-
 from typing import Sequence, Tuple
 
 from aries_askar import AskarError
-
 from indy_credx import (
     Credential,
     CredentialDefinition,
@@ -21,13 +19,12 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
-
 from ..issuer import (
+    DEFAULT_CRED_DEF_TAG,
+    DEFAULT_SIGNATURE_TYPE,
     IndyIssuer,
     IndyIssuerError,
     IndyIssuerRevocationRegistryFullError,
-    DEFAULT_CRED_DEF_TAG,
-    DEFAULT_SIGNATURE_TYPE,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -122,14 +119,20 @@ class IndyCredxIssuer(IndyIssuer):
         """Create a new credential definition and store it in the wallet.
 
         Args:
-            origin_did: the DID issuing the credential definition
-            schema_json: the schema used as a basis
-            signature_type: the credential definition signature type (default 'CL')
-            tag: the credential definition tag
-            support_revocation: whether to enable revocation for this credential def
+            origin_did (str): The DID issuing the credential definition.
+            schema (dict): The schema to create a credential definition for.
+            signature_type (str, optional): The credential definition signature type
+                (default 'CL').
+            tag (str, optional): The credential definition tag.
+            support_revocation (bool, optional): Whether to enable revocation for this
+                credential definition.
 
         Returns:
-            A tuple of the credential definition ID and JSON
+            Tuple[str, str]: A tuple of the credential definition ID and JSON.
+
+        Raises:
+            IndyIssuerError: If there is an error creating or storing the credential
+                definition.
 
         """
         try:

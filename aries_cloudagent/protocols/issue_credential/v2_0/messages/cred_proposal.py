@@ -42,9 +42,10 @@ class V20CredProposal(AgentMessage):
 
         Args:
             comment: optional human-readable comment
-            credential_proposal: proposed credential preview
+            credential_preview: proposed credential preview
             formats: acceptable attachment formats
             filters_attach: list of attachments filtering credential proposal
+            kwargs: additional key-value arguments to map into message class properties
 
         """
         super().__init__(_id=_id, **kwargs)

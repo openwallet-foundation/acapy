@@ -23,6 +23,7 @@ class PingResponse(AgentMessage):
 
         Args:
             comment: An optional comment string to include in the message
+            kwargs: Keyword arguments for message construction
 
         """
         super().__init__(**kwargs)

@@ -40,6 +40,7 @@ class BasicMessage(AgentMessage):
             sent_time: Time message was sent
             content: message content
             localization: localization
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)

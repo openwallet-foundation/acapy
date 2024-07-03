@@ -4,7 +4,6 @@ import json
 import logging
 from typing import Optional
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -12,8 +11,10 @@ from ....indy.verifier import IndyVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ..indy.pres_exch_handler import IndyPresExchHandler
-
+from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
+from .messages.presentation import Presentation
 from .messages.presentation_ack import PresentationAck
 from .messages.presentation_problem_report import (
     PresentationProblemReport,
@@ -21,8 +22,6 @@ from .messages.presentation_problem_report import (
 )
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
-from .messages.presentation import Presentation
-from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
 from .models.presentation_exchange import V10PresentationExchange
 
 LOGGER = logging.getLogger(__name__)
@@ -406,6 +405,7 @@ class PresentationManager:
         Args:
             presentation_exchange_record: presentation exchange record
                 with presentation request and presentation to verify
+            responder: responder to use
 
         Returns:
             presentation record, updated
@@ -453,6 +453,7 @@ class PresentationManager:
 
         Args:
             presentation_exchange_record: presentation exchange record with thread id
+            responder: Responder to use
 
         """
         responder = responder or self._profile.inject_or(BaseResponder)

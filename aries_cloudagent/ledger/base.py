@@ -128,6 +128,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             did: The ledger DID
             endpoint: The endpoint address
             endpoint_type: The type of the endpoint (default 'endpoint')
+            write_ledger: Flag to write the endpoint to the ledger
+            endorser_did: Optional DID of the endorser
+            routing_keys: List of routing_keys if mediator is present
         """
 
     @abstractmethod
@@ -147,6 +150,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             verkey: The verification key of the keypair.
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
+            write_ledger: Flag to write the nym to the ledger
+            endorser_did: Optional DID of the endorser
         """
 
     @abstractmethod
@@ -284,6 +289,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             schema_name: The schema name
             schema_version: The schema version
             attribute_names: A list of schema attributes
+            write_ledger: Flag to write the schema to the ledger
+            endorser_did: Optional DID of the endorser
 
         """
 
@@ -433,6 +440,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions
             support_revocation: Optional flag to enable revocation for this cred def
+            write_ledger: Flag to write the cred def to the ledger
+            endorser_did: Optional DID of the endorser
 
         Returns:
             Tuple with cred def id, cred def structure, and whether it's novel
@@ -592,13 +601,30 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         write_ledger: bool = True,
         endorser_did: str = None,
     ) -> Tuple[str, dict]:
-        """Send schema to ledger.
+        """Send schema to the ledger.
+
+        This method sends a schema to the ledger for publication.
 
         Args:
-            issuer: The issuer instance to use for schema creation
-            schema_name: The schema name
-            schema_version: The schema version
-            attribute_names: A list of schema attributes
+            schema_id (str): The ID of the schema.
+            schema_def (dict): The definition of the schema.
+            write_ledger (bool, optional): Whether to write the schema to the ledger.
+                Defaults to True.
+            endorser_did (str, optional): The DID of the endorser. Defaults to None.
+
+        Returns:
+            Tuple[str, dict]: A tuple containing the schema ID and the schema definition.
+
+        Raises:
+            BadLedgerRequestError: If there is no public DID available for publishing the
+                schema.
+            BadLedgerRequestError: If the public DID is not an IndyDID.
+            LedgerError: If the ledger is in read-only mode or if the TAA is required and
+                not accepted.
+            LedgerError: If the ledger is in read-only mode.
+            LedgerError: If parsing the schema sequence number from the ledger response
+                fails.
+            LedgerObjectAlreadyExistsError: If the schema already exists on the ledger.
 
         """
         from aries_cloudagent.anoncreds.default.legacy_indy.registry import (
@@ -697,14 +723,27 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Send credential definition to ledger and store relevant key matter in wallet.
 
         Args:
-            issuer: The issuer instance to use for credential definition creation
-            schema_id: The schema id of the schema to create cred def for
-            signature_type: The signature type to use on the credential definition
-            tag: Optional tag to distinguish multiple credential definitions
-            support_revocation: Optional flag to enable revocation for this cred def
+            schema_id (str): The schema id of the schema to create credential definition
+                for.
+            cred_def_id (str): The credential definition id.
+            cred_def (dict): The credential definition structure.
+            write_ledger (bool, optional): Flag indicating whether to write the
+                credential definition to the ledger. Defaults to True.
+            endorser_did (str, optional): The DID of the endorser. Defaults to None.
 
         Returns:
-            Tuple with cred def id, cred def structure, and whether it's novel
+            Tuple[str, dict, bool]: A tuple containing the credential definition id,
+                credential definition structure, and a boolean indicating whether it's
+                novel.
+
+        Raises:
+            BadLedgerRequestError: If there is no public DID available to publish the
+                credential definition.
+            LedgerError: If the ledger does not have the specified schema.
+            LedgerObjectAlreadyExistsError: If the credential definition already exists
+                in the wallet and on the ledger.
+            LedgerError: If the ledger is in read-only mode and cannot write the
+                credential definition.
 
         """
         public_info = await self.get_wallet_public_did()

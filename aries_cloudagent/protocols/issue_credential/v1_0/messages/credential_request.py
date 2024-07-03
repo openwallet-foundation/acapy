@@ -37,8 +37,9 @@ class CredentialRequest(AgentMessage):
         """Initialize credential request object.
 
         Args:
-            requests_attach: requests attachments
             comment: optional comment
+            requests_attach: requests attachments
+            kwargs: additional key-value arguments to map into message class properties
 
         """
         super().__init__(_id=_id, **kwargs)

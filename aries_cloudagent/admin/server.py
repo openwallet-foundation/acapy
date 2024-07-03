@@ -80,7 +80,9 @@ class AdminResponder(BaseResponder):
         """Initialize an instance of `AdminResponder`.
 
         Args:
-            send: Function to send outbound message
+            profile (Profile): The profile for this responder.
+            send (Coroutine): Function to send outbound message.
+            **kwargs: Additional keyword arguments.
 
         """
         super().__init__(**kwargs)
@@ -98,6 +100,7 @@ class AdminResponder(BaseResponder):
 
         Args:
             message: The `OutboundMessage` to be sent
+            **kwargs: Additional keyword arguments
         """
         profile = self._profile()
         if not profile:
@@ -227,14 +230,16 @@ class AdminServer(BaseAdminServer):
         """Initialize an AdminServer instance.
 
         Args:
-            host: Host to listen on
-            port: Port to listen on
-            context: The application context instance
-            outbound_message_router: Coroutine for delivering outbound messages
-            webhook_router: Callable for delivering webhooks
-            conductor_stop: Conductor (graceful) stop for shutdown API call
-            task_queue: An optional task queue for handlers
-            conductor_stats: Conductor statistics API call
+            host (str): The host to listen on.
+            port (int): The port to listen on.
+            context (InjectionContext): The application context instance.
+            root_profile (Profile): The root profile.
+            outbound_message_router (Coroutine): Coroutine for delivering
+                outbound messages.
+            webhook_router (Callable): Callable for delivering webhooks.
+            conductor_stop (Coroutine): Conductor (graceful) stop for shutdown API call.
+            task_queue (TaskQueue, optional): An optional task queue for handlers.
+            conductor_stats (Coroutine, optional): Conductor statistics API call.
         """
         self.app = None
         self.admin_api_key = context.settings.get("admin.admin_api_key")

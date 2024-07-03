@@ -100,6 +100,7 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has both or neither of name and names
@@ -208,10 +209,15 @@ class IndyProofRequest(BaseModel):
         """Initialize indy cred abstract object.
 
         Args:
-            schema_id: schema identifier
-            cred_def_id: credential definition identifier
-            nonce: nonce
-            key_correctness_proof: key correctness proof
+            nonce (str): The nonce value.
+            name (str): The name of the proof request.
+            version (str): The version of the proof request.
+            requested_attributes (Mapping): A mapping of attribute names to attribute
+                constraints.
+            requested_predicates (Mapping): A mapping of predicate names to predicate
+                constraints.
+            non_revoked (Mapping): A mapping of non-revocation timestamps.
+            kwargs: Keyword arguments for BaseModel
 
         """
         super().__init__(**kwargs)

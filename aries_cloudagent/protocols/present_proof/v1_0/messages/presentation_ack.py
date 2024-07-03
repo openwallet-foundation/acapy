@@ -25,6 +25,8 @@ class PresentationAck(V10Ack):
 
         Args:
             status: Status (default OK)
+            verification_result: Whether presentation is verified
+            kwargs: Additional keyword arguments for message construction
 
         """
         super().__init__(status, **kwargs)
