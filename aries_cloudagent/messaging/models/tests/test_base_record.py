@@ -413,3 +413,37 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         assert result[0]._id == record_id
         assert result[0].value == record_value
         assert result[0].a == "one"
+
+    async def test_query_with_limit_and_offset_and_post_filter(self):
+        session = InMemoryProfile.test_session()
+        mock_storage = mock.MagicMock(BaseStorage, autospec=True)
+        session.context.injector.bind_instance(BaseStorage, mock_storage)
+        record_id = "record_id"
+        a_record = ARecordImpl(ident=record_id, a="one", b="two", code="red")
+        record_value = a_record.record_value
+        record_value.update({"created_at": time_now(), "updated_at": time_now()})
+        tag_filter = {"code": "red"}
+        stored = StorageRecord(
+            ARecordImpl.RECORD_TYPE,
+            json.dumps(record_value),
+            {"code": "red"},
+            record_id,
+        )
+        mock_storage.find_all_records.return_value = [stored] * 15  # return 15 records
+
+        # Query with limit and offset
+        result = await ARecordImpl.query(
+            session,
+            tag_filter,
+            limit=10,
+            offset=5,
+            post_filter_positive={"a": "one"},
+        )
+        mock_storage.find_all_records.assert_awaited_once_with(
+            type_filter=ARecordImpl.RECORD_TYPE, tag_query=tag_filter
+        )
+        assert len(result) == 10
+        assert result and isinstance(result[0], ARecordImpl)
+        assert result[0]._id == record_id
+        assert result[0].value == record_value
+        assert result[0].a == "one"
