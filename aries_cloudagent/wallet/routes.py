@@ -1067,11 +1067,6 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 
     Args:
         request (web.BaseRequest): The HTTP request object.
-            "headers": { ... },
-            "payload": { ... },
-            "did": "did:example:123",
-            "verificationMethod": "did:example:123#keys-1"
-            with did and verification being mutually exclusive.
 
     Returns:
         web.Response: The HTTP response containing the signed JWS.
@@ -1114,13 +1109,6 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
 
     Args:
         request (web.BaseRequest): The HTTP request object.
-            Contains the request context and payload.
-                "headers": { ... },
-                "payload": { ... },
-                "did": "did:example:123",
-                "verificationMethod": "did:example:123#keys-1"
-                with did and verification being mutually exclusive.
-                "non_sd_list": []
 
     Returns:
         web.Response: The HTTP response object.
