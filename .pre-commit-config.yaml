@@ -6,16 +6,15 @@ repos:
         stages: [commit-msg]
         args: ["--config", ".commitlint.config.js"]
         additional_dependencies: ['@commitlint/config-conventional']
-  - repo: https://github.com/psf/black
-    # Ensure this is synced with pyproject.toml
-    rev: 24.4.2
-    hooks:
-      - id: black
-        stages: [commit]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ensure this is synced with pyproject.toml
-    rev: v0.4.4
+    rev: v0.5.0
     hooks:
+      # Run the linter
       - id: ruff
         stages: [commit]
         args: [--fix, --exit-non-zero-on-fix]
+      # Run the formatter
+      - id: ruff-format
+        stages: [commit]
+        args: [--fix, --exit-non-zero-on-fix, --formatter]
