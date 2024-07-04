@@ -1,18 +1,27 @@
 """Verifiable Credential and Presentation proving methods."""
 
+import asyncio
 from hashlib import sha256
 import time
 
+from aries_cloudagent.anoncreds.models.anoncreds_revocation import (
+    RevRegDef,
+    RevRegDefValue,
+)
+from aries_cloudagent.anoncreds.revocation import AnonCredsRevocation
 from ..ld_proofs import (
     AuthenticationProofPurpose,
     ProofPurpose,
     LinkedDataProofException,
 )
-from ...anoncreds.holder import AnonCredsHolder
+from ...anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ...anoncreds.verifier import AnonCredsVerifier
 from ...core.profile import Profile
 from anoncreds import (
     W3cCredential,
+    RevocationStatusList,
+    CredentialRevocationState,
+    AnoncredsError,
 )
 
 
@@ -127,7 +136,7 @@ async def create_signed_anoncreds_presentation(
 
         if requires_revoc_status:
             w3c_creds_metadata[entry_idx]["rev_reg_id"] = w3c_cred.rev_reg_id
-            w3c_creds_metadata[entry_idx]["timestamp"] = w3c_cred.timestamp  # missing
+            w3c_creds_metadata[entry_idx]["timestamp"] = non_revoked  # missing
 
         for field in fields:
             path = field["path"][0]
@@ -199,6 +208,37 @@ async def create_signed_anoncreds_presentation(
         rev_reg_entries,
     ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
 
+    if rev_reg_defs:
+        revreg_def_v = list(rev_reg_defs.values())[0]
+        rev_reg_key = list(rev_reg_defs.keys())[0]
+
+        rev_reg_def = {
+            rev_reg_key: RevRegDef(
+                issuer_id=revreg_def_v["issuerId"],
+                cred_def_id=revreg_def_v["credDefId"],
+                tag=revreg_def_v["tag"],
+                value=RevRegDefValue(
+                    public_keys=revreg_def_v["value"]["publicKeys"],
+                    tails_hash=revreg_def_v["value"]["tailsHash"],
+                    tails_location=revreg_def_v["value"]["tailsLocation"],
+                    max_cred_num=revreg_def_v["value"]["maxCredNum"],
+                ),
+                type=revreg_def_v["revocDefType"],
+            )
+        }
+
+        x = RevocationStatusList.load(
+            list(list(rev_reg_entries.values())[0].values())[0]
+        ).to_dict()
+
+        del x["currentAccumulator"]
+
+        rev_lists = {"e": list(x.values())}
+
+        rev_lists["e"][2] = RevocationStatusList.load(
+            list(list(rev_reg_entries.values())[0].values())[0]
+        )
+
     # TODO use rev_reg_defs, rev_reg_entries to create revocation states ...
     # TODO possibly refactor this into a couple of methods -
     # one to create the proof request and another to sign it
@@ -206,13 +246,49 @@ async def create_signed_anoncreds_presentation(
     if holder:
         # TODO match up the parameters with what the function is expecting ...
         anoncreds_holder = AnonCredsHolder(profile)
+        revocation = AnonCredsRevocation(profile)
+        rev_state = None
+        try:
+
+            if rev_reg_defs:
+
+                rev_reg_def = RevRegDef(
+                    issuer_id=revreg_def_v["issuerId"],
+                    cred_def_id=revreg_def_v["credDefId"],
+                    tag=revreg_def_v["tag"],
+                    value=RevRegDefValue(
+                        public_keys=revreg_def_v["value"]["publicKeys"],
+                        tails_hash=revreg_def_v["value"]["tailsHash"],
+                        tails_location=revreg_def_v["value"]["tailsLocation"],
+                        max_cred_num=revreg_def_v["value"]["maxCredNum"],
+                    ),
+                    type=revreg_def_v["revocDefType"],
+                )
+                tails_local_path = await revocation.get_or_fetch_local_tails_path(
+                    rev_reg_def
+                )
+                rev_state = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    CredentialRevocationState.create,
+                    rev_reg_def.serialize(),
+                    RevocationStatusList.load(
+                        list(list(rev_reg_entries.values())[0].values())[0]
+                    ),
+                    int(w3c_creds[0].rev_reg_index),
+                    tails_local_path,
+                )
+
+                print(">>> rev_state:", rev_state)
+
+        except AnoncredsError as err:
+            raise AnonCredsHolderError("Error creating revocation state") from err
         anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
             presentation_request=anoncreds_proofrequest,
             requested_credentials_w3c=w3c_creds,
             credentials_w3c_metadata=w3c_creds_metadata,
             schemas=schemas,
             credential_definitions=cred_defs,
-            rev_states=None,
+            rev_states=rev_state,
         )
 
         # TODO any processing to put the returned proof into DIF format

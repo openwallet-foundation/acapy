@@ -58,8 +58,7 @@ async def verify_signed_anoncredspresentation(
 
     try:
         return await anoncreds_verifier.verify_presentation_w3c(
-            anoncreds_pres_req,
-            presentation,
+            anoncreds_pres_req, presentation, cred_metadata
         )
     except Exception as e:
         raise e

@@ -717,16 +717,16 @@ class AnonCredsHolder:
                     cred,
                     attr,
                     reveal=True,
-                    timestamp=timestamp,
-                    rev_state=rev_state,
+                    timestamp=meta.get("timestamp"),
+                    rev_state=rev_states,
                 )
 
             for pred in meta["proof_preds"]:
                 present_creds.add_predicates(
                     cred,
                     pred,
-                    timestamp=timestamp,
-                    rev_state=rev_state,
+                    timestamp=meta.get("timestamp"),
+                    rev_state=rev_states,
                 )
 
         try:
