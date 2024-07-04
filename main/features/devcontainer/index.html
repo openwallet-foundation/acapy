@@ -2563,15 +2563,14 @@ We provide a <a href="https://containers.dev"><code>devcontainer</code></a> and 
 <p><em>NOTE</em> follow any prompts to install <code>Python Extension</code> or reload window for <code>Pylance</code> when first building the container.</p>
 <p><em>ADDITIONAL NOTE</em> we advise that after each time you rebuild the container that you also perform: <code>Developer: Reload Window</code> as some extensions seem to require this in order to work as expected.</p>
 <h4 id="devcontainerjson">devcontainer.json<a class="headerlink" href="#devcontainerjson" title="Permanent link">&para;</a></h4>
-<p>When the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/.devcontainer/devcontainer.json">.devcontainer/devcontainer.json</a> is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements (and black). We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).</p>
+<p>When the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/.devcontainer/devcontainer.json">.devcontainer/devcontainer.json</a> is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).</p>
 <h3 id="poetry">Poetry<a class="headerlink" href="#poetry" title="Permanent link">&para;</a></h3>
-<p>The Python libraries / dependencies are installed using <a href="https://python-poetry.org"><code>poetry</code></a>. For the devcontainer, we <em>DO NOT</em> use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. <code>poetry run black .</code>). If you need to add new dependencies, you will need to add the dependency via poetry <em>AND</em> you should rebuild your devcontainer.</p>
+<p>The Python libraries / dependencies are installed using <a href="https://python-poetry.org"><code>poetry</code></a>. For the devcontainer, we <em>DO NOT</em> use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. <code>poetry run ruff check .</code>). If you need to add new dependencies, you will need to add the dependency via poetry <em>AND</em> you should rebuild your devcontainer.</p>
 <p>In VS Code, open a Terminal, you should be able to run the following commands:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>aries_cloudagent<span class="w"> </span>-v
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>aries_cloudagent
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>ruff<span class="w"> </span>check<span class="w"> </span>.
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>black<span class="w"> </span>.<span class="w"> </span>--check
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>poetry<span class="w"> </span>--version
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>poetry<span class="w"> </span>--version
 </code></pre></div>
 <p>The first command should show you that <code>aries_cloudagent</code> module is loaded (ACA-Py). The others are examples of code quality checks that ACA-Py does on commits (if you have <a href="https://pre-commit.com"><code>precommit</code></a> installed) and Pull Requests.</p>
 <p>When running <code>ruff check .</code> in the terminal, you may see <code>error: Failed to initialize cache at /.ruff_cache: Permission denied (os error 13)</code> - that's ok. If there are actual ruff errors, you should see something like:</p>
@@ -2580,10 +2579,9 @@ We provide a <a href="https://containers.dev"><code>devcontainer</code></a> and 
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Found<span class="w"> </span><span class="m">1</span><span class="w"> </span>error.
 </code></pre></div>
 <h4 id="extensions">extensions<a class="headerlink" href="#extensions" title="Permanent link">&para;</a></h4>
-<p>We have added Black formatter and Ruff extensions. Although we have added launch settings for both <code>ruff</code> and <code>black</code>, you can also use the extension commands from the command palette.</p>
+<p>We have added Ruff extensions. Although we have added launch settings for both <code>ruff</code>, you can also use the extension commands from the command palette.</p>
 <ul>
-<li><code>Ruff: Format Document</code></li>
-<li><code>Ruff: Fix all auto-fixable problems</code></li>
+<li><code>ruff (format) - aries_cloudagent</code></li>
 </ul>
 <p>More importantly, these extensions are now added to document save, so files will be formatted and checked. We advise that after each time you rebuild the container that you also perform: <code>Developer: Reload Window</code> to ensure the extensions are loaded correctly.</p>
 <h3 id="running-docker-in-docker-demos">Running docker-in-docker demos<a class="headerlink" href="#running-docker-in-docker-demos" title="Permanent link">&para;</a></h3>
