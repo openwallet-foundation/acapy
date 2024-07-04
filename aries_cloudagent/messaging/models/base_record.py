@@ -314,7 +314,10 @@ class BaseRecord(BaseModel):
         storage = session.inject(BaseStorage)
 
         tag_query = cls.prefix_tag_filter(tag_filter)
-        if limit is not None or offset is not None:
+        post_filter = post_filter_positive or post_filter_negative
+        paginated = limit is not None or offset is not None
+        if not post_filter and paginated:
+            # Only fetch paginated records if post-filter is not being applied
             rows = await storage.find_paginated_records(
                 type_filter=cls.RECORD_TYPE,
                 tag_query=tag_query,
@@ -328,23 +331,36 @@ class BaseRecord(BaseModel):
             )
 
         result = []
+        num_results_post_filter = 0  # to apply pagination post-filter
+        num_records_to_match = (
+            (limit or DEFAULT_PAGE_SIZE) + (offset or 0) if paginated else sys.maxsize
+        )  # if pagination is not requested, set to sys.maxsize to process all records
         for record in rows:
             vals = json.loads(record.value)
-            if match_post_filter(
-                vals,
-                post_filter_positive,
-                positive=True,
-                alt=alt,
-            ) and match_post_filter(
-                vals,
-                post_filter_negative,
-                positive=False,
-                alt=alt,
-            ):
-                try:
+            try:
+                if not post_filter:  # pagination would already be applied if requested
                     result.append(cls.from_storage(record.id, vals))
-                except BaseModelError as err:
-                    raise BaseModelError(f"{err}, for record id {record.id}")
+                elif (
+                    (not paginated or num_results_post_filter < num_records_to_match)
+                    and match_post_filter(
+                        vals,
+                        post_filter_positive,
+                        positive=True,
+                        alt=alt,
+                    )
+                    and match_post_filter(
+                        vals,
+                        post_filter_negative,
+                        positive=False,
+                        alt=alt,
+                    )
+                ):
+                    if num_results_post_filter >= (offset or 0):
+                        # append post-filtered records after requested offset
+                        result.append(cls.from_storage(record.id, vals))
+                    num_results_post_filter += 1
+            except BaseModelError as err:
+                raise BaseModelError(f"{err}, for record id {record.id}")
         return result
 
     async def save(
