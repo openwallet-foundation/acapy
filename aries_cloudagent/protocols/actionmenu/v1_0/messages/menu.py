@@ -37,6 +37,7 @@ class Menu(AgentMessage):
             description: Introductory text for the menu
             errormsg: An optional error message to display
             options: A sequence of menu options
+            kwargs: Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.title = title

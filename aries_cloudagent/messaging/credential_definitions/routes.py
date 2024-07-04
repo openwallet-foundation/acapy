@@ -585,6 +585,7 @@ async def add_cred_def_non_secrets_record(
     wallet.
 
     Args:
+        profile: The active profile
         schema_id: The schema id (or stringified sequence number)
         issuer_did: The DID of the issuer
         credential_definition_id: The credential definition id

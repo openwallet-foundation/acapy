@@ -1,13 +1,11 @@
 """A problem report message."""
 
 import logging
-
 from enum import Enum
 
 from marshmallow import EXCLUDE, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
-
 from ..message_types import CRED_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -54,6 +52,7 @@ class V20CredProblemReportSchema(ProblemReportSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         """
         if not data.get("description", {}).get("code", ""):

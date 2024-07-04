@@ -15,7 +15,8 @@ from .....messaging.valid import DIDValidation
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ....didcomm_prefix import DIDCommPrefix
-from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1, DIDEX_1_0
+from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
+from ....didexchange.v1_0.message_types import DIDEX_1_0
 from ..message_types import DEFAULT_VERSION, INVITATION
 from .service import Service
 
@@ -136,10 +137,22 @@ class InvitationMessage(AgentMessage):
         """Initialize invitation message object.
 
         Args:
-            requests_attach: request attachments
+            label (Optional[str]): The label for the invitation.
+            image_url (Optional[str]): The URL of an image associated with the invitation.
+            handshake_protocols (Optional[Sequence[Text]]): The supported handshake
+                protocols.
+            requests_attach (Optional[Sequence[AttachDecorator]]): The request
+                attachments.
+            services (Optional[Sequence[Union[Service, Text]]]): The services associated
+                with the invitation.
+            accept (Optional[Sequence[Text]]): The accepted protocols.
+            version (str): The version of the invitation message.
+            msg_type (Optional[Text]): The type of the invitation message.
+            goal_code (Optional[Text]): The goal code.
+            goal (Optional[Text]): The goal.
+            kwargs: Additional keyword arguments.
 
         """
-        # super().__init__(_id=_id, **kwargs)
         super().__init__(_type=msg_type, _version=version, **kwargs)
         self.label = label
         self.image_url = image_url
@@ -304,6 +317,7 @@ class InvitationMessageSchema(AgentMessageSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
         Raises:
             ValidationError: If any of the fields do not validate
         """

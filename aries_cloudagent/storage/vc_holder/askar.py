@@ -1,16 +1,14 @@
 """Askar storage implementation of VC holder interface."""
 
 import json
-
-from dateutil.parser import parse as dateutil_parser
-from dateutil.parser import ParserError
 from typing import Mapping, Sequence
 
-from ...askar.profile import AskarProfile
+from dateutil.parser import ParserError
+from dateutil.parser import parse as dateutil_parser
 
+from ...askar.profile import AskarProfile
 from ..askar import AskarStorage, AskarStorageSearch, AskarStorageSearchSession
 from ..record import StorageRecord
-
 from .base import VCHolder, VCRecordSearch
 from .vc_record import VCRecord
 from .xform import VC_CRED_RECORD_TYPE
@@ -108,6 +106,7 @@ class AskarVCHolder(VCHolder):
             proof_types: The signature suite types used for the proof objects.
             given_id: The given id of the credential
             tag_query: A tag filter clause
+            pd_uri_list: A list of presentation definition URIs to match
 
         """
 

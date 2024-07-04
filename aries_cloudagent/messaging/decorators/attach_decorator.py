@@ -429,6 +429,7 @@ class AttachDecoratorData(BaseModel):
 
         Args:
             wallet: Wallet to use to verify signature
+            signer_verkey: verkey of the signer to check against
 
         Returns:
             True if verification succeeds else False
@@ -562,7 +563,9 @@ class AttachDecorator(BaseModel):
             filename: file name
             lastmod_time: last modification time, "%Y-%m-%d %H:%M:%SZ"
             description: content description
+            byte_count: byte count of data included by reference
             data: payload, as per `AttachDecoratorData`
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)

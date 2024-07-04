@@ -26,10 +26,17 @@ class BaseInboundTransport(ABC):
         """Initialize the inbound transport instance.
 
         Args:
-            scheme: The transport scheme identifier
-            create_session: Method to create a new inbound session
+            scheme (str): The transport scheme identifier.
+            create_session (Callable): Method to create a new inbound session.
+            max_message_size (int, optional): The maximum size of a message.
+                Defaults to 0.
+            is_external (bool, optional): Indicates if the transport is external.
+                Defaults to False.
+            wire_format (BaseWireFormat, optional): The wire format used for message
+                serialization. Defaults to None.
+            root_profile (Profile, optional): The root profile for the transport.
+                Defaults to None.
         """
-
         self._create_session = create_session
         self._max_message_size = max_message_size
         self._scheme = scheme

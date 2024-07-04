@@ -75,6 +75,7 @@ class Disclosures(AgentMessage):
 
         Args:
             disclosures: A mapping of protocol names to a dictionary of properties
+            kwargs: Additional keyword arguments for the message
         """
         super().__init__(**kwargs)
         self.disclosures = list(disclosures) if disclosures else []

@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import CONNECTION_RESPONSE, PROTOCOL_PACKAGE
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
@@ -28,6 +27,7 @@ class ConnectionResponse(AgentMessage):
 
         Args:
             connection: Connection details object
+            kwargs: Additional keyword arguments for the message
 
         """
         super().__init__(**kwargs)

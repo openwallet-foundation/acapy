@@ -131,6 +131,7 @@ class RotateProblemReportSchema(ProblemReportSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data is invalid

@@ -1,26 +1,24 @@
 """Cryptography functions used by BasicWallet."""
 
 import re
-
 from collections import OrderedDict
-from typing import Callable, Optional, Sequence, Tuple, Union, List
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import nacl.bindings
 import nacl.exceptions
 import nacl.utils
-
 from marshmallow import ValidationError
 
-from ..utils.jwe import JweRecipient, b64url, JweEnvelope, from_b64url
-from .error import WalletError
-from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes, random_seed
-from .key_type import ED25519, BLS12381G2, KeyType
+from ..utils.jwe import JweEnvelope, JweRecipient, b64url, from_b64url
 from .bbs import (
-    create_bls12381g2_keypair,
-    verify_signed_messages_bls12381g2,
     BbsException,
+    create_bls12381g2_keypair,
     sign_messages_bls12381g2,
+    verify_signed_messages_bls12381g2,
 )
+from .error import WalletError
+from .key_type import BLS12381G2, ED25519, KeyType
+from .util import b58_to_bytes, b64_to_bytes, bytes_to_b58, random_seed
 
 
 def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]:
@@ -158,14 +156,17 @@ def sign_message(
 
 
 def sign_message_ed25519(message: bytes, secret: bytes) -> bytes:
-    """Sign message using a ed25519 private signing key.
+    """Sign message using an ed25519 private signing key.
+
+    This function takes a message and a private signing key as input and returns the
+    signature of the message using the ed25519 algorithm.
 
     Args:
-        messages (bytes): The message to sign
-        secret (bytes): The private signing key
+        message (bytes): The message to sign.
+        secret (bytes): The private signing key.
 
     Returns:
-        bytes: The signature
+        bytes: The signature of the message.
 
     """
     result = nacl.bindings.crypto_sign(message, secret)
@@ -295,12 +296,12 @@ def encrypt_plaintext(
     """Encrypt the payload of a packed message.
 
     Args:
-        message: Message to encrypt
-        add_data:
-        key: Key used for encryption
+        message (str): The message to encrypt.
+        add_data (bytes): Additional data to include in the encryption.
+        key (bytes): The key used for encryption.
 
     Returns:
-        A tuple of (ciphertext, nonce, tag)
+        Tuple[bytes, bytes, bytes]: A tuple containing the ciphertext, nonce, and tag.
 
     """
     nonce = nacl.utils.random(nacl.bindings.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
@@ -320,13 +321,13 @@ def decrypt_plaintext(
     """Decrypt the payload of a packed message.
 
     Args:
-        ciphertext:
-        recips_bin:
-        nonce:
-        key:
+        ciphertext (bytes): The encrypted payload to be decrypted.
+        recips_bin (bytes): The binary representation of the recipients' public keys.
+        nonce (bytes): The nonce used for encryption.
+        key (bytes): The secret key used for encryption.
 
     Returns:
-        The decrypted string
+        str: The decrypted string.
 
     """
     output = nacl.bindings.crypto_aead_chacha20poly1305_ietf_decrypt(

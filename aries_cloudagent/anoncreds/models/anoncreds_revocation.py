@@ -41,6 +41,7 @@ class RevRegDefValue(BaseModel):
             max_cred_num: Max. number of Creds
             tails_location: Tails file location
             tails_hash: Tails file hash
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.public_keys = public_keys
@@ -99,6 +100,7 @@ class RevRegDef(BaseModel):
             cred_def_id: Cred Def ID
             tag: Tag
             value: Rev Reg Def Value
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -238,6 +240,7 @@ class RevRegDefResult(BaseModel):
             revocation_registry_definition_state: Rev Reg Def state
             registration_metadata: Registration metadata
             revocation_registry_definition_metadata: Rev Reg Def metadata
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -299,6 +302,7 @@ class GetRevRegDefResult(BaseModel):
             revocation_registry_id: Revocation Registry ID
             resolution_metadata: Resolution metadata
             revocation_registry_metadata: Revocation Registry metadata
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.revocation_registry = revocation_registry
@@ -347,6 +351,7 @@ class RevList(BaseModel):
             revocation_list: Revocation list
             current_accumulator: Current accumulator
             timestamp: Timestamp
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -487,6 +492,7 @@ class RevListResult(BaseModel):
             revocation_list_state: Revocation list state
             registration_metadata: Registration metadata
             revocation_list_metadata: Revocation list metadata
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -537,6 +543,7 @@ class GetRevListResult(BaseModel):
             revocation_list: Revocation list
             resolution_metadata: Resolution metadata
             revocation_registry_metadata: Rev Reg metadata
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.revocation_list = revocation_list

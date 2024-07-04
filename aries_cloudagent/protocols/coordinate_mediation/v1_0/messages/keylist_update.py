@@ -33,6 +33,7 @@ class KeylistUpdate(AgentMessage):
 
         Args:
             updates: Update rules for keylist update request
+            kwargs: Additional keyword arguments for the message
         """
         super(KeylistUpdate, self).__init__(**kwargs)
         self.updates = list(updates) if updates else []

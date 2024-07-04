@@ -121,6 +121,7 @@ class BaseResponder(ABC):
             message: the `BaseMessage`, or pre-packed str or bytes to reply with
             connection_id: optionally override the target connection ID
             target: optionally specify a `ConnectionTarget` to send to
+            target_list: optionally specify a list of `ConnectionTarget` to send to
 
         Raises:
             ResponderError: If there is no active connection
@@ -191,6 +192,7 @@ class BaseResponder(ABC):
 
         Args:
             message: The `OutboundMessage` to be sent
+            kwargs: Additional keyword arguments
         """
 
     @abstractmethod

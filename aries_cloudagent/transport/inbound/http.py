@@ -22,6 +22,7 @@ class HttpTransport(BaseInboundTransport):
             host: Host to listen on
             port: Port to listen on
             create_session: Method to create a new inbound session
+            kwargs: Additional keyword arguments
 
         """
         super().__init__("http", create_session, **kwargs)

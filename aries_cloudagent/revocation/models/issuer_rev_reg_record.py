@@ -537,6 +537,8 @@ class IssuerRevRegRecord(BaseRecord):
             session: The profile session to use
             cred_def_id: The credential definition ID to filter by
             state: A state value to filter by
+            negative_state: A state value to exclude
+            limit: The maximum number of records to return
         """
         tag_filter = dict(
             filter(

@@ -6,10 +6,8 @@ from typing import Union
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector
 
 from ...core.profile import Profile
-
 from ..stats import StatsTracer
 from ..wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
-
 from .base import BaseOutboundTransport, OutboundTransportError
 
 
@@ -61,6 +59,7 @@ class HttpTransport(BaseOutboundTransport):
             payload: message payload in string or byte format
             endpoint: URI endpoint for delivery
             metadata: Additional metadata associated with the payload
+            api_key: API key for the endpoint
         """
         if not endpoint:
             raise OutboundTransportError("No endpoint provided")

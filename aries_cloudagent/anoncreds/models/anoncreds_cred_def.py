@@ -43,6 +43,7 @@ class CredDefValuePrimary(BaseModel):
             z: is equal to s^(xz), where xz is a randomly selected integer between 2
                 and p'q'-1. This makes up part of the CL-RSA public key, independent of
                 the message blocks being signed.
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.n = n
@@ -172,6 +173,7 @@ class CredDefValue(BaseModel):
         Args:
             primary: Cred Def value primary
             revocation: Cred Def value revocation
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.primary = primary
@@ -223,6 +225,7 @@ class CredDef(BaseModel):
             type: Type
             tag: Tag
             value: Cred Def value
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -362,6 +365,7 @@ class CredDefResult(BaseModel):
             credential_definition_state: Cred Def state
             registration_metadata: Registration metadata
             credential_definition_metadata: Cred Def metadata
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -409,6 +413,7 @@ class GetCredDefResult(BaseModel):
             credential_definition: Cred Def
             resolution_metadata: Resolution metadata
             credential_definition_metadata: Cred Def metadata
+            kwargs: Keyword arguments
         """
         super().__init__(**kwargs)
         self.credential_definition_id = credential_definition_id

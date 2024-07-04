@@ -286,6 +286,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             type_filter: Filter string
             tag_query: Tags to search
             page_size: Size of page to return
+            options: Dictionary of backend-specific options
 
         """
         self.tag_query = tag_query

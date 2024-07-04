@@ -2,8 +2,7 @@ from typing import Coroutine, Union
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
-
-from .messages.cred_problem_report import V20CredProblemReport, ProblemReportReason
+from .messages.cred_problem_report import ProblemReportReason, V20CredProblemReport
 from .models.cred_ex_record import V20CredExRecord
 
 
@@ -17,6 +16,7 @@ def problem_report_for_record(
     Args:
         record: connection or exchange record
         desc_en: description text to include in problem report
+        thread_id: thread id to assign to problem report
 
     """
     result = V20CredProblemReport(

@@ -1,14 +1,13 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL
 from ...messages.cred_format import V20CredFormat
-from ...messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from ...messages.cred_proposal import V20CredProposal
-
+from ...messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from .. import cred_ex_record as test_module
 from ..cred_ex_record import V20CredExRecord
 
@@ -112,10 +111,10 @@ class TestV20CredExRecord(IsolatedAsyncioTestCase):
                 error_msg=None,
                 trace=False,
             )
-            assert type(cx_rec.cred_proposal) == V20CredProposal
+            assert isinstance(cx_rec.cred_proposal, V20CredProposal)
             ser = cx_rec.serialize()
             deser = V20CredExRecord.deserialize(ser)
-            assert type(deser.cred_proposal) == V20CredProposal
+            assert isinstance(deser.cred_proposal, V20CredProposal)
 
     async def test_save_error_state(self):
         session = InMemoryProfile.test_session()

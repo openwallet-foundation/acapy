@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-
 from ..non_rev_interval import IndyNonRevocationInterval
 
 FROM = 1000000000

@@ -53,9 +53,11 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         """Initialize an instance.
 
         Args:
-            message: Message
-            obj_id: Object ID
-            obj: Generic Object
+            message (str): The message associated with the instance.
+            obj_id (str): The ID of the object.
+            obj (T, optional): The generic object associated with the instance.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
         """
         super().__init__(message, obj_id, obj, *args, **kwargs)
         self._message = message
@@ -124,11 +126,7 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
 
     @abstractmethod
     async def get_revocation_list(
-        self,
-        profile: Profile,
-        revocation_registry_id: str,
-        timestamp_from: Optional[int] = 0,
-        timestamp_to: Optional[int] = None,
+        self, profile: Profile, revocation_registry_id: str, timestamp: int
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
 

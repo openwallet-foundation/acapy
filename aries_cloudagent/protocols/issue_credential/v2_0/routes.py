@@ -239,6 +239,7 @@ class V20CredFilterSchema(OpenAPISchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has neither indy nor ld_proof

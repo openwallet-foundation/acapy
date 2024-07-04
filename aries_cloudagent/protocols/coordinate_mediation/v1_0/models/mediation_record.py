@@ -54,6 +54,8 @@ class MediationRecord(BaseRecord):
             routing_keys (Sequence[str]): keys in mediator control used to
             receive incoming messages
             endpoint (str): mediators endpoint
+            mediator_terms (Sequence[str]): (Optional) mediator terms
+            recipient_terms (Sequence[str]): (Optional) recipient terms
             kwargs: Pass arguments through to BaseRecord.__init__
 
         """

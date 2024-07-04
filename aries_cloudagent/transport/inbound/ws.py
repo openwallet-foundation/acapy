@@ -10,7 +10,6 @@ from ...messaging.error import MessageParseError
 from ..error import WireFormatParseError
 from .base import BaseInboundTransport, InboundTransportSetupError
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -24,6 +23,7 @@ class WsTransport(BaseInboundTransport):
             host: Host to listen on
             port: Port to listen on
             create_session: Method to create a new inbound session
+            kwargs: Additional keyword arguments
 
         """
         super().__init__("ws", create_session, **kwargs)
