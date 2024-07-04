@@ -340,8 +340,8 @@ class BaseRecord(BaseModel):
 
         result = []
         for record in rows:
-            vals = json.loads(record.value)
             try:
+                vals = json.loads(record.value)
                 if not post_filter:  # pagination would already be applied if requested
                     result.append(cls.from_storage(record.id, vals))
                 else:
@@ -364,7 +364,7 @@ class BaseRecord(BaseModel):
                         result.append(cls.from_storage(record.id, vals))
 
                     num_results_post_filter += 1
-            except BaseModelError as err:
+            except (BaseModelError, json.JSONDecodeError, TypeError) as err:
                 raise BaseModelError(f"{err}, for record id {record.id}")
         return result
 
