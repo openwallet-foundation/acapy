@@ -271,6 +271,9 @@ fi
 if ! [ -z "$WEBHOOK_TARGET" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e WEBHOOK_TARGET=${WEBHOOK_TARGET}"
 fi
+if ! [ -z "$ACAPY_DEBUG_WEBHOOKS" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e ACAPY_DEBUG_WEBHOOKS=${ACAPY_DEBUG_WEBHOOKS}"
+fi
 # if $TAILS_NETWORK is specified it will override any previously specified $DOCKER_NET
 if ! [ -z "$TAILS_NETWORK" ]; then
   DOCKER_NET="${TAILS_NETWORK}"

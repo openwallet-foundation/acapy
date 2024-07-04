@@ -15,6 +15,7 @@ class V20PresExRecordWebhook:
         "thread_id",
         "state",
         "trace",
+        "by_format",
         "verified",
         "verified_msgs",
         "created_at",
