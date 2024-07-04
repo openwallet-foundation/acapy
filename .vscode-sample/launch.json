@@ -65,6 +65,7 @@
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
+            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", "."]
@@ -75,6 +76,7 @@
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
+            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", ".", "--fix"]
@@ -85,6 +87,7 @@
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
+            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", ".", "${file}"]
@@ -95,6 +98,7 @@
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
+            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["check", ".", "${file}", "--fix"]
@@ -105,6 +109,7 @@
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
+            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": ["format", "."]
@@ -115,9 +120,10 @@
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
+            "sudo": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/aries_cloudagent",
-            "args": ["format", ".", "${file}"]
+            "args": ["format", "${file}"]
         }
     ]
 }
