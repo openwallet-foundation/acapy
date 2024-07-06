@@ -707,18 +707,14 @@ class AnonCredsHolder:
         present_creds = PresentCredentials()
         for idx, cred in enumerate(requested_credentials_w3c):
             meta = credentials_w3c_metadata[idx]
-
-            # TODO deal with revocation
-            rev_state = None
-            timestamp = None
-
+            rev_state = rev_states.get(meta["rev_reg_id"]) if rev_states else None
             for attr in meta["proof_attrs"]:
                 present_creds.add_attributes(
                     cred,
                     attr,
                     reveal=True,
                     timestamp=meta.get("timestamp"),
-                    rev_state=rev_states,
+                    rev_state=rev_state,
                 )
 
             for pred in meta["proof_preds"]:
@@ -726,7 +722,7 @@ class AnonCredsHolder:
                     cred,
                     pred,
                     timestamp=meta.get("timestamp"),
-                    rev_state=rev_states,
+                    rev_state=rev_state,
                 )
 
         try:
