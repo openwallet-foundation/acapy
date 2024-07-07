@@ -1,7 +1,8 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
-from .......messaging.models.base import BaseModel, BaseModelSchema
 from marshmallow import EXCLUDE, fields
+
+from .......messaging.models.base import BaseModel, BaseModelSchema
 
 
 class VCDIIndyCredential(BaseModel):
@@ -20,10 +21,8 @@ class VCDIIndyCredential(BaseModel):
         """Initialize vcdi cred abstract object.
 
         Args:
-            data_model_versions_supported: supported versions for data model
-            binding_required: boolean value
-            binding_methods: required if binding_required is true
             credential: credential object
+            kwargs: additional keyword arguments
         """
         super().__init__(**kwargs)
         self.credential = credential

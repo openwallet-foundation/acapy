@@ -19,6 +19,7 @@ class KeylistQueryPaginate(BaseModel):
         Args:
             limit: limit for response count
             offset: offset value
+            kwargs: additional keyword arguments for BaseModel
 
         """
         super().__init__(**kwargs)

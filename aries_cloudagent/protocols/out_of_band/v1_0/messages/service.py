@@ -34,10 +34,10 @@ class Service(BaseModel):
         """Initialize a Service instance.
 
         Args:
-            id: An identifier for this service block
-            type: A type for this service block
+            _id: An identifier for this service block
+            _type: A type for this service block
             did: A did for the connection
-            recipient_key: A list of recipient keys in W3C did:key format
+            recipient_keys: A list of recipient keys in W3C did:key format
             routing_keys: A list of routing keys in W3C did:key format
             service_endpoint: An endpoint for the connection
         """

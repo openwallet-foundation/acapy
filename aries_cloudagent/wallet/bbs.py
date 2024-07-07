@@ -2,21 +2,27 @@
 
 from typing import List, Tuple
 
+from ..core.error import BaseError
 from ..utils.dependencies import (
     assert_ursa_bbs_signatures_installed,
     is_ursa_bbs_signatures_module_installed,
 )
-from ..core.error import BaseError
 from ..wallet.util import random_seed
 
 if is_ursa_bbs_signatures_module_installed():
     from ursa_bbs_signatures import (
+        BbsException as NativeBbsException,
+    )
+    from ursa_bbs_signatures import (
+        BlsKeyPair,
         SignRequest,
         VerifyRequest,
-        BlsKeyPair,
+    )
+    from ursa_bbs_signatures import (
         sign as bbs_sign,
+    )
+    from ursa_bbs_signatures import (
         verify as bbs_verify,
-        BbsException as NativeBbsException,
     )
     from ursa_bbs_signatures._ffi.FfiException import FfiException
 
@@ -57,11 +63,15 @@ def verify_signed_messages_bls12381g2(
     """Verify an ed25519 signed message according to a public verification key.
 
     Args:
-        signed: The signed messages
-        public_key: The public key to use in verification
+        messages (List[bytes]): The signed messages to verify.
+        signature (bytes): The signature to verify.
+        public_key (bytes): The public key to use in verification.
 
     Returns:
-        True if verified, else False
+        bool: True if the signature is verified, else False.
+
+    Raises:
+        BbsException: If unable to verify the BBS+ signature.
 
     """
     assert_ursa_bbs_signatures_installed()
@@ -78,7 +88,7 @@ def verify_signed_messages_bls12381g2(
     except (
         FfiException,
         NativeBbsException,
-    ) as error:  # would be nice to be able to distinct between false and error
+    ) as error:
         raise BbsException("Unable to verify BBS+ signature") from error
 
 

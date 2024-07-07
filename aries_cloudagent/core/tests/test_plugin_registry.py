@@ -1,17 +1,16 @@
-import pytest
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
+import pytest
+
+from aries_cloudagent.tests import mock
+
 from ...config.injection_context import InjectionContext
 from ...utils.classloader import ClassLoader, ModuleLoadError
-
+from ..error import ProtocolDefinitionValidationError
+from ..goal_code_registry import GoalCodeRegistry
 from ..plugin_registry import PluginRegistry
 from ..protocol_registry import ProtocolRegistry
-from ..goal_code_registry import GoalCodeRegistry
-
-from ..error import ProtocolDefinitionValidationError
 
 
 class TestPluginRegistry(IsolatedAsyncioTestCase):
@@ -365,9 +364,13 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
         ) as load_module:
             assert self.registry.validate_version(versions, mod_name) is True
 
-            load_module.has_calls(
-                call(versions[0]["path"], mod_name),
-                call(versions[1]["path"], mod_name),
+            load_module.assert_has_calls(
+                [
+                    call("v1_0", "test_mod"),
+                    call().__bool__(),
+                    call("v2_0", "test_mod"),
+                    call().__bool__(),
+                ]
             )
 
     async def test_validate_version_list_extra_attributes_ok(self):

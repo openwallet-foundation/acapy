@@ -11,11 +11,7 @@ from .base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
-from .models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    GetCredDefResult,
-)
+from .models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
 from .models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
@@ -149,11 +145,17 @@ class AnonCredsRegistry:
         )
 
     async def get_revocation_list(
-        self, profile: Profile, rev_reg_def_id: str, timestamp: int
+        self,
+        profile: Profile,
+        rev_reg_def_id: str,
+        timestamp_from: Optional[int] = 0,
+        timestamp_to: Optional[int] = None,
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
         resolver = await self._resolver_for_identifier(rev_reg_def_id)
-        return await resolver.get_revocation_list(profile, rev_reg_def_id, timestamp)
+        return await resolver.get_revocation_list(
+            profile, rev_reg_def_id, timestamp_from, timestamp_to
+        )
 
     async def register_revocation_list(
         self,

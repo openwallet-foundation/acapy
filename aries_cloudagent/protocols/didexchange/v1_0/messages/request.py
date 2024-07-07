@@ -48,6 +48,7 @@ class DIDXRequest(AgentMessage):
               invitation.
             goal: (optional) is a self-attested string that the receiver may want to
               display to the user about the context-specific goal of the request message.
+            kwargs: Additional keyword arguments for the message
         """
         super().__init__(**kwargs)
         self.label = label

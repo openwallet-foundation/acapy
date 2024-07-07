@@ -1055,6 +1055,7 @@ class DIFPresExchHandler:
         Args:
             req: Requirement
             credentials: Sequence of credentials to check against
+            records_filter: dict of input_descriptor ID key to list of credential_json
         Return:
             dict of input_descriptor ID key to list of credential_json
         """
@@ -1212,10 +1213,14 @@ class DIFPresExchHandler:
         """Create VerifiablePresentation.
 
         Args:
-            credentials: Sequence of VCRecords
-            pd: PresentationDefinition
-        Return:
-            VerifiablePresentation
+            credentials (Sequence[VCRecord]): Sequence of VCRecords.
+            pd (PresentationDefinition): PresentationDefinition.
+            challenge (str, optional): Challenge string. Defaults to None.
+            domain (str, optional): Domain string. Defaults to None.
+            records_filter (dict, optional): Records filter dictionary. Defaults to None.
+
+        Returns:
+            Union[Sequence[dict], dict]: VerifiablePresentation.
         """
         document_loader = self.profile.inject(DocumentLoader)
         req = await self.make_requirement(

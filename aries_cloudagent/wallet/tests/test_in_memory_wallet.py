@@ -549,3 +549,13 @@ class TestInMemoryWallet:
         assert "Setting DID endpoint is only allowed for did:sov DIDs" in str(
             context.value
         )
+
+    @pytest.mark.asyncio
+    async def test_assign_and_get_by_kid(self, wallet: InMemoryWallet):
+
+        key = await wallet.create_key(ED25519)
+
+        await wallet.assign_kid_to_key(key.verkey, "test_kid")
+
+        return_key = await wallet.get_key_by_kid("test_kid")
+        assert return_key.verkey == key.verkey

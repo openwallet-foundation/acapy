@@ -53,6 +53,7 @@ class IndyPresPredSpec(BaseModel):
             cred_def_id: credential definition identifier
             predicate: predicate type (e.g., ">=")
             threshold: threshold value
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)
@@ -144,6 +145,7 @@ class IndyPresAttrSpec(BaseModel):
             value: attribute value as credential stores it
                 (None for unrevealed attribute)
             referent: credential referent
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)
@@ -278,6 +280,7 @@ class IndyPresPreview(BaseModel):
             _type: formalism for Marshmallow model creation: ignored
             attributes: list of attribute specifications
             predicates: list of predicate specifications
+            kwargs: additional keyword arguments
 
         """
         super().__init__(**kwargs)
@@ -323,10 +326,10 @@ class IndyPresPreview(BaseModel):
         Typically the verifier turns the proof preview into a proof request.
 
         Args:
+            profile: agent profile to use for ledger access
             name: for proof request
             version: version for proof request
             nonce: nonce for proof request
-            ledger: ledger with credential definitions, to check for revocation support
             non_revoc_intervals: non-revocation interval to use per cred def id
                 where applicable (default from and to the current time if applicable)
 

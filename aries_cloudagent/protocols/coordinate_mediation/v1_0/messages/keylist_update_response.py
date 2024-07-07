@@ -33,7 +33,8 @@ class KeylistUpdateResponse(AgentMessage):
         """Initialize keylist update object.
 
         Args:
-            updates: Update rules for keylist update request
+            updated: Update rules for keylist update request
+            kwargs: Additional keyword arguments for the message
         """
         super(KeylistUpdateResponse, self).__init__(**kwargs)
         self.updated = list(updated) if updated else []

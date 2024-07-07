@@ -55,6 +55,7 @@ async def wallet_config(
         except ProfileNotFoundError:
             if settings.get("auto_provision", False):
                 profile = await mgr.provision(context, profile_cfg)
+                provision = True
             else:
                 raise
 

@@ -39,6 +39,7 @@ class BaseWallet(ABC):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -46,6 +47,7 @@ class BaseWallet(ABC):
             key_type: Key type to create
             seed: Seed for key
             metadata: Optional metadata to store with the keypair
+            kid: Optional key identifier
 
         Returns:
             A `KeyInfo` representing the new record
@@ -53,6 +55,34 @@ class BaseWallet(ABC):
         Raises:
             WalletDuplicateError: If the resulting verkey already exists in the wallet
             WalletError: If there is another backend error
+        """
+
+    @abstractmethod
+    async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
+        """Assign a KID to a key.
+
+        This is separate from the create_key method because some DIDs are only
+        known after keys are created.
+
+        Args:
+            verkey: The verification key of the keypair
+            kid: The kid to assign to the keypair
+
+        Returns:
+            A `KeyInfo` representing the keypair
+
+        """
+
+    @abstractmethod
+    async def get_key_by_kid(self, kid: str) -> KeyInfo:
+        """Fetch a key by looking up its kid.
+
+        Args:
+            kid: the key identifier
+
+        Returns:
+            The key identified by kid
+
         """
 
     @abstractmethod
@@ -153,13 +183,25 @@ class BaseWallet(ABC):
     ) -> DIDInfo:
         """Create and store a new public DID.
 
+        This method creates a new public DID using the specified DID method and key type.
+
+        The optional `seed` parameter can be used to provide a seed for the DID
+            generation.
+
+        If a `did` is provided, it will be used as the DID instead of generating a new
+            one.
+
+        The `metadata` parameter can be used to store additional metadata with the DID.
+
         Args:
-            seed: Optional seed to use for DID
-            did: The DID to use
-            metadata: Metadata to store with DID
+            method: The DID method to use for creating the DID.
+            key_type: The key type to use for the DID.
+            seed: Optional seed to use for DID generation.
+            did: The DID to use instead of generating a new one.
+            metadata: Optional metadata to store with the DID.
 
         Returns:
-            The created `DIDInfo`
+            The created `DIDInfo` object.
 
         """
         metadata = metadata or {}
@@ -256,12 +298,21 @@ class BaseWallet(ABC):
         """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
         Args:
-            did: DID for which to set endpoint
-            endpoint: the endpoint to set, None to clear
-            ledger: the ledger to which to send endpoint update if
-                DID is public or posted
-            endpoint_type: the type of the endpoint/service. Only endpoint_type
-                'endpoint' affects local wallet
+            did (str): The DID for which to set the endpoint.
+            endpoint (str): The endpoint to set. Use None to clear the endpoint.
+            _ledger (BaseLedger): The ledger to which to send the endpoint update if the
+                DID is public or posted.
+            endpoint_type (EndpointType, optional): The type of the endpoint/service.
+                Only endpoint_type 'endpoint' affects the local wallet.
+            write_ledger (bool, optional): Whether to write the endpoint update to the
+                ledger. Defaults to True.
+            endorser_did (str, optional): The DID of the endorser. Defaults to None.
+            routing_keys (List[str], optional): The list of routing keys.
+                Defaults to None.
+
+        Raises:
+            WalletError: If the DID method is not 'did:sov'.
+
         """
         did_info = await self.get_local_did(did)
 

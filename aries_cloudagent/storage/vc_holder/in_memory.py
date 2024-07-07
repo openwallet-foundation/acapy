@@ -1,16 +1,15 @@
 """Basic in-memory storage implementation of VC holder interface."""
 
-from dateutil.parser import parse as dateutil_parser
-from dateutil.parser import ParserError
 from typing import Mapping, Sequence
 
+from dateutil.parser import ParserError
+from dateutil.parser import parse as dateutil_parser
+
 from ...core.in_memory import InMemoryProfile
-
 from ..in_memory import InMemoryStorage, InMemoryStorageSearch
-
 from .base import VCHolder, VCRecordSearch
 from .vc_record import VCRecord
-from .xform import storage_to_vc_record, vc_to_storage_record, VC_CRED_RECORD_TYPE
+from .xform import VC_CRED_RECORD_TYPE, storage_to_vc_record, vc_to_storage_record
 
 
 class InMemoryVCHolder(VCHolder):
@@ -89,14 +88,25 @@ class InMemoryVCHolder(VCHolder):
         """Start a new VC record search.
 
         Args:
-            contexts: An inclusive list of JSON-LD contexts to match
-            types: An inclusive list of JSON-LD types to match
-            schema_ids: An inclusive list of credential schema identifiers
-            issuer_id: The ID of the credential issuer
-            subject_ids: The IDs of credential subjects all of which to match
-            proof_types: The signature suite types used for the proof objects.
-            given_id: The given id of the credential
-            tag_query: A tag filter clause
+            contexts (Sequence[str], optional): An inclusive list of JSON-LD contexts
+                to match.
+            types (Sequence[str], optional): An inclusive list of JSON-LD types to
+                match.
+            schema_ids (str, optional): An inclusive list of credential schema
+                identifiers.
+            issuer_id (str, optional): The ID of the credential issuer.
+            subject_ids (str, optional): The IDs of credential subjects all of which
+                to match.
+            proof_types (Sequence[str], optional): The signature suite types used for
+                the proof objects.
+            given_id (str, optional): The given id of the credential.
+            tag_query (Mapping, optional): A tag filter clause.
+            pd_uri_list (Sequence[str], optional): A list of presentation definition
+                URIs.
+
+        Returns:
+            VCRecordSearch: An instance of VCRecordSearch representing the search
+                query.
 
         """
         query = {}

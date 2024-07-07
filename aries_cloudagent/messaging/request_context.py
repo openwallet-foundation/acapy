@@ -6,14 +6,13 @@ of the system to process a message.
 
 from typing import Mapping, Optional, Type
 
-from ..core.profile import Profile, ProfileSession
-from ..config.injector import Injector, InjectType
 from ..config.injection_context import InjectionContext
+from ..config.injector import Injector, InjectType
 from ..config.settings import Settings
 from ..connections.models.conn_record import ConnRecord
+from ..core.profile import Profile, ProfileSession
 from ..transport.inbound.receipt import MessageReceipt
 from ..utils.classloader import DeferLoad
-
 from .agent_message import AgentMessage
 
 IN_MEM = DeferLoad("aries_cloudagent.core.in_memory.InMemoryProfile")
@@ -145,7 +144,7 @@ class RequestContext:
         """Setter for the message receipt information.
 
         Args:
-            msg: This context's new message receipt information
+            receipt: This context's new message receipt information
         """
         self._message_receipt = receipt
 
@@ -184,7 +183,7 @@ class RequestContext:
         """Get the provided instance of a given class identifier.
 
         Args:
-            cls: The base class to retrieve an instance of
+            base_cls: The base class to retrieve an instance of
             settings: An optional mapping providing configuration to the provider
 
         Returns:

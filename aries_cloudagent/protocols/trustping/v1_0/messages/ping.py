@@ -27,6 +27,7 @@ class Ping(AgentMessage):
             response_requested: A flag indicating that a response is requested
                 (defaults to True for the recipient if not included)
             comment: An optional comment string
+            kwargs: Keyword arguments for message construction
 
         """
         super().__init__(**kwargs)

@@ -110,15 +110,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         """Create a presentation request bound to a proposal.
 
         Args:
-            pres_ex_record: Presentation exchange record for which
+            pres_ex_record (V20PresExRecord): Presentation exchange record for which
                 to create presentation request
-            name: name to use in presentation request (None for default)
-            version: version to use in presentation request (None for default)
-            nonce: nonce to use in presentation request (None to generate)
-            comment: Optional human-readable comment pertaining to request creation
+            request_data (dict, optional): Additional data to include in the request
 
         Returns:
-            A tuple (updated presentation exchange record, presentation request message)
+            Tuple[V20PresFormat, AttachDecorator]: A tuple containing the updated
+                presentation exchange record and the presentation request message
+
+        Raises:
+            SomeException: Description of the exception raised, if any
 
         """
         dif_proof_request = {}

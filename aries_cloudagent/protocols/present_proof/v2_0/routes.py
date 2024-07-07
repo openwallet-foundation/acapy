@@ -135,6 +135,7 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has no formats
@@ -210,6 +211,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has no formats
@@ -325,6 +327,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data does not have exactly one format.

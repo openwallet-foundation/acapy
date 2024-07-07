@@ -1,7 +1,7 @@
 """Injection context implementation."""
 
-from collections import namedtuple
 import copy
+from collections import namedtuple
 from typing import Mapping, Optional, Type
 
 from .base import BaseInjector, InjectionError
@@ -81,11 +81,12 @@ class InjectionContext(BaseInjector):
         """Get the provided instance of a given class identifier.
 
         Args:
-            cls: The base class to retrieve an instance of
-            settings: An optional mapping providing configuration to the provider
+            base_cls (Type[InjectType]): The base class to retrieve an instance of.
+            settings (Optional[Mapping[str, object]]): An optional mapping providing
+                configuration to the provider.
 
         Returns:
-            An instance of the base class, or None
+            InjectType: An instance of the base class, or None.
 
         """
         return self.injector.inject(base_cls, settings)

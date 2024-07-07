@@ -3,22 +3,21 @@
 import asyncio
 from typing import List, Optional, Sequence, Tuple, Union
 
-from .did_parameters_validation import DIDParametersValidation
 from ..core.in_memory import InMemoryProfile
-
 from .base import BaseWallet
 from .crypto import (
     create_keypair,
-    validate_seed,
-    sign_message,
-    verify_signed_message,
-    encode_pack_message,
     decode_pack_message,
+    encode_pack_message,
+    sign_message,
+    validate_seed,
+    verify_signed_message,
 )
-from .did_info import KeyInfo, DIDInfo
-from .did_posture import DIDPosture
+from .did_info import DIDInfo, KeyInfo
 from .did_method import DIDMethod, DIDMethods
-from .error import WalletError, WalletDuplicateError, WalletNotFoundError
+from .did_parameters_validation import DIDParametersValidation
+from .did_posture import DIDPosture
+from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, random_seed
 
@@ -62,6 +61,7 @@ class InMemoryWallet(BaseWallet):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -69,6 +69,7 @@ class InMemoryWallet(BaseWallet):
             key_type: Key type to create
             seed: Seed for key
             metadata: Optional metadata to store with the keypair
+            kid: Key identifier
 
         Returns:
             A `KeyInfo` representing the new record
@@ -88,12 +89,58 @@ class InMemoryWallet(BaseWallet):
             "verkey": verkey_enc,
             "metadata": metadata.copy() if metadata else {},
             "key_type": key_type,
+            "kid": kid,
         }
         return KeyInfo(
             verkey=verkey_enc,
             metadata=self.profile.keys[verkey_enc]["metadata"].copy(),
             key_type=key_type,
         )
+
+    async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
+        """Assign a KID to a key.
+
+        This is separate from the create_key method because some DIDs are only
+        known after keys are created.
+
+        Args:
+            verkey: The verification key of the keypair
+            kid: The kid to assign to the keypair
+
+        Returns:
+            A `KeyInfo` representing the keypair
+
+        """
+        if verkey not in self.profile.keys:
+            raise WalletNotFoundError("Key not found: {}".format(verkey))
+
+        key = self.profile.keys[verkey]
+        key["kid"] = kid
+        return KeyInfo(
+            verkey=key["verkey"],
+            metadata=key["metadata"].copy(),
+            key_type=key["key_type"],
+        )
+
+    async def get_key_by_kid(self, kid: str) -> KeyInfo:
+        """Fetch a key by looking up its kid.
+
+        Args:
+            kid: the key identifier
+
+        Returns:
+            The key identified by kid
+
+        """
+        for key in self.profile.keys.values():
+            if (item_kid := key.get("kid")) and kid == item_kid:
+                return KeyInfo(
+                    verkey=key["verkey"],
+                    metadata=key["metadata"].copy(),
+                    key_type=key["key_type"],
+                )
+
+        raise WalletNotFoundError(f"Key not found with kid {kid}")
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
         """Fetch info for a signing keypair.

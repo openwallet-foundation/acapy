@@ -1,20 +1,21 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
 from typing import Sequence, Union
+
+from marshmallow import EXCLUDE, fields
+
 from .......indy.models.cred_abstract import IndyKeyCorrectnessProofSchema
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from .......vc.vc_ld.models.credential import (
-    CredentialSchema,
-    VerifiableCredential,
-)
 from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
-
-from marshmallow import EXCLUDE, fields
+from .......vc.vc_ld.models.credential import (
+    CredentialSchema,
+    VerifiableCredential,
+)
 
 
 class AnoncredsLinkSecret(BaseModel):
@@ -174,8 +175,9 @@ class VCDICredAbstract(BaseModel):
         Args:
             data_model_versions_supported: supported versions for data model
             binding_required: boolean value
-            binding_methods: required if binding_required is true
+            binding_method: required if binding_required is true
             credential: credential object
+            kwargs: additional key-value arguments to map into message class properties
         """
         super().__init__(**kwargs)
         self.data_model_versions_supported = data_model_versions_supported

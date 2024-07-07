@@ -104,6 +104,7 @@ class Conductor:
             inbound_transports: Configuration for inbound transports
             outbound_transports: Configuration for outbound transports
             settings: Dictionary of various settings
+            context_builder: Context builder for the conductor
 
         """
         self.admin_server = None
@@ -577,7 +578,7 @@ class Conductor:
         """Route inbound messages.
 
         Args:
-            context: The context associated with the inbound message
+            profile: The active profile for the request
             message: The inbound message instance
             can_respond: If the session supports return routing
 
@@ -662,7 +663,7 @@ class Conductor:
 
         Args:
             profile: The active profile for the request
-            message: An outbound message to be sent
+            outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
         status: OutboundSendStatus = await self._outbound_message_router(
@@ -681,7 +682,7 @@ class Conductor:
 
         Args:
             profile: The active profile for the request
-            message: An outbound message to be sent
+            outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
         if not outbound.target and outbound.reply_to_verkey:
@@ -714,7 +715,7 @@ class Conductor:
 
         Args:
             profile: The active profile
-            message: An outbound message to be sent
+            outbound: The outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
         has_target = outbound.target or outbound.target_list

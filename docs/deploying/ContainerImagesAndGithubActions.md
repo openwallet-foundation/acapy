@@ -92,7 +92,7 @@ variants and between the BC Gov ACA-Py images.
   Github Container Registry.
 - Integration Tests (`.github/workflows/integrationtests.yml`) - Run on pull
   requests (to the hyperledger fork only); runs BDD integration tests.
-- Black Format (`.github/workflows/blackformat.yml`) - Run on pull requests;
+- Format (`.github/workflows/format.yml`) - Run on pull requests;
   checks formatting of files modified by the PR.
 - CodeQL (`.github/workflows/codeql.yml`) - Run on pull requests; performs
   CodeQL analysis.

@@ -1,14 +1,12 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......core.in_memory import InMemoryProfile
 from ......storage.error import StorageDuplicateError, StorageNotFoundError
-
 from .....didcomm_prefix import DIDCommPrefix
-
-from ...messages.queries import Queries, QueryItem
 from ...messages.disclosures import Disclosures
-
+from ...messages.queries import Queries, QueryItem
 from ..discovery_record import V20DiscoveryExchangeRecord
 
 
@@ -100,15 +98,15 @@ class TestV20DiscoveryExchangeRecord(IsolatedAsyncioTestCase):
             disclosures=disclosures,
         )
         ex_rec.queries_msg = queries
-        assert type(ex_rec.queries_msg) == Queries
+        assert isinstance(ex_rec.queries_msg, Queries)
         ser = ex_rec.serialize()
         deser = V20DiscoveryExchangeRecord.deserialize(ser)
-        assert type(deser.queries_msg) == Queries
+        assert isinstance(deser.queries_msg, Queries)
 
-        assert type(ex_rec.disclosures) == Disclosures
+        assert isinstance(ex_rec.disclosures, Disclosures)
         ser = ex_rec.serialize()
         deser = V20DiscoveryExchangeRecord.deserialize(ser)
-        assert type(deser.disclosures) == Disclosures
+        assert isinstance(deser.disclosures, Disclosures)
 
     async def test_retrieve_by_conn_id(self):
         session = InMemoryProfile.test_session()

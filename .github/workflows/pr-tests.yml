@@ -16,6 +16,6 @@ jobs:
     - name: Tests
       uses: ./.github/actions/run-unit-tests
       with:
-        python-version: "3.9"
+        python-version: "3.12"
         os: "ubuntu-latest"
         is_pr: "true"

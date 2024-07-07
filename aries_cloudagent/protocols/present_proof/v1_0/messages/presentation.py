@@ -35,8 +35,10 @@ class Presentation(AgentMessage):
         """Initialize presentation object.
 
         Args:
-            presentations_attach: attachments
-            comment: optional comment
+            _id (str): The ID of the presentation object.
+            comment (str, optional): An optional comment.
+            presentations_attach (Sequence[AttachDecorator], optional): Attachments.
+            kwargs: Additional keyword arguments for message.
 
         """
         super().__init__(_id=_id, **kwargs)

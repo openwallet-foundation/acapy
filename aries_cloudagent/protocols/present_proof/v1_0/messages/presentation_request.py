@@ -38,8 +38,9 @@ class PresentationRequest(AgentMessage):
         """Initialize presentation request object.
 
         Args:
-            request_presentations_attach: proof request attachments
             comment: optional comment
+            request_presentations_attach: proof request attachments
+            kwargs: additional keyword arguments for message
 
         """
         super().__init__(_id=_id, **kwargs)
