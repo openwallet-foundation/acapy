@@ -525,28 +525,6 @@ class AnonCredsVerifier:
         schemas = {}
         msgs = []
 
-        # TODO this should use the process_pres_identifiers()
-        # method, which will also fetch the revocation info
-        # for cred_def_id in cred_def_ids:
-        #     anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        #     # Build schemas for anoncreds
-        #     if cred_def_id not in cred_defs:
-        #         cred_def = (
-        #             await anoncreds_registry.get_credential_definition(
-        #                 self.profile, cred_def_id
-        #             )
-        #         ).credential_definition.serialize()
-        #         cred_defs[cred_def_id] = cred_def
-        #     schema_id = cred_def["schemaId"]
-        #     schema = (
-        #         await anoncreds_registry.get_schema(self.profile, schema_id)
-        #     ).serialize()
-        #     if schema["schema_id"] not in schemas:
-        #         schemas[schema["schema_id"]] = schema["schema"]
-
-        # TODO - this should get loaded from process_pres_identifiers()
-        # (with schemas and cred defs)
-
         anoncreds_verifier = AnonCredsVerifier(self.profile)
         (
             schemas,
@@ -554,8 +532,6 @@ class AnonCredsVerifier:
             rev_reg_defs,
             rev_reg_entries,
         ) = await anoncreds_verifier.process_pres_identifiers(cred_metadata)
-        # # rev_reg_defs = {}
-        # rev_lists = {}
 
         try:
             # TODO not sure why this attr causes an error
