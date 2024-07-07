@@ -37,12 +37,15 @@ async def create_signed_anoncreds_presentation(
     Will set a default AuthenticationProofPurpose if no proof purpose is passed.
 
     Args:
+        profile (Profile): The profile to use
+        pres_definition (dict): The presentation definition
         presentation (dict): The presentation to sign
-        suite (LinkedDataProof): The signature suite to sign the presentation with
+        credentials (list): The credentials to use for the presentation
         document_loader (DocumentLoader): Document loader to use.
         purpose (ProofPurpose, optional): Purpose to use. Required if challenge is None
         challenge (str, optional): Challenge to use. Required if domain is None.
         domain (str, optional): Domain to use. Only used if purpose is None.
+        holder (bool, optional): create a presentation or just the proof request
 
     Raises:
         LinkedDataProofException: When both purpose and challenge are not provided

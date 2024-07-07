@@ -507,6 +507,7 @@ class AnonCredsVerifier:
         Args:
             pres_req: The presentation request data.
             pres: The presentation data.
+            cred_metadata: The credential metadata.
 
         Returns:
             PresentationVerificationResult: An object containing the verification result,

@@ -27,7 +27,6 @@ from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
-from ..ledger.base import BaseLedger
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
 from ..vc.vc_ld import VerifiableCredential
@@ -704,7 +703,8 @@ class AnonCredsHolder:
 
         Args:
             presentation_request: Valid indy format presentation request
-            requested_credentials: W3C format requested credentials
+            requested_credentials_w3c: W3C format requested credentials
+            credentials_w3c_metadata: W3C format credential metadata
             schemas: Indy formatted schemas JSON
             credential_definitions: Indy formatted credential definitions JSON
             rev_states: Indy format revocation states JSON

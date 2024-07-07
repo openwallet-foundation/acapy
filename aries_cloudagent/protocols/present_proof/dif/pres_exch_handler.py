@@ -1217,7 +1217,8 @@ class DIFPresExchHandler:
             pd (PresentationDefinition): PresentationDefinition.
             challenge (str, optional): Challenge string. Defaults to None.
             domain (str, optional): Domain string. Defaults to None.
-            records_filter (dict, optional): Records filter dictionary. Defaults to None.
+            records_filter (dict, optional): Records filter dictionary.
+            is_holder_override (bool, optional): Override is_holder check.
 
         Returns:
             Union[Sequence[dict], dict]: VerifiablePresentation.

@@ -21,15 +21,12 @@ async def verify_signed_anoncredspresentation(
     """Verify presentation structure, credentials, proof purpose and signature.
 
     Args:
+        profile (Profile): The profile to use for verification
         presentation (dict): The presentation to verify
-        suites (List[LinkedDataProof]): The signature suites to verify with
-        document_loader (DocumentLoader): Document loader used for resolving of documents
         purpose (ProofPurpose, optional): Proof purpose to use.
-            Defaults to AuthenticationProofPurpose
         challenge (str, optional): The challenge to use for authentication.
-            Required if purpose is not passed, not used if purpose is passed
         domain (str, optional): Domain to use for the authentication proof purpose.
-            Not used if purpose is passed
+        pres_req (dict, optional): The presentation request to verify against.
 
     Returns:
         PresentationVerificationResult: The result of the verification. Verified property
