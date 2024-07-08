@@ -59,9 +59,7 @@ class DictWithIndyAttrValueSchema(fields.Dict):
         """Initialize the custom schema for a dictionary with IndyAttrValue."""
         super().__init__(
             keys=fields.Str(metadata={"description": "Attribute name"}),
-            values=fields.Nested(
-                IndyAttrValueSchema(), metadata={"description": "Attribute value"}
-            ),
+            values=fields.Nested(IndyAttrValueSchema()),
             **kwargs,
         )
 
