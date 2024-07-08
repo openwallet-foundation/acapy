@@ -29,6 +29,13 @@
       "url" : "https://hyperledger.github.io/anoncreds-spec"
     }
   }, {
+    "name" : "anoncreds - wallet upgrade",
+    "description" : "Anoncreds wallet upgrade",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://hyperledger.github.io/anoncreds-spec"
+    }
+  }, {
     "name" : "basicmessage",
     "description" : "Simple messaging",
     "externalDocs" : {
@@ -912,6 +919,28 @@
         }
       }
     },
+    "/anoncreds/wallet/upgrade" : {
+      "post" : {
+        "tags" : [ "anoncreds - wallet upgrade" ],
+        "summary" : "\n        Upgrade the wallet from askar to anoncreds - Be very careful with this! You \n        cannot go back! See migration guide for more information.\n    ",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "wallet_name",
+          "in" : "query",
+          "description" : "Name of wallet to upgrade to anoncreds",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/UpgradeResult"
+            }
+          }
+        }
+      }
+    },
     "/connections" : {
       "get" : {
         "tags" : [ "connection" ],
@@ -944,12 +973,26 @@
           "required" : false,
           "type" : "string"
         }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
           "name" : "my_did",
           "in" : "query",
           "description" : "My DID",
           "required" : false,
           "type" : "string",
           "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
         }, {
           "name" : "state",
           "in" : "query",
@@ -2231,6 +2274,20 @@
           "required" : false,
           "type" : "string"
         }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
+        }, {
           "name" : "role",
           "in" : "query",
           "description" : "Role assigned in credential exchange",
@@ -2606,6 +2663,20 @@
           "description" : "Connection identifier",
           "required" : false,
           "type" : "string"
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
         }, {
           "name" : "role",
           "in" : "query",
@@ -3298,16 +3369,14 @@
           "description" : "limit number of results",
           "required" : false,
           "type" : "integer",
-          "default" : -1,
-          "format" : "int32"
+          "default" : -1
         }, {
           "name" : "paginate_offset",
           "in" : "query",
           "description" : "offset to use in pagination",
           "required" : false,
           "type" : "integer",
-          "default" : 0,
-          "format" : "int32"
+          "default" : 0
         } ],
         "responses" : {
           "201" : {
@@ -3685,6 +3754,20 @@
         "summary" : "Query subwallets",
         "produces" : [ "application/json" ],
         "parameters" : [ {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
+        }, {
           "name" : "wallet_name",
           "in" : "query",
           "description" : "Wallet name",
@@ -3863,6 +3946,20 @@
           "description" : "Connection identifier",
           "required" : false,
           "type" : "string"
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
         }, {
           "name" : "role",
           "in" : "query",
@@ -4185,6 +4282,20 @@
           "description" : "Connection identifier",
           "required" : false,
           "type" : "string"
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
         }, {
           "name" : "role",
           "in" : "query",
@@ -6156,7 +6267,6 @@
         },
         "byte_count" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1234,
           "description" : "Byte count of data included by reference"
         },
@@ -6792,7 +6902,7 @@
           "type" : "string",
           "example" : "askar",
           "description" : "Type of the wallet to create. Must be same as base wallet.",
-          "enum" : [ "askar", "askar-anoncreds", "in_memory", "indy" ]
+          "enum" : [ "askar", "askar-anoncreds", "in_memory" ]
         },
         "wallet_webhook_urls" : {
           "type" : "array",
@@ -6932,7 +7042,6 @@
         },
         "revocation_registry_size" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1000,
           "description" : "Maximum number of credential revocations per registry"
         },
@@ -7294,7 +7403,8 @@
             "type" : "string"
           }
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "CredentialDefinition" : {
       "type" : "object",
@@ -7343,7 +7453,6 @@
       "properties" : {
         "revocation_registry_size" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1000,
           "description" : "Revocation registry size",
           "minimum" : 4,
@@ -7499,7 +7608,8 @@
           "example" : "CredentialStatusList2017",
           "description" : "Credential status method type to use for the credential. Should match status method registered in the Verifiable Credential Extension Registry"
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "DID" : {
       "type" : "object",
@@ -7830,7 +7940,8 @@
         "presentation_definition" : {
           "$ref" : "#/definitions/PresentationDefinition"
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "Date" : {
       "type" : "object",
@@ -7990,7 +8101,6 @@
         },
         "maxLength" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1234,
           "description" : "Max Length"
         },
@@ -7999,7 +8109,6 @@
         },
         "minLength" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1234,
           "description" : "Min Length"
         },
@@ -8457,7 +8566,6 @@
         },
         "value" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Predicate threshold value"
         }
       }
@@ -8514,7 +8622,6 @@
       "properties" : {
         "from" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Earliest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8522,7 +8629,6 @@
         },
         "to" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Latest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8584,7 +8690,6 @@
         },
         "threshold" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Threshold value"
         }
       }
@@ -8704,7 +8809,6 @@
         },
         "timestamp" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Timestamp epoch",
           "minimum" : 0,
@@ -8741,8 +8845,7 @@
           "items" : {
             "type" : "array",
             "items" : {
-              "type" : "integer",
-              "format" : "int32"
+              "type" : "integer"
             }
           }
         }
@@ -8776,7 +8879,7 @@
           }
         },
         "non_revoked" : {
-          "$ref" : "#/definitions/IndyProofReqAttrSpec_non_revoked"
+          "$ref" : "#/definitions/IndyProofReqAttrSpecNonRevoked"
         },
         "restrictions" : {
           "type" : "array",
@@ -8796,7 +8899,6 @@
       "properties" : {
         "from" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Earliest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8804,7 +8906,6 @@
         },
         "to" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Latest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8822,7 +8923,7 @@
           "description" : "Attribute name"
         },
         "non_revoked" : {
-          "$ref" : "#/definitions/IndyProofReqAttrSpec_non_revoked"
+          "$ref" : "#/definitions/IndyProofReqPredSpecNonRevoked"
         },
         "p_type" : {
           "type" : "string",
@@ -8832,7 +8933,6 @@
         },
         "p_value" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Threshold value"
         },
         "restrictions" : {
@@ -8853,7 +8953,6 @@
       "properties" : {
         "from" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Earliest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8861,7 +8960,6 @@
         },
         "to" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Latest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8879,7 +8977,7 @@
           "description" : "Proof request name"
         },
         "non_revoked" : {
-          "$ref" : "#/definitions/IndyProofReqAttrSpec_non_revoked"
+          "$ref" : "#/definitions/IndyProofRequestNonRevoked"
         },
         "nonce" : {
           "type" : "string",
@@ -8914,7 +9012,6 @@
       "properties" : {
         "from" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Earliest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8922,7 +9019,6 @@
         },
         "to" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Latest time of interest in non-revocation interval",
           "minimum" : 0,
@@ -8973,7 +9069,6 @@
       "properties" : {
         "sub_proof_index" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Sub-proof index"
         }
       }
@@ -8993,7 +9088,6 @@
         },
         "sub_proof_index" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Sub-proof index"
         }
       }
@@ -9003,7 +9097,6 @@
       "properties" : {
         "sub_proof_index" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Sub-proof index"
         },
         "values" : {
@@ -9041,7 +9134,6 @@
         },
         "timestamp" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "description" : "Epoch timestamp of interest for non-revocation proof",
           "minimum" : 0,
@@ -9095,7 +9187,6 @@
         },
         "maxCredNum" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 10,
           "description" : "Maximum number of credentials; registry size",
           "minimum" : 1
@@ -9164,8 +9255,7 @@
           "type" : "array",
           "description" : "Revoked credential revocation identifiers",
           "items" : {
-            "type" : "integer",
-            "format" : "int32"
+            "type" : "integer"
           }
         }
       }
@@ -9206,7 +9296,6 @@
         },
         "maxCredNum" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 777,
           "description" : "Maximum number of credential revocations per registry"
         },
@@ -9632,7 +9721,6 @@
         },
         "max_cred_num" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1000,
           "description" : "Maximum number of credentials for revocation registry"
         },
@@ -9814,13 +9902,11 @@
       "properties" : {
         "limit" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 30,
           "description" : "Limit for keylist query"
         },
         "offset" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 0,
           "description" : "Offset value for query"
         }
@@ -9887,7 +9973,8 @@
         "options" : {
           "$ref" : "#/definitions/LDProofVCDetail_options"
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "LDProofVCOptions" : {
       "type" : "object",
@@ -9926,7 +10013,8 @@
           "example" : "did:example:123456#key-1",
           "description" : "The verification method to use for the proof. Should match a verification method in the wallet"
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "LedgerConfigInstance" : {
       "type" : "object",
@@ -9986,8 +10074,7 @@
         "domain" : {
           "type" : "string",
           "example" : "https://example.com",
-          "description" : "A string value specifying the restricted domain of the signature.",
-          "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
+          "description" : "A string value specifying the restricted domain of the signature."
         },
         "jws" : {
           "type" : "string",
@@ -10020,7 +10107,8 @@
           "description" : "Information used for proof verification",
           "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "ListCredentialsResponse" : {
       "type" : "object"
@@ -10455,7 +10543,8 @@
             "properties" : { }
           }
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "PresentationDefinition" : {
       "type" : "object",
@@ -10905,13 +10994,11 @@
           "example" : [ 0, 1, 1, 0 ],
           "description" : "Bit list representing revoked credentials",
           "items" : {
-            "type" : "integer",
-            "format" : "int32"
+            "type" : "integer"
           }
         },
         "timestamp" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : "2021-12-31T23:59:59Z",
           "description" : "Timestamp at which revocation list is applicable"
         }
@@ -10987,7 +11074,6 @@
         },
         "max_cred_num" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1000,
           "description" : "Revocation registry size",
           "minimum" : 4,
@@ -11088,7 +11174,6 @@
       "properties" : {
         "maxCredNum" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 777
         },
         "publicKeys" : {
@@ -11111,7 +11196,6 @@
       "properties" : {
         "result" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 0,
           "description" : "Number of credentials issued against revocation registry",
           "minimum" : 0
@@ -11123,7 +11207,6 @@
       "properties" : {
         "result" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 0,
           "description" : "Number of credentials issued against revocation registry",
           "minimum" : 0
@@ -11498,7 +11581,6 @@
         },
         "seqNo" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 10,
           "description" : "Schema sequence number",
           "minimum" : 1
@@ -11778,14 +11860,14 @@
         "proof" : {
           "$ref" : "#/definitions/SignedDoc_proof"
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "SubmissionRequirements" : {
       "type" : "object",
       "properties" : {
         "count" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1234,
           "description" : "Count Value"
         },
@@ -11801,13 +11883,11 @@
         },
         "max" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1234,
           "description" : "Max Value"
         },
         "min" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1234,
           "description" : "Min Value"
         },
@@ -11848,7 +11928,6 @@
         },
         "time" : {
           "type" : "integer",
-          "format" : "int32",
           "example" : 1640995199,
           "minimum" : 0,
           "maximum" : 18446744073709551615
@@ -12161,6 +12240,9 @@
           }
         }
       }
+    },
+    "UpgradeResult" : {
+      "type" : "object"
     },
     "V10CredentialBoundOfferRequest" : {
       "type" : "object",
@@ -13128,6 +13210,9 @@
         },
         "ld_proof" : {
           "$ref" : "#/definitions/V20CredExRecordLDProof"
+        },
+        "vc_di" : {
+          "$ref" : "#/definitions/V20CredExRecord"
         }
       }
     },
@@ -13242,6 +13327,9 @@
         },
         "ld_proof" : {
           "$ref" : "#/definitions/V20CredFilter_ld_proof"
+        },
+        "vc_di" : {
+          "$ref" : "#/definitions/V20CredFilter_vc_di"
         }
       }
     },
@@ -13291,6 +13379,46 @@
       "properties" : {
         "ld_proof" : {
           "$ref" : "#/definitions/V20CredFilter_ld_proof"
+        }
+      }
+    },
+    "V20CredFilterVCDI" : {
+      "type" : "object",
+      "properties" : {
+        "cred_def_id" : {
+          "type" : "string",
+          "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+          "description" : "Credential definition identifier",
+          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$"
+        },
+        "issuer_did" : {
+          "type" : "string",
+          "example" : "WgWxqztrNooG92RXvxSTWv",
+          "description" : "Credential issuer DID",
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+        },
+        "schema_id" : {
+          "type" : "string",
+          "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+          "description" : "Schema identifier",
+          "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$"
+        },
+        "schema_issuer_did" : {
+          "type" : "string",
+          "example" : "WgWxqztrNooG92RXvxSTWv",
+          "description" : "Schema issuer DID",
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+        },
+        "schema_name" : {
+          "type" : "string",
+          "example" : "preferences",
+          "description" : "Schema name"
+        },
+        "schema_version" : {
+          "type" : "string",
+          "example" : "1.0",
+          "description" : "Schema version",
+          "pattern" : "^[0-9.]+$"
         }
       }
     },
@@ -14282,7 +14410,8 @@
             "type" : "string"
           }
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "VerifiablePresentation" : {
       "type" : "object",
@@ -14322,7 +14451,8 @@
             "properties" : { }
           }
         }
-      }
+      },
+      "additionalProperties" : true
     },
     "VerifyCredentialRequest" : {
       "type" : "object",
@@ -14410,7 +14540,6 @@
         },
         "max_results" : {
           "type" : "integer",
-          "format" : "int32",
           "description" : "Maximum number of results to return"
         },
         "proof_types" : {
@@ -14598,10 +14727,6 @@
       "type" : "object",
       "description" : "Indy primary proof"
     },
-    "IndyProofReqAttrSpec_non_revoked" : {
-      "type" : "object",
-      "x-nullable" : true
-    },
     "IndyRevRegDef_value" : {
       "type" : "object",
       "description" : "Revocation registry definition value"
@@ -14785,6 +14910,10 @@
     "V20CredFilter_ld_proof" : {
       "type" : "object",
       "description" : "Credential filter for linked data proof"
+    },
+    "V20CredFilter_vc_di" : {
+      "type" : "object",
+      "description" : "Credential filter for vc_di"
     },
     "V20CredProposal_credential_preview" : {
       "type" : "object",
