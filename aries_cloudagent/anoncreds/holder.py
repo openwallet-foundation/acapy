@@ -710,7 +710,6 @@ class AnonCredsHolder:
             rev_states: Indy format revocation states JSON
 
         """
-        # TODO implement this!!!!!  prepare and return an anoncreds proof
         present_creds = PresentCredentials()
         for idx, cred in enumerate(requested_credentials_w3c):
             meta = credentials_w3c_metadata[idx]

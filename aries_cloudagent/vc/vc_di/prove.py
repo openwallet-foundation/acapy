@@ -2,6 +2,8 @@
 
 import asyncio
 from hashlib import sha256
+import re
+from typing import Tuple
 
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.revocation.models.revocation_registry import RevocationRegistry
@@ -70,9 +72,14 @@ async def create_signed_anoncreds_presentation(
     w3c_creds = []
     w3c_creds_metadata = []
     for credential in credentials:
-        w3c_cred = W3cCredential.load(credential)
-        w3c_creds.append(w3c_cred)
-        w3c_creds_metadata.append({})
+        try:
+            w3c_cred = W3cCredential.load(credential)
+            w3c_creds.append(w3c_cred)
+            w3c_creds_metadata.append({})
+        except Exception as err:
+            raise LinkedDataProofException(
+                "Error loading credential as W3C credential"
+            ) from err
 
     anoncreds_registry = profile.inject(AnonCredsRegistry)
     pres_name = (
@@ -102,7 +109,6 @@ async def create_signed_anoncreds_presentation(
         attribute_referent = f"{referent}_attribute"
         predicate_referent_base = f"{referent}_predicate"
         predicate_referent_index = 0
-        # issuer_id = None
 
         fields = descriptor["constraints"]["fields"]
         statuses = descriptor["constraints"]["statuses"]
@@ -113,17 +119,16 @@ async def create_signed_anoncreds_presentation(
         w3c_cred = w3c_creds[entry_idx]
         schema_id = w3c_cred.schema_id
         cred_def_id = w3c_cred.cred_def_id
-        # rev_reg_id = w3c_cred.rev_reg_id
-        # rev_reg_index = w3c_cred.rev_reg_index
 
         requires_revoc_status = "active" in statuses and statuses["active"][
             "directive"
         ] in ("allowed", "required")
-        # TODO check that a revocation id is supplied if required
-        # if requires_revoc_status and (not rev_reg_id):
-        #     throw some kind of error
+
         non_revoked_interval = None
         if requires_revoc_status:
+            if not w3c_cred.rev_reg_id:
+                pass
+
             result = await anoncreds_registry.get_revocation_list(
                 profile, w3c_cred.rev_reg_id, None
             )
@@ -277,12 +282,37 @@ async def create_signed_anoncreds_presentation(
 
 
 def _extract_cred_idx(item_path: str) -> int:
-    # TODO put in some logic here ...
-    print(">>> TODO need to parse the index from this path:", item_path)
-    return 0
+    """_extract_cred_idx.
+
+    Args:
+        item_path (str): path to extract index from
+
+    Raises:
+        Exception: No index found in path
+
+    Returns:
+        int: extracted index
+    """
+    match = re.search(r"\[(\d+)\]", item_path)
+    if match:
+        return int(match.group(1))
+    else:
+        raise Exception("No index found in path")
 
 
-def _get_predicate_type_and_value(pred_filter: dict) -> (str, str):
+def _get_predicate_type_and_value(pred_filter: dict) -> Tuple[str, str]:
+    """_get_predicate_type_and_value.
+
+    Args:
+        pred_filter (dict): predicate filter
+
+    Raises:
+        Exception: TODO
+
+    Returns:
+        Tuple[str, str]: predicate type and value
+    """
+
     supported_properties = {
         "exclusiveMinimum": ">",
         "exclusiveMaximum": "<",

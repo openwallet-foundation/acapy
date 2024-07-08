@@ -560,8 +560,10 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         """Store vcdi credential."""
         cred = cred_ex_record.cred_issue.attachment(VCDICredFormatHandler.format)
         cred = cred["credential"]
-
-        w3cred = W3cCredential.load(cred)
+        try:
+            w3cred = W3cCredential.load(cred)
+        except AnonCredsHolderError as e:
+            LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
         rev_reg_def = None
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         cred_def_result = await anoncreds_registry.get_credential_definition(
@@ -569,9 +571,10 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         )
         rev_reg_id = None
         rev_reg_index = None
-        if w3cred.rev_reg_id != "None":
+        if (
+            w3cred.rev_reg_id != "None"
+        ):  # String None because rev_reg_id property wrapped str()
             rev_reg_id = w3cred.rev_reg_id
-            # rev_reg_index = cred["cred_rev_id"]
 
             rev_reg_def_result = (
                 await anoncreds_registry.get_revocation_registry_definition(

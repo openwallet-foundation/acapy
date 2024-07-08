@@ -1260,7 +1260,6 @@ class DIFPresExchHandler:
                     "enabled. Please specify which credentials should be applied to "
                     "which input_descriptors using record_ids filter."
                 )
-            # submission_property
             submission_property = PresentationSubmission(
                 id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
             )
@@ -1310,7 +1309,6 @@ class DIFPresExchHandler:
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
             if self.proof_type == ("anoncreds-2023"):
-                # TODO create anoncreds proof
                 (_proof_req, signed_vp, _cred_meta) = (
                     await create_signed_anoncreds_presentation(
                         profile=self.profile,
