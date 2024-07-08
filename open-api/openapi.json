@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.12.1"
+    "version" : "v1.0.0rc4"
   },
   "servers" : [ {
     "url" : "/"
@@ -34,6 +34,13 @@
       "url" : "https://hyperledger.github.io/anoncreds-spec"
     },
     "name" : "anoncreds - schemas"
+  }, {
+    "description" : "Anoncreds wallet upgrade",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://hyperledger.github.io/anoncreds-spec"
+    },
+    "name" : "anoncreds - wallet upgrade"
   }, {
     "description" : "Simple messaging",
     "externalDocs" : {
@@ -1077,6 +1084,33 @@
         "tags" : [ "anoncreds - schemas" ]
       }
     },
+    "/anoncreds/wallet/upgrade" : {
+      "post" : {
+        "parameters" : [ {
+          "description" : "Name of wallet to upgrade to anoncreds",
+          "in" : "query",
+          "name" : "wallet_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UpgradeResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "\n        Upgrade the wallet from askar to anoncreds - Be very careful with this! You \n        cannot go back! See migration guide for more information.\n    ",
+        "tags" : [ "anoncreds - wallet upgrade" ]
+      }
+    },
     "/connections" : {
       "get" : {
         "parameters" : [ {
@@ -1110,12 +1144,28 @@
             "type" : "string"
           }
         }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "type" : "integer"
+          }
+        }, {
           "description" : "My DID",
           "in" : "query",
           "name" : "my_did",
           "schema" : {
             "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
             "type" : "string"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
           }
         }, {
           "description" : "Connection state",
@@ -2678,6 +2728,22 @@
             "type" : "string"
           }
         }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Role assigned in credential exchange",
           "in" : "query",
           "name" : "role",
@@ -3151,6 +3217,22 @@
           "name" : "connection_id",
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
           }
         }, {
           "description" : "Role assigned in credential exchange",
@@ -3986,7 +4068,6 @@
           "name" : "paginate_limit",
           "schema" : {
             "default" : -1,
-            "format" : "int32",
             "type" : "integer"
           }
         }, {
@@ -3995,7 +4076,6 @@
           "name" : "paginate_offset",
           "schema" : {
             "default" : 0,
-            "format" : "int32",
             "type" : "integer"
           }
         } ],
@@ -4488,6 +4568,22 @@
     "/multitenancy/wallets" : {
       "get" : {
         "parameters" : [ {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
+          }
+        }, {
           "description" : "Wallet name",
           "in" : "query",
           "name" : "wallet_name",
@@ -4704,6 +4800,22 @@
           "name" : "connection_id",
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
           }
         }, {
           "description" : "Role assigned in presentation exchange",
@@ -5103,6 +5215,22 @@
           "name" : "connection_id",
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
           }
         }, {
           "description" : "Role assigned in presentation exchange",
@@ -7467,7 +7595,6 @@
           "byte_count" : {
             "description" : "Byte count of data included by reference",
             "example" : 1234,
-            "format" : "int32",
             "type" : "integer"
           },
           "data" : {
@@ -8106,7 +8233,7 @@
           },
           "wallet_type" : {
             "description" : "Type of the wallet to create. Must be same as base wallet.",
-            "enum" : [ "askar", "askar-anoncreds", "in_memory", "indy" ],
+            "enum" : [ "askar", "askar-anoncreds", "in_memory" ],
             "example" : "askar",
             "type" : "string"
           },
@@ -8249,7 +8376,6 @@
           "revocation_registry_size" : {
             "description" : "Maximum number of credential revocations per registry",
             "example" : 1000,
-            "format" : "int32",
             "type" : "integer"
           },
           "support_revocation" : {
@@ -8583,6 +8709,7 @@
         "type" : "object"
       },
       "Credential" : {
+        "additionalProperties" : true,
         "properties" : {
           "@context" : {
             "description" : "The JSON-LD context of the credential",
@@ -8701,7 +8828,6 @@
           "revocation_registry_size" : {
             "description" : "Revocation registry size",
             "example" : 1000,
-            "format" : "int32",
             "maximum" : 32768,
             "minimum" : 4,
             "type" : "integer"
@@ -8849,6 +8975,7 @@
         "type" : "object"
       },
       "CredentialStatusOptions" : {
+        "additionalProperties" : true,
         "properties" : {
           "type" : {
             "description" : "Credential status method type to use for the credential. Should match status method registered in the Verifiable Credential Extension Registry",
@@ -9187,6 +9314,7 @@
         "type" : "object"
       },
       "DIFProofRequest" : {
+        "additionalProperties" : true,
         "properties" : {
           "options" : {
             "$ref" : "#/components/schemas/DIFOptions"
@@ -9366,7 +9494,6 @@
           "maxLength" : {
             "description" : "Max Length",
             "example" : 1234,
-            "format" : "int32",
             "type" : "integer"
           },
           "maximum" : {
@@ -9376,7 +9503,6 @@
           "minLength" : {
             "description" : "Min Length",
             "example" : 1234,
-            "format" : "int32",
             "type" : "integer"
           },
           "minimum" : {
@@ -9850,7 +9976,6 @@
           },
           "value" : {
             "description" : "Predicate threshold value",
-            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -9908,7 +10033,6 @@
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -9916,7 +10040,6 @@
           "to" : {
             "description" : "Latest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -9976,7 +10099,6 @@
           },
           "threshold" : {
             "description" : "Threshold value",
-            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -10106,7 +10228,6 @@
           "timestamp" : {
             "description" : "Timestamp epoch",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "nullable" : true,
@@ -10144,7 +10265,6 @@
             "description" : "c_list value",
             "items" : {
               "items" : {
-                "format" : "int32",
                 "type" : "integer"
               },
               "type" : "array"
@@ -10185,7 +10305,7 @@
             "type" : "array"
           },
           "non_revoked" : {
-            "$ref" : "#/components/schemas/IndyProofReqAttrSpec_non_revoked"
+            "$ref" : "#/components/schemas/IndyProofReqAttrSpecNonRevoked"
           },
           "restrictions" : {
             "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
@@ -10206,7 +10326,6 @@
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10214,7 +10333,6 @@
           "to" : {
             "description" : "Latest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10230,7 +10348,7 @@
             "type" : "string"
           },
           "non_revoked" : {
-            "$ref" : "#/components/schemas/IndyProofReqPredSpec_non_revoked"
+            "$ref" : "#/components/schemas/IndyProofReqPredSpecNonRevoked"
           },
           "p_type" : {
             "description" : "Predicate type ('<', '<=', '>=', or '>')",
@@ -10240,7 +10358,6 @@
           },
           "p_value" : {
             "description" : "Threshold value",
-            "format" : "int32",
             "type" : "integer"
           },
           "restrictions" : {
@@ -10263,7 +10380,6 @@
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10271,7 +10387,6 @@
           "to" : {
             "description" : "Latest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10287,7 +10402,7 @@
             "type" : "string"
           },
           "non_revoked" : {
-            "$ref" : "#/components/schemas/IndyProofRequest_non_revoked"
+            "$ref" : "#/components/schemas/IndyProofRequestNonRevoked"
           },
           "nonce" : {
             "description" : "Nonce",
@@ -10324,7 +10439,6 @@
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10332,7 +10446,6 @@
           "to" : {
             "description" : "Latest time of interest in non-revocation interval",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10382,7 +10495,6 @@
         "properties" : {
           "sub_proof_index" : {
             "description" : "Sub-proof index",
-            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -10402,7 +10514,6 @@
           },
           "sub_proof_index" : {
             "description" : "Sub-proof index",
-            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -10412,7 +10523,6 @@
         "properties" : {
           "sub_proof_index" : {
             "description" : "Sub-proof index",
-            "format" : "int32",
             "type" : "integer"
           },
           "values" : {
@@ -10450,7 +10560,6 @@
           "timestamp" : {
             "description" : "Epoch timestamp of interest for non-revocation proof",
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -10509,7 +10618,6 @@
           "maxCredNum" : {
             "description" : "Maximum number of credentials; registry size",
             "example" : 10,
-            "format" : "int32",
             "minimum" : 1,
             "type" : "integer"
           },
@@ -10584,7 +10692,6 @@
           "revoked" : {
             "description" : "Revoked credential revocation identifiers",
             "items" : {
-              "format" : "int32",
               "type" : "integer"
             },
             "type" : "array"
@@ -10628,7 +10735,6 @@
           "maxCredNum" : {
             "description" : "Maximum number of credential revocations per registry",
             "example" : 777,
-            "format" : "int32",
             "type" : "integer"
           },
           "tag" : {
@@ -11076,7 +11182,6 @@
           "max_cred_num" : {
             "description" : "Maximum number of credentials for revocation registry",
             "example" : 1000,
-            "format" : "int32",
             "type" : "integer"
           },
           "pending_pub" : {
@@ -11270,13 +11375,11 @@
           "limit" : {
             "description" : "Limit for keylist query",
             "example" : 30,
-            "format" : "int32",
             "type" : "integer"
           },
           "offset" : {
             "description" : "Offset value for query",
             "example" : 0,
-            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -11334,6 +11437,7 @@
         "type" : "object"
       },
       "LDProofVCDetail" : {
+        "additionalProperties" : true,
         "properties" : {
           "credential" : {
             "allOf" : [ {
@@ -11372,6 +11476,7 @@
         "type" : "object"
       },
       "LDProofVCOptions" : {
+        "additionalProperties" : true,
         "properties" : {
           "challenge" : {
             "description" : "A challenge to include in the proof. SHOULD be provided by the requesting party of the credential (=holder)",
@@ -11455,6 +11560,7 @@
         "type" : "object"
       },
       "LinkedDataProof" : {
+        "additionalProperties" : true,
         "properties" : {
           "challenge" : {
             "description" : "Associates a challenge with a proof, for use with a proofPurpose such as authentication",
@@ -11470,7 +11576,6 @@
           "domain" : {
             "description" : "A string value specifying the restricted domain of the signature.",
             "example" : "https://example.com",
-            "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
           },
           "jws" : {
@@ -11908,6 +12013,7 @@
         "type" : "object"
       },
       "Presentation" : {
+        "additionalProperties" : true,
         "properties" : {
           "@context" : {
             "description" : "The JSON-LD context of the presentation",
@@ -12407,14 +12513,12 @@
             "description" : "Bit list representing revoked credentials",
             "example" : [ 0, 1, 1, 0 ],
             "items" : {
-              "format" : "int32",
               "type" : "integer"
             },
             "type" : "array"
           },
           "timestamp" : {
             "description" : "Timestamp at which revocation list is applicable",
-            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -12494,7 +12598,6 @@
           "max_cred_num" : {
             "description" : "Revocation registry size",
             "example" : 1000,
-            "format" : "int32",
             "maximum" : 32768,
             "minimum" : 4,
             "type" : "integer"
@@ -12598,7 +12701,6 @@
         "properties" : {
           "maxCredNum" : {
             "example" : 777,
-            "format" : "int32",
             "type" : "integer"
           },
           "publicKeys" : {
@@ -12622,7 +12724,6 @@
           "result" : {
             "description" : "Number of credentials issued against revocation registry",
             "example" : 0,
-            "format" : "int32",
             "minimum" : 0,
             "type" : "integer"
           }
@@ -12634,7 +12735,6 @@
           "result" : {
             "description" : "Number of credentials issued against revocation registry",
             "example" : 0,
-            "format" : "int32",
             "minimum" : 0,
             "type" : "integer"
           }
@@ -13011,7 +13111,6 @@
           "seqNo" : {
             "description" : "Schema sequence number",
             "example" : 10,
-            "format" : "int32",
             "minimum" : 1,
             "type" : "integer"
           },
@@ -13293,6 +13392,7 @@
         "type" : "object"
       },
       "SignedDoc" : {
+        "additionalProperties" : true,
         "properties" : {
           "proof" : {
             "allOf" : [ {
@@ -13310,7 +13410,6 @@
           "count" : {
             "description" : "Count Value",
             "example" : 1234,
-            "format" : "int32",
             "type" : "integer"
           },
           "from" : {
@@ -13326,13 +13425,11 @@
           "max" : {
             "description" : "Max Value",
             "example" : 1234,
-            "format" : "int32",
             "type" : "integer"
           },
           "min" : {
             "description" : "Min Value",
             "example" : 1234,
-            "format" : "int32",
             "type" : "integer"
           },
           "name" : {
@@ -13372,7 +13469,6 @@
           },
           "time" : {
             "example" : 1640995199,
-            "format" : "int32",
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
@@ -13709,6 +13805,9 @@
             "type" : "array"
           }
         },
+        "type" : "object"
+      },
+      "UpgradeResult" : {
         "type" : "object"
       },
       "V10CredentialBoundOfferRequest" : {
@@ -14768,6 +14867,9 @@
           },
           "ld_proof" : {
             "$ref" : "#/components/schemas/V20CredExRecordLDProof"
+          },
+          "vc_di" : {
+            "$ref" : "#/components/schemas/V20CredExRecord"
           }
         },
         "type" : "object"
@@ -14890,6 +14992,13 @@
             } ],
             "description" : "Credential filter for linked data proof",
             "type" : "object"
+          },
+          "vc_di" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilterVCDI"
+            } ],
+            "description" : "Credential filter for vc_di",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -14945,6 +15054,46 @@
           }
         },
         "required" : [ "ld_proof" ],
+        "type" : "object"
+      },
+      "V20CredFilterVCDI" : {
+        "properties" : {
+          "cred_def_id" : {
+            "description" : "Credential definition identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
+            "type" : "string"
+          },
+          "issuer_did" : {
+            "description" : "Credential issuer DID",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
+            "type" : "string"
+          },
+          "schema_id" : {
+            "description" : "Schema identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
+            "type" : "string"
+          },
+          "schema_issuer_did" : {
+            "description" : "Schema issuer DID",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
+            "type" : "string"
+          },
+          "schema_name" : {
+            "description" : "Schema name",
+            "example" : "preferences",
+            "type" : "string"
+          },
+          "schema_version" : {
+            "description" : "Schema version",
+            "example" : "1.0",
+            "pattern" : "^[0-9.]+$",
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "V20CredFormat" : {
@@ -15959,6 +16108,7 @@
         "type" : "object"
       },
       "VerifiableCredential" : {
+        "additionalProperties" : true,
         "properties" : {
           "@context" : {
             "description" : "The JSON-LD context of the credential",
@@ -16026,6 +16176,7 @@
         "type" : "object"
       },
       "VerifiablePresentation" : {
+        "additionalProperties" : true,
         "properties" : {
           "@context" : {
             "description" : "The JSON-LD context of the presentation",
@@ -16168,7 +16319,6 @@
           },
           "max_results" : {
             "description" : "Maximum number of results to return",
-            "format" : "int32",
             "type" : "integer"
           },
           "proof_types" : {
@@ -16291,27 +16441,6 @@
           "$ref" : "#/components/schemas/IndyNonRevocProof"
         } ],
         "description" : "Indy non-revocation proof",
-        "nullable" : true,
-        "type" : "object"
-      },
-      "IndyProofReqAttrSpec_non_revoked" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofReqAttrSpecNonRevoked"
-        } ],
-        "nullable" : true,
-        "type" : "object"
-      },
-      "IndyProofReqPredSpec_non_revoked" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofReqPredSpecNonRevoked"
-        } ],
-        "nullable" : true,
-        "type" : "object"
-      },
-      "IndyProofRequest_non_revoked" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofRequestNonRevoked"
-        } ],
         "nullable" : true,
         "type" : "object"
       }
