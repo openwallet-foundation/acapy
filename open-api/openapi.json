@@ -10165,7 +10165,12 @@
       "IndyPrimaryProof" : {
         "properties" : {
           "eq_proof" : {
-            "$ref" : "#/components/schemas/IndyPrimaryProof_eq_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyEQProof"
+            } ],
+            "description" : "Indy equality proof",
+            "nullable" : true,
+            "type" : "object"
           },
           "ge_proofs" : {
             "description" : "Indy GE proofs",
@@ -10277,7 +10282,12 @@
       "IndyProofProofProofsProof" : {
         "properties" : {
           "non_revoc_proof" : {
-            "$ref" : "#/components/schemas/IndyProofProofProofsProof_non_revoc_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyNonRevocProof"
+            } ],
+            "description" : "Indy non-revocation proof",
+            "nullable" : true,
+            "type" : "object"
           },
           "primary_proof" : {
             "allOf" : [ {
@@ -16426,22 +16436,6 @@
             "type" : "string"
           }
         },
-        "type" : "object"
-      },
-      "IndyPrimaryProof_eq_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyEQProof"
-        } ],
-        "description" : "Indy equality proof",
-        "nullable" : true,
-        "type" : "object"
-      },
-      "IndyProofProofProofsProof_non_revoc_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyNonRevocProof"
-        } ],
-        "description" : "Indy non-revocation proof",
-        "nullable" : true,
         "type" : "object"
       }
     },
