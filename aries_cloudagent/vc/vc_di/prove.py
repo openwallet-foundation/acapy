@@ -3,7 +3,7 @@
 import asyncio
 from hashlib import sha256
 import re
-from typing import Tuple
+from typing import Any, Tuple
 
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.revocation.models.revocation_registry import RevocationRegistry
@@ -33,7 +33,7 @@ async def create_signed_anoncreds_presentation(
     challenge: str = None,
     domain: str = None,
     holder: bool = True,
-) -> (dict, dict, dict):
+) -> tuple[dict, dict, list]:
     """Sign the presentation with the passed signature suite.
 
     Will set a default AuthenticationProofPurpose if no proof purpose is passed.
@@ -66,6 +66,122 @@ async def create_signed_anoncreds_presentation(
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
     # validate structure of presentation
+    anoncreds_proofrequest, w3c_creds_metadata, w3c_creds = (
+        await prepare_data_for_presentation(
+            presentation, credentials, pres_definition, profile, challenge
+        )
+    )
+
+    anoncreds_verifier = AnonCredsVerifier(profile)
+    (
+        schemas,
+        cred_defs,
+        rev_reg_defs,
+        rev_reg_entries,
+    ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
+
+    # TODO possibly refactor this into a couple of methods -
+    # one to create the proof request and another to sign it
+    # (the holder flag is a bit of a hack)
+    if holder:
+        rev_states = await create_rev_states(
+            w3c_creds_metadata, rev_reg_defs, rev_reg_entries
+        )
+        anoncreds_holder = AnonCredsHolder(profile)
+        anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
+            presentation_request=anoncreds_proofrequest,
+            requested_credentials_w3c=w3c_creds,
+            credentials_w3c_metadata=w3c_creds_metadata,
+            schemas=schemas,
+            credential_definitions=cred_defs,
+            rev_states=rev_states,
+        )
+
+        # TODO any processing to put the returned proof into DIF format
+        anoncreds_proof["presentation_submission"] = presentation[
+            "presentation_submission"
+        ]
+    else:
+        anoncreds_proof = None
+
+    return (anoncreds_proofrequest, anoncreds_proof, w3c_creds_metadata)
+
+
+async def create_rev_states(
+    w3c_creds_metadata: list,
+    rev_reg_defs: dict,
+    rev_reg_entries: dict,
+) -> dict:
+    """create_rev_states.
+
+    Args:
+        profile (Profile): The profile to use
+        w3c_creds_metadata (list): The metadata for the credentials
+        rev_reg_defs (dict): The revocation registry definitions
+        rev_reg_entries (dict): The revocation registry entries
+
+    Returns:
+        dict: A dictionary of revocation states
+    """
+    if not bool(rev_reg_defs and rev_reg_entries):
+        return None
+
+    rev_states = {}
+    for w3c_cred_cred in w3c_creds_metadata:
+        rev_reg_def = rev_reg_defs.get(w3c_cred_cred["rev_reg_id"])
+        rev_reg_def["id"] = w3c_cred_cred["rev_reg_id"]
+        rev_reg_def_from_registry = RevocationRegistry.from_definition(
+            rev_reg_def, True
+        )
+        local_tails_path = (
+            await rev_reg_def_from_registry.get_or_fetch_local_tails_path()
+        )
+        revocation_status_list = RevocationStatusList.load(
+            rev_reg_entries.get(w3c_cred_cred["rev_reg_id"])[
+                w3c_cred_cred.get("timestamp")
+            ]
+        )
+        rev_reg_index = w3c_cred_cred["rev_reg_index"]
+        try:
+
+            rev_state = await asyncio.get_event_loop().run_in_executor(
+                None,
+                CredentialRevocationState.create,
+                rev_reg_def,
+                revocation_status_list,
+                rev_reg_index,
+                local_tails_path,
+            )
+            rev_states[w3c_cred_cred["rev_reg_id"]] = rev_state
+        except AnoncredsError as err:
+            raise AnonCredsHolderError("Error creating revocation state") from err
+
+        return rev_states
+
+
+async def prepare_data_for_presentation(
+    presentation,
+    credentials,
+    pres_definition,
+    profile,
+    challenge,
+) -> tuple[dict[str, Any], list, list]:
+    """prepare_data_for_presentation.
+
+    Args:
+        presentation (dict): The presentation to prepare
+        credentials (list): The credentials to use
+        pres_definition (dict): The presentation definition
+        profile (Profile): The profile to use
+        challenge (str): The challenge to use
+
+    Raises:
+        LinkedDataProofException: Error loading credential as W3C credential
+
+    Returns:
+        tuple[dict[str, Any], list, list]: A tuple of the anoncreds proof
+            request, the W3C credentials metadata, and the W3C credentials
+    """
     pres_submission = presentation["presentation_submission"]
     descriptor_map = pres_submission["descriptor_map"]
 
@@ -88,8 +204,6 @@ async def create_signed_anoncreds_presentation(
     hash = sha256(challenge.encode("utf-8")).hexdigest()
     nonce = str(int(hash, 16))[:20]
 
-    # assemble the necessary structures and then call
-    # AnoncredsHolder.create_presentation_w3c() (new method)
     anoncreds_proofrequest = {
         "version": "1.0",
         "name": pres_name,
@@ -211,74 +325,7 @@ async def create_signed_anoncreds_presentation(
             else:
                 print("... skipping:", path)
 
-    anoncreds_verifier = AnonCredsVerifier(profile)
-    (
-        schemas,
-        cred_defs,
-        rev_reg_defs,
-        rev_reg_entries,
-    ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
-    rev_states = {}
-
-    # TODO possibly refactor this into a couple of methods -
-    # one to create the proof request and another to sign it
-    # (the holder flag is a bit of a hack)
-    if holder:
-        # TODO match up the parameters with what the function is expecting ...
-        rev_states = None
-
-        if rev_reg_defs and rev_reg_entries:
-
-            rev_states = {}
-            for w3c_cred_cred in w3c_creds_metadata:
-                rev_reg_def = rev_reg_defs.get(w3c_cred_cred["rev_reg_id"])
-                rev_reg_def["id"] = w3c_cred_cred["rev_reg_id"]
-                rev_reg_def_from_registry = RevocationRegistry.from_definition(
-                    rev_reg_def, True
-                )
-                local_tails_path = (
-                    await rev_reg_def_from_registry.get_or_fetch_local_tails_path()
-                )
-                revocation_status_list = RevocationStatusList.load(
-                    rev_reg_entries.get(w3c_cred_cred["rev_reg_id"])[
-                        w3c_cred_cred.get("timestamp")
-                    ]
-                )
-                rev_reg_index = w3c_cred_cred["rev_reg_index"]
-                try:
-
-                    rev_state = await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        CredentialRevocationState.create,
-                        rev_reg_def,
-                        revocation_status_list,
-                        rev_reg_index,
-                        local_tails_path,
-                    )
-                    rev_states[w3c_cred_cred["rev_reg_id"]] = rev_state
-                except AnoncredsError as err:
-                    raise AnonCredsHolderError(
-                        "Error creating revocation state"
-                    ) from err
-
-        anoncreds_holder = AnonCredsHolder(profile)
-        anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
-            presentation_request=anoncreds_proofrequest,
-            requested_credentials_w3c=w3c_creds,
-            credentials_w3c_metadata=w3c_creds_metadata,
-            schemas=schemas,
-            credential_definitions=cred_defs,
-            rev_states=rev_states,
-        )
-
-        # TODO any processing to put the returned proof into DIF format
-        anoncreds_proof["presentation_submission"] = presentation[
-            "presentation_submission"
-        ]
-    else:
-        anoncreds_proof = None
-
-    return (anoncreds_proofrequest, anoncreds_proof, w3c_creds_metadata)
+    return anoncreds_proofrequest, w3c_creds_metadata, w3c_creds
 
 
 def _extract_cred_idx(item_path: str) -> int:
