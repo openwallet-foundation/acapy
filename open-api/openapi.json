@@ -9861,11 +9861,7 @@
           },
           "values" : {
             "additionalProperties" : {
-              "allOf" : [ {
-                "$ref" : "#/definitions/IndyAttrValue"
-              } ],
-              "description" : "Attribute value",
-              "type" : "object"
+              "$ref" : "#/components/schemas/IndyAttrValue"
             },
             "description" : "Credential attributes",
             "type" : "object"

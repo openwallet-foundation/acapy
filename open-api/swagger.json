@@ -8454,11 +8454,7 @@
           "type" : "object",
           "description" : "Credential attributes",
           "additionalProperties" : {
-            "type" : "object",
-            "description" : "Attribute value",
-            "allOf" : [ {
-              "$ref" : "#/definitions/IndyAttrValue"
-            } ]
+            "$ref" : "#/definitions/IndyAttrValue"
           }
         },
         "witness" : {
