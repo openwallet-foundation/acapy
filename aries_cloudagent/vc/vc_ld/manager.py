@@ -29,7 +29,7 @@ from ..ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ..ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..ld_proofs.suites.linked_data_proof import LinkedDataProof
 from ..ld_proofs.validation_result import DocumentVerificationResult
-from ..ld_proofs.schema_validators.construct_validator import construct_validator
+from ..ld_proofs.schema_validators.validator_builder import validator_builder
 from ..ld_proofs.schema_validators.schema_validator_base import VcSchemaValidatorError
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
@@ -301,7 +301,7 @@ class VcLdpManager:
         if credential_schemas:
             for credential_schema in credential_schemas:
                 try:
-                    validator = construct_validator(credential_schema)
+                    validator = validator_builder(credential_schema)
                     validator.validate(credential)
                 except VcSchemaValidatorError as e:
                     raise VcLdpManagerError("credentialSchema validation error") from e

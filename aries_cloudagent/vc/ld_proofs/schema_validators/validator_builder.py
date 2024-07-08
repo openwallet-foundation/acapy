@@ -1,11 +1,12 @@
-"""Vc Schema Validator constructor functions."""
+"""Vc Schema Validator builder functions."""
 
 
+from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
 from .edtech_schema_validator import EdJsonVcSchemaValidator
 from .schema_validator_base import VcSchemaValidator
 
 
-def construct_validator(vc_schema:dict) -> VcSchemaValidator:  
+def validator_builder(vc_schema:dict) -> VcSchemaValidator:  
     """Instantiates a supported Vc Schema Validator for a given credentialSchema.
 
     :param vc_schema: dict containing the schema id and type.
@@ -14,6 +15,7 @@ def construct_validator(vc_schema:dict) -> VcSchemaValidator:
     schema_type = vc_schema.get('type')
     if schema_type == '1EdTechJsonSchemaValidator2019':
         return EdJsonVcSchemaValidator(vc_schema)
+    # TODO: Add support for other credential schema types
     else:
-        return VcSchemaValidator(vc_schema)
+        raise VcSchemaValidatorError(f"Unsupported credentialSchema type: {schema_type}")
     

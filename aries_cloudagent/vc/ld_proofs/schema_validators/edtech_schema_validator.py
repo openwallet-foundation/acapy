@@ -1,9 +1,7 @@
 """1EdTechJsonSchemaValidator2019 credentialSchema validator."""
 
-from typing import List
+from typing import Dict, List
 from jsonschema import Draft201909Validator, ValidationError
-import jsonschema
-
 from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
 from .schema_validator_base import VcSchemaValidator
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
@@ -11,23 +9,28 @@ import json
 
 class EdJsonVcSchemaValidator(VcSchemaValidator):
     """Class implementation for 1EdTechJsonSchemaValidator2019 type."""
-    def __init__(self, vc_schema: dict):
+    def __init__(self, vc_schema: Dict):
         """Initializes the EdJsonVcSchemaValidator."""
-        self._schema_type = self.check_type(vc_schema.get('type'))
-        self._schema_id = self.check_id(vc_schema.get('id'))
+        super().__init__(vc_schema)
 
-    def check_id(self,id) -> str:
+    @property
+    def schema_id(self):
+        """Getter for schema id."""
+        return self._schema_id
+
+    @schema_id.setter
+    def schema_id(self, id):
         """Checks the id follows 1EdTechJsonSchemaValidator2019 type requirements."""
-        if isinstance(id, str) or id is None:
+        if isinstance(id, str) and type is not None:
             if id.startswith("https"):
-                return id
+                self._schema_id = id
             else: 
                 raise VcSchemaValidatorError(
                 f'The HTTP scheme MUST be "https" for {id}'
                 )
         else: 
             raise VcSchemaValidatorError(
-                "credentialSchema id must be a string."
+                "id must be a string."
                 )
     
     def validate(self, vc: VerifiableCredential):
@@ -39,8 +42,9 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
         """
 
         validation_errors = []
-        schema_json = self.download(self.schema_id, {"TLS_1_3": True})
-        validator = Draft201909Validator(schema_json, format_checker=Draft201909Validator.FORMAT_CHECKER)
+        schema_json = self.fetch(self.schema_id)
+        validator = Draft201909Validator(schema_json, 
+                                         format_checker=Draft201909Validator.FORMAT_CHECKER)
         validator.check_schema(schema_json)
 
 
@@ -58,9 +62,7 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
 
         :param errors: the errors to format
         """
-
-        by_relevance = sorted(errors, key=jsonschema.exceptions.relevance)
-
+        
         error_details = []
 
         def traverse_errors(errors):
@@ -70,17 +72,15 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
 
                 details = {
                     "reason": str(error.message),
-                    "credential_path": str('$.' + '.'.join([str(item) for item in error.relative_path])),
-                    "schema_path": [str(item) for item in error.relative_schema_path]
+                    "json_path": error.json_path,
+                    "schema_path": [str(item) for item in error.schema_path]
                 }
                 error_details.append(details)
 
-        traverse_errors(by_relevance)
-        # TODO: Standardize?
-        prefix = "Credential does not conform to Schema"
+        traverse_errors(errors)
 
         error = {
-            "message": prefix,
+            "message": "Credential does not conform to Schema",
             "details": error_details
         }
         return json.dumps(error)

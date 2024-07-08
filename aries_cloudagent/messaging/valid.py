@@ -889,8 +889,8 @@ class CredentialSchema(Validator):
     """Credential schema."""
 
     EXAMPLE = {
-        "id": "https://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json",
-        "type": "1EdTechJsonSchemaValidator2019"
+        "id": "https://example.org/examples/degree.json",
+        "type": "JsonSchemaValidator2018"
     }
 
     def __init__(self) -> None:
@@ -911,15 +911,14 @@ class CredentialSchema(Validator):
                 raise ValidationError(
                         f'credential schema {schema} must have a type'
                     ) from None
-                
-            if "id" in schema:
-                uri_validator = Uri()
-                try:
-                    uri_validator(schema["id"])
-                except ValidationError:
-                    raise ValidationError(
-                        f'credential schema id {schema["id"]} must be URI'
-                    ) from None
+
+            uri_validator = Uri()
+            try:
+                uri_validator(schema["id"])
+            except ValidationError:
+                raise ValidationError(
+                    f'credential schema id {schema["id"]} must be URI'
+                ) from None
 
         return value
 
@@ -1060,4 +1059,4 @@ INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
 INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
 
 CREDENTIAL_SCHEMA_VALIDATE = CredentialSchema()
-CREDENTIAL_SCHEMA_EXAMPLE = CredentialStatus.EXAMPLE
+CREDENTIAL_SCHEMA_EXAMPLE = CredentialSchema.EXAMPLE

@@ -1,5 +1,6 @@
 """Base class for performing Verifiable Credential validation using credentialSchemas."""
-from typing import Dict, Optional
+from abc import ABC, abstractmethod
+from typing import Dict
 from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
 import urllib.parse as urllib_parse
@@ -9,12 +10,12 @@ from ....version import __version__
 
 
 
-class VcSchemaValidator:
+class VcSchemaValidator(ABC):
     """Base class for a single Verifiable Credential Schema Instance."""
-    def __init__(self, *, vc_schema: Dict) -> None:
+    def __init__(self, vc_schema: Dict) -> None:
         """Initializes the VcSchemaValidator."""
-        self._schema_type = self.check_type(vc_schema.get('type'))
-        self._schema_id = self.check_id(vc_schema.get('id'))
+        self.schema_type = vc_schema.get('type')
+        self.schema_id = vc_schema.get('id')
     
     @property
     def schema_type(self):
@@ -22,13 +23,10 @@ class VcSchemaValidator:
         return self._schema_type
     
     @schema_type.setter
-    def schema_type(self, value):
-        self.schema_type = self.check_type(value)
-
-    def check_type(self, type) -> str:
+    def schema_type(self, type):
         """Checks type is valid."""
         if isinstance(type, str) and type is not None:
-            return type
+            self._schema_type = type
         else: 
             raise VcSchemaValidatorError(
                 "type must be defined and a string."
@@ -40,18 +38,16 @@ class VcSchemaValidator:
         return self._schema_id
     
     @schema_id.setter
-    def schema_id(self, value):
-        self.schema_id = self.check_id(value)
-    
-    def check_id(self, id) -> str:
+    def schema_id(self, id):
         """Checks id is valid."""
-        if isinstance(id, str) or type is None:
-            return id
+        if isinstance(id, str) and type is not None:
+            self._schema_id = id
         else: 
             raise VcSchemaValidatorError(
                 "id must be a string."
                 )
 
+    @abstractmethod
     def validate(self, vc: VerifiableCredential):
         """Validate a verifiable credential with its provided credentialSchema.
 
@@ -59,39 +55,39 @@ class VcSchemaValidator:
         :raises VcSchemaValidatorError: errors for the invalid VC.
         :returns True if valid.
         """
-        raise VcSchemaValidatorError(
-            f"{self.schema_type} type is not supported for validating."
-        )
     
-    def download(self, url: str, options: Optional[Dict], **kwargs):
+    def fetch(self, url: str, **kwargs):
         """Retrieves a schema JSON document from the given URL.
 
-        :param url: the URL of the schema to download
-        :param options: 
+        :param url: the URL of the schema to fetch
         :return: the Schema JSON object
         """
-        options = options or {}
+
+        # validate URL
+        pieces = urllib_parse.urlparse(url)
+        if (
+            not all([pieces.scheme, pieces.netloc])
+            or pieces.scheme not in ["http", "https"]
+            or set(pieces.netloc)
+            > set(string.ascii_letters + string.digits + "-.:")
+        ):
+            raise VcSchemaValidatorError(
+                'URL could not be dereferenced; only "http" and "https" '             
+                "URLs are supported.", 
+                {"url": url})
+        
+        headers = {"Accept": "application/json"}
+        headers["User-Agent"] = f"AriesCloudAgent/{__version__}"
 
         try:
-            # validate URL
-            pieces = urllib_parse.urlparse(url)
-            if (
-                not all([pieces.scheme, pieces.netloc])
-                or pieces.scheme not in ["http", "https"]
-                or set(pieces.netloc)
-                > set(string.ascii_letters + string.digits + "-.:")
-            ):
-                raise VcSchemaValidatorError(
-                    'URL could not be dereferenced; only "http" and "https" '             
-                    "URLs are supported.", 
-                    {"url": url})
-
-        except Exception as cause:
-            raise VcSchemaValidatorError(cause)
-        headers = options.get("headers")
-        if headers is None:
-            headers = {"Accept": "application/json"}
-        headers["User-Agent"] = f"AriesCloudAgent/{__version__}"
-        
-        response = requests.get(url, headers=headers, **kwargs)
-        return response.json()
+            response = requests.get(url, headers=headers, **kwargs)
+            response.raise_for_status() 
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise VcSchemaValidatorError("A connection error occurred:", str(e))
+        except requests.exceptions.HTTPError as e:
+            raise VcSchemaValidatorError("An HTTP error occurred:", str(e))
+        except requests.exceptions.Timeout as e:
+            raise VcSchemaValidatorError("The request timed out:", str(e))     
+        except requests.exceptions.RequestException as e:
+            raise VcSchemaValidatorError("An error occurred:", str(e))

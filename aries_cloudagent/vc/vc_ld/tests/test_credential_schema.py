@@ -15,6 +15,7 @@ from ..models.options import LDProofVCOptions
 from ...tests.data import (
     TEST_LD_DOCUMENT_CORRECT_SCHEMA,
     TEST_LD_DOCUMENT_INCORRECT_SCHEMA,
+    TEST_LD_DOCUMENT_INCORRECT_URL
 )
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
@@ -64,5 +65,17 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
             with pytest.raises(VcSchemaValidatorError) as validator_error:
                 await self.ldp_manager.prepare_credential(vc, self.options)
     
-            assert '''"reason": "\'2.1\' is not of type \'number\'", "credential_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
+            assert '''"reason": "\'2.1\' is not of type \'number\'", "json_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
+        assert ldp_manager_error.value.args[0] == 'credentialSchema validation error'
+
+    async def test_prepare_detail_invalid_url(
+        self
+    ):
+        vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_INCORRECT_URL)
+
+        with pytest.raises(VcLdpManagerError) as ldp_manager_error:
+            with pytest.raises(VcSchemaValidatorError) as validator_error:
+                await self.ldp_manager.prepare_credential(vc, self.options)
+
+            assert '''The HTTP scheme MUST be "https" for http://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json''' in validator_error.value.args[0]
         assert ldp_manager_error.value.args[0] == 'credentialSchema validation error'

@@ -259,7 +259,6 @@ class VerifiableCredential(BaseModel):
             return [
                 schema.get("id")
                 for schema in self._credential_schema
-                if schema.get("id")
             ]
     
     @credential_schema.setter
@@ -274,10 +273,14 @@ class VerifiableCredential(BaseModel):
             else credential_schema
         )
 
-        # loop trough all credential schemas and check for valid id uri
+        # loop through all credential schemas and check for valid id uri
         for schema in schemas:
             if schema.get("id"):
                 uri_validator(schema.get("id"))
+                if not isinstance(schema.get("type"), str) or schema.get("type") is None:
+                    raise ValidationError(schema.get("id"), "must also reference a type.")
+            else: 
+                raise ValidationError("credentialSchema id is required")
 
         self._credential_schema = credential_schema
 
@@ -307,7 +310,7 @@ class VerifiableCredential(BaseModel):
                 and self.issuance_date == o.issuance_date
                 and self.expiration_date == o.expiration_date
                 and self.credential_subject == o.credential_subject
-                and self._credential_schema == o._credential_schema
+                and self.credential_schema == o.credential_schema
                 and self.credential_status == o.credential_status
                 and self.proof == o.proof
                 and self.extra == o.extra
