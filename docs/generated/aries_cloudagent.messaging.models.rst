@@ -32,3 +32,11 @@ aries\_cloudagent.messaging.models.openapi module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.messaging.models.paginated\_query module
+----------------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.models.paginated_query
+   :members:
+   :undoc-members:
+   :show-inheritance:

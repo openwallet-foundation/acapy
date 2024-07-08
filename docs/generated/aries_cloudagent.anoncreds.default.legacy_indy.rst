@@ -17,6 +17,14 @@ aries\_cloudagent.anoncreds.default.legacy\_indy.author module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.anoncreds.default.legacy\_indy.recover module
+---------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.anoncreds.default.legacy_indy.recover
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.anoncreds.default.legacy\_indy.registry module
 ----------------------------------------------------------------
 

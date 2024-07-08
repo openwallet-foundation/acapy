@@ -49,14 +49,6 @@ aries\_cloudagent.storage.in\_memory module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.storage.indy module
--------------------------------------
-
-.. automodule:: aries_cloudagent.storage.indy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.storage.record module
 ---------------------------------------
 
