@@ -1301,7 +1301,11 @@ class DIFPresExchHandler:
             return result_vp[0]
         return result_vp
 
-    def __add_dif_fields_to_vp(self, vp: dict, submission_property: PresentationSubmission) -> dict:
+    def __add_dif_fields_to_vp(
+        self,
+        vp: dict,
+        submission_property: PresentationSubmission
+    ) -> dict:
         vp["@context"].append(PRESENTATION_SUBMISSION_JSONLD_CONTEXT)
         vp["type"].append(PRESENTATION_SUBMISSION_JSONLD_TYPE)
         vp["presentation_submission"] = submission_property.serialize()
