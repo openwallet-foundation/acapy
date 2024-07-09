@@ -32,7 +32,6 @@ async def create_signed_anoncreds_presentation(
     purpose: ProofPurpose = None,
     challenge: str = None,
     domain: str = None,
-    holder: bool = True,
 ) -> tuple[dict, dict, list]:
     """Sign the presentation with the passed signature suite.
 
@@ -65,11 +64,9 @@ async def create_signed_anoncreds_presentation(
     if not purpose:
         purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
-    # validate structure of presentation
-    anoncreds_proofrequest, w3c_creds_metadata, w3c_creds = (
-        await prepare_data_for_presentation(
-            presentation, credentials, pres_definition, profile, challenge
-        )
+    w3c_creds = await _load_w3c_credentials(credentials)
+    anoncreds_proofrequest, w3c_creds_metadata = await prepare_data_for_presentation(
+        presentation, w3c_creds, pres_definition, profile, challenge
     )
 
     anoncreds_verifier = AnonCredsVerifier(profile)
@@ -80,31 +77,45 @@ async def create_signed_anoncreds_presentation(
         rev_reg_entries,
     ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
 
-    # TODO possibly refactor this into a couple of methods -
-    # one to create the proof request and another to sign it
-    # (the holder flag is a bit of a hack)
-    if holder:
-        rev_states = await create_rev_states(
-            w3c_creds_metadata, rev_reg_defs, rev_reg_entries
-        )
-        anoncreds_holder = AnonCredsHolder(profile)
-        anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
-            presentation_request=anoncreds_proofrequest,
-            requested_credentials_w3c=w3c_creds,
-            credentials_w3c_metadata=w3c_creds_metadata,
-            schemas=schemas,
-            credential_definitions=cred_defs,
-            rev_states=rev_states,
-        )
+    rev_states = await create_rev_states(
+        w3c_creds_metadata, rev_reg_defs, rev_reg_entries
+    )
+    anoncreds_holder = AnonCredsHolder(profile)
+    anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
+        presentation_request=anoncreds_proofrequest,
+        requested_credentials_w3c=w3c_creds,
+        credentials_w3c_metadata=w3c_creds_metadata,
+        schemas=schemas,
+        credential_definitions=cred_defs,
+        rev_states=rev_states,
+    )
 
-        # TODO any processing to put the returned proof into DIF format
-        anoncreds_proof["presentation_submission"] = presentation[
-            "presentation_submission"
-        ]
-    else:
-        anoncreds_proof = None
+    # TODO any processing to put the returned proof into DIF format
+    anoncreds_proof["presentation_submission"] = presentation["presentation_submission"]
 
-    return (anoncreds_proofrequest, anoncreds_proof, w3c_creds_metadata)
+    return anoncreds_proof
+
+
+async def _load_w3c_credentials(credentials: list) -> list:
+    """_load_w3c_credentials.
+
+    Args:
+        credentials (list): The credentials to load
+
+    Returns:
+        list: A list of W3C credentials
+    """
+    w3c_creds = []
+    for credential in credentials:
+        try:
+            w3c_cred = W3cCredential.load(credential)
+            w3c_creds.append(w3c_cred)
+        except Exception as err:
+            raise LinkedDataProofException(
+                "Error loading credential as W3C credential"
+            ) from err
+
+    return w3c_creds
 
 
 async def create_rev_states(
@@ -161,7 +172,7 @@ async def create_rev_states(
 
 async def prepare_data_for_presentation(
     presentation,
-    credentials,
+    w3c_creds,
     pres_definition,
     profile,
     challenge,
@@ -170,33 +181,22 @@ async def prepare_data_for_presentation(
 
     Args:
         presentation (dict): The presentation to prepare
-        credentials (list): The credentials to use
+        w3c_creds (list): The W3C credentials
         pres_definition (dict): The presentation definition
         profile (Profile): The profile to use
         challenge (str): The challenge to use
-
-    Raises:
-        LinkedDataProofException: Error loading credential as W3C credential
 
     Returns:
         tuple[dict[str, Any], list, list]: A tuple of the anoncreds proof
             request, the W3C credentials metadata, and the W3C credentials
     """
+
+    if not challenge:
+        raise LinkedDataProofException("A challenge is required")
+
     pres_submission = presentation["presentation_submission"]
     descriptor_map = pres_submission["descriptor_map"]
-
-    w3c_creds = []
-    w3c_creds_metadata = []
-    for credential in credentials:
-        try:
-            w3c_cred = W3cCredential.load(credential)
-            w3c_creds.append(w3c_cred)
-            w3c_creds_metadata.append({})
-        except Exception as err:
-            raise LinkedDataProofException(
-                "Error loading credential as W3C credential"
-            ) from err
-
+    w3c_creds_metadata = [{} for _ in range(len(w3c_creds))]
     anoncreds_registry = profile.inject(AnonCredsRegistry)
     pres_name = (
         pres_definition.get("name") if pres_definition.get("name") else "Proof request"
@@ -325,7 +325,7 @@ async def prepare_data_for_presentation(
             else:
                 print("... skipping:", path)
 
-    return anoncreds_proofrequest, w3c_creds_metadata, w3c_creds
+    return anoncreds_proofrequest, w3c_creds_metadata
 
 
 def _extract_cred_idx(item_path: str) -> int:

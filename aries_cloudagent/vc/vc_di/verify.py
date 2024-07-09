@@ -6,7 +6,10 @@ from ..ld_proofs import (
     ProofPurpose,
 )
 from ..vc_ld.validation_result import PresentationVerificationResult
-from .prove import create_signed_anoncreds_presentation
+from .prove import (
+    prepare_data_for_presentation,
+    _load_w3c_credentials,
+)
 
 
 async def verify_signed_anoncredspresentation(
@@ -40,17 +43,14 @@ async def verify_signed_anoncredspresentation(
 
     credentials = presentation["verifiableCredential"]
     pres_definition = pres_req["presentation_definition"]
+    w3c_creds = await _load_w3c_credentials(credentials)
 
-    (anoncreds_pres_req, _signed_vp, cred_metadata) = (
-        await create_signed_anoncreds_presentation(
-            profile=profile,
-            pres_definition=pres_definition,
-            presentation=presentation,
-            credentials=credentials,
-            challenge=challenge,
-            domain=domain,
-            holder=False,
-        )
+    (anoncreds_pres_req, cred_metadata) = await prepare_data_for_presentation(
+        presentation=presentation,
+        w3c_creds=w3c_creds,
+        pres_definition=pres_definition,
+        profile=profile,
+        challenge=challenge,
     )
 
     try:

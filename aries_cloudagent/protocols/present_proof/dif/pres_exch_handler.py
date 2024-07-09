@@ -1309,14 +1309,12 @@ class DIFPresExchHandler:
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
             if self.proof_type == ("anoncreds-2023"):
-                (_proof_req, signed_vp, _cred_meta) = (
-                    await create_signed_anoncreds_presentation(
-                        profile=self.profile,
-                        pres_definition=pd.serialize(),
-                        presentation=vp,
-                        credentials=applicable_creds_list,
-                        challenge=challenge,
-                    )
+                signed_vp = await create_signed_anoncreds_presentation(
+                    profile=self.profile,
+                    pres_definition=pd.serialize(),
+                    presentation=vp,
+                    credentials=applicable_creds_list,
+                    challenge=challenge,
                 )
             else:
                 issue_suite = await self._get_issue_suite(
