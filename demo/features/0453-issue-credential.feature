@@ -24,7 +24,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |            |           |
        | --public-did --multitenant             | --multitenant --log-file  | driverslicense | Data_DL_NormalizedValues |            |           |
 
-    @Release @WalletType_Askar_AnonCreds @BasicTest
+    @Release @WalletType_Askar_AnonCreds @BasicTest @cred_type_vc_di
     Examples:
        | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
        | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           |
@@ -62,7 +62,7 @@ Feature: RFC 0453 Aries agent issue credential
     When "Acme" offers a credential with data <Credential_data>
     Then "Bob" has the credential issued
 
-    @WalletType_Askar_AnonCreds @SwitchCredTypeTest
+    @WalletType_Askar_AnonCreds @SwitchCredTypeTest @cred_type_vc_di
     Examples:
        | Acme_capabilities                                                         | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra | New_Cred_Type |
        | --public-did --wallet-type askar-anoncreds                                | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | vc_di         |
