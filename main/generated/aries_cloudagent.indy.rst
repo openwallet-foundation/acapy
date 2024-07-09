@@ -14,7 +14,6 @@ Subpackages
 
    aries_cloudagent.indy.credx
    aries_cloudagent.indy.models
-   aries_cloudagent.indy.sdk
 
 Submodules
 ----------
