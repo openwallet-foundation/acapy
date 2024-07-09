@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [Hyperledger Discord](https://discord.gg/hyperledger) or through an issue in this repo.
 
-**Last Update**: 2024-05-01, Release 0.12.1
+**Last Update**: 2024-07-08, Release 1.0.0rc4
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -22,7 +22,7 @@ ACA-Py and other Aries Frameworks and Agents.
 | AIP Version | Supported | Notes |
 |  - | :-------: | -------- |
 | AIP 1.0     | :white_check_mark:  | Fully supported. |
-| AIP 2.0     | :white_check_mark:  | Fully supported, with a couple of very minor exceptions noted [below](#aip-20). |
+| AIP 2.0     | :white_check_mark:  | Fully supported. |
 
 A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can be found [later in this document](#supported-rfcs).
 
@@ -77,9 +77,9 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | --- | :--: | -- |
 | [Aries Askar] | :white_check_mark: | Recommended - Aries Askar provides equivalent/evolved secure storage and cryptography support to the "indy-wallet" part of the Indy SDK. When using Askar (via the `--wallet-type askar` startup parameter), other functionality is handled by [CredX](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
 | [Aries Askar]-AnonCreds | :white_check_mark: | Recommended - When using Askar/AnonCreds (via the `--wallet-type askar-anoncreds` startup parameter), other functionality is handled by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions).<br><br>This `wallet-type` will eventually be the same as `askar` when we have fully integrated the AnonCreds RS library into ACA-Py. |
-| [Indy SDK](https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage) | :warning: Deprecated | **To be removed in the next Major/Minor release of ACA-Py** Full support for the features of the "indy-wallet" secure storage capabilities found in the Indy SDK. |
+| [Indy SDK](https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage) | :x: | **Removed in ACA-Py Release 1.0.0rc4** |
 
-> New installations of ACA-Py should **NOT** use the [Indy SDK]. Existing deployments using the [Indy SDK] should transition to [Aries Askar] and related components as soon as possible.
+> Existing deployments using the [Indy SDK] **MUST** transition to [Aries Askar] and related components as soon as possible. See the [Indy SDK to Askar Migration Guide] for guidance.
 
 [Aries Askar]: https://github.com/hyperledger/aries-askar
 [Indy SDK]: https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage

@@ -42,14 +42,6 @@ aries\_cloudagent.ledger.error module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.ledger.indy module
-------------------------------------
-
-.. automodule:: aries_cloudagent.ledger.indy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.ledger.indy\_vdr module
 -----------------------------------------
 
