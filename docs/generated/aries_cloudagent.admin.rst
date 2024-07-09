@@ -33,6 +33,14 @@ aries\_cloudagent.admin.request\_context module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.admin.routes module
+-------------------------------------
+
+.. automodule:: aries_cloudagent.admin.routes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.admin.server module
 -------------------------------------
 

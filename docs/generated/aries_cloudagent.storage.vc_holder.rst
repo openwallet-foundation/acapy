@@ -33,14 +33,6 @@ aries\_cloudagent.storage.vc\_holder.in\_memory module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.storage.vc\_holder.indy module
-------------------------------------------------
-
-.. automodule:: aries_cloudagent.storage.vc_holder.indy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.storage.vc\_holder.vc\_record module
 ------------------------------------------------------
 

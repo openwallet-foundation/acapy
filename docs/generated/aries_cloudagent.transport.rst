@@ -43,6 +43,14 @@ aries\_cloudagent.transport.stats module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.transport.v2\_pack\_format module
+---------------------------------------------------
+
+.. automodule:: aries_cloudagent.transport.v2_pack_format
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.transport.wire\_format module
 -----------------------------------------------
 
