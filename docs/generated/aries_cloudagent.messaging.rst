@@ -85,6 +85,14 @@ aries\_cloudagent.messaging.util module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.messaging.v2\_agent\_message module
+-----------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.v2_agent_message
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.messaging.valid module
 ----------------------------------------
 

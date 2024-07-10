@@ -49,6 +49,14 @@ aries\_cloudagent.utils.env module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.utils.general module
+--------------------------------------
+
+.. automodule:: aries_cloudagent.utils.general
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.utils.http module
 -----------------------------------
 

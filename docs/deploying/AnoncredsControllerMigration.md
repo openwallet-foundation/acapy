@@ -1,6 +1,6 @@
-# Anoncreds Controller Migration
+# AnonCreds Controller Migration
 
-To upgrade an agent to use anoncreds a controller should implement the required changes to endpoints and payloads in a way that is backwards compatible. The controller can then trigger the upgrade via the upgrade endpoint.
+To upgrade an agent to use AnonCreds a controller should implement the required changes to endpoints and payloads in a way that is backwards compatible. The controller can then trigger the upgrade via the upgrade endpoint.
 
 ## Step 1 - Endpoint Payload and Response Changes
 
@@ -10,12 +10,12 @@ A good way to implement this with backwards compatibility is to get the wallet t
 
 ## Schemas
 
-#### Creating a Schema:
+### Creating a Schema:
 
 - Change endpoint from **POST /schemas** to **POST /anoncreds/schema**
 - Change payload and parameters from
 
-```
+```yml
 params
  - conn_id
  - create_transaction_for_endorser
@@ -144,12 +144,12 @@ to
 }
 ```
 
-#### Getting schemas:
+#### Getting schemas
 
 - Change endpoint from **GET /schemas/created** to **GET /anoncreds/schemas**
 - Response payloads have no change
 
-#### Getting a schema:
+#### Getting a schema
 
 - Change endpoint from **GET /schemas/{schema_id}** to **GET /anoncreds/schema/{schema_id}**
 - Response payload changed from
@@ -185,12 +185,12 @@ to
 
 ## Credential Definitions
 
-#### Creating a credential definition:
+### Creating a credential definition
 
 - Change endpoint from **POST /credential-definitions** to **POST /anoncreds/credential-definition**
 - Change payload and parameters from
 
-```
+```yml
 params
  - conn_id
  - create_transaction_for_endorser
@@ -297,14 +297,14 @@ With Endorsement:
 }
 ```
 
-#### Getting credential definitions:
+### Getting credential definitions
 
-- Change endpoint from **GET /credential-definitons/created** to **GET /anoncreds/credential-defintions**
+- Change endpoint from **GET /credential-definitions/created** to **GET /anoncreds/credential-definitions**
 - Response payloads have no change
 
-#### Getting a credential definition:
+### Getting a credential definition
 
-- Change endpoint from **GET /credential-definitons/{schema_id}** to **GET /anoncreds/credential-defintion/{cred_def_id}**
+- Change endpoint from **GET /credential-definitions/{schema_id}** to **GET /anoncreds/credential-definition/{cred_def_id}**
 - Response payload changed from
 
 ```json
@@ -345,7 +345,7 @@ to
 
 Most of the changes with revocation endpoints only require prepending `/anoncreds` to the path. There are some other subtle changes listed below.
 
-#### Create and publish registry definition
+### Create and publish registry definition
 
 - The endpoints **POST /revocation/create-registry** and **POST /revocation/registry/{rev_reg_id}/definition** have been replaced by the single endpoint **POST /anoncreds/revocation-registry-definition**
 - Instead of creating the registry with **POST /revocation/create-registry** and payload
@@ -359,7 +359,7 @@ Most of the changes with revocation endpoints only require prepending `/anoncred
 
 - And then publishing with **POST /revocation/registry/{rev_reg_id}/definition**
 
-```
+```yml
 params
  - conn_id
  - create_transaction_for_endorser
@@ -483,12 +483,12 @@ to
 }
 ```
 
-#### Send revocation entry or list to ledger
+### Send revocation entry or list to ledger
 
 - Changes from **POST /revocation/registry/{rev_reg_id}/entry** to **POST /anoncreds/revocation-list**
 - Change from
 
-```
+```yml
 params
  - conn_id
  - create_transaction_for_endorser
@@ -529,27 +529,27 @@ to
 
 ```
 
-#### Get current active registry:
+### Get current active registry:
 
 - Change from **GET /revocation/active-registry/{cred_def_id}** to **GET /anoncreds/revocation/active-registry/{cred_def_id}**
 - No payload changes
 
-#### Rotate active registry
+### Rotate active registry
 
 - Change from **POST /revocation/active-registry/{cred_def_id}/rotate** to **POST /anoncreds/revocation/active-registry/{cred_def_id}/rotate**
 - No payload changes
 
-#### Get credential revocation status
+### Get credential revocation status
 
 - Change from **GET /revocation/credential-record** to **GET /anoncreds/revocation/credential-record**
 - No payload changes
 
-#### Publish revocations
+### Publish revocations
 
 - Change from **POST /revocation/publish-revocations** to **POST /anoncreds/revocation/publish-revocations**
 - Change payload and parameters from
 
-```
+```yml
 params
  - conn_id
  - create_transaction_for_endorser
@@ -583,69 +583,69 @@ to
 
 - options are not required
 
-#### Get registries
+### Get registries
 
 - Change from **GET /revocation/registries/created** to **GET /anoncreds/revocation/registries**
 - No payload changes
 
-#### Get registry
+### Get registry
 
 - Changes from **GET /revocation/registry/{rev_reg_id}** to **GET /anoncreds/revocation/registry/{rev_reg_id}**
 - No payload changes
 
-#### Fix reocation state
+### Fix reocation state
 
 - Changes from **POST /revocation/registry/{rev_reg_id}/fix-revocation-entry-state** to **POST /anoncreds/revocation/registry/{rev_reg_id}/fix-revocation-state**
 - No payload changes
 
-#### Get number of issued credentials
+### Get number of issued credentials
 
 - Changes from **GET /revocation/registry/{rev_reg_id}/issued** to **GET /anoncreds/revocation/registry/{rev_reg_id}/issued**
 - No payload changes
 
-#### Get credential details
+### Get credential details
 
 - Changes from **GET /revocation/registry/{rev_reg_id}/issued/details** to **GET /anoncreds/revocation/registry/{rev_reg_id}/issued/details**
 - No payload changes
 
-#### Get revoked credential details
+### Get revoked credential details
 
 - Changes from **GET /revocation/registry/{rev_reg_id}/issued/indy_recs** to **GET /anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs**
 - No payload changes
 
-#### Set state manually
+### Set state manually
 
 - Changes from **PATCH /revocation/registry/{rev_reg_id}/set-state** to **PATCH /anoncreds/revocation/registry/{rev_reg_id}/set-state**
 - No payload changes
 
-#### Upload tails file
+### Upload tails file
 
 - Changes from **PUT /revocation/registry/{rev_reg_id}/tails-file** to **PUT /anoncreds/registry/{rev_reg_id}/tails-file**
 - No payload changes
 
-#### Download tails file
+### Download tails file
 
 - Changes from **GET /revocation/registry/{rev_reg_id}/tails-file** to **GET /anoncreds/revocation/registry/{rev_reg_id}/tails-file**
 - No payload changes
 
-#### Revoke a credential
+### Revoke a credential
 
 - Changes from **POST /revocation/revoke** to **POST /anoncreds/revocation/revoke**
 - Change payload and parameters from
 
-#### Clear pending revocations
+### Clear pending revocations
 
 - **POST /revocation/clear-pending-revocations** has been removed.
 
-#### Delete tails file
+### Delete tails file
 
 - Endpoint **DELETE /revocation/delete-tails-server** has been removed
 
-#### Update tails file
+### Update tails file
 
 - Endpoint **PATCH /revocation/registry/{rev_reg_id}** has been removed
 
-#### Additional Endpoints
+### Additional Endpoints
 
 - **PUT /anoncreds/registry/{rev_reg_id}/active** is available to set the active registry
 
@@ -664,12 +664,12 @@ The behavior for a base wallet (standalone) or admin wallet in multitenant mode 
 3. Call the upgrade endpoint
 4. Scale up the controller instances to handle new endpoints
 
-### Base wallet (standalone) or admin wallet in multitenant mode:
+### Base wallet (standalone) or admin wallet in multitenant mode
 
 The agent will get a 503 error during the upgrade process. Any agent instance will shut down when the upgrade is complete. It is up to the aca-py agent to start up again. After the upgrade is complete the old endpoints will no longer be available and result in a 400 error.
 
 The aca-py agent will work after the restart. However, it will receive a warning for having the wrong wallet type configured. It is recommended to change the `wallet-type` to `askar-anoncreds` in the agent configuration file or start-up command.
 
-### Subwallet (tenant) in multitenancy mode:
+### Subwallet (tenant) in multitenancy mode
 
 The sub-tenant which is in the process of being upgraded will get a 503 error during the upgrade process. All other sub-tenants will continue to operate normally. After the upgrade is complete the sub-tenant will be able to use the new endpoints. The old endpoints will no longer be available and result in a 403 error. Any aca-py agents will remain running after the upgrade and it's not required that the aca-py agent restarts. 

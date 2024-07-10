@@ -21,6 +21,7 @@ Subpackages
    aries_cloudagent.connections
    aries_cloudagent.core
    aries_cloudagent.did
+   aries_cloudagent.didcomm_v2
    aries_cloudagent.holder
    aries_cloudagent.indy
    aries_cloudagent.ledger
