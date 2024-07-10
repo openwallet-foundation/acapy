@@ -1685,6 +1685,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../deploying/AnoncredsControllerMigration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Controller Migration to use AnonCreds Rust
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../deploying/Poetry/" class="md-nav__link">
         
   
@@ -2135,6 +2156,41 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#design-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Design Goals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2152,8 +2208,10 @@
 
 
 <h1 id="upgrade-via-api-design">Upgrade via API Design<a class="headerlink" href="#upgrade-via-api-design" title="Permanent link">&para;</a></h1>
-<h4 id="to-isolate-an-upgrade-process-and-trigger-it-via-api-the-following-pattern-was-designed-to-handle-multitenant-scenarios-it-includes-an-is_upgrading-record-in-the-walletdb-and-a-middleware-to-prevent-requests-during-the-upgrade-process">To isolate an upgrade process and trigger it via API the following pattern was designed to handle multitenant scenarios. It includes an is_upgrading record in the wallet(DB) and a middleware to prevent requests during the upgrade process.<a class="headerlink" href="#to-isolate-an-upgrade-process-and-trigger-it-via-api-the-following-pattern-was-designed-to-handle-multitenant-scenarios-it-includes-an-is_upgrading-record-in-the-walletdb-and-a-middleware-to-prevent-requests-during-the-upgrade-process" title="Permanent link">&para;</a></h4>
-<h4 id="the-diagam-below-descripes-the-sequence-of-events-for-the-anoncreds-upgrade-process-which-it-was-designed-for-but-the-architecture-can-be-used-for-any-upgrade-process">The diagam below descripes the sequence of events for the anoncreds upgrade process which it was designed for, but the architecture can be used for any upgrade process.<a class="headerlink" href="#the-diagam-below-descripes-the-sequence-of-events-for-the-anoncreds-upgrade-process-which-it-was-designed-for-but-the-architecture-can-be-used-for-any-upgrade-process" title="Permanent link">&para;</a></h4>
+<h2 id="design-goals">Design Goals<a class="headerlink" href="#design-goals" title="Permanent link">&para;</a></h2>
+<p>To isolate an upgrade process and trigger it via API the following pattern was designed to handle multitenant scenarios. It includes an is_upgrading record in the wallet(DB) and a middleware to prevent requests during the upgrade process.</p>
+<h2 id="flow">Flow<a class="headerlink" href="#flow" title="Permanent link">&para;</a></h2>
+<p>The diagram below describes the sequence of events for the anoncreds upgrade process which it was designed, but the architecture can be used for any upgrade process.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant A1 as Agent 1
     participant M1 as Middleware
@@ -2241,13 +2299,15 @@
     M1--&gt;&gt;A1: OK
 
     Note over A2: Same as Agent 1</code></pre>
-<h5 id="an-example-of-the-implementation-can-be-found-via-the-anoncreds-upgrade-components">An example of the implementation can be found via the anoncreds upgrade components.<a class="headerlink" href="#an-example-of-the-implementation-can-be-found-via-the-anoncreds-upgrade-components" title="Permanent link">&para;</a></h5>
-<div class="highlight"><pre><span></span><code>- `aries_cloudagent/wallet/routes.py` in the `upgrade_anoncreds` controller 
-- the upgrade code in `wallet/anoncreds_upgrade.py`
-- the middleware in `admin/server.py` in the `upgrade_middleware` function
-- the singleton sets in `wallet/singletons.py`
-- the startup process in `core/conductor.py` in the `check_for_wallet_upgrades_in_progress` function
-</code></pre></div>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<p>An example of the implementation can be found via the anoncreds upgrade components.</p>
+<ul>
+<li><code>aries_cloudagent/wallet/routes.py</code> in the <code>upgrade_anoncreds</code> controller </li>
+<li>the upgrade code in <code>wallet/anoncreds_upgrade.py</code></li>
+<li>the middleware in <code>admin/server.py</code> in the <code>upgrade_middleware</code> function</li>
+<li>the singleton sets in <code>wallet/singletons.py</code></li>
+<li>the startup process in <code>core/conductor.py</code> in the <code>check_for_wallet_upgrades_in_progress</code> function</li>
+</ul>
 
 
 

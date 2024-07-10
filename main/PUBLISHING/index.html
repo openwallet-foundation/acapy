@@ -1691,6 +1691,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../deploying/AnoncredsControllerMigration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Controller Migration to use AnonCreds Rust
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deploying/Poetry/" class="md-nav__link">
         
   
@@ -2178,6 +2199,16 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <ol>
 <li>
 <p>Create a PR branch from an updated <code>main</code> branch.</p>
+</li>
+<li>
+<p>See if there are any Document Site <code>mkdocs</code> changes needed. Run the script
+   <code>./scripts/prepmkdocs.sh; mkdocs</code>. Watch the log, noting particularly if
+   there are new documentation files that are in the docs folder and not
+   referenced in the mkdocs navigation. If there is, update the <code>mkdocs.yml</code>
+   file as necessary. On completion of the testing, run the script
+   <code>./scripts/prepmkdocs clean</code> to undo the temporary changes to the docs. Be
+   sure to do the last <code>clean</code> step -- <strong>DO NOT MERGE THE TEMPORARY DOC
+   CHANGES.</strong></p>
 </li>
 <li>
 <p>Update the CHANGELOG.md to add the new release.  Only create a new section when working on the first release candidate for a new release. When transitioning from one release candidate to the next, or to an official release, just update the title and date of the change log section.</p>
