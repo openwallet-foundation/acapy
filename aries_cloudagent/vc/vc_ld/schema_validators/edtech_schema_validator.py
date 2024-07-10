@@ -2,7 +2,7 @@
 
 from typing import Dict, List
 from jsonschema import Draft201909Validator, ValidationError
-from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
+from .error import VcSchemaValidatorError
 from .schema_validator_base import VcSchemaValidator
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
 import json
@@ -20,7 +20,7 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
 
     @schema_id.setter
     def schema_id(self, id):
-        """Checks the id follows 1EdTechJsonSchemaValidator2019 type requirements."""
+        """Checks the id follows 1EdTechJsonSchemaValidator2019 requirements."""
         if isinstance(id, str) and type is not None:
             if id.startswith("https"):
                 self._schema_id = id
@@ -31,6 +31,21 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
         else: 
             raise VcSchemaValidatorError(
                 "id must be a string."
+                )
+        
+    @property
+    def schema_type(self):
+        """Getter for schema type."""
+        return self._schema_type
+        
+    @schema_type.setter
+    def schema_type(self, type):
+        """Checks the type follows 1EdTechJsonSchemaValidator2019 requirements."""
+        if type == '1EdTechJsonSchemaValidator2019':
+            self._schema_type = type  
+        else: 
+            raise VcSchemaValidatorError(
+                "type must be 1EdTechJsonSchemaValidator2019."
                 )
     
     def validate(self, vc: VerifiableCredential):

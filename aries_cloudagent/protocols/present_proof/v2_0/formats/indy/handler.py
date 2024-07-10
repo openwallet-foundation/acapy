@@ -377,4 +377,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         )
         pres_ex_record.verified = json.dumps(verified)
         pres_ex_record.verified_msgs = list(set(verified_msgs))
+        # credentialSchema validation only applies to DIF, indy creds are inherently valid
+        pres_ex_record.validated = "true"
+        pres_ex_record.validated_msgs = None
         return pres_ex_record

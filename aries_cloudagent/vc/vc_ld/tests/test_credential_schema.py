@@ -5,7 +5,7 @@ from aries_cloudagent.core.in_memory.profile import InMemoryProfile
 from aries_cloudagent.resolver.default.key import KeyDIDResolver
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
-from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
+from ..schema_validators.error import VcSchemaValidatorError
 from aries_cloudagent.wallet.default_verification_key_strategy import BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy
 import pytest
 from ....wallet.did_method import  DIDMethods

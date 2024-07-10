@@ -1,8 +1,8 @@
 """Base class for performing Verifiable Credential validation using credentialSchemas."""
 from abc import ABC, abstractmethod
 from typing import Dict
-from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
-from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
+from .error import VcSchemaValidatorError
+from ..models.credential import VerifiableCredential
 import urllib.parse as urllib_parse
 import string
 import requests

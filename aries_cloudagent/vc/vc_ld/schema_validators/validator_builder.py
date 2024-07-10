@@ -1,7 +1,7 @@
 """Vc Schema Validator builder functions."""
 
 
-from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
+from .error import VcSchemaValidatorError
 from .edtech_schema_validator import EdJsonVcSchemaValidator
 from .schema_validator_base import VcSchemaValidator
 

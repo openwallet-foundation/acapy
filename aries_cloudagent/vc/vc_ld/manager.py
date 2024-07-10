@@ -6,6 +6,9 @@ from typing import Dict, List, Optional, Type, Union, cast
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
+from aries_cloudagent.vc.vc_ld.schema_validation_result import ValidationResult
+from aries_cloudagent.vc.vc_ld.validate import validate_presentation
+
 from ...core.profile import Profile
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
@@ -29,11 +32,11 @@ from ..ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ..ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..ld_proofs.suites.linked_data_proof import LinkedDataProof
 from ..ld_proofs.validation_result import DocumentVerificationResult
-from ..ld_proofs.schema_validators.validator_builder import validator_builder
-from ..ld_proofs.schema_validators.schema_validator_base import VcSchemaValidatorError
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
 from .external_suite import ExternalSuiteNotFoundError, ExternalSuiteProvider
+from .schema_validators.validator_builder import validator_builder
+from .schema_validators.schema_validator_base import VcSchemaValidatorError
 from .issue import issue as ldp_issue
 from .models.credential import VerifiableCredential
 from .models.linked_data_proof import LDProof
@@ -500,4 +503,13 @@ class VcLdpManager:
             suites=await self._get_all_proof_suites(),
             document_loader=self.profile.inject(DocumentLoader),
             challenge=options.challenge,
+        )
+    
+    async def validate_presentation(
+            self, vp: VerifiablePresentation
+    ) -> ValidationResult:
+        """Validate a VP with a Linked Data Proof."""
+        
+        return await validate_presentation(
+            presentation=vp.serialize()
         )

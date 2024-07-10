@@ -61,6 +61,8 @@ class V20PresExRecord(BaseExchangeRecord):
         pres: Union[V20Pres, Mapping] = None,  # aries message
         verified: str = None,
         verified_msgs: list = None,
+        validated: str = None,
+        validated_msgs: list = None,
         auto_present: bool = False,
         auto_verify: bool = False,
         error_msg: str = None,
@@ -81,6 +83,8 @@ class V20PresExRecord(BaseExchangeRecord):
         self._pres = V20Pres.serde(pres)
         self.verified = verified
         self.verified_msgs = verified_msgs
+        self.validated = validated
+        self.validated_msgs = validated_msgs
         self.auto_present = auto_present
         self.auto_verify = auto_verify
         self.error_msg = error_msg
@@ -219,6 +223,8 @@ class V20PresExRecord(BaseExchangeRecord):
                     "state",
                     "verified",
                     "verified_msgs",
+                    "validated",
+                    "validated_msgs",
                     "auto_present",
                     "auto_verify",
                     "error_msg",
@@ -336,6 +342,23 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         fields.Str(
             required=False,
             metadata={"description": "Proof verification warning or error information"},
+        ),
+        required=False,
+    )
+    validated = fields.Str(
+        required=False,
+        validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether credentials presented are valid: 'true' or 'false'",
+            "example": "true",
+        },
+    )
+    validated_msgs = fields.List(
+        fields.Str(
+            required=False,
+            metadata={
+                "description": "Credential validation warning or error information"
+            },
         ),
         required=False,
     )
