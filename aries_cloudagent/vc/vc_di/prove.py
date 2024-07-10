@@ -154,7 +154,6 @@ async def create_rev_states(
         )
         rev_reg_index = w3c_cred_cred["rev_reg_index"]
         try:
-
             rev_state = await asyncio.get_event_loop().run_in_executor(
                 None,
                 CredentialRevocationState.create,
@@ -167,7 +166,7 @@ async def create_rev_states(
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error creating revocation state") from err
 
-        return rev_states
+    return rev_states
 
 
 async def prepare_data_for_presentation(
@@ -197,7 +196,6 @@ async def prepare_data_for_presentation(
     pres_submission = presentation["presentation_submission"]
     descriptor_map = pres_submission["descriptor_map"]
     w3c_creds_metadata = [{} for _ in range(len(w3c_creds))]
-    anoncreds_registry = profile.inject(AnonCredsRegistry)
     pres_name = (
         pres_definition.get("name") if pres_definition.get("name") else "Proof request"
     )
@@ -240,6 +238,8 @@ async def prepare_data_for_presentation(
 
         non_revoked_interval = None
         if requires_revoc_status:
+            anoncreds_registry = profile.inject(AnonCredsRegistry)
+
             if not w3c_cred.rev_reg_id:
                 pass
 

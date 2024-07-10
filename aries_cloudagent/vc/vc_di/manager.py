@@ -21,10 +21,8 @@ class VcDiManager:
         self, vp: VerifiablePresentation, options: dict
     ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
-
-        if not options["options"]["challenge"]:
+        if not options.get("options", {}).get("challenge"):
             raise VcDiManagerError("Challenge is required for verifying a VP")
-
         return await verify_signed_anoncredspresentation(
             profile=self.profile,
             presentation=vp.serialize(),
