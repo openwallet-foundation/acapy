@@ -3,9 +3,9 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
+    HandlerException,
     RequestContext,
 )
-
 from ..base_service import BaseMenuService
 from ..messages.perform import Perform
 
@@ -22,6 +22,9 @@ class PerformHandler(BaseHandler):
         """
         self._logger.debug("PerformHandler called with context %s", context)
         assert isinstance(context.message, Perform)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         self._logger.info("Received action menu perform request")
 

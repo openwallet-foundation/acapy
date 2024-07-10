@@ -3,9 +3,9 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
+    HandlerException,
     RequestContext,
 )
-
 from ..manager import V10DiscoveryMgr
 from ..messages.query import Query
 
@@ -17,6 +17,10 @@ class QueryHandler(BaseHandler):
         """Message handler implementation."""
         self._logger.debug("QueryHandler called with context %s", context)
         assert isinstance(context.message, Query)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
+
         profile = context.profile
         mgr = V10DiscoveryMgr(profile)
         reply = await mgr.receive_query(context.message)
