@@ -1,6 +1,7 @@
 """Verifiable Credential and Presentation validation methods."""
 
 import asyncio
+from typing import Union
 from pyld.jsonld import JsonLdProcessor
 
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
@@ -10,11 +11,14 @@ from .schema_validation_result import ValidationResult
 
 async def _validate_credential(
     *,
-    credential: dict,
+    credential: Union[dict, VerifiableCredential],
 ) -> ValidationResult:
     """Validate credential against credentialSchema if present."""
 
-    vc = VerifiableCredential.deserialize(credential)
+    if isinstance(credential, VerifiableCredential):
+        vc = credential
+    else:
+        vc = VerifiableCredential.deserialize(credential)
 
     errors = []
     credential_schemas = vc.credential_schema
@@ -36,7 +40,7 @@ async def _validate_credential(
 
 async def validate_credential(
     *,
-    credential: dict,
+    credential: Union[dict, VerifiableCredential],
 ) -> ValidationResult:
     """Validate credential against its credentialSchema.
     

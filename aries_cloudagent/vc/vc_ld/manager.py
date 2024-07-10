@@ -7,7 +7,7 @@ from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
 from aries_cloudagent.vc.vc_ld.schema_validation_result import ValidationResult
-from aries_cloudagent.vc.vc_ld.validate import validate_presentation
+from aries_cloudagent.vc.vc_ld.validate import validate_credential, validate_presentation
 
 from ...core.profile import Profile
 from ...storage.vc_holder.base import VCHolder
@@ -35,8 +35,6 @@ from ..ld_proofs.validation_result import DocumentVerificationResult
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
 from .external_suite import ExternalSuiteNotFoundError, ExternalSuiteProvider
-from .schema_validators.validator_builder import validator_builder
-from .schema_validators.schema_validator_base import VcSchemaValidatorError
 from .issue import issue as ldp_issue
 from .models.credential import VerifiableCredential
 from .models.linked_data_proof import LDProof
@@ -296,18 +294,10 @@ class VcLdpManager:
         if holder_did and holder_did.startswith("did:key") and "id" not in subject:
             subject["id"] = holder_did
 
-        
-        credential_schemas = credential.credential_schema
-        if isinstance(credential_schemas, dict):
-            credential_schemas = [credential_schemas]
-        
-        if credential_schemas:
-            for credential_schema in credential_schemas:
-                try:
-                    validator = validator_builder(credential_schema)
-                    validator.validate(credential)
-                except VcSchemaValidatorError as e:
-                    raise VcLdpManagerError("credentialSchema validation error") from e
+        validation_result = await self.validate_credential(credential)
+        if not validation_result.validated:
+            raise VcLdpManagerError(
+                "credentialSchema validation error", validation_result.errors)
 
         return credential
 
@@ -512,4 +502,13 @@ class VcLdpManager:
         
         return await validate_presentation(
             presentation=vp.serialize()
+        )
+    
+    async def validate_credential(
+            self, vc: VerifiableCredential
+    ) -> ValidationResult:
+        """Validate a credential with a Linked Data Proof."""
+        
+        return await validate_credential(
+            credential=vc
         )

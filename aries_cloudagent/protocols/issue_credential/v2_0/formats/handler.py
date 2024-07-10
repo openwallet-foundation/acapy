@@ -88,7 +88,7 @@ class V20CredFormatHandler(ABC):
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
-        """Receive foramt specific credential offer message."""
+        """Receive format specific credential offer message."""
 
     @abstractmethod
     async def create_request(

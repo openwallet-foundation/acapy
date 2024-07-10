@@ -1,4 +1,4 @@
-"""Test VcLdpManager."""
+"""Test VcLdpManager CredentialSchema."""
 
 from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.core.in_memory.profile import InMemoryProfile
@@ -44,20 +44,12 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
         })
         
 
-    async def test_derive_ld_proofs(self):
+    async def test_prepare_credential(self):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_CORRECT_SCHEMA)
         detail = await self.ldp_manager.prepare_credential(vc, self.options)
         assert detail
-
-    async def test_prepare_detail(
-        self
-    ):
-        vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_CORRECT_SCHEMA)
-        detail = await self.ldp_manager.prepare_credential(vc, self.options)
-        assert detail
-
     
-    async def test_prepare_detail_fail(
+    async def test_prepare_credential_fail(
         self
     ):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_INCORRECT_SCHEMA)
@@ -72,7 +64,6 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
         self
     ):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_INCORRECT_URL)
-
         with pytest.raises(VcLdpManagerError) as ldp_manager_error:
             with pytest.raises(VcSchemaValidatorError) as validator_error:
                 await self.ldp_manager.prepare_credential(vc, self.options)
