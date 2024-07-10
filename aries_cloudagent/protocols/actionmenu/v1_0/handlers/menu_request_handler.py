@@ -3,9 +3,9 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
+    HandlerException,
     RequestContext,
 )
-
 from ..base_service import BaseMenuService
 from ..messages.menu_request import MenuRequest
 
@@ -22,6 +22,9 @@ class MenuRequestHandler(BaseHandler):
         """
         self._logger.debug("MenuRequestHandler called with context %s", context)
         assert isinstance(context.message, MenuRequest)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         self._logger.info("Received action menu request")
 

@@ -1,9 +1,11 @@
+from typing import Generator
+
 import pytest
 
 from aries_cloudagent.tests import mock
 
-from ......core.protocol_registry import ProtocolRegistry
 from ......core.goal_code_registry import GoalCodeRegistry
+from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.issue_credential.v1_0.controller import (
@@ -16,7 +18,6 @@ from ......protocols.issue_credential.v1_0.message_types import (
 from ......protocols.present_proof.v1_0.message_types import (
     CONTROLLERS as pres_proof_v1_controller,
 )
-
 from ...handlers.queries_handler import QueriesHandler
 from ...manager import V20DiscoveryMgr
 from ...messages.disclosures import Disclosures
@@ -27,7 +28,7 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
+def request_context() -> Generator[RequestContext, None, None]:
     ctx = RequestContext.test_context()
     protocol_registry = ProtocolRegistry()
     goal_code_registry = GoalCodeRegistry()
@@ -48,6 +49,7 @@ class TestQueriesHandler:
         queries = Queries(queries=test_queries)
         queries.assign_thread_id("test123")
         request_context.message = queries
+        request_context.connection_ready = True
         handler = QueriesHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -67,6 +69,7 @@ class TestQueriesHandler:
         queries = Queries(queries=test_queries)
         queries.assign_thread_id("test123")
         request_context.message = queries
+        request_context.connection_ready = True
         handler = QueriesHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -105,6 +108,7 @@ class TestQueriesHandler:
         queries = Queries(queries=test_queries)
         queries.assign_thread_id("test123")
         request_context.message = queries
+        request_context.connection_ready = True
         handler = QueriesHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -129,6 +133,7 @@ class TestQueriesHandler:
         queries_msg = Queries(queries=test_queries)
         queries_msg.assign_thread_id("test123")
         request_context.message = queries_msg
+        request_context.connection_ready = True
         handler = QueriesHandler()
         responder = MockResponder()
         with mock.patch.object(
