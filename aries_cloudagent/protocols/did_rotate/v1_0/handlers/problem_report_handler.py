@@ -1,6 +1,6 @@
 """Rotate problem report handler."""
 
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from ..manager import DIDRotateManager
@@ -19,6 +19,9 @@ class ProblemReportHandler(BaseHandler):
         """
         self._logger.debug("ProblemReportHandler called with context %s", context)
         assert isinstance(context.message, RotateProblemReport)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         problem_report = context.message
 
