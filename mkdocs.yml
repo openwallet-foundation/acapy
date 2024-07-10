@@ -134,6 +134,7 @@ nav:
     - Deployment Model: deploying/deploymentModel.md
     - Upgrading ACA-Py: deploying/UpgradingACA-Py.md
     - Indy SDK to Askar Migration: deploying/IndySDKtoAskarMigration.md
+    - Controller Migration to use AnonCreds Rust: deploying/AnoncredsControllerMigration.md
     - The Use of Poetry in ACA-Py: deploying/Poetry.md
     - ACA-Py Container Images: deploying/ContainerImagesAndGithubActions.md
     - Databases: deploying/Databases.md
