@@ -11,6 +11,7 @@ from .contexts import (
     VACCINATION_V1,
     ODRL,
     SCHEMA_ORG,
+    DIF_PRESENTATION_SUBMISSION_V1,
 )
 from ..ld_proofs.constants import (
     SECURITY_CONTEXT_V2_URL,
@@ -49,6 +50,7 @@ DOCUMENTS = {
     "https://www.w3.org/ns/odrl.jsonld": ODRL,
     "http://schema.org/": SCHEMA_ORG,
     "https://w3id.org/vaccination/v1": VACCINATION_V1,
+    "https://identity.foundation/presentation-exchange/submission/v1": DIF_PRESENTATION_SUBMISSION_V1,
 }
 
 
