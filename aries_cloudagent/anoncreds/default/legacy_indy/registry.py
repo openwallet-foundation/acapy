@@ -740,14 +740,18 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         return ledger_id, ledger
 
     async def get_revocation_registry_delta(
-        self, profile: Profile, rev_reg_def_id: str, timestamp: None
+        self,
+        profile: Profile,
+        rev_reg_def_id: str,
+        timestamp_from: Optional[int] = 0,
+        timestamp_to: Optional[int] = None,
     ) -> Tuple[dict, int]:
         """Fetch the revocation registry delta."""
         ledger_id, ledger = await self._get_ledger(profile, rev_reg_def_id)
 
         async with ledger:
             delta, timestamp = await ledger.get_revoc_reg_delta(
-                rev_reg_def_id, timestamp_to=timestamp
+                rev_reg_def_id, timestamp_from=timestamp_from, timestamp_to=timestamp_to
             )
 
             if delta is None:
@@ -759,13 +763,17 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         return delta, timestamp
 
     async def get_revocation_list(
-        self, profile: Profile, rev_reg_def_id: str, timestamp: int
+        self,
+        profile: Profile,
+        rev_reg_def_id: str,
+        timestamp_from: Optional[int] = 0,
+        timestamp_to: Optional[int] = None,
     ) -> GetRevListResult:
         """Get the revocation registry list."""
         _, ledger = await self._get_ledger(profile, rev_reg_def_id)
 
         delta, timestamp = await self.get_revocation_registry_delta(
-            profile, rev_reg_def_id, timestamp
+            profile, rev_reg_def_id, timestamp_from, timestamp_to
         )
 
         async with ledger:

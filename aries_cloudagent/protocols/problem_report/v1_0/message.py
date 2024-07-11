@@ -47,6 +47,7 @@ class ProblemReport(AgentMessage):
             noticed_time: Datetime when the problem was noticed
             tracking_uri: URI for tracking the problem
             escalation_uri: URI for escalating the problem
+            kwargs: Additional keyword arguments for message
         """
         super().__init__(**kwargs)
         self.description = description if description else None
@@ -159,6 +160,7 @@ class ProblemReportSchema(AgentMessageSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has neither indy nor ld_proof

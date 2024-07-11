@@ -229,6 +229,7 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             record_id: The ID of the record to find
+            for_update: Whether to lock the record for update
         """
 
         storage = session.inject(BaseStorage)
@@ -250,10 +251,12 @@ class BaseRecord(BaseModel):
         """Retrieve a record by tag filter.
 
         Args:
+            cls: The record class
             session: The profile session to use
             tag_filter: The filter dictionary to apply
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
+            for_update: Whether to lock the record for update
         """
 
         storage = session.inject(BaseStorage)
@@ -311,12 +314,20 @@ class BaseRecord(BaseModel):
         storage = session.inject(BaseStorage)
 
         tag_query = cls.prefix_tag_filter(tag_filter)
-        if limit is not None or offset is not None:
+        post_filter = post_filter_positive or post_filter_negative
+
+        # set flag to indicate if pagination is requested or not, then set defaults
+        paginated = limit is not None or offset is not None
+        limit = limit or DEFAULT_PAGE_SIZE
+        offset = offset or 0
+
+        if not post_filter and paginated:
+            # Only fetch paginated records if post-filter is not being applied
             rows = await storage.find_paginated_records(
                 type_filter=cls.RECORD_TYPE,
                 tag_query=tag_query,
-                limit=limit or DEFAULT_PAGE_SIZE,
-                offset=offset or 0,
+                limit=limit,
+                offset=offset,
             )
         else:
             rows = await storage.find_all_records(
@@ -324,24 +335,37 @@ class BaseRecord(BaseModel):
                 tag_query=tag_query,
             )
 
+        num_results_post_filter = 0  # used if applying pagination post-filter
+        num_records_to_match = limit + offset  # ignored if not paginated
+
         result = []
         for record in rows:
-            vals = json.loads(record.value)
-            if match_post_filter(
-                vals,
-                post_filter_positive,
-                positive=True,
-                alt=alt,
-            ) and match_post_filter(
-                vals,
-                post_filter_negative,
-                positive=False,
-                alt=alt,
-            ):
-                try:
+            try:
+                vals = json.loads(record.value)
+                if not post_filter:  # pagination would already be applied if requested
                     result.append(cls.from_storage(record.id, vals))
-                except BaseModelError as err:
-                    raise BaseModelError(f"{err}, for record id {record.id}")
+                else:
+                    continue_processing = (
+                        not paginated or num_results_post_filter < num_records_to_match
+                    )
+                    if not continue_processing:
+                        break
+
+                    post_filter_match = match_post_filter(
+                        vals, post_filter_positive, positive=True, alt=alt
+                    ) and match_post_filter(
+                        vals, post_filter_negative, positive=False, alt=alt
+                    )
+
+                    if not post_filter_match:
+                        continue
+
+                    if num_results_post_filter >= offset:  # append only after offset
+                        result.append(cls.from_storage(record.id, vals))
+
+                    num_results_post_filter += 1
+            except (BaseModelError, json.JSONDecodeError, TypeError) as err:
+                raise BaseModelError(f"{err}, for record id {record.id}")
         return result
 
     async def save(
@@ -359,7 +383,7 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             reason: A reason to add to the log
             log_params: Additional parameters to log
-            override: Override configured logging regimen, print to stderr instead
+            log_override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
         """
 

@@ -7,9 +7,9 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
-from typing import Callable, Coroutine, Union
 import warnings
 import weakref
+from typing import Callable, Coroutine, Union
 
 from aiohttp.web import HTTPException
 
@@ -17,12 +17,13 @@ from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
-from ..messaging.base_message import BaseMessage
+from ..messaging.base_message import BaseMessage, DIDCommVersion
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
-from ..messaging.responder import BaseResponder, SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
+from ..messaging.responder import SKIP_ACTIVE_CONN_CHECK_MSG_TYPES, BaseResponder
 from ..messaging.util import datetime_now
+from ..messaging.v2_agent_message import V2AgentMessage
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -108,12 +109,55 @@ class Dispatcher:
             A pending task instance resolving to the handler task
 
         """
+
+        if (
+            self.profile.settings.get("experiment.didcomm_v2")
+            and inbound_message.receipt.didcomm_version == DIDCommVersion.v2
+        ):
+            handle = self.handle_v2_message(profile, inbound_message, send_outbound)
+        else:
+            handle = self.handle_v1_message(profile, inbound_message, send_outbound)
+
         return self.put_task(
-            self.handle_message(profile, inbound_message, send_outbound),
+            handle,
             complete,
         )
 
-    async def handle_message(
+    async def handle_v2_message(
+        self,
+        profile: Profile,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+    ):
+        """Handle a DIDComm V2 message."""
+
+        # send a DCV2 Problem Report here for testing, and to punt procotol handling down
+        # the road a bit
+        context = RequestContext(profile)
+        context.message_receipt = inbound_message.receipt
+        responder = DispatcherResponder(
+            context,
+            inbound_message,
+            send_outbound,
+            reply_session_id=inbound_message.session_id,
+            reply_to_verkey=inbound_message.receipt.sender_verkey,
+        )
+
+        context.injector.bind_instance(BaseResponder, responder)
+        error_result = V2AgentMessage(
+            message={
+                "type": "https://didcomm.org/report-problem/2.0/problem-report",
+                "body": {
+                    "comment": "No Handlers Found",
+                    "code": "e.p.msg.not-found",
+                },
+            }
+        )
+        if inbound_message.receipt.thread_id:
+            error_result.message["pthid"] = inbound_message.receipt.thread_id
+        await responder.send_reply(error_result)
+
+    async def handle_v1_message(
         self,
         profile: Profile,
         inbound_message: InboundMessage,
@@ -298,6 +342,7 @@ class DispatcherResponder(BaseResponder):
             context: The request context of the incoming message
             inbound_message: The inbound message triggering this handler
             send_outbound: Async function to send outbound message
+            kwargs: Additional keyword arguments
 
         """
         super().__init__(**kwargs)
@@ -315,6 +360,10 @@ class DispatcherResponder(BaseResponder):
 
         Args:
             message: The message payload
+            kwargs: Additional keyword arguments
+
+        Returns:
+            OutboundMessage: The created outbound message.
         """
         context = self._context()
         if not context:
@@ -338,6 +387,7 @@ class DispatcherResponder(BaseResponder):
 
         Args:
             message: The `OutboundMessage` to be sent
+            kwargs: Additional keyword arguments
         """
         context = self._context()
         if not context:

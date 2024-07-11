@@ -600,27 +600,40 @@ class OutOfBandManager(BaseConnectionManager):
     ) -> InvitationRecord:
         """Generate new connection invitation.
 
-        This interaction represents an out-of-band communication channel. In the future
-        and in practice, these sort of invitations will be received over any number of
-        channels such as SMS, Email, QR Code, NFC, etc.
+        This method generates a new connection invitation, which represents an out-of-band
+        communication channel. In the future and in practice, these sort of invitations
+        will be received over any number of channels such as SMS, Email, QR Code, NFC,
+        etc.
 
         Args:
-            my_label: label for this connection
-            my_endpoint: endpoint where other party can reach me
-            auto_accept: auto-accept a corresponding connection request
-                (None to use config)
-            public: set to create an invitation from the public DID
-            hs_protos: list of handshake protocols to include
-            multi_use: set to True to create an invitation for multiple-use connection
-            alias: optional alias to apply to connection for later use
-            attachments: list of dicts in form of {"id": ..., "type": ...}
-            service_accept: Optional list of mime types in the order of preference of
-            the sender that the receiver can use in responding to the message
-            protocol_version: OOB protocol version [1.0, 1.1]
-            goal_code: Optional self-attested code for receiver logic
-            goal: Optional self-attested string for receiver logic
+            my_label (Optional[str]): Label for this connection.
+            my_endpoint (Optional[str]): Endpoint where the other party can reach me.
+            auto_accept (Optional[bool]): Auto-accept a corresponding connection request
+                (None to use config).
+            public (bool): Set to True to create an invitation from the public DID.
+            use_did (Optional[str]): DID to use for the invitation.
+            use_did_method (Optional[str]): DID method to use for the invitation.
+            hs_protos (Optional[Sequence[HSProto]]): List of handshake protocols to
+                include.
+            multi_use (bool): Set to True to create an invitation for multiple-use
+                connection.
+            create_unique_did (bool): Set to True to create a unique DID for the
+                invitation.
+            alias (Optional[str]): Optional alias to apply to the connection for later
+                use.
+            attachments (Optional[Sequence[Mapping]]): List of attachments in the form of
+                {"id": ..., "type": ...}.
+            metadata (Optional[dict]): Additional metadata for the invitation.
+            mediation_id (Optional[str]): Mediation ID for the invitation.
+            service_accept (Optional[Sequence[Text]]): Optional list of mime types in the
+                order of preference of the sender that the receiver can use in responding
+                to the message.
+            protocol_version (Optional[Text]): OOB protocol version [1.0, 1.1].
+            goal_code (Optional[Text]): Optional self-attested code for receiver logic.
+            goal (Optional[Text]): Optional self-attested string for receiver logic.
+
         Returns:
-            Invitation record
+            InvitationRecord: The generated invitation record.
 
         """
         creator = InvitationCreator(
@@ -1151,6 +1164,7 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             oob_record: OOB Record
             conn_record: Connection record associated with the oob record
+            version: The version of the OOB protocol
 
         Returns:
             OobRecord: The oob record with updated state and reuse_msg_id.
@@ -1238,6 +1252,7 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             reuse_msg: The `HandshakeReuse` to process
             receipt: The message receipt
+            conn_rec: The connection record associated with the message
 
         Returns:
             None
@@ -1313,6 +1328,7 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             reuse_accepted_msg: The `HandshakeReuseAccept` to process
             receipt: The message receipt
+            conn_record: The connection record associated with the message
 
         Returns:
             None
@@ -1392,6 +1408,7 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             problem_report: The `OOBProblemReport` to process
             receipt: The message receipt
+            conn_record: The connection record associated with the OOB record
 
         Returns:
             None

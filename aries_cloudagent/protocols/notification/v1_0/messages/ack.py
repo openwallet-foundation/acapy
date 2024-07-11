@@ -23,6 +23,7 @@ class V10Ack(AgentMessage):
 
         Args:
             status: Status (default OK)
+            kwargs: Additional message keyword arguments
 
         """
         super().__init__(**kwargs)

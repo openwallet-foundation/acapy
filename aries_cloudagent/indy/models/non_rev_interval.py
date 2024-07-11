@@ -22,6 +22,7 @@ class IndyNonRevocationInterval(BaseModel):
         Args:
             fro: earliest time of interest
             to: latest time of interest
+            kwargs: additional attributes
 
         """
         super().__init__(**kwargs)

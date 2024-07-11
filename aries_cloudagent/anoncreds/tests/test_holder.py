@@ -18,7 +18,6 @@ from anoncreds import (
 )
 from aries_askar import AskarError, AskarErrorCode
 
-from ..holder import AnonCredsHolder, AnonCredsHolderError
 from aries_cloudagent.anoncreds.tests.mock_objects import (
     MOCK_CRED,
     MOCK_CRED_DEF,
@@ -35,7 +34,10 @@ from aries_cloudagent.tests import mock
 from aries_cloudagent.wallet.error import WalletNotFoundError
 
 from .. import holder as test_module
+from ..holder import AnonCredsHolder, AnonCredsHolderError
 from ..models.anoncreds_cred_def import CredDef, CredDefValue, CredDefValuePrimary
+from ..models.anoncreds_revocation import GetRevListResult, RevList
+from ..registry import AnonCredsRegistry
 
 
 class MockCredReceived:
@@ -84,6 +86,8 @@ class MockCredEntry:
         mock_cred = deepcopy(MOCK_CRED)
         if rev_reg:
             mock_cred["rev_reg_id"] = "rev-reg-id"
+
+        mock_cred["rev_reg_index"] = 1
         self.name = "name"
         self.value = mock_cred
         self.raw_value = mock_cred
@@ -377,25 +381,30 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_credential_revoked(self, mock_handle):
-        mock_ledger = mock.MagicMock(
-            get_revoc_reg_delta=mock.CoroutineMock(
-                return_value=(
-                    {
-                        "value": {
-                            "revoked": [100],
-                        }
-                    },
-                    0,
-                ),
-            )
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry,
+            mock.MagicMock(
+                get_revocation_list=mock.CoroutineMock(
+                    return_value=GetRevListResult(
+                        revocation_list=RevList(
+                            issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+                            current_accumulator="21 124C594B6B20E41B681E92B2C43FD165EA9E68BC3C9D63A82C8893124983CAE94 21 124C5341937827427B0A3A32113BD5E64FB7AB39BD3E5ABDD7970874501CA4897 6 5438CB6F442E2F807812FD9DC0C39AFF4A86B1E6766DBB5359E86A4D70401B0F 4 39D1CA5C4716FFC4FE0853C4FF7F081DFD8DF8D2C2CA79705211680AC77BF3A1 6 70504A5493F89C97C225B68310811A41AD9CD889301F238E93C95AD085E84191 4 39582252194D756D5D86D0EED02BF1B95CE12AED2FA5CD3C53260747D891993C",
+                            revocation_list=[0, 1, 1, 0],
+                            timestamp=1669640864487,
+                            rev_reg_def_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:4ae1cc6c-f6bd-486c-8057-88f2ce74e960",
+                        ),
+                        resolution_metadata={},
+                        revocation_registry_metadata={},
+                    )
+                )
+            ),
         )
         mock_handle.fetch = mock.CoroutineMock(return_value=MockCredEntry())
         assert (
             await self.holder.credential_revoked(
-                ledger=mock_ledger,
                 credential_id="cred-id",
-                to=None,
-                fro=None,
+                timestamp_to=None,
+                timestamp_from=None,
             )
             is False
         )
@@ -415,8 +424,9 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         mock_handle.remove.call_args_list[0].args == ("credential", "cred-id")
         mock_handle.remove.call_args_list[0].args == ("attribute-mime-types", "cred-id")
 
-        # not found, don't raise error
-        await self.holder.delete_credential("cred-id")
+        # not found
+        with self.assertRaises(AnonCredsHolderError):
+            await self.holder.delete_credential("cred-id")
         # other asker error, raise error
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.delete_credential("cred-id")

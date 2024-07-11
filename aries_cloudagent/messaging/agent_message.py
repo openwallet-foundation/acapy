@@ -384,6 +384,7 @@ class AgentMessage(BaseModel, BaseMessage):
         """Copy trace from a json structure.
 
         Args:
+            context: context object
             trace: string containing trace json structure
         """
         if trace:
@@ -480,6 +481,7 @@ class AgentMessageSchema(BaseModelSchema):
 
         Args:
             data: Incoming data to parse
+            kwargs: Additional keyword arguments
 
         Returns:
             Parsed and modified data
@@ -519,6 +521,7 @@ class AgentMessageSchema(BaseModelSchema):
 
         Args:
             obj: The AgentMessage object
+            kwargs: Additional keyword arguments
 
         Returns:
             The AgentMessage object with populated decorators
@@ -533,6 +536,7 @@ class AgentMessageSchema(BaseModelSchema):
 
         Args:
             obj: The AgentMessage object
+            kwargs: Additional keyword arguments
 
         Raises:
             BaseModelError: If a decorator does not validate
@@ -562,7 +566,8 @@ class AgentMessageSchema(BaseModelSchema):
         """Post-dump hook to write the decorators to the serialized output.
 
         Args:
-            obj: The serialized data
+            data: The serialized data
+            kwargs: Additional keyword arguments
 
         Returns:
             The modified data
@@ -581,7 +586,8 @@ class AgentMessageSchema(BaseModelSchema):
         """Post-dump hook to write the signatures to the serialized output.
 
         Args:
-            obj: The serialized data
+            data: The serialized data
+            kwargs: Additional keyword arguments
 
         Returns:
             The modified data

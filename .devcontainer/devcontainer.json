@@ -6,7 +6,7 @@
         "dockerfile": "Dockerfile",
         "context": "..",
         "args": {
-          "VARIANT": "3.9-bullseye",
+          "VARIANT": "3.12-bullseye",
           "POETRY_VERSION": "1.7.1"
         }
     },
@@ -14,7 +14,6 @@
         "vscode": {
             "extensions": [
               "ms-python.python",
-              "ms-python.black-formatter",
               "charliermarsh.ruff"
             ],
             "settings": {
@@ -33,11 +32,9 @@
                         "source.fixAll": true,
                         "source.organizeImports": true
                       },
-                    "editor.defaultFormatter": "ms-python.black-formatter",
-                    "ruff.organizeImports": false
+                    "editor.defaultFormatter": "charliermarsh.ruff",
+                    "ruff.organizeImports": true
                   },
-                "black-formatter.importStrategy": "useBundled",
-                "black-formatter.showNotifications": "always",
                 "ruff.codeAction.fixViolation": {
                     "enable": true
                 },

@@ -50,7 +50,7 @@ class AnonCredsVerifier:
         Args:
             pres_req: presentation request
             pres: corresponding presentation
-
+            cred_defs: credential definitions by cred def id
         """
         msgs = []
         for req_proof_key, pres_key in {
@@ -423,7 +423,7 @@ class AnonCredsVerifier:
                         result = await anoncreds_registry.get_revocation_list(
                             self.profile,
                             identifier["rev_reg_id"],
-                            identifier["timestamp"],
+                            timestamp_to=identifier["timestamp"],
                         )
                         rev_lists[identifier["rev_reg_id"]][
                             identifier["timestamp"]
@@ -453,6 +453,7 @@ class AnonCredsVerifier:
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
+            rev_lists: revocation lists
         """
 
         msgs = []

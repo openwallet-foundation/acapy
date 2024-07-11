@@ -1,6 +1,7 @@
 """Ledger related errors."""
 
 from typing import Generic, TypeVar
+
 from ..core.error import BaseError
 
 
@@ -44,6 +45,8 @@ class LedgerObjectAlreadyExistsError(LedgerError, Generic[T]):
             message: Human readable message text
             obj_id: ledger object id
             obj: ledger object
+            args: additional positional arguments
+            kwargs: additional keyword arguments
 
         """
         super().__init__(message, obj_id, obj, *args, **kwargs)

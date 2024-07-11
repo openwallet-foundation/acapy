@@ -97,6 +97,7 @@ class CredentialManager:
             connection_id: Connection to create offer for
             credential_proposal: The credential proposal with preview
             auto_remove: Flag to automatically remove the record on completion
+            comment: Optional human-readable comment to set in offer message
 
         Returns:
             A tuple of the new credential exchange record and credential offer message
@@ -152,6 +153,7 @@ class CredentialManager:
             schema_version: Schema version for credential proposal
             cred_def_id: Credential definition id for credential proposal
             issuer_did: Issuer DID for credential proposal
+            trace: Whether to trace the operation
 
         Returns:
             Resulting credential exchange record including credential proposal
@@ -229,6 +231,7 @@ class CredentialManager:
 
         Args:
             cred_ex_record: Credential exchange to create offer for
+            counter_proposal: optional proposal to counter
             comment: optional human-readable comment to set in offer message
 
         Returns:
@@ -512,10 +515,17 @@ class CredentialManager:
         """Receive a credential request.
 
         Args:
-            credential_request_message: Credential request to receive
+            message (CredentialRequest): The credential request message to receive.
+            connection_record (Optional[ConnRecord]): The connection record associated
+                with the request.
+            oob_record (Optional[OobRecord]): The out-of-band record associated with the
+                request.
 
         Returns:
-            credential exchange record, retrieved and updated
+            V10CredentialExchange: The credential exchange record, retrieved and updated.
+
+        Raises:
+            StorageNotFoundError: If the credential exchange record is not found.
 
         """
         assert len(message.requests_attach or []) == 1
@@ -576,6 +586,7 @@ class CredentialManager:
             cred_ex_record: The credential exchange record
                 for which to issue a credential
             comment: optional human-readable comment pertaining to credential issue
+            retries: how many times to retry on error
 
         Returns:
             Tuple: (Updated credential exchange record, credential message)

@@ -1,6 +1,7 @@
 """Represents a DID exchange response message under RFC 23."""
 
 from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -36,7 +37,10 @@ class DIDXResponse(AgentMessage):
 
         Args:
             image_url: Optional image URL for this response
+            did: DID for this response
             did_doc_attach: signed DID doc attachment
+            did_rotate_attach: signed DID rotation attachment
+            kwargs: Additional keyword arguments for the message
         """
         super().__init__(**kwargs)
         self.did = did

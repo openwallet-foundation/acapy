@@ -23,10 +23,10 @@ from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
-from ..ledger.base import BaseLedger
 from ..wallet.error import WalletNotFoundError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .models.anoncreds_cred_def import CredDef
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -477,29 +477,36 @@ class AnonCredsHolder:
             raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
+        self, credential_id: str, timestamp_from: int = None, timestamp_to: int = None
     ) -> bool:
-        """Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by credential id.
 
         Args:
-            credential_id: Credential id to check
+            ledger (BaseLedger): The ledger to check for revocation status.
+            credential_id (str): The ID of the credential to check.
+            timestamp_from (int, optional): The earliest timestamp to consider for
+                revocation status. Defaults to None.
+            timestamp_to (int, optional): The latest timestamp to consider for revocation
+                status. Defaults to None.
 
+        Returns:
+            bool: True if the credential is revoked, False otherwise.
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id
 
-        # TODO Use anoncreds registry
-        # check if cred.rev_reg_id is returning None or 'None'
-        if rev_reg_id:
-            cred_rev_id = cred.rev_reg_index
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        rev_list = (
+            await anoncreds_registry.get_revocation_list(
+                self.profile, rev_reg_id, timestamp_from, timestamp_to
             )
-            return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
-        else:
-            return False
+        ).revocation_list
+
+        set_revoked = {
+            index for index, value in enumerate(rev_list.revocation_list) if value == 1
+        }
+
+        return cred.rev_reg_index in set_revoked
 
     async def delete_credential(self, credential_id: str):
         """Remove a credential stored in the wallet.
@@ -515,10 +522,9 @@ class AnonCredsHolder:
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
         except AskarError as err:
-            if err.code == AskarErrorCode.NOT_FOUND:
-                pass
-            else:
-                raise AnonCredsHolderError("Error deleting credential") from err
+            raise AnonCredsHolderError(
+                "Error deleting credential", error_code=err.code
+            ) from err  # noqa: E501
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None
@@ -652,8 +658,8 @@ class AnonCredsHolder:
         Args:
             cred_rev_id: credential revocation id in revocation registry
             rev_reg_def: revocation registry definition
-            rev_reg_delta: revocation delta
-            timestamp: delta timestamp
+            rev_list: revocation registry
+            tails_file_path: path to tails file
 
         Returns:
             the revocation state

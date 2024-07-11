@@ -39,6 +39,7 @@ TRACE_TAG = os.getenv("TRACE_TAG")
 TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
 WEBHOOK_TARGET = os.getenv("WEBHOOK_TARGET")
+ACAPY_DEBUG_WEBHOOKS = os.getenv("ACAPY_DEBUG_WEBHOOKS")
 
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
 
@@ -585,7 +586,8 @@ class DemoAgent:
             # turn on notifications if revocation is enabled
             result.append("--notify-revocation")
         # enable extended webhooks
-        result.append("--debug-webhooks")
+        if ACAPY_DEBUG_WEBHOOKS:
+            result.append("--debug-webhooks")
         # always enable notification webhooks
         result.append("--monitor-revocation-notification")
 
@@ -941,7 +943,7 @@ class DemoAgent:
         future = loop.run_in_executor(
             self.thread_pool_executor, self._process, agent_args, my_env, loop
         )
-        self.proc = await asyncio.wait_for(future, 20, loop=loop)
+        self.proc = await asyncio.wait_for(future, 20)
         if wait:
             await asyncio.sleep(1.0)
             await self.detect_process()
@@ -968,7 +970,7 @@ class DemoAgent:
         loop = asyncio.get_event_loop()
         if self.proc:
             future = loop.run_in_executor(self.thread_pool_executor, self._terminate)
-            result = await asyncio.wait_for(future, 10, loop=loop)
+            await asyncio.wait_for(future, 10)
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port

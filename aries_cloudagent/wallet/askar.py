@@ -3,8 +3,7 @@
 import asyncio
 import json
 import logging
-
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union, cast
 
 from aries_askar import (
     AskarError,
@@ -15,16 +14,14 @@ from aries_askar import (
     SeedMethod,
 )
 
-from .did_parameters_validation import DIDParametersValidation
 from ..askar.didcomm.v1 import pack_message, unpack_message
 from ..askar.profile import AskarProfileSession
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 from ..storage.askar import AskarStorage
-from ..storage.base import StorageRecord, StorageDuplicateError, StorageNotFoundError
-
-from .base import BaseWallet, KeyInfo, DIDInfo
+from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
+from .base import BaseWallet, DIDInfo, KeyInfo
 from .crypto import (
     sign_message,
     validate_seed,
@@ -32,8 +29,9 @@ from .crypto import (
 )
 from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
-from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
+from .did_parameters_validation import DIDParametersValidation
+from .error import WalletDuplicateError, WalletError, WalletNotFoundError
+from .key_type import BLS12381G2, ED25519, X25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
@@ -87,6 +85,7 @@ class AskarWallet(BaseWallet):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -94,6 +93,7 @@ class AskarWallet(BaseWallet):
             key_type: Key type to create
             seed: Seed for key
             metadata: Optional metadata to store with the keypair
+            kid: Optional key identifier
 
         Returns:
             A `KeyInfo` representing the new record
@@ -104,11 +104,20 @@ class AskarWallet(BaseWallet):
         """
         if metadata is None:
             metadata = {}
+
+        if kid:
+            tags = {"kid": kid}
+        else:
+            tags = None
+
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
             await self._session.handle.insert_key(
-                verkey, keypair, metadata=json.dumps(metadata)
+                verkey,
+                keypair,
+                metadata=json.dumps(metadata),
+                tags=tags,
             )
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
@@ -116,6 +125,61 @@ class AskarWallet(BaseWallet):
                     "Verification key already present in wallet"
                 ) from None
             raise WalletError("Error creating signing key") from err
+
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
+
+    async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
+        """Assign a KID to a key.
+
+        This is separate from the create_key method because some DIDs are only
+        known after keys are created.
+
+        Args:
+            verkey: The verification key of the keypair
+            kid: The kid to assign to the keypair
+
+        Returns:
+            A `KeyInfo` representing the keypair
+
+        """
+        key_entry = await self._session.handle.fetch_key(name=verkey, for_update=True)
+        if not key_entry:
+            raise WalletNotFoundError(f"No key entry found for verkey {verkey}")
+
+        key = cast(Key, key_entry.key)
+        metadata = cast(dict, key_entry.metadata)
+        key_types = self.session.inject(KeyTypes)
+        key_type = key_types.from_key_type(key.algorithm.value)
+        if not key_type:
+            raise WalletError(f"Unknown key type {key.algorithm.value}")
+
+        await self._session.handle.update_key(name=verkey, tags={"kid": kid})
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
+
+    async def get_key_by_kid(self, kid: str) -> KeyInfo:
+        """Fetch a key by looking up its kid.
+
+        Args:
+            kid: the key identifier
+
+        Returns:
+            The key identified by kid
+
+        """
+        key_entries = await self._session.handle.fetch_all_keys(
+            tag_filter={"kid": kid}, limit=2
+        )
+        if len(key_entries) > 1:
+            raise WalletDuplicateError(f"More than one key found by kid {kid}")
+
+        entry = key_entries[0]
+        key = cast(Key, entry.key)
+        verkey = bytes_to_b58(key.get_public_bytes())
+        metadata = cast(dict, entry.metadata)
+        key_types = self.session.inject(KeyTypes)
+        key_type = key_types.from_key_type(key.algorithm.value)
+        if not key_type:
+            raise WalletError(f"Unknown key type {key.algorithm.value}")
 
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
 
@@ -510,12 +574,25 @@ class AskarWallet(BaseWallet):
         """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
         Args:
-            did: DID for which to set endpoint
-            endpoint: the endpoint to set, None to clear
-            ledger: the ledger to which to send endpoint update if
-                DID is public or posted
-            endpoint_type: the type of the endpoint/service. Only endpoint_type
-                'endpoint' affects local wallet
+            did (str): The DID for which to set the endpoint.
+            endpoint (str): The endpoint to set. Use None to clear the endpoint.
+            ledger (BaseLedger): The ledger to which to send the endpoint update if the
+                DID is public or posted.
+            endpoint_type (EndpointType, optional): The type of the endpoint/service.
+                Only endpoint_type 'endpoint' affects the local wallet. Defaults to None.
+            write_ledger (bool, optional): Whether to write the endpoint update to the
+                ledger. Defaults to True.
+            endorser_did (str, optional): The DID of the endorser. Defaults to None.
+            routing_keys (List[str], optional): The routing keys to be used.
+                Defaults to None.
+
+        Raises:
+            WalletError: If the DID is not of type 'did:sov'.
+            LedgerConfigError: If no ledger is available but the DID is public.
+
+        Returns:
+            dict: The attribute definition if write_ledger is False, otherwise None.
+
         """
         did_info = await self.get_local_did(did)
         if did_info.method != SOV:
@@ -800,6 +877,9 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
         method = None
     # elif key_type == BLS12381G1:
     #     alg = KeyAlg.BLS12_381_G1
+    elif key_type == X25519:
+        alg = KeyAlg.X25519
+        method = None
     elif key_type == BLS12381G2:
         alg = KeyAlg.BLS12_381_G2
         method = SeedMethod.BlsKeyGen

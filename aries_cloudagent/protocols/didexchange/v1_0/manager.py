@@ -30,7 +30,8 @@ from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
 from ...out_of_band.v1_0.messages.service import Service as OOBService
-from .message_types import ARIES_PROTOCOL as DIDEX_1_1, DIDEX_1_0
+from .message_types import ARIES_PROTOCOL as DIDEX_1_1
+from .message_types import DIDEX_1_0
 from .messages.complete import DIDXComplete
 from .messages.problem_report import DIDXProblemReport, ProblemReportReason
 from .messages.request import DIDXRequest
@@ -90,6 +91,7 @@ class DIDXManager(BaseConnectionManager):
             auto_accept: set to auto-accept invitation (None to use config)
             alias: optional alias to set on record
             mediation_id: record id for mediation with routing_keys, service endpoint
+            protocol: The protocol to use for the connection
 
         Returns:
             The new `ConnRecord` instance
@@ -199,17 +201,38 @@ class DIDXManager(BaseConnectionManager):
         """Create and send a request against a public DID only (no explicit invitation).
 
         Args:
-            their_public_did: public DID to which to request a connection
-            my_label: my label for request
-            my_endpoint: my endpoint
-            mediation_id: record id for mediation with routing_keys, service endpoint
-            use_public_did: use my public DID for this connection
-            goal_code: Optional self-attested code for sharing intent of connection
-            goal: Optional self-attested string for sharing intent of connection
-            auto_accept: auto-accept a corresponding connection request
+            their_public_did (str): Public DID to which to request a connection.
+            my_label (Optional[str], optional): My label for the request.
+                Defaults to None.
+            my_endpoint (Optional[str], optional): My endpoint. Defaults to None.
+            mediation_id (Optional[str], optional): Record ID for mediation with routing
+                keys, service endpoint. Defaults to None.
+            use_public_did (bool, optional): Use my public DID for this connection.
+                Defaults to False.
+            alias (Optional[str], optional): Alias for the connection. Defaults to None.
+            goal_code (Optional[str], optional): Optional self-attested code for sharing
+                intent of connection. Defaults to None.
+            goal (Optional[str], optional): Optional self-attested string for sharing
+                intent of connection. Defaults to None.
+            auto_accept (bool, optional): Auto-accept a corresponding connection request.
+                Defaults to False.
+            protocol (Optional[str], optional): Protocol to use for the connection.
+                Defaults to None.
+            use_did (Optional[str], optional): Local DID to use for the connection.
+                Defaults to None.
+            use_did_method (Optional[str], optional): DID method to use for the
+                connection. Defaults to None.
 
         Returns:
-            The new `ConnRecord` instance
+            ConnRecord: The new `ConnRecord` instance representing the connection.
+
+        Raises:
+            DIDXManagerError: If both `use_did` and `use_did_method` are specified, or
+                if both `use_public_did` and `use_did` are specified, or if both
+                `use_public_did` and `use_did_method` are specified.
+            WalletError: If no public DID is configured.
+            DIDXManagerError: If a connection already exists for the specified
+                `their_public_did` and `my_did`.
 
         """
 
@@ -316,6 +339,7 @@ class DIDXManager(BaseConnectionManager):
                 service endpoint
             goal_code: Optional self-attested code for sharing intent of connection
             goal: Optional self-attested string for sharing intent of connection
+            use_did_method: The DID method to use for the connection
         Returns:
             A new `DIDXRequest` message to send to the other agent
 
@@ -510,7 +534,7 @@ class DIDXManager(BaseConnectionManager):
             recipient_verkey: The recipient verkey: None for public recipient DID
             my_endpoint: My endpoint
             alias: Alias for the connection
-            auto_accept: Auto-accept request against implicit invitation
+            auto_accept_implicit: Auto-accept request against implicit invitation
         Returns:
             The new or updated `ConnRecord` instance
 
@@ -763,6 +787,7 @@ class DIDXManager(BaseConnectionManager):
             my_endpoint: Current agent endpoint
             mediation_id: The record id for mediation that contains routing_keys and
                 service endpoint
+            use_public_did: Use public DID for connection
 
         Returns:
             New `DIDXResponse` message
@@ -797,6 +822,8 @@ class DIDXManager(BaseConnectionManager):
         if conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2"):
             use_did_method = "did:peer:2"
         elif conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4"):
+            use_did_method = "did:peer:4"
+        elif conn_rec.their_did and conn_rec.their_did.startswith("did:peer:1"):
             use_did_method = "did:peer:4"
         else:
             use_did_method = None

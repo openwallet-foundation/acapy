@@ -5,10 +5,10 @@ A request context provided by the admin server to admin route handlers.
 
 from typing import Mapping, Optional, Type
 
-from ..core.profile import Profile, ProfileSession
-from ..config.injector import Injector, InjectionError, InjectType
 from ..config.injection_context import InjectionContext
+from ..config.injector import InjectionError, Injector, InjectType
 from ..config.settings import Settings
+from ..core.profile import Profile, ProfileSession
 from ..utils.classloader import DeferLoad
 
 IN_MEM = DeferLoad("aries_cloudagent.core.in_memory.InMemoryProfile")
@@ -78,6 +78,7 @@ class AdminRequestContext:
 
         Args:
             cls: The base class to retrieve an instance of
+            base_cls: The base class to retrieve an instance of
             settings: An optional mapping providing configuration to the provider
 
         Returns:

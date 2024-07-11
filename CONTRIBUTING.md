@@ -19,7 +19,7 @@ Contributions are made pursuant to the Developer's Certificate of Origin, availa
 
 A configuration for [pre-commit](https://pre-commit.com/) is included in this repository. This is an optional tool to help contributors commit code that follows the formatting requirements enforced by the CI pipeline. Additionally, it can be used to help contributors write descriptive commit messages that can be parsed by changelog generators.
 
-On each commit, pre-commit hooks will run that verify the committed code complies with ruff and is formatted with black. To install the ruff and black checks:
+On each commit, pre-commit hooks will run that verify the committed code complies and formats with ruff. To install the ruff checks:
 
 ```bash
 pre-commit install

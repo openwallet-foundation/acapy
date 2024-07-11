@@ -31,6 +31,7 @@ class TransactionJobToSend(AgentMessage):
 
         Args:
             job: The job that needs to be send
+            kwargs: Additional keyword arguments for the message
 
         """
 

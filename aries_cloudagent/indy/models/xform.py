@@ -1,7 +1,6 @@
 """Utilities to deal with indy."""
 
 from ...indy.holder import IndyHolder
-
 from .pres_preview import IndyPresPreview
 
 
@@ -19,7 +18,7 @@ async def indy_proof_req_preview2indy_requested_creds(
 
     Args:
         indy_proof_req: indy proof request
-        pres_preview: preview from presentation proposal, if applicable
+        preview: preview from presentation proposal, if applicable
         holder: holder injected into current context
 
     """
@@ -121,9 +120,9 @@ def indy_proof_req2non_revoc_intervals(indy_proof_req: dict):
                 indy_proof_req.get("non_revoked"),
             )
             if interval:
-                fro = interval.get("from")
-                to = interval.get("to")
-                if (to is not None) and fro == to:
+                timestamp_from = interval.get("from")
+                timestamp_to = interval.get("to")
+                if (timestamp_to is not None) and timestamp_from == timestamp_to:
                     interval["from"] = 0  # accommodate indy-sdk verify=False if fro=to
             non_revoc_intervals[reft] = interval
     return non_revoc_intervals

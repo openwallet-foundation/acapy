@@ -172,13 +172,19 @@ class AnonCredsIssuer:
         """Create a new credential schema and store it in the wallet.
 
         Args:
-            issuer_id: the DID issuing the credential definition
-            name: the schema name
-            version: the schema version
-            attr_names: a sequence of schema attribute names
+            issuer_id (str): The DID issuing the credential definition.
+            name (str): The schema name.
+            version (str): The schema version.
+            attr_names (Sequence[str]): A sequence of schema attribute names.
+            options (Optional[dict]): Additional options for schema creation.
+                Defaults to None.
 
         Returns:
-            A SchemaResult instance
+            SchemaResult: An instance of SchemaResult.
+
+        Raises:
+            AnonCredsSchemaAlreadyExists: If a similar schema already exists in
+                the records.
 
         """
         options = options or {}
