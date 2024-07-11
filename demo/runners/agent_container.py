@@ -455,8 +455,6 @@ class AriesAgent(DemoAgent):
                 if not pres_request_dif and not pres_request_indy:
                     raise Exception("Invalid presentation request received")
 
-                # TODO for a DIF presentation need to check if it is asking for an anoncreds proof ...
-
                 if pres_request_indy:
                     # include self-attested attributes (not included in credentials)
                     creds_by_reft = {}
