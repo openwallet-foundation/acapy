@@ -1,6 +1,9 @@
 import json
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
+from unittest.mock import MagicMock
+from pyld.jsonld import JsonLdProcessor
+from pyld import jsonld
 
 import anoncreds
 import pytest
@@ -39,6 +42,8 @@ from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfileSession,
 )
 from aries_cloudagent.tests import mock
+from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
+from aries_cloudagent.vc.tests.document_loader import custom_document_loader
 from aries_cloudagent.wallet.error import WalletNotFoundError
 
 from .. import holder as test_module
@@ -71,6 +76,25 @@ class MockCredReceived:
         return MOCK_CRED
 
 
+class MockCredReceivedW3C:
+    def __init__(self, bad_schema=False, bad_cred_def=False):
+        self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
+        self.cred_def_id = (
+            "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
+        )
+
+        if bad_schema:
+            self.schema_id = "bad-schema-id"
+        if bad_cred_def:
+            self.cred_def_id = "bad-cred-def-id"
+
+    def to_json_buffer(self):
+        return b"credential"
+
+    def to_dict(self):
+        return MOCK_W3C_CRED
+
+
 class MockCredential:
     def __init__(self, bad_schema=False, bad_cred_def=False):
         self.bad_schema = bad_schema
@@ -83,6 +107,20 @@ class MockCredential:
 
     def process(self, *args, **kwargs):
         return MockCredReceived(self.bad_schema, self.bad_cred_def)
+
+
+class MockW3Credential:
+    def __init__(self, bad_schema=False, bad_cred_def=False):
+        self.bad_schema = bad_schema
+        self.bad_cred_def = bad_cred_def
+
+    cred = mock.AsyncMock(auto_spec=W3cCredential)
+
+    def to_dict(self):
+        return MOCK_W3C_CRED
+
+    def process(self, *args, **kwargs):
+        return MockCredReceivedW3C(self.bad_schema, self.bad_cred_def)
 
 
 class MockMasterSecret:
@@ -310,6 +348,54 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 MOCK_CRED,
                 {"cred-req-meta": "cred-req-meta"},
             )
+
+    @mock.patch.object(
+        AnonCredsHolder, "get_master_secret", return_value="master-secret"
+    )
+    @mock.patch.object(
+        W3cCredential,
+        "load",
+        side_effect=[
+            MockW3Credential(),
+        ],
+    )
+    @mock.patch.object(
+        Credential,
+        "from_w3c",
+        side_effect=[
+            MockCredential(),
+        ],
+    )
+    async def test_store_credential_w3c(
+        self, mock_load, mock_w3cload, mock_master_secret
+    ):
+
+        self.profile.context.injector.bind_instance(
+            DocumentLoader, custom_document_loader
+        )
+        self.profile.transaction = mock.Mock(
+            return_value=mock.MagicMock(
+                insert=mock.CoroutineMock(return_value=None),
+                commit=mock.CoroutineMock(return_value=None),
+            )
+        )
+
+        with mock.patch.object(jsonld, "expand", return_value=MagicMock()):
+            with mock.patch.object(
+                JsonLdProcessor, "get_values", return_value=["type1"]
+            ):
+                result = await self.holder.store_credential_w3c(
+                    MOCK_CRED_DEF,
+                    MOCK_W3C_CRED,
+                    {"cred-req-meta": "cred-req-meta"},
+                    credential_attr_mime_types={"first_name": "application/json"},
+                )
+
+                assert result is not None
+                assert mock_master_secret.called
+                assert mock_load.called
+                assert mock_w3cload.called
+                assert self.profile.transaction.called
 
     @mock.patch.object(
         AnonCredsHolder, "get_master_secret", return_value="master-secret"
