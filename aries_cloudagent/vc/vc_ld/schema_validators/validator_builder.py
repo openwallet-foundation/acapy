@@ -1,6 +1,7 @@
 """Vc Schema Validator builder functions."""
 
 
+from .type import ED_TECH_JSON_SCHEMA_VALIDATOR_2019
 from .error import VcSchemaValidatorError
 from .edtech_schema_validator import EdJsonVcSchemaValidator
 from .schema_validator_base import VcSchemaValidator
@@ -13,7 +14,7 @@ def validator_builder(vc_schema:dict) -> VcSchemaValidator:
     :returns: VcSchemaValidator the appropriate validator for the given schema. 
     """
     schema_type = vc_schema.get('type')
-    if schema_type == '1EdTechJsonSchemaValidator2019':
+    if schema_type == ED_TECH_JSON_SCHEMA_VALIDATOR_2019:
         return EdJsonVcSchemaValidator(vc_schema)
     # TODO: Add support for other credential schema types
     else:

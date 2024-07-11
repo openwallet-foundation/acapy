@@ -413,6 +413,15 @@ class DebugGroup(ArgumentGroup):
                 "Default: false."
             ),
         )
+        parser.add_argument(
+            "--ignore-unknown-w3c-schemas",
+            action="store_true",
+            env_var="ACAPY_IGNORE_UNKNOWN_W3C_SCHEMAS",
+            help=(
+                "Ignore W3C credentialSchema validation for unsupported types. "
+                "Default: true."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract debug settings."""
@@ -464,6 +473,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.auto_accept_requests"] = True
         if args.auto_respond_messages:
             settings["debug.auto_respond_messages"] = True
+        if args.ignore_unknown_w3c_schemas:
+            settings["debug.ignore_unknown_w3c_schemas"] = True
         return settings
 
 

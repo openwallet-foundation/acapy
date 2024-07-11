@@ -61,7 +61,7 @@ class V20PresExRecord(BaseExchangeRecord):
         pres: Union[V20Pres, Mapping] = None,  # aries message
         verified: str = None,
         verified_msgs: list = None,
-        validated: str = None,
+        validated: bool = None,
         validated_msgs: list = None,
         auto_present: bool = False,
         auto_verify: bool = False,
@@ -345,12 +345,12 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         ),
         required=False,
     )
-    validated = fields.Str(
+    validated = fields.Bool(
         required=False,
-        validate=validate.OneOf(["true", "false"]),
+        validate=validate.OneOf([True, False]),
         metadata={
-            "description": "Whether credentials presented are valid: 'true' or 'false'",
-            "example": "true",
+            "description": "Whether credentials presented are valid: True or False",
+            "example": True,
         },
     )
     validated_msgs = fields.List(

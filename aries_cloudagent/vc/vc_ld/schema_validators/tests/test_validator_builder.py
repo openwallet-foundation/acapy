@@ -26,4 +26,4 @@ class TestValidatorBuilder(TestCase):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_CORRECT_SCHEMA)
         vc_schema_validator = validator_builder(vc.credential_schema[0])
 
-        assert vc_schema_validator is issubclass(EdJsonVcSchemaValidator)
+        assert isinstance(vc_schema_validator, EdJsonVcSchemaValidator)

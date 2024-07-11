@@ -294,10 +294,7 @@ class VcLdpManager:
         if holder_did and holder_did.startswith("did:key") and "id" not in subject:
             subject["id"] = holder_did
 
-        validation_result = await self.validate_credential(credential)
-        if not validation_result.validated:
-            raise VcLdpManagerError(
-                "credentialSchema validation error", validation_result.errors)
+        await self.validate_credential(credential)
 
         return credential
 
@@ -500,15 +497,31 @@ class VcLdpManager:
     ) -> ValidationResult:
         """Validate a VP with a Linked Data Proof."""
         
-        return await validate_presentation(
+        validation_result = await validate_presentation(
             presentation=vp.serialize()
         )
-    
+        await self._handle_validation_config(validation_result)
+        return validation_result
+
     async def validate_credential(
             self, vc: VerifiableCredential
     ) -> ValidationResult:
         """Validate a credential with a Linked Data Proof."""
         
-        return await validate_credential(
+        validation_result = await validate_credential(
             credential=vc
         )
+        await self._handle_validation_config(validation_result)
+        return validation_result
+        
+    async def _handle_validation_config(
+            self, result: ValidationResult
+        )-> ValidationResult:
+        """Handles how validation errors are treated."""
+        if not result.validated:
+            if self.profile.context.settings.get("debug.ignore_unknown_w3c_schemas"):
+                self._logger.debug("credentialSchema validation error: %s", 
+                                   result.errors)
+            else:
+                raise VcLdpManagerError(
+                    "credentialSchema validation error", result.errors)
