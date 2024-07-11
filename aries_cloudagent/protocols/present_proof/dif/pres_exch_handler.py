@@ -1330,16 +1330,14 @@ class DIFPresExchHandler:
         return result_vp
 
     def __add_dif_fields_to_vp(
-        self,
-        vp: dict,
-        submission_property: PresentationSubmission
+        self, vp: dict, submission_property: PresentationSubmission
     ) -> dict:
         vp["@context"].append(PRESENTATION_SUBMISSION_JSONLD_CONTEXT)
         vp["type"].append(PRESENTATION_SUBMISSION_JSONLD_TYPE)
         vp["presentation_submission"] = submission_property.serialize()
         if self.proof_type is BbsBlsSignature2020.signature_type:
             vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-        
+
         return vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
