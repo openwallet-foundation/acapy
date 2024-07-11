@@ -1272,9 +1272,7 @@ class DIFPresExchHandler:
                 )
                 if not issuer_id and len(filtered_creds_list) == 0:
                     vp = await create_presentation(credentials=applicable_creds_list)
-                    vp["presentation_submission"] = submission_property.serialize()
-                    if self.proof_type is BbsBlsSignature2020.signature_type:
-                        vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+                    vp = self.__add_dif_fields_to_vp(vp, submission_property)
                     result_vp.append(vp)
                     continue
                 else:
@@ -1292,9 +1290,7 @@ class DIFPresExchHandler:
                         vp = await create_presentation(
                             credentials=applicable_creds_list
                         )
-                        vp["presentation_submission"] = submission_property.serialize()
-                        if self.proof_type is BbsBlsSignature2020.signature_type:
-                            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+                        vp = self.__add_dif_fields_to_vp(vp, submission_property)
                         result_vp.append(vp)
                         continue
                     else:
@@ -1317,6 +1313,7 @@ class DIFPresExchHandler:
                     challenge=challenge,
                 )
             else:
+                vp = self.__add_dif_fields_to_vp(vp, submission_property)
                 issue_suite = await self._get_issue_suite(
                     issuer_id=issuer_id,
                 )
@@ -1326,10 +1323,24 @@ class DIFPresExchHandler:
                     challenge=challenge,
                     document_loader=document_loader,
                 )
+
             result_vp.append(signed_vp)
         if len(result_vp) == 1:
             return result_vp[0]
         return result_vp
+
+    def __add_dif_fields_to_vp(
+        self,
+        vp: dict,
+        submission_property: PresentationSubmission
+    ) -> dict:
+        vp["@context"].append(PRESENTATION_SUBMISSION_JSONLD_CONTEXT)
+        vp["type"].append(PRESENTATION_SUBMISSION_JSONLD_TYPE)
+        vp["presentation_submission"] = submission_property.serialize()
+        if self.proof_type is BbsBlsSignature2020.signature_type:
+            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+        
+        return vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubject id is derived."""
