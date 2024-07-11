@@ -1,16 +1,13 @@
 """test prove.py"""
 
 import pytest
-from aries_cloudagent import anoncreds
 from aries_cloudagent.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from aries_cloudagent.anoncreds.tests.mock_objects import MOCK_W3CPRES
 from aries_cloudagent.revocation.models.revocation_registry import RevocationRegistry
-from aries_cloudagent.tests import mock
 from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.tests import mock
-from anoncreds import W3cPresentation
-from ....core.in_memory.profile import InMemoryProfile, InMemoryProfileSession
+from ....core.in_memory.profile import InMemoryProfile
 from ....core.profile import Profile
 from ....resolver.default.key import KeyDIDResolver
 from ....resolver.did_resolver import DIDResolver
@@ -20,8 +17,6 @@ from ....wallet.default_verification_key_strategy import (
 )
 from ....wallet.did_method import DIDMethods
 from ...ld_proofs.document_loader import DocumentLoader
-from ..manager import VcDiManager, VcDiManagerError
-from ...vc_ld.models.presentation import VerifiablePresentation
 
 from ..prove import (
     _extract_cred_idx,
