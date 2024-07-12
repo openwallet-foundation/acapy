@@ -92,7 +92,7 @@ class LinkedDataProofSchema(BaseModelSchema):
     )
 
     created = fields.Str(
-        required=True,
+        required=False,
         validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (

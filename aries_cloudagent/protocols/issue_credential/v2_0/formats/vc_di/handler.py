@@ -7,8 +7,8 @@ import datetime
 import json
 import logging
 from typing import Mapping, Tuple
-from anoncreds import W3cCredential
 from ...models.cred_ex_record import V20CredExRecord
+from anoncreds import W3cCredential
 from ...models.detail.indy import (
     V20CredExRecordIndy,
 )
@@ -295,9 +295,10 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             credential=credential,
         )
 
-        return self.get_format_data(
+        cred_offer = self.get_format_data(
             CRED_20_OFFER, json.loads(vcdi_cred_abstract.to_json())
         )
+        return cred_offer
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
@@ -461,7 +462,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             cred_def = await ledger.get_credential_definition(cred_def_id)
-        revocable = cred_def["value"].get("revocation")
+        revocable = True if cred_def["value"].get("revocation") else False
 
         legacy_offer = await self._prepare_legacy_offer(cred_offer, schema_id)
         legacy_request = await self._prepare_legacy_request(cred_request, cred_def_id)
@@ -559,21 +560,22 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         """Store vcdi credential."""
         cred = cred_ex_record.cred_issue.attachment(VCDICredFormatHandler.format)
         cred = cred["credential"]
-
+        try:
+            w3cred = W3cCredential.load(cred)
+        except AnonCredsHolderError as e:
+            LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
         rev_reg_def = None
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         cred_def_result = await anoncreds_registry.get_credential_definition(
             self.profile, cred["proof"][0]["verificationMethod"]
         )
-        # TODO: remove loading of W3cCredential and use the credential directly
-        try:
-            cred_w3c = W3cCredential.load(cred)
-            rev_reg_id = cred_w3c.rev_reg_id
-            rev_reg_index = cred_w3c.rev_reg_index
-        except AnonCredsHolderError as e:
-            LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
-            raise e
-        if rev_reg_id:
+        rev_reg_id = None
+        rev_reg_index = None
+        if (
+            w3cred.rev_reg_id != "None"
+        ):  # String None because rev_reg_id property wrapped str()
+            rev_reg_id = w3cred.rev_reg_id
+
             rev_reg_def_result = (
                 await anoncreds_registry.get_revocation_registry_definition(
                     self.profile, rev_reg_id

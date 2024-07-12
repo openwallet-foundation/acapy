@@ -1,6 +1,7 @@
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
+from aries_cloudagent.vc.vc_di.manager import VcDiManager
 from marshmallow import ValidationError
 from pyld import jsonld
 
@@ -2348,3 +2349,22 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         ) as mock_create_vp:
             mock_create_vp.side_effect = DIFPresExchError("TEST")
             await self.handler.create_pres(record)
+
+    def test_get_type_manager_options(self):
+        profile = InMemoryProfile.test_profile()
+        handler = DIFPresFormatHandler(profile)
+        dif_proof = {"proof": {"type": "DataIntegrityProof"}}
+        pres_request = {
+            "options": {"challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7"}
+        }
+        manager, options = handler._get_type_manager_options(dif_proof, pres_request)
+        assert isinstance(manager, VcDiManager)
+        assert options == pres_request
+
+        dif_proof = {"proof": {"type": "LDPProof"}}
+        pres_request = {
+            "options": {"challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7"}
+        }
+        manager, options = handler._get_type_manager_options(dif_proof, pres_request)
+        assert isinstance(manager, VcLdpManager)
+        assert options.challenge == "3fa85f64-5717-4562-b3fc-2c963f66afa7"
