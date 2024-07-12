@@ -536,7 +536,6 @@ class AnonCredsVerifier:
         ) = await anoncreds_verifier.process_pres_identifiers(cred_metadata)
 
         try:
-            # TODO not sure why this attr causes an error
             del pres["presentation_submission"]
 
             presentation = W3cPresentation.load(pres)

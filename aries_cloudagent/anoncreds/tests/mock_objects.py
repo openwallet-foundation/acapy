@@ -30,13 +30,13 @@ MOCK_PRES_REQ = {
     },
     "requested_predicates": {},
 }
-
+CONTEXT = [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://w3id.org/security/data-integrity/v2",
+    {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
+]
 MOCK_W3CPRES = {
-    "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/security/data-integrity/v2",
-        {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
-    ],
+    "@context": CONTEXT,
     "type": ["VerifiablePresentation"],
     "verifiableCredential": [
         {
@@ -71,12 +71,10 @@ MOCK_W3CPRES = {
         "challenge": "10275921379803826423",
     },
 }
+
+W3C_CRED_DEF_ID = "DyZ6N8yDTQsdJazNGRG1Wa:3:CL:1255405:faber.agent.degree_schema"
 MOCK_W3C_CRED = {
-    "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/security/data-integrity/v2",
-        {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
-    ],
+    "@context": CONTEXT,
     "type": ["VerifiableCredential"],
     "issuer": "DyZ6N8yDTQsdJazNGRG1Wa",
     "credentialSubject": {
@@ -91,7 +89,7 @@ MOCK_W3C_CRED = {
             "cryptosuite": "anoncreds-2023",
             "type": "DataIntegrityProof",
             "proofPurpose": "assertionMethod",
-            "verificationMethod": "DyZ6N8yDTQsdJazNGRG1Wa:3:CL:1255405:faber.agent.degree_schema",
+            "verificationMethod": W3C_CRED_DEF_ID,
             "proofValue": "ukgGEqXNjaGVtYV9pZNkvRHlaNk44eURUUXNkSmF6TkdSRzFXYToyOmRlZ3JlZSBzY2hlbWE6OTQuNDYuNzGrY3JlZF9kZWZfaWTZPUR5WjZOOHlEVFFzZEphek5HUkcxV2E6MzpDTDoxMjU1NDA1OmZhYmVyLmFnZW50LmRlZ3JlZV9zY2hlbWGpc2lnbmF0dXJlgqxwX2NyZWRlbnRpYWyEo21fMtwAIC3M5nrMyTjMr0bM6syCRRgDB8z4TMzdzOrMucy5zKPMisy6zJxTzPB4bVHMszJEzIahYdwBAHTMiCVWzN_M98zRzPPMgkVezLDMlMz8fnN8UcyFzJXMigNmzMLMwiPMsczEJcz1zN7M0cyxzK7MwljMg2IqdVrMy8yHzM3M_mNpBMz9XF1SzPVIzLEmzPbM1BjMyHzM43zMkMzuEMznzKBkJ8zadMz8zMLM_CBqE2fMtRjMuczDzIR4SRhQSRbMhUrM1gHM18yUzP7MsszJFszqJRzMnczxCMzazO4LBcyIDMzEzLRmScyYzLXMgMyIzKHMnmBTzIvMysyHzIZ0AsyEzMvMmMz_SczrLczAzPhsecySzP3MysynzMzM0l0STcyPcszWzKFJOQUAzLbM5cybzLV7zOHM-Xw6zMdZzNEOzKlwZcyezOolV8yqzOIqQ3LMkMzmQczWzLELFcz0D8zRWVXMuMyHEszdF8z4REknzJvM7MyVzP52zPjMnkDMwyAmFg_MzgfM32TM7sy6zKZQzPhazJnMuCrMwGdpzIPM0szYzPZ1zPgMHTnM9MzozLJTzMIwzP7M0czwbkLMqh7MyqFl3ABLEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALynM23zM3iFzAcy0IDwJUczoJ6F23AFVCcytzP_MusyjzKXMnRXMzcyOzI5wDS5VOMy0dMyVH8zXzJ_M-cyIASNgJns2zPfMzzLMlW1MU8zgBHlMzP0AzKvMssyYzLHM_U5vzJnMnmrM4DfM91k4PBIIVMzFzKl4F0bMmR8XzJfMxU7M2sz0Bcz_GMy2zMFEJsyybgwbzPZsaTPMlQcSzKY6eczbbTRZTMzyzIzMmxxTzKgKzMnM0czuHWjM9My0c8zKzMU9cEfMySXM98zbPw7MsHlyzOTM6lLMucyQzJjM7syHQQPMtUrMgczOaD7MlXp4SszXNcyFzLDMgGRxCczCClxHAVXM-goMLsyLY8yZK8yHzMY3zKVXKwp2zLjM4MzwzLpvUcyfzMYYAQAsG8zlzP0MMHwHJAfMgAPMtQDMhCsLzNjM1cy8B3fM6szVDczuYMy4zILMo0MizJgczOp8zLUFzLExzNPMkBMKzKbMhczLL8z6Tcy-dMzXRGXMnF0tR8yQzLVOTwXMp8yeC8yrdnnM9Myeb8zVPg8rzO9WzOLM0cy2zMtkBszjJszozNHMmgZhzOsHzNRSzLbMiszTJszbzMDMrszkLMyhzLJ4aRYnVw7M3cygzNxHzIhDSk_MpVPM-MzmzLkAVMyzzJMjID_MvEjMisz5zOnMy8zSFMzMbUXMu8zjzMBCUESscl9jcmVkZW50aWFswLtzaWduYXR1cmVfY29ycmVjdG5lc3NfcHJvb2aConNl3AEAzJBUX8zkPVXMwMyhzPwxdWrM58z6JMz3zLDMlVHMg8yvzJYOWcyKzJZozPk1zPcJP1ZZzK3MxDFJzOwyF0rMvC9xzP0XzNXMyH7MgMy4CMywzPgkzJPMy8zQzMhwMkvM4cz2zPYXzJMlzJXMnMyZzM00zMjM2lITzKFHLTjM2MzgzP_MnGzMvQTM6cy_zP_M4QnMznvM7y1bNMzJzNV-zK7MhczmzOEwzN_MrczpzLUcX8zfzKViDzRhzOjMlcycNQxxzK3MuMzFQMzpJ0NFZ1VZb8zhzLbMnx9eITLMnkvMn8yMKWnM8Mysaj7M0sylVsyXzKglM3TMhczzKMyqditdMMznfzx3JcyPQWNNzJzMpVPM3gHM5AYTzPUFHMzIzOLMrczEzKbMzklyzLdFATFczOrM7My9Sszdb0vM5HDMkFfMthApKMzfzNTMmXU7T8zEVMyfzM3MgszJzP7MlMy3zNwwzMwrzKPMuW7M2h1laTZ8DUEJzNknzMjMhWrMiaFj3AAgbszDzP0zBBoOzP7Mw8yNzPxmR8zPzJjMmnXMsxbM5cyxbMziDsyfOGPMkn83Hcy5",
         }
     ],
@@ -128,16 +126,17 @@ MOCK_W3C_PRES_REQ = {
         }
     },
 }
+
 CREDS_W3C_METADATA = [
     {
         "schema_id": "DyZ6N8yDTQsdJazNGRG1Wa:2:degree schema:94.46.71",
-        "cred_def_id": "DyZ6N8yDTQsdJazNGRG1Wa:3:CL:1255405:faber.agent.degree_schema",
+        "cred_def_id": W3C_CRED_DEF_ID,
         "proof_attrs": ["age-verification_attribute"],
         "proof_preds": ["age-verification_predicate_0"],
     }
 ]
 CRED_DEFS = {
-    "DyZ6N8yDTQsdJazNGRG1Wa:3:CL:1255405:faber.agent.degree_schema": {
+    W3C_CRED_DEF_ID: {
         "issuerId": "DyZ6N8yDTQsdJazNGRG1Wa",
         "schemaId": "1255405",
         "type": "CL",

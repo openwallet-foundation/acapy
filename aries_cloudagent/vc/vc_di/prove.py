@@ -3,12 +3,11 @@
 import asyncio
 from hashlib import sha256
 import re
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.revocation.models.revocation_registry import RevocationRegistry
 from ..ld_proofs import (
-    AuthenticationProofPurpose,
     ProofPurpose,
     LinkedDataProofException,
 )
@@ -30,7 +29,7 @@ async def create_signed_anoncreds_presentation(
     presentation: dict,
     credentials: list,
     purpose: ProofPurpose = None,
-    challenge: str = None,
+    challenge: str,
     domain: str = None,
 ) -> tuple[dict, dict, list]:
     """Sign the presentation with the passed signature suite.
@@ -56,13 +55,12 @@ async def create_signed_anoncreds_presentation(
         dict: A verifiable presentation object
 
     """
-    if not purpose and not challenge:
+
+    if not challenge:
         raise LinkedDataProofException(
             'A "challenge" param is required when not providing a'
             ' "purpose" (for AuthenticationProofPurpose).'
         )
-    if not purpose:
-        purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
 
     w3c_creds = await _load_w3c_credentials(credentials)
     anoncreds_proofrequest, w3c_creds_metadata = await prepare_data_for_presentation(
@@ -122,7 +120,7 @@ async def create_rev_states(
     w3c_creds_metadata: list,
     rev_reg_defs: dict,
     rev_reg_entries: dict,
-) -> dict:
+) -> Optional[dict]:
     """create_rev_states.
 
     Args:
@@ -199,8 +197,8 @@ async def prepare_data_for_presentation(
     pres_name = (
         pres_definition.get("name") if pres_definition.get("name") else "Proof request"
     )
-    hash = sha256(challenge.encode("utf-8")).hexdigest()
-    nonce = str(int(hash, 16))[:20]
+    challenge_hash = sha256(challenge.encode("utf-8")).hexdigest()
+    nonce = str(int(challenge_hash, 16))[:20]
 
     anoncreds_proofrequest = {
         "version": "1.0",
@@ -237,11 +235,8 @@ async def prepare_data_for_presentation(
         ] in ("allowed", "required")
 
         non_revoked_interval = None
-        if requires_revoc_status:
+        if requires_revoc_status and w3c_cred.rev_reg_id:
             anoncreds_registry = profile.inject(AnonCredsRegistry)
-
-            if not w3c_cred.rev_reg_id:
-                pass
 
             result = await anoncreds_registry.get_revocation_list(
                 profile, w3c_cred.rev_reg_id, None
@@ -344,7 +339,7 @@ def _extract_cred_idx(item_path: str) -> int:
     if match:
         return int(match.group(1))
     else:
-        raise Exception("No index found in path")
+        raise AnonCredsHolderError("No index found in path")
 
 
 def _get_predicate_type_and_value(pred_filter: dict) -> Tuple[str, str]:
@@ -373,4 +368,4 @@ def _get_predicate_type_and_value(pred_filter: dict) -> Tuple[str, str]:
             return (supported_properties[key], pred_filter[key])
 
     # TODO more informative description
-    raise Exception()
+    raise AnonCredsHolderError("Unsupported predicate filter")

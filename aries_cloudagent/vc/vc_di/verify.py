@@ -1,5 +1,6 @@
 """Verifiable Credential and Presentation verification methods."""
 
+from aries_cloudagent.anoncreds.holder import AnonCredsHolderError
 from ...core.profile import Profile
 from ...anoncreds.verifier import AnonCredsVerifier
 from ..ld_proofs import (
@@ -10,6 +11,7 @@ from .prove import (
     prepare_data_for_presentation,
     _load_w3c_credentials,
 )
+from anoncreds import AnoncredsError
 
 
 async def verify_signed_anoncredspresentation(
@@ -57,6 +59,5 @@ async def verify_signed_anoncredspresentation(
         return await anoncreds_verifier.verify_presentation_w3c(
             anoncreds_pres_req, presentation, cred_metadata
         )
-    except Exception as e:
-        raise e
-        # return PresentationVerificationResult(verified=False, errors=[e])
+    except AnoncredsError as err:
+        raise AnonCredsHolderError("Error loading master secret") from err
