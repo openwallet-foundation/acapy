@@ -414,12 +414,12 @@ class DebugGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
-            "--ignore-unknown-w3c-schemas",
+            "--raise-unknown-w3c-schema-errors",
             action="store_true",
-            env_var="ACAPY_IGNORE_UNKNOWN_W3C_SCHEMAS",
+            env_var="RAISE_UNKNOWN_W3C_SCHEMA_ERRORS",
             help=(
-                "Ignore W3C credentialSchema validation for unsupported types. "
-                "Default: true."
+                "Raise W3C credentialSchema errors for unsupported types. "
+                "Default: false."
             ),
         )
 
@@ -473,8 +473,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.auto_accept_requests"] = True
         if args.auto_respond_messages:
             settings["debug.auto_respond_messages"] = True
-        if args.ignore_unknown_w3c_schemas:
-            settings["debug.ignore_unknown_w3c_schemas"] = True
+        if args.raise_unknown_w3c_schema_errors:
+            settings["debug.raise_unknown_w3c_schema_errors"] = True
         return settings
 
 
