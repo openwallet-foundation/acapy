@@ -2,11 +2,8 @@ from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST
-
 from ..pres_format import V20PresFormat
 from ..pres_request import V20PresRequest
 
@@ -98,9 +95,7 @@ PRES_REQ = [
         formats=[
             V20PresFormat(
                 attach_id="indy",
-                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                    V20PresFormat.Format.INDY.api
-                ],
+                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][V20PresFormat.Format.INDY.api],
             )
         ],
         request_presentations_attach=[
@@ -142,11 +137,11 @@ class TestV20PresRequest(TestCase):
         for pres_req_msg in PRES_REQ:
             pres_req_dict = pres_req_msg.serialize()
             pres_req_obj = V20PresRequest.deserialize(pres_req_dict)
-            assert type(pres_req_obj) == V20PresRequest
+            assert type(pres_req_obj) is V20PresRequest
 
-            pres_req_dict["request_presentations~attach"][0]["data"][
-                "base64"
-            ] = "eyJub3QiOiAiaW5keSJ9"
+            pres_req_dict["request_presentations~attach"][0]["data"]["base64"] = (
+                "eyJub3QiOiAiaW5keSJ9"
+            )
             with self.assertRaises(BaseModelError):
                 V20PresRequest.deserialize(pres_req_dict)
 

@@ -2,11 +2,8 @@ import json
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACH_DECO_IDS, PRESENTATION
-
 from ..presentation import Presentation
 
 INDY_PROOF = json.loads(
@@ -1695,7 +1692,7 @@ class TestPresentation(TestCase):
         )
 
         presentation = Presentation.deserialize(dump)
-        assert type(presentation) == Presentation
+        assert type(presentation) is Presentation
 
     def test_serialize(self):
         """Test serialization."""

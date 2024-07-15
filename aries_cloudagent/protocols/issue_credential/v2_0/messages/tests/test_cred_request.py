@@ -2,11 +2,8 @@ from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_REQUEST
-
 from ..cred_format import V20CredFormat
 from ..cred_request import V20CredRequest
 
@@ -53,9 +50,7 @@ class TestV20CredRequest(IsolatedAsyncioTestCase):
         formats=[
             V20CredFormat(
                 attach_id="indy",
-                format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                    V20CredFormat.Format.INDY.api
-                ],
+                format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][V20CredFormat.Format.INDY.api],
             )
         ],
         requests_attach=[
@@ -100,7 +95,7 @@ class TestV20CredRequest(IsolatedAsyncioTestCase):
         obj = TestV20CredRequest.CRED_REQUEST.serialize()
 
         cred_request = V20CredRequest.deserialize(obj)
-        assert type(cred_request) == V20CredRequest
+        assert type(cred_request) is V20CredRequest
 
         obj["requests~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"
         with self.assertRaises(BaseModelError):
