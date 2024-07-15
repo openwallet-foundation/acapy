@@ -1696,13 +1696,13 @@ files = [
 
 [[package]]
 name = "portalocker"
-version = "2.8.2"
+version = "2.10.1"
 description = "Wraps the portalocker recipe for easy usage"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "portalocker-2.8.2-py3-none-any.whl", hash = "sha256:cfb86acc09b9aa7c3b43594e19be1345b9d16af3feb08bf92f23d4dce513a28e"},
-    {file = "portalocker-2.8.2.tar.gz", hash = "sha256:2b035aa7828e46c58e9b31390ee1f169b98e1066ab10b9a6a861fe7e25ee4f33"},
+    {file = "portalocker-2.10.1-py3-none-any.whl", hash = "sha256:53a5984ebc86a025552264b459b46a2086e269b21823cb572f8f28ee759e45bf"},
+    {file = "portalocker-2.10.1.tar.gz", hash = "sha256:ef1bf844e878ab08aee7e40184156e1151f228f103aa5c6bd0724cc330960f8f"},
 ]
 
 [package.dependencies]
@@ -2805,4 +2805,4 @@ didcommv2 = ["didcomm-messaging"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "1065a3f2d74d9c1faa8d4bff0808cb568e0782cd1d62297ec56ab35532f6e00f"
+content-hash = "88f34d72b52ee56ffa6f728f807104c126c1ca25f895f7e67ed5ddf3193836fd"
