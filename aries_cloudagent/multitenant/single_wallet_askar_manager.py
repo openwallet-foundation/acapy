@@ -9,11 +9,11 @@ from ..config.wallet import wallet_config
 from ..core.profile import (
     Profile,
 )
-from ..multitenant.base import BaseMultitenantManager
 from ..wallet.models.wallet_record import WalletRecord
+from .base import BaseMultitenantManager
 
 
-class AskarProfileMultitenantManager(BaseMultitenantManager):
+class SingleWalletAskarMultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
 
     DEFAULT_MULTITENANT_WALLET_NAME = "multitenant_sub_wallet"
@@ -92,9 +92,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         profile_context = self._multitenant_profile.context.copy()
 
         if provision:
-            await self._multitenant_profile.store.create_profile(
-                wallet_record.wallet_id
-            )
+            await self._multitenant_profile.store.create_profile(wallet_record.wallet_id)
 
         extra_settings = {
             "admin.webhook_urls": self.get_webhook_urls(base_context, wallet_record),
