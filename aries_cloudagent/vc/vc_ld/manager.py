@@ -520,8 +520,9 @@ class VcLdpManager:
         """Handles how validation errors are treated."""
         if not result.validated:
             if self.profile.context.settings.get("debug.raise_unknown_w3c_schema_errors"):
-                self._logger.debug("credentialSchema validation error: %s", 
-                                   result.errors)
-            else:
                 raise VcLdpManagerError(
                     "credentialSchema validation error", result.errors)
+            else:
+                self._logger.debug("credentialSchema validation error: %s", 
+                                   result.errors)
+                
