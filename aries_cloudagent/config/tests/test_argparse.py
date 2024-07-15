@@ -633,3 +633,19 @@ class TestArgParse(IsolatedAsyncioTestCase):
         )
         with self.assertRaises(argparse.ArgsParseError):
             group.get_settings(result)
+
+    async def test_raise_w3c_schema_error(self):
+        """Test raising unknown W3C credentialSchema type error flag."""
+        parser = argparse.create_argument_parser()
+        group = argparse.DebugGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--raise-errors-for-unknown-w3c-schemas",
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("debug.raise_errors_for_unknown_w3c_schemas")

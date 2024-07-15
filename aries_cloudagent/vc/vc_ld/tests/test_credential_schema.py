@@ -22,8 +22,6 @@ TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_UUID = "urn:uuid:1b6824b1-db3f-43e8-8f17-baf618743635"
 
-
-
 class TestCredentialSchema(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
@@ -36,6 +34,8 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
             DIDResolver: self.did_resolver,
         },
     )
+        self.context = self.profile.context
+        self.context.settings["debug.raise_errors_for_unknown_w3c_schemas"] = True
         self.ldp_manager = VcLdpManager(self.profile)
         self.profile.context.injector.bind_instance(DocumentLoader, DocumentLoader(self.profile))
         self.options = LDProofVCOptions.deserialize({

@@ -1,5 +1,6 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
+import logging
 from typing import Dict, List, Optional, Type, Union, cast
 
 
@@ -98,6 +99,7 @@ class VcLdpManager:
     def __init__(self, profile: Profile):
         """Initialize the VC LD Proof Manager."""
         self.profile = profile
+        self._logger = logging.getLogger(__name__)
 
     async def _did_info_for_did(self, did: str) -> DIDInfo:
         """Get the did info for specified did.
@@ -519,7 +521,8 @@ class VcLdpManager:
         )-> ValidationResult:
         """Handles how validation errors are treated."""
         if not result.validated:
-            if self.profile.context.settings.get("debug.raise_unknown_w3c_schema_errors"):
+            if self.profile.context.settings.get(
+                "debug.raise_errors_for_unknown_w3c_schemas"):
                 raise VcLdpManagerError(
                     "credentialSchema validation error", result.errors)
             else:

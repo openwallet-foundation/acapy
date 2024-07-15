@@ -66,8 +66,7 @@ async def _validate_presentation(
     presentation: dict,
 ):
     """Validate presentation credentials."""
-
-    credential_results = None
+    
     credentials = JsonLdProcessor.get_values(presentation, "verifiableCredential")
     credential_results = await asyncio.gather(
         *[
