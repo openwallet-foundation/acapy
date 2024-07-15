@@ -1,16 +1,12 @@
 import json
-
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, PRES_20
-
-from ..pres_format import V20PresFormat
 from ..pres import V20Pres
+from ..pres_format import V20PresFormat
 
 INDY_PROOF = json.loads(  # indy returns proof json-encoded: json-decode before base64
     """{
@@ -1846,7 +1842,7 @@ class TestV20Pres(TestCase):
         """Test deserialization."""
         pres_dict = PRES.serialize()
         pres_obj = V20Pres.deserialize(pres_dict)
-        assert type(pres_obj) == V20Pres
+        assert type(pres_obj) is V20Pres
 
         pres_dict["presentations~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"
         with self.assertRaises(BaseModelError):
@@ -1886,4 +1882,4 @@ class TestV20Pres(TestCase):
         """Test deserialization dif."""
         pres_dict = PRES_DIF.serialize()
         pres_obj = V20Pres.deserialize(pres_dict)
-        assert type(pres_obj) == V20Pres
+        assert type(pres_obj) is V20Pres

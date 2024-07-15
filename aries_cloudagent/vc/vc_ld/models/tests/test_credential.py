@@ -3,12 +3,12 @@ from unittest import TestCase
 
 from marshmallow.utils import INCLUDE
 
-from ...models.credential import VerifiableCredential
-from ...models.linked_data_proof import LDProof
 from ....ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_CREDENTIAL_TYPE,
 )
+from ...models.credential import VerifiableCredential
+from ...models.linked_data_proof import LDProof
 
 CREDENTIAL = {
     "@context": [
@@ -59,7 +59,7 @@ class TestLinkedDataProof(TestCase):
     def test_serde(self):
         """Test de/serialization."""
         proof = LDProof.deserialize(VC_PROOF)
-        assert type(proof) == LDProof
+        assert type(proof) is LDProof
 
         proof_dict = proof.serialize()
         assert proof_dict == VC_PROOF
@@ -71,7 +71,7 @@ class TestVerifiableCredential(TestCase):
     def test_serde_credential(self):
         """Test de/serialization."""
         credential = VerifiableCredential.deserialize(CREDENTIAL, unknown=INCLUDE)
-        assert type(credential) == VerifiableCredential
+        assert type(credential) is VerifiableCredential
 
         credential_dict = credential.serialize()
         assert credential_dict == CREDENTIAL
@@ -81,7 +81,7 @@ class TestVerifiableCredential(TestCase):
         credential = VerifiableCredential.deserialize(
             VERIFIABLE_CREDENTIAL, unknown=INCLUDE
         )
-        assert type(credential) == VerifiableCredential
+        assert type(credential) is VerifiableCredential
 
         credential_dict = credential.serialize()
         assert credential_dict == VERIFIABLE_CREDENTIAL

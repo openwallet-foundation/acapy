@@ -1,22 +1,19 @@
 import importlib
 import json
-
 from os.path import join
 from typing import Any, Mapping, Type
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.tests import mock
+
+from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
 from ....core.profile import Profile, ProfileSession
-from ....config.injection_context import InjectionContext
 from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer
-
 from ...error import RevocationError
-
 from .. import issuer_rev_reg_record as test_module
 from ..issuer_rev_reg_record import IssuerRevRegRecord
 from ..revocation_registry import RevocationRegistry
@@ -328,7 +325,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         self.ledger.send_revoc_reg_entry.assert_called_once()
 
         rev_reg = rec.get_registry()
-        assert type(rev_reg) == RevocationRegistry
+        assert type(rev_reg) is RevocationRegistry
 
         async with self.profile.session() as session:
             queried = await IssuerRevRegRecord.query_by_cred_def_id(

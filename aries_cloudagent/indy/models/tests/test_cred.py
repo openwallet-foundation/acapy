@@ -36,7 +36,7 @@ class TestIndyKeyCorrectnessProof(TestCase):
     def test_serde(self):
         """Test de/serialization."""
         kcp = IndyKeyCorrectnessProof.deserialize(KC_PROOF)
-        assert type(kcp) == IndyKeyCorrectnessProof
+        assert type(kcp) is IndyKeyCorrectnessProof
 
         kcp_dict = kcp.serialize()
         assert kcp_dict == KC_PROOF
@@ -54,7 +54,7 @@ class TestIndyCredAbstract(TestCase):
             "key_correctness_proof": KC_PROOF,
         }
         cred_abstract = IndyCredAbstract.deserialize(obj)
-        assert type(cred_abstract) == IndyCredAbstract
+        assert type(cred_abstract) is IndyCredAbstract
 
         cred_abstract_dict = cred_abstract.serialize()
         assert cred_abstract_dict == obj
@@ -73,7 +73,7 @@ class TestIndyCredRequest(TestCase):
             "nonce": "1234567890",
         }
         cred_request = IndyCredRequest.deserialize(obj)
-        assert type(cred_request) == IndyCredRequest
+        assert type(cred_request) is IndyCredRequest
 
         cred_request_dict = cred_request.serialize()
         assert cred_request_dict == obj
@@ -89,7 +89,7 @@ class TestIndyAttrValue(TestCase):
             "encoded": "1234567890",
         }
         attr_val = IndyAttrValue.deserialize(obj)
-        assert type(attr_val) == IndyAttrValue
+        assert type(attr_val) is IndyAttrValue
 
         attr_val_dict = attr_val.serialize()
         assert attr_val_dict == obj
@@ -120,7 +120,7 @@ class TestIndyCredential(TestCase):
             "witness": None,
         }
         cred = IndyCredential.deserialize(obj)
-        assert type(cred) == IndyCredential
+        assert type(cred) is IndyCredential
 
         cred_dict = cred.serialize()
         assert cred_dict.items() <= obj.items()

@@ -207,7 +207,7 @@ class TestIndyProof(TestCase):
     def test_serde(self):
         """Test de/serialization."""
         proof = IndyProof.deserialize(INDY_PROOF)
-        assert type(proof) == IndyProof
+        assert type(proof) is IndyProof
 
         proof_dict = proof.serialize()
         assert proof_dict == INDY_PROOF

@@ -1,11 +1,8 @@
 import json
-
 from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import PRESENTATION_ACK
-
 from ..presentation_ack import PresentationAck
 
 
@@ -29,7 +26,7 @@ class TestPresentationAck(TestCase):
         )
 
         pres_ack = PresentationAck.deserialize(dump)
-        assert type(pres_ack) == PresentationAck
+        assert type(pres_ack) is PresentationAck
 
     def test_serialize(self):
         """Test serialization."""

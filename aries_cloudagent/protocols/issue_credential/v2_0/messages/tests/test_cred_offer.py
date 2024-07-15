@@ -2,11 +2,8 @@ from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_OFFER
-
 from ..cred_format import V20CredFormat
 from ..cred_offer import V20CredOffer
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
@@ -64,9 +61,7 @@ class TestV20CredOffer(IsolatedAsyncioTestCase):
 
     async def test_init_type(self):
         """Test initializer and type."""
-        assert (
-            TestV20CredOffer.CRED_OFFER.credential_preview == TestV20CredOffer.preview
-        )
+        assert TestV20CredOffer.CRED_OFFER.credential_preview == TestV20CredOffer.preview
         assert (
             TestV20CredOffer.CRED_OFFER.offers_attach[0].content
             == TestV20CredOffer.indy_offer
@@ -95,7 +90,7 @@ class TestV20CredOffer(IsolatedAsyncioTestCase):
         obj = TestV20CredOffer.CRED_OFFER.serialize()
 
         cred_offer = V20CredOffer.deserialize(obj)
-        assert type(cred_offer) == V20CredOffer
+        assert type(cred_offer) is V20CredOffer
 
         obj["offers~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"
         with self.assertRaises(BaseModelError):
