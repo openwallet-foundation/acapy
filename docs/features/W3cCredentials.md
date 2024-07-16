@@ -14,6 +14,14 @@ This document outlines a new functionality within Aries Agent that facilitates t
   - [Signature Suite](#signature-suite)
   - [DID Method](#did-method)
 - [Issue a Credential](#issue-a-credential)
+- [Verify a Credential](#verify-a-credential)
+- [Present Proof](#present-proof)
+  - [Requesting Proof](#requesting-proof)
+  - [Presenting Proof](#presenting-proof)
+  - [Verifying Proof](#verifying-proof)
+- [Appendix](#appendix)
+  - [Glossary of Terms](#glossary-of-terms)
+  - [References and Resources](#references-and-resources)
 
 ### General Concept
 
@@ -89,3 +97,531 @@ You can create a `did:key` using the `/wallet/did/create` endpoint with the foll
 ### Issue a Credential
 
 The issuance of W3C credentials is facilitated through the `/issue-credential-2.0/send` endpoint. This process adheres to the formats described in [RFC 0809 VC-DI](https://github.com/hyperledger/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md) and utilizes `didcomm` for communication between agents.
+
+To issue a W3C credential, follow these steps:
+
+1. **Prepare the Credential Data:**
+Ensure the credential data conforms to the VC-DI context.
+
+<details>
+<summary>JSON example</summary>
+
+```jsonc
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://w3id.org/security/data-integrity/v2",
+    {
+      "@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"
+    }
+  ],
+  "type": ["VerifiableCredential"],
+  "issuer": "did:key:z6MkqG......",
+  "issuanceDate": "2023-01-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "did:key:z6Mkh......",
+    "name": "John Doe"
+  },
+  "proof": {
+    "type": "Ed25519Signature2020",
+    "created": "2023-01-01T00:00:00Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+    "jws": "eyJhbGciOiJFZERTQSJ9..."
+  }
+}
+```
+</details>
+
+2. **Send the Credential:**
+Use the `/issue-credential-2.0/send` endpoint to issue the credential.
+
+<details>
+<summary>JSON example</summary>
+
+```jsonc
+{
+  "auto_issue": true,
+  "auto_remove": false,
+  "comment": "Issuing a test credential",
+  "credential_preview": {
+    "@type": "https://didcomm.org/issue-credential/2.0/credential-preview",
+    "attributes": [
+      {"name": "name", "value": "John Doe"}
+    ]
+  },
+  "trace": false
+}
+```
+</details>
+
+3. **Verify the Response:**
+The response should confirm the credential issuance.
+
+<details>
+<summary>JSON example</summary>
+
+```jsonc
+{
+  "state": "credential_issued",
+  "credential_id": "12345",
+  "thread_id": "abcde",
+  "role": "issuer"
+}
+```
+</details>
+
+### Verify a Credential
+
+To verify a credential, follow these steps:
+
+1. **Prepare the Verification Request:**
+Ensure the request conforms to the verification context.
+
+<details>
+<summary>JSON example</summary>
+
+```jsonc
+{
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/data-integrity/v2"
+      ],
+      "type": ["VerifiableCredential"],
+      "issuer": "did:key:z6MkqG......",
+      "issuanceDate": "2023-01-01T00:00:00Z",
+      "credentialSubject": {
+        "id": "did:key:z6Mkh......",
+        "name": "John Doe"
+      },
+      "proof": {
+        "type": "Ed25519Signature2020",
+        "created": "2023-01-01T00:00:00Z",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+        "jws": "eyJhbGciOiJFZERTQSJ9..."
+      }
+    }
+  ]
+}
+```
+</details>
+
+2. **Send the Verification Request:**
+Use the `/verifier-credential/2.0/verify` endpoint.
+
+<details>
+<summary>JSON example</summary>
+
+```jsonc
+{
+  "presentation": {
+    "verifiableCredential": [
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/data-integrity/v2"
+        ],
+        "type": ["VerifiableCredential"],
+        "issuer": "did:key:z6MkqG......",
+        "issuanceDate": "2023-01-01T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6Mkh......",
+          "name": "John Doe"
+        },
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2023-01-01T00:00:00Z",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+          "jws": "eyJhbGciOiJFZERTQSJ9..."
+        }
+      }
+    ]
+  }
+}
+```
+</details>
+
+3. **Verify the Response:**
+The response should confirm the credential verification.
+
+<details>
+<summary>JSON example</summary>
+
+```jsonc
+{
+  "verified": true,
+  "presentation": {
+    "type": "VerifiablePresentation",
+    "verifiableCredential": [
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/security/data-integrity/v2"
+        ],
+        "type": ["VerifiableCredential"],
+        "issuer": "did:key:z6MkqG......",
+        "issuanceDate": "2023-01-01T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6Mkh......",
+          "name": "John Doe"
+        },
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2023-01-01T00:00:00Z",
+          "proofPurpose": "assertionMethod",
+          "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+          "jws": "eyJhbGciOiJFZERTQSJ9..."
+        }
+      }
+    ],
+    "proof": {
+      "type": "Ed25519Signature2020",
+      "created": "2023-01-01T00:00:00Z",
+      "proofPurpose": "authentication",
+      "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+      "jws": "eyJhbGciOiJFZERTQSJ9..."
+    }
+  }
+}
+```
+</details>
+
+### Present Proof
+
+#### Requesting Proof
+
+To request proof, follow these steps:
+
+1. **Prepare the Proof Request:**
+   Ensure the request aligns with the DIF Presentation Format.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "presentation_definition": {
+       "id": "example-presentation-definition",
+       "input_descriptors": [
+         {
+           "id": "example-input-descriptor",
+           "schema": [
+             {
+               "uri": "https://www.w3.org/2018/credentials/v1"
+             }
+           ],
+           "constraints": {
+             "fields": [
+               {
+                 "path": ["$.credentialSubject.name"],
+                 "filter": {
+                   "type": "string",
+                   "pattern": "John Doe"
+                 }
+               }
+             ]
+           }
+         }
+       ]
+     }
+   }
+   ```
+   </details>
+
+2. **Send the Proof Request:**
+   Use the `/present-proof-2.0/request-presentation` endpoint.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "comment": "Requesting proof of name",
+     "presentation_request": {
+       "presentation_definition": {
+         "id": "example-presentation-definition",
+         "input_descriptors": [
+           {
+             "id": "example-input-descriptor",
+             "schema": [
+               {
+                 "uri": "https://www.w3.org/2018/credentials/v1"
+               }
+             ],
+             "constraints": {
+               "fields": [
+                 {
+                   "path": ["$.credentialSubject.name"],
+                   "filter": {
+                     "type": "string",
+                     "pattern": "John Doe"
+                   }
+                 }
+               ]
+             }
+           }
+         ]
+       }
+     }
+   }
+   ```
+  </details>
+
+3. **Verify the Response:**
+   The response should confirm the proof request.
+
+<details>
+<summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "state": "presentation_received",
+     "thread_id": "abcde",
+     "role": "verifier"
+   }
+   ```
+   </details>
+
+#### Presenting Proof
+
+To present proof, follow these steps:
+
+1. **Prepare the Presentation Data:**
+   Ensure the presentation data conforms to the VC-DI context.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "@context": [
+       "https://www.w3.org/2018/credentials/v1",
+       "https://w3id.org/security/data-integrity/v2"
+     ],
+     "type": ["VerifiablePresentation"],
+     "verifiableCredential": [
+       {
+         "@context": [
+           "https://www.w3.org/2018/credentials/v1",
+           "https://w3id.org/security/data-integrity/v2"
+         ],
+         "type": ["VerifiableCredential"],
+         "issuer": "did:key:z6MkqG......",
+         "issuanceDate": "2023-01-01T00:00:00Z",
+         "credentialSubject": {
+           "id": "did:key:z6Mkh......",
+           "name": "John Doe"
+         },
+         "proof": {
+           "type": "Ed25519Signature2020",
+           "created": "2023-01-01T00:00:00Z",
+           "proofPurpose": "assertionMethod",
+           "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+           "jws": "eyJhbGciOiJFZERTQSJ9..."
+         }
+       }
+     ]
+   }
+   ```
+   </details>
+
+2. **Send the Presentation:**
+   Use the `/present-proof-2.0/present-presentation` endpoint.
+
+   <details>
+   <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "presentation": {
+       "@context": [
+         "https://www.w3.org/2018/credentials/v1",
+         "https://w3id.org/security/data-integrity/v2"
+       ],
+       "type": ["VerifiablePresentation"],
+       "verifiableCredential": [
+         {
+           "@context": [
+             "https://www.w3.org/2018/credentials/v1",
+             "https://w3id.org/security/data-integrity/v2"
+           ],
+           "type": ["VerifiableCredential"],
+           "issuer": "did:key:z6MkqG......",
+           "issuanceDate": "2023-01-01T00:00:00Z",
+           "credentialSubject": {
+             "id": "did:key:z6Mkh......",
+             "name": "John Doe"
+           },
+           "proof": {
+             "type": "Ed25519Signature2020",
+             "created": "2023-01-01T00:00:00Z",
+             "proofPurpose": "assertionMethod",
+             "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+             "jws": "eyJhbGciOiJFZERTQSJ9..."
+           }
+         }
+       ]
+     },
+     "comment": "Presenting proof of name"
+   }
+   ```
+   </details>
+
+3. **Verify the Response:**
+   The response should confirm the presentation.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "state": "presentation_sent",
+     "thread_id": "abcde",
+     "role": "prover"
+   }
+   ```
+   </details>
+
+#### Verifying Proof
+
+To verify presented proof, follow these steps:
+
+1. **Prepare the Verification Data:**
+   Ensure the verification data aligns with the VC-DI context.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "@context": [
+       "https://www.w3.org/2018/credentials/v1",
+       "https://w3id.org/security/data-integrity/v2"
+     ],
+     "type": ["VerifiablePresentation"],
+     "verifiableCredential": [
+       {
+         "@context": [
+           "https://www.w3.org/2018/credentials/v1",
+           "https://w3id.org/security/data-integrity/v2"
+         ],
+         "type": ["VerifiableCredential"],
+         "issuer": "did:key:z6MkqG......",
+         "issuanceDate": "2023-01-01T00:00:00Z",
+         "credentialSubject": {
+           "id": "did:key:z6Mkh......",
+           "name": "John Doe"
+         },
+         "proof": {
+           "type": "Ed25519Signature2020",
+           "created": "2023-01-01T00:00:00Z",
+           "proofPurpose": "assertionMethod",
+           "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+           "jws": "eyJhbGciOiJFZERTQSJ9..."
+         }
+       }
+     ]
+   }
+   ```
+   </details>
+
+2. **Send the Verification Request:**
+   Use the `/verifier-proof-2.0/verify` endpoint.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "presentation": {
+       "@context": [
+         "https://www.w3.org/2018/credentials/v1",
+         "https://w3id.org/security/data-integrity/v2"
+       ],
+       "type": ["VerifiablePresentation"],
+       "verifiableCredential": [
+         {
+           "@context": [
+             "https://www.w3.org/2018/credentials/v1",
+             "https://w3id.org/security/data-integrity/v2"
+           ],
+           "type": ["VerifiableCredential"],
+           "issuer": "did:key:z6MkqG......",
+           "issuanceDate": "2023-01-01T00:00:00Z",
+           "credentialSubject": {
+             "id": "did:key:z6Mkh......",
+             "name": "John Doe"
+           },
+           "proof": {
+             "type": "Ed25519Signature2020",
+             "created": "2023-01-01T00:00:00Z",
+             "proofPurpose": "assertionMethod",
+             "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+             "jws": "eyJhbGciOiJFZERTQSJ9..."
+           }
+         }
+       ]
+     }
+   }
+   ```
+   </details>
+
+3. **Verify the Response:**
+   The response should confirm the proof verification.
+
+  <details>
+  <summary>JSON example</summary>
+
+   ```jsonc
+   {
+     "verified": true,
+     "presentation": {
+       "type": "VerifiablePresentation",
+       "verifiableCredential": [
+         {
+           "@context": [
+             "https://www.w3.org/2018/credentials/v1",
+             "https://w3id.org/security/data-integrity/v2"
+           ],
+           "type": ["VerifiableCredential"],
+           "issuer": "did:key:z6MkqG......",
+           "issuanceDate": "2023-01-01T00:00:00Z",
+           "credentialSubject": {
+             "id": "did:key:z6Mkh......",
+             "name": "John Doe"
+           },
+           "proof": {
+             "type": "Ed25519Signature2020",
+             "created": "2023-01-01T00:00:00Z",
+             "proofPurpose": "assertionMethod",
+             "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
+             "jws": "eyJhbGciOiJFZERTQSJ9..."
+           }
+         }
+       ]
+     }
+   }
+   ```
+   </details>
+
+### Appendix
+
+#### Glossary of Terms
+
+- **VC-DI:** Verifiable Credential Data Integrity
+- **W3C:** World Wide Web Consortium
+- **DID:** Decentralized Identifier
+- **EdDSA:** Edwards-curve Digital Signature Algorithm
+- **DIF:** Decentralized Identity Foundation
+
+#### References and Resources
+
+- [Aries Cloud Agent Python Documentation](https://github.com/hyperledger/aries-cloudagent-python)
+- [Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/)
+- [Verifiable Presentations Data Model](https://www.w3.org/TR/vc-data-model/#presentations)
+- [DIF Presentation Format](https://identity.foundation/presentation-exchange/)
+- [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/)
