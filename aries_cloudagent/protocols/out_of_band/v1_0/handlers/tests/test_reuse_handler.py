@@ -1,5 +1,7 @@
 """Test Reuse Message Handler."""
 
+from typing import AsyncGenerator, Generator
+
 import pytest
 
 from aries_cloudagent.tests import mock
@@ -9,7 +11,6 @@ from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers import reuse_handler as test_module
 from ...manager import OutOfBandManagerError
 from ...messages.reuse import HandshakeReuse
@@ -17,14 +18,14 @@ from ...messages.reuse_accept import HandshakeReuseAccept
 
 
 @pytest.fixture()
-async def request_context() -> RequestContext:
+def request_context() -> Generator[RequestContext, None, None]:
     ctx = RequestContext.test_context()
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
 
 @pytest.fixture()
-async def session(request_context) -> ProfileSession:
+async def session(request_context) -> AsyncGenerator[ProfileSession, None]:
     yield await request_context.session()
 
 
@@ -36,6 +37,7 @@ class TestHandshakeReuseHandler:
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
         request_context.connection_record = ConnRecord()
+        request_context.connection_ready = True
         responder = MockResponder()
         await handler.handle(request_context, responder)
         mock_oob_mgr.return_value.receive_reuse_message.assert_called_once_with(
@@ -53,6 +55,7 @@ class TestHandshakeReuseHandler:
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
         request_context.connection_record = ConnRecord()
+        request_context.connection_ready = True
         responder = MockResponder()
         await handler.handle(request_context, responder)
         mock_oob_mgr.return_value.receive_reuse_message.assert_called_once_with(
@@ -73,6 +76,7 @@ class TestHandshakeReuseHandler:
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
         request_context.connection_record = ConnRecord()
+        request_context.connection_ready = True
         responder = MockResponder()
         with caplog.at_level("ERROR"):
             await handler.handle(request_context, responder)
