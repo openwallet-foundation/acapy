@@ -1193,7 +1193,8 @@ class ProtocolGroup(ArgumentGroup):
         if args.requests_through_public_did:
             if not args.public_invites:
                 raise ArgsParseError(
-                    "--public-invites is required to use " "--requests-through-public-did"
+                    "--public-invites is required to use ",
+                    "--requests-through-public-did",
                 )
             settings["requests_through_public_did"] = True
         if args.timing:
