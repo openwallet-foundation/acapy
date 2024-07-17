@@ -1,12 +1,11 @@
 import asyncio
-import pytest
-
 from unittest import mock
+
+import pytest
 
 from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
-
 from .. import profile as test_module
 
 
@@ -53,8 +52,7 @@ async def test_init_multi_ledger(open_store):
     assert askar_profile.opened == open_store
     assert askar_profile.settings["endorser.endorser_alias"] == "endorser_dev"
     assert (
-        askar_profile.settings["endorser.endorser_public_did"]
-        == "9QPa6tHvBHttLg6U4xvviv"
+        askar_profile.settings["endorser.endorser_public_did"] == "9QPa6tHvBHttLg6U4xvviv"
     )
     assert (askar_profile.inject_or(BaseLedger)).pool_name == "BCovrinDev"
 
@@ -65,7 +63,7 @@ async def test_remove_success(open_store):
     context = InjectionContext()
     profile_id = "profile_id"
     context.settings = {
-        "multitenant.wallet_type": "askar-profile",
+        "multitenant.wallet_type": "single-wallet-askar",
         "wallet.askar_profile": profile_id,
         "ledger.genesis_transactions": mock.MagicMock(),
     }
