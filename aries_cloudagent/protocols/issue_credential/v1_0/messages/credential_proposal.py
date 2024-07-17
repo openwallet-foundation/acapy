@@ -56,6 +56,7 @@ class CredentialProposal(AgentMessage):
             schema_version: schema version
             cred_def_id: credential definition identifier
             issuer_did: credential issuer DID
+            kwargs: additional key-value arguments to map into message class properties
         """
         super().__init__(_id, **kwargs)
         self.comment = comment

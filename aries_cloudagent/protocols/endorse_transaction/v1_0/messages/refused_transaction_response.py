@@ -40,6 +40,7 @@ class RefusedTransactionResponse(AgentMessage):
             signature_response: The response created to refuse the transaction
             state: The state of the transaction record
             endorser_did: The public did of the endorser who refuses the transaction
+            kwargs: Additional keyword arguments for the message
         """
         super().__init__(**kwargs)
 

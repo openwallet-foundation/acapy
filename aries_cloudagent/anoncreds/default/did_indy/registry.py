@@ -7,11 +7,7 @@ from typing import Optional, Pattern, Sequence
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
 from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
-from ...models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    GetCredDefResult,
-)
+from ...models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
 from ...models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
@@ -32,7 +28,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Initialize an instance.
 
         Args:
-        TODO: update this docstring - Anoncreds-break.
+            None
 
         """
         self._supported_identifiers_regex = re.compile(r"^did:indy:.*$")
@@ -92,7 +88,11 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         raise NotImplementedError()
 
     async def get_revocation_list(
-        self, profile: Profile, revocation_registry_id: str, timestamp: int
+        self,
+        profile: Profile,
+        revocation_registry_id: str,
+        timestamp_from: Optional[int] = 0,
+        timestamp_to: Optional[int] = None,
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
         raise NotImplementedError()

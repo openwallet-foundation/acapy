@@ -46,6 +46,7 @@ class V20CredOffer(AgentMessage):
             credential_preview: credential preview
             formats: acceptable attachment formats
             offers_attach: list of offer attachments
+            kwargs: additional key-value arguments to map into message class properties
 
         """
         super().__init__(_id=_id, **kwargs)

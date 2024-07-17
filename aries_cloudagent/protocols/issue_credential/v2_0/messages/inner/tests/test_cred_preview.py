@@ -1,9 +1,7 @@
 from unittest import TestCase
 
 from ......didcomm_prefix import DIDCommPrefix
-
 from ....message_types import CRED_20_PREVIEW
-
 from ..cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
@@ -28,9 +26,7 @@ class TestV20CredAttrSpec(TestCase):
         attr_previews_different = [
             V20CredAttrSpec(name="item", value="dmFsdWU=", mime_type="image/png"),
             V20CredAttrSpec(name="item", value="distinct value"),
-            V20CredAttrSpec(
-                name="distinct_name", value="distinct value", mime_type=None
-            ),
+            V20CredAttrSpec(name="distinct_name", value="distinct value", mime_type=None),
         ]
 
         for lhs in attr_previews_none_plain:
@@ -84,7 +80,7 @@ class TestV20CredPreview(TestCase):
         }
 
         cred20_preview = V20CredPreview.deserialize(obj)
-        assert type(cred20_preview) == V20CredPreview
+        assert type(cred20_preview) is V20CredPreview
 
     def test_serialize(self):
         """Test serialization."""

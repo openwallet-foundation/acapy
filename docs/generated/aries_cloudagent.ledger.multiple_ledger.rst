@@ -17,14 +17,6 @@ aries\_cloudagent.ledger.multiple\_ledger.base\_manager module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.ledger.multiple\_ledger.indy\_manager module
---------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.ledger.multiple_ledger.indy_manager
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.ledger.multiple\_ledger.indy\_vdr\_manager module
 -------------------------------------------------------------------
 

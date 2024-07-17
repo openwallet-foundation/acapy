@@ -17,6 +17,14 @@ Subpackages
 Submodules
 ----------
 
+aries\_cloudagent.wallet.anoncreds\_upgrade module
+--------------------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.anoncreds_upgrade
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.askar module
 -------------------------------------
 
@@ -105,14 +113,6 @@ aries\_cloudagent.wallet.in\_memory module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.wallet.indy module
-------------------------------------
-
-.. automodule:: aries_cloudagent.wallet.indy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.wallet.jwt module
 -----------------------------------
 
@@ -149,6 +149,14 @@ aries\_cloudagent.wallet.sd\_jwt module
 ---------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.sd_jwt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.wallet.singletons module
+------------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.singletons
    :members:
    :undoc-members:
    :show-inheritance:

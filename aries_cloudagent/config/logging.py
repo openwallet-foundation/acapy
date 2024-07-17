@@ -61,9 +61,12 @@ def load_resource(path: str, encoding: str = None):
     """Open a resource file located in a python package or the local filesystem.
 
     Args:
-        path: The resource path in the form of `dir/file` or `package:dir/file`
+        path (str): The resource path in the form of `dir/file` or `package:dir/file`
+        encoding (str, optional): The encoding to use when reading the resource file.
+            Defaults to None.
+
     Returns:
-        A file-like object representing the resource
+        file-like object: A file-like object representing the resource
     """
     components = path.rsplit(":", 1)
     try:
@@ -324,45 +327,47 @@ class LoggingConfigurator:
             # Title
             banner.title(agent_label or "ACA")
             # Inbound transports
-            banner.subtitle("Inbound Transports")
-            internal_in_transports = [
-                f"{transport.scheme}://{transport.host}:{transport.port}"
-                for transport in inbound_transports.values()
-                if not transport.is_external
-            ]
-            if internal_in_transports:
-                banner.list(internal_in_transports)
-            external_in_transports = [
-                f"{transport.scheme}://{transport.host}:{transport.port}"
-                for transport in inbound_transports.values()
-                if transport.is_external
-            ]
-            if external_in_transports:
-                banner.subtitle("  External Plugin")
-                banner.list(external_in_transports)
+            if inbound_transports:
+                banner.subtitle("Inbound Transports")
+                internal_in_transports = [
+                    f"{transport.scheme}://{transport.host}:{transport.port}"
+                    for transport in inbound_transports.values()
+                    if not transport.is_external
+                ]
+                if internal_in_transports:
+                    banner.list(internal_in_transports)
+                external_in_transports = [
+                    f"{transport.scheme}://{transport.host}:{transport.port}"
+                    for transport in inbound_transports.values()
+                    if transport.is_external
+                ]
+                if external_in_transports:
+                    banner.subtitle("  External Plugin")
+                    banner.list(external_in_transports)
 
             # Outbound transports
-            banner.subtitle("Outbound Transports")
-            internal_schemes = set().union(
-                *(
-                    transport.schemes
-                    for transport in outbound_transports.values()
-                    if not transport.is_external
+            if outbound_transports:
+                banner.subtitle("Outbound Transports")
+                internal_schemes = set().union(
+                    *(
+                        transport.schemes
+                        for transport in outbound_transports.values()
+                        if not transport.is_external
+                    )
                 )
-            )
-            if internal_schemes:
-                banner.list([f"{scheme}" for scheme in sorted(internal_schemes)])
+                if internal_schemes:
+                    banner.list([f"{scheme}" for scheme in sorted(internal_schemes)])
 
-            external_schemes = set().union(
-                *(
-                    transport.schemes
-                    for transport in outbound_transports.values()
-                    if transport.is_external
+                external_schemes = set().union(
+                    *(
+                        transport.schemes
+                        for transport in outbound_transports.values()
+                        if transport.is_external
+                    )
                 )
-            )
-            if external_schemes:
-                banner.subtitle("  External Plugin")
-                banner.list([f"{scheme}" for scheme in sorted(external_schemes)])
+                if external_schemes:
+                    banner.subtitle("  External Plugin")
+                    banner.list([f"{scheme}" for scheme in sorted(external_schemes)])
 
             # DID info
             if public_did:
@@ -387,36 +392,42 @@ class LoggingConfigurator:
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
         with Banner(border=":", length=80, file=sys.stderr) as banner:
-            banner.centered("⚠ DEPRECATION NOTICE: ⚠")
-            banner.hr()
             if settings.get("wallet.type", "in_memory").lower() == "indy":
+                banner.centered("⚠ DEPRECATION NOTICE: ⚠")
+                banner.hr()
                 banner.print(
                     "The Indy wallet type is deprecated, use Askar instead; see: "
                     "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
                 )
                 banner.hr()
-            banner.print(
-                "Receiving a core DIDComm protocol with the "
-                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix is deprecated. All parties "
-                "sending this prefix should be notified that support for receiving such "
-                "messages will be removed in a future release. "
-                "Use https://didcomm.org/ instead."
-            )
-            banner.hr()
-            banner.print(
-                "Aries RFC 0160: Connection Protocol is deprecated and support will be "
-                "removed in a future release; use RFC 0023: DID Exchange instead."
-            )
-            banner.hr()
-            banner.print(
-                "Aries RFC 0036: Issue Credential 1.0 is deprecated and support will be "
-                "removed in a future release; use RFC 0453: Issue Credential 2.0 instead."
-            )
-            banner.hr()
-            banner.print(
-                "Aries RFC 0037: Present Proof 1.0 is deprecated and support will be "
-                "removed in a future release; use RFC 0454: Present Proof 2.0 instead."
-            )
+            if not settings.get("transport.disabled"):
+                banner.centered("⚠ DEPRECATION NOTICE: ⚠")
+                banner.hr()
+                banner.print(
+                    "Receiving a core DIDComm protocol with the "
+                    "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix is deprecated. "
+                    "All parties sending this prefix should be notified that support "
+                    "for receiving such messages will be removed in a future release. "
+                    "Use https://didcomm.org/ instead."
+                )
+                banner.hr()
+                banner.print(
+                    "Aries RFC 0160: Connection Protocol is deprecated and "
+                    "support will be removed in a future release; "
+                    "use RFC 0023: DID Exchange instead."
+                )
+                banner.hr()
+                banner.print(
+                    "Aries RFC 0036: Issue Credential 1.0 is deprecated "
+                    "and support will be removed in a future release; "
+                    "use RFC 0453: Issue Credential 2.0 instead."
+                )
+                banner.hr()
+                banner.print(
+                    "Aries RFC 0037: Present Proof 1.0 is deprecated "
+                    "and support will be removed in a future release; "
+                    "use RFC 0454: Present Proof 2.0 instead."
+                )
         print()
 
 
@@ -450,11 +461,23 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         """Initialize an instance of `TimedRotatingFileMultiProcessHandler`.
 
         Args:
-            filename: log file name with path
-            when: specify when to rotate log file
-            interval: interval when to rotate
-            backupCount: count of backup file, backupCount of 0 will mean
-                no limit on count of backup file [no backup will be deleted]
+            filename (str): The log file name with path.
+            when (str, optional): Specifies when to rotate the log file. Defaults to "h".
+            interval (int, optional): The interval when to rotate. Defaults to 1.
+            backupCount (int, optional): The count of backup files. A backupCount of 0
+                means no limit on the count of backup files (no backup will be deleted).
+                Defaults to 1.
+            encoding (str, optional): The encoding to use for the log file.
+                Defaults to None.
+            delay (bool, optional): Whether to delay file opening until the first log
+                message is emitted. Defaults to False.
+            utc (bool, optional): Whether to use UTC time for log rotation.
+                Defaults to False.
+            atTime (datetime.time, optional): The specific time at which log rotation
+                should occur. Defaults to None.
+
+        Raises:
+            ValueError: If an invalid rollover interval is specified.
 
         """
         BaseRotatingHandler.__init__(
@@ -471,6 +494,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         self.mylogfile = "%s.%08d" % ("/tmp/trfmphanldler", randint(0, 99999999))
         self.interval = interval
 
+        # Set the appropriate suffix and regular expression pattern based on the specified rollover interval # noqa: E501
         if self.when == "S":
             self.interval = 1
             self.suffix = "%Y-%m-%d_%H-%M-%S"

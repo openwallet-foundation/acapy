@@ -26,6 +26,7 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ....messaging.valid import (
     INDY_EXTRA_WQL_EXAMPLE,
     INDY_EXTRA_WQL_VALIDATE,
@@ -70,7 +71,7 @@ class V20PresentProofModuleResponseSchema(OpenAPISchema):
     """Response schema for Present Proof Module."""
 
 
-class V20PresExRecordListQueryStringSchema(OpenAPISchema):
+class V20PresExRecordListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for presentation exchange list query."""
 
     connection_id = fields.Str(
@@ -134,6 +135,7 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has no formats
@@ -209,6 +211,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data has no formats
@@ -324,6 +327,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: if data does not have exactly one format.
@@ -448,11 +452,15 @@ async def present_proof_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
+    limit, offset = get_limit_offset(request)
+
     try:
         async with profile.session() as session:
             records = await V20PresExRecord.query(
                 session=session,
                 tag_filter=tag_filter,
+                limit=limit,
+                offset=offset,
                 post_filter_positive=post_filter,
             )
         results = [record.serialize() for record in records]
@@ -572,6 +580,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     extra_query,
                 )
             )
+
     except (IndyHolderError, AnonCredsHolderError) as err:
         if pres_ex_record:
             async with profile.session() as session:
@@ -718,6 +727,15 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                             BbsBlsSignature2020.signature_type
                                         ]
                                         break
+                    elif claim_fmt.di_vc:
+                        if "proof_type" in claim_fmt.di_vc:
+                            proof_types = claim_fmt.di_vc.get("proof_type")
+
+                            proof_type = [
+                                "DataIntegrityProof"
+                            ]  # [LinkedDataProof.signature_type]
+
+                        # TODO check acceptable proof type(s) ("anoncreds-2023")
                     else:
                         raise web.HTTPBadRequest(
                             reason=(

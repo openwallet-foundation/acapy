@@ -6,13 +6,14 @@ from enum import Enum
 from time import time
 from typing import List, Mapping, Tuple
 
-from anoncreds import AnoncredsError, Presentation
+from anoncreds import AnoncredsError, Presentation, W3cPresentation
 
 from ..core.profile import Profile
 from ..indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..messaging.util import canon, encode
 from .models.anoncreds_cred_def import GetCredDefResult
 from .registry import AnonCredsRegistry
+from ..vc.vc_ld.validation_result import PresentationVerificationResult
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class AnonCredsVerifier:
         Args:
             pres_req: presentation request
             pres: corresponding presentation
-
+            cred_defs: credential definitions by cred def id
         """
         msgs = []
         for req_proof_key, pres_key in {
@@ -423,7 +424,7 @@ class AnonCredsVerifier:
                         result = await anoncreds_registry.get_revocation_list(
                             self.profile,
                             identifier["rev_reg_id"],
-                            identifier["timestamp"],
+                            timestamp_to=identifier["timestamp"],
                         )
                         rev_lists[identifier["rev_reg_id"]][
                             identifier["timestamp"]
@@ -453,6 +454,7 @@ class AnonCredsVerifier:
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
+            rev_lists: revocation lists
         """
 
         msgs = []
@@ -496,3 +498,70 @@ class AnonCredsVerifier:
             verified = False
 
         return (verified, msgs)
+
+    async def verify_presentation_w3c(
+        self, pres_req, pres, cred_metadata
+    ) -> PresentationVerificationResult:
+        """Verify a W3C presentation.
+
+        Args:
+            pres_req: The presentation request data.
+            pres: The presentation data.
+            cred_metadata: The credential metadata.
+
+        Returns:
+            PresentationVerificationResult: An object containing the verification result,
+            errors, and other details.
+
+        Raises:
+            AnoncredsError: If there is an error during the verification process.
+
+        """
+        credentials = pres["verifiableCredential"]
+        cred_def_ids = []
+        for credential in credentials:
+            cred_def_id = credential["proof"]["verificationMethod"]
+            cred_def_ids.append(cred_def_id)
+
+        cred_defs = {}
+        schemas = {}
+        msgs = []
+
+        anoncreds_verifier = AnonCredsVerifier(self.profile)
+        (
+            schemas,
+            cred_defs,
+            rev_reg_defs,
+            rev_reg_entries,
+        ) = await anoncreds_verifier.process_pres_identifiers(cred_metadata)
+
+        try:
+            del pres["presentation_submission"]
+
+            presentation = W3cPresentation.load(pres)
+
+            verified = await asyncio.get_event_loop().run_in_executor(
+                None,
+                presentation.verify,
+                pres_req,
+                schemas,
+                cred_defs,
+                rev_reg_defs,
+                [
+                    rev_list
+                    for timestamp_to_list in rev_reg_entries.values()
+                    for rev_list in timestamp_to_list.values()
+                ],
+            )
+        except AnoncredsError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
+            LOGGER.exception(
+                f"Validation of presentation on nonce={pres_req['nonce']} "
+                "failed with error"
+            )
+            verified = False
+
+        result = PresentationVerificationResult(verified=verified, errors=msgs)
+
+        return result

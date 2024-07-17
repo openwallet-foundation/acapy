@@ -1,4 +1,4 @@
-ARG python_version=3.9.18
+ARG python_version=3.12
 FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
@@ -13,7 +13,7 @@ FROM python:${python_version}-slim-bullseye AS main
 ARG uid=1001
 ARG user=aries
 ARG acapy_version
-ARG acapy_reqs=[askar,bbs]
+ARG acapy_reqs=[askar,bbs,didcommv2]
 
 ENV HOME="/home/$user" \
     APP_ROOT="$HOME" \

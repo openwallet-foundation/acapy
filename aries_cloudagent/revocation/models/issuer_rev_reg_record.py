@@ -524,7 +524,12 @@ class IssuerRevRegRecord(BaseRecord):
 
     @classmethod
     async def query_by_cred_def_id(
-        cls, session: ProfileSession, cred_def_id: str, state: str = None
+        cls,
+        session: ProfileSession,
+        cred_def_id: str,
+        state: str = None,
+        negative_state: str = None,
+        limit=None,
     ) -> Sequence["IssuerRevRegRecord"]:
         """Retrieve issuer revocation registry records by credential definition ID.
 
@@ -532,6 +537,8 @@ class IssuerRevRegRecord(BaseRecord):
             session: The profile session to use
             cred_def_id: The credential definition ID to filter by
             state: A state value to filter by
+            negative_state: A state value to exclude
+            limit: The maximum number of records to return
         """
         tag_filter = dict(
             filter(
@@ -539,7 +546,13 @@ class IssuerRevRegRecord(BaseRecord):
                 (("cred_def_id", cred_def_id), ("state", state)),
             )
         )
-        return await cls.query(session, tag_filter)
+        return await cls.query(
+            session,
+            tag_filter,
+            post_filter_positive={"state": state} if state else None,
+            post_filter_negative={"state": negative_state} if negative_state else None,
+            limit=limit,
+        )
 
     @classmethod
     async def query_by_pending(

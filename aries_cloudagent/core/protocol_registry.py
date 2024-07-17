@@ -1,15 +1,13 @@
 """Handle registration and publication of supported protocols."""
 
-from dataclasses import dataclass
 import logging
-
+from dataclasses import dataclass
 from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from ..config.injection_context import InjectionContext
-from ..utils.classloader import ClassLoader, DeferLoad
 from ..messaging.message_type import MessageType, MessageVersion, ProtocolIdentifier
-
-from .error import ProtocolMinorVersionNotSupported, ProtocolDefinitionValidationError
+from ..utils.classloader import ClassLoader, DeferLoad
+from .error import ProtocolDefinitionValidationError, ProtocolMinorVersionNotSupported
 
 LOGGER = logging.getLogger(__name__)
 
@@ -108,8 +106,10 @@ class ProtocolRegistry:
         """Add new supported message types.
 
         Args:
-            typesets: Mappings of message types to register
-            version_definition: Optional version definition dict
+            typeset (Mapping[str, Union[str, type]]): Mappings of message types to
+                register.
+            version_definition (Optional[Union[dict[str, Any], VersionDefinition]]):
+                Optional version definition dict.
 
         """
         if version_definition is not None and isinstance(version_definition, dict):

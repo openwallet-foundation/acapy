@@ -1,4 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
@@ -8,9 +9,7 @@ from ......messaging.responder import MockResponder
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
-
 from ...messages.forward_invitation import ForwardInvitation
-
 from .. import forward_invitation_handler as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -67,7 +66,7 @@ class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
             messages = responder.messages
             assert len(messages) == 1
             (result, _) = messages[0]
-            assert type(result) == test_module.ProblemReport
+            assert type(result) is test_module.ProblemReport
 
     async def test_handle_not_ready(self):
         handler = test_module.ForwardInvitationHandler()

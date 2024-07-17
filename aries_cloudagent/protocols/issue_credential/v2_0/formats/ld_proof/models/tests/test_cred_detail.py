@@ -51,7 +51,7 @@ class TestLDProofVCDetail(TestCase):
     def test_serde(self):
         """Test de/serialization."""
         detail = LDProofVCDetail.deserialize(VC_DETAIL)
-        assert type(detail) == LDProofVCDetail
+        assert type(detail) is LDProofVCDetail
 
         detail_dict = detail.serialize()
         assert detail_dict == VC_DETAIL
@@ -63,7 +63,7 @@ class TestLDProofVCDetailOptions(TestCase):
     def test_serde(self):
         """Test de/serialization."""
         detail_options = LDProofVCDetailOptions.deserialize(VC_DETAIL_OPTIONS)
-        assert type(detail_options) == LDProofVCDetailOptions
+        assert type(detail_options) is LDProofVCDetailOptions
 
         detail_options_dict = detail_options.serialize()
         assert detail_options_dict == VC_DETAIL_OPTIONS

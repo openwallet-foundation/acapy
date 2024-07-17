@@ -52,6 +52,7 @@ class ConnectionInvitation(AgentMessage):
             endpoint: Endpoint which this agent can be reached at
             routing_keys: List of routing keys
             image_url: Optional image URL for connection invitation
+            kwargs: Additional keyword arguments for the message
         """
         super().__init__(**kwargs)
         self.label = label
@@ -191,6 +192,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
 
         Args:
             data: The data to validate
+            kwargs: Additional keyword arguments
 
         Raises:
             ValidationError: If any of the fields do not validate

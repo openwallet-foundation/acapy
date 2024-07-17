@@ -60,9 +60,11 @@ class SignatureDecorator(BaseModel):
         representing the resulting signature.
 
         Args:
+            cls: SignatureDecorator class
             value: Value to sign
             signer: Verkey of the signing party
             wallet: The wallet to use for the signature
+            timestamp: Timestamp to use for the signature
 
         Returns:
             The created `SignatureDecorator` object

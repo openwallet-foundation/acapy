@@ -27,6 +27,8 @@ from ...protocols.connections.v1_0.messages.connection_request import Connection
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.didexchange.v1_0.message_types import (
     ARIES_PROTOCOL as DIDEX_1_1,
+)
+from ...protocols.didexchange.v1_0.message_types import (
     DIDEX_1_0,
 )
 from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
@@ -277,6 +279,7 @@ class ConnRecord(BaseRecord):
             their_did: The target DID to filter by
             my_did: One of our DIDs to filter by
             my_role: Filter connections by their role
+            their_role: Filter connections by their role
         """
         tag_filter = {}
         if their_did:
@@ -364,6 +367,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             request_id: The ID of the originating connection request
+            their_role: Filter by their role
         """
         tag_filter = {"request_id": request_id}
         if their_role:
@@ -483,6 +487,8 @@ class ConnRecord(BaseRecord):
 
         Args:
             session: The active profile session
+            args: Additional positional arguments
+            kwargs: Additional keyword arguments
         """
         await super().post_save(session, *args, **kwargs)
 

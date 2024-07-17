@@ -1,14 +1,11 @@
-import pytest
-
 from unittest import TestCase
+
+import pytest
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL
-
 from ..pres_format import V20PresFormat
 from ..pres_proposal import V20PresProposal
 
@@ -112,14 +109,12 @@ class TestV20PresProposal(TestCase):
                 ],
                 proposals_attach=[AttachDecorator.data_base64(proof_req, ident="indy")],
             )
-            assert pres_proposal._type == DIDCommPrefix.qualify_current(
-                PRES_20_PROPOSAL
-            )
+            assert pres_proposal._type == DIDCommPrefix.qualify_current(PRES_20_PROPOSAL)
             assert pres_proposal.attachment(V20PresFormat.Format.INDY) == proof_req
 
             pres_proposal_ser = pres_proposal.serialize()
             pres_proposal_deser = V20PresProposal.deserialize(pres_proposal_ser)
-            assert type(pres_proposal_deser) == V20PresProposal
+            assert type(pres_proposal_deser) is V20PresProposal
 
             pres_proposal_dict = pres_proposal_deser.serialize()
             assert pres_proposal_dict == pres_proposal_ser

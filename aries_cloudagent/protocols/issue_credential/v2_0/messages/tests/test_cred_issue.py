@@ -1,13 +1,9 @@
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_ISSUE
-
 from .. import cred_issue as test_module
 from ..cred_format import V20CredFormat
 from ..cred_issue import V20CredIssue
@@ -121,7 +117,7 @@ class TestV20CredIssue(IsolatedAsyncioTestCase):
         obj = TestV20CredIssue.CRED_ISSUE.serialize()
 
         cred_issue = V20CredIssue.deserialize(obj)
-        assert type(cred_issue) == V20CredIssue
+        assert type(cred_issue) is V20CredIssue
 
         obj["credentials~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"
         with self.assertRaises(BaseModelError):

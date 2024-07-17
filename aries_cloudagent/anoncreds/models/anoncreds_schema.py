@@ -7,10 +7,7 @@ from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import (
-    INDY_OR_KEY_DID_EXAMPLE,
-    INDY_SCHEMA_ID_EXAMPLE,
-)
+from ...messaging.valid import INDY_OR_KEY_DID_EXAMPLE, INDY_SCHEMA_ID_EXAMPLE
 
 
 class AnonCredsSchema(BaseModel):
@@ -31,9 +28,7 @@ class AnonCredsSchema(BaseModel):
             attr_names: Schema Attribute Name list
             name: Schema name
             version: Schema version
-
-        TODO: update this docstring - Anoncreds-break.
-
+            kwargs: Addiiotnal keyword arguments
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -106,9 +101,7 @@ class GetSchemaResult(BaseModel):
             schema_id: Schema ID
             resolution_metadata: Resolution Metdata
             schema_metadata: Schema Metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
+            kwargs: Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.schema_value = schema
@@ -221,9 +214,7 @@ class SchemaResult(BaseModel):
             schema_state: Schema state
             registration_metadata: Registration Metdata
             schema_metadata: Schema Metadata
-
-        TODO: update this docstring - Anoncreds-break.
-
+            kwargs: Additional keyword arguments
         """
         super().__init__(**kwargs)
         self.job_id = job_id

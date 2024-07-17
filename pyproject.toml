@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aries_cloudagent"
-version = "0.12.1"
+version = "1.0.0rc4"
 description = "Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = ["Hyperledger Aries <aries@lists.hyperledger.org>"]
 license = "Apache-2.0"
@@ -15,25 +15,25 @@ repository = "https://github.com/hyperledger/aries-cloudagent-python"
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.12"
 aiohttp="~3.9.4"
 aiohttp-apispec-acapy="~3.0.2"
 aiohttp-cors="~0.7.0"
 apispec="^6.6.0"
 async-timeout="~4.0.2"
 base58="~2.1.0"
-ConfigArgParse="~1.5.3"
+ConfigArgParse="~1.7"
 deepmerge="~0.3.0"
 ecdsa="~0.19.0"
 jsonpath-ng="1.6.1"
 Markdown="~3.6"
-markupsafe="2.0.1"
-marshmallow="~3.20.1"
+markupsafe="2.1.5"
+marshmallow="~3.21.3"
 nest_asyncio="~1.6.0"
-packaging="~23.1"
-portalocker="~2.8.2"
+packaging="~23.2"
+portalocker="~2.10.1"
 prompt_toolkit=">=2.0.9,<2.1.0"
-pydid="^0.5.0"
+pydid="^0.5.1"
 pyjwt="~2.8.0"
 pyld="^2.0.4"
 pynacl="~1.5.0"
@@ -41,16 +41,16 @@ python-dateutil="~2.8.1"
 python-json-logger="~2.0.7"
 pyyaml="~6.0.1"
 qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
-requests="~2.31.0"
+requests="~2.32.3"
 rlp="4.0.1"
 unflatten="~0.1"
 sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-uuid_utils = "^0.7.0"
+uuid_utils = "^0.9.0"
 
 # askar
-aries-askar= { version = "~0.3.0", optional = true }
+aries-askar= { version = "~0.3.2", optional = true }
 indy-credx= { version = "~1.1.1", optional = true }
 indy-vdr= { version = "~0.4.0", optional = true }
 anoncreds= { version = "0.2.0", optional = true }
@@ -58,27 +58,28 @@ anoncreds= { version = "0.2.0", optional = true }
 # bbs
 ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
+# didcommv2
+didcomm-messaging = {version = "^0.1.1a0", optional = true }
+
+
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.7.0"
 # Sync with version in .pre-commit-config.yaml
-ruff = "0.4.4"
-# Sync with version in .github/workflows/blackformat.yml
-# Sync with version in .pre-commit-config.yaml
-black = "24.4.2"
+ruff = "0.5.2"
 
-sphinx="1.8.4"
+sphinx="^5.3.0"
 sphinx-rtd-theme=">=0.4.3"
 
 ptvsd="4.3.2"
 pydevd="1.5.1"
 
-pydevd-pycharm="~193.6015.39"
+pydevd-pycharm="~193.7288.30"
 
 # testing
-pytest = "^8.2.0"
+pytest = "^8.2.2"
 pytest-asyncio = "^0.23.6"
 pytest-cov = "^5.0.0"
-pytest-ruff = "^0.3.2"
+pytest-ruff = "^0.4.0"
 
 [tool.poetry.extras]
 askar = [
@@ -89,6 +90,10 @@ askar = [
 ]
 bbs = [
     "ursa-bbs-signatures"
+]
+
+didcommv2 = [
+    "didcomm-messaging"
 ]
 
 [tool.poetry.scripts]
@@ -104,7 +109,7 @@ lint.ignore = [
     "D202", # Allow blank line after docstring
     "D104", # Don't require docstring in public package
     # Things that we should fix, but are too much work right now
-    "D417", "C901",
+    "C901",
 ]
 
 include = ["aries_cloudagent/**/*.py"]

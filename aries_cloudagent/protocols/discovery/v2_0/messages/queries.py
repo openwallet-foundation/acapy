@@ -65,8 +65,8 @@ class Queries(AgentMessage):
         """Initialize query message object.
 
         Args:
-            query: The query string to match against supported message types
-            comment: An optional comment
+            queries: The query string to match against supported message types
+            kwargs: Additional key word arguments for the message
         """
         super().__init__(**kwargs)
         self.queries = queries

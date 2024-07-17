@@ -37,8 +37,13 @@ class V20Pres(AgentMessage):
         """Initialize presentation object.
 
         Args:
-            presentations_attach: attachments
-            comment: optional comment
+            _id (str, optional): The ID of the presentation object.
+            comment (str, optional): An optional comment.
+            formats (Sequence[V20PresFormat], optional): A sequence of presentation
+                formats.
+            presentations_attach (Sequence[AttachDecorator], optional): A sequence of
+                attachments.
+            **kwargs: Additional keyword arguments.
 
         """
         super().__init__(_id=_id, **kwargs)

@@ -38,6 +38,7 @@ from ....vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
 )
 from ....vc.vc_ld.prove import create_presentation, derive_credential, sign_presentation
+from ....vc.vc_di.prove import create_signed_anoncreds_presentation
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ....wallet.error import WalletError, WalletNotFoundError
@@ -194,7 +195,10 @@ class DIFPresExchHandler:
         else:
             reqd_key_type = ED25519
         for cred in applicable_creds:
-            if cred.subject_ids and len(cred.subject_ids) > 0:
+            if cred.cred_value.get("proof", {}).get("type") == "DataIntegrityProof":
+                filtered_creds_list.append(cred.cred_value)
+                issuer_id = cred.issuer_id
+            elif cred.subject_ids and len(cred.subject_ids) > 0:
                 if not issuer_id:
                     for cred_subject_id in cred.subject_ids:
                         if not cred_subject_id.startswith("urn:"):
@@ -399,14 +403,18 @@ class DIFPresExchHandler:
                 new_credential_dict = self.reveal_doc(
                     credential_dict=credential_dict, constraints=constraints
                 )
-                derive_suite = await self._get_derive_suite()
-                signed_new_credential_dict = await derive_credential(
-                    credential=credential_dict,
-                    reveal_document=new_credential_dict,
-                    suite=derive_suite,
-                    document_loader=document_loader,
-                )
-                credential = self.create_vcrecord(signed_new_credential_dict)
+                if credential_dict["proof"]["type"] == "DataIntegrityProof":
+                    # TODO - don't sign
+                    credential = self.create_vcrecord(credential_dict)
+                else:
+                    derive_suite = await self._get_derive_suite()
+                    signed_new_credential_dict = await derive_credential(
+                        credential=credential_dict,
+                        reveal_document=new_credential_dict,
+                        suite=derive_suite,
+                        document_loader=document_loader,
+                    )
+                    credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
 
@@ -1047,6 +1055,7 @@ class DIFPresExchHandler:
         Args:
             req: Requirement
             credentials: Sequence of credentials to check against
+            records_filter: dict of input_descriptor ID key to list of credential_json
         Return:
             dict of input_descriptor ID key to list of credential_json
         """
@@ -1072,6 +1081,7 @@ class DIFPresExchHandler:
                     credentials=credentials,
                     schemas=descriptor.schemas,
                 )
+
             # Filter credentials based upon path expressions specified in constraints
             filtered = await self.filter_constraints(
                 constraints=descriptor.constraint,
@@ -1198,19 +1208,26 @@ class DIFPresExchHandler:
         challenge: str = None,
         domain: str = None,
         records_filter: dict = None,
+        is_holder_override: bool = None,
     ) -> Union[Sequence[dict], dict]:
         """Create VerifiablePresentation.
 
         Args:
-            credentials: Sequence of VCRecords
-            pd: PresentationDefinition
-        Return:
-            VerifiablePresentation
+            credentials (Sequence[VCRecord]): Sequence of VCRecords.
+            pd (PresentationDefinition): PresentationDefinition.
+            challenge (str, optional): Challenge string. Defaults to None.
+            domain (str, optional): Domain string. Defaults to None.
+            records_filter (dict, optional): Records filter dictionary.
+            is_holder_override (bool, optional): Override is_holder check.
+
+        Returns:
+            Union[Sequence[dict], dict]: VerifiablePresentation.
         """
         document_loader = self.profile.inject(DocumentLoader)
         req = await self.make_requirement(
             srs=pd.submission_requirements, descriptors=pd.input_descriptors
         )
+
         result = []
         if req.nested_req:
             for nested_req in req.nested_req:
@@ -1243,11 +1260,10 @@ class DIFPresExchHandler:
                     "enabled. Please specify which credentials should be applied to "
                     "which input_descriptors using record_ids filter."
                 )
-            # submission_property
             submission_property = PresentationSubmission(
                 id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
             )
-            if self.is_holder:
+            if self.is_holder or is_holder_override:
                 (
                     issuer_id,
                     filtered_creds_list,
@@ -1256,13 +1272,12 @@ class DIFPresExchHandler:
                 )
                 if not issuer_id and len(filtered_creds_list) == 0:
                     vp = await create_presentation(credentials=applicable_creds_list)
-                    vp["presentation_submission"] = submission_property.serialize()
-                    if self.proof_type is BbsBlsSignature2020.signature_type:
-                        vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+                    vp = self.__add_dif_fields_to_vp(vp, submission_property)
                     result_vp.append(vp)
                     continue
                 else:
-                    vp = await create_presentation(credentials=filtered_creds_list)
+                    applicable_creds_list = filtered_creds_list
+                    vp = await create_presentation(credentials=applicable_creds_list)
             else:
                 if not self.pres_signing_did:
                     (
@@ -1275,32 +1290,55 @@ class DIFPresExchHandler:
                         vp = await create_presentation(
                             credentials=applicable_creds_list
                         )
-                        vp["presentation_submission"] = submission_property.serialize()
-                        if self.proof_type is BbsBlsSignature2020.signature_type:
-                            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+                        vp = self.__add_dif_fields_to_vp(vp, submission_property)
                         result_vp.append(vp)
                         continue
                     else:
-                        vp = await create_presentation(credentials=filtered_creds_list)
+                        applicable_creds_list = filtered_creds_list
+                        vp = await create_presentation(
+                            credentials=applicable_creds_list
+                        )
                 else:
                     issuer_id = self.pres_signing_did
                     vp = await create_presentation(credentials=applicable_creds_list)
             vp["presentation_submission"] = submission_property.serialize()
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-            issue_suite = await self._get_issue_suite(
-                issuer_id=issuer_id,
-            )
-            signed_vp = await sign_presentation(
-                presentation=vp,
-                suite=issue_suite,
-                challenge=challenge,
-                document_loader=document_loader,
-            )
+            if self.proof_type == ("anoncreds-2023"):
+                signed_vp = await create_signed_anoncreds_presentation(
+                    profile=self.profile,
+                    pres_definition=pd.serialize(),
+                    presentation=vp,
+                    credentials=applicable_creds_list,
+                    challenge=challenge,
+                )
+            else:
+                vp = self.__add_dif_fields_to_vp(vp, submission_property)
+                issue_suite = await self._get_issue_suite(
+                    issuer_id=issuer_id,
+                )
+                signed_vp = await sign_presentation(
+                    presentation=vp,
+                    suite=issue_suite,
+                    challenge=challenge,
+                    document_loader=document_loader,
+                )
+
             result_vp.append(signed_vp)
         if len(result_vp) == 1:
             return result_vp[0]
         return result_vp
+
+    def __add_dif_fields_to_vp(
+        self, vp: dict, submission_property: PresentationSubmission
+    ) -> dict:
+        vp["@context"].append(PRESENTATION_SUBMISSION_JSONLD_CONTEXT)
+        vp["type"].append(PRESENTATION_SUBMISSION_JSONLD_TYPE)
+        vp["presentation_submission"] = submission_property.serialize()
+        if self.proof_type is BbsBlsSignature2020.signature_type:
+            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+
+        return vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubject id is derived."""

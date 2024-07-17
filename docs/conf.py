@@ -59,6 +59,7 @@ autodoc_mock_imports = [
     "typing_extensions",
     "unflatten",
     "yaml",
+    "uuid_utils",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",

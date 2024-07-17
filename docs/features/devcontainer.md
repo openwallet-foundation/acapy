@@ -44,11 +44,11 @@ To open ACA-Py in a devcontainer, we open the *root* of this repository. We can 
 
 #### devcontainer.json
 
-When the [.devcontainer/devcontainer.json](https://github.com/hyperledger/aries-cloudagent-python/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements (and black). We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).
+When the [.devcontainer/devcontainer.json](https://github.com/hyperledger/aries-cloudagent-python/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.12 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
 
 ### Poetry
 
-The Python libraries / dependencies are installed using [`poetry`](https://python-poetry.org). For the devcontainer, we *DO NOT* use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. `poetry run black .`). If you need to add new dependencies, you will need to add the dependency via poetry *AND* you should rebuild your devcontainer.
+The Python libraries / dependencies are installed using [`poetry`](https://python-poetry.org). For the devcontainer, we *DO NOT* use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. `poetry run ruff check .`). If you need to add new dependencies, you will need to add the dependency via poetry *AND* you should rebuild your devcontainer.
 
 In VS Code, open a Terminal, you should be able to run the following commands:
 
@@ -56,7 +56,6 @@ In VS Code, open a Terminal, you should be able to run the following commands:
 python -m aries_cloudagent -v
 cd aries_cloudagent
 ruff check .
-black . --check
 poetry --version
 ```
 
@@ -72,10 +71,9 @@ Found 1 error.
 
 #### extensions
 
-We have added Black formatter and Ruff extensions. Although we have added launch settings for both `ruff` and `black`, you can also use the extension commands from the command palette.
+We have added Ruff extensions. Although we have added launch settings for both `ruff`, you can also use the extension commands from the command palette.
 
-- `Ruff: Format Document`
-- `Ruff: Fix all auto-fixable problems`
+- `ruff (format) - aries_cloudagent`
 
 More importantly, these extensions are now added to document save, so files will be formatted and checked. We advise that after each time you rebuild the container that you also perform: `Developer: Reload Window` to ensure the extensions are loaded correctly.
 

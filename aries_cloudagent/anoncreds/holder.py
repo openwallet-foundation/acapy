@@ -3,8 +3,11 @@
 import asyncio
 import json
 import logging
+from marshmallow import INCLUDE
 import re
 from typing import Dict, Optional, Sequence, Tuple, Union
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from anoncreds import (
     AnoncredsError,
@@ -14,6 +17,7 @@ from anoncreds import (
     Presentation,
     PresentCredentials,
     W3cCredential,
+    W3cPresentation,
     create_link_secret,
 )
 from aries_askar import AskarError, AskarErrorCode
@@ -23,10 +27,14 @@ from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
-from ..ledger.base import BaseLedger
+from ..storage.vc_holder.base import VCHolder
+from ..storage.vc_holder.vc_record import VCRecord
+from ..vc.vc_ld import VerifiableCredential
+from ..vc.ld_proofs import DocumentLoader
 from ..wallet.error import WalletNotFoundError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .models.anoncreds_cred_def import CredDef
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -307,7 +315,7 @@ class AnonCredsHolder:
         try:
             secret = await self.get_master_secret()
             cred_w3c = W3cCredential.load(credential_data)
-            await asyncio.get_event_loop().run_in_executor(
+            cred_w3c_recvd = await asyncio.get_event_loop().run_in_executor(
                 None,
                 cred_w3c.process,
                 credential_request_metadata,
@@ -327,7 +335,7 @@ class AnonCredsHolder:
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error processing received credential") from err
 
-        return await self._finish_store_credential(
+        credential_id = await self._finish_store_credential(
             credential_definition,
             cred_recvd,
             credential_request_metadata,
@@ -335,6 +343,45 @@ class AnonCredsHolder:
             credential_id,
             rev_reg_def,
         )
+
+        # also store in W3C format
+        # create VC record for storage
+        cred_w3c_recvd_dict = cred_w3c_recvd.to_dict()
+        cred_w3c_recvd_dict["proof"] = cred_w3c_recvd_dict["proof"][0]
+        cred_w3c_recvd_vc = VerifiableCredential.deserialize(
+            cred_w3c_recvd_dict, unknown=INCLUDE
+        )
+
+        # Saving expanded type as a cred_tag
+        document_loader = self.profile.inject(DocumentLoader)
+        expanded = jsonld.expand(
+            cred_w3c_recvd_dict, options={"documentLoader": document_loader}
+        )
+        types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+
+        vc_record = VCRecord(
+            contexts=cred_w3c_recvd_vc.context_urls,
+            expanded_types=types,
+            issuer_id=cred_w3c_recvd_vc.issuer_id,
+            subject_ids=cred_w3c_recvd_vc.credential_subject_ids,
+            schema_ids=[],  # Schemas not supported yet
+            proof_types=[cred_w3c_recvd_vc.proof.type],
+            cred_value=cred_w3c_recvd_vc.serialize(),
+            given_id=cred_w3c_recvd_vc.id,
+            record_id=credential_id,
+            cred_tags=None,  # Tags should be derived from credential values
+        )
+
+        # save credential in storage
+        async with self.profile.session() as session:
+            vc_holder = session.inject(VCHolder)
+
+            await vc_holder.store_credential(vc_record)
+
+        return credential_id
 
     async def get_credentials(self, start: int, count: int, wql: dict):
         """Get credentials stored in the wallet.
@@ -350,11 +397,11 @@ class AnonCredsHolder:
 
         try:
             rows = self.profile.store.scan(
-                CATEGORY_CREDENTIAL,
-                wql,
-                start,
-                count,
-                self.profile.settings.get("wallet.askar_profile"),
+                category=CATEGORY_CREDENTIAL,
+                tag_filter=wql,
+                offset=start,
+                limit=count,
+                profile=self.profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
                 cred = Credential.load(row.raw_value)
@@ -384,16 +431,13 @@ class AnonCredsHolder:
             extra_query: wql query dict
 
         """
-
         if not referents:
             referents = (
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
         extra_query = extra_query or {}
-
         creds = {}
-
         for reft in referents:
             names = set()
             if reft in presentation_request["requested_attributes"]:
@@ -424,11 +468,11 @@ class AnonCredsHolder:
                 tag_filter = {"$and": [tag_filter, extra_query]}
 
             rows = self.profile.store.scan(
-                CATEGORY_CREDENTIAL,
-                tag_filter,
-                start,
-                count,
-                self.profile.settings.get("wallet.askar_profile"),
+                category=CATEGORY_CREDENTIAL,
+                tag_filter=tag_filter,
+                offset=start,
+                limit=count,
+                profile=self.profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
                 if row.name in creds:
@@ -477,29 +521,36 @@ class AnonCredsHolder:
             raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
+        self, credential_id: str, timestamp_from: int = None, timestamp_to: int = None
     ) -> bool:
-        """Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by credential id.
 
         Args:
-            credential_id: Credential id to check
+            ledger (BaseLedger): The ledger to check for revocation status.
+            credential_id (str): The ID of the credential to check.
+            timestamp_from (int, optional): The earliest timestamp to consider for
+                revocation status. Defaults to None.
+            timestamp_to (int, optional): The latest timestamp to consider for revocation
+                status. Defaults to None.
 
+        Returns:
+            bool: True if the credential is revoked, False otherwise.
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id
 
-        # TODO Use anoncreds registry
-        # check if cred.rev_reg_id is returning None or 'None'
-        if rev_reg_id:
-            cred_rev_id = cred.rev_reg_index
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        rev_list = (
+            await anoncreds_registry.get_revocation_list(
+                self.profile, rev_reg_id, timestamp_from, timestamp_to
             )
-            return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
-        else:
-            return False
+        ).revocation_list
+
+        set_revoked = {
+            index for index, value in enumerate(rev_list.revocation_list) if value == 1
+        }
+
+        return cred.rev_reg_index in set_revoked
 
     async def delete_credential(self, credential_id: str):
         """Remove a credential stored in the wallet.
@@ -515,10 +566,9 @@ class AnonCredsHolder:
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
         except AskarError as err:
-            if err.code == AskarErrorCode.NOT_FOUND:
-                pass
-            else:
-                raise AnonCredsHolderError("Error deleting credential") from err
+            raise AnonCredsHolderError(
+                "Error deleting credential", error_code=err.code
+            ) from err  # noqa: E501
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None
@@ -640,6 +690,61 @@ class AnonCredsHolder:
 
         return presentation.to_json()
 
+    async def create_presentation_w3c(
+        self,
+        presentation_request: dict,
+        requested_credentials_w3c: list,
+        credentials_w3c_metadata: list,
+        schemas: Dict[str, AnonCredsSchema],
+        credential_definitions: Dict[str, CredDef],
+        rev_states: dict = None,
+    ) -> dict:
+        """Get credentials stored in the wallet.
+
+        Args:
+            presentation_request: Valid indy format presentation request
+            requested_credentials_w3c: W3C format requested credentials
+            credentials_w3c_metadata: W3C format credential metadata
+            schemas: Indy formatted schemas JSON
+            credential_definitions: Indy formatted credential definitions JSON
+            rev_states: Indy format revocation states JSON
+
+        """
+        present_creds = PresentCredentials()
+        for idx, cred in enumerate(requested_credentials_w3c):
+            meta = credentials_w3c_metadata[idx]
+            rev_state = rev_states.get(meta["rev_reg_id"]) if rev_states else None
+            for attr in meta["proof_attrs"]:
+                present_creds.add_attributes(
+                    cred,
+                    attr,
+                    reveal=True,
+                    timestamp=meta.get("timestamp"),
+                    rev_state=rev_state,
+                )
+
+            for pred in meta["proof_preds"]:
+                present_creds.add_predicates(
+                    cred,
+                    pred,
+                    timestamp=meta.get("timestamp"),
+                    rev_state=rev_state,
+                )
+
+        try:
+            secret = await self.get_master_secret()
+            presentation = W3cPresentation.create(
+                presentation_request,
+                present_creds,
+                secret,
+                schemas,
+                credential_definitions,
+            )
+        except AnoncredsError as err:
+            raise AnonCredsHolderError("Error creating presentation") from err
+
+        return presentation.to_dict()
+
     async def create_revocation_state(
         self,
         cred_rev_id: str,
@@ -652,8 +757,8 @@ class AnonCredsHolder:
         Args:
             cred_rev_id: credential revocation id in revocation registry
             rev_reg_def: revocation registry definition
-            rev_reg_delta: revocation delta
-            timestamp: delta timestamp
+            rev_list: revocation registry
+            tails_file_path: path to tails file
 
         Returns:
             the revocation state

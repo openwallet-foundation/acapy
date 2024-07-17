@@ -172,13 +172,19 @@ class AnonCredsIssuer:
         """Create a new credential schema and store it in the wallet.
 
         Args:
-            issuer_id: the DID issuing the credential definition
-            name: the schema name
-            version: the schema version
-            attr_names: a sequence of schema attribute names
+            issuer_id (str): The DID issuing the credential definition.
+            name (str): The schema name.
+            version (str): The schema version.
+            attr_names (Sequence[str]): A sequence of schema attribute names.
+            options (Optional[dict]): Additional options for schema creation.
+                Defaults to None.
 
         Returns:
-            A SchemaResult instance
+            SchemaResult: An instance of SchemaResult.
+
+        Raises:
+            AnonCredsSchemaAlreadyExists: If a similar schema already exists in
+                the records.
 
         """
         options = options or {}
@@ -310,7 +316,7 @@ class AnonCredsIssuer:
         if not isinstance(support_revocation, bool):
             raise ValueError("support_revocation must be a boolean")
 
-        max_cred_num = options.get("max_cred_num", DEFAULT_MAX_CRED_NUM)
+        max_cred_num = options.get("revocation_registry_size", DEFAULT_MAX_CRED_NUM)
         if not isinstance(max_cred_num, int):
             raise ValueError("max_cred_num must be an integer")
 

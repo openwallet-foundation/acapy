@@ -40,8 +40,15 @@ class V20PresRequest(AgentMessage):
         """Initialize presentation request object.
 
         Args:
-            request_presentations_attach: proof request attachments
-            comment: optional comment
+            _id (str, optional): The ID of the presentation request.
+            comment (str, optional): An optional comment.
+            will_confirm (bool, optional): A flag indicating whether the presentation
+                request will be confirmed.
+            formats (Sequence[V20PresFormat], optional): A sequence of presentation
+                formats.
+            request_presentations_attach (Sequence[AttachDecorator], optional): A
+                sequence of proof request attachments.
+            kwargs: Additional keyword arguments.
 
         """
         super().__init__(_id=_id, **kwargs)

@@ -158,9 +158,10 @@ class V20CredExRecord(BaseExchangeRecord):
 
         Args:
             session: The profile session to use
+            state: The state to set
             reason: A reason to add to the log
             log_params: Additional parameters to log
-            override: Override configured logging regimen, print to stderr instead
+            log_override: Override configured logging regimen, print to stderr instead
         """
 
         if self._last_state == state:  # already done
@@ -197,11 +198,11 @@ class V20CredExRecord(BaseExchangeRecord):
         else:
             topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
-        if session.profile.settings.get("debug.webhooks"):
-            if not payload:
-                payload = self.serialize()
+        # serialize payload before checking for webhook contents
+        if not payload:
+            payload = self.serialize()
         else:
-            payload = V20CredExRecordWebhook(**self.__dict__)
+            payload = V20CredExRecordWebhook(**payload)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)

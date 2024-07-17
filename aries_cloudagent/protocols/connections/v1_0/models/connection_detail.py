@@ -15,6 +15,9 @@ class DIDDocWrapper(fields.Field):
 
         Args:
             value: The value to serialize
+            attr: The attribute being serialized
+            obj: The object being serialized
+            kwargs: Additional keyword arguments
 
         Returns:
             The serialized DIDDoc
@@ -27,6 +30,9 @@ class DIDDocWrapper(fields.Field):
 
         Args:
             value: The value to deserialize
+            attr: The attribute being deserialized
+            data: The full data being deserialized
+            kwargs: Additional keyword arguments
 
         Returns:
             The deserialized value
@@ -49,6 +55,7 @@ class ConnectionDetail(BaseModel):
         Args:
             did: DID for the connection detail
             did_doc: DIDDoc for connection detail
+            kwargs: Additional keyword arguments
 
         """
         super().__init__(**kwargs)

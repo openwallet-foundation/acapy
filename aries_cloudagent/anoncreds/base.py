@@ -6,11 +6,7 @@ from typing import Generic, Optional, Pattern, Sequence, TypeVar
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..core.profile import Profile
-from .models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    GetCredDefResult,
-)
+from .models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
 from .models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
@@ -57,12 +53,11 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         """Initialize an instance.
 
         Args:
-            message: Message
-            obj_id: Object ID
-            obj: Object
-
-        TODO: update this docstring - Anoncreds-break.
-
+            message (str): The message associated with the instance.
+            obj_id (str): The ID of the object.
+            obj (T, optional): The generic object associated with the instance.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
         """
         super().__init__(message, obj_id, obj, *args, **kwargs)
         self._message = message

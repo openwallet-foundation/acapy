@@ -1,8 +1,8 @@
 """Classes to manage connections."""
 
 import logging
-from typing import Optional, Sequence, Tuple, Union, cast
 import warnings
+from typing import Optional, Sequence, Tuple, Union, cast
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
@@ -115,9 +115,17 @@ class ConnectionManager(BaseConnectionManager):
             public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
             alias: optional alias to apply to connection for later use
+            routing_keys: optional list of routing keys for the invitation
+            recipient_keys: optional list of recipient keys for the invitation
+            metadata: optional metadata to include in the connection record
+            mediation_id: optional mediation ID for the connection
 
         Returns:
             A tuple of the new `ConnRecord` and `ConnectionInvitation` instances
+
+        Raises:
+            ConnectionManagerError: if public invitations are not enabled or
+                no public DID is available
 
         """
         self.deprecation_warning()
@@ -264,11 +272,19 @@ class ConnectionManager(BaseConnectionManager):
 
         Args:
             invitation: The `ConnectionInvitation` to store
-            auto_accept: set to auto-accept the invitation (None to use config)
-            alias: optional alias to set on the record
+            their_public_did: The public DID of the inviting party (optional)
+            auto_accept: Set to True to auto-accept the invitation, False to manually
+                accept, or None to use the default setting from the configuration
+                (optional)
+            alias: An optional alias to set on the connection record (optional)
+            mediation_id: The mediation ID to associate with the connection (optional)
 
         Returns:
-            The new `ConnRecord` instance
+            The new `ConnRecord` instance representing the connection
+
+        Raises:
+            ConnectionManagerError: If the invitation is missing recipient keys or an
+                endpoint
 
         """
         self.deprecation_warning()
@@ -348,6 +364,7 @@ class ConnectionManager(BaseConnectionManager):
             connection: The `ConnRecord` representing the invitation to accept
             my_label: My label
             my_endpoint: My endpoint
+            mediation_id: The record id for mediation
 
         Returns:
             A new `ConnectionRequest` message to send to the other agent
