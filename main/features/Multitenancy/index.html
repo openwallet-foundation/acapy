@@ -738,57 +738,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#multi-tenant-admin-api" class="md-nav__link">
-    <span class="md-ellipsis">
-      Multi-tenant Admin API
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#managed-vs-unmanaged-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Managed vs Unmanaged Mode
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Managed vs Unmanaged Mode">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#managed-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Managed Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#unmanaged-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Unmanaged Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mode-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Mode Usage
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#message-routing" class="md-nav__link">
     <span class="md-ellipsis">
       Message Routing
@@ -2497,57 +2446,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#multi-tenant-admin-api" class="md-nav__link">
-    <span class="md-ellipsis">
-      Multi-tenant Admin API
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#managed-vs-unmanaged-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Managed vs Unmanaged Mode
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Managed vs Unmanaged Mode">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#managed-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Managed Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#unmanaged-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Unmanaged Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mode-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Mode Usage
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#message-routing" class="md-nav__link">
     <span class="md-ellipsis">
       Message Routing
@@ -2767,27 +2665,42 @@
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># This sets the secret used for JWT creation/verification for sub wallets</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nt">jwt-secret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Something very secret</span>
 </code></pre></div>
-<h2 id="multi-tenant-admin-api">Multi-tenant Admin API<a class="headerlink" href="#multi-tenant-admin-api" title="Permanent link">&para;</a></h2>
-<p>The multi-tenant admin API allows you to manage wallets in ACA-Py. Only the base wallet can manage wallets, so you can't for example create a wallet in the context of sub wallet (using the <code>Authorization</code> header as specified in <a href="#authentication">Authentication</a>).</p>
-<p>Multi-tenancy related actions are grouped under the <code>/multitenancy</code> path or the <code>multitenancy</code> topic in the SwaggerUI. As mentioned above, the multi-tenant admin API is disabled by default, event when multi-tenancy is enabled. This is to allow for more flexible agent configuration (e.g. horizontal scaling where only a single instance exposes the admin API). To enable the multi-tenant admin API, the <code>--multitenant-admin</code> startup parameter can be used.</p>
-<p>See the SwaggerUI for the exact API definition for multi-tenancy.</p>
-<h2 id="managed-vs-unmanaged-mode">Managed vs Unmanaged Mode<a class="headerlink" href="#managed-vs-unmanaged-mode" title="Permanent link">&para;</a></h2>
-<p>Multi-tenancy in ACA-Py is designed with two key management modes in mind.</p>
-<h3 id="managed-mode">Managed Mode<a class="headerlink" href="#managed-mode" title="Permanent link">&para;</a></h3>
-<p>In <strong><code>managed</code></strong> mode, ACA-Py will manage the key for the wallet. This is the easiest configuration as it allows ACA-Py to fully control the wallet. When a message is received from another agent it can immediately unlock the wallet and process the message. The wallet key is stored encrypted in the base wallet.</p>
-<h3 id="unmanaged-mode">Unmanaged Mode<a class="headerlink" href="#unmanaged-mode" title="Permanent link">&para;</a></h3>
-<p>In <strong><code>unmanaged</code></strong> mode, ACA-Py won't manage the key for the wallet. The key is not stored in the base wallet, which means the key to unlock the wallet needs to be provided whenever the wallet is used. When a message from another agent is received, ACA-Py cannot immediately unlock the wallet and process the message. See <a href="#authentication">Authentication</a> for more info.</p>
-<p>It is important to note unmanaged mode doesn't provide a lot of security over managed mode. The key is still processed by the agent, and therefore trust is required. It could however provide some benefit in the case a multi-tenant agent is compromised, as the agent doesn't store the key to unlock the wallet.</p>
-<blockquote>
-<p><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/26a0.svg" title=":warning:" /> Although support for unmanaged mode is mostly in place, the receiving of messages from other agents in unmanaged mode is not supported yet. This means unmanaged mode can not be used yet.</p>
-</blockquote>
-<h3 id="mode-usage">Mode Usage<a class="headerlink" href="#mode-usage" title="Permanent link">&para;</a></h3>
-<p>The mode used can be specified when creating a wallet using the <code>key_management_mode</code> parameter.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>// POST /multitenancy/wallet
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>{
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  // ... other params ...
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  &quot;key_management_mode&quot;: &quot;managed&quot; // or &quot;unmanaged&quot;
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>}
+<h5 id="single-wallet-vs-multiple-wallets">Single Wallet vs Multiple Wallets<a class="headerlink" href="#single-wallet-vs-multiple-wallets" title="Permanent link">&para;</a></h5>
+<p>With askar wallets it's possible to have all tenant wallets in a single wallet or each have an individual wallet. The default is to have each tenant in a separate wallet. This is done to keep the wallets separate and to allow for more flexibility in the future. If you want to have all tenants in a single wallet you can set the <code>multitenancy-config</code> with the value <code>{"wallet_type": "single-wallet-askar"}</code>. If you want to explicitly set the wallet type for each tenant you can do so by setting the <code>multitenancy-config</code> with the value <code>{"wallet_type": "basic"}</code>. See .vscode-sample/multitenant-admin.yml for an example.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">## Multi-tenant Admin API</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="l l-Scalar l-Scalar-Plain">The multi-tenant admin API allows you to manage wallets in ACA-Py. Only the base wallet can manage wallets, so you can&#39;t for example create a wallet in the context of sub wallet (using the `Authorization` header as specified in [Authentication](#authentication)).</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="l l-Scalar l-Scalar-Plain">Multi-tenancy related actions are grouped under the `/multitenancy` path or the `multitenancy` topic in the SwaggerUI. As mentioned above, the multi-tenant admin API is disabled by default, event when multi-tenancy is enabled. This is to allow for more flexible agent configuration (e.g. horizontal scaling where only a single instance exposes the admin API). To enable the multi-tenant admin API, the `--multitenant-admin` startup parameter can be used.</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="l l-Scalar l-Scalar-Plain">See the SwaggerUI for the exact API definition for multi-tenancy.</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="l l-Scalar l-Scalar-Plain">## Managed vs Unmanaged Mode</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="l l-Scalar l-Scalar-Plain">Multi-tenancy in ACA-Py is designed with two key management modes in mind.</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="l l-Scalar l-Scalar-Plain">### Managed Mode</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="l l-Scalar l-Scalar-Plain">In **`managed`** mode, ACA-Py will manage the key for the wallet. This is the easiest configuration as it allows ACA-Py to fully control the wallet. When a message is received from another agent it can immediately unlock the wallet and process the message. The wallet key is stored encrypted in the base wallet.</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="l l-Scalar l-Scalar-Plain">### Unmanaged Mode</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="l l-Scalar l-Scalar-Plain">In **`unmanaged`** mode, ACA-Py won&#39;t manage the key for the wallet. The key is not stored in the base wallet, which means the key to unlock the wallet needs to be provided whenever the wallet is used. When a message from another agent is received, ACA-Py cannot immediately unlock the wallet and process the message. See [Authentication](#authentication) for more info.</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="l l-Scalar l-Scalar-Plain">It is important to note unmanaged mode doesn&#39;t provide a lot of security over managed mode. The key is still processed by the agent, and therefore trust is required. It could however provide some benefit in the case a multi-tenant agent is compromised, as the agent doesn&#39;t store the key to unlock the wallet.</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="l l-Scalar l-Scalar-Plain">&gt; :warning</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Although support for unmanaged mode is mostly in place, the receiving of messages from other agents in unmanaged mode is not supported yet. This means unmanaged mode can not be used yet.</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1">### Mode Usage</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="l l-Scalar l-Scalar-Plain">The mode used can be specified when creating a wallet using the `key_management_mode` parameter.</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="err">```</span><span class="l l-Scalar l-Scalar-Plain">jsonc</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="l l-Scalar l-Scalar-Plain">// POST /multitenancy/wallet</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="p p-Indicator">{</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">  </span><span class="nv">// ... other params ...</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">  </span><span class="nv">&quot;key_management_mode&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;managed&quot;</span><span class="w"> </span><span class="nv">// or &quot;unmanaged&quot;</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="p p-Indicator">}</span>
 </code></pre></div>
 <h2 id="message-routing">Message Routing<a class="headerlink" href="#message-routing" title="Permanent link">&para;</a></h2>
 <p>In multi-tenant mode, when ACA-Py receives a message from another agent, it will need to determine which tenant to route the message to. Hyperledger Aries defines two types of routing methods, mediation and relaying.</p>
