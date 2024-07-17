@@ -492,7 +492,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
     def _get_type_manager_options(self, dif_proof: dict, pres_request: dict):
         """Get the type of manager and options based on the proof type."""
-        if dif_proof["proof"]["type"] == "DataIntegrityProof":
+        if dif_proof.get("proof") and dif_proof["proof"]["type"] == "DataIntegrityProof":
             manager = VcDiManager(self.profile)
             options = pres_request
         else:
