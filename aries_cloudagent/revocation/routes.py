@@ -118,7 +118,9 @@ class TxnOrRevRegResultSchema(OpenAPISchema):
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        metadata={"description": "Revocation registry definition transaction to endorse"},
+        metadata={
+            "description": "Revocation registry definition transaction to endorse"
+        },
     )
 
 
@@ -211,9 +213,13 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
         notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
-            raise ValidationError("Request must specify connection_id if notify is true")
+            raise ValidationError(
+                "Request must specify connection_id if notify is true"
+            )
         if notify and not notify_version:
-            raise ValidationError("Request must specify notify_version if notify is true")
+            raise ValidationError(
+                "Request must specify notify_version if notify is true"
+            )
 
     publish = fields.Boolean(
         required=False,
@@ -838,7 +844,9 @@ async def rev_regs_created(request: web.BaseRequest):
     is_anoncreds_profile_raise_web_exception(context.profile)
 
     search_tags = list(vars(RevRegsCreatedQueryStringSchema)["_declared_fields"])
-    tag_filter = {tag: request.query[tag] for tag in search_tags if tag in request.query}
+    tag_filter = {
+        tag: request.query[tag] for tag in search_tags if tag in request.query
+    }
     async with context.profile.session() as session:
         found = await IssuerRevRegRecord.query(
             session,
@@ -847,7 +855,11 @@ async def rev_regs_created(request: web.BaseRequest):
         )
 
     return web.json_response(
-        {"rev_reg_ids": [record.revoc_reg_id for record in found if record.revoc_reg_id]}
+        {
+            "rev_reg_ids": [
+                record.revoc_reg_id for record in found if record.revoc_reg_id
+            ]
+        }
     )
 
 
@@ -1287,7 +1299,9 @@ async def send_rev_reg_def(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(session, "endorser_info")
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -1405,7 +1419,9 @@ async def send_rev_reg_entry(request: web.BaseRequest):
             except BaseModelError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            endorser_info = await connection_record.metadata_get(session, "endorser_info")
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -1570,7 +1586,9 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
         # TODO error handling - for now just let exceptions get raised
         endorser_connection_id = meta_data["endorser"]["connection_id"]
         async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, endorser_connection_id)
+            connection = await ConnRecord.retrieve_by_id(
+                session, endorser_connection_id
+            )
             endorser_info = await connection.metadata_get(session, "endorser_info")
         endorser_did = endorser_info["endorser_did"]
         write_ledger = False
@@ -1642,7 +1660,9 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
         registry_record = await IssuerRevRegRecord.retrieve_by_id(session, record_id)
     await shield(generate(registry_record))
 
-    create_pending_rev_reg = meta_data["processing"].get("create_pending_rev_reg", False)
+    create_pending_rev_reg = meta_data["processing"].get(
+        "create_pending_rev_reg", False
+    )
     if write_ledger and create_pending_rev_reg:
         revoc = IndyRevocation(profile)
         await revoc.init_issuer_registry(
@@ -1730,13 +1750,17 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
         await registry_record.upload_tails_file(profile)
 
         # Post the initial revocation entry
-        await notify_revocation_entry_event(profile, registry_record.record_id, meta_data)
+        await notify_revocation_entry_event(
+            profile, registry_record.record_id, meta_data
+        )
 
     # create a "pending" registry if one is requested
     # (this is done automatically when creating a credential definition, so that when a
     #   revocation registry fills up, we can continue to issue credentials without a
     #   delay)
-    create_pending_rev_reg = meta_data["processing"].get("create_pending_rev_reg", False)
+    create_pending_rev_reg = meta_data["processing"].get(
+        "create_pending_rev_reg", False
+    )
     if create_pending_rev_reg:
         endorser_connection_id = (
             meta_data["endorser"].get("connection_id", None)
