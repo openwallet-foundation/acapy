@@ -118,9 +118,7 @@ class TxnOrRevRegResultSchema(OpenAPISchema):
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        metadata={
-            "description": "Revocation registry definition transaction to endorse"
-        },
+        metadata={"description": "Revocation registry definition transaction to endorse"},
     )
 
 
@@ -213,13 +211,9 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
         notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
-            raise ValidationError(
-                "Request must specify connection_id if notify is true"
-            )
+            raise ValidationError("Request must specify connection_id if notify is true")
         if notify and not notify_version:
-            raise ValidationError(
-                "Request must specify notify_version if notify is true"
-            )
+            raise ValidationError("Request must specify notify_version if notify is true")
 
     publish = fields.Boolean(
         required=False,
@@ -652,7 +646,7 @@ async def publish_revocations(request: web.BaseRequest):
         if not endorser_conn_id:
             raise web.HTTPBadRequest(reason="No endorser connection found")
     try:
-        rev_reg_resp, result = await rev_manager.publish_pending_revocations(
+        rev_reg_responses, result = await rev_manager.publish_pending_revocations(
             rrid2crid=rrid2crid,
             write_ledger=write_ledger,
             connection_id=endorser_conn_id,
@@ -660,30 +654,37 @@ async def publish_revocations(request: web.BaseRequest):
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    if create_transaction_for_endorser and rev_reg_resp:
-        transaction_mgr = TransactionManager(profile)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=rev_reg_resp["result"], connection_id=endorser_conn_id
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
+    txn_responses = []
+    for response in rev_reg_responses:
+        if create_transaction_for_endorser:
+            transaction_mgr = TransactionManager(profile)
             try:
-                (
-                    transaction,
-                    transaction_request,
-                ) = await transaction_mgr.create_request(
-                    transaction=transaction,
+                transaction = await transaction_mgr.create_record(
+                    messages_attach=response["result"], connection_id=endorser_conn_id
                 )
-            except (StorageError, TransactionManagerError) as err:
+            except StorageError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            await outbound_handler(transaction_request, connection_id=endorser_conn_id)
+            # if auto-request, send the request to the endorser
+            if context.settings.get_value("endorser.auto_request"):
+                try:
+                    (
+                        transaction,
+                        transaction_request,
+                    ) = await transaction_mgr.create_request(
+                        transaction=transaction,
+                    )
+                except (StorageError, TransactionManagerError) as err:
+                    raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        return web.json_response({"txn": transaction.serialize()})
+                await outbound_handler(
+                    transaction_request, connection_id=endorser_conn_id
+                )
+
+            txn_responses.append({"txn": transaction.serialize()})
+    if txn_responses:
+        return web.json_response(txn_responses)
+
     return web.json_response({"rrid2crid": result})
 
 
@@ -824,9 +825,7 @@ async def rev_regs_created(request: web.BaseRequest):
     is_anoncreds_profile_raise_web_exception(context.profile)
 
     search_tags = list(vars(RevRegsCreatedQueryStringSchema)["_declared_fields"])
-    tag_filter = {
-        tag: request.query[tag] for tag in search_tags if tag in request.query
-    }
+    tag_filter = {tag: request.query[tag] for tag in search_tags if tag in request.query}
     async with context.profile.session() as session:
         found = await IssuerRevRegRecord.query(
             session,
@@ -835,11 +834,7 @@ async def rev_regs_created(request: web.BaseRequest):
         )
 
     return web.json_response(
-        {
-            "rev_reg_ids": [
-                record.revoc_reg_id for record in found if record.revoc_reg_id
-            ]
-        }
+        {"rev_reg_ids": [record.revoc_reg_id for record in found if record.revoc_reg_id]}
     )
 
 
@@ -1279,9 +1274,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -1399,9 +1392,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
             except BaseModelError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -1566,9 +1557,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
         # TODO error handling - for now just let exceptions get raised
         endorser_connection_id = meta_data["endorser"]["connection_id"]
         async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(
-                session, endorser_connection_id
-            )
+            connection = await ConnRecord.retrieve_by_id(session, endorser_connection_id)
             endorser_info = await connection.metadata_get(session, "endorser_info")
         endorser_did = endorser_info["endorser_did"]
         write_ledger = False
@@ -1640,9 +1629,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
         registry_record = await IssuerRevRegRecord.retrieve_by_id(session, record_id)
     await shield(generate(registry_record))
 
-    create_pending_rev_reg = meta_data["processing"].get(
-        "create_pending_rev_reg", False
-    )
+    create_pending_rev_reg = meta_data["processing"].get("create_pending_rev_reg", False)
     if write_ledger and create_pending_rev_reg:
         revoc = IndyRevocation(profile)
         await revoc.init_issuer_registry(
@@ -1730,17 +1717,13 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
         await registry_record.upload_tails_file(profile)
 
         # Post the initial revocation entry
-        await notify_revocation_entry_event(
-            profile, registry_record.record_id, meta_data
-        )
+        await notify_revocation_entry_event(profile, registry_record.record_id, meta_data)
 
     # create a "pending" registry if one is requested
     # (this is done automatically when creating a credential definition, so that when a
     #   revocation registry fills up, we can continue to issue credentials without a
     #   delay)
-    create_pending_rev_reg = meta_data["processing"].get(
-        "create_pending_rev_reg", False
-    )
+    create_pending_rev_reg = meta_data["processing"].get("create_pending_rev_reg", False)
     if create_pending_rev_reg:
         endorser_connection_id = (
             meta_data["endorser"].get("connection_id", None)
