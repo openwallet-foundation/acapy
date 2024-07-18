@@ -11,6 +11,8 @@ from aries_cloudagent.tests import mock
 
 from ...admin.request_context import AdminRequestContext
 from ...askar.profile_anon import AskarAnoncredsProfile
+from ...protocols.endorse_transaction.v1_0.manager import TransactionManagerError
+from ...storage.error import StorageError
 from ...storage.in_memory import InMemoryStorage
 from .. import routes as test_module
 
@@ -325,6 +327,40 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
             result = await test_module.publish_revocations(self.author_request)
             assert result.status == 200
+
+            # Auto endorsement
+            self.author_request_dict["context"].settings["endorser.auto_request"] = True
+            self.author_request = mock.MagicMock(
+                app={},
+                match_info={},
+                query={},
+                __getitem__=lambda _, k: self.author_request_dict[k],
+                headers={"x-api-key": "author-key"},
+            )
+            self.author_request.json = mock.CoroutineMock()
+            result = await test_module.publish_revocations(self.author_request)
+            assert result.status == 200
+
+            # exceptions
+            with mock.patch.object(
+                test_module, "TransactionManager", autospec=True
+            ) as mock_txn_mgr:
+                mock_txn_mgr.return_value.create_record = mock.CoroutineMock(
+                    side_effect=StorageError()
+                )
+                with self.assertRaises(test_module.web.HTTPBadRequest):
+                    result = await test_module.publish_revocations(self.author_request)
+
+            with mock.patch.object(
+                test_module, "TransactionManager", autospec=True
+            ) as mock_txn_mgr:
+                mock_txn_mgr.return_value.create_request = mock.CoroutineMock(
+                    side_effect=[StorageError(), TransactionManagerError()]
+                )
+                with self.assertRaises(test_module.web.HTTPBadRequest):
+                    await test_module.publish_revocations(self.author_request)
+                with self.assertRaises(test_module.web.HTTPBadRequest):
+                    await test_module.publish_revocations(self.author_request)
 
     async def test_publish_revocations_endorser_x(self):
         self.author_request.json = mock.CoroutineMock()
