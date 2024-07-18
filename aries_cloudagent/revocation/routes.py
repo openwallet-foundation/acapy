@@ -654,38 +654,51 @@ async def publish_revocations(request: web.BaseRequest):
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    txn_responses = []
-    for response in rev_reg_responses:
-        if create_transaction_for_endorser:
-            transaction_mgr = TransactionManager(profile)
-            try:
-                transaction = await transaction_mgr.create_record(
-                    messages_attach=response["result"], connection_id=endorser_conn_id
+    if create_transaction_for_endorser:
+        return web.json_response(
+            (
+                await _process_publish_response_for_endorsement(
+                    profile, rev_reg_responses, outbound_handler, endorser_conn_id
                 )
-            except StorageError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            # if auto-request, send the request to the endorser
-            if context.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        transaction,
-                        transaction_request,
-                    ) = await transaction_mgr.create_request(
-                        transaction=transaction,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-                await outbound_handler(
-                    transaction_request, connection_id=endorser_conn_id
-                )
-
-            txn_responses.append({"txn": transaction.serialize()})
-    if txn_responses:
-        return web.json_response(txn_responses)
+            )
+        )
 
     return web.json_response({"rrid2crid": result})
+
+
+async def _process_publish_response_for_endorsement(
+    profile: Profile,
+    responses: dict,
+    outbound_handler: BaseResponder.send_outbound,
+    endorser_conn_id: str,
+):
+    txn_responses = []
+    for response in responses:
+        transaction_mgr = TransactionManager(profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=response["result"], connection_id=endorser_conn_id
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if profile.context.settings.get_value("endorser.auto_request"):
+            try:
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
+                    transaction=transaction,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=endorser_conn_id)
+
+        txn_responses.append({"txn": transaction.serialize()})
+
+    return txn_responses
 
 
 @docs(tags=["revocation"], summary="Clear pending revocations")
