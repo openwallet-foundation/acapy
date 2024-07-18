@@ -283,7 +283,7 @@ class RevocationManager:
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)
-        rev_entry_resp = None
+        rev_entry_responses = []
         async with self._profile.session() as session:
             issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
 
@@ -331,20 +331,24 @@ class RevocationManager:
                                 session, "endorser_info"
                             )
                         endorser_did = endorser_info["endorser_did"]
-                        rev_entry_resp = await issuer_rr_upd.send_entry(
-                            self._profile,
-                            write_ledger=write_ledger,
-                            endorser_did=endorser_did,
+                        rev_entry_responses.append(
+                            await issuer_rr_upd.send_entry(
+                                self._profile,
+                                write_ledger=write_ledger,
+                                endorser_did=endorser_did,
+                            )
                         )
                     else:
-                        rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
+                        rev_entry_responses.append(
+                            await issuer_rr_upd.send_entry(self._profile)
+                        )
                         await notify_revocation_published_event(
                             self._profile, issuer_rr_rec.revoc_reg_id, crids
                         )
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published
 
-        return rev_entry_resp, result
+        return rev_entry_responses, result
 
     async def clear_pending_revocations(
         self, purge: Mapping[Text, Sequence[Text]] = None
