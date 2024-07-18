@@ -524,7 +524,7 @@ class VcLdpManager:
             if self.profile.context.settings.get(
                 "debug.raise_errors_for_unknown_w3c_schemas"):
                 raise VcLdpManagerError(
-                    "credentialSchema validation error", result.errors)
+                    f"credentialSchema validation error: {result.errors}")
             else:
                 self._logger.debug("credentialSchema validation error: %s", 
                                    result.errors)

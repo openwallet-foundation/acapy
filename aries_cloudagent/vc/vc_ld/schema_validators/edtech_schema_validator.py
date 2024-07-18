@@ -94,8 +94,4 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
 
         traverse_errors(errors)
 
-        error = {
-            "message": "Credential does not conform to Schema",
-            "details": error_details
-        }
-        return json.dumps(error)
+        return error_details
