@@ -258,7 +258,12 @@ class IndyRevocation:
                     await IssuerRevRegRecord.query_by_cred_def_id(
                         session, cred_def_id, limit=1
                     )
-                )[0]
+                )
+                if not any_registry:
+                    raise RevocationError(
+                        f"No revocation registry record found in issuer wallet for cred def id {cred_def_id}"
+                    )
+                any_registry = any_registry[0]
                 await self.init_issuer_registry(
                     cred_def_id,
                     max_cred_num=any_registry.max_cred_num,
