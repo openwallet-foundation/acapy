@@ -136,7 +136,7 @@ Ensure the credential data conforms to the VC-DI context.
 2. **Select Credential type**
 The ability to choose the credential type (indy, vc_di) to be issued. The credential type is used to determine the schema for the credential data.
 
-The format to change credential can be seen ["Demo Instruction"](https://github.com/sarthakvijayvergiya/aries-cloudagent-python/blob/whatscookin/feat/vc-di-proof/docs/demo/README.md)
+The format to change credential can be seen in the ["Demo Instruction"](https://github.com/sarthakvijayvergiya/aries-cloudagent-python/blob/whatscookin/feat/vc-di-proof/docs/demo/README.md)
 
 3. **Send the Credential:**
 Use the `/issue-credential-2.0/send` endpoint to issue the credential.
