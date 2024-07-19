@@ -127,7 +127,7 @@ Ensure the credential data conforms to the VC-DI context.
     "created": "2023-01-01T00:00:00Z",
     "proofPurpose": "assertionMethod",
     "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-    "jws": "eyJhbGciOiJFZERTQSJ9..."
+    "proofValue": "eyJhbGciOiJFZERTQSJ9..."
   }
 }
 ```
@@ -154,6 +154,11 @@ Use the `/issue-credential-2.0/send` endpoint to issue the credential.
     "attributes": [
       {"name": "name", "value": "John Doe"}
     ]
+  },
+  "filter": {
+    "format": {
+      "cred_def_id": "FMB5MqzuhR..."
+    }
   },
   "trace": false
 }
@@ -206,7 +211,7 @@ Ensure the request conforms to the verification context.
         "created": "2023-01-01T00:00:00Z",
         "proofPurpose": "assertionMethod",
         "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-        "jws": "eyJhbGciOiJFZERTQSJ9..."
+        "proofValue": "eyJhbGciOiJFZERTQSJ9..."
       }
     }
   ]
@@ -215,7 +220,7 @@ Ensure the request conforms to the verification context.
 </details>
 
 2. **Send the Verification Request:**
-Use the `/verifier-credential/2.0/verify` endpoint.
+Use the `/present-proof/send-request` endpoint.
 
 <details>
 <summary>JSON example</summary>
@@ -241,7 +246,7 @@ Use the `/verifier-credential/2.0/verify` endpoint.
           "created": "2023-01-01T00:00:00Z",
           "proofPurpose": "assertionMethod",
           "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-          "jws": "eyJhbGciOiJFZERTQSJ9..."
+          "proofValue": "eyJhbGciOiJFZERTQSJ9..."
         }
       }
     ]
@@ -279,7 +284,7 @@ The response should confirm the credential verification.
           "created": "2023-01-01T00:00:00Z",
           "proofPurpose": "assertionMethod",
           "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-          "jws": "eyJhbGciOiJFZERTQSJ9..."
+          "proofValue": "eyJhbGciOiJFZERTQSJ9..."
         }
       }
     ],
@@ -288,7 +293,7 @@ The response should confirm the credential verification.
       "created": "2023-01-01T00:00:00Z",
       "proofPurpose": "authentication",
       "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-      "jws": "eyJhbGciOiJFZERTQSJ9..."
+      "proofValue": "eyJhbGciOiJFZERTQSJ9..."
     }
   }
 }
@@ -338,7 +343,7 @@ To request proof, follow these steps:
    </details>
 
 2. **Send the Proof Request:**
-   Use the `/present-proof-2.0/request-presentation` endpoint.
+   Use the `/present-proof-2.0/send-request` endpoint.
 
   <details>
   <summary>JSON example</summary>
@@ -426,7 +431,7 @@ To present proof, follow these steps:
            "created": "2023-01-01T00:00:00Z",
            "proofPurpose": "assertionMethod",
            "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-           "jws": "eyJhbGciOiJFZERTQSJ9..."
+           "proofValue": "eyJhbGciOiJFZERTQSJ9..."
          }
        }
      ]
@@ -435,7 +440,7 @@ To present proof, follow these steps:
    </details>
 
 2. **Send the Presentation:**
-   Use the `/present-proof-2.0/present-presentation` endpoint.
+   Use the `/present-proof-2.0/send-request` endpoint.
 
    <details>
    <summary>JSON example</summary>
@@ -466,7 +471,7 @@ To present proof, follow these steps:
              "created": "2023-01-01T00:00:00Z",
              "proofPurpose": "assertionMethod",
              "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-             "jws": "eyJhbGciOiJFZERTQSJ9..."
+             "proofValue": "eyJhbGciOiJFZERTQSJ9..."
            }
          }
        ]
@@ -526,7 +531,7 @@ To verify presented proof, follow these steps:
            "created": "2023-01-01T00:00:00Z",
            "proofPurpose": "assertionMethod",
            "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-           "jws": "eyJhbGciOiJFZERTQSJ9..."
+           "proofValue": "eyJhbGciOiJFZERTQSJ9..."
          }
        }
      ]
@@ -535,7 +540,7 @@ To verify presented proof, follow these steps:
    </details>
 
 2. **Send the Verification Request:**
-   Use the `/verifier-proof-2.0/verify` endpoint.
+   Use the `/present-proof-2.0/send-request` endpoint.
 
   <details>
   <summary>JSON example</summary>
@@ -566,7 +571,7 @@ To verify presented proof, follow these steps:
              "created": "2023-01-01T00:00:00Z",
              "proofPurpose": "assertionMethod",
              "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-             "jws": "eyJhbGciOiJFZERTQSJ9..."
+             "proofValue": "eyJhbGciOiJFZERTQSJ9..."
            }
          }
        ]
@@ -604,7 +609,7 @@ To verify presented proof, follow these steps:
              "created": "2023-01-01T00:00:00Z",
              "proofPurpose": "assertionMethod",
              "verificationMethod": "did:key:z6MkqG......#z6MkqG......",
-             "jws": "eyJhbGciOiJFZERTQSJ9..."
+             "proofValue": "eyJhbGciOiJFZERTQSJ9..."
            }
          }
        ]
