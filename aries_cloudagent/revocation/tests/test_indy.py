@@ -11,6 +11,7 @@ from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...storage.error import StorageNotFoundError
 from ..error import (
+    RevocationError,
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
 )
@@ -161,9 +162,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         recs = await self.revoc.list_issuer_registries()
         assert len(recs) == 2
 
-        init_list = list(
-            filter(lambda r: r.state == IssuerRevRegRecord.STATE_INIT, recs)
-        )
+        init_list = list(filter(lambda r: r.state == IssuerRevRegRecord.STATE_INIT, recs))
         assert len(init_list) == 2
 
         # store the ids to verify they are decommissioned
@@ -204,14 +203,10 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
             filter(lambda r: r.state == IssuerRevRegRecord.STATE_DECOMMISSIONED, recs)
         )
         assert len(decomm_list) == 2
-        decomm_rev_reg_ids = [
-            rec.revoc_reg_id for rec in decomm_list if rec.revoc_reg_id
-        ]
+        decomm_rev_reg_ids = [rec.revoc_reg_id for rec in decomm_list if rec.revoc_reg_id]
 
         # new ones replacing the decommissioned are in init state
-        init_list = list(
-            filter(lambda r: r.state == IssuerRevRegRecord.STATE_INIT, recs)
-        )
+        init_list = list(filter(lambda r: r.state == IssuerRevRegRecord.STATE_INIT, recs))
         assert len(init_list) == 2
 
         # check that the original rev reg ids are decommissioned
@@ -294,6 +289,19 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         assert not result
         assert self.revoc.init_issuer_registry.call_args.kwargs["max_cred_num"] == 3
+
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
+    )
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation.init_issuer_registry",
+        mock.CoroutineMock(return_value=None),
+    )
+    @mock.patch.object(IssuerRevRegRecord, "query_by_cred_def_id", side_effect=[[], []])
+    async def test_get_or_create_active_registry_has_no_active_or_any_registry(self, *_):
+        with self.assertRaises(RevocationError):
+            await self.revoc.get_or_create_active_registry("cred_def_id")
 
     @mock.patch(
         "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
