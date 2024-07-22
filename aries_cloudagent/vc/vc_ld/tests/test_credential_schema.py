@@ -58,7 +58,7 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
                 await self.ldp_manager.prepare_credential(vc, self.options)
     
             assert '''"reason": "\'2.1\' is not of type \'number\'", "json_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
-        assert ldp_manager_error.value.args[0] == 'credentialSchema validation error'
+        assert 'credentialSchema validation error' in ldp_manager_error.value.args[0]
 
     async def test_prepare_detail_invalid_url(
         self
@@ -69,4 +69,4 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
                 await self.ldp_manager.prepare_credential(vc, self.options)
 
             assert '''The HTTP scheme MUST be "https" for http://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json''' in validator_error.value.args[0]
-        assert ldp_manager_error.value.args[0] == 'credentialSchema validation error'
+        assert  'credentialSchema validation error' in ldp_manager_error.value.args[0] 

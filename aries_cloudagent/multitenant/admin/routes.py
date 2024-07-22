@@ -47,7 +47,8 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_PRESERVE_EXCHANGE_RECORDS": "preserve_exchange_records",
     "ACAPY_PUBLIC_INVITES": "public_invites",
     "ACAPY_REQUESTS_THROUGH_PUBLIC_DID": "requests_through_public_did",
-    "RAISE_ERRORS_FOR_UNKNOWN_W3C_SCHEMAS": "debug.RAISE_ERRORS_FOR_UNKNOWN_W3C_SCHEMAS",
+    "ACAPY_RAISE_ERRORS_FOR_UNKNOWN_W3C_SCHEMAS": 
+    "debug.raise_errors_for_unknown_w3c_schemas",
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {

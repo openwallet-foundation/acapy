@@ -353,8 +353,7 @@ class V20PresExRecordSchema(BaseExchangeSchema):
             "example": True,
         },
     )
-    validated_msgs = fields.List(
-        fields.Str(
+    validated_msgs = fields.List(fields.Str(
             required=False,
             metadata={
                 "description": "Credential validation warning or error information"

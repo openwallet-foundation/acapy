@@ -499,11 +499,9 @@ class VcLdpManager:
     ) -> ValidationResult:
         """Validate a VP with a Linked Data Proof."""
         
-        validation_result = await validate_presentation(
+        return await validate_presentation(
             presentation=vp.serialize()
         )
-        await self._handle_validation_config(validation_result)
-        return validation_result
 
     async def validate_credential(
             self, vc: VerifiableCredential

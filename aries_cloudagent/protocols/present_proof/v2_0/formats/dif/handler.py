@@ -478,7 +478,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         assert pres_ver_result is not None
         assert pres_valid_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
-        pres_ex_record.validated = json.dumps(pres_valid_result.validated)
+        pres_ex_record.validated = pres_valid_result.validated
         pres_ex_record.validated_msgs = pres_valid_result.errors
         
         return pres_ex_record

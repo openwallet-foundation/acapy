@@ -57,7 +57,7 @@ async def validate_credential(
         )
     except Exception as e:
         return ValidationResult(
-            validated=False, errors=[e]
+            validated=False, errors=e
         )
 
 
@@ -78,7 +78,11 @@ async def _validate_presentation(
     )
 
     credentials_validated = all(result.validated for result in credential_results)
-    credential_errors = [result.errors for result in credential_results if result.errors]
+    credential_errors = [[str(exception) for exception in err] 
+                     for err in [result.errors 
+                     for result in credential_results if result.errors
+                     ]]
+
 
     return ValidationResult(
         validated=credentials_validated,
@@ -106,7 +110,7 @@ async def validate_presentation(
             presentation=presentation,
         )
     except Exception as e:
-        return ValidationResult(validated=False, errors=[e])
+        return ValidationResult(validated=False, errors=e)
 
 
 __all__ = ["validate_presentation"]
