@@ -12,7 +12,6 @@ from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
-from .....storage.error import StorageNotFoundError
 from .....tests import mock
 from .....wallet.base import BaseWallet
 from .....wallet.did_method import SOV, DIDMethods
@@ -804,34 +803,16 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
     async def test_set_transaction_their_job(self):
         mock_job = mock.MagicMock()
         mock_conn = mock.MagicMock()
+        mock_conn.metadata_get = mock.CoroutineMock(
+            side_effect=[
+                None,
+                {"meta": "data"},
+            ]
+        )
+        mock_conn.metadata_set = mock.CoroutineMock()
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_retrieve:
-            mock_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.CoroutineMock(
-                    side_effect=[
-                        None,
-                        {"meta": "data"},
-                    ]
-                ),
-                metadata_set=mock.CoroutineMock(),
-            )
-
-            for i in range(2):
-                await self.manager.set_transaction_their_job(mock_job, mock_conn)
-
-    async def test_set_transaction_their_job_conn_not_found(self):
-        mock_job = mock.MagicMock()
-        mock_conn = mock.MagicMock()
-
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_retrieve:
-            mock_retrieve.side_effect = StorageNotFoundError()
-
-            with self.assertRaises(TransactionManagerError):
-                await self.manager.set_transaction_their_job(mock_job, mock_conn)
+        for i in range(2):
+            await self.manager.set_transaction_their_job(mock_job, mock_conn)
 
     @mock.patch.object(AnonCredsIssuer, "finish_schema")
     @mock.patch.object(AnonCredsIssuer, "finish_cred_def")

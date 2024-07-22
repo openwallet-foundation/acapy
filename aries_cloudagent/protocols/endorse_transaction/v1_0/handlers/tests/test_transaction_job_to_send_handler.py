@@ -26,7 +26,7 @@ class TestTransactionJobToSendHandler(IsolatedAsyncioTestCase):
             await handler.handle(request_context, responder)
 
         mock_tran_mgr.return_value.set_transaction_their_job.assert_called_once_with(
-            request_context.message, request_context.message_receipt
+            request_context.message, request_context.connection_record
         )
         assert not responder.messages
 
@@ -48,6 +48,6 @@ class TestTransactionJobToSendHandler(IsolatedAsyncioTestCase):
             await handler.handle(request_context, responder)
 
         mock_tran_mgr.return_value.set_transaction_their_job.assert_called_once_with(
-            request_context.message, request_context.message_receipt
+            request_context.message, request_context.connection_record
         )
         assert not responder.messages
