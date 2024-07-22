@@ -2085,13 +2085,13 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 
 [[package]]
 name = "pytest-ruff"
-version = "0.4.0"
+version = "0.4.1"
 description = "pytest plugin to check ruff requirements."
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pytest_ruff-0.4.0-py3-none-any.whl", hash = "sha256:e421d3096618a0878616f2db9716526454a8348eb9db6cfe4ba926793066ae20"},
-    {file = "pytest_ruff-0.4.0.tar.gz", hash = "sha256:551876108991f3dd43d719988f8224a29c6fc6d50e2284ba1ffd389c0bd3610c"},
+    {file = "pytest_ruff-0.4.1-py3-none-any.whl", hash = "sha256:69acd5b2ba68d65998c730b5b4d656788193190e45f61a53aa66ef8b390634a4"},
+    {file = "pytest_ruff-0.4.1.tar.gz", hash = "sha256:2c9a30f15f384c229c881b52ec86cfaf1e79d39530dd7dd5f2d6aebe278f7eb7"},
 ]
 
 [package.dependencies]
@@ -2805,4 +2805,4 @@ didcommv2 = ["didcomm-messaging"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a49639d458cf34f298ede12f4a0840791e607666778c9e02d3b440686314dfe5"
+content-hash = "954f7dec5f4463273ed6e331613ab897e22d41643ea15333316b4fd25f694ca0"
