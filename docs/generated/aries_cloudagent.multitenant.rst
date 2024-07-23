@@ -17,14 +17,6 @@ Subpackages
 Submodules
 ----------
 
-aries\_cloudagent.multitenant.askar\_profile\_manager module
-------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.multitenant.askar_profile_manager
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.multitenant.base module
 -----------------------------------------
 
@@ -69,6 +61,14 @@ aries\_cloudagent.multitenant.route\_manager module
 ---------------------------------------------------
 
 .. automodule:: aries_cloudagent.multitenant.route_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.multitenant.single\_wallet\_askar\_manager module
+-------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.multitenant.single_wallet_askar_manager
    :members:
    :undoc-members:
    :show-inheritance:

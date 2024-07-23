@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.0.0rc4",
+    "version" : "v1.0.0rc5",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -6423,6 +6423,10 @@
     "ClaimFormat" : {
       "type" : "object",
       "properties" : {
+        "di_vc" : {
+          "type" : "object",
+          "properties" : { }
+        },
         "jwt" : {
           "type" : "object",
           "properties" : { }
@@ -10054,7 +10058,7 @@
     },
     "LinkedDataProof" : {
       "type" : "object",
-      "required" : [ "created", "proofPurpose", "type", "verificationMethod" ],
+      "required" : [ "proofPurpose", "type", "verificationMethod" ],
       "properties" : {
         "challenge" : {
           "type" : "string",
