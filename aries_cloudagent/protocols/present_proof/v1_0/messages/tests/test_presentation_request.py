@@ -4,13 +4,9 @@ from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import str_to_epoch
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
-
 from ..presentation_request import PresentationRequest
-
 
 NOW_8601 = datetime.now(tz=timezone.utc).isoformat(" ", "seconds")
 NOW_EPOCH = str_to_epoch(NOW_8601)
@@ -104,7 +100,7 @@ class TestPresentationRequest(TestCase):
         )
 
         presentation_request = PresentationRequest.deserialize(dump)
-        assert type(presentation_request) == PresentationRequest
+        assert type(presentation_request) is PresentationRequest
 
     def test_serialize(self):
         """Test serialization."""

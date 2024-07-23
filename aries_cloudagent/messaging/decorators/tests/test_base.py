@@ -34,14 +34,14 @@ class TestBaseDecoratorSet(TestCase):
     def test_base_decorator_set(self):
         MODELS = {"a": SampleDecorator}
         deco_set = BaseDecoratorSet(MODELS)
-        assert type(deco_set) == BaseDecoratorSet
+        assert type(deco_set) is BaseDecoratorSet
         assert not deco_set.fields
         assert deco_set.models == MODELS
         assert deco_set.prefix == DECORATOR_PREFIX
         assert BaseDecoratorSet.__name__ in str(deco_set)
 
         deco_set_copy = deco_set.copy()
-        assert type(deco_set_copy) == BaseDecoratorSet
+        assert type(deco_set_copy) is BaseDecoratorSet
         assert deco_set_copy == deco_set
         assert not deco_set_copy.fields
         assert deco_set_copy.models == MODELS

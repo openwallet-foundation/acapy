@@ -3,10 +3,9 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
-    RequestContext,
     HandlerException,
+    RequestContext,
 )
-
 from ..manager import V10DiscoveryMgr
 from ..messages.disclose import Disclose
 
@@ -18,10 +17,12 @@ class DiscloseHandler(BaseHandler):
         """Message handler implementation."""
         self._logger.debug("DiscloseHandler called with context %s", context)
         assert isinstance(context.message, Disclose)
+
         if not context.connection_ready:
             raise HandlerException(
                 "Received disclosures message from inactive connection"
             )
+
         profile = context.profile
         mgr = V10DiscoveryMgr(profile)
         await mgr.receive_disclose(

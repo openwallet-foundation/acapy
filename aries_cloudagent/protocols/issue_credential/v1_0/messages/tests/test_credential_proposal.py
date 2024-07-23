@@ -1,12 +1,9 @@
 from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CREDENTIAL_PREVIEW, CREDENTIAL_PROPOSAL
-
 from ..credential_proposal import CredentialProposal
 from ..inner.credential_preview import CredAttrSpec, CredentialPreview
-
 
 CRED_PREVIEW = CredentialPreview(
     attributes=(
@@ -58,7 +55,7 @@ class TestCredentialProposal(TestCase):
         }
 
         cred_proposal = CredentialProposal.deserialize(obj)
-        assert type(cred_proposal) == CredentialProposal
+        assert type(cred_proposal) is CredentialProposal
 
     def test_serialize(self):
         """Test serialization."""

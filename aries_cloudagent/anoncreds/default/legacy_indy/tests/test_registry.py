@@ -59,6 +59,7 @@ from .. import registry as test_module
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"
 INDY_SCHEMA_ID = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
+INDY_SCHEMA_TXN_ID = r"^[0-9.]+$"
 INDY_CRED_DEF_ID = (
     rf"^([{B58}]{{21,22}})"  # issuer DID
     f":3"  # cred def id marker
@@ -73,7 +74,7 @@ INDY_REV_REG_DEF_ID = (
     rf"CL_ACCUM:(.+$)"
 )
 SUPPORTED_ID_REGEX = re.compile(
-    rf"{INDY_DID}|{INDY_SCHEMA_ID}|{INDY_CRED_DEF_ID}|{INDY_REV_REG_DEF_ID}"
+    rf"{INDY_DID}|{INDY_SCHEMA_ID}|{INDY_SCHEMA_TXN_ID}|{INDY_CRED_DEF_ID}|{INDY_REV_REG_DEF_ID}"
 )
 
 TEST_INDY_DID = "WgWxqztrNooG92RXvxSTWv"

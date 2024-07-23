@@ -237,9 +237,7 @@ class IndyRevocation:
         triggered and the caller should retry after a delay.
         """
         try:
-            active_rev_reg_rec = await self.get_active_issuer_rev_reg_record(
-                cred_def_id
-            )
+            active_rev_reg_rec = await self.get_active_issuer_rev_reg_record(cred_def_id)
             rev_reg = active_rev_reg_rec.get_registry()
             await rev_reg.get_or_fetch_local_tails_path()
             return active_rev_reg_rec, rev_reg
@@ -254,11 +252,14 @@ class IndyRevocation:
             # all registries are full, create a new one
             if not full_registries:
                 # Use any registry to get max cred num
-                any_registry = (
-                    await IssuerRevRegRecord.query_by_cred_def_id(
-                        session, cred_def_id, limit=1
+                any_registry = await IssuerRevRegRecord.query_by_cred_def_id(
+                    session, cred_def_id, limit=1
+                )
+                if not any_registry:
+                    raise RevocationError(
+                        f"No revocation registry record found in issuer wallet for cred def id {cred_def_id}"  # noqa: E501
                     )
-                )[0]
+                any_registry = any_registry[0]
                 await self.init_issuer_registry(
                     cred_def_id,
                     max_cred_num=any_registry.max_cred_num,

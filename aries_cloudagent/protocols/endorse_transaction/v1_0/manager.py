@@ -21,7 +21,6 @@ from ....revocation.util import (
     notify_revocation_reg_endorsed_event,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import notify_endorse_did_attrib_event, notify_endorse_did_event
 from .messages.cancel_transaction import CancelTransaction
@@ -310,9 +309,7 @@ class TransactionManager:
                 )
                 # we don't have an endorsed transaction so just return did meta-data
                 ledger_response = {
-                    "result": {
-                        "txn": {"type": "1", "data": {"dest": meta_data["did"]}}
-                    },
+                    "result": {"txn": {"type": "1", "data": {"dest": meta_data["did"]}}},
                     "meta_data": meta_data,
                 }
                 endorsed_msg = json.dumps(ledger_response)
@@ -430,9 +427,7 @@ class TransactionManager:
 
         # if we are the author, we need to write the endorsed ledger transaction ...
         # ... EXCEPT for DID transactions, which the endorser will write
-        if (not endorser) and (
-            txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION
-        ):
+        if (not endorser) and (txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION):
             ledger = self.profile.inject(BaseLedger)
             if not ledger:
                 raise TransactionManagerError("No ledger available")
@@ -772,20 +767,17 @@ class TransactionManager:
         return tx_job_to_send
 
     async def set_transaction_their_job(
-        self, tx_job_received: TransactionJobToSend, receipt: MessageReceipt
+        self, tx_job_received: TransactionJobToSend, connection: ConnRecord
     ):
         """Set transaction_their_job.
 
         Args:
             tx_job_received: The transaction job that is received from the other agent
-            receipt: The Message Receipt Object
+            connection: connection to set metadata on
         """
 
         try:
             async with self._profile.session() as session:
-                connection = await ConnRecord.retrieve_by_did(
-                    session, receipt.sender_did, receipt.recipient_did
-                )
                 value = await connection.metadata_get(session, "transaction_jobs")
                 if value:
                     value["transaction_their_job"] = tx_job_received.job
@@ -893,9 +885,7 @@ class TransactionManager:
         elif ledger_response["result"]["txn"]["type"] == "114":
             # revocation entry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
-            revoked = ledger_response["result"]["txn"]["data"]["value"].get(
-                "revoked", []
-            )
+            revoked = ledger_response["result"]["txn"]["data"]["value"].get("revoked", [])
             meta_data["context"]["rev_reg_id"] = rev_reg_id
             if is_anoncreds:
                 await AnonCredsRevocation(self._profile).finish_revocation_list(

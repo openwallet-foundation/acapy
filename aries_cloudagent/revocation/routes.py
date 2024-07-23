@@ -652,7 +652,7 @@ async def publish_revocations(request: web.BaseRequest):
         if not endorser_conn_id:
             raise web.HTTPBadRequest(reason="No endorser connection found")
     try:
-        rev_reg_resp, result = await rev_manager.publish_pending_revocations(
+        rev_reg_responses, result = await rev_manager.publish_pending_revocations(
             rrid2crid=rrid2crid,
             write_ledger=write_ledger,
             connection_id=endorser_conn_id,
@@ -660,17 +660,36 @@ async def publish_revocations(request: web.BaseRequest):
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    if create_transaction_for_endorser and rev_reg_resp:
+    if create_transaction_for_endorser:
+        return web.json_response(
+            (
+                await _process_publish_response_for_endorsement(
+                    profile, rev_reg_responses, outbound_handler, endorser_conn_id
+                )
+            )
+        )
+
+    return web.json_response({"rrid2crid": result})
+
+
+async def _process_publish_response_for_endorsement(
+    profile: Profile,
+    responses: dict,
+    outbound_handler: BaseResponder.send_outbound,
+    endorser_conn_id: str,
+):
+    txn_responses = []
+    for response in responses:
         transaction_mgr = TransactionManager(profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=rev_reg_resp["result"], connection_id=endorser_conn_id
+                messages_attach=response["result"], connection_id=endorser_conn_id
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
+        if profile.context.settings.get_value("endorser.auto_request"):
             try:
                 (
                     transaction,
@@ -683,8 +702,9 @@ async def publish_revocations(request: web.BaseRequest):
 
             await outbound_handler(transaction_request, connection_id=endorser_conn_id)
 
-        return web.json_response({"txn": transaction.serialize()})
-    return web.json_response({"rrid2crid": result})
+        txn_responses.append({"txn": transaction.serialize()})
+
+    return txn_responses
 
 
 @docs(tags=["revocation"], summary="Clear pending revocations")

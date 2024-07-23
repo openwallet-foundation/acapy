@@ -424,8 +424,6 @@ class BaseConnectionManager:
             storage: BaseStorage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
         ret_did = record.tags["did"]
-        if ret_did.startswith("did:peer:4"):
-            ret_did = self.long_did_peer_to_short(ret_did)
         return ret_did
 
     async def remove_keys_for_did(self, did: str):
@@ -452,9 +450,7 @@ class BaseConnectionManager:
             doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
-            raise BaseConnectionManagerError(
-                "Failed to resolve DID services"
-            ) from error
+            raise BaseConnectionManagerError("Failed to resolve DID services") from error
 
         if not doc.service:
             raise BaseConnectionManagerError(
@@ -523,10 +519,7 @@ class BaseConnectionManager:
 
         return (
             endpoint,
-            [
-                self._extract_key_material_in_base58_format(key)
-                for key in recipient_keys
-            ],
+            [self._extract_key_material_in_base58_format(key) for key in recipient_keys],
             [self._extract_key_material_in_base58_format(key) for key in routing_keys],
         )
 
@@ -800,9 +793,7 @@ class BaseConnectionManager:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
                     self._logger.debug("Connection targets retrieved from cache")
-                    targets = [
-                        ConnectionTarget.deserialize(row) for row in entry.result
-                    ]
+                    targets = [ConnectionTarget.deserialize(row) for row in entry.result]
                 else:
                     if not connection:
                         async with self._profile.session() as session:
@@ -817,9 +808,7 @@ class BaseConnectionManager:
                         # Otherwise, a replica that participated early in exchange
                         # may have bad data set in cache.
                         self._logger.debug("Caching connection targets")
-                        await entry.set_result(
-                            [row.serialize() for row in targets], 3600
-                        )
+                        await entry.set_result([row.serialize() for row in targets], 3600)
                     else:
                         self._logger.debug(
                             "Not caching connection targets for connection in "
@@ -878,12 +867,8 @@ class BaseConnectionManager:
                         did=doc.did,
                         endpoint=service.endpoint,
                         label=their_label,
-                        recipient_keys=[
-                            key.value for key in (service.recip_keys or ())
-                        ],
-                        routing_keys=[
-                            key.value for key in (service.routing_keys or ())
-                        ],
+                        recipient_keys=[key.value for key in (service.recip_keys or ())],
+                        routing_keys=[key.value for key in (service.routing_keys or ())],
                         sender_key=sender_verkey,
                     )
                 )
@@ -920,7 +905,18 @@ class BaseConnectionManager:
 
         """
         connection = None
-        if their_did:
+        if their_did and their_did.startswith("did:peer:4"):
+            # did:peer:4 always recorded as long
+            long = their_did
+            short = self.long_did_peer_to_short(their_did)
+            try:
+                async with self._profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_did_peer_4(
+                        session, long, short, my_did
+                    )
+            except StorageNotFoundError:
+                pass
+        elif their_did:
             try:
                 async with self._profile.session() as session:
                     connection = await ConnRecord.retrieve_by_did(
