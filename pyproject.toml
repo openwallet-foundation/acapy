@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aries_cloudagent"
-version = "1.0.0rc4"
+version = "1.0.0rc5"
 description = "Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = ["Hyperledger Aries <aries@lists.hyperledger.org>"]
 license = "Apache-2.0"

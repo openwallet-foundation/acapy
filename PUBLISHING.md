@@ -13,7 +13,7 @@ Once ready to do a release, create a local branch that includes the following up
    there are new documentation files that are in the docs folder and not
    referenced in the mkdocs navigation. If there is, update the `mkdocs.yml`
    file as necessary. On completion of the testing, run the script
-   `./scripts/prepmkdocs clean` to undo the temporary changes to the docs. Be
+   `./scripts/prepmkdocs.sh clean` to undo the temporary changes to the docs. Be
    sure to do the last `clean` step -- **DO NOT MERGE THE TEMPORARY DOC
    CHANGES.**
 
