@@ -18,7 +18,7 @@ class ValidationResult(BaseModel):
         self,
         *,
         validated: bool,
-        errors: Optional[List[str]] = None,
+        errors: Optional[List[Exception]] = None,
     ) -> None:
         """Create new ValidationResult instance."""
         self.validated = validated
@@ -68,4 +68,4 @@ class ValidationResultSchema(BaseModelSchema):
         model_class = ValidationResult
 
     validated = fields.Bool(required=True)
-    errors = fields.List(fields.Str())
+    errors = fields.List(fields.Field())

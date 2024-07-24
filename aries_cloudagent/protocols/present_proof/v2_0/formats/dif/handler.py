@@ -453,7 +453,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             options.challenge = str(uuid4())
 
         pres_ver_result = None
-        pres_valid_result = None
         if isinstance(dif_proof, Sequence):
             if len(dif_proof) == 0:
                 raise V20PresFormatHandlerError(
@@ -464,7 +463,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     vp=VerifiablePresentation.deserialize(proof),
                     options=options,
                 )
-                pres_valid_result = await manager.validate_presentation(
+                (validated, error_strings) = await manager.validate_presentation(
                     vp=VerifiablePresentation.deserialize(proof))
                 if not pres_ver_result.verified:
                     break
@@ -473,12 +472,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 vp=VerifiablePresentation.deserialize(dif_proof),
                 options=options,
             )
-            pres_valid_result = await manager.validate_presentation(
+            (validated, error_strings) = await manager.validate_presentation(
                     vp=VerifiablePresentation.deserialize(dif_proof))
         assert pres_ver_result is not None
-        assert pres_valid_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
-        pres_ex_record.validated = pres_valid_result.validated
-        pres_ex_record.validated_msgs = pres_valid_result.errors
+        pres_ex_record.validated = validated
+        pres_ex_record.validated_msgs = error_strings
         
         return pres_ex_record

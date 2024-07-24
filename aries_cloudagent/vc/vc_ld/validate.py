@@ -5,7 +5,7 @@ from typing import Union
 from pyld.jsonld import JsonLdProcessor
 
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
-from .schema_validators.error import VcSchemaValidatorError
+from .schema_validators.error import VcSchemaValidatorError, VcSchemaValidatorBuilderError
 from .schema_validators.validator_builder import validator_builder
 from .schema_validation_result import ValidationResult
 
@@ -32,6 +32,9 @@ async def _validate_credential(
                 validator.validate(vc)
             except VcSchemaValidatorError as e:
                 errors.append(e)
+            except VcSchemaValidatorBuilderError as e:
+                errors.append(e)
+                
 
     validated = len(errors) == 0
 
@@ -57,7 +60,7 @@ async def validate_credential(
         )
     except Exception as e:
         return ValidationResult(
-            validated=False, errors=e
+            validated=False, errors=[e]
         )
 
 
@@ -78,11 +81,8 @@ async def _validate_presentation(
     )
 
     credentials_validated = all(result.validated for result in credential_results)
-    credential_errors = [[str(exception) for exception in err] 
-                     for err in [result.errors 
-                     for result in credential_results if result.errors
-                     ]]
-
+    credential_errors =  [exception for result in credential_results if 
+                          result.errors for exception in result.errors]
 
     return ValidationResult(
         validated=credentials_validated,
@@ -110,7 +110,7 @@ async def validate_presentation(
             presentation=presentation,
         )
     except Exception as e:
-        return ValidationResult(validated=False, errors=e)
+        return ValidationResult(validated=False, errors=[e])
 
 
 __all__ = ["validate_presentation"]

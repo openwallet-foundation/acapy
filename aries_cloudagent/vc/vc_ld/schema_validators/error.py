@@ -2,3 +2,6 @@
 
 class VcSchemaValidatorError(Exception):
     """Generic VcSchemaValidator Error."""
+
+class VcSchemaValidatorBuilderError(Exception):
+     """Generic VcSchemaValidatorBuilderError Error."""

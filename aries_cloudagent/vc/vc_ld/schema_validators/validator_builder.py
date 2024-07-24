@@ -2,7 +2,7 @@
 
 
 from .type import ED_TECH_JSON_SCHEMA_VALIDATOR_2019
-from .error import VcSchemaValidatorError
+from .error import VcSchemaValidatorBuilderError
 from .edtech_schema_validator import EdJsonVcSchemaValidator
 from .schema_validator_base import VcSchemaValidator
 
@@ -18,5 +18,7 @@ def validator_builder(vc_schema:dict) -> VcSchemaValidator:
         return EdJsonVcSchemaValidator(vc_schema)
     # TODO: Add support for other credential schema types
     else:
-        raise VcSchemaValidatorError(f"Unsupported credentialSchema type: {schema_type}")
+        raise VcSchemaValidatorBuilderError(
+            f"Unsupported credentialSchema type: {schema_type}"
+        )
     
