@@ -1,9 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from .. import menu_request_handler as handler
 
 
@@ -18,6 +18,7 @@ class TestMenuRequestHandler(IsolatedAsyncioTestCase):
 
         self.context.connection_record = mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
+        self.context.connection_ready = True
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
@@ -39,6 +40,7 @@ class TestMenuRequestHandler(IsolatedAsyncioTestCase):
 
         self.context.connection_record = mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
+        self.context.connection_ready = True
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()

@@ -1,12 +1,14 @@
 """Test RevokeHandler."""
 
+from typing import Generator
+
 import pytest
 
 from ......core.event_bus import EventBus, MockEventBus
 from ......core.in_memory import InMemoryProfile
 from ......core.profile import Profile
 from ......messaging.request_context import RequestContext
-from ......messaging.responder import MockResponder, BaseResponder
+from ......messaging.responder import BaseResponder, MockResponder
 from ...messages.revoke import Revoke
 from ..revoke_handler import RevokeHandler
 
@@ -32,7 +34,7 @@ def message():
 
 
 @pytest.fixture
-def context(profile: Profile, message: Revoke):
+def context(profile: Profile, message: Revoke) -> Generator[RequestContext, None, None]:
     request_context = RequestContext(profile)
     request_context.message = message
     yield request_context
@@ -42,6 +44,7 @@ def context(profile: Profile, message: Revoke):
 async def test_handle(
     context: RequestContext, responder: BaseResponder, event_bus: MockEventBus
 ):
+    context.connection_ready = True
     await RevokeHandler().handle(context, responder)
     assert event_bus.events
     [(_, received)] = event_bus.events
@@ -55,6 +58,7 @@ async def test_handle_monitor(
     context: RequestContext, responder: BaseResponder, event_bus: MockEventBus
 ):
     context.settings["revocation.monitor_notification"] = True
+    context.connection_ready = True
     await RevokeHandler().handle(context, responder)
     [(_, webhook), (_, received)] = event_bus.events
 

@@ -25,6 +25,15 @@ class TestConnRecord(IsolatedAsyncioTestCase):
         self.test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
         self.test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
+        self.test_did_peer_4_a = "did:peer:4zQmV3Hf1TT4Xn73MBVf2NAWdMwrzUabpEvwtV3RoZc17Vxr:z2pfttj3xn6tJ7wpHV9ZSwpQVMNtHC7EtM36r1mC5fDpZ25882Yitk21QPbqzuefKPrbFsexWmQtE78vYWweckXtKeu5BhuFDvCjMUf8SC5z7cMPvp8SCdcbqWnHxygjBH9zAAs9myGRnZYXuAkq6CfBdn6ZiNmdRf65TdVfE3cYfS4jNzVZDs1abwytn4jdFJ2fwVegPB3vLY8XxeUEx12a4rtjkqMhs6zBQbJvc4PVUM9rvMbPM2QeXDy7ovkkHaKLUbNUxjQrcQeiR8MTLe1iaVtUv6RpBf4z7ioqfa4VDRmAZT7isVM3NvENUceeUfDZoFbM8PZqGkCbFvfoKiK3SrmTsvPtpXaBAfR4z7w18cFjsvvLBNMZbPnARn4oZijCkYwgaNmAUthgDP4XBFetdUo8728w25FUwTWjAPc1BdSSWPWMRKwCqyAP1Q1hM8dU6otT27MQaQ1rozKncn3U48CXEi2Ef26EDBrSozEWR273ancFojNXBbZVghZG5b6xdypjQir9PgTF94dsygtu47hNxQweVKLUM1p9umqHLhjvLhpS1aGQkGZNnKUHjLDHdToigo15F7TAf8RfMaducHBThFzEp9TUJmiZFTUYQ1uaBgSPMSaWnvTfUoFmLoGbdrWj1vVEsRrARq37u1SJGLqBx7FM2SUd8nxPsChP5jY8ka8F8r7j8qZLHZqvUXbynPUsViwwdFFk8SCsBWfiQgvq7sRiTdLnYv3H5DSwA1uW2GNYXGgkT9aJza4Sk1gvag5iAbQZgxbU594enjVSTjiWsFw2oYQ75JJwiSEgsP2rhpGsNhXxfECNLUtb7FQbDQPtUvLHCJATf7QXJEoWjpfAywmB6NyQcXfskco6FKJNNHeZBnST6U1meH98Ku66vha1k8hAc72iBhXQBnWUjaGRyzELsh2LkBH2UNwW9TuFhxz3SKtL5pGShVQ5XGQhmdrkWP68d6h7c1JqsfogcDBnmWS4VSbJwgtsPNTSsTHGX8hpGvg"
+        self.test_did_peer_4_short_a = (
+            "did:peer:4zQmV3Hf1TT4Xn73MBVf2NAWdMwrzUabpEvwtV3RoZc17Vxr"
+        )
+        self.test_did_peer_4_b = "did:peer:4zQmQ4dEtoGcivpiH6gtWwhWJY2ENVWuZifb62uzR76HGPPw:z7p4QX8zEXt2sMjv1Tqq8Lv8Nx8oGo2uRczBe21vyfMhQzsWDnwGmjriYfUX75WDq622czcdHjWGhh2VTbzKhLXUjY8Ma7g64dKAVcy8SaxN5QVdjwpXgD7htKCgCjah8jHEzyBZFrtdfTHiVXfSUz1BiURQf1Z3NfxW5cWYsvDJVvQzVmdHb8ekzCnvxCqL2UV1v9SBb1DsU66N3PCp9HVpSrqUJQyFU2Ddc8bb6u8SJfBU1nyCkNMgfA1zAyKnSBrzZWyyNzAm9oBV36qjC1Qjfcpq4FBnGr7foh5sLXppBwu2ES8U2nxdGrQzAbN47DKBoKJqPVxNh5tTuBdYjDGt7PcvZQjHQGNXXuhJctM5besZci2saGefCHzoZ87vSsFuKq6oXEsW512eadiNZWjHSdG9J4ToMEMK9WT66vGGLFdZszB3xhdFqEDnAMcpnoFUL5WN243aH6492jPC2Zjdi1BvHC1J8bUuvyihAKXF3WmFz7gJWmh6MrTEWNqb17K6tqbyXjFmfnS2RbAi8xBFj3sSsXkSs6TRTXAZD9DenYaQq4RMa2Kqh6VKGvkXAjVHKcPh9Ncpt6rU9ZYttNHbDJFgahwB8KisVBK8FBpG"
+        self.test_did_peer_4_short_b = (
+            "did:peer:4zQmQ4dEtoGcivpiH6gtWwhWJY2ENVWuZifb62uzR76HGPPw"
+        )
+
         self.test_conn_record = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
@@ -39,9 +48,7 @@ class TestConnRecord(IsolatedAsyncioTestCase):
         assert ConnRecord.Role.get("Larry") is None
         assert ConnRecord.State.get("a suffusion of yellow") is None
 
-        assert (
-            ConnRecord.Role.get(ConnRecord.Role.REQUESTER) is ConnRecord.Role.REQUESTER
-        )
+        assert ConnRecord.Role.get(ConnRecord.Role.REQUESTER) is ConnRecord.Role.REQUESTER
 
         assert (
             ConnRecord.State.get(ConnRecord.State.RESPONSE) is ConnRecord.State.RESPONSE
@@ -132,6 +139,71 @@ class TestConnRecord(IsolatedAsyncioTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc160,
         )
         assert result == record
+
+    async def test_retrieve_by_did_peer_4_by_long(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_did_peer_4_a,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        rec_id = await record.save(self.session)
+        result = await ConnRecord.retrieve_by_did_peer_4(
+            session=self.session,
+            my_did=self.test_did,
+            their_did_long=self.test_did_peer_4_a,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+        )
+        assert result == record
+
+    async def test_retrieve_by_did_peer_4_by_short(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_did_peer_4_short_b,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        await record.save(self.session)
+        result = await ConnRecord.retrieve_by_did_peer_4(
+            session=self.session,
+            my_did=self.test_did,
+            their_did_short=self.test_did_peer_4_short_b,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+        )
+        assert result == record
+
+    async def test_retrieve_by_did_peer_4_by_either(self):
+        record_short = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_did_peer_4_short_a,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        await record_short.save(self.session)
+        record_long = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_did_peer_4_b,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        await record_long.save(self.session)
+
+        result = await ConnRecord.retrieve_by_did_peer_4(
+            session=self.session,
+            my_did=self.test_did,
+            their_did_short=self.test_did_peer_4_short_a,
+            their_did_long=self.test_did_peer_4_a,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+        )
+        assert result == record_short
+        result = await ConnRecord.retrieve_by_did_peer_4(
+            session=self.session,
+            my_did=self.test_did,
+            their_did_short=self.test_did_peer_4_short_b,
+            their_did_long=self.test_did_peer_4_b,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+        )
+        assert result == record_long
 
     async def test_from_storage_with_initiator_old(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.COMPLETED)
@@ -300,9 +372,7 @@ class TestConnRecord(IsolatedAsyncioTestCase):
         connection_id = await record.save(self.session)
 
         req = ConnectionRequest(
-            connection=ConnectionDetail(
-                did=self.test_did, did_doc=DIDDoc(self.test_did)
-            ),
+            connection=ConnectionDetail(did=self.test_did, did_doc=DIDDoc(self.test_did)),
             label="abc123",
         )
         await record.attach_request(self.session, req)
@@ -317,9 +387,7 @@ class TestConnRecord(IsolatedAsyncioTestCase):
         connection_id = await record.save(self.session)
 
         req = ConnectionRequest(
-            connection=ConnectionDetail(
-                did=self.test_did, did_doc=DIDDoc(self.test_did)
-            ),
+            connection=ConnectionDetail(did=self.test_did, did_doc=DIDDoc(self.test_did)),
             label="abc123",
         )
         ser = req.serialize()

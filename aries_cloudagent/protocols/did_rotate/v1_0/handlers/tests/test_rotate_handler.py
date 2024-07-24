@@ -28,6 +28,7 @@ class TestRotateHandler:
 
         request_context.message = Rotate(**test_valid_rotate_request)
         request_context.connection_record = mock.MagicMock()
+        request_context.connection_ready = True
 
         handler = test_module.RotateHandler()
         responder = MockResponder()

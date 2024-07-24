@@ -1,9 +1,8 @@
 """Handshake Reuse Message Handler under RFC 0434."""
 
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
 from ..manager import OutOfBandManager, OutOfBandManagerError
 from ..messages.reuse import HandshakeReuse
 
@@ -18,10 +17,11 @@ class HandshakeReuseMessageHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(
-            f"HandshakeReuseMessageHandler called with context {context}"
-        )
+        self._logger.debug(f"HandshakeReuseMessageHandler called with context {context}")
         assert isinstance(context.message, HandshakeReuse)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         profile = context.profile
         mgr = OutOfBandManager(profile)

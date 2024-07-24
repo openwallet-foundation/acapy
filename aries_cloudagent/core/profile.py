@@ -1,8 +1,9 @@
 """Classes for managing profile information within a request context."""
 
-import logging
 from abc import ABC, abstractmethod
+import logging
 from typing import Any, Mapping, Optional, Type
+from weakref import ref
 
 from ..config.base import InjectionError
 from ..config.injection_context import InjectionContext
@@ -30,9 +31,12 @@ class Profile(ABC):
         created: bool = False,
     ):
         """Initialize a base profile."""
-        self._context = context or InjectionContext()
         self._created = created
         self._name = name or Profile.DEFAULT_NAME
+
+        context = context or InjectionContext()
+        self._context = context.start_scope()
+        self._context.injector.bind_instance(Profile, ref(self))
 
     @property
     def backend(self) -> str:
@@ -159,9 +163,11 @@ class ProfileSession(ABC):
         self._active = False
         self._awaited = False
         self._entered = 0
-        self._context = (context or profile.context).start_scope("session", settings)
+        self._context = (context or profile.context).start_scope(settings)
         self._profile = profile
         self._events = []
+
+        self._context.injector.bind_instance(ProfileSession, ref(self))
 
     async def _setup(self):
         """Create the underlying session or transaction."""
