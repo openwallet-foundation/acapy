@@ -412,3 +412,59 @@ PRESENTATION_INVALID_DATA_TYPE = {
         "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..vLk6iXrPxdt4xWq_Lwnd85cy17Npol1ALxYoMhZrKpmkaWDOoz_exP1ggurPik7Rhpa7a82AfrT0OnigJnJsAQ",
     },
 }
+
+PRESENTATION_VALID = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "type": ["VerifiablePresentation"],
+    "verifiableCredential": [
+    {
+    "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json",
+            "https://purl.imsglobal.org/spec/ob/v3p0/extensions.json"
+        ],
+        "id": "http://example.edu/credentials/3732",
+        "type": ["VerifiableCredential", "OpenBadgeCredential"],
+        "issuer": {
+            "id": "string",
+            "type": [
+                "Profile"
+            ],
+            "name": "Example University"
+        },
+        "issuanceDate": "2010-01-01T00:00:00Z",
+        "name": "Example University Degree",
+        "credentialSubject": {
+            "type": [
+                "AchievementSubject"
+            ],
+            "achievement": {
+                "id": "https://example.com/achievements/21st-century-skills/teamwork",
+                "type": [
+                    "Achievement"
+                ],
+                "criteria": {
+                    "narrative": "Team members are nominated for this badge by their peers and recognized upon review by Example Corp management."
+                },
+                "description": "This badge recognizes the development of the capacity to collaborate within a group environment.",
+                "name": "Teamwork"
+            },
+            "creditsEarned": 2.1
+        },
+        "credentialSchema": [
+            {
+                "id": "https://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json",
+                "type": "1EdTechJsonSchemaValidator2019"
+            }
+        ]
+        }
+    ],
+    "proof": {
+        "type": "Ed25519Signature2018",
+        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+        "created": "2020-12-11T03:50:55+00:00",
+        "proofPurpose": "authentication",
+        "challenge": "2b1bbff6-e608-4368-bf84-67471b27e41c",
+        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..vLk6iXrPxdt4xWq_Lwnd85cy17Npol1ALxYoMhZrKpmkaWDOoz_exP1ggurPik7Rhpa7a82AfrT0OnigJnJsAQ",
+    },
+}

@@ -463,7 +463,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     vp=VerifiablePresentation.deserialize(proof),
                     options=options,
                 )
-                (validated, error_strings) = await manager.validate_presentation(
+                (validated, validate_messages) = await manager.validate_presentation(
                     vp=VerifiablePresentation.deserialize(proof))
                 if not pres_ver_result.verified:
                     break
@@ -472,11 +472,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 vp=VerifiablePresentation.deserialize(dif_proof),
                 options=options,
             )
-            (validated, error_strings) = await manager.validate_presentation(
+            (validated, validate_messages) = await manager.validate_presentation(
                     vp=VerifiablePresentation.deserialize(dif_proof))
         assert pres_ver_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
         pres_ex_record.validated = validated
-        pres_ex_record.validated_msgs = error_strings
+        pres_ex_record.validated_msgs = validate_messages
         
         return pres_ex_record

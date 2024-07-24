@@ -6,8 +6,6 @@ from typing import Dict, List, Optional, Type, Union, cast
 
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
-
-from aries_cloudagent.vc.vc_ld.schema_validation_result import ValidationResult
 from aries_cloudagent.vc.vc_ld.schema_validators.error import (
     VcSchemaValidatorBuilderError
 )
@@ -506,48 +504,36 @@ class VcLdpManager:
             presentation=vp.serialize()
         )
 
-        (validated, validated_error_strings) = await self._handle_unsupported_validator(
-            validation_result)
+        validate_messages = []
+        for error in validation_result.errors:
+            if isinstance(error, VcSchemaValidatorBuilderError):
+                self._logger.debug(str(error))
+            validate_messages.append(str(error))  
         
-        return (validated, validated_error_strings)
+        return (validation_result.validated, validate_messages)
 
        
     async def validate_credential(
             self, vc: VerifiableCredential
-    ) -> ValidationResult:
+    ):
         """Validate a credential with a Linked Data Proof."""
         
         validation_result = await validate_credential(
             credential=vc
         )
 
-        (validated, validated_error_strings) = await self._handle_unsupported_validator(
-            validation_result)
-
-        if not validated:
-            self._logger.debug("credentialSchema validation error: %s", 
-                                validated_error_strings)
-            raise VcLdpManagerError(
-                f"credentialSchema validation error: {validated_error_strings}")
-
-
-        return validation_result
-        
-    async def _handle_unsupported_validator(
-            self, validation_result: ValidationResult
-        )-> Union[bool, List[str]]:
-        """Handles how validation errors are treated."""
-        validated_error_strings = []
+        validate_messages = []
         for error in validation_result.errors:
-            # Unsupported credentialSchema type error 
             if isinstance(error, VcSchemaValidatorBuilderError):
+                self._logger.debug(str(error))
                 if self.profile.context.settings.get(
                 "debug.raise_errors_for_unknown_w3c_schemas"):
-                    raise error
-                else:
-                    self._logger.debug(str(error))
-            else:    
-                validated_error_strings.append(str(error))  
+                    raise VcLdpManagerError(
+                "Unable to validate credential. ") from error
+            else:
+                validate_messages.append(str(error))  
 
-        return (validation_result.validated, validated_error_strings)
-                
+        if len(validate_messages) > 0:
+            self._logger.debug("credentialSchema validation error: %s", validate_messages)
+            raise VcLdpManagerError(f"Invalid Credential: {validate_messages}")
+        

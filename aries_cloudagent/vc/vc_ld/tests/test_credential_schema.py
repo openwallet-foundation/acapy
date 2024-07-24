@@ -5,6 +5,8 @@ from aries_cloudagent.core.in_memory.profile import InMemoryProfile
 from aries_cloudagent.resolver.default.key import KeyDIDResolver
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
+from aries_cloudagent.vc.vc_ld.models.presentation import VerifiablePresentation
+from aries_cloudagent.vc.vc_ld.tests.test_credential import PRESENTATION_VALID
 from ..schema_validators.error import VcSchemaValidatorError
 from aries_cloudagent.wallet.default_verification_key_strategy import BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy
 import pytest
@@ -58,7 +60,7 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
                 await self.ldp_manager.prepare_credential(vc, self.options)
     
             assert '''"reason": "\'2.1\' is not of type \'number\'", "json_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
-        assert 'credentialSchema validation error' in ldp_manager_error.value.args[0]
+        assert 'Invalid Credential' in ldp_manager_error.value.args[0]
 
     async def test_prepare_detail_invalid_url(
         self
@@ -69,4 +71,64 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
                 await self.ldp_manager.prepare_credential(vc, self.options)
 
             assert '''The HTTP scheme MUST be "https" for http://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json''' in validator_error.value.args[0]
-        assert  'credentialSchema validation error' in ldp_manager_error.value.args[0] 
+        assert 'Invalid Credential' in ldp_manager_error.value.args[0] 
+
+    async def test_validate_credential_invalid_type(
+        self
+    ):
+        vc_dict = TEST_LD_DOCUMENT_CORRECT_SCHEMA
+        vc_dict['credentialSchema'] = [
+            {
+                "id": "https://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json",
+                "type": "1EdTechJsonSchemaValidator2019"
+            },
+            {
+                "id": "https://example.com/schema.json",
+                "type": "Example"
+            }
+        ]
+        vc = VerifiableCredential.deserialize(vc_dict)
+        with pytest.raises(VcLdpManagerError) as ldp_manager_error:
+            with pytest.raises(VcSchemaValidatorError) as validator_error:
+                await self.ldp_manager.prepare_credential(vc, self.options)
+
+            assert '''Unsupported credentialSchema type: Example''' in validator_error.value.args[0]
+        assert 'Unable to validate credential.' in ldp_manager_error.value.args[0] 
+
+    async def test_validate_presentation_valid(
+        self
+    ):
+        vp = VerifiablePresentation.deserialize(PRESENTATION_VALID)
+        (validated, validate_messages) = await self.ldp_manager.validate_presentation(vp)
+        assert validated is True
+        assert validate_messages == []
+
+    async def test_validate_presentation_valid_no_schema(
+        self
+    ):
+        vp_dict = PRESENTATION_VALID
+        del vp_dict['verifiableCredential'][0]['credentialSchema']
+        vp = VerifiablePresentation.deserialize(PRESENTATION_VALID)
+
+        (validated, validate_messages) = await self.ldp_manager.validate_presentation(vp)
+
+        assert validated is True
+        assert validate_messages == []
+
+    async def test_validate_presentation_invalid_schema(
+        self
+    ):
+        vp_dict = PRESENTATION_VALID
+        vp_dict['verifiableCredential'][0]['credentialSchema'] = [
+            {
+                "id": "https://example.com/schema.json",
+                "type": "Example"
+            }]
+        vp = VerifiablePresentation.deserialize(PRESENTATION_VALID)
+
+        (validated, validate_messages) = await self.ldp_manager.validate_presentation(vp)
+
+        assert validated is False
+        assert len(validate_messages) > 0
+        assert validate_messages[0] == "Unsupported credentialSchema type: Example"
+       
