@@ -8,7 +8,9 @@ from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
 from aries_cloudagent.vc.vc_ld.schema_validation_result import ValidationResult
-from aries_cloudagent.vc.vc_ld.schema_validators.error import VcSchemaValidatorBuilderError
+from aries_cloudagent.vc.vc_ld.schema_validators.error import (
+    VcSchemaValidatorBuilderError
+)
 from aries_cloudagent.vc.vc_ld.validate import validate_credential, validate_presentation
 
 from ...core.profile import Profile
