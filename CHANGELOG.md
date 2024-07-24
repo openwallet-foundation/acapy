@@ -1,5 +1,22 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.11.2rc1
+
+A patch release to add the verification of a linkage between an inbound message and its associated connection (if any) before processing the message.
+
+### 0.11.2rc1 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.11.2rc1 Categorized List of Pull Requests
+
+- Dependency update and release PR
+  - Apply security patch 0.11.x [\#3120](https://github.com/hyperledger/aries-cloudagent-python/pull/3120) [jamshale](https://github.com/jamshale)
+- Release management pull requests
+  - 0.11.2rc1 [\#3122](https://github.com/hyperledger/aries-cloudagent-python/pull/3122) [swcurran](https://github.com/swcurran)
+- PRs cherry-picked into [\#3120](https://github.com/hyperledger/aries-cloudagent-python/pull/3120) from the `main` branch:
+  - Check connection is ready in all connection required handlers [\#3095](https://github.com/hyperledger/aries-cloudagent-python/pull/3095) [jamshale](https://github.com/jamshale)
+
 ## 0.11.1
 
 A patch release to update the `aiohttp` library such that a reported serious
