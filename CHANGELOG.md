@@ -1,5 +1,28 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.12.2rc1
+
+A patch release to add the verification of a linkage between an inbound message and its associated connection (if any) before processing the message. Also adds some additional cleanup/fix PRs from the main branch (see list below) that might be useful for deployments currently using [Release 0.12.1](#0121).
+
+### 0.12.2rc1 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.2rc1 Categorized List of Pull Requests
+
+- Dependency update and release PR
+  - Patch release 0.12.x [\#3121](https://github.com/hyperledger/aries-cloudagent-python/pull/3121) [jamshale](https://github.com/jamshale)
+- Release management pull requests
+  - 0.12.2rc1 [\#3123](https://github.com/hyperledger/aries-cloudagent-python/pull/3123) [swcurran](https://github.com/swcurran)
+- PRs cherry-picked into [\#3121](https://github.com/hyperledger/aries-cloudagent-python/pull/3120) from the `main` branch:
+  - Check connection is ready in all connection required handlers [\#3095](https://github.com/hyperledger/aries-cloudagent-python/pull/3095) [jamshale](https://github.com/jamshale)
+  - fix: multiuse invites with did peer 4 [\#3112](https://github.com/hyperledger/aries-cloudagent-python/pull/3112) [dbluhm](https://github.com/dbluhm)
+  - fix: respond to did:peer:1 with did:peer:4 [\#3050](https://github.com/hyperledger/aries-cloudagent-python/pull/3050) [dbluhm](https://github.com/dbluhm)
+  - feat: soft binding for plugin flexibility [\#3010](https://github.com/hyperledger/aries-cloudagent-python/pull/3010) [dbluhm](https://github.com/dbluhm)
+  - feat: inject profile and session [\#2997](https://github.com/hyperledger/aries-cloudagent-python/pull/2997) [dbluhm](https://github.com/dbluhm)
+  - feat: external signature suite provider interface [\#2835](https://github.com/hyperledger/aries-cloudagent-python/pull/2835) [dbluhm](https://github.com/dbluhm)
+  - fix(interop): overly strict validation [\#2943](https://github.com/hyperledger/aries-cloudagent-python/pull/2943) [dbluhm](https://github.com/dbluhm)
+
 ## 0.12.1
 
 ### April 26, 2024
