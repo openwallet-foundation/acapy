@@ -1,9 +1,8 @@
 """Handler for revoke message."""
 
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
 from ..messages.revoke import Revoke
 
 
@@ -16,6 +15,10 @@ class RevokeHandler(BaseHandler):
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle revoke message."""
         assert isinstance(context.message, Revoke)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
+
         self._logger.debug(
             "Received notification of revocation for %s cred %s with comment: %s",
             context.message.revocation_format,

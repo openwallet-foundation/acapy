@@ -3,9 +3,9 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
+    HandlerException,
     RequestContext,
 )
-
 from ..messages.basicmessage import BasicMessage
 
 
@@ -21,6 +21,9 @@ class BasicMessageHandler(BaseHandler):
         """
         self._logger.debug("BasicMessageHandler called with context %s", context)
         assert isinstance(context.message, BasicMessage)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         self._logger.info("Received basic message: %s", context.message.content)
 

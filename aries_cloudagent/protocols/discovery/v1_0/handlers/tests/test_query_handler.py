@@ -5,7 +5,6 @@ from aries_cloudagent.tests import mock
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from ...handlers.query_handler import QueryHandler
 from ...messages.disclose import Disclose
 from ...messages.query import Query
@@ -30,6 +29,7 @@ class TestQueryHandler:
         query_msg = Query(query="*")
         query_msg.assign_thread_id("test123")
         request_context.message = query_msg
+        request_context.connection_ready = True
         handler = QueryHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -50,6 +50,7 @@ class TestQueryHandler:
         query_msg = Query(query="*")
         query_msg.assign_thread_id("test123")
         request_context.message = query_msg
+        request_context.connection_ready = True
         handler = QueryHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -65,6 +66,7 @@ class TestQueryHandler:
         query_msg = Query(query="*")
         query_msg.assign_thread_id("test123")
         request_context.message = query_msg
+        request_context.connection_ready = True
         handler = QueryHandler()
         responder = MockResponder()
         with mock.patch.object(
