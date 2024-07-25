@@ -64,6 +64,12 @@ multitenant-admin: true
 jwt-secret: Something very secret
 ```
 
+##### Single Wallet vs Multiple Wallets
+
+With askar wallets it's possible to have all tenant wallets in a single wallet or each have an individual wallet. The default is to have each tenant in a separate wallet. This is done to keep the wallets separate and to allow for more flexibility in the future. If you want to have all tenants in a single wallet you can set the `multitenancy-config` with the value `{"wallet_type": "single-wallet-askar"}`. If you want to explicitly set the wallet type for each tenant you can do so by setting the `multitenancy-config` with the value `{"wallet_type": "basic"}`. See .vscode-sample/multitenant-admin.yml for an example.
+
+```yaml
+
 ## Multi-tenant Admin API
 
 The multi-tenant admin API allows you to manage wallets in ACA-Py. Only the base wallet can manage wallets, so you can't for example create a wallet in the context of sub wallet (using the `Authorization` header as specified in [Authentication](#authentication)).

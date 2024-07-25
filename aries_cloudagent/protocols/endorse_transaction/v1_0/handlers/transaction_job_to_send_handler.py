@@ -26,9 +26,12 @@ class TransactionJobToSendHandler(BaseHandler):
 
         if not context.connection_ready:
             raise HandlerException("No connection established")
+        assert context.connection_record
 
         mgr = TransactionManager(context.profile)
         try:
-            await mgr.set_transaction_their_job(context.message, context.message_receipt)
+            await mgr.set_transaction_their_job(
+                context.message, context.connection_record
+            )
         except TransactionManagerError:
             self._logger.exception("Error receiving transaction jobs")
