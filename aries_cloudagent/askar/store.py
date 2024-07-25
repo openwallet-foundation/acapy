@@ -6,7 +6,7 @@ import urllib
 
 from aries_askar import AskarError, AskarErrorCode, Store
 
-from ..core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
+from ..core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ..core.profile import Profile
 from ..utils.env import storage_path
 
@@ -49,9 +49,7 @@ class AskarStoreConfig:
                 f"With key derivation method '{self.KEY_DERIVATION_RAW}',"
                 "key should also be provided"
             )
-        # self.rekey = config.get("rekey")
-        # self.rekey_derivation_method = config.get("rekey_derivation_method")
-
+        self.rekey = config.get("rekey")
         self.name = config.get("name") or Profile.DEFAULT_NAME
         self.in_memory = self.name == ":memory:"
         if self.in_memory:
@@ -156,6 +154,10 @@ class AskarStoreConfig:
                     self.key_derivation_method,
                     self.key,
                 )
+
+            if self.rekey:
+                await Store.rekey(store, self.key_derivation_method, self.rekey)
+
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
                 raise ProfileDuplicateError(
@@ -165,6 +167,17 @@ class AskarStoreConfig:
                 raise ProfileNotFoundError(
                     f"Store '{self.name}' not found",
                 )
+            if self.rekey:
+                # Attempt to rekey the store with a default key in the case the key
+                # was created with a blank key before version 0.12.0
+                store = await Store.open(
+                    self.get_uri(),
+                    self.key_derivation_method,
+                    AskarStoreConfig.DEFAULT_KEY,
+                )
+                await Store.rekey(store, self.key_derivation_method, self.rekey)
+                return AskarOpenStore(self, provision, store)
+
             raise ProfileError("Error opening store") from err
 
         return AskarOpenStore(self, provision, store)
