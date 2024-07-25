@@ -90,7 +90,7 @@ Feature: RFC 0454 Aries agent present proof
          | Acme   | --public-did --mediation --multitenant --wallet-type askar-anoncreds | --mediation --multitenant --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
-   @T001.2-RFC0454
+   @T001.2-RFC0454 @BBS
    Scenario Outline: Present Proof json-ld where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "3" agents
          | name  | role     | capabilities        |

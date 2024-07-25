@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir poetry
 ADD ./README.md pyproject.toml ./poetry.lock ./
 RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
 
-RUN poetry install --no-directory -E "askar bbs didcommv2" --with=dev
+RUN poetry install --no-directory -E "askar didcommv2" --with=dev
 
 ADD . .
 

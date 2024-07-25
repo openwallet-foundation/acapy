@@ -125,7 +125,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
 
-  @T003.1-RFC0453
+  @T003.1-RFC0453 @BBS
   Scenario Outline: Holder accepts a deleted json-ld credential offer
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -155,7 +155,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
-  @T003.1-RFC0453
+  @T003.1-RFC0453 @BBS
   Scenario Outline: Issue a json-ld credential with the Issuer beginning with an offer
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -193,7 +193,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --multitenant --wallet-type askar-anoncreds | --multitenant --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
 
-  @T003.1-RFC0453
+  @T003.1-RFC0453 @BBS
   Scenario Outline: Issue a json-ld credential with the holder beginning with a request
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -223,7 +223,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
 
-  @T004-RFC0453
+  @T004-RFC0453 @BBS
   Scenario Outline: Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
     Given we have "2" agents
       | name  | role    | capabilities        |

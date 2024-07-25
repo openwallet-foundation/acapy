@@ -23,8 +23,9 @@ cd indy-tails-server/docker
 cd ../..
 git clone https://github.com/hyperledger/aries-cloudagent-python
 cd aries-cloudagent-python/demo
-./run_bdd -t ~@taa_required
+./run_bdd -t ~@taa_required -t ~@BBS
 ```
+Note: BBS is not included by default in ACA-Py, therefore if tests are run without `-t ~@BBS` these will fail.
 
 Note that an Indy ledger and tails server are both required (these can also be specified using environment variables).
 
@@ -80,7 +81,7 @@ The agents run on a pre-defined set of ports, however occasionally your local sy
 To override the default port settings:
 
 ```bash
-AGENT_PORT_OVERRIDE=8030 ./run_bdd -t <some tags>
+AGENT_PORT_OVERRIDE=8030 ./run_bdd -t <some tag>
 ```
 
 (Note that since the test run multiple agents you require up to 60 available ports.)

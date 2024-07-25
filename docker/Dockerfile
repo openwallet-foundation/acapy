@@ -13,7 +13,7 @@ FROM python:${python_version}-slim-bullseye AS main
 ARG uid=1001
 ARG user=aries
 ARG acapy_version
-ARG acapy_reqs=[askar,bbs,didcommv2]
+ARG acapy_reqs=[askar,didcommv2]
 
 ENV HOME="/home/$user" \
     APP_ROOT="$HOME" \

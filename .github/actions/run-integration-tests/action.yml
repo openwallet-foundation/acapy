@@ -5,7 +5,7 @@ inputs:
   TEST_SCOPE:
     description: "Set of flags that defines the test scope"
     required: false
-    default: "-t @PR"
+    default: "-t @PR -t ~@BBS"
   IN_LEDGER_URL:
     description: "URL to the von network ledger browser"
     required: false
