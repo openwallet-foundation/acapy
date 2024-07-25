@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v0.12.1",
+    "version" : "v0.12.2rc1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -9986,8 +9986,7 @@
         "domain" : {
           "type" : "string",
           "example" : "https://example.com",
-          "description" : "A string value specifying the restricted domain of the signature.",
-          "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
+          "description" : "A string value specifying the restricted domain of the signature."
         },
         "jws" : {
           "type" : "string",

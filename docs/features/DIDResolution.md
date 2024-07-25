@@ -176,7 +176,7 @@ plugin:
 The following is a fully functional Dockerfile encapsulating this setup:
 
 ```dockerfile=
-FROM ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.12.1
+FROM ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.12.2rc1
 RUN pip3 install git+https://github.com/dbluhm/acapy-resolver-github
 
 CMD ["aca-py", "start", "-it", "http", "0.0.0.0", "3000", "-ot", "http", "-e", "http://localhost:3000", "--admin", "0.0.0.0", "3001", "--admin-insecure-mode", "--no-ledger", "--plugin", "acapy_resolver_github"]

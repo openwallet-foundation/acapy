@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.12.1"
+    "version" : "v0.12.2rc1"
   },
   "servers" : [ {
     "url" : "/"
@@ -11470,7 +11470,6 @@
           "domain" : {
             "description" : "A string value specifying the restricted domain of the signature.",
             "example" : "https://example.com",
-            "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
           },
           "jws" : {
