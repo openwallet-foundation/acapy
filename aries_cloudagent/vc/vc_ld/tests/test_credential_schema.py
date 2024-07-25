@@ -6,7 +6,7 @@ from aries_cloudagent.resolver.default.key import KeyDIDResolver
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
 from aries_cloudagent.vc.vc_ld.models.presentation import VerifiablePresentation
-from aries_cloudagent.vc.vc_ld.tests.test_credential import PRESENTATION_VALID
+from aries_cloudagent.vc.vc_ld.tests.test_credential import PRESENTATION_INVALID_SCHEMA, PRESENTATION_VALID, PRESENTATION_VALID_NO_SCHEMA
 from ..schema_validators.error import VcSchemaValidatorError
 from aries_cloudagent.wallet.default_verification_key_strategy import BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy
 import pytest
@@ -100,15 +100,14 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
     ):
         vp = VerifiablePresentation.deserialize(PRESENTATION_VALID)
         (validated, validate_messages) = await self.ldp_manager.validate_presentation(vp)
+        assert validate_messages == [] 
         assert validated is True
-        assert validate_messages == []
+        
 
     async def test_validate_presentation_valid_no_schema(
         self
     ):
-        vp_dict = PRESENTATION_VALID
-        del vp_dict['verifiableCredential'][0]['credentialSchema']
-        vp = VerifiablePresentation.deserialize(PRESENTATION_VALID)
+        vp = VerifiablePresentation.deserialize(PRESENTATION_VALID_NO_SCHEMA)
 
         (validated, validate_messages) = await self.ldp_manager.validate_presentation(vp)
 
@@ -118,13 +117,7 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
     async def test_validate_presentation_invalid_schema(
         self
     ):
-        vp_dict = PRESENTATION_VALID
-        vp_dict['verifiableCredential'][0]['credentialSchema'] = [
-            {
-                "id": "https://example.com/schema.json",
-                "type": "Example"
-            }]
-        vp = VerifiablePresentation.deserialize(PRESENTATION_VALID)
+        vp = VerifiablePresentation.deserialize(PRESENTATION_INVALID_SCHEMA)
 
         (validated, validate_messages) = await self.ldp_manager.validate_presentation(vp)
 
