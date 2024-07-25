@@ -22,8 +22,8 @@ Once ready to do a release, create a local branch that includes the following up
   - Use a command like the following, adjusting the tag parameters as
     appropriate. `docker run -it --rm -v "$(pwd)":/usr/local/src/your-app
     githubchangeloggenerator/github-changelog-generator --user hyperledger
-    --project aries-cloudagent-python --output 0.11.1.md --since-tag 0.11.0
-    --future-release 0.11.1rc2 --release-branch main --token <your-token>`
+    --project aries-cloudagent-python --output 0.11.2.md --since-tag 0.11.0
+    --future-release 0.11.2 --release-branch main --token <your-token>`
   - In the generated file, use only the PR list -- we don't include the list of
     closed issues in the Change Log.
 
