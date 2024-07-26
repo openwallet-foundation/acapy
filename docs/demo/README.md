@@ -172,6 +172,7 @@ Faber:
 
 ```
     (1) Issue Credential
+    (1a) Set Credential Type (indy)
     (2) Send Proof Request
     (3) Send Message
     (4) Create New Invitation
@@ -225,6 +226,7 @@ Faber will setup support for revocation automatically, and you will see an extra
 
 ```
     (1) Issue Credential
+    (1a) Set Credential Type (indy)
     (2) Send Proof Request
     (3) Send Message
     (4) Create New Invitation
@@ -321,6 +323,7 @@ Faber:
 
 ```
     (1) Issue Credential
+    (1a) Set Credential Type (indy)
     (2) Send Proof Request
     (3) Send Message
     (4) Create New Invitation
