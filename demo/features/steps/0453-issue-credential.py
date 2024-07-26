@@ -15,8 +15,6 @@ from bdd_support.agent_backchannel_client import (
 from behave import given, then, when
 from runners.support.agent import (
     DID_METHOD_KEY,
-    KEY_TYPE_BLS,
-    SIG_TYPE_BLS,
 )
 
 
@@ -352,12 +350,12 @@ def step_impl(context, holder):
     assert False
 
 
-@given('"{issuer}" is ready to issue a json-ld credential for {schema_name}')
-def step_impl(context, issuer, schema_name):
+@given('"{issuer}" is ready to issue a json-ld credential for {schema_name} with {key_type}')
+def step_impl(context, issuer, schema_name, key_type):
     # create a "did:key" to use as issuer
     agent = context.active_agents[issuer]
 
-    data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
+    data = {"method": DID_METHOD_KEY, "options": {"key_type": key_type}}
     new_did = agent_container_POST(
         agent["agent"],
         "/wallet/did/create",
@@ -368,12 +366,12 @@ def step_impl(context, issuer, schema_name):
     pass
 
 
-@given('"{holder}" is ready to receive a json-ld credential')
-def step_impl(context, holder):
+@given('"{holder}" is ready to receive a json-ld credential with {key_type}')
+def step_impl(context, holder, key_type):
     # create a "did:key" to use as holder identity
     agent = context.active_agents[holder]
 
-    data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
+    data = {"method": DID_METHOD_KEY, "options": {"key_type": key_type}}
     new_did = agent_container_POST(
         agent["agent"],
         "/wallet/did/create",
@@ -385,8 +383,8 @@ def step_impl(context, holder):
     pass
 
 
-@when('"{issuer}" offers "{holder}" a json-ld credential with data {credential_data}')
-def step_impl(context, issuer, holder, credential_data):
+@when('"{issuer}" offers "{holder}" a json-ld credential with data {credential_data} with {sig_type}')
+def step_impl(context, issuer, holder, credential_data, sig_type):
     # initiate a cred exchange with a json-ld credential
     agent = context.active_agents[issuer]
     holder_agent = context.active_agents[holder]
@@ -418,7 +416,7 @@ def step_impl(context, issuer, holder, credential_data):
                         "birthDate": "1958-07-17",
                     },
                 },
-                "options": {"proofType": SIG_TYPE_BLS},
+                "options": {"proofType": sig_type},
             }
         },
     }
@@ -434,9 +432,9 @@ def step_impl(context, issuer, holder, credential_data):
 
 
 @when(
-    '"{issuer}" offers and deletes "{holder}" a json-ld credential with data {credential_data}'
+    '"{issuer}" offers and deletes "{holder}" a json-ld credential with data {credential_data} and {sig_type}'
 )
-def step_impl(context, issuer, holder, credential_data):
+def step_impl(context, issuer, holder, credential_data, sig_type):
     # initiate a cred exchange with a json-ld credential
     agent = context.active_agents[issuer]
     holder_agent = context.active_agents[holder]
@@ -481,7 +479,7 @@ def step_impl(context, issuer, holder, credential_data):
                         "birthDate": "1958-07-17",
                     },
                 },
-                "options": {"proofType": SIG_TYPE_BLS},
+                "options": {"proofType": sig_type},
             }
         },
     }
@@ -531,9 +529,9 @@ def step_impl(context, issuer):
 
 
 @when(
-    '"{holder}" requests a json-ld credential with data {credential_data} from "{issuer}"'
+    '"{holder}" requests a json-ld credential with data {credential_data} from "{issuer}" with {sig_type}'
 )
-def step_impl(context, issuer, holder, credential_data):
+def step_impl(context, issuer, holder, credential_data, sig_type):
     issuer_agent = context.active_agents[issuer]
     holder_agent = context.active_agents[holder]
     data = {
@@ -564,7 +562,7 @@ def step_impl(context, issuer, holder, credential_data):
                         "birthDate": "1958-07-17",
                     },
                 },
-                "options": {"proofType": SIG_TYPE_BLS},
+                "options": {"proofType": sig_type},
             }
         },
     }
@@ -578,9 +576,9 @@ def step_impl(context, issuer, holder, credential_data):
 
 
 @when(
-    '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data}'
+    '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data} with {sig_type}'
 )
-def step_impl(context, issuer, holder, credential_data):
+def step_impl(context, issuer, holder, credential_data, sig_type):
     # initiate a cred exchange with an anoncreds credential
     agent = context.active_agents[issuer]
     holder_agent = context.active_agents[holder]
@@ -612,7 +610,7 @@ def step_impl(context, issuer, holder, credential_data):
                         "birthDate": "1958-07-17",
                     },
                 },
-                "options": {"proofType": SIG_TYPE_BLS},
+                "options": {"proofType": sig_type},
             }
         },
     }

@@ -90,7 +90,7 @@ Feature: RFC 0454 Aries agent present proof
          | Acme   | --public-did --mediation --multitenant --wallet-type askar-anoncreds | --mediation --multitenant --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
-   @T001.2-RFC0454 @BBS
+   @T001.2-RFC0454
    Scenario Outline: Present Proof json-ld where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -100,23 +100,41 @@ Feature: RFC 0454 Aries agent present proof
       And "<issuer>" and "Bob" have an existing connection
       And "Bob" has an issued json-ld <Schema_name> credential <Credential_data> from "<issuer>"
       And "Faber" and "Bob" have an existing connection
-      When "Faber" sends a request for json-ld proof presentation <Proof_request> to "Bob"
+      When "Faber" sends a request for json-ld proof presentation <Proof_request> to "Bob" with <Sig_type>
       Then "Faber" has the proof verified
 
       @PR @Release @WalletType_Askar
       Examples:
-         | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
-         | Acme   | --public-did --cred-type json-ld                          |                           | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | issuer | Acme1_capabilities               | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     | Key_type | Sig_type             |
+         | Acme   | --public-did --cred-type json-ld |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | ed25519  | Ed25519Signature2018 |
+         | Acme   | --public-did --cred-type json-ld |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | ed25519  | Ed25519Signature2020 |
+
+      @PR @Release @WalletType_Askar @BBS
+      Examples:
+         | issuer | Acme1_capabilities               | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     | Key_type   | Sig_type            |
+         | Acme   | --public-did --cred-type json-ld |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | bls12381g2 | BbsBlsSignature2020 |
 
       @Release @WalletType_Askar
       Examples:
-         | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
-         | Faber  | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | issuer | Acme_capabilities                               | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     | Key_type | Sig_type             |
+         | Faber  | --public-did --cred-type json-ld --did-exchange | --did-exchange   | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | ed25519  | Ed25519Signature2018 |
+         | Faber  | --public-did --cred-type json-ld --did-exchange | --did-exchange   | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | ed25519  | Ed25519Signature2020 |
+
+      @Release @WalletType_Askar @BBS
+      Examples:
+         | issuer | Acme_capabilities                               | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     | Key_type   | Sig_type            | 
+         | Faber  | --public-did --cred-type json-ld --did-exchange | --did-exchange   | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | bls12381g2 | BbsBlsSignature2020 |
 
       @PR @Release @WalletType_Askar_AnonCreds
       Examples:
-         | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
-         | Faber  | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | issuer | Acme_capabilities                                              | Bob_capabilities              | Schema_name       | Credential_data   | Proof_request     | Key_type | Sig_type             |
+         | Faber  | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | ed25519  | Ed25519Signature2018 |
+         | Faber  | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | ed25519  | Ed25519Signature2020 |
+
+      @PR @Release @WalletType_Askar_AnonCreds @BBS
+      Examples:
+         | issuer | Acme_capabilities                                              | Bob_capabilities              | Schema_name       | Credential_data   | Proof_request     | Key_type   | Sig_type            |
+         | Faber  | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | bls12381g2 | BbsBlsSignature2020 |
 
 
    @T002-RFC0454
