@@ -198,7 +198,7 @@ When ready to test the credentials exchange protocols, go to the Faber prompt, e
 
 You don't need to do anything with Alice's agent - her agent is implemented to automatically receive credentials and respond to proof requests.
 
-Note there is an option "2a" to initiate a connectionless proof - you can execute this option but it will only work end-to-end when [connecting to Faber from a mobile agent](./AliceGetsAPhone.md).
+Note there is an option "2a" to initiate a connectionless proof - you can execute this option but it will only work end-to-end when [connecting to Faber from a mobile agent](AliceGetsAPhone.md).
 
 ## Additional Options in the Alice/Faber demo
 
