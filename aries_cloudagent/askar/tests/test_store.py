@@ -26,15 +26,6 @@ class TestStoreConfig(IsolatedAsyncioTestCase):
         assert askar_store.key == self.key
         assert askar_store.storage_type == self.storage_type
 
-    async def test_init_should_fail_when_key_missing(self):
-        config = {
-            "key_derivation_method": self.key_derivation_method,
-            "storage_type": self.storage_type,
-        }
-
-        with self.assertRaises(ProfileError):
-            askar_store = AskarStoreConfig(config)
-
 
 class TestStoreOpen(IsolatedAsyncioTestCase):
     key_derivation_method = "Raw"
