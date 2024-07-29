@@ -63,7 +63,7 @@ didcomm-messaging = {version = "^0.1.1a0", optional = true }
 
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = "~3.7.0"
+pre-commit = "~3.8.0"
 # Sync with version in .pre-commit-config.yaml
 ruff = "0.5.5"
 
