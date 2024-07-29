@@ -12,6 +12,7 @@ FROM python:${python_version}-slim-bullseye AS main
 
 ARG uid=1001
 ARG user=aries
+ARG acapy_name="aries-cloudagent"
 ARG acapy_version
 ARG acapy_reqs=[askar,didcommv2]
 
@@ -24,15 +25,15 @@ ENV HOME="/home/$user" \
     PYTHONIOENCODING=UTF-8 \
     RUST_LOG=warn \
     SHELL=/bin/bash \
-    SUMMARY="aries-cloudagent image" \
-    DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
-    This image layers the python implementation of aries-cloudagent $acapy_version. Based on Debian Buster."
+    SUMMARY="$acapy_name image" \
+    DESCRIPTION="$acapy_name provides a base image for running Hyperledger Aries agents in Docker. \
+    This image layers the python implementation of $acapy_name $acapy_version. Based on Debian Buster."
 
 LABEL summary="$SUMMARY" \
     description="$DESCRIPTION" \
     io.k8s.description="$DESCRIPTION" \
-    io.k8s.display-name="aries-cloudagent $acapy_version" \
-    name="aries-cloudagent" \
+    io.k8s.display-name="$acapy_name $acapy_version" \
+    name=$acapy_name \
     acapy.version="$acapy_version" \
     maintainer=""
 

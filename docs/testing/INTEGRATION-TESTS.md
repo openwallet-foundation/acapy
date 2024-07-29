@@ -86,6 +86,24 @@ AGENT_PORT_OVERRIDE=8030 ./run_bdd -t <some tag>
 
 (Note that since the test run multiple agents you require up to 60 available ports.)
 
+### Note on BBS+ Signatures
+
+ACA-Py does not come installed with the `bbs` library by default therefore integation tests involving BBS+ signatures (tagged with @BBS) will fail unless excluded.
+
+You can exclude BBS+ tests from running with the tag `~@BBS`:
+
+```bash
+   run_bdd -t ~@BBS
+```
+
+If you want to run all tests including BBS+ tests you should include the `--all-extras` flag:
+
+```bash
+   run_bdd --all-extras
+```
+
+Note: The `bbs` library may not install on ARM (i.e. aarch64 or  arm64) architecture therefore YMMV with testing BBS+ on ARM based devices.
+
 ## Aca-py Integration Tests vs Aries Agent Test Harness (AATH)
 
 Aca-py Behave tests are based on the interoperability tests that are implemented in the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).  Both use [Behave (Gherkin)](https://behave.readthedocs.io/en/stable/) to execute tests against a running aca-py agent (or in the case of AATH, against any compatible Aries agent), however the aca-py integration tests focus on aca-py specific features.

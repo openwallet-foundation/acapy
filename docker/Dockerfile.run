@@ -18,7 +18,8 @@ RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD pyproject.toml poetry.lock README.md ./
 RUN mkdir -p log && chmod -R ug+rw log
 
-RUN poetry install -E "askar"
+ARG all_extras=0
+RUN if ! [ -z ${all_extras} ]; then poetry install --all-extras; else poetry install -E "askar didcommv2"; fi
 
 ADD . .
 

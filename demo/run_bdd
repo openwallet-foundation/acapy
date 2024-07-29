@@ -4,6 +4,7 @@ shopt -s nocasematch
 
 cd $(dirname $0)
 
+ACAPY_REQS="[askar,didcommv2]"
 AGENT="agent_container"
 ARGS=""
 
@@ -98,6 +99,11 @@ do
     fi
     continue
   ;;
+  --all-extras)
+    ACAPY_REQS="[askar,bbs,didcommv2]"
+    ALL_EXTRAS=1
+    continue
+  ;;
   --help)
     cat <<EOF
 
@@ -105,15 +111,15 @@ Usage:
    ./run_bdd [OPTIONS]
 
    - Options:
+      --all-extras - run tests that include BBS+ Signatures, Askar, and DIDComm V2
       --events - display on the terminal the webhook events from the ACA-Py agent.
       --timing - at the end of the run, display timing; relevant to the "performance" agent.
       --bg - run the agent in the background; for use when using OpenAPI/Swagger interface
-          --trace-log - log trace events to the standard log file
-          --trace-http - log trace events to an http endpoint specified in env var TRACE_TARGET_URL
-          --self-attested - include a self-attested attribute in the proof request/response
-          --webhook-url - send events to an http endpoint specified in env var WEBHOOK_URL
-      debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port>
-                    --debug-pycharm; --debug-ptvsd
+      --trace-log - log trace events to the standard log file
+      --trace-http - log trace events to an http endpoint specified in env var TRACE_TARGET_URL
+      --self-attested - include a self-attested attribute in the proof request/response
+      --webhook-url - send events to an http endpoint specified in env var WEBHOOK_URL
+      debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port> --debug-pycharm; --debug-ptvsd
 
 EOF
     exit 0
@@ -133,8 +139,8 @@ if [ ! -z "$AGENT_PORT_OVERRIDE" ]; then
 fi
 
 echo "Preparing agent image..."
-docker build -q -t acapy-base -f ../docker/Dockerfile .. || exit 1
-docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
+docker build -q -t acapy-base -f ../docker/Dockerfile --build-arg acapy_reqs=$ACAPY_REQS  .. || exit 1
+docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base --build-arg all_extras=$ALL_EXTRAS .. || exit 1
 docker build -q -t aries-bdd-image -f ../docker/Dockerfile.bdd .. || exit 1
 
 if [ ! -z "$DOCKERHOST" ]; then
