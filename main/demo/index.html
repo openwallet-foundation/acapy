@@ -2701,7 +2701,7 @@ on starting and stopping your own local Hyperledger Indy instance.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation
 </code></pre></div>
 <p>Note that you don't specify this option with <code>alice</code> because it's only applicable for the credential <code>issuer</code> (who has to enable revocation when creating a credential definition, and explicitly revoke credentials as appropriate; alice doesn't have to do anything special when revocation is enabled).</p>
-<p>You need to run an AnonCreds revocation registry tails server in order to support revocation - the details are described in the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server">Alice gets a Phone</a> demo instructions.</p>
+<p>You need to run an AnonCreds revocation registry tails server in order to support revocation - the details are described in the <a href="AliceGetsAPhone/#run-an-instance-of-indy-tails-server">Alice gets a Phone</a> demo instructions.</p>
 <p>Faber will setup support for revocation automatically, and you will see an extra option in faber's menu to revoke a credential:</p>
 <p><div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>    (1) Issue Credential
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    (1a) Set Credential Type (indy)
@@ -2822,9 +2822,9 @@ Publish now? [Y/N]: y
 <p>Note that with multi-tenancy enabled:</p>
 <ul>
 <li>The "base" wallet will have access to this new "agency API" - the agent's admin key, if enabled, must be provided in a header</li>
-<li>"Base wallet" API calls are handled <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L606">here</a></li>
-<li>The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L378">this code here</a>)</li>
-<li>"Sub-wallet" API calls are handled <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L632">here</a></li>
+<li>"Base wallet" API calls are handled <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606">here</a></li>
+<li>The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: <a href="https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L378">this code here</a>)</li>
+<li>"Sub-wallet" API calls are handled <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632">here</a></li>
 </ul>
 <p>Documentation on ACA-Py's multi-tenancy support can be found <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md">here</a>.</p>
 <h3 id="multi-tenancy-with-mediation">Multi-tenancy <em>with Mediation</em>!!!<a class="headerlink" href="#multi-tenancy-with-mediation" title="Permanent link">&para;</a></h3>
