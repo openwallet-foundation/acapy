@@ -6,7 +6,7 @@ import urllib
 
 from aries_askar import AskarError, AskarErrorCode, Store
 
-from ..core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
+from ..core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ..core.profile import Profile
 from ..utils.env import storage_path
 
@@ -36,21 +36,16 @@ class AskarStoreConfig:
             config = {}
         self.auto_recreate = config.get("auto_recreate", False)
         self.auto_remove = config.get("auto_remove", False)
+
         self.key = config.get("key", self.DEFAULT_KEY)
         self.key_derivation_method = (
             config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVATION
         )
 
-        if (
-            self.key_derivation_method.lower() == self.KEY_DERIVATION_RAW.lower()
-            and self.key == ""
-        ):
-            raise ProfileError(
-                f"With key derivation method '{self.KEY_DERIVATION_RAW}',"
-                "key should also be provided"
-            )
-        # self.rekey = config.get("rekey")
-        # self.rekey_derivation_method = config.get("rekey_derivation_method")
+        self.rekey = config.get("rekey")
+        self.rekey_derivation_method = (
+            config.get("rekey_derivation_method") or self.DEFAULT_KEY_DERIVATION
+        )
 
         self.name = config.get("name") or Profile.DEFAULT_NAME
         self.in_memory = self.name == ":memory:"
@@ -133,6 +128,20 @@ class AskarStoreConfig:
                 )
             raise ProfileError("Error removing store") from err
 
+    def _handle_open_error(self, err: AskarError, retry=False):
+        if err.code == AskarErrorCode.DUPLICATE:
+            raise ProfileDuplicateError(
+                f"Duplicate store '{self.name}'",
+            )
+        if err.code == AskarErrorCode.NOT_FOUND:
+            raise ProfileNotFoundError(
+                f"Store '{self.name}' not found",
+            )
+        if retry and self.rekey:
+            return
+
+        raise ProfileError("Error opening store") from err
+
     async def open_store(self, provision: bool = False) -> "AskarOpenStore":
         """Open a store, removing and/or creating it if so configured.
 
@@ -156,16 +165,27 @@ class AskarStoreConfig:
                     self.key_derivation_method,
                     self.key,
                 )
+                if self.rekey:
+                    await Store.rekey(store, self.rekey_derivation_method, self.rekey)
+
         except AskarError as err:
-            if err.code == AskarErrorCode.DUPLICATE:
-                raise ProfileDuplicateError(
-                    f"Duplicate store '{self.name}'",
-                )
-            if err.code == AskarErrorCode.NOT_FOUND:
-                raise ProfileNotFoundError(
-                    f"Store '{self.name}' not found",
-                )
-            raise ProfileError("Error opening store") from err
+            self._handle_open_error(err, retry=True)
+
+            if self.rekey:
+                # Attempt to rekey the store with a default key in the case the key
+                # was created with a blank key before version 0.12.0. This can be removed
+                # in a future version or when 0.11.0 is no longer supported.
+                try:
+                    store = await Store.open(
+                        self.get_uri(),
+                        self.key_derivation_method,
+                        AskarStoreConfig.DEFAULT_KEY,
+                    )
+                except AskarError as err:
+                    self._handle_open_error(err)
+
+                await Store.rekey(store, self.rekey_derivation_method, self.rekey)
+                return AskarOpenStore(self, provision, store)
 
         return AskarOpenStore(self, provision, store)
 
