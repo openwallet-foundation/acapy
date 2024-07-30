@@ -80,10 +80,6 @@ That's it--you should be ready to start issuing and receiving verifiable credent
 
 ## Lab 2: Getting Ready To Be An Issuer
 
-::: todo
-To Do: Update lab to use this schema: H7W22uhD4ueQdGaGeiCgaM:2:student id:1.0.0
-:::
-
 In this lab we will use our Traction Tenant agent to create and publish an
 AnonCreds Schema object (or two), and then use that Schema to create and publish
 a Credential Definition. All of the AnonCreds objects will be published on the
@@ -115,7 +111,7 @@ BCovrin (pronounced “Be Sovereign”) Test network. For those new to AnonCreds
     3. To see the details about your schema, hit the Expand (`>`) link, and then
        the subsequent `>` to “View Raw Content."
 3. With the schema in place, it's time to become an issuer. To do that, you have
-   to create a Credential Definition. Click on the “Credential” icon in the
+   to create a Credential Definition. Click on the “+” icon in the
    “Credential Definition” column of your schema to create the Credential
    Definition (CredDef) for the Schema. The “Tag” can be any value you want — it
    is an issuer defined part of the identifier for the Credential Definition.
@@ -165,7 +161,7 @@ Mobile Wallet we downloaded in [Lab
     2. Review the offer and then click the “Accept” button.
     3. Your new credential should be saved to your wallet.
 4. Review the Issuance Data:
-    1. Back in your Traction Tenant, refresh the list to see the updates status of the issuance you just completed (should be “credential_issued” or “credential_acked”, depending on the Wallet you are using).
+    1. Back in your Traction Tenant, refresh the list to see the updates status of the issuance you just completed (should be “credential_issued” or “done”, depending on the Wallet you are using).
     2. Expand the issuance and again to “View Raw Content.” to see the data that was exchanged between the Traction Issuer and the Wallet.
 5. If you want, repeat the process for other credentials types your Traction Tenant is capable of issuing.
 
@@ -200,7 +196,7 @@ to do.
     1. Open up your mobile Wallet and look for a notification about receiving a presentation request. Where that appears may vary based on the Wallet you are using.
     2. Review the information you are being asked to share, and then click the “Share” button to send the presentation.
 4. Review the Presentation Request Result:
-    1. Back in your Traction Tenant, refresh the Verifications list to see the updated status of the presentation request you just completed. It should be something positive, like “presentation_received” if all went well. It may be different depending on the Wallet you are using.
+    1. Back in your Traction Tenant, refresh the Verifications list to see the updated status of the presentation request you just completed. It should be something positive, like “presentation_received” or “done” if all went well. It may be different depending on the Wallet you are using.
     2. If you want, expand the presentation request and “View Raw Content.” to see the presentation request, and presentation data exchanged between the Traction Verifier and the Wallet.
 5. Repeat the process, making the presentation request more complicated:
     1. From the list of presentations, use the arrow icon action to copy an existing presentation request and just re-run it, or evolve it.
