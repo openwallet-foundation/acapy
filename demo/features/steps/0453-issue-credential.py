@@ -383,7 +383,7 @@ def step_impl(context, holder, key_type):
     pass
 
 
-@when('"{issuer}" offers "{holder}" a json-ld credential with data {credential_data} with {sig_type}')
+@when('"{issuer}" offers "{holder}" a json-ld credential with data {credential_data} and {sig_type}')
 def step_impl(context, issuer, holder, credential_data, sig_type):
     # initiate a cred exchange with a json-ld credential
     agent = context.active_agents[issuer]
@@ -644,26 +644,27 @@ def step_impl(context, holder):
 
 
 @given(
-    '"{holder}" has an issued json-ld {schema_name} credential {credential_data} from "{issuer}"'
+    '"{holder}" has an issued json-ld {schema_name} credential {credential_data} from "{issuer}" with {key_type} and {sig_type}'
 )
-def step_impl(context, holder, schema_name, credential_data, issuer):
+def step_impl(context, holder, schema_name, credential_data, issuer, key_type, sig_type):
     context.execute_steps(
         '''
         Given "'''
         + issuer
         + """" is ready to issue a json-ld credential for """
-        + schema_name
+        + schema_name + " with " + key_type
         + '''
         And "'''
         + holder
-        + """" is ready to receive a json-ld credential """
+        + """" is ready to receive a json-ld credential with """
+        + key_type
         + '''
         When "'''
         + issuer
         + '''" offers "'''
         + holder
         + """" a json-ld credential with data """
-        + credential_data
+        + credential_data + " and " + sig_type 
         + '''
         Then "'''
         + holder
