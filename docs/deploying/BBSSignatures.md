@@ -1,16 +1,16 @@
 # BBS+ Signatures Support
 
-ACA-Py includes support for BBS+ Signatures out of the box through an optional dependency, however the implementation for it is out of date and does not currently support ARM (aarch64 or arm64) architecture (e.g. Apple devices with M1 chips or above).
+ACA-Py has supported BBS+ Signatures for some time. However, the dependency that is used (`bbs`) does not support ARM architecture, and its inclusion in the default ACA-Py artifacts mean that developers using ARM-based hardware (such as Apple M1 Macs or later) cannot run ACA-Py "out-of-the-box". We feel that providing a better developer experience by supporting ARM architecture is more important than BBS+ Signature support at this time. As such, we have removed the BBS+ dependency from the base ACA-Py artifacts, and made it an add-on, that those using ACA-Py with BBS+ must take extra steps to build their own artifacts. This file describes how to do those extra steps.
 
-The base release images of ACA-Py exclude the installation of the `bbs` library to maintain widespread support accross various architectures.
+Regarding future support for BBS+ Signatures in ACA-Py, there is currently a lot of work going on in developing implementations and BBS+-based Verifiable Credential standards. However, at the time of this release, there is not an obvious approach to an implementation to use in ACA-Py that includes ARM support. As a result, we will hold off on updating the BBS+ Signatures support in ACA-Py until the standards and path forward clarify. In the meantime, maintainers of ACA-Py plan to continue to do all we can to push for newer and better ZKP-based Verifiable Credential standards.
 
-If you require BBS+ for your deployment an optional "extended" ACA-Py image has been released (`aries-cloudagent-bbs`) that includes BBS+, with the caveat that it may not successfully install on ARM architecture.
+If you require BBS+ for your deployment an optional "extended" ACA-Py image has been released (`aries-cloudagent-bbs`) that includes BBS+, with the caveat that it will very likely not install on ARM architecture.
 
 ## Development and Testing
 
 ### Developer setup
 
-If you are a contributor or are developing using a local build of ACA-Py and need BBS+, the easiest way to include `bbs` is to install it with `poetry` (again with the caveat that it may not successfully install on ARM Architecture). The `--all-extras` flag will install all of `askar`, `bbs` and `didcommv2`:
+If you are a contributor or are developing using a local build of ACA-Py and need BBS+, the easiest way to include it is to install the optional dependency `bbs` it with `poetry` (again with the caveat that it will very likely not install on ARM architecture). The `--all-extras` flag will install the `bbs` optional dependency in ACA-Py:
 
 ```shell
 poetry install --all-extras
