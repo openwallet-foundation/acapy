@@ -7,6 +7,8 @@ from acapy_agent.core.profile import Profile
 from acapy_agent.did.did_key import DIDKey
 from acapy_agent.wallet.key_type import KeyType
 
+from acapy_agent.resolver.did_resolver import DIDResolver
+
 
 class BaseVerificationKeyStrategy(ABC):
     """Base class for defining which verification method is in use."""
@@ -60,5 +62,11 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         elif did.startswith("did:sov:"):
             # key-1 is what uniresolver uses for key id
             return did + "#key-1"
-
+        elif did.startswith("did:web:"):
+            did_resolver = profile.inject(DIDResolver)
+            did_document = await did_resolver.resolve(profile=profile, did=did)
+            verification_method_list = did_document.get("verificationMethod", {})
+            # taking the first verification method from did document
+            verification_method_id = verification_method_list[0].get("id")
+            return verification_method_id
         return None
