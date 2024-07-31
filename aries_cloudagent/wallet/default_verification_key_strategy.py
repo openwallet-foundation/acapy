@@ -5,6 +5,7 @@ from typing import Optional, List
 
 from aries_cloudagent.core.profile import Profile
 
+from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.wallet.key_type import KeyType
 
 from aries_cloudagent.did.did_key import DIDKey
@@ -62,5 +63,11 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         elif did.startswith("did:sov:"):
             # key-1 is what uniresolver uses for key id
             return did + "#key-1"
-
+        elif did.startswith("did:web:"):
+            did_resolver = profile.inject(DIDResolver)
+            did_document = await did_resolver.resolve(profile=profile, did=did)
+            verification_method_list = did_document.get("verificationMethod", {})
+            # taking the first verification method from did document
+            verification_method_id = verification_method_list[0].get("id")
+            return verification_method_id
         return None
