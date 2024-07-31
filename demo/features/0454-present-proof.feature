@@ -98,25 +98,25 @@ Feature: RFC 0454 Aries agent present proof
          | Faber | verifier | <Acme_capabilities> |
          | Bob   | prover   | <Bob_capabilities>  |
       And "<issuer>" and "Bob" have an existing connection
-      And "Bob" has an issued json-ld <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Bob" has an issued json-ld <Schema_name> credential <Credential_data> from "<issuer>" with <Key_type> and <Sig_type>
       And "Faber" and "Bob" have an existing connection
-      When "Faber" sends a request for json-ld proof presentation <Proof_request> to "Bob"
+      When "Faber" sends a request for json-ld proof presentation <Proof_request> to "Bob" with <Sig_type>
       Then "Faber" has the proof verified
 
-      @PR @Release @WalletType_Askar
+      @PR @Release @WalletType_Askar @BBS
       Examples:
-         | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
-         | Acme   | --public-did --cred-type json-ld                          |                           | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | issuer | Acme_capabilities                 | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     | Key_type   | Sig_type            |
+         | Acme   | --public-did --cred-type json-ld  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | bls12381g2 | BbsBlsSignature2020 |
 
-      @Release @WalletType_Askar
+      @Release @WalletType_Askar @BBS
       Examples:
-         | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
-         | Faber  | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | issuer | Acme_capabilities                               | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     | Key_type   | Sig_type            |
+         | Faber  | --public-did --cred-type json-ld --did-exchange | --did-exchange   | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | bls12381g2 | BbsBlsSignature2020 |
 
-      @PR @Release @WalletType_Askar_AnonCreds
+      @PR @Release @WalletType_Askar_AnonCreds @BBS
       Examples:
-         | issuer | Acme_capabilities                                         | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
-         | Faber  | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | issuer | Acme_capabilities                                              | Bob_capabilities              | Schema_name       | Credential_data   | Proof_request     | Key_type   | Sig_type            |
+         | Faber  | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 | bls12381g2 | BbsBlsSignature2020 |
 
 
    @T002-RFC0454

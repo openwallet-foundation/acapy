@@ -1,27 +1,12 @@
-from behave import given, when, then
-import json
-from time import sleep
-import time
+from behave import when, then
 
 from bdd_support.agent_backchannel_client import (
     read_proof_req_data,
-    read_presentation_data,
     aries_container_request_proof,
     aries_container_verify_proof,
     agent_container_POST,
     async_sleep,
 )
-from runners.agent_container import AgentContainer
-from runners.support.agent import (
-    CRED_FORMAT_INDY,
-    CRED_FORMAT_JSON_LD,
-    DID_METHOD_SOV,
-    DID_METHOD_KEY,
-    KEY_TYPE_ED255,
-    KEY_TYPE_BLS,
-    SIG_TYPE_BLS,
-)
-
 
 # This step is defined in another feature file
 # Given "Acme" and "Bob" have an existing connection
@@ -105,9 +90,9 @@ def step_impl(context, verifier):
 
 
 @when(
-    '"{verifier}" sends a request for json-ld proof presentation {request_for_proof} to "{prover}"'
+    '"{verifier}" sends a request for json-ld proof presentation {request_for_proof} to "{prover}" with {sig_type}'
 )
-def step_impl(context, verifier, request_for_proof, prover):
+def step_impl(context, verifier, request_for_proof, prover, sig_type):
     agent = context.active_agents[verifier]
     prover_agent = context.active_agents[prover]
 
@@ -122,7 +107,7 @@ def step_impl(context, verifier, request_for_proof, prover):
                 },
                 "presentation_definition": {
                     "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
-                    "format": {"ldp_vp": {"proof_type": [SIG_TYPE_BLS]}},
+                    "format": {"ldp_vp": {"proof_type": [sig_type]}},
                     "input_descriptors": [
                         {
                             "id": "citizenship_input_1",

@@ -216,12 +216,6 @@ To run specific tests pass parameters as defined by [pytest](https://docs.pytest
 ./scripts/run_tests aries_cloudagent/protocols/connections
 ```
 
-To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) and related dependencies, run the script:
-
-```bash
-./scripts/run_tests_indy
-```
-
 ### Running Aries Agent Test Harness Tests
 
 You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).

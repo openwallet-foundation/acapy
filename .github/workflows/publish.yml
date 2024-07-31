@@ -100,6 +100,24 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           platforms: ${{ env.PLATFORMS }}
 
+      - name: Build and Push extended Image to ghcr.io
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          target: main
+          build-args: |
+            python_version=${{ matrix.python-version }}
+            acapy_name=aries-cloudagent-bbs
+            acapy_version=${{ inputs.tag || github.event.release.tag_name }}
+            acapy_reqs=[askar,bbs,didcommv2]
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          platforms: ${{ env.PLATFORMS }}
+
       # Temp fix
       # https://github.com/docker/build-push-action/issues/252
       # https://github.com/moby/buildkit/issues/1896

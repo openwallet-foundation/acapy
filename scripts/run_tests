@@ -7,8 +7,15 @@ FAST=${FAST:-0}
 
 cd "$(dirname "$0")" || exit
 
+for arg in "$@"; do
+  if [ "$arg" = "--all-extras" ]; then
+    ALL_EXTRAS=1
+    shift # remove all-extras flag from remaining args
+  fi
+done
+
 if [[ $FAST -eq 0 ]]; then
-  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
+  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test -f ../docker/Dockerfile.test --build-arg "all_extras=$ALL_EXTRAS" .. || exit 1
 fi
 
 DOCKER_ARGS=""
@@ -20,6 +27,7 @@ for arg in "$@"; do
     #shift # remove debug flag from pytest args.
   fi
 done
+
 if [ -n "${ENABLE_PTVSD}" ]; then
   DOCKER_ARGS="${DOCKER_ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi

@@ -9,9 +9,17 @@ if [[ $OSTYPE == 'darwin'* ]]; then
 fi
 
 cd "$(dirname "$0")" || exit 1
+
+for arg in "$@"; do
+  if [ "$arg" = "--all-extras" ]; then
+    ALL_EXTRAS=1
+    shift # remove all-extras flag from remaining args
+  fi
+done
+
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
-$CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
+$CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-run -f ../docker/Dockerfile.run --build-arg all_extras=$ALL_EXTRAS .. || exit 1
 
 ARGS=""
 for PORT in $PORTS; do
