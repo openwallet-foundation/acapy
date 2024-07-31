@@ -111,7 +111,7 @@ Usage:
    ./run_bdd [OPTIONS]
 
    - Options:
-      --all-extras - run tests that include BBS+ Signatures, Askar, and DIDComm V2
+      --all-extras - run tests that include BBS Signatures, Askar, and DIDComm V2
       --events - display on the terminal the webhook events from the ACA-Py agent.
       --timing - at the end of the run, display timing; relevant to the "performance" agent.
       --bg - run the agent in the background; for use when using OpenAPI/Swagger interface

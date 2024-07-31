@@ -10,13 +10,13 @@ developer @shaangill025.
 - `./scripts/run_tests`
 - `./scripts/run_tests aries_cloudagent/protocols/out_of_band/v1_0/tests`
 
-Note: The `bbs` library is not installed with ACA-Py by default, therefore unit tests involving BBS+ signatures are disabled. To run BBS+ tests add the `--all-extras` flag:
+Note: The `bbs` library is not installed with ACA-Py by default, therefore unit tests involving BBS Signatures are disabled. To run BBS tests add the `--all-extras` flag:
 
 ```bash
     ./scripts/run_tests --all-extras
 ```
 
-Note: The `bbs` library may not install on ARM (i.e. aarch64 or  arm64) architecture therefore YMMV with testing BBS+ on ARM based devices.
+Note: The `bbs` library may not install on ARM (i.e. aarch64 or  arm64) architecture therefore YMMV with testing BBS Signatures on ARM based devices.
 
 ## Pytest
 
