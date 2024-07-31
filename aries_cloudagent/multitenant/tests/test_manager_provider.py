@@ -1,9 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ...config.injection_context import InjectionContext
 from ...config.base import InjectionError
-from ..manager_provider import MultitenantManagerProvider
+from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
+from ..manager_provider import MultitenantManagerProvider
 
 
 class TestProfileManagerProvider(IsolatedAsyncioTestCase):
@@ -21,11 +21,11 @@ class TestProfileManagerProvider(IsolatedAsyncioTestCase):
         profile = InMemoryProfile.test_profile()
         provider = MultitenantManagerProvider(profile)
         context = InjectionContext()
-        context.settings["multitenant.wallet_type"] = "askar-profile"
+        context.settings["multitenant.wallet_type"] = "single-wallet-askar"
 
         self.assertEqual(
             provider.provide(context.settings, context.injector).__class__.__name__,
-            "AskarProfileMultitenantManager",
+            "SingleWalletAskarMultitenantManager",
         )
 
     async def test_invalid_manager_type(self):

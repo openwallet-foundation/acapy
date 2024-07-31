@@ -1,6 +1,9 @@
 import json
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
+from unittest.mock import MagicMock
+from pyld.jsonld import JsonLdProcessor
+from pyld import jsonld
 
 import anoncreds
 import pytest
@@ -15,14 +18,22 @@ from anoncreds import (
     PresentCredentials,
     RevocationRegistryDefinition,
     Schema,
+    W3cCredential,
+    W3cPresentation,
 )
 from aries_askar import AskarError, AskarErrorCode
 
 from aries_cloudagent.anoncreds.tests.mock_objects import (
+    CRED_DEFS,
+    CREDS_W3C_METADATA,
     MOCK_CRED,
     MOCK_CRED_DEF,
     MOCK_PRES,
     MOCK_PRES_REQ,
+    MOCK_W3C_CRED,
+    MOCK_W3C_PRES_REQ,
+    MOCK_W3CPRES,
+    SCHEMAS,
 )
 from aries_cloudagent.askar.profile import AskarProfile
 from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
@@ -31,6 +42,8 @@ from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfileSession,
 )
 from aries_cloudagent.tests import mock
+from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
+from aries_cloudagent.vc.tests.document_loader import custom_document_loader
 from aries_cloudagent.wallet.error import WalletNotFoundError
 
 from .. import holder as test_module
@@ -63,6 +76,25 @@ class MockCredReceived:
         return MOCK_CRED
 
 
+class MockCredReceivedW3C:
+    def __init__(self, bad_schema=False, bad_cred_def=False):
+        self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
+        self.cred_def_id = (
+            "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
+        )
+
+        if bad_schema:
+            self.schema_id = "bad-schema-id"
+        if bad_cred_def:
+            self.cred_def_id = "bad-cred-def-id"
+
+    def to_json_buffer(self):
+        return b"credential"
+
+    def to_dict(self):
+        return MOCK_W3C_CRED
+
+
 class MockCredential:
     def __init__(self, bad_schema=False, bad_cred_def=False):
         self.bad_schema = bad_schema
@@ -75,6 +107,20 @@ class MockCredential:
 
     def process(self, *args, **kwargs):
         return MockCredReceived(self.bad_schema, self.bad_cred_def)
+
+
+class MockW3Credential:
+    def __init__(self, bad_schema=False, bad_cred_def=False):
+        self.bad_schema = bad_schema
+        self.bad_cred_def = bad_cred_def
+
+    cred = mock.AsyncMock(auto_spec=W3cCredential)
+
+    def to_dict(self):
+        return MOCK_W3C_CRED
+
+    def process(self, *args, **kwargs):
+        return MockCredReceivedW3C(self.bad_schema, self.bad_cred_def)
 
 
 class MockMasterSecret:
@@ -302,6 +348,54 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 MOCK_CRED,
                 {"cred-req-meta": "cred-req-meta"},
             )
+
+    @mock.patch.object(
+        AnonCredsHolder, "get_master_secret", return_value="master-secret"
+    )
+    @mock.patch.object(
+        W3cCredential,
+        "load",
+        side_effect=[
+            MockW3Credential(),
+        ],
+    )
+    @mock.patch.object(
+        Credential,
+        "from_w3c",
+        side_effect=[
+            MockCredential(),
+        ],
+    )
+    async def test_store_credential_w3c(
+        self, mock_load, mock_w3cload, mock_master_secret
+    ):
+
+        self.profile.context.injector.bind_instance(
+            DocumentLoader, custom_document_loader
+        )
+        self.profile.transaction = mock.Mock(
+            return_value=mock.MagicMock(
+                insert=mock.CoroutineMock(return_value=None),
+                commit=mock.CoroutineMock(return_value=None),
+            )
+        )
+
+        with mock.patch.object(jsonld, "expand", return_value=MagicMock()):
+            with mock.patch.object(
+                JsonLdProcessor, "get_values", return_value=["type1"]
+            ):
+                result = await self.holder.store_credential_w3c(
+                    MOCK_CRED_DEF,
+                    MOCK_W3C_CRED,
+                    {"cred-req-meta": "cred-req-meta"},
+                    credential_attr_mime_types={"first_name": "application/json"},
+                )
+
+                assert result is not None
+                assert mock_master_secret.called
+                assert mock_load.called
+                assert mock_w3cload.called
+                assert self.profile.transaction.called
 
     @mock.patch.object(
         AnonCredsHolder, "get_master_secret", return_value="master-secret"
@@ -617,6 +711,54 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 schemas={},
                 credential_definitions={},
                 rev_states={},
+            )
+
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(
+        AnonCredsHolder, "get_master_secret", return_value="master-secret"
+    )
+    @mock.patch.object(
+        anoncreds.W3cPresentation,
+        "create",
+        return_value=W3cPresentation.load(MOCK_W3CPRES),
+    )
+    async def test_create_presentation_w3c(
+        self, mock_pres_create, mock_master_secret, mock_handle
+    ):
+        mock_handle.fetch = mock.CoroutineMock(return_value=MockCredEntry())
+        await self.holder.create_presentation_w3c(
+            presentation_request=MOCK_W3C_PRES_REQ,
+            requested_credentials_w3c=[W3cCredential.load(MOCK_W3C_CRED)],
+            schemas=SCHEMAS,
+            credential_definitions=CRED_DEFS,
+            credentials_w3c_metadata=CREDS_W3C_METADATA,
+        )
+
+        assert mock_pres_create.called
+        assert mock_master_secret.called
+        mock_handle.fetch.assert_called
+
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(
+        AnonCredsHolder, "get_master_secret", return_value="master-secret"
+    )
+    @mock.patch.object(
+        anoncreds.W3cPresentation,
+        "create",
+        side_effect=AnoncredsError(AnoncredsErrorCode.UNEXPECTED, "test"),
+    )
+    async def test_create_presentation_w3c_create_error(
+        self, mock_pres_create, mock_master_secret, mock_handle
+    ):
+        mock_handle.fetch = mock.CoroutineMock(return_value=MockCredEntry())
+        # anoncreds error when creating presentation
+        with self.assertRaises(AnonCredsHolderError):
+            await self.holder.create_presentation_w3c(
+                presentation_request=MOCK_W3C_PRES_REQ,
+                requested_credentials_w3c=[W3cCredential.load(MOCK_W3C_CRED)],
+                schemas=SCHEMAS,
+                credential_definitions=CRED_DEFS,
+                credentials_w3c_metadata=CREDS_W3C_METADATA,
             )
 
     @mock.patch.object(

@@ -8,9 +8,18 @@ Once ready to do a release, create a local branch that includes the following up
 
 1. Create a PR branch from an updated `main` branch.
 
-2. Update the CHANGELOG.md to add the new release.  Only create a new section when working on the first release candidate for a new release. When transitioning from one release candidate to the next, or to an official release, just update the title and date of the change log section.
+2. See if there are any Document Site `mkdocs` changes needed. Run the script
+   `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
+   there are new documentation files that are in the docs folder and not
+   referenced in the mkdocs navigation. If there is, update the `mkdocs.yml`
+   file as necessary. On completion of the testing, run the script
+   `./scripts/prepmkdocs.sh clean` to undo the temporary changes to the docs. Be
+   sure to do the last `clean` step -- **DO NOT MERGE THE TEMPORARY DOC
+   CHANGES.**
 
-3. Include details of the merged PRs included in this release. General process to follow:
+3. Update the CHANGELOG.md to add the new release.  Only create a new section when working on the first release candidate for a new release. When transitioning from one release candidate to the next, or to an official release, just update the title and date of the change log section.
+
+4. Include details of the merged PRs included in this release. General process to follow:
 
 - Gather the set of PRs since the last release and put them into a list. A good
   tool to use for this is the
@@ -91,9 +100,9 @@ Once you have the list of PRs:
 - Organize the list into suitable categories, update (if necessary) the PR description and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
 - Add a narrative about the release above the PR that highlights what has gone into the release.
 
-4. Check to see if there are any other PRs that should be included in the release.
+5. Check to see if there are any other PRs that should be included in the release.
 
-5. Update the ReadTheDocs in the `/docs` folder by following the instructions in
+6. Update the ReadTheDocs in the `/docs` folder by following the instructions in
    the `docs/UpdateRTD.md` file. That will likely add a number of new and modified
    files to the PR. Eliminate all of the errors in the generation process,
    either by mocking external dependencies or by fixing ACA-Py code. If
@@ -101,7 +110,7 @@ Once you have the list of PRs:
    developer. Experience has demonstrated to use that documentation generation
    errors should be fixed in the code.
 
-6. Search across the repository for the previous version number and update it
+7. Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md entry for the previous release
    is a likely exception, and the `pyproject.toml` in the root **MUST** be
    updated. You can skip (although it won't hurt) to update the files in the
@@ -114,26 +123,26 @@ Once you have the list of PRs:
    have dropped the previously used `-` in the release candidate version string
    to better follow the semver rules.
 
-7. Regenerate openapi.json and swagger.json by running
+8. Regenerate openapi.json and swagger.json by running
    `../scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
 
    Command: `cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..`
 
-8.  Double check all of these steps above, and then submit a PR from the branch.
+9.  Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.
    If there are still further changes to be merged, mark the PR as "Draft",
    repeat **ALL** of the steps again, and then mark this PR as ready and then
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-9.  Immediately after it is merged, create a new GitHub tag representing the
+10. Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
    version in [pyproject.toml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/pyproject.toml). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
 
-10. New images for the release are automatically published by the GitHubAction
+11. New images for the release are automatically published by the GitHubAction
    Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
    when a release is tagged, so no manual action is needed. The images are
    published in the [Hyperledger Package Repository under
@@ -147,11 +156,11 @@ Once you have the list of PRs:
 [publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
 
-11. Update the ACA-Py Read The Docs site by building the new "latest" (main
+12. Update the ACA-Py Read The Docs site by building the new "latest" (main
     branch) and activating and building the new release. Appropriate permissions
     are required to publish the new documentation version.
 
-12. Update the [https://aca-py.org] website with the latest documentation by
+13. Update the [https://aca-py.org] website with the latest documentation by
     creating a PR and tag of the latest documentation from this site. Details
     are provided in the [aries-acapy-docs] repository.
 

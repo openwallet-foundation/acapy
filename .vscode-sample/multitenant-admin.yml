@@ -8,10 +8,11 @@ inbound-transport:
 
 outbound-transport: http
 
-wallet-type: askar-anoncreds
+wallet-type: askar
 wallet-storage-type: default
 wallet-name: multitenant-admin-wallet
 wallet-key: multitenant-admin-wallet-key
+multitenancy-config: '{"wallet_type": "single-wallet-askar"}'
 
 admin-insecure-mode: true
 
@@ -19,7 +20,7 @@ admin: [0.0.0.0, 9051]
 
 endpoint: http://localhost:9050
 
-genesis-url: https://localhost:9000/genesis
+genesis-url: http://localhost:9000/genesis
 
 # Connections
 debug-connections: true
@@ -35,3 +36,11 @@ multitenant-admin: true
 log-level: info
 
 tails-server-base-url: https://localhost:6543
+
+plugin:
+  - multitenant_provider.v1_0
+
+# This is used if you want to use the multitoken multitenant manager plugin
+# plugin-config-value:
+#   - multitenant_provider.manager.class_name="multitenant_provider.v1_0.manager.SingleWalletAskarMultitokenMultitenantManager"
+#   - multitenant_provider.manager.always_check_provided_wallet_key=false

@@ -1,10 +1,9 @@
 """Generic ack message handler."""
 
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-from .....utils.tracing import trace_event, get_timer
-
+from .....utils.tracing import get_timer, trace_event
 from ..messages.ack import V10Ack
 
 
@@ -22,6 +21,10 @@ class V10AckHandler(BaseHandler):
 
         self._logger.debug("V20PresAckHandler called with context %s", context)
         assert isinstance(context.message, V10Ack)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
+
         self._logger.info(
             "Received v1.0 notification ack message: %s",
             context.message.serialize(as_string=True),

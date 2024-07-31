@@ -64,7 +64,7 @@ class TestIndyProofReq(TestCase):
         """Test de/serialization."""
 
         proof_req = IndyProofRequest.deserialize(PROOF_REQ)
-        assert type(proof_req) == IndyProofRequest
+        assert type(proof_req) is IndyProofRequest
 
         ser = proof_req.serialize()
         assert ser == PROOF_REQ

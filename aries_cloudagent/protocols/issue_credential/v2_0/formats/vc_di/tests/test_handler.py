@@ -1,7 +1,7 @@
 from copy import deepcopy
 from time import time
 import json
-
+from anoncreds import W3cCredential
 from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
     CredDef,
     GetCredDefResult,
@@ -869,22 +869,27 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             record.save = mock.CoroutineMock()
             self.handler.get_detail_record = mock.AsyncMock(return_value=record)
             with mock.patch.object(
-                AnonCredsHolder,
-                "store_credential_w3c",
-                mock.AsyncMock(),
-            ) as mock_store_credential:
-                # Error case: no cred ex record found
+                W3cCredential,
+                "rev_reg_id",
+                return_value="rr-id",
+            ):
+                with mock.patch.object(
+                    AnonCredsHolder,
+                    "store_credential_w3c",
+                    mock.AsyncMock(),
+                ) as mock_store_credential:
+                    # Error case: no cred ex record found
 
-                await self.handler.store_credential(cred_ex_record, cred_id)
+                    await self.handler.store_credential(cred_ex_record, cred_id)
 
-                mock_store_credential.assert_called_once_with(
-                    mock_credential_definition_result.credential_definition.serialize(),
-                    VCDI_CRED["credential"],
-                    record.cred_request_metadata,
-                    None,
-                    credential_id=cred_id,
-                    rev_reg_def=revocation_registry.serialize(),
-                )
+                    mock_store_credential.assert_called_once_with(
+                        mock_credential_definition_result.credential_definition.serialize(),
+                        VCDI_CRED["credential"],
+                        record.cred_request_metadata,
+                        None,
+                        credential_id=cred_id,
+                        rev_reg_def=revocation_registry.serialize(),
+                    )
 
             with mock.patch.object(
                 AnonCredsHolder,

@@ -172,6 +172,7 @@ Faber:
 
 ```
     (1) Issue Credential
+    (1a) Set Credential Type (indy)
     (2) Send Proof Request
     (3) Send Message
     (4) Create New Invitation
@@ -219,12 +220,13 @@ To enable support for revoking credentials, run the `faber` demo with the `--rev
 
 Note that you don't specify this option with `alice` because it's only applicable for the credential `issuer` (who has to enable revocation when creating a credential definition, and explicitly revoke credentials as appropriate; alice doesn't have to do anything special when revocation is enabled).
 
-You need to run an AnonCreds revocation registry tails server in order to support revocation - the details are described in the [Alice gets a Phone](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server) demo instructions.
+You need to run an AnonCreds revocation registry tails server in order to support revocation - the details are described in the [Alice gets a Phone](AliceGetsAPhone.md#run-an-instance-of-indy-tails-server) demo instructions.
 
 Faber will setup support for revocation automatically, and you will see an extra option in faber's menu to revoke a credential:
 
 ```
     (1) Issue Credential
+    (1a) Set Credential Type (indy)
     (2) Send Proof Request
     (3) Send Message
     (4) Create New Invitation
@@ -321,6 +323,7 @@ Faber:
 
 ```
     (1) Issue Credential
+    (1a) Set Credential Type (indy)
     (2) Send Proof Request
     (3) Send Message
     (4) Create New Invitation
@@ -383,9 +386,9 @@ You can inspect the additional multi-tenancy admin API's (i.e. the "agency API" 
 Note that with multi-tenancy enabled:
 
 - The "base" wallet will have access to this new "agency API" - the agent's admin key, if enabled, must be provided in a header
-- "Base wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L606)
-- The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L378))
-- "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L632)
+- "Base wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
+- The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L378))
+- "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
 
 Documentation on ACA-Py's multi-tenancy support can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md).
 

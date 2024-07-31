@@ -1,6 +1,6 @@
 """Rotate ack handler."""
 
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from ..manager import DIDRotateManager
@@ -19,6 +19,9 @@ class RotateAckHandler(BaseHandler):
         """
         self._logger.debug("RotateAckHandler called with context %s", context)
         assert isinstance(context.message, RotateAck)
+
+        if not context.connection_ready:
+            raise HandlerException("No connection established")
 
         connection_record = context.connection_record
         ack = context.message

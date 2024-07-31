@@ -2,15 +2,11 @@ from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_PREVIEW, CRED_20_PROPOSAL
-
 from ..cred_format import V20CredFormat
 from ..cred_proposal import V20CredProposal
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
-
 
 TEST_PREVIEW = V20CredPreview(
     attributes=(
@@ -41,9 +37,7 @@ class TestV20CredProposal(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            filters_attach=[
-                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
-            ],
+            filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")],
         )
         assert cred_proposal.credential_preview == TEST_PREVIEW
         assert cred_proposal.attachment() == TEST_INDY_FILTER
@@ -102,7 +96,7 @@ class TestV20CredProposal(IsolatedAsyncioTestCase):
             ],
         }
         cred_proposal = V20CredProposal.deserialize(obj)
-        assert type(cred_proposal) == V20CredProposal
+        assert type(cred_proposal) is V20CredProposal
 
         obj["filters~attach"][0]["data"]["base64"] = "eyJub3QiOiAiaW5keSJ9"  # not indy
         with self.assertRaises(BaseModelError):
@@ -152,9 +146,7 @@ class TestV20CredProposal(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            filters_attach=[
-                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
-            ],
+            filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")],
         )
 
         cred_proposal_dict = cred_proposal.serialize()
@@ -249,9 +241,7 @@ class TestV20CredProposalSchema(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            filters_attach=[
-                AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")
-            ],
+            filters_attach=[AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy")],
         )
 
         data = cred_proposal.serialize()

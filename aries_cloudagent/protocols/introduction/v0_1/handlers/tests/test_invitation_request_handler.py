@@ -1,4 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ......messaging.base_handler import HandlerException
@@ -7,10 +8,8 @@ from ......messaging.responder import MockResponder
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
-
 from ...messages.invitation import Invitation
 from ...messages.invitation_request import InvitationRequest
-
 from .. import invitation_request_handler as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -70,7 +69,7 @@ class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
             messages = responder.messages
             assert len(messages) == 1
             (result, _) = messages[0]
-            assert type(result) == Invitation
+            assert type(result) is Invitation
             assert result._thread._thid == self.context.message._message_id
 
     async def test_handle_not_ready(self):

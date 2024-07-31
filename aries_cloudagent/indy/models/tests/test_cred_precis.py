@@ -29,7 +29,7 @@ class TestCredInfo(TestCase):
     def test_serde(self):
         """Test de/serialization."""
         cred_info = IndyCredInfo.deserialize(CRED_INFO)
-        assert type(cred_info) == IndyCredInfo
+        assert type(cred_info) is IndyCredInfo
 
         ser = cred_info.serialize()
         assert ser == CRED_INFO

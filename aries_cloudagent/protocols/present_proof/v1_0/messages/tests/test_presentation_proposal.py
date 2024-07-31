@@ -5,13 +5,9 @@ from ......indy.models.pres_preview import (
     IndyPresPredSpec,
     IndyPresPreview,
 )
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import PRESENTATION_PROPOSAL
-
 from ..presentation_proposal import PresentationProposal
-
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
@@ -61,7 +57,7 @@ class TestPresentationProposal(TestCase):
         }
 
         pres_proposal = PresentationProposal.deserialize(obj)
-        assert type(pres_proposal) == PresentationProposal
+        assert type(pres_proposal) is PresentationProposal
 
     def test_serialize(self):
         """Test serialization."""

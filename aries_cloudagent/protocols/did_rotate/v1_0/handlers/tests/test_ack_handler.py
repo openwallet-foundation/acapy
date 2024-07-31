@@ -23,6 +23,7 @@ class TestAckHandler:
 
         request_context.message = RotateAck()
         request_context.connection_record = mock.MagicMock()
+        request_context.connection_ready = True
 
         handler = test_module.RotateAckHandler()
         responder = MockResponder()

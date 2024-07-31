@@ -217,7 +217,9 @@ class ConnRecord(BaseRecord):
         self.their_role = (
             ConnRecord.Role.get(their_role).rfc160
             if isinstance(their_role, str)
-            else None if their_role is None else their_role.rfc160
+            else None
+            if their_role is None
+            else their_role.rfc160
         )
         self.invitation_key = invitation_key
         self.invitation_msg_id = invitation_msg_id
@@ -284,6 +286,44 @@ class ConnRecord(BaseRecord):
         tag_filter = {}
         if their_did:
             tag_filter["their_did"] = their_did
+        if my_did:
+            tag_filter["my_did"] = my_did
+
+        post_filter = {}
+        if their_role:
+            post_filter["their_role"] = cls.Role.get(their_role).rfc160
+
+        return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
+
+    @classmethod
+    async def retrieve_by_did_peer_4(
+        cls,
+        session: ProfileSession,
+        their_did_long: Optional[str] = None,
+        their_did_short: Optional[str] = None,
+        my_did: Optional[str] = None,
+        their_role: Optional[str] = None,
+    ) -> "ConnRecord":
+        """Retrieve a connection record by target DID.
+
+        Args:
+            session: The active profile session
+            their_did_long: The target DID to filter by, in long form
+            their_did_short: The target DID to filter by, in short form
+            my_did: One of our DIDs to filter by
+            my_role: Filter connections by their role
+            their_role: Filter connections by their role
+        """
+        tag_filter = {}
+        if their_did_long and their_did_short:
+            tag_filter["$or"] = [
+                {"their_did": their_did_long},
+                {"their_did": their_did_short},
+            ]
+        elif their_did_short:
+            tag_filter["their_did"] = their_did_short
+        elif their_did_long:
+            tag_filter["their_did"] = their_did_long
         if my_did:
             tag_filter["my_did"] = my_did
 
@@ -375,9 +415,7 @@ class ConnRecord(BaseRecord):
         return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
-    async def retrieve_by_alias(
-        cls, session: ProfileSession, alias: str
-    ) -> "ConnRecord":
+    async def retrieve_by_alias(cls, session: ProfileSession, alias: str) -> "ConnRecord":
         """Retrieve a connection record from an alias.
 
         Args:

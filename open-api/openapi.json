@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.0.0rc4"
+    "version" : "v1.0.0rc5"
   },
   "servers" : [ {
     "url" : "/"
@@ -7756,6 +7756,10 @@
       },
       "ClaimFormat" : {
         "properties" : {
+          "di_vc" : {
+            "properties" : { },
+            "type" : "object"
+          },
           "jwt" : {
             "properties" : { },
             "type" : "object"
@@ -11616,7 +11620,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "created", "proofPurpose", "type", "verificationMethod" ],
+        "required" : [ "proofPurpose", "type", "verificationMethod" ],
         "type" : "object"
       },
       "ListCredentialsResponse" : {
