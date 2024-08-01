@@ -23,6 +23,7 @@ class V20CredExRecordWebhook:
         "credential_definition_id",
         "schema_id",
         "credential_id",
+        "by_format",
         "trace",
         "public_did",
         "cred_id_stored",
