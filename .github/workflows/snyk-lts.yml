@@ -4,8 +4,8 @@ on:
   push:
     # These branches represent the LTS releases
     branches:
-      - 0.12.x
-      - 0.11.x
+      - 0.12.lts
+      - 0.11.lts
     paths:
       - aries_cloudagent/**
       - docker/**
