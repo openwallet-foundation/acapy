@@ -1,5 +1,24 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.11.3
+
+A patch release to add a fix that ensures that sufficient webhook information is sent to an ACA-Py controller that is executing the [AIP 2.0 Present Proof 2.0 Protocol].
+
+[AIP 2.0 Present Proof 2.0 Protocol]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
+
+### 0.11.3 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.11.3 Categorized List of Pull Requests
+
+- Dependency update and release PR
+  - [ PATCH ] 0.11.x with PR 3081 terse webhooks [\#3142](https://github.com/hyperledger/aries-cloudagent-python/pull/3142) [jamshale](https://github.com/jamshale)
+- Release management pull requests
+  - 0.11.3 [\#3144](https://github.com/hyperledger/aries-cloudagent-python/pull/3144) [swcurran](https://github.com/swcurran)
+- PRs cherry-picked into [\#3142](https://github.com/hyperledger/aries-cloudagent-python/pull/3142) from the `main` branch:
+  - Add by_format to terse webhook for presentations [\#3081](https://github.com/hyperledger/aries-cloudagent-python/pull/3081) [ianco](https://github.com/ianco)
+
 ## 0.11.2
 
 A patch release to add the verification of a linkage between an inbound message and its associated connection (if any) before processing the message.
