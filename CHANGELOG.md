@@ -2,6 +2,8 @@
 
 ## 0.11.3
 
+### August 2, 2024
+
 A patch release to add a fix that ensures that sufficient webhook information is sent to an ACA-Py controller that is executing the [AIP 2.0 Present Proof 2.0 Protocol].
 
 [AIP 2.0 Present Proof 2.0 Protocol]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
@@ -21,6 +23,8 @@ There are no breaking changes in this release.
 
 ## 0.11.2
 
+### July 25, 2024
+
 A patch release to add the verification of a linkage between an inbound message and its associated connection (if any) before processing the message.
 
 ### 0.11.2 Breaking Changes
@@ -37,6 +41,8 @@ There are no breaking changes in this release.
   - Check connection is ready in all connection required handlers [\#3095](https://github.com/hyperledger/aries-cloudagent-python/pull/3095) [jamshale](https://github.com/jamshale)
 
 ## 0.11.1
+
+### May 7, 2024
 
 A patch release to update the `aiohttp` library such that a reported serious
 vulnerability is addressed such that a crafted payload delivered to `aiohttp`
