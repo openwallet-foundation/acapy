@@ -28,6 +28,32 @@ To use ACA-Py you create a business logic controller that "talks to" an ACA-Py i
 This [checklist-style overview document](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/features/SupportedRFCs.md) provides a full list of the features in ACA-Py.
 The following is a list of some of the core features needed for a production deployment, with a link to detailed information about the capability.
 
+## LTS Releases
+
+The ACA-Py community provides periodic releases with new features and
+improvements. Certain releases are designated by the ACA-Py maintainers as
+long-term support (LTS) releases and listed in this document. Critical bugs and
+important (as determined by the ACA-Py Maintainers) fixes will be backported to
+the active LTS releases. Each LTS release will be supported with patches for **9
+months** following the designation of the **next** LTS Release. For more details see
+the [LTS strategy](./LTS-Strategy.md).
+
+Current LTS releases are:
+
+- [0.12](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.12.1) **Current LTS Release**
+- [0.11](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.11.1) **End of Life: January 2025**
+
+Unless specified in the **Breaking Changes** section of the ACA-Py
+[CHANGELOG](./CHANGELOG.md), all LTS patch releases will be able to be deployed
+**without** an upgrade process from its prior release. Minor/Major release upgrades
+steps (if any) of ACA-Py are tested and documented in the ACA-Py
+[CHANGELOG](./CHANGELOG.md) per release and in the project documents published
+at [https://aca-py.org](https://aca-py.org) from the markdown files in this
+repository.
+
+ACA-Py releases and release notes can be found on the [GitHub releases
+page](https://github.com/hyperledger/aries-cloudagent-python/releases).
+
 ### Multi-Tenant
 
 ACA-Py supports "multi-tenant" scenarios. In these scenarios, one (scalable) instance of ACA-Py uses one database instance, and are together capable of managing separate secure storage (for private keys, DIDs, credentials, etc.) for many different actors. This enables (for example) an "issuer-as-a-service", where an enterprise may have many VC issuers, each with different identifiers, using the same instance of ACA-Py to interact with VC holders as required. Likewise, an ACA-Py instance could be a "cloud wallet" for many holders (e.g. people or organizations) that, for whatever reason, cannot use a mobile device for a wallet. Learn more about multi-tenant deployments [here](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/features/Multitenancy.md).
