@@ -89,9 +89,9 @@ test)
   exportEnvironment "$@"
   ../scripts/run_tests $(getStartupParams "$@")
   ;;
-test-indy)
+test-all)
   exportEnvironment "$@"
-  ../scripts/run_tests_indy $(getStartupParams "$@")
+  ../scripts/run_tests --all-extras $(getStartupParams "$@")
   ;;
 *)
   usage

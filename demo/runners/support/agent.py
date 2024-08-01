@@ -78,6 +78,7 @@ DID_METHOD_KEY = "key"
 KEY_TYPE_ED255 = "ed25519"
 KEY_TYPE_BLS = "bls12381g2"
 SIG_TYPE_BLS = "BbsBlsSignature2020"
+SIG_TYPE_ED255 = "Ed25519Signature2020"
 
 
 class repr_json:

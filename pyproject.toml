@@ -56,11 +56,10 @@ indy-vdr= { version = "~0.4.0", optional = true }
 anoncreds= { version = "0.2.0", optional = true }
 
 # bbs
-ursa-bbs-signatures= { version = "~1.0.1", optional = true }
+ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 
 # didcommv2
 didcomm-messaging = {version = "^0.1.1a0", optional = true }
-
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.8.0"
@@ -91,7 +90,6 @@ askar = [
 bbs = [
     "ursa-bbs-signatures"
 ]
-
 didcommv2 = [
     "didcomm-messaging"
 ]
@@ -133,8 +131,7 @@ markers = [
     "indy_credx: Tests specifically relating to Indy-Credx support",
     "indy_vdr: Tests specifically relating to Indy-VDR support",
     "ursa_bbs_signatures: Tests specificaly relating to BBS Signatures support",
-    "postgres: Tests relating to the postgres storage plugin for Indy",
-]
+    "postgres: Tests relating to the postgres storage plugin for Indy"]
 junit_family = "xunit1"
 asyncio_mode = "auto"
 
