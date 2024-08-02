@@ -284,7 +284,7 @@ You can include more complex schemas, for example to use the schema.org [Person]
 
 ## Credential-Specific Contexts
 
-The recommended approach to defining credentials is to define a credential-specific vocabulary (or make use of existing ones).  (Note that these can include references to `https://schema.org`, you just shouldn't uste this directly in your credential.)
+The recommended approach to defining credentials is to define a credential-specific vocabulary (or make use of existing ones).  (Note that these can include references to `https://schema.org`, you just shouldn't use this directly in your credential.)
 
 ### Credential Issue Example
 
