@@ -2,8 +2,6 @@ FROM ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.12.1
 
 USER root
 
-ADD https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 ./jq
-RUN chmod +x ./jq
 COPY ngrok-wait.sh ngrok-wait.sh
 RUN chmod +x ./ngrok-wait.sh
 
