@@ -205,7 +205,7 @@ You first include `https://schema.org` in the `@context` block of the credential
 
 Then you review the [attributes and objects defined by `https://schema.org`](https://schema.org/docs/schemas.html) and decide what you need to include in your credential.
 
-For example to issue a credetial with [givenName](https://schema.org/givenName), [familyName](https://schema.org/familyName) and [alumniOf](https://schema.org/alumniOf) attributes, submit the following:
+For example to issue a credential with [givenName](https://schema.org/givenName), [familyName](https://schema.org/familyName) and [alumniOf](https://schema.org/alumniOf) attributes, submit the following:
 
 ```json
 {
