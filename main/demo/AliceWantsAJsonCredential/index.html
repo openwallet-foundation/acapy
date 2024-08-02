@@ -2540,7 +2540,7 @@ doing anything with an Indy ledger-based credentials. However, there must be som
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">],</span>
 </code></pre></div>
 <p>Then you review the <a href="https://schema.org/docs/schemas.html">attributes and objects defined by <code>https://schema.org</code></a> and decide what you need to include in your credential.</p>
-<p>For example to issue a credetial with <a href="https://schema.org/givenName">givenName</a>, <a href="https://schema.org/familyName">familyName</a> and <a href="https://schema.org/alumniOf">alumniOf</a> attributes, submit the following:</p>
+<p>For example to issue a credential with <a href="https://schema.org/givenName">givenName</a>, <a href="https://schema.org/familyName">familyName</a> and <a href="https://schema.org/alumniOf">alumniOf</a> attributes, submit the following:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ad35a4d8-c84b-4a4f-a83f-1afbf134b8b9&quot;</span><span class="p">,</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;filter&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -2608,7 +2608,7 @@ doing anything with an Indy ledger-based credentials. However, there must be som
 <a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="credential-specific-contexts">Credential-Specific Contexts<a class="headerlink" href="#credential-specific-contexts" title="Permanent link">&para;</a></h2>
-<p>The recommended approach to defining credentials is to define a credential-specific vocabulary (or make use of existing ones).  (Note that these can include references to <code>https://schema.org</code>, you just shouldn't uste this directly in your credential.)</p>
+<p>The recommended approach to defining credentials is to define a credential-specific vocabulary (or make use of existing ones).  (Note that these can include references to <code>https://schema.org</code>, you just shouldn't use this directly in your credential.)</p>
 <h3 id="credential-issue-example">Credential Issue Example<a class="headerlink" href="#credential-issue-example" title="Permanent link">&para;</a></h3>
 <p>The following example uses the W3C citizenship context to issue a PermanentResident credential (replace the <code>connection_id</code>, <code>issuer</code> and <code>credentialSubject.id</code> with your local values):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">{</span>
