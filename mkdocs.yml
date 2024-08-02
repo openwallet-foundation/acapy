@@ -82,6 +82,7 @@ nav:
     - Welcome: aca-py.org.md
     - ACA-Py README: README.md
     - Release Notes: CHANGELOG.md
+    - ACA-Py Long Term Support (LTS) Policy: LTS-Strategy.md
 - Features:
     - Developer Introduction: features/DevReadMe.md
     - DevContainer Support: features/devcontainer.md
@@ -133,6 +134,7 @@ nav:
 - Deploying:
     - Deployment Model: deploying/deploymentModel.md
     - Upgrading ACA-Py: deploying/UpgradingACA-Py.md
+    - Enabling BBS Signatures support: deploying/BBSSignatures.md
     - Indy SDK to Askar Migration: deploying/IndySDKtoAskarMigration.md
     - Controller Migration to use AnonCreds Rust: deploying/AnoncredsControllerMigration.md
     - The Use of Poetry in ACA-Py: deploying/Poetry.md
