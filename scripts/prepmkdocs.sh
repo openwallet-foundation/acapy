@@ -12,6 +12,7 @@ if [[ "$1" == "clean" ]]; then
         docs/CONTRIBUTING.md \
         docs/MAINTAINERS.md \
         docs/PUBLISHING.md \
+        docs/LTS-Strategy.md \
         docs/SECURITY.md
     ## Update the following line to "clean" any changes made below to files that remain in the `docs` folder
     git checkout -- docs/README.md docs/demo/AriesOpenAPIDemo.md docs/demo/AliceGetsAPhone.md docs/features/DevReadMe.md
