@@ -8,7 +8,7 @@ NGROK_ENDPOINT=null
 while [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]
 do
     echo "Fetching end point from ngrok service"
-    NGROK_ENDPOINT=$(curl --silent $NGROK_NAME:4040/api/tunnels | ./jq -r '.tunnels[] | select(.proto=="https") | .public_url')
+    NGROK_ENDPOINT=$(curl --silent $NGROK_NAME:4040/api/tunnels | jq -r '.tunnels[] | select(.proto=="https") | .public_url')
 
     if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
         echo "ngrok not ready, sleeping 5 seconds...."
