@@ -18,6 +18,7 @@ class BaseVerificationKeyStrategy(ABC):
         self,
         did: str,
         profile: Optional[Profile],
+        proof_type: Optional[str] = None,
         allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
@@ -39,11 +40,18 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
 
     Supports did:key: and did:sov only.
     """
+    def __init__(self):
+        """Initialize the key types mapping."""
+        self.key_types_mapping = {
+            "Ed25519Signature2018": "Ed25519VerificationKey2018",
+            "Ed25519Signature2020": "Ed25519VerificationKey2020",
+        }
 
     async def get_verification_method_id_for_did(
         self,
         did: str,
         profile: Optional[Profile],
+        proof_type: Optional[str] = None,
         allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
@@ -65,8 +73,14 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         elif did.startswith("did:web:"):
             did_resolver = profile.inject(DIDResolver)
             did_document = await did_resolver.resolve(profile=profile, did=did)
-            verification_method_list = did_document.get("verificationMethod", {})
-            # taking the first verification method from did document
-            verification_method_id = verification_method_list[0].get("id")
-            return verification_method_id
+            if proof_type:
+                verification_method_type = self.key_types_mapping[proof_type]
+                verification_method_list = did_document.get("verificationMethod", None)
+                for method in verification_method_list:
+                    if method.get("type") == verification_method_type:
+                        return method.get("id")
+            else:
+                # taking the first verification method from did document
+                verification_method_id = verification_method_list[0].get("id")
+                return verification_method_id
         return None
