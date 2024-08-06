@@ -77,7 +77,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                 verification_method_types = self.key_types_mapping[proof_type]
                 verification_method_list = did_document.get("verificationMethod", None)
                 for method in verification_method_list:
-                    if method.get("type") == verification_method_type:
+                    if method.get("type") in verification_method_types:
                         return method.get("id")
             else:
                 # taking the first verification method from did document
