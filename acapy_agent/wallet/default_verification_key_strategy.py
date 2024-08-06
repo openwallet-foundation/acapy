@@ -43,8 +43,8 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     def __init__(self):
         """Initialize the key types mapping."""
         self.key_types_mapping = {
-            "Ed25519Signature2018": "Ed25519VerificationKey2018",
-            "Ed25519Signature2020": "Ed25519VerificationKey2020",
+            "Ed25519Signature2018": ["Ed25519VerificationKey2018"],
+            "Ed25519Signature2020": ["Ed25519VerificationKey2020", "Multikey"],
         }
 
     async def get_verification_method_id_for_did(
