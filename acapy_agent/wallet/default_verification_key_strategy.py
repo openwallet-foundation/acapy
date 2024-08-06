@@ -74,7 +74,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
             did_resolver = profile.inject(DIDResolver)
             did_document = await did_resolver.resolve(profile=profile, did=did)
             if proof_type:
-                verification_method_type = self.key_types_mapping[proof_type]
+                verification_method_types = self.key_types_mapping[proof_type]
                 verification_method_list = did_document.get("verificationMethod", None)
                 for method in verification_method_list:
                     if method.get("type") == verification_method_type:
