@@ -698,7 +698,7 @@ async def _process_publish_response_for_endorsement(
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
             await outbound_handler(transaction_request, connection_id=endorser_conn_id)
-
+        LOGGER.error(">>> transaction: %s", transaction.serialize())
         txn_responses.append(transaction.serialize())
 
     return txn_responses
