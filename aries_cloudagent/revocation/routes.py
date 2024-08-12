@@ -668,7 +668,7 @@ async def publish_revocations(request: web.BaseRequest):
         )
         return web.json_response({"txn": list_of_txns})
 
-    return web.json_response({"rrid2crid": result})
+    return web.json_response({"sent": {"rrid2crid": result}})
 
 
 async def _process_publish_response_for_endorsement(
