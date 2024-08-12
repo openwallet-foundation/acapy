@@ -298,12 +298,14 @@ class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
         required=False,
         metadata={"definition": "Content sent"},
     )
-    txn = fields.Nested(
-        TransactionRecordSchema(),
-        required=False,
-        metadata={
-            "description": "Revocation registry revocations transaction to endorse"
-        },
+    txn = fields.List(
+        fields.Nested(
+            TransactionRecordSchema(),
+            required=False,
+            metadata={
+                "description": "Revocation registry revocations transaction to endorse"
+            },
+        )
     )
 
 
