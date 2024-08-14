@@ -13707,11 +13707,14 @@
             "$ref" : "#/components/schemas/PublishRevocations"
           },
           "txn" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/TransactionRecord"
-            } ],
-            "description" : "Revocation registry revocations transaction to endorse",
-            "type" : "object"
+            "items" : {
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/TransactionRecord"
+              } ],
+              "description" : "Revocation registry revocations transaction to endorse",
+              "type" : "object"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"

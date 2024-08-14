@@ -12152,7 +12152,14 @@
           "$ref" : "#/definitions/PublishRevocations"
         },
         "txn" : {
-          "$ref" : "#/definitions/TxnOrPublishRevocationsResult_txn"
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "description" : "Revocation registry revocations transaction to endorse",
+            "allOf" : [ {
+              "$ref" : "#/definitions/TransactionRecord"
+            } ]
+          }
         }
       }
     },
@@ -14802,10 +14809,6 @@
     "TxnOrCredentialDefinitionSendResult_txn" : {
       "type" : "object",
       "description" : "Credential definition transaction to endorse"
-    },
-    "TxnOrPublishRevocationsResult_txn" : {
-      "type" : "object",
-      "description" : "Revocation registry revocations transaction to endorse"
     },
     "TxnOrRegisterLedgerNymResponse_txn" : {
       "type" : "object",
