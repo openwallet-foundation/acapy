@@ -290,14 +290,9 @@ class PublishRevocationsSchema(OpenAPISchema):
     )
 
 
-class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
+class TxnOrPublishRevocationsResultSchema(PublishRevocationsSchema):
     """Result schema for credential definition send request."""
 
-    sent = fields.Nested(
-        PublishRevocationsSchema(),
-        required=False,
-        metadata={"definition": "Content sent"},
-    )
     txn = fields.List(
         fields.Nested(
             TransactionRecordSchema(),
