@@ -114,9 +114,7 @@ class EndorserInfoSchema(OpenAPISchema):
 
     endorser_did = fields.Str(required=True, metadata={"description": "Endorser DID"})
 
-    endorser_name = fields.Str(
-        required=False, metadata={"description": "Endorser Name"}
-    )
+    endorser_name = fields.Str(required=False, metadata={"description": "Endorser Name"})
 
 
 @docs(
@@ -297,9 +295,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
     endorser_did = request.query.get("endorser_did")
     try:
         async with context.profile.session() as session:
-            transaction = await TransactionRecord.retrieve_by_id(
-                session, transaction_id
-            )
+            transaction = await TransactionRecord.retrieve_by_id(session, transaction_id)
             connection_record = await ConnRecord.retrieve_by_id(
                 session, transaction.connection_id
             )
@@ -368,9 +364,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
-            transaction = await TransactionRecord.retrieve_by_id(
-                session, transaction_id
-            )
+            transaction = await TransactionRecord.retrieve_by_id(session, transaction_id)
             connection_record = await ConnRecord.retrieve_by_id(
                 session, transaction.connection_id
             )
@@ -434,9 +428,7 @@ async def cancel_transaction(request: web.BaseRequest):
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
-            transaction = await TransactionRecord.retrieve_by_id(
-                session, transaction_id
-            )
+            transaction = await TransactionRecord.retrieve_by_id(session, transaction_id)
             connection_record = await ConnRecord.retrieve_by_id(
                 session, transaction.connection_id
             )
@@ -499,9 +491,7 @@ async def transaction_resend(request: web.BaseRequest):
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
-            transaction = await TransactionRecord.retrieve_by_id(
-                session, transaction_id
-            )
+            transaction = await TransactionRecord.retrieve_by_id(session, transaction_id)
             connection_record = await ConnRecord.retrieve_by_id(
                 session, transaction.connection_id
             )
@@ -669,9 +659,7 @@ async def transaction_write(request: web.BaseRequest):
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
-            transaction = await TransactionRecord.retrieve_by_id(
-                session, transaction_id
-            )
+            transaction = await TransactionRecord.retrieve_by_id(session, transaction_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:

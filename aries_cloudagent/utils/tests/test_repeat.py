@@ -33,7 +33,7 @@ class TestRepeat(IsolatedAsyncioTestCase):
             assert seen == len(expect)
 
     def test_repr(self):
-        assert repr(
-            test_module.RepeatSequence(5, interval=5.0, backoff=0.25)
-        ).startswith("<RepeatSequence")
+        assert repr(test_module.RepeatSequence(5, interval=5.0, backoff=0.25)).startswith(
+            "<RepeatSequence"
+        )
         assert repr(test_module.RepeatAttempt(None)).startswith("<RepeatAttempt")

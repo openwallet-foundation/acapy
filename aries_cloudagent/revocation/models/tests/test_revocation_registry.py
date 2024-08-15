@@ -104,9 +104,7 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
 
         more_magic = mock.MagicMock()
         with mock.patch.object(test_module, "Session", autospec=True) as mock_session:
-            mock_session.return_value.__enter__ = mock.MagicMock(
-                return_value=more_magic
-            )
+            mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
             more_magic.get = mock.MagicMock(
                 side_effect=test_module.RequestException("Not this time")
             )
@@ -119,9 +117,7 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
 
         more_magic = mock.MagicMock()
         with mock.patch.object(test_module, "Session", autospec=True) as mock_session:
-            mock_session.return_value.__enter__ = mock.MagicMock(
-                return_value=more_magic
-            )
+            mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
             more_magic.get = mock.MagicMock(
                 return_value=mock.MagicMock(
                     iter_content=mock.MagicMock(side_effect=[(b"abcd1234",), (b"",)])
@@ -144,9 +140,7 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
         ) as mock_b58enc, mock.patch.object(
             Path, "is_file", autospec=True
         ) as mock_is_file:
-            mock_session.return_value.__enter__ = mock.MagicMock(
-                return_value=more_magic
-            )
+            mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
             more_magic.get = mock.MagicMock(
                 return_value=mock.MagicMock(
                     iter_content=mock.MagicMock(side_effect=[(b"abcd1234",), (b"",)])

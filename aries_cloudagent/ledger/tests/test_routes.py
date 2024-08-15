@@ -294,9 +294,7 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
 
     async def test_register_nym_ledger_txn_error(self):
         self.request.query = {"did": self.test_did, "verkey": self.test_verkey}
-        self.ledger.register_nym.side_effect = test_module.LedgerTransactionError(
-            "Error"
-        )
+        self.ledger.register_nym.side_effect = test_module.LedgerTransactionError("Error")
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.register_ledger_nym(self.request)
 

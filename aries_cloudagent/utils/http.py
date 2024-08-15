@@ -184,8 +184,7 @@ async def put_file(
                     )
                     if (
                         # redirect codes
-                        response.status in (301, 302, 303, 307, 308)
-                        and not attempt.final
+                        response.status in (301, 302, 303, 307, 308) and not attempt.final
                     ):
                         # NOTE: a redirect counts as another upload attempt
                         to_url = response.headers.get("Location")

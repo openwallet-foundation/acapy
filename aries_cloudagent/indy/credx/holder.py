@@ -331,9 +331,7 @@ class IndyCredxHolder(IndyHolder):
                 if row.name in creds:
                     creds[row.name]["presentation_referents"].add(reft)
                 else:
-                    cred_info = _make_cred_info(
-                        row.name, Credential.load(row.raw_value)
-                    )
+                    cred_info = _make_cred_info(row.name, Credential.load(row.raw_value))
                     creds[row.name] = {
                         "cred_info": cred_info,
                         "interval": presentation_request.get("non_revoked"),

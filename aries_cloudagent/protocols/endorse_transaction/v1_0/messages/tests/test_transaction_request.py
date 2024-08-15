@@ -104,8 +104,7 @@ class TestTransactionRequest(TestCase, TestConfig):
         )
 
         assert (
-            transaction_request_dict
-            is mock_transaction_request_schema_dump.return_value
+            transaction_request_dict is mock_transaction_request_schema_dump.return_value
         )
 
 

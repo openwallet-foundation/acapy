@@ -20,9 +20,7 @@ class TestSettings(TestCase):
         for key in self.test_settings:
             assert key in self.test_instance
             assert self.test_instance[key] == self.test_settings[key]
-            assert (
-                self.test_instance.get_value(self.test_key) == self.test_settings[key]
-            )
+            assert self.test_instance.get_value(self.test_key) == self.test_settings[key]
         with self.assertRaises(KeyError):
             self.test_instance["MISSING"]
         assert len(self.test_instance) == 1

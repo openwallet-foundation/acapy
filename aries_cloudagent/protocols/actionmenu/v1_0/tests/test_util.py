@@ -72,6 +72,4 @@ class TestActionMenuUtil(IsolatedAsyncioTestCase):
         mock_event_bus.events.clear()
 
         # retrieve no menu
-        assert (
-            await test_module.retrieve_connection_menu(connection_id, context) is None
-        )
+        assert await test_module.retrieve_connection_menu(connection_id, context) is None

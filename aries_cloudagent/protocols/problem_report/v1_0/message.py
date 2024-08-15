@@ -71,12 +71,8 @@ class ProblemReportSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     description = fields.Dict(
-        keys=fields.Str(
-            metadata={"description": "Locale or 'code'", "example": "en-US"}
-        ),
-        values=fields.Str(
-            metadata={"description": "Problem description or error code"}
-        ),
+        keys=fields.Str(metadata={"description": "Locale or 'code'", "example": "en-US"}),
+        values=fields.Str(metadata={"description": "Problem description or error code"}),
         required=False,
         metadata={"description": "Human-readable localized problem descriptions"},
     )

@@ -162,9 +162,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         mgr.closed_session(mock_session)
 
     async def test_process_undelivered(self):
-        self.profile.context.update_settings(
-            {"transport.enable_undelivered_queue": True}
-        )
+        self.profile.context.update_settings({"transport.enable_undelivered_queue": True})
         test_verkey = "test-verkey"
         test_wire_format = mock.MagicMock()
         mgr = InboundTransportManager(self.profile, None)

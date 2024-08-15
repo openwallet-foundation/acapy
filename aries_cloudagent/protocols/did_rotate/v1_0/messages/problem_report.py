@@ -10,9 +10,7 @@ from .....protocols.problem_report.v1_0.message import (
 )
 from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.ProblemReportHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.ProblemReportHandler"
 
 
 class ProblemReportReason(Enum):
@@ -141,9 +139,7 @@ class RotateProblemReportSchema(ProblemReportSchema):
             raise ValidationError("Rotate problem report must contain problem_items")
 
         if "did" not in data["problem_items"][0]:
-            raise ValidationError(
-                "Rotate problem report problem_items must contain did"
-            )
+            raise ValidationError("Rotate problem report problem_items must contain did")
 
     @pre_dump
     def check_thread_deco(self, obj, **kwargs):

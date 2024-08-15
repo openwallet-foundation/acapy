@@ -8,12 +8,12 @@ repos:
         additional_dependencies: ['@commitlint/config-conventional']
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ensure this is synced with pyproject.toml
-    rev: v0.5.0
+    rev: v0.5.7
     hooks:
       # Run the linter
       - id: ruff
         stages: [commit]
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix, --exit-non-zero-on-fix, "--config", "pyproject.toml"]
       # Run the formatter
       - id: ruff-format
         stages: [commit]

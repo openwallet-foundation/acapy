@@ -415,9 +415,7 @@ class IndyPresPreview(BaseModel):
                     "name": attr_spec.name,
                     **{"restrictions": [{"cred_def_id": cd_id}] for _ in [""] if cd_id},
                     **{
-                        "non_revoked": interval.serialize()
-                        for _ in [""]
-                        if revoc_support
+                        "non_revoked": interval.serialize() for _ in [""] if revoc_support
                     },
                 }
 

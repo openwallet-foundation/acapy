@@ -56,9 +56,7 @@ def step_impl(context, issuer, count=None):
             f"\nlists revocation registries ({count} creds) = = = = = = = = = = = = = ="
         )
     else:
-        print(
-            "\nlists revocation registries = = = = = = = = = = = = = = = = = = = = = ="
-        )
+        print("\nlists revocation registries = = = = = = = = = = = = = = = = = = = = = =")
     print("\ncreated_response: ", len(created_response["rev_reg_ids"]))
     print("full_response: ", len(full_response["rev_reg_ids"]))
     print("decommissioned_response:", len(decommissioned_response["rev_reg_ids"]))

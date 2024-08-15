@@ -56,9 +56,7 @@ class PresentationRequestHandler(BaseHandler):
             )
 
         connection_id = (
-            context.connection_record.connection_id
-            if context.connection_record
-            else None
+            context.connection_record.connection_id if context.connection_record else None
         )
 
         presentation_manager = PresentationManager(profile)
@@ -69,15 +67,15 @@ class PresentationRequestHandler(BaseHandler):
         # or create it (verifier sent request first)
         try:
             async with profile.session() as session:
-                (presentation_exchange_record) = (
-                    await V10PresentationExchange.retrieve_by_tag_filter(
-                        session,
-                        {"thread_id": context.message._thread_id},
-                        {
-                            "role": V10PresentationExchange.ROLE_PROVER,
-                            "connection_id": connection_id,
-                        },
-                    )
+                (
+                    presentation_exchange_record
+                ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": context.message._thread_id},
+                    {
+                        "role": V10PresentationExchange.ROLE_PROVER,
+                        "connection_id": connection_id,
+                    },
                 )  # holder initiated via proposal
                 presentation_exchange_record.presentation_request = indy_proof_request
                 presentation_exchange_record.presentation_request_dict = (

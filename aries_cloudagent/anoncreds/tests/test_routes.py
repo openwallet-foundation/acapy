@@ -60,9 +60,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             },
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
         }
@@ -276,9 +274,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
         result = await test_module.rev_reg_def_post(self.request)
 
-        assert (
-            json.loads(result.body)["revocation_registry_definition_id"] == "revRegId"
-        )
+        assert json.loads(result.body)["revocation_registry_definition_id"] == "revRegId"
 
         assert mock_match.call_count == 1
         assert mock_create.call_count == 1
@@ -296,9 +292,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             return_value={"revRegDefId": "rev_reg_def_id", "options": {}}
         )
         result = await test_module.rev_list_post(self.request)
-        assert (
-            json.loads(result.body)["revocation_registry_definition_id"] == "revRegId"
-        )
+        assert json.loads(result.body)["revocation_registry_definition_id"] == "revRegId"
         assert mock_create.call_count == 1
 
     @mock.patch.object(

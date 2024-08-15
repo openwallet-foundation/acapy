@@ -41,9 +41,7 @@ class Stats:
         else:
             names = set(names).intersection(all_names)
             counts = {name: val for (name, val) in counts.items() if name in names}
-            maxes = {
-                name: val for (name, val) in self.max_time.items() if name in names
-            }
+            maxes = {name: val for (name, val) in self.max_time.items() if name in names}
             mins = {name: val for (name, val) in self.min_time.items() if name in names}
             totals = {
                 name: val for (name, val) in self.total_time.items() if name in names

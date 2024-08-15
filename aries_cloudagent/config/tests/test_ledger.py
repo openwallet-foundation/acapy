@@ -16,9 +16,7 @@ TEST_GENESIS = "GENESIS"
 
 class TestLedgerConfig(IsolatedAsyncioTestCase):
     async def test_fetch_genesis_transactions(self):
-        with mock.patch.object(
-            test_module, "fetch", mock.CoroutineMock()
-        ) as mock_fetch:
+        with mock.patch.object(test_module, "fetch", mock.CoroutineMock()) as mock_fetch:
             await test_module.fetch_genesis_transactions("http://1.2.3.4:9000/genesis")
 
     async def test_fetch_genesis_transactions_x(self):
@@ -77,9 +75,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             get_txn_author_agreement=mock.CoroutineMock(
                 return_value={
                     "taa_required": True,
-                    "taa_record": {
-                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
-                    },
+                    "taa_record": {"digest": b"ffffffffffffffffffffffffffffffffffffffff"},
                 }
             ),
             get_latest_txn_author_acceptance=mock.CoroutineMock(
@@ -101,9 +97,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             test_module, "accept_taa", mock.CoroutineMock()
         ) as mock_accept_taa:
             mock_accept_taa.return_value = False
-            assert not await test_module.ledger_config(
-                profile, TEST_DID, provision=True
-            )
+            assert not await test_module.ledger_config(profile, TEST_DID, provision=True)
 
     async def test_accept_taa(self):
         settings = {
@@ -113,9 +107,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             get_txn_author_agreement=mock.CoroutineMock(
                 return_value={
                     "taa_required": True,
-                    "taa_record": {
-                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
-                    },
+                    "taa_record": {"digest": b"ffffffffffffffffffffffffffffffffffffffff"},
                 }
             ),
             get_latest_txn_author_acceptance=mock.CoroutineMock(
@@ -507,9 +499,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 )
             )
             with self.assertRaises(test_module.ConfigError) as cm:
-                await test_module.load_multiple_genesis_transactions_from_config(
-                    settings
-                )
+                await test_module.load_multiple_genesis_transactions_from_config(settings)
             assert "No is_write ledger set" in str(cm.exception)
 
     async def test_load_multiple_genesis_transactions_multiple_write(self):
@@ -625,9 +615,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         ) as mock_fetch, mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             mock_open.side_effect = IOError("no read permission")
             with self.assertRaises(test_module.ConfigError):
-                await test_module.load_multiple_genesis_transactions_from_config(
-                    settings
-                )
+                await test_module.load_multiple_genesis_transactions_from_config(settings)
 
     @mock.patch("sys.stdout")
     async def test_ledger_accept_taa_not_tty_not_accept_config(self, mock_stdout):
@@ -678,9 +666,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         ) as mock_use_aio_loop, mock.patch.object(
             test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
         ) as mock_prompt:
-            mock_ledger = mock.MagicMock(
-                accept_txn_author_agreement=mock.CoroutineMock()
-            )
+            mock_ledger = mock.MagicMock(accept_txn_author_agreement=mock.CoroutineMock())
             mock_prompt.return_value = ""
             assert await test_module.accept_taa(
                 mock_ledger, mock_profile, taa_info, provision=False

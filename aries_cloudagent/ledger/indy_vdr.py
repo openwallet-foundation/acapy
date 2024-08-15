@@ -126,14 +126,10 @@ class IndyVdrLedgerPool:
                 path = self.cfg_path.joinpath(self.name, "genesis")
                 self.genesis_txns_cache = _normalize_txns(open(path).read())
             except FileNotFoundError:
-                raise LedgerConfigError(
-                    "Pool config '%s' not found", self.name
-                ) from None
+                raise LedgerConfigError("Pool config '%s' not found", self.name) from None
         return self.genesis_txns_cache
 
-    async def create_pool_config(
-        self, genesis_transactions: str, recreate: bool = False
-    ):
+    async def create_pool_config(self, genesis_transactions: str, recreate: bool = False):
         """Create the pool ledger configuration."""
 
         cfg_pool = self.cfg_path.joinpath(self.name)
@@ -757,9 +753,7 @@ class IndyVdrLedger(BaseLedger):
             )
 
             try:
-                attrib_req = ledger.build_attrib_request(
-                    nym, nym, None, attr_json, None
-                )
+                attrib_req = ledger.build_attrib_request(nym, nym, None, attr_json, None)
 
                 if endorser_did and not write_ledger:
                     attrib_req.set_endorser(endorser_did)
@@ -808,9 +802,7 @@ class IndyVdrLedger(BaseLedger):
             raise BadLedgerRequestError("Cannot register NYM without a public DID")
 
         try:
-            nym_req = ledger.build_nym_request(
-                public_info.did, did, verkey, alias, role
-            )
+            nym_req = ledger.build_nym_request(public_info.did, did, verkey, alias, role)
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
@@ -952,9 +944,7 @@ class IndyVdrLedger(BaseLedger):
         taa_found = response["data"]
         taa_required = bool(taa_found and taa_found["text"])
         if taa_found:
-            taa_found["digest"] = self.taa_digest(
-                taa_found["version"], taa_found["text"]
-            )
+            taa_found["digest"] = self.taa_digest(taa_found["version"], taa_found["text"])
 
         return {
             "aml_record": aml_found,
@@ -968,9 +958,7 @@ class IndyVdrLedger(BaseLedger):
         Anything more accurate is a privacy concern.
         """
         return int(
-            datetime.combine(
-                date.today(), datetime.min.time(), timezone.utc
-            ).timestamp()
+            datetime.combine(date.today(), datetime.min.time(), timezone.utc).timestamp()
         )
 
     async def accept_txn_author_agreement(
@@ -1105,9 +1093,7 @@ class IndyVdrLedger(BaseLedger):
         # re-calculate the delta.
         if not accum_to:
             try:
-                (_, timestamp) = await self.get_revoc_reg_entry(
-                    revoc_reg_id, int(time())
-                )
+                (_, timestamp) = await self.get_revoc_reg_entry(revoc_reg_id, int(time()))
                 fetch_req = ledger.build_get_revoc_reg_delta_request(
                     public_info and public_info.did,
                     revoc_reg_id,

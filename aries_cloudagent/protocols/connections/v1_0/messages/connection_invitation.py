@@ -200,9 +200,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         """
         if data.get("did"):
             if data.get("recipient_keys"):
-                raise ValidationError(
-                    "Fields are incompatible", ("did", "recipientKeys")
-                )
+                raise ValidationError("Fields are incompatible", ("did", "recipientKeys"))
             if data.get("endpoint"):
                 raise ValidationError(
                     "Fields are incompatible", ("did", "serviceEndpoint")

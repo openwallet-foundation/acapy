@@ -40,9 +40,7 @@ class V20PresProposalHandler(BaseHandler):
             )
         # If connection is present it must be ready for use
         elif not context.connection_ready:
-            raise HandlerException(
-                "Connection used for presentation proposal not ready"
-            )
+            raise HandlerException("Connection used for presentation proposal not ready")
 
         profile = context.profile
         pres_manager = V20PresManager(profile)

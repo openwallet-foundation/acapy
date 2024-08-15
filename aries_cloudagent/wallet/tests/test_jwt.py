@@ -35,9 +35,7 @@ class TestJWT:
         verification_method = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         headers = {}
         payload = {}
-        signed: str = await jwt_sign(
-            profile, headers, payload, did, verification_method
-        )
+        signed: str = await jwt_sign(profile, headers, payload, did, verification_method)
 
         assert signed
 
@@ -80,9 +78,7 @@ class TestJWT:
             await jwt_verify(profile, signed)
 
     @pytest.mark.asyncio
-    async def test_resolve_public_key_by_kid_for_verify(
-        self, profile, in_memory_wallet
-    ):
+    async def test_resolve_public_key_by_kid_for_verify(self, profile, in_memory_wallet):
         await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
         kid = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         key_material = await resolve_public_key_by_kid_for_verify(profile, kid)

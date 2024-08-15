@@ -39,14 +39,12 @@ class TestForwardHandler(IsolatedAsyncioTestCase):
             mock_mgr.return_value.get_recipient = mock.CoroutineMock(
                 return_value=RouteRecord(connection_id="dummy")
             )
-            mock_connection_mgr.return_value.get_connection_targets = (
-                mock.CoroutineMock(
-                    return_value=[
-                        ConnectionTarget(
-                            recipient_keys=["recip_key"],
-                        )
-                    ]
-                )
+            mock_connection_mgr.return_value.get_connection_targets = mock.CoroutineMock(
+                return_value=[
+                    ConnectionTarget(
+                        recipient_keys=["recip_key"],
+                    )
+                ]
             )
 
             await handler.handle(self.context, responder)
@@ -77,9 +75,7 @@ class TestForwardHandler(IsolatedAsyncioTestCase):
         handler = test_module.ForwardHandler()
 
         responder = MockResponder()
-        with mock.patch.object(
-            test_module, "RoutingManager", autospec=True
-        ) as mock_mgr:
+        with mock.patch.object(test_module, "RoutingManager", autospec=True) as mock_mgr:
             mock_mgr.return_value.get_recipient = mock.CoroutineMock(
                 side_effect=test_module.RoutingManagerError()
             )

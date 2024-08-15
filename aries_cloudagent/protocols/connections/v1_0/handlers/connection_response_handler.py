@@ -42,4 +42,4 @@ class ConnectionResponseHandler(BaseHandler):
 
         # send trust ping in response
         if context.settings.get("auto_ping_connection"):
-            await responder.send(Ping(), connection_id=connection.connection_id),
+            (await responder.send(Ping(), connection_id=connection.connection_id),)

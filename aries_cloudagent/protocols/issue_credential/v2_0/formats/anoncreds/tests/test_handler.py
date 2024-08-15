@@ -205,9 +205,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         Ledger = mock.MagicMock()
         self.ledger = Ledger()
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
-        self.ledger.get_credential_definition = mock.CoroutineMock(
-            return_value=CRED_DEF
-        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
         self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
@@ -285,9 +283,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         await details_indy[0].save(self.session)
         await details_indy[1].save(self.session)  # exercise logger warning on get()
 
-        with mock.patch.object(
-            INDY_LOGGER, "warning", mock.MagicMock()
-        ) as mock_warning:
+        with mock.patch.object(INDY_LOGGER, "warning", mock.MagicMock()) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
             mock_warning.assert_called_once()
 
@@ -579,9 +575,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         cred_def = {"cred": "def"}
-        self.ledger.get_credential_definition = mock.CoroutineMock(
-            return_value=cred_def
-        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=cred_def)
 
         cred_req_meta = {}
         self.holder.create_credential_request = mock.CoroutineMock(
@@ -621,27 +615,23 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             "get_ledger_for_identifier",
             mock.CoroutineMock(return_value=(None, self.ledger)),
         ):
-            await self.handler.create_request(
-                cred_ex_record, {"holder_did": holder_did}
-            )
+            await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
 
     async def test_create_request_bad_state(self):
         cred_ex_record = V20CredExRecord(state=V20CredExRecord.STATE_OFFER_SENT)
 
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.create_request(cred_ex_record)
-        assert (
-            "Indy issue credential format cannot start from credential request"
-            in str(context.exception)
+        assert "Indy issue credential format cannot start from credential request" in str(
+            context.exception
         )
 
         cred_ex_record.state = None
 
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.create_request(cred_ex_record)
-        assert (
-            "Indy issue credential format cannot start from credential request"
-            in str(context.exception)
+        assert "Indy issue credential format cannot start from credential request" in str(
+            context.exception
         )
 
     async def test_create_request_not_unique_x(self):
@@ -673,9 +663,8 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.receive_request(cred_ex_record, cred_request_message)
 
-        assert (
-            "Indy issue credential format cannot start from credential request"
-            in str(context.exception)
+        assert "Indy issue credential format cannot start from credential request" in str(
+            context.exception
         )
 
     @pytest.mark.skip(reason="Anoncreds-break")

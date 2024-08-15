@@ -218,9 +218,7 @@ def step_impl(context, holder):
     # check wallet status
     wallet_revoked_creds = agent_container_GET(
         agent["agent"],
-        "/revocation/registry/"
-        + cred_exchange["indy"]["rev_reg_id"]
-        + "/issued/details",
+        "/revocation/registry/" + cred_exchange["indy"]["rev_reg_id"] + "/issued/details",
     )
     print("wallet_revoked_creds:", wallet_revoked_creds)
     matched = False
@@ -309,9 +307,7 @@ def step_impl(context, holder):
     # check wallet status
     wallet_revoked_creds = agent_container_GET(
         agent["agent"],
-        "/revocation/registry/"
-        + cred_exchange["indy"]["rev_reg_id"]
-        + "/issued/details",
+        "/revocation/registry/" + cred_exchange["indy"]["rev_reg_id"] + "/issued/details",
     )
     matched = False
     for rec in wallet_revoked_creds:
@@ -350,7 +346,9 @@ def step_impl(context, holder):
     assert False
 
 
-@given('"{issuer}" is ready to issue a json-ld credential for {schema_name} with {key_type}')
+@given(
+    '"{issuer}" is ready to issue a json-ld credential for {schema_name} with {key_type}'
+)
 def step_impl(context, issuer, schema_name, key_type):
     # create a "did:key" to use as issuer
     agent = context.active_agents[issuer]
@@ -383,7 +381,9 @@ def step_impl(context, holder, key_type):
     pass
 
 
-@when('"{issuer}" offers "{holder}" a json-ld credential with data {credential_data} and {sig_type}')
+@when(
+    '"{issuer}" offers "{holder}" a json-ld credential with data {credential_data} and {sig_type}'
+)
 def step_impl(context, issuer, holder, credential_data, sig_type):
     # initiate a cred exchange with a json-ld credential
     agent = context.active_agents[issuer]
@@ -652,7 +652,9 @@ def step_impl(context, holder, schema_name, credential_data, issuer, key_type, s
         Given "'''
         + issuer
         + """" is ready to issue a json-ld credential for """
-        + schema_name + " with " + key_type
+        + schema_name
+        + " with "
+        + key_type
         + '''
         And "'''
         + holder
@@ -664,7 +666,9 @@ def step_impl(context, holder, schema_name, credential_data, issuer, key_type, s
         + '''" offers "'''
         + holder
         + """" a json-ld credential with data """
-        + credential_data + " and " + sig_type 
+        + credential_data
+        + " and "
+        + sig_type
         + '''
         Then "'''
         + holder

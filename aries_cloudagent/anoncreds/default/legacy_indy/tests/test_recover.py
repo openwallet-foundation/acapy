@@ -40,7 +40,6 @@ rev_reg_def = RevRegDef(
 
 @pytest.mark.anoncreds
 class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
-
     @mock.patch.object(
         indy_vdr,
         "open_pool",
@@ -108,7 +107,6 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         ),
     )
     async def test_generate_ledger_rrrecovery_txn(self):
-
         # Has updates
         result = await generate_ledger_rrrecovery_txn(
             GENESIS,

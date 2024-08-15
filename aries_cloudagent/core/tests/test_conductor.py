@@ -1261,9 +1261,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         with mock.patch.object(
             test_module,
             "MediationManager",
-            return_value=mock.MagicMock(
-                set_default_mediator_by_id=mock.CoroutineMock()
-            ),
+            return_value=mock.MagicMock(set_default_mediator_by_id=mock.CoroutineMock()),
         ) as mock_mgr, mock.patch.object(
             MediationRecord, "retrieve_by_id", mock.CoroutineMock()
         ), mock.patch.object(
@@ -1434,9 +1432,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
     )
     @mock.patch.object(test_module.ConnectionInvitation, "from_url")
     async def test_mediator_invitation_0160(self, mock_from_url, _):
-        conductor = test_module.Conductor(
-            self.__get_mediator_config("test-invite", True)
-        )
+        conductor = test_module.Conductor(self.__get_mediator_config("test-invite", True))
         with mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
@@ -1550,9 +1546,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         # given
         invite_string = "test-invite"
 
-        conductor = test_module.Conductor(
-            self.__get_mediator_config(invite_string, True)
-        )
+        conductor = test_module.Conductor(self.__get_mediator_config(invite_string, True))
         with mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
@@ -1608,9 +1602,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         # given
         invite_string = "test-invite"
 
-        conductor = test_module.Conductor(
-            self.__get_mediator_config(invite_string, True)
-        )
+        conductor = test_module.Conductor(self.__get_mediator_config(invite_string, True))
         with mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
@@ -1622,9 +1614,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         invite_store_mock = get_invite_store_mock(invite_string, True)
         patched_invite_store.return_value = invite_store_mock
 
-        connection_manager_mock = mock.MagicMock(
-            receive_invitation=mock.CoroutineMock()
-        )
+        connection_manager_mock = mock.MagicMock(receive_invitation=mock.CoroutineMock())
         patched_connection_manager.return_value = connection_manager_mock
         with mock.patch.object(
             BaseStorage,
@@ -1654,9 +1644,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         return_value=get_invite_store_mock("test-invite"),
     )
     async def test_mediator_invitation_x(self, _):
-        conductor = test_module.Conductor(
-            self.__get_mediator_config("test-invite", True)
-        )
+        conductor = test_module.Conductor(self.__get_mediator_config("test-invite", True))
         with mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:

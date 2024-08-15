@@ -57,12 +57,10 @@ class TestAdapters(IsolatedAsyncioTestCase):
     res_adapter = ResolverAdapter(profile=profile, resolver=resolver)
 
     async def test_resolver_adapter_resolve_did(self):
-
         doc = await self.res_adapter.resolve(self.test_did)
         assert doc["did"] == self.test_did
 
     async def test_resolver_adapter_is_resolvable(self):
-
         valid = await self.res_adapter.is_resolvable(self.test_did)
         assert valid
 
@@ -70,7 +68,6 @@ class TestAdapters(IsolatedAsyncioTestCase):
         assert not invalid
 
     async def test_secrets_adapter_errors(self):
-
         sec_adapter = SecretsAdapter(session=MagicMock())
         with self.assertRaises(SecretsAdapterError) as ctx:
             await sec_adapter.get_secret_by_kid("kid")
@@ -104,7 +101,6 @@ class TestAdapters(IsolatedAsyncioTestCase):
         assert not await sec_adapter.get_secret_by_kid("kid")
 
     async def test_secrets_adapter_valid_return(self):
-
         store = MagicMock()
         askar_profile = AskarProfile(opened=store)
         session: AskarProfileSession = askar_profile.session()

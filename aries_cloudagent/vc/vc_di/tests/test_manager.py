@@ -173,7 +173,6 @@ def manager(profile: Profile):
 @pytest.mark.asyncio
 async def test_assert_no_callenge_error(manager: VcDiManager):
     with pytest.raises(VcDiManagerError) as context:
-
         await manager.verify_presentation({}, {"options": {}})
 
 

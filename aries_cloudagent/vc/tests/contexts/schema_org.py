@@ -310,9 +310,7 @@ SCHEMA_ORG = {
         "DigitalAudioTapeFormat": {"@id": "schema:DigitalAudioTapeFormat"},
         "DigitalDocument": {"@id": "schema:DigitalDocument"},
         "DigitalDocumentPermission": {"@id": "schema:DigitalDocumentPermission"},
-        "DigitalDocumentPermissionType": {
-            "@id": "schema:DigitalDocumentPermissionType"
-        },
+        "DigitalDocumentPermissionType": {"@id": "schema:DigitalDocumentPermissionType"},
         "DigitalFormat": {"@id": "schema:DigitalFormat"},
         "DisabilitySupport": {"@id": "schema:DisabilitySupport"},
         "DisagreeAction": {"@id": "schema:DisagreeAction"},
@@ -361,9 +359,7 @@ SCHEMA_ORG = {
         "EUEnergyEfficiencyCategoryE": {"@id": "schema:EUEnergyEfficiencyCategoryE"},
         "EUEnergyEfficiencyCategoryF": {"@id": "schema:EUEnergyEfficiencyCategoryF"},
         "EUEnergyEfficiencyCategoryG": {"@id": "schema:EUEnergyEfficiencyCategoryG"},
-        "EUEnergyEfficiencyEnumeration": {
-            "@id": "schema:EUEnergyEfficiencyEnumeration"
-        },
+        "EUEnergyEfficiencyEnumeration": {"@id": "schema:EUEnergyEfficiencyEnumeration"},
         "Ear": {"@id": "schema:Ear"},
         "EatAction": {"@id": "schema:EatAction"},
         "EditedOrCroppedContent": {"@id": "schema:EditedOrCroppedContent"},
@@ -713,9 +709,7 @@ SCHEMA_ORG = {
         },
         "MerchantReturnNotPermitted": {"@id": "schema:MerchantReturnNotPermitted"},
         "MerchantReturnPolicy": {"@id": "schema:MerchantReturnPolicy"},
-        "MerchantReturnUnlimitedWindow": {
-            "@id": "schema:MerchantReturnUnlimitedWindow"
-        },
+        "MerchantReturnUnlimitedWindow": {"@id": "schema:MerchantReturnUnlimitedWindow"},
         "MerchantReturnUnspecified": {"@id": "schema:MerchantReturnUnspecified"},
         "Message": {"@id": "schema:Message"},
         "MiddleSchool": {"@id": "schema:MiddleSchool"},
@@ -901,9 +895,7 @@ SCHEMA_ORG = {
         "Pathology": {"@id": "schema:Pathology"},
         "PathologyTest": {"@id": "schema:PathologyTest"},
         "Patient": {"@id": "schema:Patient"},
-        "PatientExperienceHealthAspect": {
-            "@id": "schema:PatientExperienceHealthAspect"
-        },
+        "PatientExperienceHealthAspect": {"@id": "schema:PatientExperienceHealthAspect"},
         "PawnShop": {"@id": "schema:PawnShop"},
         "PayAction": {"@id": "schema:PayAction"},
         "PaymentAutomaticallyApplied": {"@id": "schema:PaymentAutomaticallyApplied"},
@@ -967,9 +959,7 @@ SCHEMA_ORG = {
         "PresentationDigitalDocument": {"@id": "schema:PresentationDigitalDocument"},
         "PreventionHealthAspect": {"@id": "schema:PreventionHealthAspect"},
         "PreventionIndication": {"@id": "schema:PreventionIndication"},
-        "PriceComponentTypeEnumeration": {
-            "@id": "schema:PriceComponentTypeEnumeration"
-        },
+        "PriceComponentTypeEnumeration": {"@id": "schema:PriceComponentTypeEnumeration"},
         "PriceSpecification": {"@id": "schema:PriceSpecification"},
         "PriceTypeEnumeration": {"@id": "schema:PriceTypeEnumeration"},
         "PrimaryCare": {"@id": "schema:PrimaryCare"},
@@ -1009,9 +999,7 @@ SCHEMA_ORG = {
         "QAPage": {"@id": "schema:QAPage"},
         "QualitativeValue": {"@id": "schema:QualitativeValue"},
         "QuantitativeValue": {"@id": "schema:QuantitativeValue"},
-        "QuantitativeValueDistribution": {
-            "@id": "schema:QuantitativeValueDistribution"
-        },
+        "QuantitativeValueDistribution": {"@id": "schema:QuantitativeValueDistribution"},
         "Quantity": {"@id": "schema:Quantity"},
         "Question": {"@id": "schema:Question"},
         "Quiz": {"@id": "schema:Quiz"},
@@ -1324,9 +1312,7 @@ SCHEMA_ORG = {
         "WearableMeasurementHips": {"@id": "schema:WearableMeasurementHips"},
         "WearableMeasurementInseam": {"@id": "schema:WearableMeasurementInseam"},
         "WearableMeasurementLength": {"@id": "schema:WearableMeasurementLength"},
-        "WearableMeasurementOutsideLeg": {
-            "@id": "schema:WearableMeasurementOutsideLeg"
-        },
+        "WearableMeasurementOutsideLeg": {"@id": "schema:WearableMeasurementOutsideLeg"},
         "WearableMeasurementSleeve": {"@id": "schema:WearableMeasurementSleeve"},
         "WearableMeasurementTypeEnumeration": {
             "@id": "schema:WearableMeasurementTypeEnumeration"
@@ -1354,14 +1340,10 @@ SCHEMA_ORG = {
         "WearableSizeSystemAU": {"@id": "schema:WearableSizeSystemAU"},
         "WearableSizeSystemBR": {"@id": "schema:WearableSizeSystemBR"},
         "WearableSizeSystemCN": {"@id": "schema:WearableSizeSystemCN"},
-        "WearableSizeSystemContinental": {
-            "@id": "schema:WearableSizeSystemContinental"
-        },
+        "WearableSizeSystemContinental": {"@id": "schema:WearableSizeSystemContinental"},
         "WearableSizeSystemDE": {"@id": "schema:WearableSizeSystemDE"},
         "WearableSizeSystemEN13402": {"@id": "schema:WearableSizeSystemEN13402"},
-        "WearableSizeSystemEnumeration": {
-            "@id": "schema:WearableSizeSystemEnumeration"
-        },
+        "WearableSizeSystemEnumeration": {"@id": "schema:WearableSizeSystemEnumeration"},
         "WearableSizeSystemEurope": {"@id": "schema:WearableSizeSystemEurope"},
         "WearableSizeSystemFR": {"@id": "schema:WearableSizeSystemFR"},
         "WearableSizeSystemGS1": {"@id": "schema:WearableSizeSystemGS1"},
@@ -1473,9 +1455,7 @@ SCHEMA_ORG = {
         "antagonist": {"@id": "schema:antagonist"},
         "appearance": {"@id": "schema:appearance"},
         "applicableLocation": {"@id": "schema:applicableLocation"},
-        "applicantLocationRequirements": {
-            "@id": "schema:applicantLocationRequirements"
-        },
+        "applicantLocationRequirements": {"@id": "schema:applicantLocationRequirements"},
         "application": {"@id": "schema:application"},
         "applicationCategory": {"@id": "schema:applicationCategory"},
         "applicationContact": {"@id": "schema:applicationContact"},
@@ -2044,9 +2024,7 @@ SCHEMA_ORG = {
         "includedComposition": {"@id": "schema:includedComposition"},
         "includedDataCatalog": {"@id": "schema:includedDataCatalog"},
         "includedInDataCatalog": {"@id": "schema:includedInDataCatalog"},
-        "includedInHealthInsurancePlan": {
-            "@id": "schema:includedInHealthInsurancePlan"
-        },
+        "includedInHealthInsurancePlan": {"@id": "schema:includedInHealthInsurancePlan"},
         "includedRiskFactor": {"@id": "schema:includedRiskFactor"},
         "includesAttraction": {"@id": "schema:includesAttraction"},
         "includesHealthPlanFormulary": {"@id": "schema:includesHealthPlanFormulary"},
@@ -2231,9 +2209,7 @@ SCHEMA_ORG = {
         "model": {"@id": "schema:model"},
         "modelDate": {"@id": "schema:modelDate", "@type": "Date"},
         "modifiedTime": {"@id": "schema:modifiedTime"},
-        "monthlyMinimumRepaymentAmount": {
-            "@id": "schema:monthlyMinimumRepaymentAmount"
-        },
+        "monthlyMinimumRepaymentAmount": {"@id": "schema:monthlyMinimumRepaymentAmount"},
         "monthsOfExperience": {"@id": "schema:monthsOfExperience"},
         "mpn": {"@id": "schema:mpn"},
         "multipleValues": {"@id": "schema:multipleValues"},
@@ -2298,9 +2274,7 @@ SCHEMA_ORG = {
         "occupancy": {"@id": "schema:occupancy"},
         "occupationLocation": {"@id": "schema:occupationLocation"},
         "occupationalCategory": {"@id": "schema:occupationalCategory"},
-        "occupationalCredentialAwarded": {
-            "@id": "schema:occupationalCredentialAwarded"
-        },
+        "occupationalCredentialAwarded": {"@id": "schema:occupationalCredentialAwarded"},
         "offerCount": {"@id": "schema:offerCount"},
         "offeredBy": {"@id": "schema:offeredBy"},
         "offers": {"@id": "schema:offers"},

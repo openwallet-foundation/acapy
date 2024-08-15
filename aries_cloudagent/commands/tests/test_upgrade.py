@@ -65,9 +65,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             ConnRecord,
             "query",
             mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(
-            ConnRecord, "save", mock.CoroutineMock()
-        ):
+        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
             await test_module.upgrade(
                 settings={
                     "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
@@ -89,9 +87,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             ConnRecord,
             "query",
             mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(
-            ConnRecord, "save", mock.CoroutineMock()
-        ):
+        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
             await test_module.upgrade(settings={})
 
     async def test_upgrade_from_version(self):
@@ -279,9 +275,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             ConnRecord,
             "query",
             mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(
-            ConnRecord, "save", mock.CoroutineMock()
-        ):
+        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     settings={
@@ -378,9 +372,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             ConnRecord,
             "query",
             mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(
-            ConnRecord, "save", mock.CoroutineMock()
-        ), mock.patch.object(
+        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()), mock.patch.object(
             asyncio, "get_event_loop", mock.MagicMock()
         ) as mock_get_event_loop, mock.patch.object(
             # Normally, this would be a CoroutingMock. However, the coroutine
@@ -684,9 +676,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(profile=self.profile)
-            assert "Explicit upgrade flag with critical value found" in str(
-                ctx.exception
-            )
+            assert "Explicit upgrade flag with critical value found" in str(ctx.exception)
 
         with mock.patch.object(
             test_module.yaml,
@@ -714,9 +704,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(profile=self.profile)
-            assert "Explicit upgrade flag with critical value found" in str(
-                ctx.exception
-            )
+            assert "Explicit upgrade flag with critical value found" in str(ctx.exception)
 
         with mock.patch.object(
             test_module, "LOGGER", mock.MagicMock()

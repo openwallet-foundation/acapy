@@ -497,9 +497,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             check_exchange_record = await V20CredExRecord.retrieve_by_id(
                 session, exchange_record.cred_ex_id
             )
-            assert (
-                check_exchange_record.state == V20CredExRecord.STATE_CREDENTIAL_REVOKED
-            )
+            assert check_exchange_record.state == V20CredExRecord.STATE_CREDENTIAL_REVOKED
 
             check_crev_record = await IssuerCredRevRecord.retrieve_by_id(
                 session, crev_record.record_id

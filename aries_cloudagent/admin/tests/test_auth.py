@@ -11,7 +11,6 @@ from ..request_context import AdminRequestContext
 
 class TestAdminAuthentication(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-
         self.profile = InMemoryProfile.test_profile(
             settings={
                 "admin.admin_api_key": "admin_api_key",
@@ -64,7 +63,6 @@ class TestAdminAuthentication(IsolatedAsyncioTestCase):
 
 class TestTenantAuthentication(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-
         self.profile = InMemoryProfile.test_profile(
             settings={
                 "admin.admin_api_key": "admin_api_key",

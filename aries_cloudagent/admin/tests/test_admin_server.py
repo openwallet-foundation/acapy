@@ -171,17 +171,13 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         server = self.get_admin_server(settings)
         await server.start()
         assert server.app._client_max_size == 4 * 1024 * 1024
-        with mock.patch.object(
-            server, "websocket_queues", mock.MagicMock()
-        ) as mock_wsq:
+        with mock.patch.object(server, "websocket_queues", mock.MagicMock()) as mock_wsq:
             mock_wsq.values = mock.MagicMock(
                 return_value=[mock.MagicMock(stop=mock.MagicMock())]
             )
             await server.stop()
 
-        with mock.patch.object(
-            web.TCPSite, "start", mock.CoroutineMock()
-        ) as mock_start:
+        with mock.patch.object(web.TCPSite, "start", mock.CoroutineMock()) as mock_start:
             mock_start.side_effect = OSError("Failure to launch")
             with self.assertRaises(AdminSetupError):
                 await self.get_admin_server(settings).start()
@@ -280,8 +276,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             assert response.headers["Access-Control-Allow-Headers"] == "X-API-KEY"
             assert response.headers["Access-Control-Allow-Methods"] == "GET"
             assert (
-                response.headers["Access-Control-Allow-Origin"]
-                == "http://localhost:3000"
+                response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
             )
 
         async with self.client_session.ws_connect(

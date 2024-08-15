@@ -96,8 +96,7 @@ class TestConnectionResponse(TestCase, TestConfig):
         )
 
         assert (
-            connection_response_dict
-            is mock_connection_response_schema_dump.return_value
+            connection_response_dict is mock_connection_response_schema_dump.return_value
         )
 
 

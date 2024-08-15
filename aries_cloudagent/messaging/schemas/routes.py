@@ -91,9 +91,7 @@ class SchemaSendResultSchema(OpenAPISchema):
             "example": INDY_SCHEMA_ID_EXAMPLE,
         },
     )
-    schema = fields.Nested(
-        SchemaSchema(), metadata={"description": "Schema definition"}
-    )
+    schema = fields.Nested(SchemaSchema(), metadata={"description": "Schema definition"})
 
 
 class TxnOrSchemaSendResultSchema(OpenAPISchema):
@@ -233,9 +231,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -301,9 +297,7 @@ async def schemas_send_schema(request: web.BaseRequest):
     # If the transaction is for the endorser, but the schema has already been created,
     # then we send back the schema since the transaction will fail to be created.
     elif "signed_txn" not in schema_def:
-        return web.json_response(
-            {"sent": {"schema_id": schema_id, "schema": schema_def}}
-        )
+        return web.json_response({"sent": {"schema_id": schema_id, "schema": schema_def}})
     else:
         transaction_mgr = TransactionManager(context.profile)
         try:

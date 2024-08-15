@@ -76,9 +76,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         transport = HttpTransport()
 
-        await asyncio.wait_for(
-            send_message(transport, b"{}", endpoint=server_addr), 5.0
-        )
+        await asyncio.wait_for(send_message(transport, b"{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
         assert self.headers.get("content-type") == "application/ssi-agent-wire"
 
@@ -92,9 +90,7 @@ class TestHttpTransport(AioHTTPTestCase):
         transport = HttpTransport()
 
         self.profile.settings["emit_new_didcomm_mime_type"] = True
-        await asyncio.wait_for(
-            send_message(transport, b"{}", endpoint=server_addr), 5.0
-        )
+        await asyncio.wait_for(send_message(transport, b"{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
         assert self.headers.get("content-type") == "application/didcomm-envelope-enc"
 
@@ -107,9 +103,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         transport = HttpTransport()
         transport.collector = Collector()
-        await asyncio.wait_for(
-            send_message(transport, b"{}", endpoint=server_addr), 5.0
-        )
+        await asyncio.wait_for(send_message(transport, b"{}", endpoint=server_addr), 5.0)
 
         results = transport.collector.extract()
         assert results["count"] == {

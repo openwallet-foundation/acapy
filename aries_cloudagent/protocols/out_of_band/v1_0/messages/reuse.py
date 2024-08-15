@@ -7,9 +7,7 @@ from marshmallow import EXCLUDE, ValidationError, fields, pre_dump
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import DEFAULT_VERSION, MESSAGE_REUSE, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.reuse_handler.HandshakeReuseMessageHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.reuse_handler.HandshakeReuseMessageHandler"
 
 
 class HandshakeReuse(AgentMessage):

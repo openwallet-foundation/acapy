@@ -48,9 +48,7 @@ class DIDXRequestHandler(BaseHandler):
                     conn_rec,
                     mediation_id=mediation_id,
                 )
-                await responder.send_reply(
-                    response, connection_id=conn_rec.connection_id
-                )
+                await responder.send_reply(response, connection_id=conn_rec.connection_id)
                 conn_rec.state = ConnRecord.State.RESPONSE.rfc23
                 async with context.session() as session:
                     await conn_rec.save(session, reason="Sent connection response")

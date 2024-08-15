@@ -74,8 +74,7 @@ class TestCredentialRequest(TestCase):
         )
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages."
-        "credential_request.CredentialRequestSchema.load"
+        f"{PROTOCOL_PACKAGE}.messages." "credential_request.CredentialRequestSchema.load"
     )
     def test_deserialize(self, mock_credential_request_schema_load):
         """
@@ -89,8 +88,7 @@ class TestCredentialRequest(TestCase):
         assert credential_request is mock_credential_request_schema_load.return_value
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages."
-        "credential_request.CredentialRequestSchema.dump"
+        f"{PROTOCOL_PACKAGE}.messages." "credential_request.CredentialRequestSchema.dump"
     )
     def test_serialize(self, mock_credential_request_schema_dump):
         """
@@ -109,9 +107,7 @@ class TestCredentialRequest(TestCase):
         credential_request_dict = credential_request.serialize()
         mock_credential_request_schema_dump.assert_called_once_with(credential_request)
 
-        assert (
-            credential_request_dict is mock_credential_request_schema_dump.return_value
-        )
+        assert credential_request_dict is mock_credential_request_schema_dump.return_value
 
 
 class TestCredentialRequestSchema(TestCase):

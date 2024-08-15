@@ -3,9 +3,7 @@
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_DENY, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.mediation_deny_handler.MediationDenyHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.mediation_deny_handler.MediationDenyHandler"
 
 
 class MediationDeny(AgentMessage):

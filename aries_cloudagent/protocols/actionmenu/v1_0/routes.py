@@ -90,9 +90,7 @@ class ActionMenuFetchResultSchema(OpenAPISchema):
     result = fields.Nested(MenuSchema, metadata={"description": "Action menu"})
 
 
-@docs(
-    tags=["action-menu"], summary="Close the active menu associated with a connection"
-)
+@docs(tags=["action-menu"], summary="Close the active menu associated with a connection")
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 @tenant_authentication

@@ -139,12 +139,8 @@ async def create_rev_states(
     for w3c_cred_cred in w3c_creds_metadata:
         rev_reg_def = rev_reg_defs.get(w3c_cred_cred["rev_reg_id"])
         rev_reg_def["id"] = w3c_cred_cred["rev_reg_id"]
-        rev_reg_def_from_registry = RevocationRegistry.from_definition(
-            rev_reg_def, True
-        )
-        local_tails_path = (
-            await rev_reg_def_from_registry.get_or_fetch_local_tails_path()
-        )
+        rev_reg_def_from_registry = RevocationRegistry.from_definition(rev_reg_def, True)
+        local_tails_path = await rev_reg_def_from_registry.get_or_fetch_local_tails_path()
         revocation_status_list = RevocationStatusList.load(
             rev_reg_entries.get(w3c_cred_cred["rev_reg_id"])[
                 w3c_cred_cred.get("timestamp")
@@ -242,9 +238,7 @@ async def prepare_data_for_presentation(
                 profile, w3c_cred.rev_reg_id, None
             )
             w3c_creds_metadata[entry_idx]["rev_reg_id"] = w3c_cred.rev_reg_id
-            w3c_creds_metadata[entry_idx][
-                "timestamp"
-            ] = result.revocation_list.timestamp
+            w3c_creds_metadata[entry_idx]["timestamp"] = result.revocation_list.timestamp
 
             non_revoked_interval = {
                 "from": result.revocation_list.timestamp,
@@ -281,9 +275,9 @@ async def prepare_data_for_presentation(
                         f"{predicate_referent_base}_{predicate_referent_index}"
                     )
                     predicate_referent_index = predicate_referent_index + 1
-                    anoncreds_proofrequest["requested_predicates"][
-                        predicate_referent
-                    ] = pred_request
+                    anoncreds_proofrequest["requested_predicates"][predicate_referent] = (
+                        pred_request
+                    )
                     w3c_creds_metadata[entry_idx]["proof_preds"].append(
                         predicate_referent
                     )

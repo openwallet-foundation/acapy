@@ -24,7 +24,7 @@ class AdminRequestContext:
         context: Optional[InjectionContext] = None,
         settings: Optional[Mapping[str, object]] = None,
         root_profile: Optional[Profile] = None,
-        metadata: Optional[dict] = None
+        metadata: Optional[dict] = None,
     ):
         """Initialize an instance of AdminRequestContext."""
         self._context = (context or profile.context).start_scope(settings)
@@ -154,8 +154,6 @@ class AdminRequestContext:
         """
         skip = ("session",)
         items = (
-            "{}={}".format(k, repr(v))
-            for k, v in self.__dict__.items()
-            if k not in skip
+            "{}={}".format(k, repr(v)) for k, v in self.__dict__.items() if k not in skip
         )
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))

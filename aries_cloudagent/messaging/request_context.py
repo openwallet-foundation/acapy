@@ -26,7 +26,7 @@ class RequestContext:
         profile: Profile,
         *,
         context: Optional[InjectionContext] = None,
-        settings: Optional[Mapping[str, object]] = None
+        settings: Optional[Mapping[str, object]] = None,
     ):
         """Initialize an instance of RequestContext."""
         self._connection_ready = False
@@ -229,8 +229,6 @@ class RequestContext:
         """
         skip = ()
         items = (
-            "{}={}".format(k, repr(v))
-            for k, v in self.__dict__.items()
-            if k not in skip
+            "{}={}".format(k, repr(v)) for k, v in self.__dict__.items() if k not in skip
         )
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))

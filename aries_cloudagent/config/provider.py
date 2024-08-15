@@ -43,7 +43,7 @@ class ClassProvider(BaseProvider):
         instance_cls: Union[str, type],
         *ctor_args,
         init_method: Optional[str] = None,
-        **ctor_kwargs
+        **ctor_kwargs,
     ):
         """Initialize the class provider."""
         self._ctor_args = ctor_args
@@ -113,7 +113,7 @@ class StatsProvider(BaseProvider):
         provider: BaseProvider,
         methods: Sequence[str],
         *,
-        ignore_missing: bool = True
+        ignore_missing: bool = True,
     ):
         """Initialize the statistics provider instance."""
         if not provider:

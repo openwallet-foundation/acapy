@@ -45,9 +45,7 @@ class AnonCredsRegistry:
 
     async def _resolver_for_identifier(self, identifier: str) -> BaseAnonCredsResolver:
         resolvers = [
-            resolver
-            for resolver in self.resolvers
-            if await resolver.supports(identifier)
+            resolver for resolver in self.resolvers if await resolver.supports(identifier)
         ]
         if len(resolvers) == 0:
             raise AnonCredsResolutionError(
@@ -59,9 +57,7 @@ class AnonCredsRegistry:
             )
         return resolvers[0]
 
-    async def _registrar_for_identifier(
-        self, identifier: str
-    ) -> BaseAnonCredsRegistrar:
+    async def _registrar_for_identifier(self, identifier: str) -> BaseAnonCredsRegistrar:
         registrars = [
             registrar
             for registrar in self.registrars
@@ -111,9 +107,7 @@ class AnonCredsRegistry:
         options: Optional[dict] = None,
     ) -> CredDefResult:
         """Register a credential definition on the registry."""
-        registrar = await self._registrar_for_identifier(
-            credential_definition.issuer_id
-        )
+        registrar = await self._registrar_for_identifier(credential_definition.issuer_id)
         return await registrar.register_credential_definition(
             profile,
             schema,

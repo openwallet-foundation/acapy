@@ -32,9 +32,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile(
             settings={"admin.admin_api_key": "secret-key"}
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.context.injector.bind_instance(KeyTypes, KeyTypes())
         self.request_dict = {
             "context": self.context,
@@ -58,9 +56,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.did_methods.register(WEB)
         self.context.injector.bind_instance(DIDMethods, self.did_methods)
 
-        self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
-        ]
+        self.test_mediator_routing_keys = ["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"]
         self.test_mediator_endpoint = "http://mediator.example.com"
 
     async def test_missing_wallet(self):
@@ -704,9 +700,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         mock_route_manager = mock.MagicMock()
         mock_route_manager.route_verkey = mock.CoroutineMock()
-        mock_route_manager.mediation_record_if_id = mock.CoroutineMock(
-            return_value=None
-        )
+        mock_route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
         mock_route_manager.routing_info = mock.CoroutineMock(return_value=(None, None))
         mock_route_manager.__aenter__ = mock.CoroutineMock(
             return_value=mock_route_manager

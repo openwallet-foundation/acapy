@@ -76,9 +76,7 @@ class PackWireFormat(BaseWireFormat):
     def __init__(self):
         """Initialize the pack wire format instance."""
         self.v1pack_format = V1PackWireFormat()
-        self.v2pack_format = (
-            V2PackWireFormat() if V2PackWireFormat is not None else None
-        )
+        self.v2pack_format = V2PackWireFormat() if V2PackWireFormat is not None else None
 
     def get_for_packed_msg(self, packed_msg: Union[str, bytes]) -> BaseWireFormat:
         """Retrieve appropriate DIDComm instance for a given packed message."""
@@ -323,9 +321,7 @@ class V1PackWireFormat(BaseWireFormat):
             raise WireFormatEncodeError("No wallet instance")
 
         try:
-            message = await wallet.pack_message(
-                message_json, recipient_keys, sender_key
-            )
+            message = await wallet.pack_message(message_json, recipient_keys, sender_key)
         except WalletError as e:
             raise WireFormatEncodeError("Message pack failed") from e
 
@@ -363,8 +359,6 @@ class V1PackWireFormat(BaseWireFormat):
 
             recipient_keys = [recipient["header"]["kid"] for recipient in recipients]
         except Exception as e:
-            raise RecipientKeysError(
-                "Error trying to extract recipient keys from JWE", e
-            )
+            raise RecipientKeysError("Error trying to extract recipient keys from JWE", e)
 
         return recipient_keys

@@ -98,9 +98,7 @@ class TestPresExchHandler:
             if isinstance(tmp_vp, Sequence):
                 cred_count_list = []
                 for tmp_vp_single in tmp_vp:
-                    cred_count_list.append(
-                        len(tmp_vp_single.get("verifiableCredential"))
-                    )
+                    cred_count_list.append(len(tmp_vp_single.get("verifiableCredential")))
 
                 assert min(cred_count_list) == tmp_pd[1]
             else:
@@ -125,9 +123,7 @@ class TestPresExchHandler:
             if isinstance(tmp_vp, Sequence):
                 cred_count_list = []
                 for tmp_vp_single in tmp_vp:
-                    cred_count_list.append(
-                        len(tmp_vp_single.get("verifiableCredential"))
-                    )
+                    cred_count_list.append(len(tmp_vp_single.get("verifiableCredential")))
 
                 assert min(cred_count_list) == tmp_pd[1]
             else:
@@ -1841,9 +1837,7 @@ class TestPresExchHandler:
 
     def test_invalid_string_filter(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        assert not dif_pres_exch_handler.process_string_val(
-            val="test", _filter=Filter()
-        )
+        assert not dif_pres_exch_handler.process_string_val(val="test", _filter=Filter())
 
     @pytest.mark.ursa_bbs_signatures
     def test_cred_schema_match_b(self, profile, setup_tuple):
@@ -2036,9 +2030,7 @@ class TestPresExchHandler:
             (
                 issuer_id,
                 filtered_creds,
-            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(
-                VC_RECORDS
-            )
+            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(VC_RECORDS)
             assert issuer_id == "did:sov:LjgpST2rjsoxYegQDRm7EL"
             assert len(filtered_creds) == 2
 
@@ -2123,9 +2115,7 @@ class TestPresExchHandler:
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
-                subject_ids=[
-                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-                ],
+                subject_ids=["did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"],
                 proof_types=["BbsBlsSignature2020"],
                 schema_ids=["https://example.org/examples/degree.json"],
                 cred_value={"...": "..."},
@@ -2169,12 +2159,8 @@ class TestPresExchHandler:
             (
                 issuer_id,
                 filtered_creds,
-            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(
-                VC_RECORDS
-            )
-            assert (
-                issuer_id == "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            )
+            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(VC_RECORDS)
+            assert issuer_id == "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
             assert len(filtered_creds) == 2
 
     @pytest.mark.ursa_bbs_signatures
@@ -2193,9 +2179,7 @@ class TestPresExchHandler:
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="https://example.edu/issuers/565049",
-                subject_ids=[
-                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-                ],
+                subject_ids=["did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"],
                 proof_types=["BbsBlsSignature2020"],
                 schema_ids=["https://example.org/examples/degree.json"],
                 cred_value={"...": "..."},
@@ -2476,9 +2460,7 @@ class TestPresExchHandler:
                 ]
             }
         """
-        tmp_pd = PresentationDefinition.deserialize(
-            test_pd_filter_with_only_string_type
-        )
+        tmp_pd = PresentationDefinition.deserialize(test_pd_filter_with_only_string_type)
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=cred_list,
             pd=tmp_pd,
@@ -2818,9 +2800,7 @@ class TestPresExchHandler:
             .startswith("urn:")
         )
         assert (
-            tmp_vp.get("verifiableCredential")[0]
-            .get("credentialSubject")
-            .get("college")
+            tmp_vp.get("verifiableCredential")[0].get("credentialSubject").get("college")
             == "Contoso University"
         )
 
@@ -3621,9 +3601,7 @@ class TestPresExchHandler:
                     "path": ["$.credentialSubject.Patient[0].address[0].city"],
                 }
             )
-            assert not await dif_pres_exch_handler.filter_by_field(
-                field, vc_record_cred
-            )
+            assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 
     @pytest.mark.asyncio
     async def test_filter_by_field_xsd_parser(self, profile):

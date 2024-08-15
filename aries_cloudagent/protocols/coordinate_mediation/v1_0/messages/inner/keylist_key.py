@@ -21,7 +21,7 @@ class KeylistKey(BaseModel):
         recipient_key: str = None,
         action: str = None,
         result: str = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize a KeylistKey instance.
 

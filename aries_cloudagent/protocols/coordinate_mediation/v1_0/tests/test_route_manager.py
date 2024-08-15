@@ -693,9 +693,7 @@ async def test_mediation_routing_info_with_mediator(
         routing_keys=[TEST_ROUTE_VERKEY_REF],
         endpoint="http://mediator.example.com",
     )
-    keys, endpoint = await mediation_route_manager.routing_info(
-        profile, mediation_record
-    )
+    keys, endpoint = await mediation_route_manager.routing_info(profile, mediation_record)
     assert keys == mediation_record.routing_keys
     assert endpoint == mediation_record.endpoint
 

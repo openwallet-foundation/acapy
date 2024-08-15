@@ -68,9 +68,7 @@ class ClassLoader:
         try:
             return import_module(mod_path, package)
         except ModuleNotFoundError as e:
-            raise ModuleLoadError(
-                f"Unable to import module {full_path}: {str(e)}"
-            ) from e
+            raise ModuleLoadError(f"Unable to import module {full_path}: {str(e)}") from e
 
     @classmethod
     def load_class(

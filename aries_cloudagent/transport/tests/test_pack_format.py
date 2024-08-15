@@ -110,9 +110,7 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
             )
         )
         session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
-        with mock.patch.object(
-            test_module, "Forward", mock.MagicMock()
-        ) as mock_forward:
+        with mock.patch.object(test_module, "Forward", mock.MagicMock()) as mock_forward:
             mock_forward.return_value = mock.MagicMock(to_json=mock.MagicMock())
             with self.assertRaises(WireFormatEncodeError):
                 await serializer.pack(session, None, ["key"], ["key"], ["key"])
@@ -161,9 +159,7 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.RecipientKeysError):
             serializer.get_recipient_keys(message_json)
 
-        message_dict, delivery = await serializer.parse_message(
-            self.session, packed_json
-        )
+        message_dict, delivery = await serializer.parse_message(self.session, packed_json)
         assert message_dict == self.test_message
         assert message_dict["@type"] == self.test_message_type
         assert delivery.thread_id == self.test_thread_id
@@ -195,9 +191,7 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
 
         assert isinstance(packed, dict) and "protected" in packed
 
-        message_dict, delivery = await serializer.parse_message(
-            self.session, packed_json
-        )
+        message_dict, delivery = await serializer.parse_message(self.session, packed_json)
         assert message_dict["@type"] == DIDCommPrefix.qualify_current(FORWARD)
         assert delivery.recipient_verkey == router_did.verkey
         assert delivery.sender_verkey is None
@@ -254,7 +248,6 @@ class TestV2PackWireFormat(IsolatedAsyncioTestCase):
         self.wallet = self.session.inject(BaseWallet)
 
     async def test_errors(self):
-
         self.session.context.injector.bind_instance(
             DIDCommMessaging, TestDIDCommMessaging()
         )
@@ -282,7 +275,6 @@ class TestV2PackWireFormat(IsolatedAsyncioTestCase):
                 )
 
     async def test_fallback(self):
-
         serializer = V2PackWireFormat()
 
         test_dm = TestDIDCommMessaging()

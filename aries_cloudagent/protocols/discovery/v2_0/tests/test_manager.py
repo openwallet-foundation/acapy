@@ -172,9 +172,7 @@ class TestV20DiscoveryManager(IsolatedAsyncioTestCase):
             self._caplog.set_level(logging.WARNING)
             mock_receive_query.return_value = Disclosures()
             await self.manager.proactive_disclose_features("test123")
-            assert (
-                "Unable to send discover-features v2 disclosures" in self._caplog.text
-            )
+            assert "Unable to send discover-features v2 disclosures" in self._caplog.text
 
     async def test_check_if_disclosure_received(self):
         with mock.patch.object(

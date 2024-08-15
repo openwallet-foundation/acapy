@@ -48,9 +48,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         STATE_INVITATION = ConnRecord.State.INVITATION
         STATE_ABANDONED = ConnRecord.State.ABANDONED
         ROLE_REQUESTER = ConnRecord.Role.REQUESTER
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec:
+        with mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec:
             mock_conn_rec.query = mock.CoroutineMock()
             mock_conn_rec.Role = ConnRecord.Role
             mock_conn_rec.State = mock.MagicMock(
@@ -132,9 +130,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
         ROLE_REQUESTER = ConnRecord.Role.REQUESTER
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec:
+        with mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec:
             mock_conn_rec.Role = mock.MagicMock(return_value=ROLE_REQUESTER)
             mock_conn_rec.State = mock.MagicMock(
                 COMPLETED=STATE_COMPLETED,
@@ -330,9 +326,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_retrieve_x(self):
         self.request.match_info = {"conn_id": "dummy"}
         mock_conn_rec = mock.MagicMock()
-        mock_conn_rec.serialize = mock.MagicMock(
-            side_effect=test_module.BaseModelError()
-        )
+        mock_conn_rec.serialize = mock.MagicMock(side_effect=test_module.BaseModelError())
 
         with mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
@@ -387,7 +381,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                 routing_keys=body["routing_keys"],
                 my_endpoint=body["service_endpoint"],
                 metadata=body["metadata"],
-                mediation_id="some-id"
+                mediation_id="some-id",
             )
             mock_response.assert_called_once_with(
                 {

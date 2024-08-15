@@ -26,7 +26,9 @@ def indy_client_dir(subpath: str = None, create: bool = False) -> str:
         (
             "Documents"
             if isdir(join(home, "Documents"))
-            else getenv("EXTERNAL_STORAGE", "") if system() == "Linux" else ""
+            else getenv("EXTERNAL_STORAGE", "")
+            if system() == "Linux"
+            else ""
         ),
         ".indy_client",
         subpath if subpath else "",

@@ -129,9 +129,7 @@ def create_sd_list(payload, non_sd_list) -> List:
     """Create a list of claims which will be selectively disclosable."""
     flattened_payload = create_json_paths(payload)
     separated_non_sd_list = separate_list_splices(non_sd_list)
-    sd_list = [
-        claim for claim in flattened_payload if claim not in separated_non_sd_list
-    ]
+    sd_list = [claim for claim in flattened_payload if claim not in separated_non_sd_list]
     return sort_sd_list(sd_list)
 
 
@@ -163,8 +161,8 @@ async def sd_jwt_sign(
                     match.context.value.remove(match.value)
                     match.context.value.append(SDObj(match.value))
                 else:
-                    match.context.value[SDObj(str(match.path))] = (
-                        match.context.value.pop(str(match.path))
+                    match.context.value[SDObj(str(match.path))] = match.context.value.pop(
+                        str(match.path)
                     )
 
     return await SDJWTIssuerACAPy(

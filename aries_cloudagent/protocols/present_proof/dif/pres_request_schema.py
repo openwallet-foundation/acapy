@@ -42,9 +42,7 @@ class DIFProofRequestSchema(BaseModelSchema):
         model_class = DIFProofRequest
 
     options = fields.Nested(DIFOptionsSchema(), required=False)
-    presentation_definition = fields.Nested(
-        PresentationDefinitionSchema(), required=True
-    )
+    presentation_definition = fields.Nested(PresentationDefinitionSchema(), required=True)
 
 
 class DIFPresSpecSchema(OpenAPISchema):

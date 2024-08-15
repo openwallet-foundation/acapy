@@ -121,9 +121,9 @@ def _extract_payload_key(sender_cek: dict, recip_secret: Key) -> Tuple[bytes, st
     recip_x = recip_secret.convert_key(KeyAlg.X25519)
 
     if sender_cek["nonce"] and sender_cek["sender"]:
-        sender_vk = crypto_box.crypto_box_seal_open(
-            recip_x, sender_cek["sender"]
-        ).decode("utf-8")
+        sender_vk = crypto_box.crypto_box_seal_open(recip_x, sender_cek["sender"]).decode(
+            "utf-8"
+        )
         sender_x = Key.from_public_bytes(
             KeyAlg.ED25519, b58_to_bytes(sender_vk)
         ).convert_key(KeyAlg.X25519)

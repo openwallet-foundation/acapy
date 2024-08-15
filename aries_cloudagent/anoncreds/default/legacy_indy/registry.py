@@ -257,9 +257,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 profile, options
             )
 
-        write_ledger = (
-            True if endorser_did is None and not create_transaction else False
-        )
+        write_ledger = True if endorser_did is None and not create_transaction else False
 
         # Get either the transaction or the seq_no or the created schema
         async with ledger:
@@ -428,9 +426,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 profile, options
             )
 
-        write_ledger = (
-            True if endorser_did is None and not create_transaction else False
-        )
+        write_ledger = True if endorser_did is None and not create_transaction else False
 
         async with ledger:
             try:
@@ -611,9 +607,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 profile, options
             )
 
-        write_ledger = (
-            True if endorser_did is None and not create_transaction else False
-        )
+        write_ledger = True if endorser_did is None and not create_transaction else False
 
         try:
             async with ledger:
@@ -890,9 +884,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 profile, options
             )
 
-        write_ledger = (
-            True if endorser_did is None and not create_transaction else False
-        )
+        write_ledger = True if endorser_did is None and not create_transaction else False
 
         result = await self._revoc_reg_entry_with_fix(
             profile,
@@ -996,9 +988,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 profile, options
             )
 
-        write_ledger = (
-            True if endorser_did is None and not create_transaction else False
-        )
+        write_ledger = True if endorser_did is None and not create_transaction else False
 
         result = await self._revoc_reg_entry_with_fix(
             profile,
@@ -1116,9 +1106,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         )
 
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_list.rev_reg_def_id
-            )
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_def_id)
 
         async with profile.session() as session:
             LOGGER.debug(f"revocation_list = {rev_list.revocation_list}")
@@ -1163,9 +1151,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 session, rev_reg_id=rev_list.rev_reg_def_id
             )
             return [
-                int(rec.cred_rev_id)
-                for rec in cred_rev_records
-                if rec.state == "revoked"
+                int(rec.cred_rev_id) for rec in cred_rev_records if rec.state == "revoked"
             ]
 
         def _revocation_list_to_array_of_indexes(

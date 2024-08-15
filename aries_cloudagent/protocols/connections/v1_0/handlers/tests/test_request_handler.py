@@ -160,9 +160,7 @@ class TestRequestHandler:
     @pytest.mark.asyncio
     @mock.patch.object(handler, "ConnectionManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
-    async def test_problem_report(
-        self, mock_conn_target, mock_conn_mgr, request_context
-    ):
+    async def test_problem_report(self, mock_conn_target, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.receive_request = mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value

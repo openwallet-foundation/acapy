@@ -60,9 +60,7 @@ class TestCancelTransaction(TestCase, TestConfig):
             self.transaction_resend
         )
 
-        assert (
-            transaction_resend_dict is mock_transaction_resend_schema_dump.return_value
-        )
+        assert transaction_resend_dict is mock_transaction_resend_schema_dump.return_value
 
 
 class TestTransactionResendSchema(IsolatedAsyncioTestCase, TestConfig):

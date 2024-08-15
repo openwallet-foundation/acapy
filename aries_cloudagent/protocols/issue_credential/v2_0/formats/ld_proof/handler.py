@@ -123,9 +123,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 attach_id=LDProofCredFormatHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_base64(
-                data, ident=LDProofCredFormatHandler.format.api
-            ),
+            AttachDecorator.data_base64(data, ident=LDProofCredFormatHandler.format.api),
         )
 
     async def create_proposal(
@@ -282,9 +280,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Issue linked data proof credential."""
         if not cred_ex_record.cred_request:
-            raise V20CredFormatError(
-                "Cannot issue credential without credential request"
-            )
+            raise V20CredFormatError("Cannot issue credential without credential request")
 
         detail_dict = cred_ex_record.cred_request.attachment(
             LDProofCredFormatHandler.format
@@ -423,6 +419,4 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
             await vc_holder.store_credential(vc_record)
             # Store detail record, emit event
-            await detail_record.save(
-                session, reason="store credential v2.0", event=True
-            )
+            await detail_record.save(session, reason="store credential v2.0", event=True)

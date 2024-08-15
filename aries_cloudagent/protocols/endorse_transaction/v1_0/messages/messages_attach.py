@@ -31,7 +31,7 @@ class MessagesAttach(AgentMessage):
         mechanism: str = None,
         taaDigest: str = None,
         time: int = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize the attached message object.
 

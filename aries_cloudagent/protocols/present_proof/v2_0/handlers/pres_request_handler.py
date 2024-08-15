@@ -56,9 +56,7 @@ class V20PresRequestHandler(BaseHandler):
             )
 
         connection_id = (
-            context.connection_record.connection_id
-            if context.connection_record
-            else None
+            context.connection_record.connection_id if context.connection_record else None
         )
 
         profile = context.profile

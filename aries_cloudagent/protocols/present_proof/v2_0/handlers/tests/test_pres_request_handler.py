@@ -188,9 +188,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
         request_context.message = V20PresRequest()
-        request_context.message.attachment = mock.MagicMock(
-            return_value=mock.MagicMock()
-        )
+        request_context.message.attachment = mock.MagicMock(return_value=mock.MagicMock())
 
         mock_oob_processor = mock.MagicMock(
             find_oob_record_for_inbound_message=mock.CoroutineMock(
@@ -206,9 +204,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         px_rec_instance = test_module.V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),
@@ -247,9 +243,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
         request_context.message = V20PresRequest()
-        request_context.message.attachment = mock.MagicMock(
-            return_value=mock.MagicMock()
-        )
+        request_context.message.attachment = mock.MagicMock(return_value=mock.MagicMock())
 
         mock_oob_processor = mock.MagicMock(
             find_oob_record_for_inbound_message=mock.CoroutineMock(
@@ -265,9 +259,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         px_rec_instance = test_module.V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),
@@ -316,9 +308,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         mock_px_rec = mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
@@ -381,9 +371,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         mock_px_rec = mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
@@ -453,9 +441,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         mock_px_rec = test_module.V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),
@@ -527,9 +513,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         mock_px_rec = test_module.V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),
@@ -799,9 +783,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         mock_px_rec = mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
@@ -867,9 +849,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         mock_px_rec = mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
@@ -948,9 +928,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
 
         mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                mock.CoroutineMock(
-                    return_value=[{"cred_info": {"referent": "dummy-0"}}]
-                )
+                mock.CoroutineMock(return_value=[{"cred_info": {"referent": "dummy-0"}}])
             )
         )
         request_context.injector.bind_instance(IndyHolder, mock_holder)
@@ -1016,9 +994,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
 
         mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                mock.CoroutineMock(
-                    return_value=[{"cred_info": {"referent": "dummy-0"}}]
-                )
+                mock.CoroutineMock(return_value=[{"cred_info": {"referent": "dummy-0"}}])
             )
         )
         request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
@@ -1220,9 +1196,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
 
         mock_oob_processor = mock.MagicMock(
@@ -1334,9 +1308,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                     format_=V20PresFormat.Format.INDY.aries,
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
 
         mock_oob_processor = mock.MagicMock(

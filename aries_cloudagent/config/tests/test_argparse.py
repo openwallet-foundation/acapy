@@ -13,9 +13,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         parser = argparse.create_argument_parser()
 
         groups = (
-            g
-            for g in argparse.group.get_registered()
-            if g is not argparse.TransportGroup
+            g for g in argparse.group.get_registered() if g is not argparse.TransportGroup
         )
         argparse.load_argument_groups(parser, *groups)
 
@@ -628,8 +626,6 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert supported_regex
         assert supported_regex == ["regex"]
 
-        result = parser.parse_args(
-            ["-e", "test", "--universal-resolver-regex", "regex"]
-        )
+        result = parser.parse_args(["-e", "test", "--universal-resolver-regex", "regex"])
         with self.assertRaises(argparse.ArgsParseError):
             group.get_settings(result)

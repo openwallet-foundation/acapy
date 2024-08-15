@@ -26,9 +26,7 @@ class ConnectionInvitationHandler(BaseHandler):
         report = ConnectionProblemReport(
             description={
                 "code": ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
-                "en": (
-                    "Connection invitations cannot be submitted via agent messaging"
-                ),
+                "en": ("Connection invitations cannot be submitted via agent messaging"),
             }
         )
         report.assign_thread_from(context.message)

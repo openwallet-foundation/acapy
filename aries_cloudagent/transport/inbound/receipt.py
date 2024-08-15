@@ -28,7 +28,7 @@ class MessageReceipt:
         sender_verkey: str = None,
         thread_id: str = None,
         parent_thread_id: str = None,
-        didcomm_version: DIDCommVersion = None
+        didcomm_version: DIDCommVersion = None,
     ):
         """Initialize the message delivery instance."""
         self._connection_id = connection_id

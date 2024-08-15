@@ -136,10 +136,7 @@ class InvitationCreator:
                 "create_unique_did can only be used with use_did_method"
             )
 
-        if (
-            use_did_method
-            and use_did_method not in DIDXManager.SUPPORTED_USE_DID_METHODS
-        ):
+        if use_did_method and use_did_method not in DIDXManager.SUPPORTED_USE_DID_METHODS:
             raise OutOfBandManagerError(f"Unsupported use_did_method: {use_did_method}")
 
         self.profile = profile
@@ -195,9 +192,7 @@ class InvitationCreator:
         self.mediation_id = mediation_id
         self.metadata = metadata
 
-    async def create_attachment(
-        self, attachment: Mapping, pthid: str
-    ) -> AttachDecorator:
+    async def create_attachment(self, attachment: Mapping, pthid: str) -> AttachDecorator:
         """Create attachment for OOB invitation."""
         a_type = attachment.get("type")
         a_id = attachment.get("id")
@@ -898,9 +893,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
             return None
 
-    async def _wait_for_reuse_response(
-        self, oob_id: str, timeout: int = 15
-    ) -> OobRecord:
+    async def _wait_for_reuse_response(self, oob_id: str, timeout: int = 15) -> OobRecord:
         """Wait for reuse response.
 
         Wait for reuse response message state. Either by receiving a reuse accepted or
@@ -975,9 +968,7 @@ class OutOfBandManager(BaseConnectionManager):
                 # This rules out the scenario where the record was in the desired state
                 # Before starting the event listener
                 async with self.profile.session() as session:
-                    conn_record = await ConnRecord.retrieve_by_id(
-                        session, connection_id
-                    )
+                    conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
                     if conn_record.is_ready:
                         return conn_record
 
@@ -1356,9 +1347,7 @@ class OutOfBandManager(BaseConnectionManager):
                 await oob_record.delete_record(session)
 
                 conn_record.invitation_msg_id = invi_msg_id
-                await conn_record.save(
-                    session, reason="Assigning new invitation_msg_id"
-                )
+                await conn_record.save(session, reason="Assigning new invitation_msg_id")
             # Emit webhook
             await self.profile.notify(
                 REUSE_ACCEPTED_WEBHOOK_TOPIC,

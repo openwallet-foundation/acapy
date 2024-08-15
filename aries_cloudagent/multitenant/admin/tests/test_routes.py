@@ -620,9 +620,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             mock_wallet_record_retrieve_by_id.return_value = mock_wallet_record
 
             await test_module.wallet_get(self.request)
-            mock_response.assert_called_once_with(
-                {"settings": {}, "wallet_id": "dummy"}
-            )
+            mock_response.assert_called_once_with({"settings": {}, "wallet_id": "dummy"})
 
     async def test_wallet_get_not_found(self):
         self.request.match_info = {"wallet_id": "dummy"}
@@ -754,9 +752,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
 
             result = await test_module.wallet_remove(self.request)
 
-            self.mock_multitenant_mgr.remove_wallet.assert_called_once_with(
-                "dummy", None
-            )
+            self.mock_multitenant_mgr.remove_wallet.assert_called_once_with("dummy", None)
             mock_response.assert_called_once_with({})
             assert result == mock_response.return_value
 

@@ -100,9 +100,7 @@ class TestConnectionRequest(TestCase, TestConfig):
             self.connection_request
         )
 
-        assert (
-            connection_request_dict is mock_connection_request_schema_dump.return_value
-        )
+        assert connection_request_dict is mock_connection_request_schema_dump.return_value
 
 
 class TestConnectionRequestSchema(IsolatedAsyncioTestCase, TestConfig):

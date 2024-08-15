@@ -238,9 +238,7 @@ class TestIndyVdrLedger:
         )
 
         async with ledger:
-            ledger.pool_handle.submit_request.return_value = {
-                "txnMetadata": {"seqNo": 1}
-            }
+            ledger.pool_handle.submit_request.return_value = {"txnMetadata": {"seqNo": 1}}
 
             with mock.patch.object(
                 ledger,
@@ -506,9 +504,7 @@ class TestIndyVdrLedger:
                 )
 
     @pytest.mark.asyncio
-    async def test_send_credential_definition_no_such_schema(
-        self, ledger: IndyVdrLedger
-    ):
+    async def test_send_credential_definition_no_such_schema(self, ledger: IndyVdrLedger):
         issuer = mock.MagicMock(IndyIssuer)
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {}
@@ -1193,9 +1189,7 @@ class TestIndyVdrLedger:
                 return_value=json.dumps({"result": {"txnMetadata": {"seqNo": 1234}}}),
             ):
                 ledger.pool_handle.submit_request.return_value = {"status": "ok"}
-                result = await ledger.send_revoc_reg_entry(
-                    reg_id, "CL_ACCUM", reg_entry
-                )
+                result = await ledger.send_revoc_reg_entry(reg_id, "CL_ACCUM", reg_entry)
                 assert result == 1234
 
     @pytest.mark.asyncio

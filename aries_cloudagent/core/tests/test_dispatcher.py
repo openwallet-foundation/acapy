@@ -258,9 +258,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         await dispatcher.setup()
         rcv = Receiver()
         message = {
-            "@type": DIDCommPrefix.qualify_current(
-                StubV1_2AgentMessage.Meta.message_type
-            )
+            "@type": DIDCommPrefix.qualify_current(StubV1_2AgentMessage.Meta.message_type)
         }
 
         with mock.patch.object(

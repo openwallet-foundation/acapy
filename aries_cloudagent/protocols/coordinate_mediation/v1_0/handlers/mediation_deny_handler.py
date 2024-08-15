@@ -15,9 +15,7 @@ class MediationDenyHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle mediate-deny message."""
-        self._logger.debug(
-            "%s called with context %s", self.__class__.__name__, context
-        )
+        self._logger.debug("%s called with context %s", self.__class__.__name__, context)
         assert isinstance(context.message, MediationDeny)
 
         if not context.connection_ready:

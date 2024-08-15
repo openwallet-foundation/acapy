@@ -107,9 +107,7 @@ class TestLegacyPeerDIDResolver:
             test_module, "BaseConnectionManager"
         ) as mock_mgr, mock.patch.object(
             test_module, "LegacyDocCorrections"
-        ) as mock_corrections, pytest.raises(
-            test_module.DIDNotFound
-        ):
+        ) as mock_corrections, pytest.raises(test_module.DIDNotFound):
             doc = object
             mock_corrections.apply = mock.MagicMock(return_value=doc)
             mock_mgr.return_value = mock.MagicMock(

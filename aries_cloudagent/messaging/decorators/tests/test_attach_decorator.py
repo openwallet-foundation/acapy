@@ -441,9 +441,7 @@ class TestAttachDecoratorSignature:
             byte_count=BYTE_COUNT,
         )
         deco_indy_master = deepcopy(deco_indy)
-        did_info = [
-            await wallet.create_local_did(SOV, ED25519, seed[i]) for i in [0, 1]
-        ]
+        did_info = [await wallet.create_local_did(SOV, ED25519, seed[i]) for i in [0, 1]]
         assert deco_indy.data.signatures == 0
         assert deco_indy.data.header_map() is None
         await deco_indy.data.sign(did_info[0].verkey, wallet)

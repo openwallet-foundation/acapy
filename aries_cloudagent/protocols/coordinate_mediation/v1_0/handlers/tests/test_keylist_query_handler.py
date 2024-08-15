@@ -47,8 +47,7 @@ class TestKeylistQueryHandler(IsolatedAsyncioTestCase):
         result, _target = responder.messages[0]
         assert isinstance(result, CMProblemReport)
         assert (
-            result.description["code"]
-            == ProblemReportReason.MEDIATION_NOT_GRANTED.value
+            result.description["code"] == ProblemReportReason.MEDIATION_NOT_GRANTED.value
         )
 
     async def test_handler_record_not_granted(self):
@@ -61,8 +60,7 @@ class TestKeylistQueryHandler(IsolatedAsyncioTestCase):
         result, _target = responder.messages[0]
         assert isinstance(result, CMProblemReport)
         assert (
-            result.description["code"]
-            == ProblemReportReason.MEDIATION_NOT_GRANTED.value
+            result.description["code"] == ProblemReportReason.MEDIATION_NOT_GRANTED.value
         )
 
     async def test_handler(self):

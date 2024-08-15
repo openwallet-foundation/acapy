@@ -150,8 +150,7 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 )
                 assert storage_type_record.value == STORAGE_TYPE_VALUE_ANONCREDS
                 assert (
-                    upgrading_record.value
-                    == anoncreds_upgrade.UPGRADING_RECORD_FINISHED
+                    upgrading_record.value == anoncreds_upgrade.UPGRADING_RECORD_FINISHED
                 )
                 assert "test-profile" in singletons.IsAnoncredsSingleton().wallets
 
@@ -171,9 +170,7 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                     anoncreds_upgrade.UPGRADING_RECORD_IN_PROGRESS,
                 )
             )
-            await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(
-                self.profile
-            )
+            await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(self.profile)
             storage_type_record = await storage.find_record(
                 RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
             )
@@ -200,9 +197,7 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 await storage.update_record(
                     upgrading_record, anoncreds_upgrade.UPGRADING_RECORD_IN_PROGRESS, {}
                 )
-            await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(
-                self.profile
-            )
+            await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(self.profile)
             assert mock_retry_converting_records.called
 
     async def test_set_storage_type_to_anoncreds_no_existing_record(self):
@@ -224,7 +219,6 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
             assert storage_type_record.value == STORAGE_TYPE_VALUE_ANONCREDS
 
     async def test_update_if_subwallet_and_set_storage_type_with_subwallet(self):
-
         await anoncreds_upgrade.finish_upgrade_by_updating_profile_or_shutting_down(
             self.profile, True
         )
@@ -235,7 +229,6 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
         )._instance.flush.called
 
     async def test_update_if_subwallet_and_set_storage_type_with_base_wallet(self):
-
         await anoncreds_upgrade.finish_upgrade_by_updating_profile_or_shutting_down(
             self.profile, False
         )
@@ -340,9 +333,7 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 InMemoryProfileSession,
                 "commit",
                 # Don't wait for sleep in retry to speed up test
-            ) as mock_commit, mock.patch.object(
-                asyncio, "sleep"
-            ):
+            ) as mock_commit, mock.patch.object(asyncio, "sleep"):
                 """
                 Only tests schemas and cred_defs failing to upgrade because the other objects are
                 hard to mock. These tests should be enough to cover them as the logic is the same.
