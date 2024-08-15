@@ -24,7 +24,7 @@ class AdminRequestContext:
         context: Optional[InjectionContext] = None,
         settings: Optional[Mapping[str, object]] = None,
         root_profile: Optional[Profile] = None,
-        metadata: Optional[dict] = None,
+        metadata: Optional[dict] = None
     ):
         """Initialize an instance of AdminRequestContext."""
         self._context = (context or profile.context).start_scope(settings)
