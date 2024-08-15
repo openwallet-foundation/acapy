@@ -12148,11 +12148,28 @@
     "TxnOrPublishRevocationsResult" : {
       "type" : "object",
       "properties" : {
-        "sent" : {
-          "$ref" : "#/definitions/PublishRevocations"
+        "rrid2crid" : {
+          "type" : "object",
+          "description" : "Credential revocation ids by revocation registry id",
+          "additionalProperties" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "example" : "12345",
+              "description" : "Credential revocation identifier",
+              "pattern" : "^[1-9][0-9]*$"
+            }
+          }
         },
         "txn" : {
-          "$ref" : "#/definitions/TxnOrPublishRevocationsResult_txn"
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "description" : "Revocation registry revocations transaction to endorse",
+            "allOf" : [ {
+              "$ref" : "#/definitions/TransactionRecord"
+            } ]
+          }
         }
       }
     },
@@ -14802,10 +14819,6 @@
     "TxnOrCredentialDefinitionSendResult_txn" : {
       "type" : "object",
       "description" : "Credential definition transaction to endorse"
-    },
-    "TxnOrPublishRevocationsResult_txn" : {
-      "type" : "object",
-      "description" : "Revocation registry revocations transaction to endorse"
     },
     "TxnOrRegisterLedgerNymResponse_txn" : {
       "type" : "object",

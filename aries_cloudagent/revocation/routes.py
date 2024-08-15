@@ -290,20 +290,17 @@ class PublishRevocationsSchema(OpenAPISchema):
     )
 
 
-class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
+class TxnOrPublishRevocationsResultSchema(PublishRevocationsSchema):
     """Result schema for credential definition send request."""
 
-    sent = fields.Nested(
-        PublishRevocationsSchema(),
-        required=False,
-        metadata={"definition": "Content sent"},
-    )
-    txn = fields.Nested(
-        TransactionRecordSchema(),
-        required=False,
-        metadata={
-            "description": "Revocation registry revocations transaction to endorse"
-        },
+    txn = fields.List(
+        fields.Nested(
+            TransactionRecordSchema(),
+            required=False,
+            metadata={
+                "description": "Revocation registry revocations transaction to endorse"
+            },
+        )
     )
 
 
@@ -661,13 +658,10 @@ async def publish_revocations(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if create_transaction_for_endorser:
-        return web.json_response(
-            (
-                await _process_publish_response_for_endorsement(
-                    profile, rev_reg_responses, outbound_handler, endorser_conn_id
-                )
-            )
+        list_of_txns = await _process_publish_response_for_endorsement(
+            profile, rev_reg_responses, outbound_handler, endorser_conn_id
         )
+        return web.json_response({"txn": list_of_txns})
 
     return web.json_response({"rrid2crid": result})
 
@@ -702,7 +696,7 @@ async def _process_publish_response_for_endorsement(
 
             await outbound_handler(transaction_request, connection_id=endorser_conn_id)
 
-        txn_responses.append({"txn": transaction.serialize()})
+        txn_responses.append(transaction.serialize())
 
     return txn_responses
 
