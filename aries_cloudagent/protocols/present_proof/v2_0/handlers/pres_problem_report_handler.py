@@ -4,7 +4,6 @@ from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
-
 from ..manager import V20PresManager
 from ..messages.pres_problem_report import V20PresProblemReport
 

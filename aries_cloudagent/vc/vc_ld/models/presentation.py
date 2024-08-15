@@ -3,6 +3,7 @@
 from typing import List, Optional, Union
 
 from marshmallow import INCLUDE, ValidationError, fields, post_dump
+
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     CREDENTIAL_CONTEXT_VALIDATE,

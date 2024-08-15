@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-
 from .controller_proof_purpose import ControllerProofPurpose
 
 # Avoid circular dependency

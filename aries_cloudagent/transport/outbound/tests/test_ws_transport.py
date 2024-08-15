@@ -1,11 +1,10 @@
 import asyncio
 import json
 
+from aiohttp import WSMsgType, web
 from aiohttp.test_utils import AioHTTPTestCase
-from aiohttp import web, WSMsgType
 
 from ....core.in_memory import InMemoryProfile
-
 from ..ws import WsTransport
 
 

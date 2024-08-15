@@ -1,9 +1,7 @@
 """Message and inner object type identifiers for Out of Band messages."""
 
 from ....messaging.util import get_proto_default_version
-
 from ...didcomm_prefix import DIDCommPrefix
-
 from ..definition import versions
 
 SPEC_URI = (

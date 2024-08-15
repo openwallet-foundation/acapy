@@ -1,9 +1,9 @@
 from ecdsa import ECDH, NIST256p, SigningKey
 
 from ..derive_ecdh import (
+    concat_kdf,
     derive_shared_secret,
     derive_shared_secret_from_key,
-    concat_kdf,
 )
 
 

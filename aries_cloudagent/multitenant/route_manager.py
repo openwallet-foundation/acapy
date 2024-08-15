@@ -24,7 +24,6 @@ from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..storage.error import StorageNotFoundError
 from .base import BaseMultitenantManager
 
-
 LOGGER = logging.getLogger(__name__)
 
 

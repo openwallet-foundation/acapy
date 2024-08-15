@@ -1,8 +1,8 @@
 """Utilities for working with Message Types and Versions."""
 
+import re
 from dataclasses import dataclass
 from functools import lru_cache
-import re
 from typing import ClassVar, Pattern, Tuple, Union
 
 

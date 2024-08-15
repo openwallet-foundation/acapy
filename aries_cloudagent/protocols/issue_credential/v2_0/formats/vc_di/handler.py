@@ -7,40 +7,14 @@ import datetime
 import json
 import logging
 from typing import Mapping, Tuple
-from ...models.cred_ex_record import V20CredExRecord
+
 from anoncreds import W3cCredential
-from ...models.detail.indy import (
-    V20CredExRecordIndy,
-)
-from .models.cred import (
-    VCDIIndyCredentialSchema,
-)
-from .models.cred_request import (
-    AnoncredsLinkSecretRequest,
-    BindingProof,
-    DidcommSignedAttachmentRequest,
-    VCDICredRequest,
-    VCDICredRequestSchema,
-)
-
-from ......vc.vc_ld import VerifiableCredential
-
-from .models.cred_offer import (
-    AnoncredsLinkSecret,
-    BindingMethod,
-    DidcommSignedAttachment,
-    VCDICredAbstract,
-    VCDICredAbstractSchema,
-)
 from marshmallow import RAISE
 
-from ......anoncreds.revocation import AnonCredsRevocation
-
-from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ......anoncreds.issuer import (
-    AnonCredsIssuer,
-)
+from ......anoncreds.issuer import AnonCredsIssuer
+from ......anoncreds.registry import AnonCredsRegistry
+from ......anoncreds.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
@@ -55,6 +29,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
+from ......vc.vc_ld import VerifiableCredential
 from ......wallet.base import BaseWallet
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -68,8 +43,24 @@ from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_offer import V20CredOffer
 from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_request import V20CredRequest
-
+from ...models.cred_ex_record import V20CredExRecord
+from ...models.detail.indy import V20CredExRecordIndy
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+from .models.cred import VCDIIndyCredentialSchema
+from .models.cred_offer import (
+    AnoncredsLinkSecret,
+    BindingMethod,
+    DidcommSignedAttachment,
+    VCDICredAbstract,
+    VCDICredAbstractSchema,
+)
+from .models.cred_request import (
+    AnoncredsLinkSecretRequest,
+    BindingProof,
+    DidcommSignedAttachmentRequest,
+    VCDICredRequest,
+    VCDICredRequestSchema,
+)
 
 LOGGER = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@
 
 from collections import OrderedDict
 
-from ..core.error import ProfileError
 from ..config.settings import BaseSettings
+from ..core.error import ProfileError
 
 
 def get_write_ledger_config_for_profile(settings: BaseSettings) -> dict:

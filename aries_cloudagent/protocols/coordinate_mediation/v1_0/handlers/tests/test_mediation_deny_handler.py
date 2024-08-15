@@ -1,7 +1,8 @@
 """Test mediate deny message handler."""
 
-import pytest
 from unittest import IsolatedAsyncioTestCase
+
+import pytest
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException

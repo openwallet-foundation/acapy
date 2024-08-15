@@ -1,28 +1,27 @@
 """Tests for Domain Txn Handling Utils."""
 
-import base58
 import json
-
 from copy import deepcopy
-
 from unittest import TestCase
+
+import base58
 
 from ..domain_txn_handler import (
     _extract_attr_typed_value,
-    parse_attr_txn,
     decode_state_value,
     extract_params_write_request,
     hash_of,
     make_state_path_for_attr,
+    parse_attr_txn,
     prepare_attr_for_state,
+    prepare_claim_def_for_state,
+    prepare_get_claim_def_for_state,
+    prepare_get_revoc_reg_entry_for_state,
     prepare_nym_for_state,
+    prepare_revoc_def_for_state,
+    prepare_revoc_reg_entry_accum_for_state,
     prepare_revoc_reg_entry_for_state,
     prepare_schema_for_state,
-    prepare_get_claim_def_for_state,
-    prepare_claim_def_for_state,
-    prepare_revoc_def_for_state,
-    prepare_get_revoc_reg_entry_for_state,
-    prepare_revoc_reg_entry_accum_for_state,
 )
 
 CLAIM_DEF_TXN = {

@@ -1,33 +1,34 @@
 from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
+from ...core.in_memory import InMemoryProfile
+from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import BLS12381G2
 from ...wallet.util import b58_to_bytes
-from ...wallet.in_memory import InMemoryWallet
-from ...core.in_memory import InMemoryProfile
 from ..ld_proofs import (
-    WalletKeyPair,
     AssertionProofPurpose,
-    verify,
-    sign,
-    derive,
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
+    WalletKeyPair,
+    derive,
+    sign,
+    verify,
 )
-from .document_loader import custom_document_loader
 from .data import (
-    BBS_PARTIAL_PROOF_NESTED_VC_MATTR,
-    BBS_VC_MATTR,
+    BBS_NESTED_VC_FULL_REVEAL_DOCUMENT_MATTR,
     BBS_NESTED_VC_MATTR,
-    BBS_VC_REVEAL_DOCUMENT_MATTR,
+    BBS_NESTED_VC_REVEAL_DOCUMENT_MATTR,
+    BBS_PARTIAL_PROOF_NESTED_VC_MATTR,
     BBS_PARTIAL_PROOF_VC_MATTR,
     BBS_PROOF_NESTED_VC_MATTR,
     BBS_PROOF_VC_MATTR,
     BBS_SIGNED_NESTED_VC_MATTR,
     BBS_SIGNED_VC_MATTR,
-    BBS_NESTED_VC_REVEAL_DOCUMENT_MATTR,
-    BBS_NESTED_VC_FULL_REVEAL_DOCUMENT_MATTR,
+    BBS_VC_MATTR,
+    BBS_VC_REVEAL_DOCUMENT_MATTR,
 )
+from .document_loader import custom_document_loader
 
 
 @pytest.mark.ursa_bbs_signatures

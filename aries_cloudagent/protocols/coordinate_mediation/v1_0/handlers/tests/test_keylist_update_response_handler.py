@@ -2,20 +2,19 @@
 
 from functools import partial
 from typing import AsyncGenerator
-import pytest
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
 
+import pytest
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.event_bus import EventBus, MockEventBus
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ...manager import MediationManager
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.inner.keylist_updated import KeylistUpdated
 from ...messages.keylist_update_response import KeylistUpdateResponse
-from ...manager import MediationManager
 from ...route_manager import RouteManager
 from ...tests.test_route_manager import MockRouteManager
 from ..keylist_update_response_handler import KeylistUpdateResponseHandler

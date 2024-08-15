@@ -12,8 +12,8 @@ from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMetho
 from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
 from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..resolver.did_resolver import DIDResolver
-from .default_verification_key_strategy import BaseVerificationKeyStrategy
 from .base import BaseWallet
+from .default_verification_key_strategy import BaseVerificationKeyStrategy
 from .key_type import ED25519
 from .util import b64_to_bytes, bytes_to_b64
 

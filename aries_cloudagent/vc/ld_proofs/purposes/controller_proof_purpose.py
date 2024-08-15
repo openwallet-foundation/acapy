@@ -2,14 +2,13 @@
 
 from typing import TYPE_CHECKING
 
-from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-
 from .proof_purpose import ProofPurpose
 
 # Avoid circular dependency

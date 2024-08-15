@@ -6,10 +6,8 @@ from typing import List
 from pyld import jsonld
 
 from ....utils.dependencies import is_ursa_bbs_signatures_module_installed
-
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
-
 from .linked_data_proof import LinkedDataProof
 
 

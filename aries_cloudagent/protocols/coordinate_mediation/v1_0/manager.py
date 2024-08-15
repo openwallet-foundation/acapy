@@ -27,10 +27,7 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
-from .normalization import (
-    normalize_from_did_key,
-    normalize_to_did_key,
-)
+from .normalization import normalize_from_did_key, normalize_to_did_key
 
 LOGGER = logging.getLogger(__name__)
 

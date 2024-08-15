@@ -4,17 +4,17 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from ..messaging.agent_message import AgentMessage
 from ..connections.models.conn_record import ConnRecord
 from ..connections.models.connection_target import ConnectionTarget
+from ..messaging.agent_message import AgentMessage
 from ..messaging.decorators.service_decorator import ServiceDecorator
 from ..messaging.request_context import RequestContext
 from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.issue_credential.v1_0.message_types import CREDENTIAL_OFFER
 from ..protocols.issue_credential.v2_0.message_types import CRED_20_OFFER
+from ..protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ..protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ..protocols.present_proof.v2_0.message_types import PRES_20_REQUEST
-from ..protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ..storage.error import StorageNotFoundError
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage

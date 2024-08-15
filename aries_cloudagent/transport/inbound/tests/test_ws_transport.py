@@ -1,20 +1,19 @@
 import asyncio
 import json
-import pytest
 
+import pytest
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
+
 from aries_cloudagent.tests import mock
 
+from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
-
 from ...outbound.message import OutboundMessage
 from ...wire_format import JsonWireFormat
-from ....config.injection_context import InjectionContext
-
+from .. import ws as test_module
 from ..message import InboundMessage
 from ..session import InboundSession
 from ..ws import WsTransport
-from .. import ws as test_module
 
 
 class TestWsTransport(AioHTTPTestCase):

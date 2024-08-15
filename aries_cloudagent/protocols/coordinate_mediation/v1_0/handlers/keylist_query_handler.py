@@ -4,7 +4,6 @@ from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageNotFoundError
-
 from ..manager import MediationManager, MediationNotGrantedError
 from ..messages.keylist_query import KeylistQuery
 from ..messages.problem_report import CMProblemReport, ProblemReportReason

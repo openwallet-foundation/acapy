@@ -1,7 +1,6 @@
 """BbsBlsSignatureProof2020 class."""
 
 import re
-
 from os import urandom
 from typing import List
 
@@ -23,13 +22,11 @@ if BbsBlsSignature2020Base.BBS_SUPPORTED:
 
 from ....utils.dependencies import assert_ursa_bbs_signatures_installed
 from ....wallet.util import b64_to_bytes, bytes_to_b64
-
 from ..crypto import _KeyPair as KeyPair
-from ..error import LinkedDataProofException
-from ..validation_result import ProofResult
 from ..document_loader import DocumentLoaderMethod
+from ..error import LinkedDataProofException
 from ..purposes import _ProofPurpose as ProofPurpose
-
+from ..validation_result import ProofResult
 from .bbs_bls_signature_2020 import BbsBlsSignature2020
 from .linked_data_proof import DeriveProofResult
 

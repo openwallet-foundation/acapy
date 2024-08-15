@@ -1,9 +1,9 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ...config.injection_context import InjectionContext
 from ...utils.classloader import ClassLoader, DeferLoad
-
 from ..protocol_registry import ProtocolRegistry
 
 

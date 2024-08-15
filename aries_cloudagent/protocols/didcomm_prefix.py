@@ -1,7 +1,6 @@
 """DIDComm prefix management."""
 
 import re
-
 from enum import Enum
 
 QUALIFIED = re.compile(r"^[a-zA-Z\-\+]+:.+")

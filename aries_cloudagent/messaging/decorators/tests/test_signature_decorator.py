@@ -1,9 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ....wallet.key_type import ED25519
 from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
 from ....wallet.in_memory import InMemoryWallet
+from ....wallet.key_type import ED25519
 from ..signature_decorator import SignatureDecorator
 
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"

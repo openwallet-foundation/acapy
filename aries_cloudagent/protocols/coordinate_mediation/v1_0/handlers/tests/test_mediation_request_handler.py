@@ -1,20 +1,19 @@
 """Test mediate request message handler."""
 
-import pytest
 from unittest import IsolatedAsyncioTestCase
+
+import pytest
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
+from ......wallet.did_method import DIDMethods
 from ...messages.mediate_grant import MediationGrant
 from ...messages.mediate_request import MediationRequest
 from ...messages.problem_report import CMProblemReport
 from ...models.mediation_record import MediationRecord
-
 from ..mediation_request_handler import MediationRequestHandler
-from ......wallet.did_method import DIDMethods
 
 TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"

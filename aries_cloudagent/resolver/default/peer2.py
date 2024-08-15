@@ -5,7 +5,7 @@ Resolution is performed using the peer-did-python library https://github.com/sic
 
 from typing import Optional, Pattern, Sequence, Text
 
-from did_peer_2 import resolve, PATTERN
+from did_peer_2 import PATTERN, resolve
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile

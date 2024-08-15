@@ -4,7 +4,6 @@ from .....core.event_bus import EventBus, MockEventBus
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 from .....transport.inbound.receipt import MessageReceipt
-
 from ..handler import ProblemReportHandler
 from ..message import ProblemReport
 

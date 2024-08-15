@@ -1,10 +1,8 @@
 """The classloader provides utilities to dynamically load classes and modules."""
 
 import inspect
-from importlib import resources
 import sys
-
-from importlib import import_module
+from importlib import import_module, resources
 from importlib.util import find_spec, resolve_name
 from types import ModuleType
 from typing import Optional, Sequence, Type

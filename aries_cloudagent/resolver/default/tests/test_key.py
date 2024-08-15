@@ -5,7 +5,6 @@ import pytest
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....messaging.valid import DIDKey
-
 from ...base import DIDNotFound
 from ..key import KeyDIDResolver
 

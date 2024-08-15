@@ -1,8 +1,6 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import DISCLOSE, PROTOCOL_PACKAGE
 from ..disclose import Disclose
 

@@ -5,16 +5,7 @@ import json
 import logging
 import os
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import yaml
 from configargparse import ArgumentParser

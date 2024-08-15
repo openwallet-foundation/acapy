@@ -1,19 +1,18 @@
 import asyncio
 import logging
+from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
 from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 
 from .....core.in_memory import InMemoryProfile
-from .....storage.error import StorageNotFoundError
 from .....messaging.responder import BaseResponder, MockResponder
-
+from .....storage.error import StorageNotFoundError
 from ....didcomm_prefix import DIDCommPrefix
-
 from ..manager import V20DiscoveryMgr, V20DiscoveryMgrError
-from ..messages.queries import Queries, QueryItem
 from ..messages.disclosures import Disclosures
+from ..messages.queries import Queries, QueryItem
 from ..models.discovery_record import V20DiscoveryExchangeRecord
 
 TEST_DISCOVERY_EX_REC = V20DiscoveryExchangeRecord(

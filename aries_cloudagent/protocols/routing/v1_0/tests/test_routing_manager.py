@@ -1,16 +1,13 @@
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 
 from marshmallow import ValidationError
 
-from .....messaging.request_context import RequestContext
-from .....storage.error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-)
-from .....transport.inbound.receipt import MessageReceipt
+from aries_cloudagent.tests import mock
 
-from ..manager import RoutingManager, RoutingManagerError, RouteNotFoundError
+from .....messaging.request_context import RequestContext
+from .....storage.error import StorageDuplicateError, StorageNotFoundError
+from .....transport.inbound.receipt import MessageReceipt
+from ..manager import RouteNotFoundError, RoutingManager, RoutingManagerError
 from ..models.route_record import RouteRecord, RouteRecordSchema
 
 TEST_CONN_ID = "conn-id"

@@ -1,23 +1,20 @@
 from unittest import IsolatedAsyncioTestCase
 
-from .....did.did_key import DIDKey
-from .....wallet.key_type import ED25519
-from .....wallet.in_memory import InMemoryWallet
 from .....core.in_memory import InMemoryProfile
-
-from ....tests.document_loader import custom_document_loader
+from .....did.did_key import DIDKey
+from .....wallet.in_memory import InMemoryWallet
+from .....wallet.key_type import ED25519
 from ....tests.data import (
     TEST_LD_DOCUMENT,
-    TEST_LD_DOCUMENT_SIGNED_ED25519,
     TEST_LD_DOCUMENT_BAD_SIGNED_ED25519,
+    TEST_LD_DOCUMENT_SIGNED_ED25519,
     TEST_VC_DOCUMENT,
     TEST_VC_DOCUMENT_SIGNED_ED25519,
 )
-
+from ....tests.document_loader import custom_document_loader
 from ...crypto.wallet_key_pair import WalletKeyPair
-from ...purposes.assertion_proof_purpose import AssertionProofPurpose
 from ...ld_proofs import sign, verify
-
+from ...purposes.assertion_proof_purpose import AssertionProofPurpose
 from ..ed25519_signature_2018 import Ed25519Signature2018
 
 

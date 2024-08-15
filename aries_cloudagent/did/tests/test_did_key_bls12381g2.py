@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ...wallet.key_type import BLS12381G2
 from ...wallet.util import b58_to_bytes
-from ..did_key import DIDKey, DID_KEY_RESOLVERS
+from ..did_key import DID_KEY_RESOLVERS, DIDKey
 from .test_dids import (
     DID_BLS12381G2_zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5F93pSGYYco3gpK9tc53ruWUo2tkBB9bxPCFBUjq2th8FbtT4xih6y6Q1K9EL4Th86NiCGT,
 )

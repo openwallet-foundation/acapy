@@ -17,17 +17,11 @@ from anoncreds import (
 )
 from aries_askar import AskarError
 
-from ..askar.profile_anon import (
-    AskarAnoncredsProfile,
-    AskarAnoncredsProfileSession,
-)
+from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from .base import (
-    AnonCredsSchemaAlreadyExists,
-    BaseAnonCredsError,
-)
+from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import CredDefFinishedEvent
 from .models.anoncreds_cred_def import CredDef, CredDefResult

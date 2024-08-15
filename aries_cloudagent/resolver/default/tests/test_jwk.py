@@ -4,7 +4,6 @@ import pytest
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
-
 from ...base import DIDMethodNotSupported
 from ..jwk import JwkDIDResolver
 

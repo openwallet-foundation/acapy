@@ -1,10 +1,9 @@
 import sys
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ...config.error import ArgsParseError
+from aries_cloudagent.tests import mock
 
+from ...config.error import ArgsParseError
 from .. import start as test_module
 
 

@@ -16,8 +16,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from base58 import b58decode
 from urllib.parse import urlparse
+
+from base58 import b58decode
 
 
 def resource(ref: str, delimiter: str = None) -> str:

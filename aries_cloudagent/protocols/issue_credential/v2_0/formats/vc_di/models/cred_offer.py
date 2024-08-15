@@ -12,10 +12,7 @@ from .......messaging.valid import (
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
-from .......vc.vc_ld.models.credential import (
-    CredentialSchema,
-    VerifiableCredential,
-)
+from .......vc.vc_ld.models.credential import CredentialSchema, VerifiableCredential
 
 
 class AnoncredsLinkSecret(BaseModel):

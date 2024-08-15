@@ -4,19 +4,11 @@ import asyncio
 import logging
 import urllib.parse
 
-from aiohttp import (
-    BaseConnector,
-    ClientError,
-    ClientResponse,
-    ClientSession,
-    FormData,
-)
+from aiohttp import BaseConnector, ClientError, ClientResponse, ClientSession, FormData
 from aiohttp.web import HTTPConflict
 
 from ..core.error import BaseError
-
 from .repeat import RepeatSequence
-
 
 LOGGER = logging.getLogger(__name__)
 

@@ -1,8 +1,6 @@
-from unittest import TestCase
-from unittest import mock
+from unittest import TestCase, mock
 
 from ...core.error import BaseError
-
 from .. import classloader as test_module
 from ..classloader import ClassLoader, ClassNotFoundError, ModuleLoadError
 

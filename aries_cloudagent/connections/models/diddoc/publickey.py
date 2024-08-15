@@ -21,7 +21,6 @@ from enum import Enum
 
 from .util import canon_did, canon_ref
 
-
 LinkedDataKeySpec = namedtuple("LinkedDataKeySpec", "ver_type authn_type specifier")
 
 

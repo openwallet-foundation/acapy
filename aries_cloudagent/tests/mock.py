@@ -1,6 +1,6 @@
 """Mock utilities."""
 
-from unittest.mock import AsyncMock, MagicMock, patch, create_autospec, Mock, ANY
+from unittest.mock import ANY, AsyncMock, MagicMock, Mock, create_autospec, patch
 
 
 def CoroutineMock(*args, **kwargs):

@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import ROTATE, PROTOCOL_PACKAGE
+from ..message_types import PROTOCOL_PACKAGE, ROTATE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.rotate_handler.RotateHandler"
 

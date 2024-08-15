@@ -1,16 +1,14 @@
 """Profile manager for multiple Indy ledger support."""
 
 import logging
-
 from collections import OrderedDict
 
 from ...cache.base import BaseCache
+from ...config.injector import BaseInjector, InjectionError
 from ...config.provider import BaseProvider
 from ...config.settings import BaseSettings
-from ...config.injector import BaseInjector, InjectionError
 from ...core.profile import Profile
 from ...utils.classloader import ClassNotFoundError, DeferLoad
-
 from .base_manager import MultipleLedgerManagerError
 
 LOGGER = logging.getLogger(__name__)

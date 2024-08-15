@@ -1,9 +1,7 @@
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import DIDX_COMPLETE
 from ..complete import DIDXComplete
 

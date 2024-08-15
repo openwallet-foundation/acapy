@@ -1,11 +1,11 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-
 from .. import indy_tails_server as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

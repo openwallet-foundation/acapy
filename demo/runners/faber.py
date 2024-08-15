@@ -22,12 +22,7 @@ from runners.support.agent import (  # noqa:E402
     CRED_FORMAT_VC_DI,
     SIG_TYPE_BLS,
 )
-from runners.support.utils import (  # noqa:E402
-    log_msg,
-    log_status,
-    prompt,
-    prompt_loop,
-)
+from runners.support.utils import log_msg, log_status, prompt, prompt_loop  # noqa:E402
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")

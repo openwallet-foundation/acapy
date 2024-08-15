@@ -4,8 +4,8 @@ from ....config.base import BaseInjector, BaseProvider, BaseSettings
 from ....core.profile import Profile
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.route_manager import (
-    MultitenantRouteManager,
     BaseWalletRouteManager,
+    MultitenantRouteManager,
 )
 from .route_manager import CoordinateMediationV1RouteManager
 

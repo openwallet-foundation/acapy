@@ -1,10 +1,9 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.tests import mock
+
 from ....core.in_memory import InMemoryProfile
-
 from ...outbound.message import OutboundMessage
-
 from ...wire_format import BaseWireFormat
 from ..base import InboundTransportConfiguration, InboundTransportRegistrationError
 from ..manager import InboundTransportManager

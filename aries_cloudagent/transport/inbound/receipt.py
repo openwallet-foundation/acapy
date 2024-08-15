@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+
 from ...messaging.base_message import DIDCommVersion
 
 

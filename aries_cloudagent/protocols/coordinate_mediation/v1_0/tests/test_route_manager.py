@@ -1,12 +1,13 @@
-from aries_cloudagent.tests import mock
 import pytest
+
+from aries_cloudagent.tests import mock
 
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
-from .....wallet.base import BaseWallet
 from .....core.profile import Profile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
+from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
 from .....wallet.did_method import SOV
 from .....wallet.in_memory import InMemoryWallet

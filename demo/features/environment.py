@@ -1,6 +1,4 @@
-from bdd_support.agent_backchannel_client import (
-    aries_container_terminate,
-)
+from bdd_support.agent_backchannel_client import aries_container_terminate
 
 
 def before_feature(context, feature):

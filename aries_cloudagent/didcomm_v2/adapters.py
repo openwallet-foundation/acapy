@@ -2,6 +2,7 @@
 
 import logging
 from typing import Optional, cast
+
 from aries_askar import Key
 
 try:
@@ -11,11 +12,10 @@ try:
 except ModuleNotFoundError as err:
     raise ImportError("Install the didcommv2 extra to use this module.") from err
 
+from ..askar.profile import AskarProfileSession
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..resolver.did_resolver import DIDResolver
-from ..askar.profile import AskarProfileSession
-
 
 LOGGER = logging.getLogger(__name__)
 

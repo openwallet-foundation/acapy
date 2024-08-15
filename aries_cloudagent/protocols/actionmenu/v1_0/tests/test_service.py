@@ -1,10 +1,8 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .....core.event_bus import EventBus, MockEventBus
 from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
-
 from .. import driver_service as test_module
 
 

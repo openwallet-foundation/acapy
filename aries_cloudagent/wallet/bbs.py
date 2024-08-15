@@ -10,20 +10,10 @@ from ..utils.dependencies import (
 from ..wallet.util import random_seed
 
 if is_ursa_bbs_signatures_module_installed():
-    from ursa_bbs_signatures import (
-        BbsException as NativeBbsException,
-    )
-    from ursa_bbs_signatures import (
-        BlsKeyPair,
-        SignRequest,
-        VerifyRequest,
-    )
-    from ursa_bbs_signatures import (
-        sign as bbs_sign,
-    )
-    from ursa_bbs_signatures import (
-        verify as bbs_verify,
-    )
+    from ursa_bbs_signatures import BbsException as NativeBbsException
+    from ursa_bbs_signatures import BlsKeyPair, SignRequest, VerifyRequest
+    from ursa_bbs_signatures import sign as bbs_sign
+    from ursa_bbs_signatures import verify as bbs_verify
     from ursa_bbs_signatures._ffi.FfiException import FfiException
 
 

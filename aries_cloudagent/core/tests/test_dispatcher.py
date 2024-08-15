@@ -1,10 +1,10 @@
 import json
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
-import pytest
 
+import pytest
 from marshmallow import EXCLUDE
+
+from aries_cloudagent.tests import mock
 
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
@@ -15,18 +15,17 @@ from ...core.profile import Profile
 from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 from ...messaging.request_context import RequestContext
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.issue_credential.v2_0.message_types import CRED_20_PROBLEM_REPORT
 from ...protocols.issue_credential.v2_0.messages.cred_problem_report import (
     V20CredProblemReport,
 )
 from ...protocols.problem_report.v1_0.message import ProblemReport
-from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.message import OutboundMessage
 from ...utils.stats import Collector
-
 from .. import dispatcher as test_module
 
 

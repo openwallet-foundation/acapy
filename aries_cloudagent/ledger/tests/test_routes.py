@@ -7,9 +7,7 @@ from ...connections.models.conn_record import ConnRecord
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.endpoint_type import EndpointType
-from ...ledger.multiple_ledger.base_manager import (
-    BaseMultipleLedgerManager,
-)
+from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )

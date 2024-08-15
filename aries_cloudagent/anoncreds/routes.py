@@ -26,10 +26,7 @@ from ..messaging.valid import (
     UUIDFour,
 )
 from ..revocation.error import RevocationNotSupportedError
-from ..revocation.routes import (
-    RevocationModuleResponseSchema,
-    RevRegIdMatchInfoSchema,
-)
+from ..revocation.routes import RevocationModuleResponseSchema, RevRegIdMatchInfoSchema
 from ..storage.error import StorageNotFoundError
 from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from .base import (
@@ -38,10 +35,7 @@ from .base import (
     AnonCredsResolutionError,
 )
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
-from .models.anoncreds_cred_def import (
-    CredDefResultSchema,
-    GetCredDefResultSchema,
-)
+from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
 from .models.anoncreds_schema import (
     AnonCredsSchemaSchema,

@@ -1,7 +1,10 @@
 import json
 from base64 import b64encode
-
 from unittest import IsolatedAsyncioTestCase
+
+from didcomm_messaging import DIDCommMessaging, PackResult
+from didcomm_messaging.crypto.backend.askar import CryptoServiceError
+
 from aries_cloudagent.tests import mock
 from aries_cloudagent.transport.v2_pack_format import V2PackWireFormat
 
@@ -15,10 +18,6 @@ from ...wallet.key_type import ED25519
 from .. import pack_format as test_module
 from ..error import RecipientKeysError, WireFormatEncodeError, WireFormatParseError
 from ..pack_format import PackWireFormat
-
-from didcomm_messaging import DIDCommMessaging
-from didcomm_messaging.crypto.backend.askar import CryptoServiceError
-from didcomm_messaging import PackResult
 
 
 class TestPackWireFormat(IsolatedAsyncioTestCase):

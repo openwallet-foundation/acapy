@@ -1,19 +1,17 @@
 """V2.0 issue-credential base credential format handler."""
 
-from abc import ABC, abstractclassmethod, abstractmethod
 import logging
-
+from abc import ABC, abstractclassmethod, abstractmethod
 from typing import Mapping, Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
 from .....messaging.decorators.attach_decorator import AttachDecorator
-
 from ..messages.cred_format import V20CredFormat
-from ..messages.cred_proposal import V20CredProposal
-from ..messages.cred_offer import V20CredOffer
-from ..messages.cred_request import V20CredRequest
 from ..messages.cred_issue import V20CredIssue
+from ..messages.cred_offer import V20CredOffer
+from ..messages.cred_proposal import V20CredProposal
+from ..messages.cred_request import V20CredRequest
 from ..models.cred_ex_record import V20CredExRecord
 
 LOGGER = logging.getLogger(__name__)

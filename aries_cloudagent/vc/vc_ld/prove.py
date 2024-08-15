@@ -2,15 +2,14 @@
 
 from typing import List
 
-
 from ..ld_proofs import (
     AuthenticationProofPurpose,
-    ProofPurpose,
     DocumentLoaderMethod,
-    sign,
     LinkedDataProof,
     LinkedDataProofException,
+    ProofPurpose,
     derive,
+    sign,
 )
 from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
 from .models.credential import VerifiableCredentialSchema

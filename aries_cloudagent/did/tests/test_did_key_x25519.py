@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ...wallet.key_type import X25519
 from ...wallet.util import b58_to_bytes
-from ..did_key import DIDKey, DID_KEY_RESOLVERS
+from ..did_key import DID_KEY_RESOLVERS, DIDKey
 from .test_dids import DID_X25519_z6LShLeXRTzevtwcfehaGEzCMyL3bNsAeKCwcqwJxyCo63yE
 
 TEST_X25519_BASE58_KEY = "6fUMuABnqSDsaGKojbUF3P7ZkEL3wi2njsDdUWZGNgCU"

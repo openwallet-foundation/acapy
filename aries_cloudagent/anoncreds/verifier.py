@@ -11,9 +11,9 @@ from anoncreds import AnoncredsError, Presentation, W3cPresentation
 from ..core.profile import Profile
 from ..indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..messaging.util import canon, encode
+from ..vc.vc_ld.validation_result import PresentationVerificationResult
 from .models.anoncreds_cred_def import GetCredDefResult
 from .registry import AnonCredsRegistry
-from ..vc.vc_ld.validation_result import PresentationVerificationResult
 
 LOGGER = logging.getLogger(__name__)
 

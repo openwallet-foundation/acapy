@@ -1,9 +1,7 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
-from ...message_types import QUERIES, PROTOCOL_PACKAGE
+from ...message_types import PROTOCOL_PACKAGE, QUERIES
 from ..queries import Queries, QueryItem
 
 TEST_QUERY_PROTOCOL = "https://didcomm.org/tictactoe/1.*"

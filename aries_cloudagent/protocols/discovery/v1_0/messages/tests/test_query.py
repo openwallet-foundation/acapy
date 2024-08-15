@@ -1,9 +1,7 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
-from ...message_types import QUERY, PROTOCOL_PACKAGE
+from ...message_types import PROTOCOL_PACKAGE, QUERY
 from ..query import Query
 
 

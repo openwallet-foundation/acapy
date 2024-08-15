@@ -1,18 +1,18 @@
 """Test LegacyPeerDIDResolver."""
 
-from aries_cloudagent.tests import mock
 import pydid
 import pytest
 
-from .. import legacy_peer as test_module
+from aries_cloudagent.tests import mock
+
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....connections.models.diddoc.diddoc import DIDDoc
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....storage.error import StorageNotFoundError
+from .. import legacy_peer as test_module
 from ..legacy_peer import LegacyPeerDIDResolver
-
 
 TEST_DID0 = "did:sov:WgWxqztrNooG92RXvxSTWv"
 TEST_DID1 = "did:example:abc123"

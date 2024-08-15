@@ -8,11 +8,10 @@ from ..util import (
     bytes_to_b64,
     full_verkey,
     pad,
-    str_to_b64,
     set_urlsafe_b64,
+    str_to_b64,
     unpad,
 )
-
 
 BYTES = b"\xe0\xa0\xbe"  # chr(2110).encode(), least with + in b64 encoding
 STR = "Hello World"  # b64encodes to SGVsbG8gV29ybGQ=

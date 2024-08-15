@@ -1,22 +1,17 @@
+from unittest import TestCase, mock
+
 import pytest
 
-from unittest import mock
-from unittest import TestCase
-
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CREDENTIAL_PROBLEM_REPORT, PROTOCOL_PACKAGE
-
+from .. import credential_problem_report as test_module
 from ..credential_problem_report import (
     CredentialProblemReport,
     CredentialProblemReportSchema,
     ProblemReportReason,
     ValidationError,
 )
-
-from .. import credential_problem_report as test_module
 
 
 class TestCredentialProblemReport(TestCase):

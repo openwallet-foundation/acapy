@@ -1,5 +1,5 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
+
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
@@ -7,20 +7,18 @@ from aries_cloudagent.wallet.key_type import BLS12381G2
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....wallet.in_memory import InMemoryWallet
-from ....tests.document_loader import custom_document_loader
 from ....tests.data import (
     TEST_LD_DOCUMENT,
-    TEST_LD_DOCUMENT_SIGNED_BBS,
     TEST_LD_DOCUMENT_BAD_SIGNED_BBS,
+    TEST_LD_DOCUMENT_SIGNED_BBS,
     TEST_VC_DOCUMENT,
     TEST_VC_DOCUMENT_SIGNED_BBS,
 )
-
-from ...error import LinkedDataProofException
+from ....tests.document_loader import custom_document_loader
 from ...crypto.wallet_key_pair import WalletKeyPair
-from ...purposes.assertion_proof_purpose import AssertionProofPurpose
+from ...error import LinkedDataProofException
 from ...ld_proofs import sign, verify
-
+from ...purposes.assertion_proof_purpose import AssertionProofPurpose
 from ..bbs_bls_signature_2020 import BbsBlsSignature2020
 
 

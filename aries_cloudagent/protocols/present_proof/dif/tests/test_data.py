@@ -3,7 +3,6 @@
 import json
 
 from .....storage.vc_holder.vc_record import VCRecord
-
 from ..pres_exch import PresentationDefinition
 
 

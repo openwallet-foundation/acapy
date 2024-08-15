@@ -4,7 +4,6 @@ from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
-
 from ..manager import CredentialManager
 from ..messages.credential_problem_report import CredentialProblemReport
 

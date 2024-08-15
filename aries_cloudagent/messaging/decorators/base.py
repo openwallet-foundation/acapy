@@ -7,7 +7,6 @@ from marshmallow import Schema
 from marshmallow.fields import Field
 
 from ...core.error import BaseError
-
 from ..models.base import BaseModel
 
 DECORATOR_PREFIX = "~"

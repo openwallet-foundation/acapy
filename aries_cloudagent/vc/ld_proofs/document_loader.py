@@ -2,20 +2,17 @@
 
 import asyncio
 import concurrent.futures
-
 from typing import Callable
 
+import nest_asyncio
 from pydid.did_url import DIDUrl
 from pyld.documentloader import requests
 
-from .document_downloader import StaticCacheJsonLdDownloader
 from ...cache.base import BaseCache
 from ...core.profile import Profile
 from ...resolver.did_resolver import DIDResolver
-
+from .document_downloader import StaticCacheJsonLdDownloader
 from .error import LinkedDataProofException
-
-import nest_asyncio
 
 nest_asyncio.apply()
 

@@ -1,15 +1,14 @@
 import asyncio
-import pytest
 
-from aiohttp.test_utils import AioHTTPTestCase
+import pytest
 from aiohttp import web
+from aiohttp.test_utils import AioHTTPTestCase
+
 from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....utils.stats import Collector
-
 from ...wire_format import JsonWireFormat
-
 from ..base import OutboundTransportError
 from ..http import HttpTransport
 

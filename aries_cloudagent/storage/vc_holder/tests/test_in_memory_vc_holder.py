@@ -2,10 +2,8 @@ import pytest
 
 from ....core.in_memory import InMemoryProfile
 from ...error import StorageDuplicateError, StorageNotFoundError
-
 from ..base import VCHolder
 from ..vc_record import VCRecord
-
 
 VC_CONTEXT = "https://www.w3.org/2018/credentials/v1"
 VC_TYPE = "https://www.w3.org/2018/credentials#VerifiableCredential"

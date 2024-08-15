@@ -2,18 +2,19 @@
 
 import asyncio
 from typing import List
+
 from pyld.jsonld import JsonLdProcessor
 
 from ..ld_proofs import (
-    LinkedDataProof,
+    AuthenticationProofPurpose,
     CredentialIssuancePurpose,
     DocumentLoaderMethod,
-    ProofPurpose,
-    AuthenticationProofPurpose,
-    verify as ld_proofs_verify,
     DocumentVerificationResult,
+    LinkedDataProof,
     LinkedDataProofException,
+    ProofPurpose,
 )
+from ..ld_proofs import verify as ld_proofs_verify
 from .models.credential import VerifiableCredentialSchema
 from .validation_result import PresentationVerificationResult
 

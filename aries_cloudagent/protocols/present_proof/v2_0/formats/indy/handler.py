@@ -2,9 +2,9 @@
 
 import json
 import logging
+from typing import Mapping, Tuple
 
 from marshmallow import RAISE
-from typing import Mapping, Tuple
 
 from ......core.profile import Profile
 from ......indy.holder import IndyHolder
@@ -16,19 +16,16 @@ from ......indy.util import generate_pr_nonce
 from ......indy.verifier import IndyVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
-
 from ....indy.pres_exch_handler import IndyPresExchHandler
-
 from ...message_types import (
     ATTACHMENT_FORMAT,
-    PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
 )
 from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord
-
 from ..anoncreds.handler import AnonCredsPresExchangeHandler
 from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
 

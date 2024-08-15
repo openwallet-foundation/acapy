@@ -1,6 +1,7 @@
 """Fixtures for vc holder tests."""
 
 import pytest
+
 from ..vc_record import VCRecord
 
 VC_CONTEXT = "https://www.w3.org/2018/credentials/v1"

@@ -1,12 +1,9 @@
 import pytest
 
-
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
-
 from ..base import VCHolder
 from ..vc_record import VCRecord
-
 from . import test_in_memory_vc_holder as in_memory
 
 

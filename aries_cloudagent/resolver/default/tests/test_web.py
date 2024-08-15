@@ -1,6 +1,7 @@
 """Test did:web Resolver."""
 
 import pytest
+
 from ..web import WebDIDResolver
 
 

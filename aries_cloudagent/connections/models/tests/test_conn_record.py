@@ -8,7 +8,6 @@ from ....protocols.connections.v1_0.messages.connection_request import Connectio
 from ....protocols.connections.v1_0.models.connection_detail import ConnectionDetail
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
-
 from ..conn_record import ConnRecord
 from ..diddoc.diddoc import DIDDoc
 

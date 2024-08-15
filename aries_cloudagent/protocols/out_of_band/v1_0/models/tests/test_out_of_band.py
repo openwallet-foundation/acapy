@@ -1,9 +1,9 @@
 import pytest
 
-from ..oob_record import OobRecord
-from ...messages.invitation import InvitationMessage
 from ......core.in_memory import InMemoryProfile
 from ......core.profile import ProfileSession
+from ...messages.invitation import InvitationMessage
+from ..oob_record import OobRecord
 
 
 @pytest.fixture()

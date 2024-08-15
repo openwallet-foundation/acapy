@@ -1,17 +1,14 @@
 """Verifiable Credential and Presentation verification methods."""
 
-from aries_cloudagent.anoncreds.holder import AnonCredsHolderError
-from ...core.profile import Profile
-from ...anoncreds.verifier import AnonCredsVerifier
-from ..ld_proofs import (
-    ProofPurpose,
-)
-from ..vc_ld.validation_result import PresentationVerificationResult
-from .prove import (
-    prepare_data_for_presentation,
-    _load_w3c_credentials,
-)
 from anoncreds import AnoncredsError
+
+from aries_cloudagent.anoncreds.holder import AnonCredsHolderError
+
+from ...anoncreds.verifier import AnonCredsVerifier
+from ...core.profile import Profile
+from ..ld_proofs import ProofPurpose
+from ..vc_ld.validation_result import PresentationVerificationResult
+from .prove import _load_w3c_credentials, prepare_data_for_presentation
 
 
 async def verify_signed_anoncredspresentation(

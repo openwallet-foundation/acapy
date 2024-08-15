@@ -1,6 +1,6 @@
-from ..localization_decorator import LocalizationDecorator
-
 from unittest import TestCase
+
+from ..localization_decorator import LocalizationDecorator
 
 
 class TestThreadDecorator(TestCase):

@@ -9,7 +9,6 @@ import time
 import aiohttp
 import base58
 
-
 LOGGER = logging.getLogger(__name__)
 
 

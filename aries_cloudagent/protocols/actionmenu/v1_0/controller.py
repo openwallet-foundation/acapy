@@ -3,7 +3,6 @@
 from typing import Sequence
 
 from ....config.injection_context import InjectionContext
-
 from .base_service import BaseMenuService
 
 

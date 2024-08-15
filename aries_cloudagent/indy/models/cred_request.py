@@ -8,9 +8,9 @@ from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
-    UUID4_EXAMPLE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
+    UUID4_EXAMPLE,
 )
 
 

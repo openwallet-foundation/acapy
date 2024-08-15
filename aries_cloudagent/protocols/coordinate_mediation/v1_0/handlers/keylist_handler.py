@@ -6,10 +6,8 @@ from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageNotFoundError
-
 from ..messages.keylist import Keylist
 from ..models.mediation_record import MediationRecord
-
 
 LOG = logging.getLogger(__name__)
 

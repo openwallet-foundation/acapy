@@ -1,12 +1,13 @@
-from aries_cloudagent.tests import mock
 import pytest
 
-from .. import problem_report_handler as test_module
+from aries_cloudagent.tests import mock
+
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ...manager import DIDXManagerError
 from ...messages.problem_report import DIDXProblemReport
+from .. import problem_report_handler as test_module
 
 
 @pytest.fixture()

@@ -2,11 +2,7 @@ from typing import Coroutine, Union
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
-
-from .messages.pres_problem_report import (
-    V20PresProblemReport,
-    ProblemReportReason,
-)
+from .messages.pres_problem_report import ProblemReportReason, V20PresProblemReport
 from .models.pres_exchange import V20PresExRecord
 
 

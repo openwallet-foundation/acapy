@@ -1,7 +1,7 @@
 """Environment utility methods."""
 
-from pathlib import Path
 from os import getenv
+from pathlib import Path
 
 
 def storage_path(*subpaths, create: bool = False) -> Path:

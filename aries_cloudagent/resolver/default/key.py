@@ -5,11 +5,10 @@ Resolution is performed using the IndyLedger class.
 
 from typing import Optional, Pattern, Sequence, Text
 
-from ...did.did_key import DIDKey
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
+from ...did.did_key import DIDKey
 from ...messaging.valid import DIDKey as DIDKeyType
-
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
 

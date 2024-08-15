@@ -25,12 +25,8 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     SchemaResult,
     SchemaState,
 )
-from aries_cloudagent.askar.profile import (
-    AskarProfile,
-)
-from aries_cloudagent.askar.profile_anon import (
-    AskarAnoncredsProfile,
-)
+from aries_cloudagent.askar.profile import AskarProfile
+from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
 from aries_cloudagent.core.event_bus import Event, MockEventBus
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,

@@ -3,9 +3,9 @@
 Resolution is performed by looking up a stored DID Document.
 """
 
+import logging
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-import logging
 from typing import List, Optional, Sequence, Text, Union
 
 from pydid import DID
@@ -19,7 +19,6 @@ from ...messaging.valid import IndyDID
 from ...storage.error import StorageNotFoundError
 from ...wallet.key_type import ED25519
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
-
 
 LOGGER = logging.getLogger(__name__)
 

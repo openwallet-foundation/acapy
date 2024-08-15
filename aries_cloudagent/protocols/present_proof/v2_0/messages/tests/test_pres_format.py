@@ -1,8 +1,6 @@
 from unittest import TestCase
 
-
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
 from ..pres_format import V20PresFormat
 
 CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"

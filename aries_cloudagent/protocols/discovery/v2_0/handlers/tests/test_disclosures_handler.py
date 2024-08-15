@@ -1,16 +1,13 @@
 import pytest
 
-from aries_cloudagent.tests import mock
-
 from aries_cloudagent.storage.error import StorageNotFoundError
+from aries_cloudagent.tests import mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...handlers.disclosures_handler import DisclosuresHandler
 from ...messages.disclosures import Disclosures
 from ...messages.queries import Queries, QueryItem
