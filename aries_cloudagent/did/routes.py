@@ -11,7 +11,7 @@ from .web_requests import (
     DIDKeyRegistrationRequest,
     DIDKeyRegistrationResponse,
 )
-from .operators import DidKeyOperator, DidOperatorError
+from . import DidOperationError, DidKeyManager
 
 KEY_MAPPINGS = {"ed25519": ED25519}
 
@@ -30,16 +30,10 @@ async def register_did_key(request: web.BaseRequest):
     body = await request.json()
     context: AdminRequestContext = request["context"]
     try:
-        key_type = (
-            body["key_type"]
-            if "key_type" in body
-            else context.profile.settings.get("wallet.key_type")
-        )
-        did_doc = await DidKeyOperator(context.profile).register_did(
-            KEY_MAPPINGS[key_type]
-        )
+        key_type = body["key_type"]
+        did_doc = await DidKeyManager(context.profile).register(KEY_MAPPINGS[key_type])
         return web.json_response({"didDocument": did_doc}, status=201)
-    except (KeyError, ValidationError, DidOperatorError) as err:
+    except (KeyError, ValidationError, DidOperationError) as err:
         return web.json_response({"message": str(err)}, status=400)
 
 

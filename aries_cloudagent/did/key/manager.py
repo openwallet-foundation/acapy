@@ -1,18 +1,18 @@
-"""DID Key operator class."""
+"""DID Key manager class."""
 
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import KEY
 from ...wallet.base import BaseWallet
 
 
-class DidKeyOperator:
-    """Operator for managing key dids."""
+class DidKeyManager:
+    """Class for managing key dids."""
 
     def __init__(self, profile):
-        """Initialize a new `DidKeyOperator` instance."""
+        """Initialize a new `DidKeyManager` instance."""
         self.profile = profile
 
-    async def register_did(
+    async def register(
         self,
         key_type: KeyType,
     ):
@@ -25,7 +25,7 @@ class DidKeyOperator:
             A `DIDDocument` instance representing the created DID
 
         Raises:
-            DidWebOperatorError: If the an error occures during did registration
+            DidOperationError: If the an error occures during did registration
 
         """
         async with self.profile.session() as session:
@@ -46,7 +46,7 @@ class DidKeyOperator:
             A `DIDDocument` instance representing the created DID
 
         Raises:
-            DidWebOperatorError: If the an error occures during did registration
+            DidOperationError: If the an error occures during did document creation
 
         """
         verification_method = f"{did}#" + did.split(":")[-1]

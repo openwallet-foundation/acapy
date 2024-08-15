@@ -1678,17 +1678,6 @@ class WalletGroup(ArgumentGroup):
                 "recreate it during provisioning."
             ),
         )
-        parser.add_argument(
-            "--wallet-key-type",
-            type=str,
-            metavar="<wallet-key-type>",
-            default="ed25519",
-            env_var="ACAPY_WALLET_KEY_TYPE",
-            help=(
-                "The default key type to use when creating a did."
-                "This can be overwritten by options at did registration time."
-            ),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract wallet settings."""
@@ -1723,8 +1712,6 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.replace_public_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
-        if args.wallet_key_type:
-            settings["wallet.key_type"] = args.wallet_key_type
         # check required settings for persistent wallets
         if settings["wallet.type"] in ["askar", "askar-anoncreds"]:
             # requires name, key
