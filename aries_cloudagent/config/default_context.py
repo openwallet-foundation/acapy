@@ -136,6 +136,7 @@ class DefaultContextBuilder(ContextBuilder):
             plugin_registry.register_package("aries_cloudagent.protocols")
 
         # Currently providing admin routes only
+        plugin_registry.register_plugin("aries_cloudagent.did")
         plugin_registry.register_plugin("aries_cloudagent.holder")
 
         plugin_registry.register_plugin("aries_cloudagent.ledger")
