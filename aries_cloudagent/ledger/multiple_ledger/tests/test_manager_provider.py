@@ -1,13 +1,12 @@
-import pytest
-
 from unittest import IsolatedAsyncioTestCase
+
+import pytest
 
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
 from ....ledger.base import BaseLedger
 from ....ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
-
 from ..base_manager import MultipleLedgerManagerError
 from ..manager_provider import MultiIndyLedgerManagerProvider
 

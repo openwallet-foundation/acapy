@@ -7,7 +7,6 @@ from ....vc.tests.contexts import (
     SECURITY_V1,
     SECURITY_V2,
 )
-
 from . import (
     TEST_EURO_HEALTH,
     TEST_SIGN_OBJ0,

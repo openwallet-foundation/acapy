@@ -1,13 +1,13 @@
-from copy import deepcopy
 import json
-import pytest
+from copy import deepcopy
 from time import time
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
+
+import pytest
 from marshmallow import ValidationError
 
-from .. import handler as test_module
+from aries_cloudagent.tests import mock
+
 from .......anoncreds.holder import AnonCredsHolder
 from .......anoncreds.issuer import AnonCredsIssuer
 from .......anoncreds.revocation import AnonCredsRevocationRegistryFullError
@@ -23,17 +23,6 @@ from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......storage.record import StorageRecord
-
-from ....models.detail.indy import V20CredExRecordIndy
-from ....messages.cred_proposal import V20CredProposal
-from ....messages.cred_format import V20CredFormat
-from ....messages.cred_issue import V20CredIssue
-from ....messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
-from ....messages.cred_offer import V20CredOffer
-from ....messages.cred_request import (
-    V20CredRequest,
-)
-from ....models.cred_ex_record import V20CredExRecord
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -41,9 +30,18 @@ from ....message_types import (
     CRED_20_PROPOSAL,
     CRED_20_REQUEST,
 )
+from ....messages.cred_format import V20CredFormat
+from ....messages.cred_issue import V20CredIssue
+from ....messages.cred_offer import V20CredOffer
+from ....messages.cred_proposal import V20CredProposal
+from ....messages.cred_request import V20CredRequest
+from ....messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
+from ....models.cred_ex_record import V20CredExRecord
+from ....models.detail.indy import V20CredExRecordIndy
 from ...handler import V20CredFormatError
-from ..handler import AnonCredsCredFormatHandler
+from .. import handler as test_module
 from ..handler import LOGGER as INDY_LOGGER
+from ..handler import AnonCredsCredFormatHandler
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"

@@ -1,9 +1,10 @@
 import json
 import tempfile
+from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
 from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
@@ -11,9 +12,7 @@ from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
-
-from .. import issuer, holder, verifier
-
+from .. import holder, issuer, verifier
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 SCHEMA_NAME = "resident"

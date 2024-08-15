@@ -1,9 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.core.in_memory import InMemoryProfile
-
 from aries_cloudagent.did.did_key import DIDKey
-
 from aries_cloudagent.wallet.default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
 )

@@ -1,48 +1,45 @@
+import json
 from copy import deepcopy
 from time import time
-import json
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
+
 from marshmallow import ValidationError
 
-from .. import handler as test_module
+from aries_cloudagent.tests import mock
 
+from .......cache.base import BaseCache
+from .......cache.in_memory import InMemoryCache
 from .......core.in_memory import InMemoryProfile
+from .......indy.holder import IndyHolder
+from .......indy.issuer import IndyIssuer
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
-from .......multitenant.base import BaseMultitenantManager
-from .......multitenant.manager import MultitenantManager
-from .......indy.issuer import IndyIssuer
-from .......cache.in_memory import InMemoryCache
-from .......cache.base import BaseCache
-from .......storage.record import StorageRecord
 from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......indy.holder import IndyHolder
-from ....models.detail.indy import V20CredExRecordIndy
-from ....messages.cred_proposal import V20CredProposal
-from ....messages.cred_format import V20CredFormat
-from ....messages.cred_issue import V20CredIssue
-from ....messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
-from ....messages.cred_offer import V20CredOffer
-from ....messages.cred_request import (
-    V20CredRequest,
-)
-from ....models.cred_ex_record import V20CredExRecord
+from .......multitenant.base import BaseMultitenantManager
+from .......multitenant.manager import MultitenantManager
+from .......storage.record import StorageRecord
 from ....message_types import (
     ATTACHMENT_FORMAT,
-    CRED_20_PROPOSAL,
-    CRED_20_OFFER,
-    CRED_20_REQUEST,
     CRED_20_ISSUE,
+    CRED_20_OFFER,
+    CRED_20_PROPOSAL,
+    CRED_20_REQUEST,
 )
-
+from ....messages.cred_format import V20CredFormat
+from ....messages.cred_issue import V20CredIssue
+from ....messages.cred_offer import V20CredOffer
+from ....messages.cred_proposal import V20CredProposal
+from ....messages.cred_request import V20CredRequest
+from ....messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
+from ....models.cred_ex_record import V20CredExRecord
+from ....models.detail.indy import V20CredExRecordIndy
 from ...handler import V20CredFormatError
-
-from ..handler import IndyCredFormatHandler
+from .. import handler as test_module
 from ..handler import LOGGER as INDY_LOGGER
+from ..handler import IndyCredFormatHandler
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"

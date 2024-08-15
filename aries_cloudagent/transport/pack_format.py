@@ -5,18 +5,14 @@ import logging
 from typing import List, Sequence, Tuple, Union
 
 from ..core.profile import ProfileSession
-
-from ..protocols.routing.v1_0.messages.forward import Forward
-
-from ..messaging.util import time_now
 from ..messaging.base_message import DIDCommVersion
+from ..messaging.util import time_now
+from ..protocols.routing.v1_0.messages.forward import Forward
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 from ..wallet.util import b64_to_str
-
-from .error import WireFormatParseError, WireFormatEncodeError, RecipientKeysError
+from .error import RecipientKeysError, WireFormatEncodeError, WireFormatParseError
 from .inbound.receipt import MessageReceipt
-
 from .wire_format import BaseWireFormat
 
 try:

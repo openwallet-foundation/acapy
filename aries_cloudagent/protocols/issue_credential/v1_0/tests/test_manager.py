@@ -1,28 +1,27 @@
 import json
-
 from copy import deepcopy
 from time import time
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .....core.in_memory import InMemoryProfile
+from aries_cloudagent.tests import mock
+
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
+from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
-from .....messaging.decorators.thread_decorator import ThreadDecorator
-from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from .....messaging.responder import BaseResponder, MockResponder
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from .....messaging.decorators.thread_decorator import ThreadDecorator
+from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.base import StorageRecord
 from .....storage.error import StorageNotFoundError
-
+from .. import manager as test_module
 from ..manager import CredentialManager, CredentialManagerError
 from ..messages.credential_ack import CredentialAck
 from ..messages.credential_issue import CredentialIssue
@@ -30,17 +29,14 @@ from ..messages.credential_offer import CredentialOffer
 from ..messages.credential_problem_report import CredentialProblemReport
 from ..messages.credential_proposal import CredentialProposal
 from ..messages.credential_request import CredentialRequest
-from ..messages.inner.credential_preview import CredentialPreview, CredAttrSpec
+from ..messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from ..models.credential_exchange import V10CredentialExchange
-
-from .. import manager as test_module
-
 from . import (
     CRED_DEF,
     CRED_DEF_ID,
-    INDY_CRED_REQ,
     INDY_CRED,
     INDY_CRED_INFO,
+    INDY_CRED_REQ,
     INDY_OFFER,
     REV_REG_DEF,
     REV_REG_ID,

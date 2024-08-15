@@ -3,14 +3,14 @@
 # pylint: disable=redefined-outer-name
 
 import base64
+import json as jsonlib
 import os
-import pytest
 import time
 import uuid
 
-import json as jsonlib
+import pytest
 
-from . import logger, Agent, FABER, ALICE, MULTI
+from . import ALICE, FABER, MULTI, Agent, logger
 
 # add a blank line...
 logger.info("start testing mediated connections...")

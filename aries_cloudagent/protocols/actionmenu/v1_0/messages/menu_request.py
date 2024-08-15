@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import MENU_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.menu_request_handler.MenuRequestHandler"

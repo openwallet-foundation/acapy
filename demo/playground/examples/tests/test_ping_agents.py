@@ -3,11 +3,12 @@
 # pylint: disable=redefined-outer-name
 
 import os
-import pytest
 import time
 import uuid
 
-from . import logger, Agent, FABER, ALICE, MULTI
+import pytest
+
+from . import ALICE, FABER, MULTI, Agent, logger
 
 
 @pytest.fixture(scope="session")

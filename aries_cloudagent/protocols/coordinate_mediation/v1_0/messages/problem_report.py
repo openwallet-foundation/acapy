@@ -1,13 +1,11 @@
 """Represents a coordinate-mediation problem report message."""
 
 import logging
-
 from enum import Enum
 
 from marshmallow import EXCLUDE, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
-
 from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (

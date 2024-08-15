@@ -1,11 +1,10 @@
-from copy import deepcopy
 import json
+from copy import deepcopy
 from time import time
 from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.tests import mock
 
-from .. import manager as test_module
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.models.pres_preview import (
@@ -29,11 +28,10 @@ from .....vc.tests.document_loader import custom_document_loader
 from .....vc.vc_ld.manager import VcLdpManager
 from .....vc.vc_ld.validation_result import PresentationVerificationResult
 from ...indy import pres_exch_handler as test_indy_util_module
+from .. import manager as test_module
 from ..formats.dif.handler import DIFPresFormatHandler
-from ..formats.dif.tests.test_handler import (
-    DIF_PRES,
-    DIF_PRES_REQUEST_B as DIF_PRES_REQ,
-)
+from ..formats.dif.tests.test_handler import DIF_PRES
+from ..formats.dif.tests.test_handler import DIF_PRES_REQUEST_B as DIF_PRES_REQ
 from ..formats.handler import V20PresFormatHandlerError
 from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError

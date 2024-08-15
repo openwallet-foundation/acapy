@@ -1,7 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ..wallet_record import WalletRecord
 from ...error import WalletSettingsError
+from ..wallet_record import WalletRecord
 
 
 class TestWalletRecord(IsolatedAsyncioTestCase):

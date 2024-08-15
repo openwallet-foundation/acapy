@@ -1,9 +1,6 @@
 """Steps for upgrading the wallet to support anoncreds."""
 
-from bdd_support.agent_backchannel_client import (
-    agent_container_POST,
-    async_sleep,
-)
+from bdd_support.agent_backchannel_client import agent_container_POST, async_sleep
 from behave import given, then
 
 

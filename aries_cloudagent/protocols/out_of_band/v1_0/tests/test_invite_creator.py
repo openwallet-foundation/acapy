@@ -1,6 +1,7 @@
 """Test the InvitationCreator class."""
 
 from unittest.mock import MagicMock
+
 import pytest
 
 from ..manager import InvitationCreator, OutOfBandManagerError

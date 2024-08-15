@@ -1,15 +1,14 @@
 """Credential Issuance proof purpose class."""
 
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from ..constants import CREDENTIALS_ISSUER_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-
 from .assertion_proof_purpose import AssertionProofPurpose
 
 # Avoid circular dependency

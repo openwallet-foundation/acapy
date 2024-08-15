@@ -1,12 +1,7 @@
 """Action menu utility methods."""
 
 from ....admin.request_context import AdminRequestContext
-from ....storage.base import (
-    BaseStorage,
-    StorageRecord,
-    StorageNotFoundError,
-)
-
+from ....storage.base import BaseStorage, StorageNotFoundError, StorageRecord
 from .messages.menu import Menu
 
 MENU_RECORD_TYPE = "connection_action_menu"

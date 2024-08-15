@@ -9,13 +9,12 @@ from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
-from .....utils.tracing import trace_event, get_timer
+from .....utils.tracing import get_timer, trace_event
 from .....wallet.error import WalletNotFoundError
-
 from .. import problem_report_for_record
 from ..manager import PresentationManager
-from ..messages.presentation_request import PresentationRequest
 from ..messages.presentation_problem_report import ProblemReportReason
+from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
 
 

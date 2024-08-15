@@ -4,7 +4,6 @@ import json
 import re
 
 from base58 import alphabet
-
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Field
 from marshmallow.validate import OneOf, Range, Regexp, Validator

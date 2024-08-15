@@ -1,6 +1,4 @@
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
-
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .. import stats as test_module
 

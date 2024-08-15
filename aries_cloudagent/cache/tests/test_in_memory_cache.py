@@ -1,6 +1,6 @@
-import pytest
-
 from asyncio import sleep, wait_for
+
+import pytest
 
 from ..base import CacheError
 from ..in_memory import InMemoryCache

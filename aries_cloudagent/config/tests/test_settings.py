@@ -1,11 +1,11 @@
-import pytest
-
 from unittest import TestCase
+
+import pytest
 
 from aries_cloudagent.config.plugin_settings import PluginSettings
 
-from ..settings import Settings
 from ..plugin_settings import PLUGIN_CONFIG_KEY
+from ..settings import Settings
 
 
 class TestSettings(TestCase):

@@ -5,7 +5,6 @@ from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....storage.error import StorageNotFoundError
-
 from ..manager import MediationManager
 from ..messages.mediate_grant import MediationGrant
 from ..models.mediation_record import MediationRecord

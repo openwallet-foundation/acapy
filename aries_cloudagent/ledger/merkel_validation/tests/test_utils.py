@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from ..utils import encode_hex, ascii_chr
+from ..utils import ascii_chr, encode_hex
 
 
 class TestUtils(TestCase):

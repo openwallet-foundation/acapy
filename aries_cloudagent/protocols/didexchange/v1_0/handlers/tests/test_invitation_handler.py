@@ -3,12 +3,10 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
+from ......wallet.did_method import DIDMethods
 from .....out_of_band.v1_0.messages.invitation import InvitationMessage
-
 from ...handlers.invitation_handler import InvitationHandler
 from ...messages.problem_report import DIDXProblemReport, ProblemReportReason
-from ......wallet.did_method import DIDMethods
 
 
 @pytest.fixture()

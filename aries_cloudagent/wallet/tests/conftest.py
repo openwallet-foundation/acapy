@@ -1,4 +1,5 @@
 import pytest
+
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.resolver.tests.test_did_resolver import MockResolver
 from aries_cloudagent.wallet.default_verification_key_strategy import (

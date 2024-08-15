@@ -1,10 +1,6 @@
 """Connect invitation handler under RFC 23 (DID exchange)."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 

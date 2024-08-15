@@ -7,10 +7,7 @@ import time
 import aiohttp
 import base58
 import indy_vdr
-from anoncreds import (
-    RevocationRegistry,
-    RevocationRegistryDefinition,
-)
+from anoncreds import RevocationRegistry, RevocationRegistryDefinition
 
 from ...models.anoncreds_revocation import RevList
 

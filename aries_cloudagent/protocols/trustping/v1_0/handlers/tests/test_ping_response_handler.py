@@ -3,7 +3,6 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers.ping_response_handler import PingResponseHandler
 from ...messages.ping_response import PingResponse
 

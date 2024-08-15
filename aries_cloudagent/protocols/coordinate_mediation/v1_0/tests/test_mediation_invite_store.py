@@ -1,10 +1,8 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest import TestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, TestCase, mock
 
 from aries_cloudagent.protocols.coordinate_mediation.mediation_invite_store import (
-    MediationInviteStore,
     MediationInviteRecord,
+    MediationInviteStore,
     NoDefaultMediationInviteException,
 )
 from aries_cloudagent.storage.base import BaseStorage

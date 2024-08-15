@@ -1,9 +1,11 @@
 """A simple event bus."""
 
 import asyncio
-from contextlib import contextmanager
 import logging
+from contextlib import contextmanager
+from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -14,10 +16,8 @@ from typing import (
     NamedTuple,
     Optional,
     Pattern,
-    TYPE_CHECKING,
     Tuple,
 )
-from functools import partial
 
 if TYPE_CHECKING:  # To avoid circular import error
     from .profile import Profile

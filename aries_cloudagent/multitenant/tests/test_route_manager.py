@@ -1,5 +1,6 @@
-from aries_cloudagent.tests import mock
 import pytest
+
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile

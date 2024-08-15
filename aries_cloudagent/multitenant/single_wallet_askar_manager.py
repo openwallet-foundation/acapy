@@ -6,9 +6,7 @@ from ..askar.profile import AskarProfile
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
-from ..core.profile import (
-    Profile,
-)
+from ..core.profile import Profile
 from ..wallet.models.wallet_record import WalletRecord
 from .base import BaseMultitenantManager
 

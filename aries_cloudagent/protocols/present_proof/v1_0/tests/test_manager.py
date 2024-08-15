@@ -1,22 +1,20 @@
 import json
-
 from time import time
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
+from aries_cloudagent.tests import mock
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
-    IndyPresPreview,
     IndyPresPredSpec,
+    IndyPresPreview,
 )
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
@@ -24,11 +22,8 @@ from .....ledger.multiple_ledger.ledger_requests_executor import (
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
-
 from ....didcomm_prefix import DIDCommPrefix
-
 from ...indy import pres_exch_handler as test_indy_util_module
-
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
@@ -37,7 +32,6 @@ from ..messages.presentation_problem_report import PresentationProblemReport
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
-
 
 NOW = int(time())
 CONN_ID = "connection_id"

@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from ...validation_result import PurposeResult
-from ..controller_proof_purpose import ControllerProofPurpose
 from ..authentication_proof_purpose import AuthenticationProofPurpose
+from ..controller_proof_purpose import ControllerProofPurpose
 
 
 class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):

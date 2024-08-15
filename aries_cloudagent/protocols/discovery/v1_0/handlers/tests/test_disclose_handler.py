@@ -6,9 +6,7 @@ from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...handlers.disclose_handler import DiscloseHandler
 from ...messages.disclose import Disclose
 from ...messages.query import Query

@@ -13,7 +13,7 @@ from marshmallow import (
 )
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.valid import StrOrNumberField, UUID4_EXAMPLE, UUID4_VALIDATE
+from ....messaging.valid import UUID4_EXAMPLE, UUID4_VALIDATE, StrOrNumberField
 from ....vc.vc_ld.models.presentation import (
     VerifiablePresentation,
     VerifiablePresentationSchema,

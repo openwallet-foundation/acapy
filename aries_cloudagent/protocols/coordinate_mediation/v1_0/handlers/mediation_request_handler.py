@@ -3,8 +3,7 @@
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
-from ..manager import MediationManager, MediationAlreadyExists
+from ..manager import MediationAlreadyExists, MediationManager
 from ..messages.mediate_request import MediationRequest
 from ..messages.problem_report import CMProblemReport, ProblemReportReason
 

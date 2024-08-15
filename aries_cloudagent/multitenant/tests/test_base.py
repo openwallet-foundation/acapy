@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
+
 import jwt
 
-from .. import base as test_module
+from aries_cloudagent.tests import mock
+
 from ...config.base import InjectionError
 from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
@@ -21,6 +21,7 @@ from ...wallet.did_method import SOV
 from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import ED25519
 from ...wallet.models.wallet_record import WalletRecord
+from .. import base as test_module
 from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 

@@ -6,9 +6,7 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-
 from .....storage.error import StorageError
-
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.transaction_request import TransactionRequest
 from ..models.transaction_record import TransactionRecord

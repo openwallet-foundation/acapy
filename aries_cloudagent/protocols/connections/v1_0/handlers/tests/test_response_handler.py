@@ -3,12 +3,7 @@ import pytest
 from aries_cloudagent.tests import mock
 
 from ......connections.models import connection_target
-from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.trustping.v1_0.messages.ping import Ping

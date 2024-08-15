@@ -5,12 +5,7 @@ import logging
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import ProfileSession
-from ....storage.base import (
-    BaseStorage,
-    StorageRecord,
-    StorageNotFoundError,
-)
-
+from ....storage.base import BaseStorage, StorageNotFoundError, StorageRecord
 from .base_service import BaseIntroductionService, IntroductionError
 from .messages.forward_invitation import ForwardInvitation
 from .messages.invitation import Invitation as IntroInvitation

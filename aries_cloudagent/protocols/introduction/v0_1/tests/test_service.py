@@ -2,18 +2,16 @@ from unittest import IsolatedAsyncioTestCase
 
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
+from .....did.did_key import DIDKey
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
-from .....did.did_key import DIDKey
 from .....wallet.key_type import ED25519
-
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
 from ....out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
 from ....out_of_band.v1_0.messages.service import Service as OOBService
-
 from .. import base_service, demo_service
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

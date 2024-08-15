@@ -9,10 +9,7 @@ from .. import routes as test_module
 from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from ..messages.cred_format import V20CredFormat
-from . import (
-    LD_PROOF_VC_DETAIL,
-    TEST_DID,
-)
+from . import LD_PROOF_VC_DETAIL, TEST_DID
 
 
 class TestV20CredRoutes(IsolatedAsyncioTestCase):

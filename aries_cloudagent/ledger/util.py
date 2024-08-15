@@ -4,7 +4,6 @@ import re
 
 from ..core.profile import Profile
 
-
 TAA_ACCEPTED_RECORD_TYPE = "taa_accepted"
 
 DID_EVENT_PREFIX = "acapy::REGISTER_DID::"

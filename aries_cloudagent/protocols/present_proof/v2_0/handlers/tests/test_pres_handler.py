@@ -1,13 +1,12 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...messages.pres import V20Pres
-
 from .. import pres_handler as test_module
 
 

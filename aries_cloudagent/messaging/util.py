@@ -2,12 +2,10 @@
 
 import logging
 import re
-
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from math import floor
 from typing import Any, Dict, List, Union
-
 
 LOGGER = logging.getLogger(__name__)
 I32_BOUND = 2**31

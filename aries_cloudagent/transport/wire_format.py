@@ -2,15 +2,13 @@
 
 import json
 import logging
-
 from abc import abstractmethod
 from typing import List, Sequence, Tuple, Union
 
 from ..core.profile import ProfileSession
 from ..messaging.util import time_now
-
-from .inbound.receipt import MessageReceipt
 from .error import WireFormatParseError
+from .inbound.receipt import MessageReceipt
 
 LOGGER = logging.getLogger(__name__)
 

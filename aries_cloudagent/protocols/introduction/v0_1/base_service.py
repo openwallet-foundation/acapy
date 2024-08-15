@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
-
 from .messages.invitation import Invitation
 
 

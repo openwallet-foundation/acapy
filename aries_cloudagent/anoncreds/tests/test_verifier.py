@@ -22,9 +22,7 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     GetSchemaResult,
 )
 from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
-from aries_cloudagent.core.in_memory.profile import (
-    InMemoryProfile,
-)
+from aries_cloudagent.core.in_memory.profile import InMemoryProfile
 from aries_cloudagent.tests import mock
 
 from .. import verifier as test_module

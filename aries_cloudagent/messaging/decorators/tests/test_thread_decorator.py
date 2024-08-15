@@ -1,6 +1,6 @@
-from ..thread_decorator import ThreadDecorator
-
 from unittest import TestCase
+
+from ..thread_decorator import ThreadDecorator
 
 
 class TestThreadDecorator(TestCase):

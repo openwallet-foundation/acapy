@@ -1,6 +1,7 @@
 """Normalization methods used while transitioning to DID:Key method."""
 
 from typing import Union
+
 from ....did.did_key import DIDKey
 from ....wallet.key_type import ED25519
 

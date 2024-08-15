@@ -1,13 +1,12 @@
+import json
 from unittest import IsolatedAsyncioTestCase
 
-import json
-
-from ...storage.error import StorageNotFoundError
-from ..util import bytes_to_b58
-from ..key_type import ED25519
 from ...core.in_memory import InMemoryProfile
+from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage
-from ..key_pair import KeyPairStorageManager, KEY_PAIR_STORAGE_TYPE
+from ..key_pair import KEY_PAIR_STORAGE_TYPE, KeyPairStorageManager
+from ..key_type import ED25519
+from ..util import bytes_to_b58
 
 
 class TestKeyPairStorageManager(IsolatedAsyncioTestCase):

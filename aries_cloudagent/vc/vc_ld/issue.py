@@ -1,12 +1,12 @@
 """Verifiable Credential issuance methods."""
 
 from ..ld_proofs import (
-    LinkedDataProof,
-    ProofPurpose,
-    sign,
     CredentialIssuancePurpose,
     DocumentLoaderMethod,
+    LinkedDataProof,
     LinkedDataProofException,
+    ProofPurpose,
+    sign,
 )
 from .models.credential import CredentialSchema
 

@@ -1,9 +1,9 @@
 import pytest
 
-from aries_cloudagent.wallet.did_method import DIDMethods, DIDMethod, HolderDefinedDid
+from aries_cloudagent.wallet.did_method import DIDMethod, DIDMethods, HolderDefinedDid
 from aries_cloudagent.wallet.did_parameters_validation import DIDParametersValidation
 from aries_cloudagent.wallet.error import WalletError
-from aries_cloudagent.wallet.key_type import ED25519, BLS12381G1
+from aries_cloudagent.wallet.key_type import BLS12381G1, ED25519
 
 
 @pytest.fixture

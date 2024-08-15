@@ -10,9 +10,9 @@ from urllib.parse import urlparse
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.agent_container import (  # noqa:E402
+    AriesAgent,
     arg_parser,
     create_agent_with_args,
-    AriesAgent,
 )
 from runners.support.utils import (  # noqa:E402
     check_requires,
@@ -22,7 +22,6 @@ from runners.support.utils import (  # noqa:E402
     prompt,
     prompt_loop,
 )
-
 
 DEMO_EXTRA_AGENT_ARGS = os.getenv("DEMO_EXTRA_AGENT_ARGS")
 

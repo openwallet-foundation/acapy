@@ -1,16 +1,13 @@
 import json
-
 from unittest import mock
-import pytest
 
+import pytest
 from aries_askar import AskarError, Key, KeyAlg, Session
 
 from ....config.injection_context import InjectionContext
-from ....utils.jwe import JweRecipient, b64url, JweEnvelope
-
+from ....utils.jwe import JweEnvelope, JweRecipient, b64url
 from ...profile import AskarProfileManager
 from .. import v2 as test_module
-
 
 ALICE_KID = "did:example:alice#key-1"
 BOB_KID = "did:example:bob#key-1"

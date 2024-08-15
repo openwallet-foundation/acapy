@@ -1,5 +1,4 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from .. import __main__ as test_module
 

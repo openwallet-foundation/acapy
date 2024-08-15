@@ -1,6 +1,6 @@
-from ..trace_decorator import TraceDecorator, TraceReport, TRACE_MESSAGE_TARGET
-
 from unittest import TestCase
+
+from ..trace_decorator import TRACE_MESSAGE_TARGET, TraceDecorator, TraceReport
 
 
 class TestTraceDecorator(TestCase):

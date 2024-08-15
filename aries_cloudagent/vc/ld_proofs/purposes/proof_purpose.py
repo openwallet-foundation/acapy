@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Optional
 
 from ....messaging.util import str_to_datetime
-
 from ..document_loader import DocumentLoaderMethod
 from ..validation_result import PurposeResult
 

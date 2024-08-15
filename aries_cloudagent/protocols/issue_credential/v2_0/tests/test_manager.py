@@ -1,39 +1,36 @@
 import json
-
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.tests import mock
+
+from .....anoncreds.issuer import AnonCredsIssuer
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....core.in_memory import InMemoryProfile
-from .....anoncreds.issuer import AnonCredsIssuer
 from .....indy.issuer import IndyIssuer
-from .....messaging.decorators.thread_decorator import ThreadDecorator
-from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....messaging.responder import BaseResponder, MockResponder
 from .....ledger.base import BaseLedger
+from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....messaging.decorators.thread_decorator import ThreadDecorator
+from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
-
 from .. import manager as test_module
 from ..manager import V20CredManager, V20CredManagerError
 from ..message_types import (
     ATTACHMENT_FORMAT,
-    CRED_20_PROPOSAL,
-    CRED_20_OFFER,
-    CRED_20_REQUEST,
     CRED_20_ISSUE,
+    CRED_20_OFFER,
+    CRED_20_PROPOSAL,
+    CRED_20_REQUEST,
 )
 from ..messages.cred_ack import V20CredAck
-from ..messages.cred_issue import V20CredIssue
 from ..messages.cred_format import V20CredFormat
+from ..messages.cred_issue import V20CredIssue
 from ..messages.cred_offer import V20CredOffer
 from ..messages.cred_problem_report import V20CredProblemReport
 from ..messages.cred_proposal import V20CredProposal
 from ..messages.cred_request import V20CredRequest
-from ..messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
+from ..messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from ..models.cred_ex_record import V20CredExRecord
-
 from . import (
     CRED_DEF,
     CRED_DEF_ID,

@@ -1,9 +1,7 @@
 """Message and inner object type identifiers for Connections."""
 
 from ...didcomm_prefix import DIDCommPrefix
-
 from .messages.cred_format import V20CredFormat
-
 
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"

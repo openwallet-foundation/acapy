@@ -6,7 +6,6 @@ from ....config.injection_context import InjectionContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.agent_message import AgentMessage
-
 from .messages.menu import Menu
 
 

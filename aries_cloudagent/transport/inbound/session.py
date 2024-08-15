@@ -8,11 +8,9 @@ from ...admin.server import AdminResponder
 from ...core.profile import Profile
 from ...messaging.responder import BaseResponder
 from ...multitenant.base import BaseMultitenantManager
-
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage
 from ..wire_format import BaseWireFormat
-
 from .message import InboundMessage
 from .receipt import MessageReceipt
 

@@ -1,10 +1,8 @@
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
 from ..cred_format import V20CredFormat
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
-
 
 TEST_PREVIEW = V20CredPreview(
     attributes=(

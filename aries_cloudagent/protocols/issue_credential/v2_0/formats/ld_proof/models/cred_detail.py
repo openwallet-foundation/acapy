@@ -4,7 +4,6 @@ from typing import Optional, Union
 
 from marshmallow import INCLUDE, fields
 
-
 from .......messaging.models.base import BaseModel, BaseModelSchema
 from .......vc.vc_ld import CredentialSchema
 from .......vc.vc_ld.models.credential import VerifiableCredential

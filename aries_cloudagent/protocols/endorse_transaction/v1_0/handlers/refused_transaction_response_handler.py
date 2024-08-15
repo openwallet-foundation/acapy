@@ -6,7 +6,6 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.refused_transaction_response import RefusedTransactionResponse
 

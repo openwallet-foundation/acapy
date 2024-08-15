@@ -2,8 +2,6 @@ import json
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
-from pyld.jsonld import JsonLdProcessor
-from pyld import jsonld
 
 import anoncreds
 import pytest
@@ -22,6 +20,8 @@ from anoncreds import (
     W3cPresentation,
 )
 from aries_askar import AskarError, AskarErrorCode
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from aries_cloudagent.anoncreds.tests.mock_objects import (
     CRED_DEFS,

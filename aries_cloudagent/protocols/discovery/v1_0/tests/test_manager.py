@@ -1,14 +1,13 @@
+from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
 from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 
 from .....core.in_memory import InMemoryProfile
-from .....storage.error import StorageNotFoundError
 from .....messaging.responder import BaseResponder, MockResponder
-
+from .....storage.error import StorageNotFoundError
 from ....didcomm_prefix import DIDCommPrefix
-
 from ..manager import V10DiscoveryMgr
 from ..messages.disclose import Disclose
 from ..messages.query import Query

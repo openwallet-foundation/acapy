@@ -1,5 +1,6 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -15,7 +16,7 @@ from .....resolver.did_resolver import DIDResolver
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
-from .....wallet.did_method import DIDMethods, SOV
+from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
 from ....coordinate_mediation.v1_0.manager import MediationManager

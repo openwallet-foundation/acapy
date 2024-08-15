@@ -1,7 +1,12 @@
+import json
 from copy import deepcopy
 from time import time
-import json
+from unittest import IsolatedAsyncioTestCase
+
+import pytest
 from anoncreds import W3cCredential
+from marshmallow import ValidationError
+
 from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
     CredDef,
     GetCredDefResult,
@@ -18,30 +23,29 @@ from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_issue import
 from aries_cloudagent.protocols.issue_credential.v2_0.models.cred_ex_record import (
     V20CredExRecord,
 )
+from aries_cloudagent.tests import mock
 from aries_cloudagent.wallet.did_info import DIDInfo
-import pytest
+
 from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from .......messaging.credential_definitions.util import (
-    CRED_DEF_SENT_RECORD_TYPE,
+from .......anoncreds.issuer import AnonCredsIssuer
+from .......cache.base import BaseCache
+from .......cache.in_memory import InMemoryCache
+from .......core.in_memory import InMemoryProfile
+from .......ledger.base import BaseLedger
+from .......ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
 )
+from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
-from .......protocols.issue_credential.v2_0.formats.handler import (
-    V20CredFormatError,
-)
-from .......protocols.issue_credential.v2_0.messages.cred_format import (
-    V20CredFormat,
-)
-from .......protocols.issue_credential.v2_0.messages.cred_offer import (
-    V20CredOffer,
-)
+from .......protocols.issue_credential.v2_0.formats.handler import V20CredFormatError
+from .......protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
+from .......protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from .......protocols.issue_credential.v2_0.messages.cred_proposal import (
     V20CredProposal,
 )
-from .......protocols.issue_credential.v2_0.messages.cred_request import (
-    V20CredRequest,
-)
+from .......protocols.issue_credential.v2_0.messages.cred_request import V20CredRequest
 from .......protocols.issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
@@ -49,24 +53,7 @@ from .......protocols.issue_credential.v2_0.messages.inner.cred_preview import (
 from .......protocols.issue_credential.v2_0.models.detail.indy import (
     V20CredExRecordIndy,
 )
-
 from .......storage.record import StorageRecord
-
-from unittest import IsolatedAsyncioTestCase
-
-from marshmallow import ValidationError
-
-from aries_cloudagent.tests import mock
-
-from .......core.in_memory import InMemoryProfile
-from .......ledger.base import BaseLedger
-from .......ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
-from .......cache.in_memory import InMemoryCache
-from .......cache.base import BaseCache
-from .......anoncreds.issuer import AnonCredsIssuer
-
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -74,9 +61,9 @@ from ....message_types import (
     CRED_20_PROPOSAL,
     CRED_20_REQUEST,
 )
-from ..handler import VCDICredFormatHandler
-from ..handler import LOGGER as VCDI_LOGGER
 from .. import handler as test_module
+from ..handler import LOGGER as VCDI_LOGGER
+from ..handler import VCDICredFormatHandler
 
 # these are from faber
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"

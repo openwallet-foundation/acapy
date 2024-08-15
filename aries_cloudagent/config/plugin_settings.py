@@ -4,7 +4,6 @@ from typing import Any, Mapping, Optional
 
 from .base import BaseSettings
 
-
 PLUGIN_CONFIG_KEY = "plugin_config"
 
 

@@ -1,10 +1,6 @@
 """Connect invitation handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.problem_report import ConnectionProblemReport, ProblemReportReason
 

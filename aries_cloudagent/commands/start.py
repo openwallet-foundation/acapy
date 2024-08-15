@@ -5,19 +5,19 @@ import functools
 import logging
 import signal
 import sys
-from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
+
+from configargparse import ArgumentParser
 
 try:
     import uvloop
 except ImportError:
     uvloop = None
 
-from ..core.conductor import Conductor
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
-
+from ..core.conductor import Conductor
 from . import PROG
 
 LOGGER = logging.getLogger(__name__)

@@ -1,6 +1,7 @@
 """Test keylist handler."""
 
 import logging
+
 import pytest
 
 from ......connections.models.conn_record import ConnRecord
@@ -10,7 +11,6 @@ from ......messaging.responder import MockResponder
 from ...messages.keylist import Keylist
 from ...models.mediation_record import MediationRecord
 from ..keylist_handler import KeylistHandler
-
 
 TEST_CONN_ID = "conn-id"
 pytestmark = pytest.mark.asyncio

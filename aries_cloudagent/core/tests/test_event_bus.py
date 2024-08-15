@@ -1,12 +1,12 @@
 """Test Event Bus."""
 
-import pytest
 import re
-
 from unittest import mock
 
+import pytest
+
 from .. import event_bus as test_module
-from ..event_bus import EventBus, Event
+from ..event_bus import Event, EventBus
 
 # pylint: disable=redefined-outer-name
 

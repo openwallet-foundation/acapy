@@ -1,7 +1,7 @@
 import asyncio
+from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 
 from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
 

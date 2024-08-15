@@ -1,20 +1,17 @@
 """Test Problem Report Message."""
 
+from unittest import TestCase, mock
+
 import pytest
 
-from unittest import mock
-from unittest import TestCase
-
 from ......messaging.models.base import BaseModelError
-
+from .. import problem_report as test_module
 from ..problem_report import (
     CMProblemReport,
     CMProblemReportSchema,
     ProblemReportReason,
     ValidationError,
 )
-
-from .. import problem_report as test_module
 
 
 class TestCMProblemReportMessage(TestCase):

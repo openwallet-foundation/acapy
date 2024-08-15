@@ -3,9 +3,8 @@ from unittest import TestCase
 from marshmallow import EXCLUDE, fields
 
 from ...models.base import BaseModel, BaseModelSchema
-
 from ..base import BaseDecoratorSet
-from ..default import DecoratorSet, DEFAULT_MODELS
+from ..default import DEFAULT_MODELS, DecoratorSet
 
 
 class SimpleModel(BaseModel):

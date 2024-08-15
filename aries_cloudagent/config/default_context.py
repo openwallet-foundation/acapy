@@ -6,10 +6,7 @@ from ..cache.in_memory import InMemoryCache
 from ..core.event_bus import EventBus
 from ..core.goal_code_registry import GoalCodeRegistry
 from ..core.plugin_registry import PluginRegistry
-from ..core.profile import (
-    ProfileManager,
-    ProfileManagerProvider,
-)
+from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService

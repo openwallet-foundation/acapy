@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .....messaging.util import datetime_to_str
 from ..proof_purpose import ProofPurpose

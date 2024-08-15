@@ -1,32 +1,23 @@
-from .ld_proofs import sign, verify, derive
-from .proof_set import ProofSet
-from .purposes import (
-    _ProofPurpose as ProofPurpose,
-    _ControllerProofPurpose as ControllerProofPurpose,
-    _AuthenticationProofPurpose as AuthenticationProofPurpose,
-    _CredentialIssuancePurpose as CredentialIssuancePurpose,
-    _AssertionProofPurpose as AssertionProofPurpose,
-)
-from .suites import (
-    _LinkedDataProof as LinkedDataProof,
-    _LinkedDataSignature as LinkedDataSignature,
-    _JwsLinkedDataSignature as JwsLinkedDataSignature,
-    _Ed25519Signature2018 as Ed25519Signature2018,
-    _Ed25519Signature2020 as Ed25519Signature2020,
-    _BbsBlsSignature2020 as BbsBlsSignature2020,
-    _BbsBlsSignatureProof2020 as BbsBlsSignatureProof2020,
-)
-from .crypto import (
-    _KeyPair as KeyPair,
-    _WalletKeyPair as WalletKeyPair,
-)
-from .document_loader import (
-    DocumentLoader,
-    DocumentLoaderMethod,
-)
-from .error import LinkedDataProofException
-from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
 from .check import get_properties_without_context
+from .crypto import _KeyPair as KeyPair
+from .crypto import _WalletKeyPair as WalletKeyPair
+from .document_loader import DocumentLoader, DocumentLoaderMethod
+from .error import LinkedDataProofException
+from .ld_proofs import derive, sign, verify
+from .proof_set import ProofSet
+from .purposes import _AssertionProofPurpose as AssertionProofPurpose
+from .purposes import _AuthenticationProofPurpose as AuthenticationProofPurpose
+from .purposes import _ControllerProofPurpose as ControllerProofPurpose
+from .purposes import _CredentialIssuancePurpose as CredentialIssuancePurpose
+from .purposes import _ProofPurpose as ProofPurpose
+from .suites import _BbsBlsSignature2020 as BbsBlsSignature2020
+from .suites import _BbsBlsSignatureProof2020 as BbsBlsSignatureProof2020
+from .suites import _Ed25519Signature2018 as Ed25519Signature2018
+from .suites import _Ed25519Signature2020 as Ed25519Signature2020
+from .suites import _JwsLinkedDataSignature as JwsLinkedDataSignature
+from .suites import _LinkedDataProof as LinkedDataProof
+from .suites import _LinkedDataSignature as LinkedDataSignature
+from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
 
 __all__ = [
     "sign",

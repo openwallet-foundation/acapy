@@ -6,9 +6,7 @@ from ....core.profile import Profile
 from ....wallet.base import BaseWallet
 from ....wallet.key_type import KeyType
 from ....wallet.util import b58_to_bytes
-
 from ..error import LinkedDataProofException
-
 from .key_pair import KeyPair
 
 

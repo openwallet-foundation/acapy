@@ -1,19 +1,17 @@
 """Test for DIF PresExch Schemas."""
 
 import json
-
 from unittest import TestCase
 
 from .....messaging.models.base import BaseModelError
-
 from ..pres_exch import (
     ClaimFormat,
-    SubmissionRequirements,
+    Constraints,
     DIFHolder,
     Filter,
-    Constraints,
-    VPWithSubmission,
     SchemasInputDescriptorFilter,
+    SubmissionRequirements,
+    VPWithSubmission,
 )
 
 

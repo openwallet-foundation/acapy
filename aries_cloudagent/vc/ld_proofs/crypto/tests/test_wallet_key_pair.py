@@ -1,12 +1,11 @@
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 
+from aries_cloudagent.tests import mock
 from aries_cloudagent.wallet.key_type import ED25519
 
 from .....core.in_memory import InMemoryProfile
 from .....wallet.in_memory import InMemoryWallet
 from ...error import LinkedDataProofException
-
 from ..wallet_key_pair import WalletKeyPair
 
 

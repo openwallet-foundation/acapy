@@ -3,7 +3,6 @@
 import json
 
 from ...storage.record import StorageRecord
-
 from .vc_record import VCRecord
 
 VC_CRED_RECORD_TYPE = "vc_cred"

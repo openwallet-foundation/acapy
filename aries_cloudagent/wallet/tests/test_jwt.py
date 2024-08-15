@@ -3,7 +3,6 @@ import pytest
 from aries_cloudagent.wallet.key_type import ED25519
 
 from ...wallet.did_method import KEY
-
 from ..jwt import jwt_sign, jwt_verify, resolve_public_key_by_kid_for_verify
 
 

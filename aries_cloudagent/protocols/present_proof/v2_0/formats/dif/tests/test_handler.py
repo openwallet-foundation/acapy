@@ -1,11 +1,12 @@
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
-from aries_cloudagent.vc.vc_di.manager import VcDiManager
+
 from marshmallow import ValidationError
 from pyld import jsonld
 
-from .. import handler as test_module
+from aries_cloudagent.tests import mock
+from aries_cloudagent.vc.vc_di.manager import VcDiManager
+
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......messaging.responder import BaseResponder, MockResponder
@@ -35,6 +36,7 @@ from ....messages.pres_proposal import V20PresProposal
 from ....messages.pres_request import V20PresRequest
 from ....models.pres_exchange import V20PresExRecord
 from ...handler import V20PresFormatHandlerError
+from .. import handler as test_module
 from ..handler import DIFPresFormatHandler
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"

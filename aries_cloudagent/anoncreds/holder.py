@@ -3,11 +3,8 @@
 import asyncio
 import json
 import logging
-from marshmallow import INCLUDE
 import re
 from typing import Dict, Optional, Sequence, Tuple, Union
-from pyld import jsonld
-from pyld.jsonld import JsonLdProcessor
 
 from anoncreds import (
     AnoncredsError,
@@ -21,6 +18,9 @@ from anoncreds import (
     create_link_secret,
 )
 from aries_askar import AskarError, AskarErrorCode
+from marshmallow import INCLUDE
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 from uuid_utils import uuid4
 
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
@@ -29,8 +29,8 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
-from ..vc.vc_ld import VerifiableCredential
 from ..vc.ld_proofs import DocumentLoader
+from ..vc.vc_ld import VerifiableCredential
 from ..wallet.error import WalletNotFoundError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .models.anoncreds_cred_def import CredDef

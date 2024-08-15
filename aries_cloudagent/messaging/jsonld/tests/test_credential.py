@@ -1,22 +1,17 @@
 """Test json-ld credential."""
 
 import json
-
-
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
 from ....core.in_memory import InMemoryProfile
 from ....vc.ld_proofs import DocumentLoader
 from ....wallet.base import BaseWallet
 from ....wallet.in_memory import InMemoryWallet
 from ....wallet.key_type import ED25519
-
 from .. import credential as test_module
 from ..create_verify_data import DroppedAttributeError
 from ..credential import did_key, sign_credential, verify_credential
 from ..error import BadJWSHeaderError, SignatureTypeError
-
 from . import (
     TEST_SEED,
     TEST_SIGN_ERROR_OBJS,

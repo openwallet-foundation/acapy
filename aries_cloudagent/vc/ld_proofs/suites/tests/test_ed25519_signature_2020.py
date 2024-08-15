@@ -1,21 +1,21 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ..ed25519_signature_2020 import Ed25519Signature2020
-from ...crypto.wallet_key_pair import WalletKeyPair
-from ...ld_proofs import sign, verify
-from ...purposes.assertion_proof_purpose import AssertionProofPurpose
-from ....tests.data import (
-    TEST_LD_DOCUMENT,
-    TEST_LD_DOCUMENT_SIGNED_ED25519_2020,
-    TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020,
-    TEST_VC_DOCUMENT,
-    TEST_VC_DOCUMENT_SIGNED_ED25519_2020,
-)
-from ....tests.document_loader import custom_document_loader
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
+from ....tests.data import (
+    TEST_LD_DOCUMENT,
+    TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020,
+    TEST_LD_DOCUMENT_SIGNED_ED25519_2020,
+    TEST_VC_DOCUMENT,
+    TEST_VC_DOCUMENT_SIGNED_ED25519_2020,
+)
+from ....tests.document_loader import custom_document_loader
+from ...crypto.wallet_key_pair import WalletKeyPair
+from ...ld_proofs import sign, verify
+from ...purposes.assertion_proof_purpose import AssertionProofPurpose
+from ..ed25519_signature_2020 import Ed25519Signature2020
 
 
 class TestEd25519Signature2020(IsolatedAsyncioTestCase):

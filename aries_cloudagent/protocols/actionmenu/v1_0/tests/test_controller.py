@@ -1,4 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from .....core.in_memory import InMemoryProfile

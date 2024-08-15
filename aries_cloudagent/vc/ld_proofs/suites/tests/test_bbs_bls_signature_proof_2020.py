@@ -1,5 +1,5 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
+
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
@@ -7,29 +7,27 @@ from aries_cloudagent.wallet.key_type import BLS12381G2
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....wallet.in_memory import InMemoryWallet
-from ....tests.document_loader import custom_document_loader
 from ....tests.data import (
-    TEST_LD_DOCUMENT_SIGNED_BBS,
-    TEST_LD_DOCUMENT_PROOF_BBS,
     TEST_LD_DOCUMENT_BAD_PARTIAL_PROOF_BBS,
     TEST_LD_DOCUMENT_PARTIAL_PROOF_BBS,
-    TEST_LD_DOCUMENT_REVEAL_ALL,
+    TEST_LD_DOCUMENT_PROOF_BBS,
     TEST_LD_DOCUMENT_REVEAL,
-    TEST_VC_DOCUMENT_SIGNED_BBS,
-    TEST_VC_DOCUMENT_REVEAL,
+    TEST_LD_DOCUMENT_REVEAL_ALL,
+    TEST_LD_DOCUMENT_SIGNED_BBS,
     TEST_VC_DOCUMENT_NESTED_PARTIAL_PROOF_BBS,
     TEST_VC_DOCUMENT_NESTED_PROOF_BBS,
+    TEST_VC_DOCUMENT_NESTED_REVEAL,
     TEST_VC_DOCUMENT_NESTED_SIGNED_BBS,
     TEST_VC_DOCUMENT_PARTIAL_PROOF_BBS,
-    TEST_VC_DOCUMENT_NESTED_REVEAL,
+    TEST_VC_DOCUMENT_REVEAL,
+    TEST_VC_DOCUMENT_SIGNED_BBS,
 )
+from ....tests.document_loader import custom_document_loader
 from ....vc_ld import derive_credential, verify_credential
-
 from ...crypto.wallet_key_pair import WalletKeyPair
-from ...purposes.assertion_proof_purpose import AssertionProofPurpose
 from ...error import LinkedDataProofException
-from ...ld_proofs import verify, derive
-
+from ...ld_proofs import derive, verify
+from ...purposes.assertion_proof_purpose import AssertionProofPurpose
 from ..bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 
 

@@ -14,9 +14,7 @@ from ..protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRec
 from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
-from ..revocation.util import (
-    notify_pending_cleared_event,
-)
+from ..revocation.util import notify_pending_cleared_event
 from ..storage.error import StorageNotFoundError
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 

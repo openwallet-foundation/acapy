@@ -1,11 +1,6 @@
 """Connection complete handler under RFC 23 (DID exchange)."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
-
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.complete import DIDXComplete
 

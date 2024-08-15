@@ -1,23 +1,15 @@
 """Web DID Resolver."""
 
 import urllib.parse
-
 from typing import Optional, Pattern, Sequence, Text
 
 import aiohttp
-
 from pydid import DID, DIDDocument
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...messaging.valid import DIDWeb
-
-from ..base import (
-    BaseDIDResolver,
-    DIDNotFound,
-    ResolverError,
-    ResolverType,
-)
+from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 
 class WebDIDResolver(BaseDIDResolver):

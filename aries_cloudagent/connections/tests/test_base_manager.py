@@ -1,9 +1,8 @@
 """Test connections base manager."""
 
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
-from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -12,6 +11,8 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
+
+from aries_cloudagent.tests import mock
 
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
@@ -33,8 +34,8 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ...protocols.coordinate_mediation.v1_0.route_manager import (
-    RouteManager,
     CoordinateMediationV1RouteManager,
+    RouteManager,
 )
 from ...protocols.discovery.v2_0.manager import V20DiscoveryMgr
 from ...resolver.default.key import KeyDIDResolver
@@ -44,7 +45,7 @@ from ...storage.error import StorageNotFoundError
 from ...transport.inbound.receipt import MessageReceipt
 from ...utils.multiformats import multibase, multicodec
 from ...wallet.base import DIDInfo
-from ...wallet.did_method import DIDMethods, SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.error import WalletNotFoundError
 from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import ED25519

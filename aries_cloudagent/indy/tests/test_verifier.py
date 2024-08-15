@@ -1,7 +1,7 @@
 from copy import deepcopy
 from time import time
-
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
@@ -10,10 +10,8 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
-
 from .. import verifier as test_module
 from ..verifier import IndyVerifier
-
 
 INDY_PROOF_REQ_NAME = {
     "nonce": "15606741555044336341559",

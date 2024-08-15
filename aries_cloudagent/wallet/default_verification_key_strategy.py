@@ -1,13 +1,11 @@
 """Utilities for specifying which verification method is in use for a given DID."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from aries_cloudagent.core.profile import Profile
-
-from aries_cloudagent.wallet.key_type import KeyType
-
 from aries_cloudagent.did.did_key import DIDKey
+from aries_cloudagent.wallet.key_type import KeyType
 
 
 class BaseVerificationKeyStrategy(ABC):

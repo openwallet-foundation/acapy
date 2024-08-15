@@ -6,17 +6,14 @@ from typing import Mapping, Tuple
 
 from marshmallow import RAISE
 
-from ......anoncreds.revocation import AnonCredsRevocation
-
-from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ......anoncreds.issuer import (
-    AnonCredsIssuer,
-)
+from ......anoncreds.issuer import AnonCredsIssuer
+from ......anoncreds.registry import AnonCredsRegistry
+from ......anoncreds.revocation import AnonCredsRevocation
+from ......cache.base import BaseCache
 from ......indy.models.cred import IndyCredentialSchema
 from ......indy.models.cred_abstract import IndyCredAbstractSchema
 from ......indy.models.cred_request import IndyCredRequestSchema
-from ......cache.base import BaseCache
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,

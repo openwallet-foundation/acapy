@@ -1,7 +1,6 @@
 from unittest import IsolatedAsyncioTestCase
 
 from ...protocols.issue_credential.v1_0.message_types import CONTROLLERS
-
 from ..goal_code_registry import GoalCodeRegistry
 
 

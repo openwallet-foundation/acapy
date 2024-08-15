@@ -1,13 +1,12 @@
-import pytest
-
 from unittest import mock
+
+import pytest
 
 from ......messaging.models.base import BaseModelError
 from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import PROBLEM_REPORT
-from ..problem_report import DIDXProblemReport
-
 from .. import problem_report as test_module
+from ..problem_report import DIDXProblemReport
 
 THID = "dummy-thid"
 PTHID = "dummy-pthid"

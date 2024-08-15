@@ -1,12 +1,11 @@
-from behave import when, then
-
 from bdd_support.agent_backchannel_client import (
-    read_proof_req_data,
+    agent_container_POST,
     aries_container_request_proof,
     aries_container_verify_proof,
-    agent_container_POST,
     async_sleep,
+    read_proof_req_data,
 )
+from behave import then, when
 
 # This step is defined in another feature file
 # Given "Acme" and "Bob" have an existing connection

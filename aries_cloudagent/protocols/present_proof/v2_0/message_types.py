@@ -1,7 +1,6 @@
 """Message and inner object type identifiers for present-proof protocol v2.0."""
 
 from ...didcomm_prefix import DIDCommPrefix
-
 from .messages.pres_format import V20PresFormat
 
 SPEC_URI = (

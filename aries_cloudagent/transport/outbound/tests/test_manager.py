@@ -1,12 +1,11 @@
 import json
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ....core.in_memory import InMemoryProfile
-from ....connections.models.connection_target import ConnectionTarget
-from ...wire_format import BaseWireFormat
+from aries_cloudagent.tests import mock
 
+from ....connections.models.connection_target import ConnectionTarget
+from ....core.in_memory import InMemoryProfile
+from ...wire_format import BaseWireFormat
 from .. import manager as test_module
 from ..manager import (
     OutboundDeliveryError,

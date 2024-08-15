@@ -5,7 +5,6 @@ import logging
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.agent_message import AgentMessage
-
 from .base_service import BaseMenuService
 from .messages.menu import Menu
 

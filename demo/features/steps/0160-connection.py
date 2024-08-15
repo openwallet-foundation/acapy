@@ -8,18 +8,17 @@
 #
 # -----------------------------------------------------------
 
-from behave import given, when, then
 import json
 import os
 
 from bdd_support.agent_backchannel_client import (
-    create_agent_container_with_args,
-    aries_container_initialize,
-    aries_container_generate_invitation,
-    aries_container_receive_invitation,
     aries_container_detect_connection,
+    aries_container_generate_invitation,
+    aries_container_initialize,
+    aries_container_receive_invitation,
+    create_agent_container_with_args,
 )
-
+from behave import given, then, when
 
 BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
 AGENT_PORT = os.getenv("AGENT_PORT", "8020")

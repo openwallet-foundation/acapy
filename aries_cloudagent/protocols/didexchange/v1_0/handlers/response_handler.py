@@ -1,10 +1,6 @@
 """DID exchange response handler under RFC 23."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....trustping.v1_0.messages.ping import Ping
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.response import DIDXResponse

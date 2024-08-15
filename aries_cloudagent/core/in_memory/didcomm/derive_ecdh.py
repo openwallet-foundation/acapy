@@ -1,7 +1,6 @@
 """Functions for performing Key Agreement."""
 
 import hashlib
-
 from binascii import unhexlify
 from typing import Union
 

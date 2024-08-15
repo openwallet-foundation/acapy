@@ -5,13 +5,13 @@ retrieving did's from different sources provided by the method type.
 """
 
 import asyncio
+import logging
 from datetime import datetime, timezone
 from itertools import chain
-import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Resource, VerificationMethod
 import pydid
+from pydid import DID, DIDError, DIDUrl, Resource, VerificationMethod
 from pydid.doc.doc import BaseDIDDocument, IDNotFoundError
 
 from ..core.profile import Profile

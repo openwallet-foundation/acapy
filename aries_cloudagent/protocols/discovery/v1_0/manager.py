@@ -2,15 +2,13 @@
 
 import asyncio
 import logging
-
 from typing import Optional
 
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....core.protocol_registry import ProtocolRegistry
-from ....storage.error import StorageNotFoundError
 from ....messaging.responder import BaseResponder
-
+from ....storage.error import StorageNotFoundError
 from .messages.disclose import Disclose
 from .messages.query import Query
 from .models.discovery_record import V10DiscoveryExchangeRecord as DiscRecord

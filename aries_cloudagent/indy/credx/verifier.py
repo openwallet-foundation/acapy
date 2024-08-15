@@ -2,13 +2,11 @@
 
 import asyncio
 import logging
-
 from typing import Tuple
 
 from indy_credx import CredxError, Presentation
 
 from ...core.profile import Profile
-
 from ..verifier import IndyVerifier, PresVerifyMsg
 
 LOGGER = logging.getLogger(__name__)
