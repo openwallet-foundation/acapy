@@ -12,7 +12,6 @@ class DidKeyOperator:
         """Initialize a new `DidKeyOperator` instance."""
         self.profile = profile
 
-
     async def register_did(
         self,
         key_type: KeyType,
@@ -31,11 +30,9 @@ class DidKeyOperator:
         """
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-        info = await wallet.create_local_did(
-            method=KEY, key_type=key_type
-        )
+        info = await wallet.create_local_did(method=KEY, key_type=key_type)
         return await self.create_did_doc(info.did)
-    
+
     async def create_did_doc(
         self,
         did: str,
@@ -52,11 +49,11 @@ class DidKeyOperator:
             DidWebOperatorError: If the an error occures during did registration
 
         """
-        verification_method = f'{did}#'+did.split(':')[-1]
+        verification_method = f"{did}#" + did.split(":")[-1]
         return {
             "@context": [
-                'https://www.w3.org/ns/did/v1',
-                'https://w3id.org/security/multikey/v1'
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/multikey/v1",
             ],
             "id": did,
             "verificationMethod": [
@@ -64,7 +61,7 @@ class DidKeyOperator:
                     "id": verification_method,
                     "type": "MultiKey",
                     "controller": did,
-                    "publicKeyMultibase": did.split(':')[-1],
+                    "publicKeyMultibase": did.split(":")[-1],
                 },
             ],
             "authentication": [verification_method],

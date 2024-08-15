@@ -13,9 +13,7 @@ from .web_requests import (
 )
 from .operators import DidKeyOperator, DidOperatorError
 
-KEY_MAPPINGS = {
-    'ed25519': ED25519
-}
+KEY_MAPPINGS = {"ed25519": ED25519}
 
 
 @docs(tags=["did"], summary="Register Key DID")
@@ -32,17 +30,16 @@ async def register_did_key(request: web.BaseRequest):
     body = await request.json()
     context: AdminRequestContext = request["context"]
     try:
-        key_type = body['key_type'] \
-            if 'key_type' in body \
-            else context.profile.settings.get('wallet.key_type')
-        did_doc = await DidKeyOperator(context.profile)\
-            .register_did(KEY_MAPPINGS[key_type])
+        key_type = (
+            body["key_type"]
+            if "key_type" in body
+            else context.profile.settings.get("wallet.key_type")
+        )
+        did_doc = await DidKeyOperator(context.profile).register_did(
+            KEY_MAPPINGS[key_type]
+        )
         return web.json_response({"didDocument": did_doc}, status=201)
-    except (
-        KeyError,
-        ValidationError,
-        DidOperatorError
-    ) as err:
+    except (KeyError, ValidationError, DidOperatorError) as err:
         return web.json_response({"message": str(err)}, status=400)
 
 
@@ -54,6 +51,7 @@ async def register(app: web.Application):
             web.post("/did/key", register_did_key),
         ]
     )
+
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
