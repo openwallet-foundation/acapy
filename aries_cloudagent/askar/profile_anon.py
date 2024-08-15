@@ -27,9 +27,6 @@ from .store import AskarOpenStore, AskarStoreConfig
 # import traceback
 
 
-
-
-
 LOGGER = logging.getLogger(__name__)
 
 
