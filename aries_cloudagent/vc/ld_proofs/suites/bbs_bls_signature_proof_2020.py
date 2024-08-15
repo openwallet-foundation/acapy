@@ -10,14 +10,18 @@ from .bbs_bls_signature_2020_base import BbsBlsSignature2020Base
 
 if BbsBlsSignature2020Base.BBS_SUPPORTED:
     from ursa_bbs_signatures import (
-        create_proof as bls_create_proof,
-        verify_proof as bls_verify_proof,
+        BlsKeyPair,
         CreateProofRequest,
+        ProofMessage,
+        ProofMessageType,
         VerifyProofRequest,
         get_total_message_count,
-        ProofMessage,
-        BlsKeyPair,
-        ProofMessageType,
+    )
+    from ursa_bbs_signatures import (
+        create_proof as bls_create_proof,
+    )
+    from ursa_bbs_signatures import (
+        verify_proof as bls_verify_proof,
     )
 
 from ....utils.dependencies import assert_ursa_bbs_signatures_installed
