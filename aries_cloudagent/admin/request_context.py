@@ -15,7 +15,6 @@ IN_MEM = DeferLoad("aries_cloudagent.core.in_memory.InMemoryProfile")
 
 
 class AdminRequestContext:
-    """Context established by the Conductor and passed into message handlers."""
 
     def __init__(
         self,
