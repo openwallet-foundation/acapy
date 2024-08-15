@@ -1,4 +1,6 @@
-from ...wallet.key_type import KeyType, ED25519
+"""DID Key operator class."""
+
+from ...wallet.key_type import KeyType
 from ...wallet.did_method import KEY
 from ...wallet.base import BaseWallet
 
@@ -7,8 +9,7 @@ class DidKeyOperator:
     """Operator for managing key dids."""
 
     def __init__(self, profile):
-        """Initialize a new `DidKeyOperator` instance.
-        """
+        """Initialize a new `DidKeyOperator` instance."""
         self.profile = profile
 
 
@@ -16,7 +17,7 @@ class DidKeyOperator:
         self,
         key_type: KeyType,
     ):
-        """Create, store and register a new key DID.
+        """Register a new key DID.
 
         Args:
             key_type: The key type to use for the DID
@@ -39,6 +40,18 @@ class DidKeyOperator:
         self,
         did: str,
     ):
+        """Creates a DID doc based on a did:key value.
+
+        Args:
+            did: The did:key value
+
+        Returns:
+            A `DIDDocument` instance representing the created DID
+
+        Raises:
+            DidWebOperatorError: If the an error occures during did registration
+
+        """
         verification_method = f'{did}#'+did.split(':')[-1]
         return {
             "@context": [
