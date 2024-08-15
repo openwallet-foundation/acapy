@@ -14,7 +14,7 @@ class DidKeyOperator:
 
     async def register_did(
         self,
-        key_type: KeyType = ED25519,
+        key_type: KeyType,
     ):
         """Create, store and register a new key DID.
 

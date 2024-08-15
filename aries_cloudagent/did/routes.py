@@ -32,8 +32,8 @@ async def register_did_key(request: web.BaseRequest):
     body = await request.json()
     context: AdminRequestContext = request["context"]
     try:
-        key_type = KEY_MAPPINGS[body['key_type']]
-        did_doc = await DidKeyOperator(context.profile).register_did(key_type)
+        key_type = body['key_type'] if 'key_type' in body else context.profile.settings.get('wallet.key_type')
+        did_doc = await DidKeyOperator(context.profile).register_did(KEY_MAPPINGS[key_type])
         return web.json_response({"didDocument": did_doc}, status=201)
     except (
         KeyError,
