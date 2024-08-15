@@ -282,9 +282,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     did = request.query.get("did")
     verkey = request.query.get("verkey")
     if not did or not verkey:
-        raise web.HTTPBadRequest(
-            reason="Request query must include both did and verkey"
-        )
+        raise web.HTTPBadRequest(reason="Request query must include both did and verkey")
 
     alias = request.query.get("alias")
     role = request.query.get("role")
@@ -321,9 +319,7 @@ async def register_ledger_nym(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         async with context.profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -775,9 +771,7 @@ async def set_write_ledger(request: web.BaseRequest):
     return web.json_response({"write_ledger": set_ledger_id})
 
 
-@docs(
-    tags=["ledger"], summary="Fetch the multiple ledger configuration currently in use"
-)
+@docs(tags=["ledger"], summary="Fetch the multiple ledger configuration currently in use")
 @response_schema(LedgerConfigListSchema, 200, description="")
 @tenant_authentication
 async def get_ledger_config(request: web.BaseRequest):
@@ -799,9 +793,7 @@ async def get_ledger_config(request: web.BaseRequest):
         ledger_config_list = session.settings.get_value("ledger.ledger_config_list")
         config_ledger_dict = {"production_ledgers": [], "non_production_ledgers": []}
         production_ledger_keys = (await multiledger_mgr.get_prod_ledgers()).keys()
-        non_production_ledger_keys = (
-            await multiledger_mgr.get_nonprod_ledgers()
-        ).keys()
+        non_production_ledger_keys = (await multiledger_mgr.get_nonprod_ledgers()).keys()
         config_ledger_ids_set = set()
         for config in ledger_config_list:
             ledger_id = config.get("id")

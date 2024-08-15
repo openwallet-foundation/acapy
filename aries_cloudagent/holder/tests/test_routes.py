@@ -81,9 +81,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             },
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
         }
@@ -150,9 +148,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             },
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
         }
@@ -235,9 +231,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(test_module.web, "json_response") as mock_response:
             await test_module.credentials_attr_mime_types_get(self.request)
-            mock_response.assert_called_once_with(
-                {"results": {"a": "application/jpeg"}}
-            )
+            mock_response.assert_called_once_with({"results": {"a": "application/jpeg"}})
 
     @mock.patch.object(AnonCredsHolder, "get_mime_type")
     async def test_attribute_mime_types_get_with_anoncreds(self, mock_get_mime_type):
@@ -249,9 +243,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             },
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
         }
@@ -275,9 +267,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(test_module.web, "json_response") as mock_response:
             await test_module.credentials_attr_mime_types_get(self.request)
-            mock_response.assert_called_once_with(
-                {"results": {"a": "application/jpeg"}}
-            )
+            mock_response.assert_called_once_with({"results": {"a": "application/jpeg"}})
             assert mock_get_mime_type.called
 
     async def test_credentials_remove(self):
@@ -304,9 +294,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             },
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
         }
@@ -324,12 +312,8 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
         mock_delete_credential.side_effect = [
             None,
-            AnonCredsHolderError(
-                "anoncreds error", error_code=AskarErrorCode.NOT_FOUND
-            ),
-            AnonCredsHolderError(
-                "anoncreds error", error_code=AskarErrorCode.UNEXPECTED
-            ),
+            AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.NOT_FOUND),
+            AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.UNEXPECTED),
         ]
 
         with mock.patch.object(
@@ -384,9 +368,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             },
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
         }

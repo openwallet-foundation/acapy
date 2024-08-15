@@ -75,9 +75,7 @@ class KeyPairStorageManager:
 
         """
 
-        record = await self._store.find_record(
-            KEY_PAIR_STORAGE_TYPE, {"verkey": verkey}
-        )
+        record = await self._store.find_record(KEY_PAIR_STORAGE_TYPE, {"verkey": verkey})
         data = json.loads(record.value)
 
         return data
@@ -97,9 +95,7 @@ class KeyPairStorageManager:
             StorageNotFoundError: If the record is not found
 
         """
-        record = await self._store.find_record(
-            KEY_PAIR_STORAGE_TYPE, {"verkey": verkey}
-        )
+        record = await self._store.find_record(KEY_PAIR_STORAGE_TYPE, {"verkey": verkey})
         await self._store.delete_record(record)
 
     async def update_key_pair_metadata(self, verkey: str, metadata: dict):
@@ -109,9 +105,7 @@ class KeyPairStorageManager:
             StorageNotFoundError: If the record is not found.
 
         """
-        record = await self._store.find_record(
-            KEY_PAIR_STORAGE_TYPE, {"verkey": verkey}
-        )
+        record = await self._store.find_record(KEY_PAIR_STORAGE_TYPE, {"verkey": verkey})
         data = json.loads(record.value)
         data["metadata"] = metadata
 

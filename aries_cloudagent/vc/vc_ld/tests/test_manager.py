@@ -112,9 +112,7 @@ async def test_assert_can_issue_with_id_and_proof_type(manager: VcLdpManager):
         await manager.assert_can_issue_with_id_and_proof_type(
             "not_did", Ed25519Signature2018.signature_type
         )
-        assert "Unable to issue credential with issuer id: not_did" in str(
-            context.value
-        )
+        assert "Unable to issue credential with issuer id: not_did" in str(context.value)
 
     with mock.patch.object(
         manager,

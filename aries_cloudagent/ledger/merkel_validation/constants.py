@@ -52,7 +52,5 @@ PROOF_NODES = "proof_nodes"
 TAG = "tag"
 ACCUM_TO = "accum_to"
 ACCUM_FROM = "accum_from"
-(NODE_TYPE_BLANK, NODE_TYPE_LEAF, NODE_TYPE_EXTENSION, NODE_TYPE_BRANCH) = tuple(
-    range(4)
-)
+(NODE_TYPE_BLANK, NODE_TYPE_LEAF, NODE_TYPE_EXTENSION, NODE_TYPE_BRANCH) = tuple(range(4))
 BLANK_NODE = b""

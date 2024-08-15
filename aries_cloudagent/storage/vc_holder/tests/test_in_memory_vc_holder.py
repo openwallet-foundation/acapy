@@ -286,9 +286,7 @@ class TestInMemoryVCHolder:
         assert rows == expected
 
     @pytest.mark.asyncio
-    async def test_tag_query_valid_and_operator(
-        self, holder: VCHolder, record: VCRecord
-    ):
+    async def test_tag_query_valid_and_operator(self, holder: VCHolder, record: VCRecord):
         test_uri_list = [
             "https://www.w3.org/2018/credentials#VerifiableCredential",
             "https://example.org/examples#UniversityDegreeCredential2",

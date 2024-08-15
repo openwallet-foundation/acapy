@@ -49,9 +49,7 @@ class TestKeyType(TestCase):
         assert key_types.from_multicodec_prefix(X25519_PREFIX_BYTES) == X25519
         assert key_types.from_multicodec_prefix(BLS12381G1_PREFIX_BYTES) == BLS12381G1
         assert key_types.from_multicodec_prefix(BLS12381G2_PREFIX_BYTES) == BLS12381G2
-        assert (
-            key_types.from_multicodec_prefix(BLS12381G1G2_PREFIX_BYTES) == BLS12381G1G2
-        )
+        assert key_types.from_multicodec_prefix(BLS12381G1G2_PREFIX_BYTES) == BLS12381G1G2
         assert key_types.from_multicodec_prefix(b"\xef\x01") is None
 
     def test_from_prefixed_bytes(self):
@@ -87,9 +85,7 @@ class TestKeyType(TestCase):
             == BLS12381G1G2
         )
         assert (
-            key_types.from_prefixed_bytes(
-                b"".join([b"\xef\x01", b"other-random-bytes"])
-            )
+            key_types.from_prefixed_bytes(b"".join([b"\xef\x01", b"other-random-bytes"]))
             is None
         )
 

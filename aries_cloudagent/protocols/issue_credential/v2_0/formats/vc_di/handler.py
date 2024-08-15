@@ -329,9 +329,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             )
 
         nonce = cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"]
-        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"][
-            "cred_def_id"
-        ]
+        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"]["cred_def_id"]
 
         ledger = self.profile.inject(BaseLedger)
         # TODO use the ledger registry in the anoncreds module,
@@ -436,13 +434,9 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         cred_request = cred_ex_record.cred_request.attachment(
             VCDICredFormatHandler.format
         )
-        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
-            decode=False
-        )
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
 
-        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"][
-            "cred_def_id"
-        ]
+        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"]["cred_def_id"]
 
         ledger = self.profile.inject(BaseLedger)
         # TODO use the ledger registry in the anoncreds module,

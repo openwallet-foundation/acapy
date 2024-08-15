@@ -39,7 +39,7 @@ class AskarProfile(Profile):
         opened: AskarOpenStore,
         context: InjectionContext = None,
         *,
-        profile_id: str = None
+        profile_id: str = None,
     ):
         """Create a new AskarProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
@@ -105,9 +105,7 @@ class AskarProfile(Profile):
 
         injector.bind_provider(
             BaseStorageSearch,
-            ClassProvider(
-                "aries_cloudagent.storage.askar.AskarStorageSearch", ref(self)
-            ),
+            ClassProvider("aries_cloudagent.storage.askar.AskarStorageSearch", ref(self)),
         )
 
         injector.bind_provider(
@@ -208,7 +206,7 @@ class AskarProfileSession(ProfileSession):
         is_txn: bool,
         *,
         context: InjectionContext = None,
-        settings: Mapping[str, Any] = None
+        settings: Mapping[str, Any] = None,
     ):
         """Create a new IndySdkProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)

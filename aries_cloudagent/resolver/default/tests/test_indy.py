@@ -68,9 +68,7 @@ class TestIndyResolver:
         assert await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.asyncio
-    async def test_resolve_with_accept(
-        self, profile: Profile, resolver: IndyDIDResolver
-    ):
+    async def test_resolve_with_accept(self, profile: Profile, resolver: IndyDIDResolver):
         """Test resolve method."""
         assert await resolver.resolve(
             profile, TEST_DID0, ["didcomm/aip1", "didcomm/aip2;env=rfc19"]
@@ -93,9 +91,7 @@ class TestIndyResolver:
             assert await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.asyncio
-    async def test_resolve_x_no_ledger(
-        self, profile: Profile, resolver: IndyDIDResolver
-    ):
+    async def test_resolve_x_no_ledger(self, profile: Profile, resolver: IndyDIDResolver):
         """Test resolve method with no ledger."""
         profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,

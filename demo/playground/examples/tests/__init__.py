@@ -209,9 +209,7 @@ class Agent:
 
         return wrapped_get(self.url, path, **kwargs)
 
-    def post(
-        self, path: str, return_json: bool = True, fail_with: str = None, **kwargs
-    ):
+    def post(self, path: str, return_json: bool = True, fail_with: str = None, **kwargs):
         """Do post to agent endpoint."""
         wrapped_post = post
         if fail_with:

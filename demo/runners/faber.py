@@ -377,11 +377,7 @@ class FaberAgent(AriesAgent):
                                                     },
                                                 },
                                                 {"path": ["$.credentialSubject.name"]},
-                                                {
-                                                    "path": [
-                                                        "$.credentialSubject.degree"
-                                                    ]
-                                                },
+                                                {"path": ["$.credentialSubject.degree"]},
                                                 {
                                                     "path": [
                                                         "$.credentialSubject.birthdate_dateint"

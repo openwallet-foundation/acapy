@@ -80,9 +80,7 @@ class TestRecord(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
-            ],
+            proposals_attach=[AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")],
         )
         record = V20PresExRecord(
             pres_ex_id="pxid",

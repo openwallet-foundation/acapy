@@ -140,12 +140,10 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 indy_proof_request = proof_request.attachment(
                     AnonCredsPresExchangeHandler.format
                 )
-                requested_credentials = (
-                    await indy_proof_req_preview2indy_requested_creds(
-                        indy_proof_request,
-                        preview=None,
-                        holder=AnonCredsHolder(self._profile),
-                    )
+                requested_credentials = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_request,
+                    preview=None,
+                    holder=AnonCredsHolder(self._profile),
                 )
             except ValueError as err:
                 LOGGER.warning(f"{err}")

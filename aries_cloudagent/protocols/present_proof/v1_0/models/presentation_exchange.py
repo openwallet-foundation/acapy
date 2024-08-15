@@ -125,9 +125,7 @@ class V10PresentationExchange(BaseExchangeRecord):
     def presentation_request(self) -> IndyProofRequest:
         """Accessor; get deserialized view."""
         return (
-            None
-            if self._presentation_request is None
-            else self._presentation_request.de
+            None if self._presentation_request is None else self._presentation_request.de
         )
 
     @presentation_request.setter

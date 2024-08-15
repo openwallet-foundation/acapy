@@ -103,9 +103,7 @@ async def test_resolve_not_found(profile, resolver, mock_client_session):
 
 @pytest.mark.asyncio
 async def test_resolve_unexpected_status(profile, resolver, mock_client_session):
-    mock_client_session.response = MockResponse(
-        500, "Server failed to complete request"
-    )
+    mock_client_session.response = MockResponse(500, "Server failed to complete request")
     with pytest.raises(ResolverError):
         await resolver.resolve(profile, "did:sov:WRfXPg8dantKVubE3HX8pw")
 

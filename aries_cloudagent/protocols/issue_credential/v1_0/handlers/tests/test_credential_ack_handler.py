@@ -60,9 +60,7 @@ class TestCredentialAckHandler(IsolatedAsyncioTestCase):
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
-            assert (
-                err.exception.message == "Connection used for credential ack not ready"
-            )
+            assert err.exception.message == "Connection used for credential ack not ready"
 
     async def test_called_no_connection_no_oob(self):
         request_context = RequestContext.test_context()

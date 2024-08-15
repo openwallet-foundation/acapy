@@ -37,7 +37,7 @@ class TestWsTransport(AioHTTPTestCase):
         client_info,
         wire_format,
         can_respond: bool = False,
-        **kwargs
+        **kwargs,
     ):
         if not self.session:
             session = InboundSession(
@@ -68,9 +68,7 @@ class TestWsTransport(AioHTTPTestCase):
             self.result_event.set()
 
     async def test_start_x(self):
-        with mock.patch.object(
-            test_module.web, "TCPSite", mock.MagicMock()
-        ) as mock_site:
+        with mock.patch.object(test_module.web, "TCPSite", mock.MagicMock()) as mock_site:
             mock_site.return_value = mock.MagicMock(
                 start=mock.CoroutineMock(side_effect=OSError())
             )

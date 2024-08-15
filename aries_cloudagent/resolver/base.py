@@ -128,9 +128,7 @@ class BaseDIDResolver(ABC):
                 DeprecationWarning,
             )
 
-            supported_did_regex = re.compile(
-                "^did:(?:{}):.*$".format("|".join(methods))
-            )
+            supported_did_regex = re.compile("^did:(?:{}):.*$".format("|".join(methods)))
 
         return bool(supported_did_regex.match(did))
 

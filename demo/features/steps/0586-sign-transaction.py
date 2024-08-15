@@ -141,9 +141,7 @@ def step_impl(context, agent_name, schema_name):
         )
 
         if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
-            assert (
-                created_txn["registration_metadata"]["txn"]["state"] == "request_sent"
-            )
+            assert created_txn["registration_metadata"]["txn"]["state"] == "request_sent"
             assert created_txn["schema_state"]["state"] == "wait"
             assert created_txn["job_id"] is not None
 
@@ -434,9 +432,7 @@ def step_impl(context, agent_name):
     context.rev_reg_id = rev_reg_id
 
 
-@when(
-    '"{agent_name}" has activated the tails file, and uploaded it to the tails server'
-)
+@when('"{agent_name}" has activated the tails file, and uploaded it to the tails server')
 @then(
     '"{agent_name}" has has activated the tails file, and uploaded it to the tails server'
 )
@@ -778,9 +774,7 @@ def step_impl(context, holder_name, issuer_name):
     assert revoc_status_bool is True
 
 
-@given(
-    'Without endorser, "{agent_name}" authors a schema transaction with {schema_name}'
-)
+@given('Without endorser, "{agent_name}" authors a schema transaction with {schema_name}')
 def step_impl(context, agent_name, schema_name):
     agent = context.active_agents[agent_name]
 

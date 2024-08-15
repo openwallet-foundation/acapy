@@ -54,9 +54,7 @@ class TestProvision(IsolatedAsyncioTestCase):
         # given
         mediation_invite = "test-invite"
 
-        with mock.patch.object(
-            test_module.MediationInviteStore, "store"
-        ) as invite_store:
+        with mock.patch.object(test_module.MediationInviteStore, "store") as invite_store:
             # when
             await test_module.provision({"mediation.invite": mediation_invite})
 

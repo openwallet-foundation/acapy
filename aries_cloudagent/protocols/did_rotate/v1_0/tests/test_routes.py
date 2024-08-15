@@ -57,9 +57,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
         "DIDRotateManager",
         autospec=True,
         return_value=mock.MagicMock(
-            rotate_my_did=mock.CoroutineMock(
-                return_value=generate_mock_rotate_message()
-            )
+            rotate_my_did=mock.CoroutineMock(return_value=generate_mock_rotate_message())
         ),
     )
     async def test_rotate(self, *_):

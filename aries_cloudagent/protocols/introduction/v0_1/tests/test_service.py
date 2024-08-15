@@ -35,9 +35,7 @@ class TestIntroductionService(IsolatedAsyncioTestCase):
                     _id="#inline",
                     _type="did-communication",
                     did=TEST_DID,
-                    recipient_keys=[
-                        DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did
-                    ],
+                    recipient_keys=[DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did],
                     routing_keys=[
                         DIDKey.from_public_key_b58(TEST_ROUTE_VERKEY, ED25519).did
                     ],

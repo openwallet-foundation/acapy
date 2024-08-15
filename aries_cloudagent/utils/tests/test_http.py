@@ -64,9 +64,7 @@ class TestTransportUtils(AioHTTPTestCase):
 
     async def test_fetch_stream(self):
         server_addr = f"http://localhost:{self.server.port}"
-        stream = await fetch_stream(
-            f"{server_addr}/succeed", session=self.client.session
-        )
+        stream = await fetch_stream(f"{server_addr}/succeed", session=self.client.session)
         result = await stream.read()
         assert result == b"[true]"
         assert self.succeed_calls == 1

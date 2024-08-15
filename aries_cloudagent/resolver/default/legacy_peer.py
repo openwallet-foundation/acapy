@@ -221,9 +221,7 @@ class LegacyDocCorrections:
         return value
 
     @staticmethod
-    def remove_verification_method(
-        vms: List[dict], public_key_base58: str
-    ) -> List[dict]:
+    def remove_verification_method(vms: List[dict], public_key_base58: str) -> List[dict]:
         """Remove the verification method with the given key."""
         return [vm for vm in vms if vm["publicKeyBase58"] != public_key_base58]
 

@@ -77,9 +77,9 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
 
     async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
         """Return BaseLedger instance."""
-        return self.production_ledgers.get(
+        return self.production_ledgers.get(ledger_id) or self.non_production_ledgers.get(
             ledger_id
-        ) or self.non_production_ledgers.get(ledger_id)
+        )
 
     async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
         """Return ledger_id by ledger pool name."""
@@ -197,9 +197,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 applicable_ledger_inst = result[1]
                 is_self_certified = result[2]
                 if applicable_ledger_id in self.production_ledgers:
-                    insert_key = list(self.production_ledgers).index(
-                        applicable_ledger_id
-                    )
+                    insert_key = list(self.production_ledgers).index(applicable_ledger_id)
                     if is_self_certified:
                         applicable_prod_ledgers["self_certified"][insert_key] = (
                             applicable_ledger_id,
@@ -220,9 +218,10 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                             applicable_ledger_inst,
                         )
                     else:
-                        applicable_non_prod_ledgers["non_self_certified"][
-                            insert_key
-                        ] = (applicable_ledger_id, applicable_ledger_inst)
+                        applicable_non_prod_ledgers["non_self_certified"][insert_key] = (
+                            applicable_ledger_id,
+                            applicable_ledger_inst,
+                        )
         applicable_prod_ledgers["self_certified"] = OrderedDict(
             sorted(applicable_prod_ledgers.get("self_certified").items())
         )
@@ -240,36 +239,28 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 applicable_prod_ledgers.get("self_certified").values()
             )[0]
             if cache_did and self.cache:
-                await self.cache.set(
-                    cache_key, successful_ledger_inst[0], self.cache_ttl
-                )
+                await self.cache.set(cache_key, successful_ledger_inst[0], self.cache_ttl)
             return successful_ledger_inst
         elif len(applicable_non_prod_ledgers.get("self_certified")) > 0:
             successful_ledger_inst = list(
                 applicable_non_prod_ledgers.get("self_certified").values()
             )[0]
             if cache_did and self.cache:
-                await self.cache.set(
-                    cache_key, successful_ledger_inst[0], self.cache_ttl
-                )
+                await self.cache.set(cache_key, successful_ledger_inst[0], self.cache_ttl)
             return successful_ledger_inst
         elif len(applicable_prod_ledgers.get("non_self_certified")) > 0:
             successful_ledger_inst = list(
                 applicable_prod_ledgers.get("non_self_certified").values()
             )[0]
             if cache_did and self.cache:
-                await self.cache.set(
-                    cache_key, successful_ledger_inst[0], self.cache_ttl
-                )
+                await self.cache.set(cache_key, successful_ledger_inst[0], self.cache_ttl)
             return successful_ledger_inst
         elif len(applicable_non_prod_ledgers.get("non_self_certified")) > 0:
             successful_ledger_inst = list(
                 applicable_non_prod_ledgers.get("non_self_certified").values()
             )[0]
             if cache_did and self.cache:
-                await self.cache.set(
-                    cache_key, successful_ledger_inst[0], self.cache_ttl
-                )
+                await self.cache.set(cache_key, successful_ledger_inst[0], self.cache_ttl)
             return successful_ledger_inst
         else:
             raise MultipleLedgerManagerError(

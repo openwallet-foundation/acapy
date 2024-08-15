@@ -137,8 +137,7 @@ class TestCredentialOfferHandler(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
             assert (
-                err.exception.message
-                == "Connection used for credential offer not ready"
+                err.exception.message == "Connection used for credential offer not ready"
             )
 
         assert not responder.messages

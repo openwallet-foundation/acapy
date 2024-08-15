@@ -61,8 +61,6 @@ class MediationGrantSchema(AgentMessageSchema):
         }
     )
     routing_keys = fields.List(
-        fields.Str(
-            metadata={"description": "Keys to use for forward message packaging"}
-        ),
+        fields.Str(metadata={"description": "Keys to use for forward message packaging"}),
         required=False,
     )

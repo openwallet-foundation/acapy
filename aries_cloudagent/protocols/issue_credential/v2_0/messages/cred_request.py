@@ -12,9 +12,7 @@ from .....messaging.decorators.attach_decorator import (
 from ..message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
 from .cred_format import V20CredFormat, V20CredFormatSchema
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.cred_request_handler.V20CredRequestHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.cred_request_handler.V20CredRequestHandler"
 
 
 class V20CredRequest(AgentMessage):

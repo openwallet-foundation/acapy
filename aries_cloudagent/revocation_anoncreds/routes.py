@@ -395,13 +395,9 @@ class RevokeRequestSchemaAnoncreds(CredRevRecordQueryStringSchema):
         notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
-            raise ValidationError(
-                "Request must specify connection_id if notify is true"
-            )
+            raise ValidationError("Request must specify connection_id if notify is true")
         if notify and not notify_version:
-            raise ValidationError(
-                "Request must specify notify_version if notify is true"
-            )
+            raise ValidationError("Request must specify notify_version if notify is true")
 
     publish = fields.Boolean(
         required=False,
@@ -571,9 +567,7 @@ async def get_rev_regs(request: web.BaseRequest):
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     search_tags = list(vars(RevRegsCreatedQueryStringSchema)["_declared_fields"])
-    tag_filter = {
-        tag: request.query[tag] for tag in search_tags if tag in request.query
-    }
+    tag_filter = {tag: request.query[tag] for tag in search_tags if tag in request.query}
     cred_def_id = tag_filter.get("cred_def_id")
     state = tag_filter.get("state")
     try:

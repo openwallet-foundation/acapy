@@ -157,9 +157,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         assert self.registry.supported_identifiers_regex == SUPPORTED_ID_REGEX
         assert bool(self.registry.supported_identifiers_regex.match(TEST_INDY_DID))
         assert bool(self.registry.supported_identifiers_regex.match(TEST_INDY_DID_1))
-        assert bool(
-            self.registry.supported_identifiers_regex.match(TEST_INDY_SCHEMA_ID)
-        )
+        assert bool(self.registry.supported_identifiers_regex.match(TEST_INDY_SCHEMA_ID))
         assert bool(
             self.registry.supported_identifiers_regex.match(TEST_INDY_REV_REG_DEF_ID)
         )
@@ -790,9 +788,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def test_txn_submit(self):
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                txn_submit=mock.CoroutineMock(return_value="transaction_id")
-            ),
+            mock.MagicMock(txn_submit=mock.CoroutineMock(return_value="transaction_id")),
         )
         async with self.profile.session() as session:
             ledger = session.inject(BaseLedger)
@@ -883,7 +879,6 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def test_register_revocation_list_with_author_role(
         self, mock_send_revoc_reg_entry, mock_create_record, _
     ):
-
         self.profile.inject_or = mock.MagicMock()
         self.profile.settings.set_value("endorser.author", True)
 
@@ -1104,7 +1099,6 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         mock.CoroutineMock(return_value=MockTxn()),
     )
     async def test_fix_ledger_entry(self, *_):
-
         self.profile.context.injector.bind_instance(
             BaseLedger,
             mock.MagicMock(send_revoc_reg_entry=mock.CoroutineMock(return_value={})),

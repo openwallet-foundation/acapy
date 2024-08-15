@@ -177,9 +177,7 @@ class AnonCredsVerifier:
                     index = revealed_attrs[uuid]["sub_proof_index"]
                     if cred_defs[index].credential_definition.value.revocation:
                         timestamp = pres["identifiers"][index].get("timestamp")
-                        if (timestamp is not None) ^ bool(
-                            non_revoc_intervals.get(uuid)
-                        ):
+                        if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
                             LOGGER.debug(f">>> uuid: {uuid}")
                             LOGGER.debug(
                                 f">>> revealed_attrs[uuid]: {revealed_attrs[uuid]}"
@@ -344,9 +342,7 @@ class AnonCredsVerifier:
                         f"'{req_attr['name']}'"
                     )
                 else:
-                    raise ValueError(
-                        f"Missing requested attribute '{req_attr['name']}'"
-                    )
+                    raise ValueError(f"Missing requested attribute '{req_attr['name']}'")
             elif "names" in req_attr:
                 group_spec = revealed_groups[uuid]
                 pres_req_attr_spec = {
@@ -417,18 +413,15 @@ class AnonCredsVerifier:
                 if identifier.get("timestamp"):
                     rev_lists.setdefault(identifier["rev_reg_id"], {})
 
-                    if (
-                        identifier["timestamp"]
-                        not in rev_lists[identifier["rev_reg_id"]]
-                    ):
+                    if identifier["timestamp"] not in rev_lists[identifier["rev_reg_id"]]:
                         result = await anoncreds_registry.get_revocation_list(
                             self.profile,
                             identifier["rev_reg_id"],
                             timestamp_to=identifier["timestamp"],
                         )
-                        rev_lists[identifier["rev_reg_id"]][
-                            identifier["timestamp"]
-                        ] = result.revocation_list.serialize()
+                        rev_lists[identifier["rev_reg_id"]][identifier["timestamp"]] = (
+                            result.revocation_list.serialize()
+                        )
         return (
             schemas,
             cred_defs,

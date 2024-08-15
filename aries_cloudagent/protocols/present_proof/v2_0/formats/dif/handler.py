@@ -224,16 +224,13 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             elif (
                                 len(proof_types) == 1
                                 and (
-                                    BbsBlsSignature2020.signature_type
-                                    not in proof_types
+                                    BbsBlsSignature2020.signature_type not in proof_types
                                 )
                                 and (
-                                    Ed25519Signature2018.signature_type
-                                    not in proof_types
+                                    Ed25519Signature2018.signature_type not in proof_types
                                 )
                                 and (
-                                    Ed25519Signature2020.signature_type
-                                    not in proof_types
+                                    Ed25519Signature2020.signature_type not in proof_types
                                 )
                             ):
                                 raise V20PresFormatHandlerError(
@@ -246,16 +243,13 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             elif (
                                 len(proof_types) >= 2
                                 and (
-                                    BbsBlsSignature2020.signature_type
-                                    not in proof_types
+                                    BbsBlsSignature2020.signature_type not in proof_types
                                 )
                                 and (
-                                    Ed25519Signature2018.signature_type
-                                    not in proof_types
+                                    Ed25519Signature2018.signature_type not in proof_types
                                 )
                                 and (
-                                    Ed25519Signature2020.signature_type
-                                    not in proof_types
+                                    Ed25519Signature2020.signature_type not in proof_types
                                 )
                             ):
                                 raise V20PresFormatHandlerError(
@@ -269,20 +263,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                         proof_format
                                         == Ed25519Signature2018.signature_type
                                     ):
-                                        proof_type = [
-                                            Ed25519Signature2018.signature_type
-                                        ]
+                                        proof_type = [Ed25519Signature2018.signature_type]
                                         dif_handler_proof_type = (
                                             Ed25519Signature2018.signature_type
                                         )
                                         break
                                     elif (
-                                        proof_format
-                                        == BbsBlsSignature2020.signature_type
+                                        proof_format == BbsBlsSignature2020.signature_type
                                     ):
-                                        proof_type = [
-                                            BbsBlsSignature2020.signature_type
-                                        ]
+                                        proof_type = [BbsBlsSignature2020.signature_type]
                                         dif_handler_proof_type = (
                                             BbsBlsSignature2020.signature_type
                                         )
@@ -462,9 +451,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         """
         dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
-        pres_request = pres_ex_record.pres_request.attachment(
-            DIFPresFormatHandler.format
-        )
+        pres_request = pres_ex_record.pres_request.attachment(DIFPresFormatHandler.format)
         pres_ver_result = None
         if isinstance(dif_proof, Sequence):
             if len(dif_proof) == 0:

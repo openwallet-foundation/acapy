@@ -21,9 +21,7 @@ class BasicMessageModuleResponseSchema(OpenAPISchema):
 class SendMessageSchema(OpenAPISchema):
     """Request schema for sending a message."""
 
-    content = fields.Str(
-        metadata={"description": "Message content", "example": "Hello"}
-    )
+    content = fields.Str(metadata={"description": "Message content", "example": "Hello"})
 
 
 class BasicConnIdMatchInfoSchema(OpenAPISchema):

@@ -1553,18 +1553,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             mock_txn_mgr.return_value.complete_transaction = mock.CoroutineMock()
 
             mock_txn_mgr.return_value.complete_transaction.return_value = (
-                mock.CoroutineMock(
-                    serialize=mock.MagicMock(return_value={"...": "..."})
-                ),
+                mock.CoroutineMock(serialize=mock.MagicMock(return_value={"...": "..."})),
                 mock.CoroutineMock(),
             )
 
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(),
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-                messages_attach=[
-                    {"data": {"json": json.dumps({"message": "attached"})}}
-                ],
+                messages_attach=[{"data": {"json": json.dumps({"message": "attached"})}}],
             )
             await test_module.transaction_write(self.request)
             mock_response.assert_called_once_with({"...": "..."})
@@ -1599,9 +1595,7 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."}),
                 state=TransactionRecord.STATE_TRANSACTION_CREATED,
-                messages_attach=[
-                    {"data": {"json": json.dumps({"message": "attached"})}}
-                ],
+                messages_attach=[{"data": {"json": json.dumps({"message": "attached"})}}],
             )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
@@ -1623,9 +1617,7 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."}),
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-                messages_attach=[
-                    {"data": {"json": json.dumps({"message": "attached"})}}
-                ],
+                messages_attach=[{"data": {"json": json.dumps({"message": "attached"})}}],
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):

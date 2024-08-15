@@ -47,9 +47,7 @@ class ForwardHandler(BaseHandler):
         connection_verkey = connection_targets[0].recipient_keys[0]
 
         # Note: not currently vetting the state of the connection here
-        self._logger.info(
-            f"Forwarding message to connection: {recipient.connection_id}"
-        )
+        self._logger.info(f"Forwarding message to connection: {recipient.connection_id}")
 
         send_status = await responder.send(
             packed,

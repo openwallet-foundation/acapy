@@ -26,9 +26,7 @@ class DIDXResponseHandler(BaseHandler):
         profile = context.profile
         mgr = DIDXManager(profile)
         try:
-            conn_rec = await mgr.accept_response(
-                context.message, context.message_receipt
-            )
+            conn_rec = await mgr.accept_response(context.message, context.message_receipt)
         except DIDXManagerError as e:
             report, targets = await mgr.manager_error_to_problem_report(
                 e, context.message, context.message_receipt

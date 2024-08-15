@@ -154,9 +154,7 @@ class BaseResponder(ABC):
         async def _wait_for_state() -> Tuple[bool, Optional[str]]:
             while True:
                 async with profile.session() as session:
-                    conn_record = await ConnRecord.retrieve_by_id(
-                        session, connection_id
-                    )
+                    conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
                     if conn_record.is_ready:
                         # if ConnRecord.State.get(conn_record.state) in (
                         #     ConnRecord.State.COMPLETED,

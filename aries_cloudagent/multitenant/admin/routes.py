@@ -484,9 +484,7 @@ async def wallet_create(request: web.BaseRequest):
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)
 
-        wallet_record = await multitenant_mgr.create_wallet(
-            settings, key_management_mode
-        )
+        wallet_record = await multitenant_mgr.create_wallet(settings, key_management_mode)
 
         token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
 

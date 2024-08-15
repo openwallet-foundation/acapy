@@ -24,9 +24,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
         self.registry.register_message_types(
             {self.test_message_type: self.test_message_cls}
         )
-        self.registry.register_controllers(
-            {self.test_message_type: self.test_controller}
-        )
+        self.registry.register_controllers({self.test_message_type: self.test_controller})
 
         assert list(self.registry.message_types) == [self.test_message_type]
         assert list(self.registry.protocols) == [self.test_protocol]
@@ -96,8 +94,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
         }
         self.registry.register_message_types(test_typesets, test_version_def)
         assert (
-            "https://didcom.org/out-of-band/1.0/invitation"
-            in self.registry.message_types
+            "https://didcom.org/out-of-band/1.0/invitation" in self.registry.message_types
         )
         assert (
             "https://didcom.org/out-of-band/1.0/handshake-reuse"
@@ -112,8 +109,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
             in self.registry.message_types
         )
         assert (
-            "https://didcom.org/out-of-band/1.1/invitation"
-            in self.registry.message_types
+            "https://didcom.org/out-of-band/1.1/invitation" in self.registry.message_types
         )
         assert (
             "https://didcom.org/out-of-band/1.1/handshake-reuse"
@@ -194,9 +190,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
             async def check_access(self, context):
                 return False
 
-        with mock.patch.object(
-            ClassLoader, "load_class", mock.MagicMock()
-        ) as load_class:
+        with mock.patch.object(ClassLoader, "load_class", mock.MagicMock()) as load_class:
             load_class.return_value = Mockery
             published = await self.registry.prepare_disclosed(ctx, protocols)
             assert not published

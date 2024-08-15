@@ -555,9 +555,7 @@ class AgentMessageSchema(BaseModelSchema):
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         for field_name in expect_fields:
             if field_name not in self._signatures:
-                raise BaseModelError(
-                    "Missing signature for field: {}".format(field_name)
-                )
+                raise BaseModelError("Missing signature for field: {}".format(field_name))
 
         return obj
 

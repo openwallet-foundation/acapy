@@ -51,8 +51,7 @@ def match_post_filter(
         return (
             positive
             and all(
-                record.get(k) and record.get(k) in alts
-                for k, alts in post_filter.items()
+                record.get(k) and record.get(k) in alts for k, alts in post_filter.items()
             )
         ) or (
             (not positive)
@@ -498,9 +497,7 @@ class BaseRecord(BaseModel):
     def strip_tag_prefix(cls, tags: dict):
         """Strip tilde from unencrypted tag names."""
 
-        return (
-            {(k[1:] if "~" in k else k): v for (k, v) in tags.items()} if tags else {}
-        )
+        return {(k[1:] if "~" in k else k): v for (k, v) in tags.items()} if tags else {}
 
     @classmethod
     def prefix_tag_filter(cls, tag_filter: dict):

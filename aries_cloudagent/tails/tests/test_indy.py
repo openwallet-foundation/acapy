@@ -30,9 +30,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         )
         indy_tails = test_module.IndyTailsServer()
 
-        with mock.patch.object(
-            test_module, "put_file", mock.CoroutineMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.CoroutineMock()) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
                 context,
@@ -40,9 +38,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
                 "/tmp/dummy/path",
             )
             assert ok
-            assert (
-                text == context.settings["tails_server_upload_url"] + "/" + REV_REG_ID
-            )
+            assert text == context.settings["tails_server_upload_url"] + "/" + REV_REG_ID
 
     async def test_upload_indy_vdr(self):
         profile = InMemoryProfile.test_profile()
@@ -61,9 +57,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         profile.context.injector.bind_instance(BaseLedger, mock.MagicMock())
         indy_tails = test_module.IndyTailsServer()
 
-        with mock.patch.object(
-            test_module, "put_file", mock.CoroutineMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.CoroutineMock()) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
                 profile.context,
@@ -71,9 +65,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
                 "/tmp/dummy/path",
             )
             assert ok
-            assert (
-                text == profile.settings["tails_server_upload_url"] + "/" + REV_REG_ID
-            )
+            assert text == profile.settings["tails_server_upload_url"] + "/" + REV_REG_ID
 
     async def test_upload_x(self):
         context = InjectionContext(
@@ -84,9 +76,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         )
         indy_tails = test_module.IndyTailsServer()
 
-        with mock.patch.object(
-            test_module, "put_file", mock.CoroutineMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.CoroutineMock()) as mock_put:
             mock_put.side_effect = test_module.PutError("Server down for maintenance")
 
             (ok, text) = await indy_tails.upload_tails_file(

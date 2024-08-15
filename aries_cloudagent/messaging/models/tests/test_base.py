@@ -103,9 +103,7 @@ class TestBase(IsolatedAsyncioTestCase):
         model = model.validate()
         assert model.attr == "succeeds"
 
-        model = ModelImplWithUnknown.deserialize(
-            {"attr": "succeeds", "another": "value"}
-        )
+        model = ModelImplWithUnknown.deserialize({"attr": "succeeds", "another": "value"})
         assert model.extra
         assert model.extra["another"] == "value"
         assert model.attr == "succeeds"

@@ -159,9 +159,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         """Create a presentation."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_pres(
-                pres_ex_record, request_data
-            )
+            return await self.anoncreds_handler.create_pres(pres_ex_record, request_data)
 
         requested_credentials = {}
         if not request_data:
@@ -170,12 +168,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 indy_proof_request = proof_request.attachment(
                     IndyPresExchangeHandler.format
                 )
-                requested_credentials = (
-                    await indy_proof_req_preview2indy_requested_creds(
-                        indy_proof_request,
-                        preview=None,
-                        holder=self._profile.inject(IndyHolder),
-                    )
+                requested_credentials = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_request,
+                    preview=None,
+                    holder=self._profile.inject(IndyHolder),
                 )
             except ValueError as err:
                 LOGGER.warning(f"{err}")

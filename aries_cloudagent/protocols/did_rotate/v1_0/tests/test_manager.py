@@ -34,9 +34,7 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
         self.route_manager.routing_info = mock.CoroutineMock(
             return_value=([], self.test_endpoint)
         )
-        self.route_manager.mediation_record_if_id = mock.CoroutineMock(
-            return_value=None
-        )
+        self.route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
         self.route_manager.mediation_record_for_connection = mock.CoroutineMock(
             return_value=None
         )
@@ -56,15 +54,11 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
         mock_conn_record = MockConnRecord(test_conn_id, True)
         mock_conn_record.delete_record = mock.CoroutineMock()
 
-        with mock.patch.object(
-            self.responder, "send", mock.CoroutineMock()
-        ) as mock_send:
+        with mock.patch.object(self.responder, "send", mock.CoroutineMock()) as mock_send:
             msg = await self.manager.hangup(mock_conn_record)
             mock_conn_record.delete_record.assert_called_once()
             mock_send.assert_called_once()
-            assert (
-                msg._type == DIDCommPrefix.NEW.value + "/" + test_message_types.HANGUP
-            )
+            assert msg._type == DIDCommPrefix.NEW.value + "/" + test_message_types.HANGUP
 
     async def test_receive_hangup(self):
         mock_conn_record = MockConnRecord(test_conn_id, True)
@@ -77,14 +71,10 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
         mock_conn_record = MockConnRecord(test_conn_id, True)
         test_to_did = "did:peer:2:testdid"
 
-        with mock.patch.object(
-            self.responder, "send", mock.CoroutineMock()
-        ) as mock_send:
+        with mock.patch.object(self.responder, "send", mock.CoroutineMock()) as mock_send:
             msg = await self.manager.rotate_my_did(mock_conn_record, test_to_did)
             mock_send.assert_called_once()
-            assert (
-                msg._type == DIDCommPrefix.NEW.value + "/" + test_message_types.ROTATE
-            )
+            assert msg._type == DIDCommPrefix.NEW.value + "/" + test_message_types.ROTATE
 
     async def test_receive_rotate(self):
         mock_conn_record = MockConnRecord(test_conn_id, True)

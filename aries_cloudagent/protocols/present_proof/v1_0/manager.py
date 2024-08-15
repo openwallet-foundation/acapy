@@ -298,9 +298,7 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = indy_proof
         async with self._profile.session() as session:
-            await presentation_exchange_record.save(
-                session, reason="create presentation"
-            )
+            await presentation_exchange_record.save(session, reason="create presentation")
 
         return presentation_exchange_record, presentation_message
 
@@ -363,9 +361,9 @@ class PresentationManager:
                 name = proof_req["requested_attributes"][reft]["name"]
                 value = attr_spec["raw"]
                 if not presentation_preview.has_attr_spec(
-                    cred_def_id=presentation["identifiers"][
-                        attr_spec["sub_proof_index"]
-                    ]["cred_def_id"],
+                    cred_def_id=presentation["identifiers"][attr_spec["sub_proof_index"]][
+                        "cred_def_id"
+                    ],
                     name=name,
                     value=value,
                 ):
@@ -437,9 +435,7 @@ class PresentationManager:
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 
         async with self._profile.session() as session:
-            await presentation_exchange_record.save(
-                session, reason="verify presentation"
-            )
+            await presentation_exchange_record.save(session, reason="verify presentation")
 
         await self.send_presentation_ack(presentation_exchange_record, responder)
         return presentation_exchange_record
@@ -517,16 +513,16 @@ class PresentationManager:
         connection_id = connection_record.connection_id if connection_record else None
 
         async with self._profile.session() as session:
-            (presentation_exchange_record) = (
-                await V10PresentationExchange.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": message._thread_id},
-                    {
-                        # connection_id can be null in connectionless
-                        "connection_id": connection_id,
-                        "role": V10PresentationExchange.ROLE_PROVER,
-                    },
-                )
+            (
+                presentation_exchange_record
+            ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                session,
+                {"thread_id": message._thread_id},
+                {
+                    # connection_id can be null in connectionless
+                    "connection_id": connection_id,
+                    "role": V10PresentationExchange.ROLE_PROVER,
+                },
             )
             presentation_exchange_record.verified = message._verification_result
             presentation_exchange_record.state = (

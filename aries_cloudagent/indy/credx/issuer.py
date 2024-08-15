@@ -197,9 +197,7 @@ class IndyCredxIssuer(IndyIssuer):
         except AskarError as err:
             raise IndyIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
-            raise IndyIssuerError(
-                "Credential definition not found for credential offer"
-            )
+            raise IndyIssuerError("Credential definition not found for credential offer")
         try:
             # The tag holds the full name of the schema,
             # as opposed to just the sequence number
@@ -288,9 +286,7 @@ class IndyCredxIssuer(IndyIssuer):
                     if not rev_reg_info:
                         raise IndyIssuerError("Revocation registry metadata not found")
                     if not rev_reg_def:
-                        raise IndyIssuerError(
-                            "Revocation registry definition not found"
-                        )
+                        raise IndyIssuerError("Revocation registry definition not found")
                     if not rev_key:
                         raise IndyIssuerError(
                             "Revocation registry definition private data not found"
@@ -320,9 +316,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     await txn.commit()
             except AskarError as err:
-                raise IndyIssuerError(
-                    "Error updating revocation registry index"
-                ) from err
+                raise IndyIssuerError("Error updating revocation registry index") from err
 
             revoc = CredentialRevocationConfig(
                 rev_reg_def,
@@ -388,9 +382,7 @@ class IndyCredxIssuer(IndyIssuer):
                 raise IndyIssuerError("Repeated conflict attempting to update registry")
             try:
                 async with self._profile.session() as session:
-                    cred_def = await session.handle.fetch(
-                        CATEGORY_CRED_DEF, cred_def_id
-                    )
+                    cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
                     rev_reg_def = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF, revoc_reg_id
                     )
@@ -551,9 +543,7 @@ class IndyCredxIssuer(IndyIssuer):
                 delta.update_with(d2)
                 return delta.to_json()
             except CredxError as err:
-                raise IndyIssuerError(
-                    "Error merging revocation registry deltas"
-                ) from err
+                raise IndyIssuerError("Error merging revocation registry deltas") from err
 
         return await asyncio.get_event_loop().run_in_executor(
             None, update, fro_delta, to_delta

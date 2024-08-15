@@ -156,9 +156,7 @@ class DIDXManager(BaseConnectionManager):
             # Save the invitation for later processing
             await conn_rec.attach_invitation(session, invitation)
             if not conn_rec.invitation_key and conn_rec.their_public_did:
-                targets = await self.resolve_connection_targets(
-                    conn_rec.their_public_did
-                )
+                targets = await self.resolve_connection_targets(conn_rec.their_public_did)
                 conn_rec.invitation_key = targets[0].recipient_keys[0]
 
         await self._route_manager.save_mediator_for_connection(
@@ -596,9 +594,7 @@ class DIDXManager(BaseConnectionManager):
 
         async with self.profile.transaction() as txn:
             # Attach the connection request so it can be found and responded to
-            await conn_rec.save(
-                txn, reason="Received connection request from invitation"
-            )
+            await conn_rec.save(txn, reason="Received connection request from invitation")
             await conn_rec.attach_request(txn, request)
             await txn.commit()
 
@@ -886,9 +882,7 @@ class DIDXManager(BaseConnectionManager):
             )
         if send_mediation_request:
             temp_mediation_mgr = MediationManager(self.profile)
-            _, request = await temp_mediation_mgr.prepare_request(
-                conn_rec.connection_id
-            )
+            _, request = await temp_mediation_mgr.prepare_request(conn_rec.connection_id)
             responder = self.profile.inject(BaseResponder)
             await responder.send(request, connection_id=conn_rec.connection_id)
 
@@ -1206,9 +1200,7 @@ class DIDXManager(BaseConnectionManager):
         if not signed_diddoc_bytes:
             raise DIDXManagerError("DID rotate attachment is not signed.")
         if not await attached.data.verify(wallet, invi_key):
-            raise DIDXManagerError(
-                "DID rotate attachment signature failed verification"
-            )
+            raise DIDXManagerError("DID rotate attachment signature failed verification")
 
         return signed_diddoc_bytes.decode()
 

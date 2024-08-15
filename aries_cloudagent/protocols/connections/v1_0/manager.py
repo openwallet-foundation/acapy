@@ -167,9 +167,7 @@ class ConnectionManager(BaseConnectionManager):
             # Create and store new invitation key
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                invitation_signing_key = await wallet.create_signing_key(
-                    key_type=ED25519
-                )
+                invitation_signing_key = await wallet.create_signing_key(key_type=ED25519)
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
 
@@ -561,8 +559,7 @@ class ConnectionManager(BaseConnectionManager):
             if not connection:
                 if not self.profile.settings.get("requests_through_public_did"):
                     raise ConnectionManagerError(
-                        "Unsolicited connection requests to "
-                        "public DID is not enabled"
+                        "Unsolicited connection requests to " "public DID is not enabled"
                     )
                 connection = ConnRecord()
             connection.invitation_key = connection_key

@@ -47,7 +47,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         self.mock_record = mock.MagicMock(
             **serialized,
             serialize=mock.MagicMock(return_value=serialized),
-            save=mock.CoroutineMock()
+            save=mock.CoroutineMock(),
         )
 
     def test_mediation_sort_key(self):
@@ -147,9 +147,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as mock_response:
             mock_mediation_record_retrieve.return_value = self.mock_record
             await test_module.retrieve_mediation_request(self.request)
-            mock_response.assert_called_once_with(
-                self.mock_record.serialize.return_value
-            )
+            mock_response.assert_called_once_with(self.mock_record.serialize.return_value)
             mock_mediation_record_retrieve.assert_called()
 
     async def test_retrieve_mediation_request_x_not_found(self):
@@ -159,9 +157,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, self.assertRaises(
-            test_module.web.HTTPNotFound
-        ):
+        ) as mock_response, self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.retrieve_mediation_request(self.request)
 
     async def test_retrieve_mediation_request_x_storage_error(self):
@@ -171,9 +167,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, self.assertRaises(
-            test_module.web.HTTPBadRequest
-        ):
+        ) as mock_response, self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.retrieve_mediation_request(self.request)
 
     async def test_delete_mediation_request(self):
@@ -186,9 +180,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as mock_response:
             mock_mediation_record_retrieve.return_value = self.mock_record
             await test_module.delete_mediation_request(self.request)
-            mock_response.assert_called_once_with(
-                self.mock_record.serialize.return_value
-            )
+            mock_response.assert_called_once_with(self.mock_record.serialize.return_value)
             mock_mediation_record_retrieve.assert_called()
             mock_delete_record.assert_called()
 
@@ -199,9 +191,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, self.assertRaises(
-            test_module.web.HTTPNotFound
-        ):
+        ) as mock_response, self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.delete_mediation_request(self.request)
 
     async def test_delete_mediation_request_x_storage_error(self):
@@ -211,9 +201,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, self.assertRaises(
-            test_module.web.HTTPBadRequest
-        ):
+        ) as mock_response, self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.delete_mediation_request(self.request)
 
     async def test_request_mediation(self):
@@ -475,9 +463,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as mock_retrieve_by_id, mock.patch.object(
             test_module.web,
             "json_response",
-            mock.MagicMock(
-                side_effect=lambda *args, **kwargs: [*args, *kwargs.values()]
-            ),
+            mock.MagicMock(side_effect=lambda *args, **kwargs: [*args, *kwargs.values()]),
         ) as mock_response:
             results, status = await test_module.send_keylist_update(self.request)
             assert results["updates"] == body_with_didkey["updates"]

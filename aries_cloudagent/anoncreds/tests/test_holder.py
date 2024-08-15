@@ -56,9 +56,7 @@ from ..registry import AnonCredsRegistry
 class MockCredReceived:
     def __init__(self, bad_schema=False, bad_cred_def=False):
         self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
-        self.cred_def_id = (
-            "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
-        )
+        self.cred_def_id = "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
 
         if bad_schema:
             self.schema_id = "bad-schema-id"
@@ -79,9 +77,7 @@ class MockCredReceived:
 class MockCredReceivedW3C:
     def __init__(self, bad_schema=False, bad_cred_def=False):
         self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
-        self.cred_def_id = (
-            "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
-        )
+        self.cred_def_id = "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
 
         if bad_schema:
             self.schema_id = "bad-schema-id"
@@ -206,9 +202,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.get_master_secret()
 
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         CredentialRequest,
         "create",
@@ -270,9 +264,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 "holder-did",
             )
 
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     async def test_store_credential_fails_to_load_raises_x(self, mock_master_secret):
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.store_credential(
@@ -290,9 +282,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             )
             assert mock_master_secret.called
 
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         Credential,
         "load",
@@ -349,9 +339,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 {"cred-req-meta": "cred-req-meta"},
             )
 
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         W3cCredential,
         "load",
@@ -369,7 +357,6 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     async def test_store_credential_w3c(
         self, mock_load, mock_w3cload, mock_master_secret
     ):
-
         self.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
         )
@@ -381,9 +368,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(jsonld, "expand", return_value=MagicMock()):
-            with mock.patch.object(
-                JsonLdProcessor, "get_values", return_value=["type1"]
-            ):
+            with mock.patch.object(JsonLdProcessor, "get_values", return_value=["type1"]):
                 result = await self.holder.store_credential_w3c(
                     MOCK_CRED_DEF,
                     MOCK_W3C_CRED,
@@ -397,9 +382,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 assert mock_w3cload.called
                 assert self.profile.transaction.called
 
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(Credential, "load", return_value=MockCredential())
     async def test_store_credential_failed_trx(self, mock_load, mock_master_secret):
         self.profile.transaction = mock.MagicMock(
@@ -542,9 +525,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             assert mock_handle.fetch.call_count == 2
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.Presentation, "create", return_value=Presentation.load(MOCK_PRES)
     )
@@ -592,9 +573,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         )
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.Presentation, "create", return_value=Presentation.load(MOCK_PRES)
     )
@@ -687,9 +666,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         assert mock_handle.fetch.called
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.Presentation,
         "create",
@@ -714,9 +691,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             )
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.W3cPresentation,
         "create",
@@ -739,9 +714,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         mock_handle.fetch.assert_called
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(
-        AnonCredsHolder, "get_master_secret", return_value="master-secret"
-    )
+    @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.W3cPresentation,
         "create",

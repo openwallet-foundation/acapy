@@ -78,9 +78,7 @@ class TestRefusedTransactionResponse(TestCase, TestConfig):
         """
         Test serialization.
         """
-        refused_transaction_response_dict = (
-            self.refused_transaction_response.serialize()
-        )
+        refused_transaction_response_dict = self.refused_transaction_response.serialize()
         mock_refused_transaction_response_schema_dump.assert_called_once_with(
             self.refused_transaction_response
         )

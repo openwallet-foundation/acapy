@@ -111,9 +111,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         self.context = self.profile.context
 
         self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
-        self.context.injector.bind_instance(
-            BaseMultitenantManager, self.multitenant_mgr
-        )
+        self.context.injector.bind_instance(BaseMultitenantManager, self.multitenant_mgr)
 
         self.test_mediator_routing_keys = [
             "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -565,9 +563,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             vmethod = builder.verification_method.add(
                 Ed25519VerificationKey2020,
                 public_key_multibase=multibase.encode(
-                    multicodec.wrap(
-                        "ed25519-pub", b58_to_bytes(self.test_target_verkey)
-                    ),
+                    multicodec.wrap("ed25519-pub", b58_to_bytes(self.test_target_verkey)),
                     "base58btc",
                 ),
             )
@@ -969,9 +965,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         self.manager.resolve_didcomm_services = mock.CoroutineMock(
             return_value=(doc, doc.service)
         )
-        recip, routing = await self.manager.verification_methods_for_service(
-            doc, service
-        )
+        recip, routing = await self.manager.verification_methods_for_service(doc, service)
         assert recip == [vm]
         assert routing
 

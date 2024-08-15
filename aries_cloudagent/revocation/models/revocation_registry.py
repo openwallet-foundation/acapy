@@ -195,9 +195,7 @@ class RevocationRegistry:
             except OSError as err:
                 LOGGER.warning(f"Could not delete invalid tails file: {err}")
 
-            raise RevocationError(
-                "The hash of the downloaded tails file does not match."
-            )
+            raise RevocationError("The hash of the downloaded tails file does not match.")
 
         self.tails_local_path = str(tails_file_path)
         return self.tails_local_path

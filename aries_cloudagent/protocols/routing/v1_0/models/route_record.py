@@ -28,7 +28,7 @@ class RouteRecord(BaseRecord):
         connection_id: str = None,
         wallet_id: str = None,
         recipient_key: str = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize route record.
 

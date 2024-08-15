@@ -27,9 +27,7 @@ class PresentationProposalHandler(BaseHandler):
         """
         r_time = get_timer()
         profile = context.profile
-        self._logger.debug(
-            "PresentationProposalHandler called with context %s", context
-        )
+        self._logger.debug("PresentationProposalHandler called with context %s", context)
         assert isinstance(context.message, PresentationProposal)
         self._logger.info(
             "Received presentation proposal message: %s",
@@ -42,9 +40,7 @@ class PresentationProposalHandler(BaseHandler):
             )
         # If connection is present it must be ready for use
         elif not context.connection_ready:
-            raise HandlerException(
-                "Connection used for presentation proposal not ready"
-            )
+            raise HandlerException("Connection used for presentation proposal not ready")
 
         presentation_manager = PresentationManager(profile)
         presentation_exchange_record = await presentation_manager.receive_proposal(

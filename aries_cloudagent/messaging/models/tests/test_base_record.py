@@ -136,9 +136,7 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
             records.append(ARecordImpl(a="1", b=str(i), code="one"))
             await records[i].save(session)
         with self.assertRaises(StorageDuplicateError):
-            await ARecordImpl.retrieve_by_tag_filter(
-                session, {"code": "one"}, {"a": "1"}
-            )
+            await ARecordImpl.retrieve_by_tag_filter(session, {"code": "one"}, {"a": "1"})
         await records[0].delete_record(session)
 
     async def test_save_x(self):
@@ -320,9 +318,7 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         assert {**expect} == {**actual}
 
         tags = {"$or": [{"a": "x"}, {"c": "z"}]}
-        assert UnencTestImpl.prefix_tag_filter(tags) == {
-            "$or": [{"~a": "x"}, {"c": "z"}]
-        }
+        assert UnencTestImpl.prefix_tag_filter(tags) == {"$or": [{"~a": "x"}, {"c": "z"}]}
 
     async def test_query_with_limit(self):
         session = InMemoryProfile.test_session()

@@ -546,9 +546,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                mock.CoroutineMock(
-                    return_value=[{"cred_info": {"referent": "dummy-0"}}]
-                )
+                mock.CoroutineMock(return_value=[{"cred_info": {"referent": "dummy-0"}}])
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)

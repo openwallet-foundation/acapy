@@ -177,9 +177,11 @@ class V20CredManager:
 
         # Format specific receive_proposal handlers
         for format in cred_proposal_message.formats:
-            await V20CredFormat.Format.get(format.format).handler(
-                self.profile
-            ).receive_proposal(cred_ex_record, cred_proposal_message)
+            await (
+                V20CredFormat.Format.get(format.format)
+                .handler(self.profile)
+                .receive_proposal(cred_ex_record, cred_proposal_message)
+            )
 
         cred_ex_record.cred_proposal = cred_proposal_message
         cred_ex_record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
@@ -434,9 +436,7 @@ class V20CredManager:
             if (f := V20CredFormat.Format.get(format.format))
         ]
         handlers_without_offer = [
-            handler
-            for handler in handlers
-            if handler.can_receive_request_without_offer()
+            handler for handler in handlers if handler.can_receive_request_without_offer()
         ]
 
         async with self._profile.session() as session:
@@ -531,9 +531,7 @@ class V20CredManager:
                 )
 
         if len(issue_formats) == 0:
-            raise V20CredManagerError(
-                "Unable to issue credential. No supported formats"
-            )
+            raise V20CredManagerError("Unable to issue credential. No supported formats")
 
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,

@@ -440,9 +440,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Issue indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.issue_credential(
-                cred_ex_record, retries
-            )
+            return await self.anoncreds_handler.issue_credential(cred_ex_record, retries)
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
@@ -450,9 +448,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_request = cred_ex_record.cred_request.attachment(
             IndyCredFormatHandler.format
         )
-        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
-            decode=False
-        )
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
@@ -522,9 +518,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Store indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.store_credential(
-                cred_ex_record, cred_id
-            )
+            return await self.anoncreds_handler.store_credential(cred_ex_record, cred_id)
 
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 

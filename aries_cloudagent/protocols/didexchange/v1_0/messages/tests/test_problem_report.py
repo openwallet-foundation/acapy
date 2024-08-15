@@ -36,7 +36,5 @@ def test_missing_code():
 
 def test_unrecognized_code():
     with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
-        DIDXProblemReport.deserialize(
-            {"description": {"code": "unknown", "en": "test"}}
-        )
+        DIDXProblemReport.deserialize({"description": {"code": "unknown", "en": "test"}})
     mock_logger.warning.assert_called_once()

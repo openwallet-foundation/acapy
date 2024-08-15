@@ -59,18 +59,14 @@ EXPANDED_CRED_FHIR_TYPE_1 = [
                         "http://hl7.org/fhir/Patient.address": [
                             {
                                 "@id": "urn:bnid:_:c14n1",
-                                "http://hl7.org/fhir/Address.city": [
-                                    {"@value": "Рума"}
-                                ],
+                                "http://hl7.org/fhir/Address.city": [{"@value": "Рума"}],
                                 "http://hl7.org/fhir/Address.country": [
                                     {"@value": "test"}
                                 ],
                             },
                             {
                                 "@id": "urn:bnid:_:c14n1",
-                                "http://hl7.org/fhir/Address.city": [
-                                    {"@value": "Рума"}
-                                ],
+                                "http://hl7.org/fhir/Address.city": [{"@value": "Рума"}],
                             },
                         ],
                     }
@@ -1899,9 +1895,7 @@ TEST_CRED_WILDCARD = {
             "performer": [
                 {"reference": "PractitionerRole/ca6632d5-a447-6306-e053-5a18000a3953"}
             ],
-            "specimen": [
-                {"reference": "Specimen/ca666dfb-5a85-614a-e053-5a18000af20b"}
-            ],
+            "specimen": [{"reference": "Specimen/ca666dfb-5a85-614a-e053-5a18000af20b"}],
             "result": [
                 {"reference": "Observation/ca708651-e8eb-3513-e053-5a18000ae79b"},
                 {"reference": "Observation/ca708651-e8ec-3513-e053-5a18000ae79b"},
@@ -2020,9 +2014,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [
@@ -2089,9 +2081,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [
@@ -2158,9 +2148,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [
@@ -2227,9 +2215,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [
@@ -2296,9 +2282,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [
@@ -2365,9 +2349,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [
@@ -2434,9 +2416,7 @@ TEST_CRED_WILDCARD = {
                         },
                     ]
                 },
-                "subject": {
-                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
-                },
+                "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
                 "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
                 "method": {
                     "coding": [

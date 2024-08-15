@@ -108,9 +108,7 @@ class SubmissionRequirementsSchema(BaseModelSchema):
         model_class = SubmissionRequirements
         unknown = EXCLUDE
 
-    _name = fields.Str(
-        required=False, data_key="name", metadata={"description": "Name"}
-    )
+    _name = fields.Str(required=False, data_key="name", metadata={"description": "Name"})
     purpose = fields.Str(required=False, metadata={"description": "Purpose"})
     rule = fields.Str(
         required=False,
@@ -131,9 +129,7 @@ class SubmissionRequirementsSchema(BaseModelSchema):
         data_key="max",
         metadata={"description": "Max Value", "example": 1234, "strict": True},
     )
-    _from = fields.Str(
-        required=False, data_key="from", metadata={"description": "From"}
-    )
+    _from = fields.Str(required=False, data_key="from", metadata={"description": "From"})
     # Self References
     from_nested = fields.List(
         fields.Nested(lambda: SubmissionRequirementsSchema()), required=False
@@ -334,9 +330,7 @@ class FilterSchema(BaseModelSchema):
         model_class = Filter
         unknown = EXCLUDE
 
-    _type = fields.Str(
-        required=False, data_key="type", metadata={"description": "Type"}
-    )
+    _type = fields.Str(required=False, data_key="type", metadata={"description": "Type"})
     fmt = fields.Str(
         required=False, data_key="format", metadata={"description": "Format"}
     )
@@ -518,9 +512,7 @@ class ConstraintsSchema(BaseModelSchema):
                     data["status_active"] = data["statuses"]["active"]["directive"]
             if "suspended" in data.get("statuses"):
                 if "directive" in data.get("statuses").get("suspended"):
-                    data["status_suspended"] = data["statuses"]["suspended"][
-                        "directive"
-                    ]
+                    data["status_suspended"] = data["statuses"]["suspended"]["directive"]
             if "revoked" in data.get("statuses"):
                 if "directive" in data.get("statuses").get("revoked"):
                     data["status_revoked"] = data["statuses"]["revoked"]["directive"]
@@ -596,9 +588,7 @@ class InputDescriptorsSchema(BaseModelSchema):
     metadata = fields.Dict(
         required=False, metadata={"description": "Metadata dictionary"}
     )
-    constraint = fields.Nested(
-        ConstraintsSchema, required=False, data_key="constraints"
-    )
+    constraint = fields.Nested(ConstraintsSchema, required=False, data_key="constraints")
     schemas = fields.Nested(
         SchemasInputDescriptorFilterSchema,
         required=False,
@@ -672,9 +662,7 @@ class RequirementSchema(BaseModelSchema):
         required=False,
         metadata={"description": "Min Value", "example": 1234, "strict": True},
     )
-    input_descriptors = fields.List(
-        fields.Nested(InputDescriptorsSchema), required=False
-    )
+    input_descriptors = fields.List(fields.Nested(InputDescriptorsSchema), required=False)
     # Self References
     nested_req = fields.List(
         fields.Nested(lambda: RequirementSchema(exclude=("_nested_req",))),
@@ -750,9 +738,7 @@ class PresentationDefinitionSchema(BaseModelSchema):
     submission_requirements = fields.List(
         fields.Nested(SubmissionRequirementsSchema), required=False
     )
-    input_descriptors = fields.List(
-        fields.Nested(InputDescriptorsSchema), required=False
-    )
+    input_descriptors = fields.List(fields.Nested(InputDescriptorsSchema), required=False)
 
 
 class InputDescriptorMapping(BaseModel):

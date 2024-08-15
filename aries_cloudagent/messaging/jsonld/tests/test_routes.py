@@ -150,9 +150,7 @@ def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
                 "admin.admin_api_key": "secret-key",
             }
         )
-        context = AdminRequestContext.test_context(
-            {DIDResolver: mock_resolver}, profile
-        )
+        context = AdminRequestContext.test_context({DIDResolver: mock_resolver}, profile)
         outbound_message_router = mock.CoroutineMock()
         request_dict = {
             "context": context,
@@ -186,9 +184,7 @@ async def test_sign(mock_sign_request, mock_response):
     assert "error" not in mock_response.call_args[0][0]
 
 
-@pytest.mark.parametrize(
-    "error", [DroppedAttributeError, MissingVerificationMethodError]
-)
+@pytest.mark.parametrize("error", [DroppedAttributeError, MissingVerificationMethodError])
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
     test_module.sign_credential = mock.CoroutineMock(side_effect=error())
@@ -327,9 +323,7 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
                 "issuer": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
                 "issuanceDate": "2020-03-10T04:24:12.164Z",
                 "credentialSubject": {
-                    "id": (
-                        "did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
-                    ),
+                    "id": ("did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
                     "degree": {
                         "type": "BachelorDegree",
                         "name": "Bachelor of Science and Arts",
@@ -464,8 +458,7 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
                     "issuanceDate": "2020-03-10T04:24:12.164Z",
                     "credentialSubject": {
                         "id": (
-                            "did:key:"
-                            "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+                            "did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                         ),
                         "degree": {
                             "type": "BachelorDegree",

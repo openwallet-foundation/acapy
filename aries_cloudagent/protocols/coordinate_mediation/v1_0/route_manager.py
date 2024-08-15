@@ -339,9 +339,7 @@ class CoordinateMediationV1RouteManager(RouteManager):
             keylist_update = await mediation_mgr.remove_key(replace_key, keylist_update)
 
         responder = profile.inject(BaseResponder)
-        await responder.send(
-            keylist_update, connection_id=mediation_record.connection_id
-        )
+        await responder.send(keylist_update, connection_id=mediation_record.connection_id)
         return keylist_update
 
     async def routing_info(

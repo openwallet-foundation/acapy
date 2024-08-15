@@ -48,9 +48,7 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     )
     create_unique_did = fields.Boolean(
         required=False,
-        metadata={
-            "description": "Create unique DID for this invitation (default false)"
-        },
+        metadata={"description": "Create unique DID for this invitation (default false)"},
     )
 
 
@@ -268,9 +266,7 @@ async def invitation_create(request: web.BaseRequest):
             public=use_public_did,
             use_did=use_did,
             use_did_method=use_did_method,
-            hs_protos=[
-                h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
-            ],
+            hs_protos=[h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h],
             multi_use=multi_use,
             create_unique_did=create_unique_did,
             attachments=attachments,

@@ -126,8 +126,7 @@ class TestCrypto(TestCase):
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
-                [JweRecipient(encrypted_key=b"MTIzNDU", header={"kid": "4mZ5TYv4oN"})]
-                * 2
+                [JweRecipient(encrypted_key=b"MTIzNDU", header={"kid": "4mZ5TYv4oN"})] * 2
             )
         assert "Duplicate recipient key" in str(excinfo.value)
 

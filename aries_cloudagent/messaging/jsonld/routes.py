@@ -53,9 +53,7 @@ class SignRequestSchema(OpenAPISchema):
 class SignResponseSchema(OpenAPISchema):
     """Response schema for a signed jsonld doc."""
 
-    signed_doc = fields.Dict(
-        required=False, metadata={"description": "Signed document"}
-    )
+    signed_doc = fields.Dict(required=False, metadata={"description": "Signed document"})
     error = fields.Str(required=False, metadata={"description": "Error text"})
 
 

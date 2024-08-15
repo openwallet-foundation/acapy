@@ -185,9 +185,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     index = revealed_attrs[uuid]["sub_proof_index"]
                     if cred_defs[index]["value"].get("revocation"):
                         timestamp = pres["identifiers"][index].get("timestamp")
-                        if (timestamp is not None) ^ bool(
-                            non_revoc_intervals.get(uuid)
-                        ):
+                        if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
                             LOGGER.debug(f">>> uuid: {uuid}")
                             LOGGER.debug(
                                 f">>> revealed_attrs[uuid]: {revealed_attrs[uuid]}"
@@ -352,9 +350,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                         f"'{req_attr['name']}'"
                     )
                 else:
-                    raise ValueError(
-                        f"Missing requested attribute '{req_attr['name']}'"
-                    )
+                    raise ValueError(f"Missing requested attribute '{req_attr['name']}'")
             elif "names" in req_attr:
                 group_spec = revealed_groups[uuid]
                 pres_req_attr_spec = {

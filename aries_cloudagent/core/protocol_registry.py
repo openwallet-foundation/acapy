@@ -24,9 +24,7 @@ class VersionDefinition:
         """Create a version definition from a dict."""
         return cls(
             min=MessageVersion(data["major_version"], data["minimum_minor_version"]),
-            current=MessageVersion(
-                data["major_version"], data["current_minor_version"]
-            ),
+            current=MessageVersion(data["major_version"], data["current_minor_version"]),
         )
 
 

@@ -235,14 +235,12 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             return_value=MockEntry(raw_value=cred_def.to_json_buffer())
         )
 
-        result = (
-            await self.revocation.create_and_register_revocation_registry_definition(
-                issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
-                cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                registry_type="CL_ACCUM",
-                tag="tag",
-                max_cred_num=100,
-            )
+        result = await self.revocation.create_and_register_revocation_registry_definition(
+            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
+            cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
+            registry_type="CL_ACCUM",
+            tag="tag",
+            max_cred_num=100,
         )
 
         assert result is not None
@@ -466,9 +464,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             rev_reg_def_id="test-rev-reg-def-id",
         )
 
-        mock_handle.fetch = mock.CoroutineMock(
-            return_value=MockEntry(tags=inactive_tags)
-        )
+        mock_handle.fetch = mock.CoroutineMock(return_value=MockEntry(tags=inactive_tags))
         mock_handle.fetch_all = mock.CoroutineMock(
             return_value=[MockEntry(tags=inactive_tags), MockEntry(tags=inactive_tags)]
         )
@@ -1148,9 +1144,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await call_test_func()
 
-    @mock.patch.object(
-        AnonCredsIssuer, "cred_def_supports_revocation", return_value=True
-    )
+    @mock.patch.object(AnonCredsIssuer, "cred_def_supports_revocation", return_value=True)
     async def test_create_credential(self, mock_supports_revocation):
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
@@ -1315,9 +1309,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
         # rev list entry not found
         with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.mark_pending_revocations(
-                "test-rev-reg-id", int("200")
-            )
+            await self.revocation.mark_pending_revocations("test-rev-reg-id", int("200"))
 
         # valid
         await self.revocation.mark_pending_revocations("test-rev-reg-id", int("200"))
@@ -1383,9 +1375,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 self.profile.session(), rev_reg_def_id="test-rev-reg-id"
             )
 
-    @mock.patch.object(
-        AnonCredsIssuer, "cred_def_supports_revocation", return_value=True
-    )
+    @mock.patch.object(AnonCredsIssuer, "cred_def_supports_revocation", return_value=True)
     async def test_create_credential_w3c(self, mock_supports_revocation):
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(

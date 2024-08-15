@@ -44,9 +44,7 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         **kwargs,
     ):
         """Initialize a new V10DiscoveryExchangeRecord."""
-        super().__init__(
-            discovery_exchange_id, state or self.STATE_QUERY_SENT, **kwargs
-        )
+        super().__init__(discovery_exchange_id, state or self.STATE_QUERY_SENT, **kwargs)
         self._id = discovery_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id

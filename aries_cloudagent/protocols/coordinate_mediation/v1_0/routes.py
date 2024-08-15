@@ -203,9 +203,7 @@ async def retrieve_mediation_request(request: web.BaseRequest):
     mediation_id = request.match_info["mediation_id"]
     try:
         async with context.profile.session() as session:
-            mediation_record = await MediationRecord.retrieve_by_id(
-                session, mediation_id
-            )
+            mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
         result = mediation_record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -226,9 +224,7 @@ async def delete_mediation_request(request: web.BaseRequest):
     mediation_id = request.match_info["mediation_id"]
     try:
         async with context.profile.session() as session:
-            mediation_record = await MediationRecord.retrieve_by_id(
-                session, mediation_id
-            )
+            mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
         result = mediation_record.serialize()
         async with context.profile.session() as session:
             await mediation_record.delete_record(session)
@@ -453,9 +449,7 @@ async def get_default_mediator(request: web.BaseRequest):
     """Get default mediator."""
     context: AdminRequestContext = request["context"]
     try:
-        default_mediator = await MediationManager(
-            context.profile
-        ).get_default_mediator()
+        default_mediator = await MediationManager(context.profile).get_default_mediator()
         results = default_mediator.serialize() if default_mediator else {}
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

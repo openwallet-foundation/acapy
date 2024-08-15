@@ -66,9 +66,7 @@ class RevokeSchema(AgentMessageSchema):
         PleaseAckDecoratorSchema,
         required=False,
         data_key="~please_ack",
-        metadata={
-            "description": "Whether or not the holder should acknowledge receipt"
-        },
+        metadata={"description": "Whether or not the holder should acknowledge receipt"},
     )
     comment = fields.Str(
         required=False,

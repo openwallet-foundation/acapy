@@ -32,7 +32,7 @@ class InMemoryProfile(Profile):
         *,
         context: InjectionContext = None,
         name: str = None,
-        profile_class: Any = None
+        profile_class: Any = None,
     ):
         """Create a new InMemoryProfile instance."""
         super().__init__(context=context, name=name, created=True)
@@ -127,7 +127,7 @@ class InMemoryProfileSession(ProfileSession):
         profile: Profile,
         *,
         context: InjectionContext = None,
-        settings: Mapping[str, Any] = None
+        settings: Mapping[str, Any] = None,
     ):
         """Create a new InMemoryProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)

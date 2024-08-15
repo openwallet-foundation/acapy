@@ -256,9 +256,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.presentation_exchange_retrieve(self.request)
-                mock_response.assert_called_once_with(
-                    mock_pres_ex.serialize.return_value
-                )
+                mock_response.assert_called_once_with(mock_pres_ex.serialize.return_value)
 
     async def test_presentation_exchange_retrieve_not_found(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
@@ -401,9 +399,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             mock_presentation_manager.return_value.create_exchange_for_proposal = (
                 mock.CoroutineMock(
                     return_value=mock.MagicMock(
-                        serialize=mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
+                        serialize=mock.MagicMock(side_effect=test_module.StorageError()),
                         save_error_state=mock.CoroutineMock(),
                     )
                 )
@@ -496,9 +492,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             mock_presentation_manager.return_value.create_exchange_for_request = (
                 mock.CoroutineMock(
                     return_value=mock.MagicMock(
-                        serialize=mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
+                        serialize=mock.MagicMock(side_effect=test_module.StorageError()),
                         save_error_state=mock.CoroutineMock(),
                     )
                 )
@@ -644,9 +638,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             mock_presentation_manager.return_value.create_exchange_for_request = (
                 mock.CoroutineMock(
                     return_value=mock.MagicMock(
-                        serialize=mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
+                        serialize=mock.MagicMock(side_effect=test_module.StorageError()),
                         save_error_state=mock.CoroutineMock(),
                     )
                 )
@@ -1232,9 +1224,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             mock_presentation_manager.return_value = mock_mgr
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
-                await test_module.presentation_exchange_verify_presentation(
-                    self.request
-                )
+                await test_module.presentation_exchange_verify_presentation(self.request)
                 mock_response.assert_called_once_with({"thread_id": "sample-thread-id"})
 
     async def test_presentation_exchange_verify_presentation_px_rec_not_found(self):
@@ -1248,9 +1238,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError("no such record")
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
-                await test_module.presentation_exchange_verify_presentation(
-                    self.request
-                )
+                await test_module.presentation_exchange_verify_presentation(self.request)
             assert "no such record" in str(context.exception)
 
     async def test_presentation_exchange_verify_presentation_bad_state(self):
@@ -1273,9 +1261,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
                 )
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.presentation_exchange_verify_presentation(
-                    self.request
-                )
+                await test_module.presentation_exchange_verify_presentation(self.request)
 
     async def test_presentation_exchange_verify_presentation_x(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
@@ -1336,13 +1322,9 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             mock_presentation_manager.return_value = mock_mgr
 
             with self.assertRaises(test_module.web.HTTPBadRequest):  # ledger error
-                await test_module.presentation_exchange_verify_presentation(
-                    self.request
-                )
+                await test_module.presentation_exchange_verify_presentation(self.request)
             with self.assertRaises(test_module.web.HTTPBadRequest):  # storage error
-                await test_module.presentation_exchange_verify_presentation(
-                    self.request
-                )
+                await test_module.presentation_exchange_verify_presentation(self.request)
 
     async def test_presentation_exchange_problem_report(self):
         self.request.json = mock.CoroutineMock()
