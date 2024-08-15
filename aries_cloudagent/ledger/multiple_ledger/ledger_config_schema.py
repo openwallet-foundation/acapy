@@ -42,9 +42,7 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     id = fields.Str(required=False, metadata={"description": "ledger_id"})
-    is_production = fields.Bool(
-        required=False, metadata={"description": "is_production"}
-    )
+    is_production = fields.Bool(required=False, metadata={"description": "is_production"})
     genesis_transactions = fields.Str(
         required=False, metadata={"description": "genesis_transactions"}
     )

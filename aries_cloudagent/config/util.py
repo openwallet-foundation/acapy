@@ -45,9 +45,7 @@ class BoundedInt:
                 f"Value must be greater than or equal to {self.min_val}"
             )
         if self.max_val is not None and val > self.max_val:
-            raise ArgumentTypeError(
-                f"Value must be less than or equal to {self.max_val}"
-            )
+            raise ArgumentTypeError(f"Value must be less than or equal to {self.max_val}")
         return val
 
     def __repr__(self):

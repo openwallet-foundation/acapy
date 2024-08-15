@@ -142,9 +142,7 @@ class IndyDIDResolver(BaseDIDResolver):
                 )
                 builder.context.append(self.CONTEXT_DIDCOMM_V2)
         else:
-            LOGGER.warning(
-                "No endpoint for DID although endpoint attrib was resolvable"
-            )
+            LOGGER.warning("No endpoint for DID although endpoint attrib was resolvable")
 
         if other_endpoints:
             for type_, endpoint in other_endpoints.items():

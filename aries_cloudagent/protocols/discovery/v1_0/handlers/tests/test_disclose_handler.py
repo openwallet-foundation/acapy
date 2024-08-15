@@ -35,9 +35,7 @@ class TestDiscloseHandler:
         disclose_msg = Disclose(
             protocols=[
                 {
-                    "pid": DIDCommPrefix.qualify_current(
-                        "test_proto/v1.0/test_message"
-                    ),
+                    "pid": DIDCommPrefix.qualify_current("test_proto/v1.0/test_message"),
                     "roles": [],
                 }
             ]
@@ -67,9 +65,7 @@ class TestDiscloseHandler:
         disclose_msg = Disclose(
             protocols=[
                 {
-                    "pid": DIDCommPrefix.qualify_current(
-                        "test_proto/v1.0/test_message"
-                    ),
+                    "pid": DIDCommPrefix.qualify_current("test_proto/v1.0/test_message"),
                     "roles": [],
                 }
             ]

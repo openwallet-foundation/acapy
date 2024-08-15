@@ -305,9 +305,7 @@ class DIDDoc:
                 rv.did,
                 service.get(
                     "id",
-                    canon_ref(
-                        rv.did, "assigned-service-{}".format(len(rv.service)), ";"
-                    ),
+                    canon_ref(rv.did, "assigned-service-{}".format(len(rv.service)), ";"),
                 ),
                 service["type"],
                 rv.add_service_pubkeys(service, "recipientKeys"),

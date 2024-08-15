@@ -24,7 +24,7 @@ class InjectionContext(BaseInjector):
         self,
         *,
         settings: Optional[Mapping[str, object]] = None,
-        enforce_typing: bool = True
+        enforce_typing: bool = True,
     ):
         """Initialize a `ServiceConfig`."""
         self._injector = Injector(settings, enforce_typing=enforce_typing)

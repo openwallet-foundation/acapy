@@ -57,9 +57,7 @@ SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[SignatureTypes, KeyType] = {
     Ed25519Signature2018: ED25519,
     Ed25519Signature2020: ED25519,
 }
-PROOF_KEY_TYPE_MAPPING = cast(
-    Dict[ProofTypes, KeyType], SIGNATURE_SUITE_KEY_TYPE_MAPPING
-)
+PROOF_KEY_TYPE_MAPPING = cast(Dict[ProofTypes, KeyType], SIGNATURE_SUITE_KEY_TYPE_MAPPING)
 
 
 # We only want to add bbs suites to supported if the module is installed

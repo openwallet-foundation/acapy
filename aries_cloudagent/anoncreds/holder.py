@@ -103,9 +103,7 @@ class AnonCredsHolder:
                         # isn't accepted by cred.process
                         secret = record.value.decode("ascii")
                     except AnoncredsError as err:
-                        raise AnonCredsHolderError(
-                            "Error loading master secret"
-                        ) from err
+                        raise AnonCredsHolderError("Error loading master secret") from err
                     break
                 else:
                     try:
@@ -236,9 +234,7 @@ class AnonCredsHolder:
         schema_id = cred_recvd.schema_id
         schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
         if not schema_id_parts:
-            raise AnonCredsHolderError(
-                f"Error parsing credential schema ID: {schema_id}"
-            )
+            raise AnonCredsHolderError(f"Error parsing credential schema ID: {schema_id}")
         cred_def_id = cred_recvd.cred_def_id
         cdef_id_parts = re.match(r"^(\w+):3:CL:([^:]+):([^:]+)$", cred_def_id)
         if not cdef_id_parts:
@@ -478,9 +474,7 @@ class AnonCredsHolder:
                 if row.name in creds:
                     creds[row.name]["presentation_referents"].add(reft)
                 else:
-                    cred_info = _make_cred_info(
-                        row.name, Credential.load(row.raw_value)
-                    )
+                    cred_info = _make_cred_info(row.name, Credential.load(row.raw_value))
                     creds[row.name] = {
                         "cred_info": cred_info,
                         "interval": presentation_request.get("non_revoked"),
@@ -590,9 +584,7 @@ class AnonCredsHolder:
                     credential_id,
                 )
         except AskarError as err:
-            raise AnonCredsHolderError(
-                "Error retrieving credential mime types"
-            ) from err
+            raise AnonCredsHolderError("Error retrieving credential mime types") from err
         values = mime_types_record and mime_types_record.value_json
         if values:
             return values.get(attr) if attr else values
@@ -676,10 +668,7 @@ class AnonCredsHolder:
                 present_creds,
                 self_attest,
                 secret,
-                {
-                    schema_id: schema.to_native()
-                    for schema_id, schema in schemas.items()
-                },
+                {schema_id: schema.to_native() for schema_id, schema in schemas.items()},
                 {
                     cred_def_id: cred_def.to_native()
                     for cred_def_id, cred_def in credential_definitions.items()

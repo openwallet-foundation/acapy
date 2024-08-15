@@ -679,9 +679,7 @@ async def credential_exchange_create(request: web.BaseRequest):
 
     try:
         # Not all formats use credential preview
-        cred_preview = (
-            V20CredPreview.deserialize(preview_spec) if preview_spec else None
-        )
+        cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
         cred_proposal = V20CredProposal(
             comment=comment,
             credential_preview=cred_preview,
@@ -764,9 +762,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     cred_ex_record = None
     try:
         # Not all formats use credential preview
-        cred_preview = (
-            V20CredPreview.deserialize(preview_spec) if preview_spec else None
-        )
+        cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
         if not conn_record.is_ready:
@@ -873,9 +869,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     conn_record = None
     cred_ex_record = None
     try:
-        cred_preview = (
-            V20CredPreview.deserialize(preview_spec) if preview_spec else None
-        )
+        cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
         if not conn_record.is_ready:
@@ -1538,9 +1532,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(
-        cred_issue_message, connection_id=cred_ex_record.connection_id
-    )
+    await outbound_handler(cred_issue_message, connection_id=cred_ex_record.connection_id)
 
     trace_event(
         context.settings,

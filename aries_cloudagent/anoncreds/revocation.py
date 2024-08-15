@@ -195,9 +195,7 @@ class AnonCredsRevocation:
                 ),
             )
         except AnoncredsError as err:
-            raise AnonCredsRevocationError(
-                "Error creating revocation registry"
-            ) from err
+            raise AnonCredsRevocationError("Error creating revocation registry") from err
 
         rev_reg_def = RevRegDef.from_native(rev_reg_def)
 
@@ -253,9 +251,7 @@ class AnonCredsRevocation:
 
             if result.revocation_registry_definition_state.state == STATE_FINISHED:
                 await self.notify(
-                    RevRegDefFinishedEvent.with_payload(
-                        identifier, rev_reg_def, options
-                    )
+                    RevRegDefFinishedEvent.with_payload(identifier, rev_reg_def, options)
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
@@ -526,9 +522,7 @@ class AnonCredsRevocation:
                 )
                 await txn.commit()
             # Notify about revoked creds on any list update
-            await self.notify(
-                RevListFinishedEvent.with_payload(rev_reg_def_id, revoked)
-            )
+            await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id, revoked))
 
     async def update_revocation_list(
         self,
@@ -571,9 +565,7 @@ class AnonCredsRevocation:
         rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
         rev_list = RevList.deserialize(rev_list_entry.value_json["rev_list"])
         if rev_list.revocation_list != curr.revocation_list:
-            raise AnonCredsRevocationError(
-                "Passed revocation list does not match stored"
-            )
+            raise AnonCredsRevocationError("Passed revocation list does not match stored")
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         result = await anoncreds_registry.update_revocation_list(
@@ -604,9 +596,7 @@ class AnonCredsRevocation:
 
         return result
 
-    async def get_created_revocation_list(
-        self, rev_reg_def_id: str
-    ) -> Optional[RevList]:
+    async def get_created_revocation_list(self, rev_reg_def_id: str) -> Optional[RevList]:
         """Return rev list from record in wallet."""
         try:
             async with self.profile.session() as session:
@@ -654,9 +644,7 @@ class AnonCredsRevocation:
         with open(tails_file_path, "wb", buffer_size) as tails_file:
             with Session() as req_session:
                 try:
-                    resp = req_session.get(
-                        rev_reg_def.value.tails_location, stream=True
-                    )
+                    resp = req_session.get(rev_reg_def.value.tails_location, stream=True)
                     # Should this directly raise an Error?
                     if resp.status_code != http.HTTPStatus.OK:
                         LOGGER.warning(
@@ -990,15 +978,11 @@ class AnonCredsRevocation:
 
         """
 
-        def _handle_missing_entries(
-            rev_list: Entry, rev_reg_def: Entry, rev_key: Entry
-        ):
+        def _handle_missing_entries(rev_list: Entry, rev_reg_def: Entry, rev_key: Entry):
             if not rev_list:
                 raise AnonCredsRevocationError("Revocation registry list not found")
             if not rev_reg_def:
-                raise AnonCredsRevocationError(
-                    "Revocation registry definition not found"
-                )
+                raise AnonCredsRevocationError("Revocation registry definition not found")
             if not rev_key:
                 raise AnonCredsRevocationError(
                     "Revocation registry definition private data not found"
@@ -1049,9 +1033,7 @@ class AnonCredsRevocation:
             # If something goes wrong later, the index will be skipped.
             # FIXME - double check issuance type in case of upgraded wallet?
             if rev_reg_index > rev_reg_def.max_cred_num:
-                raise AnonCredsRevocationRegistryFullError(
-                    "Revocation registry is full"
-                )
+                raise AnonCredsRevocationRegistryFullError("Revocation registry is full")
             rev_list_value_json["next_index"] = rev_reg_index + 1
             async with self.profile.transaction() as txn:
                 await txn.handle.replace(
@@ -1162,9 +1144,7 @@ class AnonCredsRevocation:
 
             rev_reg_def_result = None
             if revocable:
-                rev_reg_def_result = await self.get_or_create_active_registry(
-                    cred_def_id
-                )
+                rev_reg_def_result = await self.get_or_create_active_registry(cred_def_id)
                 if (
                     rev_reg_def_result.revocation_registry_definition_state.state
                     != STATE_FINISHED
@@ -1202,9 +1182,7 @@ class AnonCredsRevocation:
                     <= int(cred_rev_id) + 1
                 )
 
-            if rev_reg_def_result and _is_full_registry(
-                rev_reg_def_result, cred_rev_id
-            ):
+            if rev_reg_def_result and _is_full_registry(rev_reg_def_result, cred_rev_id):
                 await self.handle_full_registry(rev_reg_def_id)
 
             return cred_json, cred_rev_id, rev_reg_def_id
@@ -1294,9 +1272,7 @@ class AnonCredsRevocation:
                 # TODO This is a little rough; stored tails location will have public uri
                 # but library needs local tails location
                 rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
-                rev_reg_def.value.tails_location = self.get_local_tails_path(
-                    rev_reg_def
-                )
+                rev_reg_def.value.tails_location = self.get_local_tails_path(rev_reg_def)
                 cred_def = CredDef.deserialize(cred_def_entry.value_json)
                 rev_reg_def_private = RevocationRegistryDefinitionPrivate.load(
                     rev_reg_def_private_entry.value_json

@@ -92,7 +92,7 @@ class GetSchemaResult(BaseModel):
         schema_id: str,
         resolution_metadata: Dict[str, Any],
         schema_metadata: Dict[str, Any],
-        **kwargs
+        **kwargs,
     ):
         """Initialize an instance.
 
@@ -205,7 +205,7 @@ class SchemaResult(BaseModel):
         schema_state: SchemaState,
         registration_metadata: Optional[dict] = None,
         schema_metadata: Optional[dict] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize an instance.
 

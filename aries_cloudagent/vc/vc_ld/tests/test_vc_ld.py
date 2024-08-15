@@ -221,9 +221,7 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         assert "Not all credentials have a valid structure" in str(context.exception)
 
     async def test_create_presentation_x_invalid_credential_structures(self):
-        unsigned_presentation = await create_presentation(
-            credentials=[CREDENTIAL_ISSUED]
-        )
+        unsigned_presentation = await create_presentation(credentials=[CREDENTIAL_ISSUED])
 
         suite = Ed25519Signature2018(
             verification_method=self.ed25519_verification_method,
@@ -254,9 +252,7 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
 
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_presentation_bbsbls(self):
-        unsigned_presentation = await create_presentation(
-            credentials=[CREDENTIAL_ISSUED]
-        )
+        unsigned_presentation = await create_presentation(credentials=[CREDENTIAL_ISSUED])
 
         suite = BbsBlsSignature2020(
             verification_method=self.bls12381g2_verification_method,

@@ -292,9 +292,7 @@ PRESENTATION_UNSIGNED = {
             ],
             "id": "http://example.gov/credentials/3732",
             "type": ["VerifiableCredential", "UniversityDegreeCredential"],
-            "issuer": {
-                "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            },
+            "issuer": {"id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"},
             "issuanceDate": "2020-03-10T04:24:12.164Z",
             "credentialSubject": {
                 "id": "did:example:456",
@@ -325,9 +323,7 @@ PRESENTATION_SIGNED = {
             ],
             "id": "http://example.gov/credentials/3732",
             "type": ["VerifiableCredential", "UniversityDegreeCredential"],
-            "issuer": {
-                "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            },
+            "issuer": {"id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"},
             "issuanceDate": "2020-03-10T04:24:12.164Z",
             "credentialSubject": {
                 "id": "did:example:456",

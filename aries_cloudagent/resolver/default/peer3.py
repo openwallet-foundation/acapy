@@ -97,9 +97,7 @@ class PeerDID3Resolver(BaseDIDResolver):
             ),
         ]
         if dids:
-            LOGGER.debug(
-                "Removing peer 2 to 3 mapping for deleted connection: %s", dids
-            )
+            LOGGER.debug("Removing peer 2 to 3 mapping for deleted connection: %s", dids)
         async with profile.session() as session:
             storage = session.inject(BaseStorage)
             for did in dids:

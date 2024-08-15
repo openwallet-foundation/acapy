@@ -29,6 +29,4 @@ class ProblemReportHandler(BaseHandler):
             context.message,
         )
 
-        await context.profile.notify(
-            "acapy::problem_report", context.message.serialize()
-        )
+        await context.profile.notify("acapy::problem_report", context.message.serialize())

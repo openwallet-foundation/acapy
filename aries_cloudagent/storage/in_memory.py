@@ -309,9 +309,7 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
             except StopIteration:
                 break
             record = self._cache[id]
-            if record.type == check_type and tag_query_match(
-                record.tags, self.tag_query
-            ):
+            if record.type == check_type and tag_query_match(record.tags, self.tag_query):
                 ret.append(record)
                 i -= 1
 

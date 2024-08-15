@@ -533,9 +533,7 @@ async def wallet_did_list(request: web.BaseRequest):
                 and (not filter_key_type or info.key_type == filter_key_type)
             ]
 
-    results.sort(
-        key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"])
-    )
+    results.sort(key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"]))
 
     return web.json_response({"results": results})
 
@@ -644,9 +642,7 @@ async def wallet_create_did(request: web.BaseRequest):
                 ###################################################
 
                 info = (
-                    await base_conn_mgr.create_did_peer_2(
-                        my_endpoints, mediation_records
-                    )
+                    await base_conn_mgr.create_did_peer_2(my_endpoints, mediation_records)
                     if is_did_peer_2
                     else await base_conn_mgr.create_did_peer_4(
                         my_endpoints, mediation_records
@@ -935,9 +931,7 @@ async def promote_wallet_public_did(
     return info, attrib_def
 
 
-@docs(
-    tags=["wallet"], summary="Update endpoint in wallet and on ledger if posted to it"
-)
+@docs(tags=["wallet"], summary="Update endpoint in wallet and on ledger if posted to it")
 @request_schema(DIDEndpointWithTypeSchema)
 @querystring_schema(CreateAttribTxnForEndorserOptionSchema())
 @querystring_schema(AttribConnIdMatchInfoSchema())
@@ -956,9 +950,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     body = await request.json()
     did = body["did"]
     endpoint = body.get("endpoint")
-    endpoint_type = EndpointType.get(
-        body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
-    )
+    endpoint_type = EndpointType.get(body.get("endpoint_type", EndpointType.ENDPOINT.w3c))
 
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
@@ -991,9 +983,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         async with context.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -1085,9 +1075,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     payload = body.get("payload", {})
 
     try:
-        jws = await jwt_sign(
-            context.profile, headers, payload, did, verification_method
-        )
+        jws = await jwt_sign(context.profile, headers, payload, did, verification_method)
     except ValueError as err:
         raise web.HTTPBadRequest(reason="Bad did or verification method") from err
     except WalletNotFoundError as err:

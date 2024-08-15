@@ -16,9 +16,7 @@ class KeylistUpdateHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle keylist-update messages."""
-        self._logger.debug(
-            "%s called with context %s", self.__class__.__name__, context
-        )
+        self._logger.debug("%s called with context %s", self.__class__.__name__, context)
         assert isinstance(context.message, KeylistUpdate)
 
         if not context.connection_ready:

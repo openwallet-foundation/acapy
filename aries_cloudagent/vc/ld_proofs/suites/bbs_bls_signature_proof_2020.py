@@ -104,9 +104,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         # document statements into actual node identifiers
         # e.g _:c14n0 => urn:bnid:_:c14n0
         transformed_input_document_statements = (
-            self._transform_blank_node_ids_into_placeholder_node_ids(
-                document_statements
-            )
+            self._transform_blank_node_ids_into_placeholder_node_ids(document_statements)
         )
 
         # Transform the resulting RDF statements back into JSON-LD
@@ -213,9 +211,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         derived_proof["proofPurpose"] = proof["proofPurpose"]
         derived_proof["created"] = proof["created"]
 
-        return DeriveProofResult(
-            document={**reveal_document_result}, proof=derived_proof
-        )
+        return DeriveProofResult(document={**reveal_document_result}, proof=derived_proof)
 
     async def verify_proof(
         self,

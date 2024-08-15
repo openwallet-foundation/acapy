@@ -164,9 +164,7 @@ class MediationManager:
 
         """
         async with self._profile.session() as session:
-            mediation_record = await MediationRecord.retrieve_by_id(
-                session, mediation_id
-            )
+            mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
             if mediation_record.role != MediationRecord.ROLE_SERVER:
                 raise MediationManagerError(
                     f"role({mediation_record.role}) is not {MediationRecord.ROLE_SERVER}"
@@ -198,9 +196,7 @@ class MediationManager:
 
         """
         async with self._profile.session() as session:
-            mediation_record = await MediationRecord.retrieve_by_id(
-                session, mediation_id
-            )
+            mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
             if mediation_record.role != MediationRecord.ROLE_SERVER:
                 raise MediationManagerError(
                     f"role({mediation_record.role}) is not {MediationRecord.ROLE_SERVER}"
@@ -406,9 +402,7 @@ class MediationManager:
         async with self._profile.session() as session:
             await self._set_default_mediator_id(record.mediation_id, session)
 
-    async def _set_default_mediator_id(
-        self, mediation_id: str, session: ProfileSession
-    ):
+    async def _set_default_mediator_id(self, mediation_id: str, session: ProfileSession):
         """Set the default mediator ID (internal)."""
         default_record = await self._get_default_record(session)
         storage = session.inject(BaseStorage)
@@ -609,9 +603,7 @@ class MediationManager:
                         to_remove.append(record)
 
             for record_for_saving in to_save:
-                await record_for_saving.save(
-                    session, reason="Route successfully added."
-                )
+                await record_for_saving.save(session, reason="Route successfully added.")
             for record_for_removal in to_remove:
                 await record_for_removal.delete_record(session)
 

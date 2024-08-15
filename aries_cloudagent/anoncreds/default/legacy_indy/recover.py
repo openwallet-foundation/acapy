@@ -37,9 +37,9 @@ async def _check_tails_hash_for_inconsistency(tails_location: str, tails_hash: s
         LOGGER.debug("Tails URL: %s", tails_location)
         tails_data_http_response = await session.get(tails_location)
         tails_data = await tails_data_http_response.read()
-        remote_tails_hash = base58.b58encode(
-            hashlib.sha256(tails_data).digest()
-        ).decode("utf-8")
+        remote_tails_hash = base58.b58encode(hashlib.sha256(tails_data).digest()).decode(
+            "utf-8"
+        )
         if remote_tails_hash != tails_hash:
             raise RevocRecoveryException(
                 f"Tails hash mismatch {remote_tails_hash} {tails_hash}"
@@ -48,7 +48,9 @@ async def _check_tails_hash_for_inconsistency(tails_location: str, tails_hash: s
             LOGGER.debug(f"Checked tails hash: {tails_hash}")
 
 
-async def fetch_txns(genesis_txns: str, registry_id: str, issuer_id: str) -> tuple[
+async def fetch_txns(
+    genesis_txns: str, registry_id: str, issuer_id: str
+) -> tuple[
     dict,
     set[int],
 ]:

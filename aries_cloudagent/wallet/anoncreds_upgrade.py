@@ -295,9 +295,7 @@ async def get_rev_list_upgrade_object(
 
     return RevListUpgradeObj(
         rev_list,
-        json.loads(rev_reg_def_upgrade_obj.askar_issuer_rev_reg_def.value)[
-            "pending_pub"
-        ],
+        json.loads(rev_reg_def_upgrade_obj.askar_issuer_rev_reg_def.value)["pending_pub"],
         rev_reg_def_upgrade_obj.rev_reg_def_id,
         askar_cred_rev_records,
     )
@@ -602,9 +600,7 @@ async def upgrade_wallet_to_anoncreds_if_requested(
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
         try:
-            upgrading_record = await storage.find_record(
-                RECORD_TYPE_ACAPY_UPGRADING, {}
-            )
+            upgrading_record = await storage.find_record(RECORD_TYPE_ACAPY_UPGRADING, {})
             if upgrading_record.value == UPGRADING_RECORD_FINISHED:
                 IsAnoncredsSingleton().set_wallet(profile.name)
                 return

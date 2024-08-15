@@ -16,9 +16,7 @@ class ResolutionResultSchema(OpenAPISchema):
     """Result schema for did document query."""
 
     did_document = fields.Dict(required=True, metadata={"description": "DID Document"})
-    metadata = fields.Dict(
-        required=True, metadata={"description": "Resolution metadata"}
-    )
+    metadata = fields.Dict(required=True, metadata={"description": "Resolution metadata"})
 
 
 class W3cDID(validate.Regexp):

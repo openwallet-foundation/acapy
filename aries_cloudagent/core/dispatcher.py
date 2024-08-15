@@ -187,9 +187,7 @@ class Dispatcher:
         except ProblemReportParseError:
             pass  # avoid problem report recursion
         except MessageParseError as e:
-            self.logger.error(
-                f"Message parsing failed: {str(e)}, sending problem report"
-            )
+            self.logger.error(f"Message parsing failed: {str(e)}, sending problem report")
             error_result = ProblemReport(
                 description={
                     "en": str(e),

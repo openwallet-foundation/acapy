@@ -46,9 +46,7 @@ class RepeatAttempt:
 
     def timeout(self, interval: float = None):
         """Create a context manager for timing out an attempt."""
-        return async_timeout.timeout(
-            self.next_interval if interval is None else interval
-        )
+        return async_timeout.timeout(self.next_interval if interval is None else interval)
 
     def __repr__(self) -> str:
         """Format as a string for debugging."""

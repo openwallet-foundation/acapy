@@ -117,9 +117,7 @@ def hash_of(text) -> str:
 def make_state_path_for_attr(did, attr_name, attr_is_hash=False) -> bytes:
     """Return state_path for ATTR."""
     nameHash = (
-        hashlib.sha256(attr_name.encode()).hexdigest()
-        if not attr_is_hash
-        else attr_name
+        hashlib.sha256(attr_name.encode()).hexdigest() if not attr_is_hash else attr_name
     )
     return "{DID}:{MARKER}:{ATTR_NAME}".format(
         DID=did, MARKER=MARKER_ATTR, ATTR_NAME=nameHash

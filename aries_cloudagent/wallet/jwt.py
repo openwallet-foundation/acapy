@@ -158,18 +158,14 @@ async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
     encoded_headers, encoded_payload, encoded_signature = jwt.split(".", 3)
     headers = b64_to_dict(encoded_headers)
     if "alg" not in headers or headers["alg"] != "EdDSA" or "kid" not in headers:
-        raise BadJWSHeaderError(
-            "Invalid JWS header parameters for Ed25519Signature2018."
-        )
+        raise BadJWSHeaderError("Invalid JWS header parameters for Ed25519Signature2018.")
 
     payload = b64_to_dict(encoded_payload)
     verification_method = headers["kid"]
     decoded_signature = b64_to_bytes(encoded_signature, urlsafe=True)
 
     async with profile.session() as session:
-        verkey = await resolve_public_key_by_kid_for_verify(
-            profile, verification_method
-        )
+        verkey = await resolve_public_key_by_kid_for_verify(profile, verification_method)
         wallet = session.inject(BaseWallet)
         valid = await wallet.verify_message(
             f"{encoded_headers}.{encoded_payload}".encode(),

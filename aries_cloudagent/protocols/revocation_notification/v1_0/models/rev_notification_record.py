@@ -93,9 +93,7 @@ class RevNotificationRecord(BaseRecord):
                 "More than one RevNotificationRecord was found for the given IDs"
             )
         if not result:
-            raise StorageNotFoundError(
-                "No RevNotificationRecord found for the given IDs"
-            )
+            raise StorageNotFoundError("No RevNotificationRecord found for the given IDs")
         return result[0]
 
     @classmethod

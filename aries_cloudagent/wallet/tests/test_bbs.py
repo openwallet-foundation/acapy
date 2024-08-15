@@ -39,9 +39,7 @@ class TestBBS(TestCase):
 
         assert signed
 
-        assert verify_signed_messages_bls12381g2(
-            SIGN_MESSAGES, signed, PUBLIC_KEY_BYTES
-        )
+        assert verify_signed_messages_bls12381g2(SIGN_MESSAGES, signed, PUBLIC_KEY_BYTES)
 
     def test_sign_x_invalid_secret_key_bytes(self):
         with self.assertRaises(BbsException) as context:

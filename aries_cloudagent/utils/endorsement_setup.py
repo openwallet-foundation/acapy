@@ -43,9 +43,7 @@ async def attempt_auto_author_with_endorser_setup(profile: Profile):
 
     endorser_did = profile.settings.get_value("endorser.endorser_public_did")
     if not endorser_did:
-        LOGGER.info(
-            "No endorser DID, can connect, but can't setup connection metadata."
-        )
+        LOGGER.info("No endorser DID, can connect, but can't setup connection metadata.")
         return
 
     try:
@@ -99,6 +97,4 @@ async def attempt_auto_author_with_endorser_setup(profile: Profile):
         )
 
     except Exception:
-        LOGGER.info(
-            "Error accepting endorser invitation/configuring endorser connection"
-        )
+        LOGGER.info("Error accepting endorser invitation/configuring endorser connection")

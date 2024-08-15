@@ -1465,9 +1465,7 @@ async def register(app: web.Application):
             web.post(
                 "/issue-credential/send-proposal", credential_exchange_send_proposal
             ),
-            web.post(
-                "/issue-credential/send-offer", credential_exchange_send_free_offer
-            ),
+            web.post("/issue-credential/send-offer", credential_exchange_send_free_offer),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/send-offer",
                 credential_exchange_send_bound_offer,

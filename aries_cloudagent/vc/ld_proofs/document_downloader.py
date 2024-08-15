@@ -45,8 +45,9 @@ class StaticCacheJsonLdDownloader:
         "https://w3id.org/security/v2": "security-v2-context.jsonld",
         "https://w3id.org/security/suites/ed25519-2020/v1": "ed25519-2020-context.jsonld",
         "https://w3id.org/security/bbs/v1": "bbs-v1-context.jsonld",
-        "https://identity.foundation/presentation-exchange/submission/v1":
-            "dif-presentation-exchange-submission-v1.jsonld",
+        "https://identity.foundation/presentation-exchange/submission/v1": (
+            "dif-presentation-exchange-submission-v1.jsonld"
+        ),
     }
 
     def __init__(
@@ -104,8 +105,7 @@ class JsonLdDocumentDownloader:
             if (
                 not all([pieces.scheme, pieces.netloc])
                 or pieces.scheme not in ["http", "https"]
-                or set(pieces.netloc)
-                > set(string.ascii_letters + string.digits + "-.:")
+                or set(pieces.netloc) > set(string.ascii_letters + string.digits + "-.:")
             ):
                 raise JsonLdError(
                     'URL could not be dereferenced; only "http" and "https" '
@@ -176,9 +176,7 @@ class JsonLdDocumentParser:
                 if (
                     linked_alternate
                     and linked_alternate.get("type") == "application/ld+json"
-                    and not re.match(
-                        r"^application\/(\w*\+)?json$", doc["content_type"]
-                    )
+                    and not re.match(r"^application\/(\w*\+)?json$", doc["content_type"])
                 ):
                     doc["contentType"] = "application/ld+json"
                     doc["documentUrl"] = jsonld.prepend_base(

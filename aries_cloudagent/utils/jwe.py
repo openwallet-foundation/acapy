@@ -259,9 +259,7 @@ class JweEnvelope:
         This value is used in the additional authenticated data when encrypting.
         """
         return (
-            self.protected_b64.encode("utf-8")
-            if self.protected_b64 is not None
-            else None
+            self.protected_b64.encode("utf-8") if self.protected_b64 is not None else None
         )
 
     def set_payload(self, ciphertext: bytes, iv: bytes, tag: bytes, aad: bytes = None):

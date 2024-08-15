@@ -53,9 +53,7 @@ async def fetch_txns(genesis_txns, registry_id):
     async with aiohttp.ClientSession() as session:
         data = await session.get(defn.tails_location)
         tails_data = await data.read()
-        tails_hash = base58.b58encode(hashlib.sha256(tails_data).digest()).decode(
-            "utf-8"
-        )
+        tails_hash = base58.b58encode(hashlib.sha256(tails_data).digest()).decode("utf-8")
         if tails_hash != defn.tails_hash:
             raise RevocRecoveryException(
                 f"Tails hash mismatch {tails_hash} {defn.tails_hash}"

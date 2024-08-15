@@ -137,9 +137,7 @@ class WalletRecordSchema(BaseRecordSchema):
     )
     key_management_mode = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            [WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED]
-        ),
+        validate=validate.OneOf([WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED]),
         metadata={"description": "Mode regarding management of wallet key"},
     )
     settings = fields.Dict(

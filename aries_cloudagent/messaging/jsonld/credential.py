@@ -57,9 +57,7 @@ def verify_jws_header(header):
     """Check header requirements."""
 
     if header != {"alg": "EdDSA", "b64": False, "crit": ["b64"]}:
-        raise BadJWSHeaderError(
-            "Invalid JWS header parameters for Ed25519Signature2018."
-        )
+        raise BadJWSHeaderError("Invalid JWS header parameters for Ed25519Signature2018.")
 
 
 async def jws_verify(session, verify_data, signature, public_key):

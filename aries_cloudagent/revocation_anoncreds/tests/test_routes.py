@@ -54,9 +54,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields({"rev_reg_id": test_module.INDY_REV_REG_ID_EXAMPLE})
             with self.assertRaises(test_module.ValidationError):
-                req.validate_fields(
-                    {"cred_rev_id": test_module.INDY_CRED_REV_ID_EXAMPLE}
-                )
+                req.validate_fields({"cred_rev_id": test_module.INDY_CRED_REV_ID_EXAMPLE})
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields(
                     {
@@ -153,9 +151,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
             await test_module.publish_revocations(self.request)
 
-            mock_response.assert_called_once_with(
-                {"rrid2crid": pub_pending.return_value}
-            )
+            mock_response.assert_called_once_with({"rrid2crid": pub_pending.return_value})
 
     async def test_publish_revocations_x(self):
         self.request.json = mock.CoroutineMock()
@@ -408,9 +404,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             result = await test_module.get_tails_file(self.request)
-            mock_file_response.assert_called_once_with(
-                path="tails_location", status=200
-            )
+            mock_file_response.assert_called_once_with(path="tails_location", status=200)
             assert result is mock_file_response.return_value
 
     async def test_get_tails_file_not_found(self):

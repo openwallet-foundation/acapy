@@ -80,10 +80,8 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         self.request.query = {"create_transaction_for_endorser": "false"}
 
         with mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = (
-                await test_module.credential_definitions_send_credential_definition(
-                    self.request
-                )
+            result = await test_module.credential_definitions_send_credential_definition(
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -129,10 +127,8 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
                     }
                 )
             )
-            result = (
-                await test_module.credential_definitions_send_credential_definition(
-                    self.request
-                )
+            result = await test_module.credential_definitions_send_credential_definition(
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(

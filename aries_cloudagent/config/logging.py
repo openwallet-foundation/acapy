@@ -207,9 +207,7 @@ class LoggingConfigurator:
 
         # Set custom file handler
         if log_file:
-            logging.root.handlers.append(
-                logging.FileHandler(log_file, encoding="utf-8")
-            )
+            logging.root.handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
 
         # Set custom log level
         if log_level:

@@ -64,10 +64,7 @@ class HSProto(Enum):
 
         if isinstance(label, str):
             for hsp in HSProto:
-                if (
-                    DIDCommPrefix.unqualify(label) == hsp.name
-                    or label.lower() in hsp.aka
-                ):
+                if DIDCommPrefix.unqualify(label) == hsp.name or label.lower() in hsp.aka:
                     return hsp
 
         elif isinstance(label, HSProto):

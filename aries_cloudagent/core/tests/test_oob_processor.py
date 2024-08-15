@@ -59,9 +59,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             "retrieve_by_tag_filter",
             mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
-            await self.oob_processor.clean_finished_oob_record(
-                self.profile, test_message
-            )
+            await self.oob_processor.clean_finished_oob_record(self.profile, test_message)
 
             assert mock_oob.state == OobRecord.STATE_DONE
             mock_oob.emit_event.assert_called_once()
@@ -87,9 +85,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             "retrieve_by_tag_filter",
             mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
-            await self.oob_processor.clean_finished_oob_record(
-                self.profile, test_message
-            )
+            await self.oob_processor.clean_finished_oob_record(self.profile, test_message)
 
             mock_oob.emit_event.assert_called_once()
             mock_oob.delete_record.assert_not_called()
@@ -109,9 +105,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
         ) as mock_retrieve_oob:
             mock_retrieve_oob.side_effect = (StorageNotFoundError(),)
 
-            await self.oob_processor.clean_finished_oob_record(
-                self.profile, test_message
-            )
+            await self.oob_processor.clean_finished_oob_record(self.profile, test_message)
 
     async def test_find_oob_target_for_outbound_message(self):
         mock_oob = mock.MagicMock(
@@ -150,9 +144,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             assert target.recipient_keys == [
                 "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
             ]
-            assert target.routing_keys == [
-                "6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"
-            ]
+            assert target.routing_keys == ["6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"]
             assert target.sender_key == "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
             payload = json.loads(outbound.payload)

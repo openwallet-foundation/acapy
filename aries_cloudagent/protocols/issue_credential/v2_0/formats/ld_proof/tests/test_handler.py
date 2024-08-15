@@ -345,9 +345,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             test_module,
             "get_properties_without_context",
             return_value=missing_properties,
-        ), self.assertRaises(
-            LinkedDataProofException
-        ) as context:
+        ), self.assertRaises(LinkedDataProofException) as context:
             await self.handler.create_offer(self.cred_proposal)
 
         assert (
@@ -454,9 +452,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            requests_attach=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")
-            ],
+            requests_attach=[AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")],
         )
 
         await self.handler.receive_request(cred_ex_record, cred_request)
@@ -576,9 +572,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            requests_attach=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")
-            ],
+            requests_attach=[AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")],
         )
 
         cred_ex_record = V20CredExRecord(
@@ -643,9 +637,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            requests_attach=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")
-            ],
+            requests_attach=[AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
             cred_ex_id="cred-ex-id",
@@ -771,9 +763,8 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
 
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.receive_credential(cred_ex_record, cred_issue)
-        assert (
-            "Received credential status type does not match credential request"
-            in str(context.exception)
+        assert "Received credential status type does not match credential request" in str(
+            context.exception
         )
 
     async def test_receive_credential_x_proof_options_ne(self):
@@ -797,9 +788,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                         ],
                     )
                 ],
-                credentials_attach=[
-                    AttachDecorator.data_base64(LD_PROOF_VC, ident="0")
-                ],
+                credentials_attach=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0")],
             )
             cred_request = V20CredRequest(
                 formats=[
@@ -900,8 +889,6 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         ) as mock_verify_credential, mock.patch.object(
             self.manager,
             "_get_proof_purpose",
-        ) as mock_get_proof_purpose, self.assertRaises(
-            V20CredFormatError
-        ) as context:
+        ) as mock_get_proof_purpose, self.assertRaises(V20CredFormatError) as context:
             await self.handler.store_credential(cred_ex_record, cred_id)
         assert "Received invalid credential: " in str(context.exception)

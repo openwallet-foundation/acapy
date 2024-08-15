@@ -200,9 +200,7 @@ def ecdh_1pu_decrypt(
 
     enc_alg = wrapper.protected.get("enc")
     if enc_alg not in ("A128CBC-HS256", "A256CBC-HS512"):
-        raise DidcommEnvelopeError(
-            f"Unsupported ECDH-1PU content encryption: {enc_alg}"
-        )
+        raise DidcommEnvelopeError(f"Unsupported ECDH-1PU content encryption: {enc_alg}")
 
     recip = wrapper.get_recipient(recip_kid)
     if not recip:

@@ -194,9 +194,7 @@ class AnonCredsPresExchHandler:
                 revocation_states[rev_reg_id] = {}
             rev_reg_def = revocation_registries[rev_reg_id]
             revocation = AnonCredsRevocation(self._profile)
-            tails_local_path = await revocation.get_or_fetch_local_tails_path(
-                rev_reg_def
-            )
+            tails_local_path = await revocation.get_or_fetch_local_tails_path(rev_reg_def)
             try:
                 revocation_states[rev_reg_id][timestamp] = json.loads(
                     await self.holder.create_revocation_state(

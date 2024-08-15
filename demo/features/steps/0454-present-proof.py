@@ -116,9 +116,7 @@ def step_impl(context, verifier, request_for_proof, prover, sig_type):
                                 {
                                     "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
                                 },
-                                {
-                                    "uri": "https://w3id.org/citizenship#PermanentResident"
-                                },
+                                {"uri": "https://w3id.org/citizenship#PermanentResident"},
                             ],
                             "constraints": {
                                 "limit_disclosure": "required",

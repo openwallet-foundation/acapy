@@ -107,12 +107,12 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             writable_ledgers=writable_ledgers,
             endorser_map=endorser_info_map,
         )
-        assert (
-            "endorser_1"
-        ), "test_public_did_1" == manager.get_endorser_info_for_ledger("test_prod_1")
-        assert (
-            "endorser_2"
-        ), "test_public_did_2" == manager.get_endorser_info_for_ledger("test_prod_2")
+        assert "endorser_1", "test_public_did_1" == manager.get_endorser_info_for_ledger(
+            "test_prod_1"
+        )
+        assert "endorser_2", "test_public_did_2" == manager.get_endorser_info_for_ledger(
+            "test_prod_2"
+        )
 
     async def test_get_write_ledgers(self):
         ledger_ids = await self.manager.get_write_ledgers()

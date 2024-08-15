@@ -12,9 +12,7 @@ from .....messaging.decorators.attach_decorator import (
 from ..message_types import PRES_20_REQUEST, PROTOCOL_PACKAGE
 from .pres_format import V20PresFormat, V20PresFormatSchema
 
-HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.pres_request_handler.V20PresRequestHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.pres_request_handler.V20PresRequestHandler"
 
 
 class V20PresRequest(AgentMessage):

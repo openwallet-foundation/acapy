@@ -120,8 +120,7 @@ class TestPresentationProposalHandler(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
         assert (
-            err.exception.message
-            == "Connection used for presentation proposal not ready"
+            err.exception.message == "Connection used for presentation proposal not ready"
         )
 
         assert not responder.messages

@@ -262,9 +262,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason=(
@@ -551,9 +549,7 @@ async def on_cred_def_event(profile: Profile, event: Event):
         meta_data["context"].get("rev_reg_size", None) if support_revocation else None
     )
     auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
-    create_pending_rev_reg = meta_data["processing"].get(
-        "create_pending_rev_reg", False
-    )
+    create_pending_rev_reg = meta_data["processing"].get("create_pending_rev_reg", False)
     endorser_connection_id = (
         meta_data["endorser"].get("connection_id", None)
         if "endorser" in meta_data

@@ -481,9 +481,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
                     proof_x,
                     REV_REG_DEFS,
                 )
-            assert "Presentation attributes mismatch requested" in str(
-                context.exception
-            )
+            assert "Presentation attributes mismatch requested" in str(context.exception)
 
             # all clear, attribute group ('names')
             await self.verifier.check_timestamps(

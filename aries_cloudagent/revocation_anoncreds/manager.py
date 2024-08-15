@@ -261,9 +261,7 @@ class RevocationManager:
             else:
                 limit_crids = None
 
-            result = await revoc.revoke_pending_credentials(
-                rrid, limit_crids=limit_crids
-            )
+            result = await revoc.revoke_pending_credentials(rrid, limit_crids=limit_crids)
             if result.curr and result.revoked:
                 await self.set_cred_revoked_state(rrid, result.revoked)
                 await revoc.update_revocation_list(

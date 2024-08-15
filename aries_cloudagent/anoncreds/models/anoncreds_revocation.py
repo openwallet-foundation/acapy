@@ -253,9 +253,7 @@ class RevRegDefResult(BaseModel):
     @property
     def rev_reg_def_id(self):
         """Revocation Registry Definition ID."""
-        return (
-            self.revocation_registry_definition_state.revocation_registry_definition_id
-        )
+        return self.revocation_registry_definition_state.revocation_registry_definition_id
 
     @property
     def rev_reg_def(self):

@@ -52,17 +52,13 @@ class AdminResetSchema(OpenAPISchema):
 class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
-    alive = fields.Boolean(
-        metadata={"description": "Liveliness status", "example": True}
-    )
+    alive = fields.Boolean(metadata={"description": "Liveliness status", "example": True})
 
 
 class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
-    ready = fields.Boolean(
-        metadata={"description": "Readiness status", "example": True}
-    )
+    ready = fields.Boolean(metadata={"description": "Readiness status", "example": True})
 
 
 class AdminShutdownSchema(OpenAPISchema):

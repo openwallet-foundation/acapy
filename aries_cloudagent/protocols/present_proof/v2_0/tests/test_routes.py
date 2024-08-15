@@ -1031,9 +1031,9 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         }
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
-        test_pd["presentation_definition"]["input_descriptors"][0]["schema"][0][
-            "uri"
-        ] = "https://example.org/test.json"
+        test_pd["presentation_definition"]["input_descriptors"][0]["schema"][0]["uri"] = (
+            "https://example.org/test.json"
+        )
         test_pd["presentation_definition"]["input_descriptors"][0]["schema"].pop(1)
         record = V20PresExRecord(
             state="request-received",
@@ -1220,9 +1220,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(
             return_value={
                 "connection_id": "dummy-conn-id",
-                "presentation_proposal": {
-                    V20PresFormat.Format.INDY.api: INDY_PROOF_REQ
-                },
+                "presentation_proposal": {V20PresFormat.Format.INDY.api: INDY_PROOF_REQ},
             }
         )
 
@@ -1239,21 +1237,17 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
                 return_value=mock.MagicMock(is_ready=True)
             )
             mock_px_rec_inst = mock.MagicMock()
-            mock_pres_mgr.return_value.create_exchange_for_proposal = (
-                mock.CoroutineMock(return_value=mock_px_rec_inst)
+            mock_pres_mgr.return_value.create_exchange_for_proposal = mock.CoroutineMock(
+                return_value=mock_px_rec_inst
             )
 
             await test_module.present_proof_send_proposal(self.request)
-            mock_response.assert_called_once_with(
-                mock_px_rec_inst.serialize.return_value
-            )
+            mock_response.assert_called_once_with(mock_px_rec_inst.serialize.return_value)
 
     async def test_present_proof_send_proposal_no_conn_record(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec:
+        with mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec:
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError()
             )
@@ -1284,14 +1278,10 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_conn_rec, mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.create_exchange_for_proposal = (
-                mock.CoroutineMock(
-                    return_value=mock.MagicMock(
-                        serialize=mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
-                        save_error_state=mock.CoroutineMock(),
-                    )
+            mock_pres_mgr.return_value.create_exchange_for_proposal = mock.CoroutineMock(
+                return_value=mock.MagicMock(
+                    serialize=mock.MagicMock(side_effect=test_module.StorageError()),
+                    save_error_state=mock.CoroutineMock(),
                 )
             )
 
@@ -1327,9 +1317,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
             await test_module.present_proof_create_request(self.request)
-            mock_response.assert_called_once_with(
-                mock_px_rec_inst.serialize.return_value
-            )
+            mock_response.assert_called_once_with(mock_px_rec_inst.serialize.return_value)
 
     async def test_present_proof_create_request_x(self):
         self.request.json = mock.CoroutineMock(
@@ -1350,9 +1338,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_inst = mock.MagicMock(
                 create_exchange_for_request=mock.CoroutineMock(
                     return_value=mock.MagicMock(
-                        serialize=mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
+                        serialize=mock.MagicMock(side_effect=test_module.StorageError()),
                         save_error_state=mock.CoroutineMock(),
                     )
                 )
@@ -1395,9 +1381,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
             await test_module.present_proof_send_free_request(self.request)
-            mock_response.assert_called_once_with(
-                mock_px_rec_inst.serialize.return_value
-            )
+            mock_response.assert_called_once_with(mock_px_rec_inst.serialize.return_value)
 
     async def test_present_proof_send_free_request_not_found(self):
         self.request.json = mock.CoroutineMock(return_value={"connection_id": "dummy"})
@@ -1456,9 +1440,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_inst = mock.MagicMock(
                 create_exchange_for_request=mock.CoroutineMock(
                     return_value=mock.MagicMock(
-                        serialize=mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
+                        serialize=mock.MagicMock(side_effect=test_module.StorageError()),
                         save_error_state=mock.CoroutineMock(),
                     )
                 )
@@ -1498,9 +1480,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1521,9 +1501,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
             await test_module.present_proof_send_bound_request(self.request)
-            mock_response.assert_called_once_with(
-                mock_px_rec_inst.serialize.return_value
-            )
+            mock_response.assert_called_once_with(mock_px_rec_inst.serialize.return_value)
 
     async def test_present_proof_send_bound_request_not_found(self):
         self.request.json = mock.CoroutineMock(return_value={"trace": False})
@@ -1551,9 +1529,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1591,9 +1567,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1646,9 +1620,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_DONE,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1685,9 +1657,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
                 save_error_state=mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
@@ -1743,9 +1713,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1764,9 +1732,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
             await test_module.present_proof_send_presentation(self.request)
-            mock_response.assert_called_once_with(
-                mock_px_rec_inst.serialize.return_value
-            )
+            mock_response.assert_called_once_with(mock_px_rec_inst.serialize.return_value)
 
     async def test_present_proof_send_presentation_dif(self):
         proof_req = deepcopy(DIF_PROOF_REQ)
@@ -1798,9 +1764,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1819,9 +1783,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
 
             await test_module.present_proof_send_presentation(self.request)
-            mock_response.assert_called_once_with(
-                mock_px_rec_inst.serialize.return_value
-            )
+            mock_response.assert_called_once_with(mock_px_rec_inst.serialize.return_value)
 
     async def test_present_proof_send_presentation_dif_error(self):
         self.request.json = mock.CoroutineMock(return_value={"dif": DIF_PROOF_REQ})
@@ -1944,9 +1906,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -1989,9 +1949,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -2026,9 +1984,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id=None,
                 state=test_module.V20PresExRecord.STATE_DONE,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -2070,9 +2026,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
                 save_error_state=mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
@@ -2114,9 +2068,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -2157,9 +2109,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_DONE,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_px_rec_inst
@@ -2183,9 +2133,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
-                serialize=mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
+                serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"}),
                 save_error_state=mock.CoroutineMock(),
             )
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(

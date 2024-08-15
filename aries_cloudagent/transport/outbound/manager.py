@@ -202,9 +202,7 @@ class OutboundTransportManager:
         # Grab the scheme from the uri
         scheme = urlparse(endpoint).scheme
         if scheme == "":
-            raise OutboundDeliveryError(
-                f"The uri '{endpoint}' does not specify a scheme"
-            )
+            raise OutboundDeliveryError(f"The uri '{endpoint}' does not specify a scheme")
 
         # Look up transport that is registered to handle this scheme
         transport_id = self.get_running_transport_for_scheme(scheme)
@@ -326,9 +324,7 @@ class OutboundTransportManager:
         """Handle completion of the drain process."""
         exc_info = task_exc_info(task)
         if exc_info:
-            LOGGER.exception(
-                "Exception in outbound queue processing:", exc_info=exc_info
-            )
+            LOGGER.exception("Exception in outbound queue processing:", exc_info=exc_info)
         if self._process_task and self._process_task.done():
             self._process_task = None
 
@@ -378,8 +374,7 @@ class OutboundTransportManager:
                     trace_event(
                         self.root_profile.settings,
                         queued.message if queued.message else queued.payload,
-                        outcome="OutboundTransportManager.DELIVER.END."
-                        + queued.endpoint,
+                        outcome="OutboundTransportManager.DELIVER.END." + queued.endpoint,
                         perf_counter=p_time,
                     )
 

@@ -29,7 +29,7 @@ class KeylistUpdated(BaseModel):
         recipient_key: str = None,
         action: str = None,
         result: str = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize a KeylistUpdated instance.
 

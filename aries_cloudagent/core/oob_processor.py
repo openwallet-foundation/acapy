@@ -34,9 +34,7 @@ class OobMessageProcessor:
 
     def __init__(
         self,
-        inbound_message_router: Callable[
-            [Profile, InboundMessage, Optional[bool]], None
-        ],
+        inbound_message_router: Callable[[Profile, InboundMessage, Optional[bool]], None],
     ) -> None:
         """Initialize an inbound OOB message processor.
 
@@ -64,10 +62,7 @@ class OobMessageProcessor:
 
                 # If the oob record is not multi use and it doesn't contain any
                 # attachments, we can now safely remove the oob record
-                if (
-                    not oob_record.multi_use
-                    and not oob_record.invitation.requests_attach
-                ):
+                if not oob_record.multi_use and not oob_record.invitation.requests_attach:
                     await oob_record.delete_record(session)
         except StorageNotFoundError:
             # It is fine if no oob record is found, Only retrieved for cleanup
@@ -261,13 +256,11 @@ class OobMessageProcessor:
         # Verify the sender key is present in their service in our record
         # If we don't have the sender verkey stored yet we can allow any key
         if oob_record.their_service and (
-            (
-                context.message_receipt.recipient_verkey
-                and (
-                    not context.message_receipt.sender_verkey
-                    or context.message_receipt.sender_verkey
-                    not in oob_record.their_service.recipient_keys
-                )
+            context.message_receipt.recipient_verkey
+            and (
+                not context.message_receipt.sender_verkey
+                or context.message_receipt.sender_verkey
+                not in oob_record.their_service.recipient_keys
             )
         ):
             LOGGER.debug(
@@ -347,9 +340,7 @@ class OobMessageProcessor:
             if not oob_record.connection_id:
                 oob_record.attach_thread_id = self.get_thread_id(message)
                 if their_service:
-                    LOGGER.debug(
-                        "Storing their service in oob record %s", their_service
-                    )
+                    LOGGER.debug("Storing their service in oob record %s", their_service)
                     oob_record.their_service = their_service
 
                 await oob_record.save(session)

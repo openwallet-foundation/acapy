@@ -85,9 +85,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         self.route_manager.routing_info = mock.CoroutineMock(
             return_value=([], self.test_endpoint)
         )
-        self.route_manager.mediation_record_if_id = mock.CoroutineMock(
-            return_value=None
-        )
+        self.route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
         self.route_manager.mediation_record_for_connection = mock.CoroutineMock(
             return_value=None
         )
@@ -133,12 +131,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
-        self.context.injector.bind_instance(
-            BaseMultitenantManager, self.multitenant_mgr
-        )
-        self.multitenant_mgr.get_default_mediator = mock.CoroutineMock(
-            return_value=None
-        )
+        self.context.injector.bind_instance(BaseMultitenantManager, self.multitenant_mgr)
+        self.multitenant_mgr.get_default_mediator = mock.CoroutineMock(return_value=None)
 
         self.manager = DIDXManager(self.profile)
         assert self.manager.profile
@@ -638,9 +632,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_response, mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                mock.CoroutineMock(
-                    return_value={"id": "did:sov:" + TestConfig.test_did}
-                ),
+                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
             ), mock.patch.object(
                 self.manager, "create_did_document", mock.CoroutineMock()
             ) as mock_create_did_doc, mock.patch.object(
@@ -1142,9 +1134,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_create_did_doc, mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                mock.CoroutineMock(
-                    return_value={"id": "did:sov:" + TestConfig.test_did}
-                ),
+                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
             ), mock.patch.object(
                 self.manager, "store_did_document", mock.CoroutineMock()
             ):
@@ -1217,9 +1207,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_did_posture, mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                mock.CoroutineMock(
-                    return_value={"id": "did:sov:" + TestConfig.test_did}
-                ),
+                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
             ), mock.patch.object(
                 self.manager, "store_did_document", mock.CoroutineMock()
             ):
@@ -1284,9 +1272,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_did_posture, mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                mock.CoroutineMock(
-                    return_value={"id": "did:sov:" + TestConfig.test_did}
-                ),
+                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
             ), mock.patch.object(
                 self.manager, "store_did_document", mock.CoroutineMock()
             ):
@@ -1371,9 +1357,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_response, mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                mock.CoroutineMock(
-                    return_value={"id": "did:sov:" + TestConfig.test_did}
-                ),
+                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
             ), mock.patch.object(
                 self.manager, "store_did_document", mock.CoroutineMock()
             ):
@@ -1449,9 +1433,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     )
 
     async def test_create_response(self):
-        conn_rec = ConnRecord(
-            connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
-        )
+        conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
         with mock.patch.object(
             test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
@@ -1464,9 +1446,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_response, mock.patch.object(
             self.manager, "create_did_document", mock.CoroutineMock()
         ) as mock_create_did_doc:
-            mock_create_did_doc.return_value = mock.MagicMock(
-                serialize=mock.MagicMock()
-            )
+            mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
                     data=mock.MagicMock(sign=mock.CoroutineMock())
@@ -1572,9 +1552,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     assert "Connection not in state" in str(context.exception)
 
     async def test_create_response_multitenant(self):
-        conn_rec = ConnRecord(
-            connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
-        )
+        conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
         self.manager.profile.context.update_settings(
             {
@@ -1599,9 +1577,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 method=SOV,
                 key_type=ED25519,
             )
-            mock_create_did_doc.return_value = mock.MagicMock(
-                serialize=mock.MagicMock()
-            )
+            mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
                     data=mock.MagicMock(sign=mock.CoroutineMock())
@@ -1632,9 +1608,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             InMemoryWallet, "get_local_did", mock.CoroutineMock()
         ) as mock_get_loc_did:
             mock_get_loc_did.return_value = self.did_info
-            mock_create_did_doc.return_value = mock.MagicMock(
-                serialize=mock.MagicMock()
-            )
+            mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
                     data=mock.MagicMock(sign=mock.CoroutineMock())
@@ -1752,9 +1726,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 ED25519,
             )
 
-        conn_rec = ConnRecord(
-            connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
-        )
+        conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
         with mock.patch.object(
             test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
@@ -1767,9 +1739,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_response, mock.patch.object(
             self.manager, "create_did_document", mock.CoroutineMock()
         ) as mock_create_did_doc:
-            mock_create_did_doc.return_value = mock.MagicMock(
-                serialize=mock.MagicMock()
-            )
+            mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
                     data=mock.MagicMock(sign=mock.CoroutineMock())
@@ -1781,9 +1751,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
     async def test_create_response_use_public_did_x_no_public_did(self):
-        conn_rec = ConnRecord(
-            connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
-        )
+        conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
         with mock.patch.object(
             test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
@@ -1796,9 +1764,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_response, mock.patch.object(
             self.manager, "create_did_document", mock.CoroutineMock()
         ) as mock_create_did_doc:
-            mock_create_did_doc.return_value = mock.MagicMock(
-                serialize=mock.MagicMock()
-            )
+            mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
                     data=mock.MagicMock(sign=mock.CoroutineMock())
@@ -2045,9 +2011,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         mock_response.did = TestConfig.test_target_did
         mock_response.did_doc_attach = None
         mock_response.did_rotate_attach.data.verify = mock.AsyncMock(return_value=True)
-        mock_response.did_rotate_attach.data.signed = (
-            TestConfig.test_target_did.encode()
-        )
+        mock_response.did_rotate_attach.data.signed = TestConfig.test_target_did.encode()
 
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
@@ -2135,9 +2099,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 verify=mock.CoroutineMock(return_value=True),
                 signed=mock.MagicMock(
                     decode=mock.MagicMock(
-                        return_value=json.dumps(
-                            {"id": "did:sov:" + TestConfig.test_did}
-                        )
+                        return_value=json.dumps({"id": "did:sov:" + TestConfig.test_did})
                     )
                 ),
             )

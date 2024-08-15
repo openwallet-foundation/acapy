@@ -67,9 +67,7 @@ def manager(profile) -> Iterable[MediationManager]:  # pylint: disable=W0621
 @pytest.fixture
 def record() -> Iterable[MediationRecord]:
     """Fixture for record used in tests."""
-    yield MediationRecord(
-        state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
-    )
+    yield MediationRecord(state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID)
 
 
 class TestMediationManager:  # pylint: disable=R0904,W0621
@@ -262,9 +260,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await manager.clear_default_mediator()
         assert not await manager.get_default_mediator_id()
 
-    async def test_clear_default_mediator_no_default_set(
-        self, manager: MediationManager
-    ):
+    async def test_clear_default_mediator_no_default_set(self, manager: MediationManager):
         await manager.clear_default_mediator()
 
     async def test_prepare_request(self, manager):
@@ -276,9 +272,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_request_granted_base58(self, manager):
         """test_request_granted."""
         record, _ = await manager.prepare_request(TEST_CONN_ID)
-        grant = MediationGrant(
-            endpoint=TEST_ENDPOINT, routing_keys=[TEST_BASE58_VERKEY]
-        )
+        grant = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_BASE58_VERKEY])
         await manager.request_granted(record, grant)
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
@@ -312,9 +306,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_prepare_keylist_query_pagination(self, manager):
         """test_prepare_keylist_query_pagination."""
-        query = await manager.prepare_keylist_query(
-            paginate_limit=10, paginate_offset=20
-        )
+        query = await manager.prepare_keylist_query(paginate_limit=10, paginate_offset=20)
         assert query.paginate.limit == 10
         assert query.paginate.offset == 20
 

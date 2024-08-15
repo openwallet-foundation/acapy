@@ -86,9 +86,7 @@ class TestCredentialRoutes(IsolatedAsyncioTestCase):
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.credential_exchange_retrieve(self.request)
-                mock_response.assert_called_once_with(
-                    mock_cred_ex.serialize.return_value
-                )
+                mock_response.assert_called_once_with(mock_cred_ex.serialize.return_value)
 
     async def test_credential_exchange_retrieve_not_found(self):
         self.request.match_info = {"cred_ex_id": "dummy"}
@@ -129,9 +127,7 @@ class TestCredentialRoutes(IsolatedAsyncioTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, mock.patch.object(
             test_module.CredentialPreview, "deserialize", autospec=True
-        ), mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        ), mock.patch.object(test_module.web, "json_response") as mock_response:
             mock_credential_manager.return_value.create_offer = mock.CoroutineMock()
 
             mock_credential_manager.return_value.create_offer.return_value = (
@@ -162,9 +158,7 @@ class TestCredentialRoutes(IsolatedAsyncioTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, mock.patch.object(
             test_module.CredentialPreview, "deserialize", autospec=True
-        ), mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        ), mock.patch.object(test_module.web, "json_response") as mock_response:
             mock_credential_manager.return_value.create_offer = mock.CoroutineMock()
 
             mock_credential_manager.return_value.create_offer.return_value = (
@@ -200,9 +194,7 @@ class TestCredentialRoutes(IsolatedAsyncioTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, mock.patch.object(
             test_module.CredentialPreview, "deserialize", autospec=True
-        ), mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        ), mock.patch.object(test_module.web, "json_response") as mock_response:
             mock_credential_manager.return_value.create_offer = mock.CoroutineMock()
 
             mock_credential_manager.return_value.create_offer.return_value = (

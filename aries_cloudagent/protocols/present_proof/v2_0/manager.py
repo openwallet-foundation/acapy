@@ -71,9 +71,7 @@ class V20PresManager:
         )
 
         async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="create v2.0 presentation proposal"
-            )
+            await pres_ex_record.save(session, reason="create v2.0 presentation proposal")
 
         return pres_ex_record
 
@@ -98,9 +96,7 @@ class V20PresManager:
         )
 
         async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="receive v2.0 presentation request"
-            )
+            await pres_ex_record.save(session, reason="receive v2.0 presentation request")
 
         return pres_ex_record
 
@@ -211,9 +207,7 @@ class V20PresManager:
         """
         pres_ex_record.state = V20PresExRecord.STATE_REQUEST_RECEIVED
         async with self._profile.session() as session:
-            await pres_ex_record.save(
-                session, reason="receive v2.0 presentation request"
-            )
+            await pres_ex_record.save(session, reason="receive v2.0 presentation request")
 
         return pres_ex_record
 
@@ -299,9 +293,7 @@ class V20PresManager:
 
         # Assign thid (and optionally pthid) to message
         pres_message.assign_thread_from(pres_ex_record.pres_request)
-        pres_message.assign_trace_decorator(
-            self._profile.settings, pres_ex_record.trace
-        )
+        pres_message.assign_trace_decorator(self._profile.settings, pres_ex_record.trace)
 
         # save presentation exchange state
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_SENT
@@ -334,7 +326,9 @@ class V20PresManager:
         connection_id = (
             None
             if oob_record
-            else connection_record.connection_id if connection_record else None
+            else connection_record.connection_id
+            if connection_record
+            else None
         )
 
         async with self._profile.session() as session:

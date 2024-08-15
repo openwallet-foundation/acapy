@@ -251,17 +251,15 @@ class IndyPresExchHandler:
                     )
 
                 if identifier["cred_def_id"] not in cred_defs:
-                    cred_defs[identifier["cred_def_id"]] = (
-                        await ledger.get_credential_definition(
-                            identifier["cred_def_id"]
-                        )
-                    )
+                    cred_defs[
+                        identifier["cred_def_id"]
+                    ] = await ledger.get_credential_definition(identifier["cred_def_id"])
 
                 if identifier.get("rev_reg_id"):
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[identifier["rev_reg_id"]] = (
-                            await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
-                        )
+                        rev_reg_defs[
+                            identifier["rev_reg_id"]
+                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
 
                     if identifier.get("timestamp"):
                         rev_reg_entries.setdefault(identifier["rev_reg_id"], {})

@@ -277,9 +277,7 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
     return did_doc
 
 
-def construct_did_signature_key_base(
-    *, id: str, key_id: str, verification_method: dict
-):
+def construct_did_signature_key_base(*, id: str, key_id: str, verification_method: dict):
     """Create base did key structure to use for most signature keys.
 
     May not be suitable for all did key types

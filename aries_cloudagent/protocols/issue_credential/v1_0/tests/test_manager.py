@@ -61,9 +61,7 @@ class TestCredentialManager(IsolatedAsyncioTestCase):
         Ledger = mock.MagicMock()
         self.ledger = Ledger()
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
-        self.ledger.get_credential_definition = mock.CoroutineMock(
-            return_value=CRED_DEF
-        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
         self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
@@ -1411,9 +1409,7 @@ class TestCredentialManager(IsolatedAsyncioTestCase):
         await stored_exchange.save(self.session)
 
         cred_def = mock.MagicMock()
-        self.ledger.get_credential_definition = mock.CoroutineMock(
-            return_value=cred_def
-        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=cred_def)
 
         cred_id = "cred-id"
         holder = mock.MagicMock()
@@ -1481,9 +1477,7 @@ class TestCredentialManager(IsolatedAsyncioTestCase):
         await stored_exchange.save(self.session)
 
         cred_def = mock.MagicMock()
-        self.ledger.get_credential_definition = mock.CoroutineMock(
-            return_value=cred_def
-        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=cred_def)
 
         cred_id = "cred-id"
         holder = mock.MagicMock()

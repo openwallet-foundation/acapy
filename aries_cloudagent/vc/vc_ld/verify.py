@@ -76,9 +76,7 @@ async def verify_credential(
             purpose=purpose,
         )
     except Exception as e:
-        return DocumentVerificationResult(
-            verified=False, document=credential, errors=[e]
-        )
+        return DocumentVerificationResult(verified=False, document=credential, errors=[e])
 
 
 async def _verify_presentation(

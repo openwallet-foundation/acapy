@@ -532,9 +532,7 @@ async def main(
             recv_timer = faber.log_timer(
                 f"Completed {issue_count} credential exchanges in"
             )
-            batch_timer = faber.log_timer(
-                f"Started {batch_size} credential exchanges in"
-            )
+            batch_timer = faber.log_timer(f"Started {batch_size} credential exchanges in")
         recv_timer.start()
         batch_timer.start()
 

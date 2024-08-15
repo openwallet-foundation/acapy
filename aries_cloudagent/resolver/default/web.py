@@ -73,9 +73,7 @@ class WebDIDResolver(BaseDIDResolver):
                         did_doc = DIDDocument.from_json(await response.text())
                         return did_doc.serialize()
                     except Exception as err:
-                        raise ResolverError(
-                            "Response was incorrectly formatted"
-                        ) from err
+                        raise ResolverError("Response was incorrectly formatted") from err
                 if response.status == 404:
                     raise DIDNotFound(f"No document found for {did}")
                 raise ResolverError(

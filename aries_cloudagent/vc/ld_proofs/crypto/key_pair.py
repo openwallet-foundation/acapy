@@ -12,9 +12,7 @@ class KeyPair(ABC):
         """Sign message(s) using key pair."""
 
     @abstractmethod
-    async def verify(
-        self, message: Union[List[bytes], bytes], signature: bytes
-    ) -> bool:
+    async def verify(self, message: Union[List[bytes], bytes], signature: bytes) -> bool:
         """Verify message(s) against signature using key pair."""
 
     @abstractproperty

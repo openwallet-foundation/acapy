@@ -405,10 +405,8 @@ class IssuerRevRegRecord(BaseRecord):
                 # await self.save(session)
                 accum_count += 1
             async with profile.session() as session:
-                issuer_rev_reg_record = (
-                    await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
-                        session, self.revoc_reg_id
-                    )
+                issuer_rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
+                    session, self.revoc_reg_id
                 )
                 cred_def_id = issuer_rev_reg_record.cred_def_id
                 _cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
@@ -417,10 +415,8 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             credx_module = importlib.import_module("indy_credx")
             cred_defn = credx_module.CredentialDefinition.load(_cred_def.value_json)
-            rev_reg_defn_private = (
-                credx_module.RevocationRegistryDefinitionPrivate.load(
-                    _rev_reg_def_private.value_json
-                )
+            rev_reg_defn_private = credx_module.RevocationRegistryDefinitionPrivate.load(
+                _rev_reg_def_private.value_json
             )
             calculated_txn = await generate_ledger_rrrecovery_txn(
                 genesis_transactions,
@@ -501,9 +497,7 @@ class IssuerRevRegRecord(BaseRecord):
         """
         if self.pending_pub:
             if cred_rev_ids:
-                self.pending_pub = [
-                    r for r in self.pending_pub if r not in cred_rev_ids
-                ]
+                self.pending_pub = [r for r in self.pending_pub if r not in cred_rev_ids]
             else:
                 self.pending_pub.clear()
             await self.save(session, reason="Cleared pending revocations")

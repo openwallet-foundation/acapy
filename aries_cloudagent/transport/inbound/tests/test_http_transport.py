@@ -72,9 +72,7 @@ class TestHttpTransport(AioHTTPTestCase):
         return self.transport.make_application()
 
     async def test_start_x(self):
-        with mock.patch.object(
-            test_module.web, "TCPSite", mock.MagicMock()
-        ) as mock_site:
+        with mock.patch.object(test_module.web, "TCPSite", mock.MagicMock()) as mock_site:
             mock_site.return_value = mock.MagicMock(
                 start=mock.CoroutineMock(side_effect=OSError())
             )

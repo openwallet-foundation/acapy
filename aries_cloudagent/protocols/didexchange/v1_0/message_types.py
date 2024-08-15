@@ -27,8 +27,6 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         DIDX_REQUEST: f"{PROTOCOL_PACKAGE}.messages.request.DIDXRequest",
         DIDX_RESPONSE: f"{PROTOCOL_PACKAGE}.messages.response.DIDXResponse",
         DIDX_COMPLETE: f"{PROTOCOL_PACKAGE}.messages.complete.DIDXComplete",
-        PROBLEM_REPORT: (
-            f"{PROTOCOL_PACKAGE}.messages.problem_report.DIDXProblemReport"
-        ),
+        PROBLEM_REPORT: (f"{PROTOCOL_PACKAGE}.messages.problem_report.DIDXProblemReport"),
     }
 )

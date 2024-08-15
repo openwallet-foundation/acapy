@@ -121,9 +121,7 @@ class IndyGEProofPredSchema(BaseModelSchema):
         model_class = IndyGEProofPred
         unknown = EXCLUDE
 
-    attr_name = fields.Str(
-        metadata={"description": "Attribute name, indy-canonicalized"}
-    )
+    attr_name = fields.Str(metadata={"description": "Attribute name, indy-canonicalized"})
     p_type = fields.Str(
         validate=validate.OneOf([p.fortran for p in Predicate]),
         metadata={"description": "Predicate type"},

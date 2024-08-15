@@ -34,9 +34,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
         proof = document.pop("proof")
         suite = mock.MagicMock()
         verification_method = {
-            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
-                "verificationMethod"
-            ],
+            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"]["verificationMethod"],
             "controller": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["issuer"],
         }
 
@@ -57,9 +55,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
         proof = document.pop("proof")
         suite = mock.MagicMock()
         verification_method = {
-            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
-                "verificationMethod"
-            ],
+            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"]["verificationMethod"],
             "controller": 10,
         }
 
@@ -81,9 +77,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
         proof = document.pop("proof")
         suite = mock.MagicMock()
         verification_method = {
-            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
-                "verificationMethod"
-            ],
+            "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"]["verificationMethod"],
             "controller": "did:example:489398593",
         }
 

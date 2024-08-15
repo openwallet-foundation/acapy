@@ -243,9 +243,7 @@ class AdminServer(BaseAdminServer):
         """
         self.app = None
         self.admin_api_key = context.settings.get("admin.admin_api_key")
-        self.admin_insecure_mode = bool(
-            context.settings.get("admin.admin_insecure_mode")
-        )
+        self.admin_insecure_mode = bool(context.settings.get("admin.admin_insecure_mode"))
         self.host = host
         self.port = port
         self.context = context
@@ -602,9 +600,7 @@ class AdminServer(BaseAdminServer):
                                 msg_received = receive.result()
                                 msg_api_key = msg_received.get("x-api-key")
                             except Exception:
-                                LOGGER.exception(
-                                    "Exception in websocket receiving task:"
-                                )
+                                LOGGER.exception("Exception in websocket receiving task:")
                             if self.admin_api_key and general_utils.const_compare(
                                 self.admin_api_key, msg_api_key
                             ):

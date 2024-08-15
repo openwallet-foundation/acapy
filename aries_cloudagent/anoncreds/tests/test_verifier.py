@@ -149,9 +149,9 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
             )
 
         # with rev_reg_id
-        mock_pres["identifiers"][0][
-            "rev_reg_id"
-        ] = "TUku9MDGa7QALbAJX4oAww:3:TUku9MDGa7QALbAJX4oAww:3:CL:18:tag:CL_ACCUM:0"
+        mock_pres["identifiers"][0]["rev_reg_id"] = (
+            "TUku9MDGa7QALbAJX4oAww:3:TUku9MDGa7QALbAJX4oAww:3:CL:18:tag:CL_ACCUM:0"
+        )
 
         # Superfluous timestamp
         with self.assertRaises(ValueError):
@@ -272,9 +272,9 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
             )
 
         # with rev_reg_id
-        mock_pres["identifiers"][0][
-            "rev_reg_id"
-        ] = "TUku9MDGa7QALbAJX4oAww:3:TUku9MDGa7QALbAJX4oAww:3:CL:18:tag:CL_ACCUM:0"
+        mock_pres["identifiers"][0]["rev_reg_id"] = (
+            "TUku9MDGa7QALbAJX4oAww:3:TUku9MDGa7QALbAJX4oAww:3:CL:18:tag:CL_ACCUM:0"
+        )
 
         # Superfluous timestamp
         with self.assertRaises(ValueError):
@@ -393,9 +393,9 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
             )
 
         # with rev_reg_id
-        mock_pres["identifiers"][0][
-            "rev_reg_id"
-        ] = "TUku9MDGa7QALbAJX4oAww:3:TUku9MDGa7QALbAJX4oAww:3:CL:18:tag:CL_ACCUM:0"
+        mock_pres["identifiers"][0]["rev_reg_id"] = (
+            "TUku9MDGa7QALbAJX4oAww:3:TUku9MDGa7QALbAJX4oAww:3:CL:18:tag:CL_ACCUM:0"
+        )
 
         # Superfluous timestamp
         with self.assertRaises(ValueError):
@@ -475,9 +475,9 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
         del mock_pres_req["requested_attributes"]["consent_attrs"]["name"]
         with self.assertRaises(ValueError):
             await self.verifier.pre_verify(mock_pres_req, mock_pres)
-        mock_pres_req["requested_attributes"]["consent_attrs"][
-            "name"
-        ] = "jti_unique_identifier"
+        mock_pres_req["requested_attributes"]["consent_attrs"]["name"] = (
+            "jti_unique_identifier"
+        )
         # attr not in proof
         mock_pres["requested_proof"]["self_attested_attrs"] = {}
         with self.assertRaises(ValueError):

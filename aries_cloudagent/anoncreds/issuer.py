@@ -321,10 +321,7 @@ class AnonCredsIssuer:
             raise ValueError("max_cred_num must be an integer")
 
         # Don't allow revocable cred def to be created without tails server base url
-        if (
-            not self.profile.settings.get("tails_server_base_url")
-            and support_revocation
-        ):
+        if not self.profile.settings.get("tails_server_base_url") and support_revocation:
             raise AnonCredsIssuerError(
                 "tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
             )
@@ -568,9 +565,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
             raise AnonCredsIssuerError(
                 "Credential definition not found for credential offer"
@@ -611,9 +606,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
             raise AnonCredsIssuerError(
@@ -670,9 +663,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
             raise AnonCredsIssuerError(

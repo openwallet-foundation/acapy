@@ -1,9 +1,7 @@
 import asyncio
-import json
 import logging
 import os
 import sys
-from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
@@ -16,7 +14,6 @@ from runners.support.utils import (  # noqa:E402
     check_requires,
     log_msg,
     log_status,
-    log_timer,
     prompt,
     prompt_loop,
 )
@@ -64,9 +61,7 @@ class AcmeAgent(AriesAgent):
         pass
 
     async def handle_connections(self, message):
-        print(
-            self.ident, "handle_connections", message["state"], message["rfc23_state"]
-        )
+        print(self.ident, "handle_connections", message["state"], message["rfc23_state"])
         conn_id = message["connection_id"]
         if (not self.connection_id) and message["rfc23_state"] == "invitation-sent":
             print(self.ident, "set connection id", conn_id)

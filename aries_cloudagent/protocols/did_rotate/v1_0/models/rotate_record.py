@@ -64,9 +64,7 @@ class RotateRecord(BaseRecord):
         cls, session, connection_id: str
     ) -> "RotateRecord":
         """Retrieve a rotate record by connection ID."""
-        return await cls.retrieve_by_tag_filter(
-            session, {"connection_id": connection_id}
-        )
+        return await cls.retrieve_by_tag_filter(session, {"connection_id": connection_id})
 
     @classmethod
     async def retrieve_by_thread_id(cls, session, thread_id: str) -> "RotateRecord":

@@ -42,9 +42,7 @@ async def issue(
     # Validate credential
     errors = CredentialSchema().validate(credential)
     if len(errors) > 0:
-        raise LinkedDataProofException(
-            f"Credential contains invalid structure: {errors}"
-        )
+        raise LinkedDataProofException(f"Credential contains invalid structure: {errors}")
 
     # Set default proof purpose if not set
     if not purpose:

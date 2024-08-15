@@ -27,9 +27,7 @@ async def get_endorser_info(profile, options: Optional[dict] = None):
             connection_record = await ConnRecord.retrieve_by_id(
                 session, endorser_connection_id
             )
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(
             reason=f"Connection for endorser with id {endorser_connection_id} not found"

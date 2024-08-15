@@ -53,9 +53,7 @@ class PeerDID4Resolver(BaseDIDResolver):
             async with profile.session() as session:
                 storage = session.inject(BaseStorage)
                 try:
-                    record = await storage.get_record(
-                        self.RECORD_TYPE, short_did_peer_4
-                    )
+                    record = await storage.get_record(self.RECORD_TYPE, short_did_peer_4)
                 except StorageNotFoundError:
                     record = StorageRecord(self.RECORD_TYPE, did, {}, short_did_peer_4)
                     await storage.add_record(record)

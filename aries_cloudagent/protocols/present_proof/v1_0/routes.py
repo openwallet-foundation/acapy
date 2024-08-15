@@ -187,9 +187,7 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class V10PresentationSendRequestRequestSchema(
-    V10PresentationCreateRequestRequestSchema
-):
+class V10PresentationSendRequestRequestSchema(V10PresentationCreateRequestRequestSchema):
     """Request schema for sending a proof request on a connection."""
 
     connection_id = fields.Str(
@@ -964,9 +962,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
 
-        if pres_ex_record.state != (
-            V10PresentationExchange.STATE_PRESENTATION_RECEIVED
-        ):
+        if pres_ex_record.state != (V10PresentationExchange.STATE_PRESENTATION_RECEIVED):
             raise web.HTTPBadRequest(
                 reason=(
                     f"Presentation exchange {presentation_exchange_id} "

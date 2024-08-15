@@ -18,9 +18,7 @@ class Ping(AgentMessage):
         message_type = PING
         schema_class = "PingSchema"
 
-    def __init__(
-        self, *, response_requested: bool = True, comment: str = None, **kwargs
-    ):
+    def __init__(self, *, response_requested: bool = True, comment: str = None, **kwargs):
         """Initialize a Ping message instance.
 
         Args:

@@ -213,9 +213,7 @@ async def test_create_signed_anoncreds_presentation(profile: Profile):
                     "@context": [
                         "https://www.w3.org/2018/credentials/v1",
                         "https://w3id.org/security/data-integrity/v2",
-                        {
-                            "@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"
-                        },
+                        {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
                     ],
                     "type": ["VerifiableCredential"],
                     "issuer": "7yDP6qARVAp1Rims8Fj43k",
@@ -304,13 +302,10 @@ async def test_create_rev_states():
             RevocationStatusList, "load", return_value=mock.MagicMock()
         ):
             with pytest.raises(AnonCredsHolderError):
-                await create_rev_states(
-                    w3c_creds_metadata, rev_reg_defs, rev_reg_entries
-                )
+                await create_rev_states(w3c_creds_metadata, rev_reg_defs, rev_reg_entries)
             with mock.patch.object(
                 CredentialRevocationState, "create", return_value=mock.MagicMock()
             ) as mock_create:
-
                 result = await create_rev_states(
                     w3c_creds_metadata, rev_reg_defs, rev_reg_entries
                 )

@@ -259,9 +259,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         Ledger = mock.MagicMock()
         self.ledger = Ledger()
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
-        self.ledger.get_credential_definition = mock.CoroutineMock(
-            return_value=CRED_DEF
-        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
         self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
@@ -341,9 +339,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         await details_vcdi[0].save(self.session)
         await details_vcdi[1].save(self.session)  # exercise logger warning on get()
 
-        with mock.patch.object(
-            VCDI_LOGGER, "warning", mock.MagicMock()
-        ) as mock_warning:
+        with mock.patch.object(VCDI_LOGGER, "warning", mock.MagicMock()) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_vcdi
             mock_warning.assert_called_once()
 
@@ -482,7 +478,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         await self.handler.receive_offer(cred_ex_record, cred_offer_message)
 
     async def test_create_request(self):
-
         # Define your mock credential definition
         mock_credential_definition_result = GetCredDefResult(
             credential_definition=CredDef(
@@ -529,7 +524,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             AnonCredsHolder, "create_credential_request", mock.CoroutineMock()
         ) as mock_create:
-
             mock_create.return_value = (
                 json.dumps(VCDI_CRED_REQ["binding_proof"]["anoncreds_link_secret"]),
                 json.dumps(cred_req_meta),
@@ -538,9 +532,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                 cred_ex_record, {"holder_did": holder_did}
             )
 
-            legacy_offer = await self.handler._prepare_legacy_offer(
-                VCDI_OFFER, SCHEMA_ID
-            )
+            legacy_offer = await self.handler._prepare_legacy_offer(VCDI_OFFER, SCHEMA_ID)
             mock_create.assert_called_once_with(
                 legacy_offer,
                 mock_credential_definition_result.credential_definition,
@@ -553,9 +545,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             assert attachment.data.base64
 
             cred_ex_record._id = "dummy-id2"
-            await self.handler.create_request(
-                cred_ex_record, {"holder_did": holder_did}
-            )
+            await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
 
             self.context.injector.clear_binding(BaseCache)
             cred_ex_record._id = "dummy-id3"
@@ -641,9 +631,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             (cred_format, attachment) = await self.handler.issue_credential(
                 cred_ex_record, retries=1
             )
-            legacy_offer = await self.handler._prepare_legacy_offer(
-                VCDI_OFFER, SCHEMA_ID
-            )
+            legacy_offer = await self.handler._prepare_legacy_offer(VCDI_OFFER, SCHEMA_ID)
             legacy_request = await self.handler._prepare_legacy_request(
                 VCDI_CRED_REQ, CRED_DEF_ID
             )

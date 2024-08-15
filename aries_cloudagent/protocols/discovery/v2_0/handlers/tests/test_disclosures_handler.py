@@ -45,9 +45,7 @@ class TestDisclosuresHandler:
             ]
         )
         test_queries = [
-            QueryItem(
-                feature_type="protocol", match="https://didcomm.org/tictactoe/1.*"
-            ),
+            QueryItem(feature_type="protocol", match="https://didcomm.org/tictactoe/1.*"),
             QueryItem(feature_type="goal-code", match="aries.*"),
         ]
         queries = Queries(queries=test_queries)
@@ -85,9 +83,7 @@ class TestDisclosuresHandler:
             ]
         )
         test_queries = [
-            QueryItem(
-                feature_type="protocol", match="https://didcomm.org/tictactoe/1.*"
-            ),
+            QueryItem(feature_type="protocol", match="https://didcomm.org/tictactoe/1.*"),
             QueryItem(feature_type="goal-code", match="aries.*"),
         ]
         queries = Queries(queries=test_queries)
@@ -129,9 +125,7 @@ class TestDisclosuresHandler:
             ]
         )
         test_queries = [
-            QueryItem(
-                feature_type="protocol", match="https://didcomm.org/tictactoe/1.*"
-            ),
+            QueryItem(feature_type="protocol", match="https://didcomm.org/tictactoe/1.*"),
             QueryItem(feature_type="goal-code", match="aries.*"),
         ]
         disclosures.assign_thread_id("test123")

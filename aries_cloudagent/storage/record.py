@@ -11,9 +11,7 @@ class StorageRecord(namedtuple("StorageRecord", "type value tags id")):
 
     __slots__ = ()
 
-    def __new__(
-        cls, type, value, tags: Optional[dict] = None, id: Optional[str] = None
-    ):
+    def __new__(cls, type, value, tags: Optional[dict] = None, id: Optional[str] = None):
         """Initialize some defaults on record."""
         if not id:
             id = uuid4().hex

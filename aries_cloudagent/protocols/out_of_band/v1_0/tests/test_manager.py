@@ -314,9 +314,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         self.responder = MockResponder()
         self.responder.send = mock.CoroutineMock()
 
-        self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
-        ]
+        self.test_mediator_routing_keys = ["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
 
@@ -590,9 +588,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 key_type=ED25519,
             )
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
-            mock_retrieve_cxid_v2.return_value = mock.MagicMock(
-                cred_offer=V20CredOffer()
-            )
+            mock_retrieve_cxid_v2.return_value = mock.MagicMock(cred_offer=V20CredOffer())
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
                 public=False,
@@ -798,9 +794,9 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                     service_accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
                 )
 
-                assert invi_rec._invitation.ser[
-                    "@type"
-                ] == DIDCommPrefix.qualify_current(self.TEST_INVI_MESSAGE_TYPE)
+                assert invi_rec._invitation.ser["@type"] == DIDCommPrefix.qualify_current(
+                    self.TEST_INVI_MESSAGE_TYPE
+                )
                 assert not invi_rec._invitation.ser.get("requests~attach")
                 assert invi_rec.invitation.label == "That guy"
                 assert (
@@ -827,9 +823,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
             service = invi_rec._invitation.ser["services"][0]
             invitation_key = DIDKey.from_did(service["recipientKeys"][0]).public_key_b58
-            record = await ConnRecord.retrieve_by_invitation_key(
-                session, invitation_key
-            )
+            record = await ConnRecord.retrieve_by_invitation_key(session, invitation_key)
             assert await record.metadata_get_all(session) == {"hello": "world"}
 
     async def test_create_invitation_x_public_metadata(self):
@@ -1446,9 +1440,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
             oob_mgr_find_existing_conn.assert_called_once()
             assert result.state == OobRecord.STATE_ACCEPTED
-            oob_record_save.assert_called_once_with(
-                ANY, reason="Storing reuse msg data"
-            )
+            oob_record_save.assert_called_once_with(ANY, reason="Storing reuse msg data")
 
     async def test_receive_invitation_handshake_reuse(self):
         self.profile.context.update_settings({"public_invites": True})

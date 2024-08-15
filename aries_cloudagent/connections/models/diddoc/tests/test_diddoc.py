@@ -80,8 +80,7 @@ class TestDIDDoc(IsolatedAsyncioTestCase):
         )
         assert set(dd_copy.authnkey) == set(dd.authnkey)
         assert all(
-            dd_copy.pubkey[k].to_dict() == dd.pubkey[k].to_dict()
-            for k in dd_copy.pubkey
+            dd_copy.pubkey[k].to_dict() == dd.pubkey[k].to_dict() for k in dd_copy.pubkey
         )
         assert set(dd_copy.pubkey) == set(dd.pubkey)
         assert all(
@@ -323,9 +322,7 @@ class TestDIDDoc(IsolatedAsyncioTestCase):
         assert len(dd.authnkey) == 0
         assert {s.priority for s in dd.service.values()} == {0, 1, 2}
         assert len(dd.service) == 3
-        assert all(
-            len(dd.service[k].to_dict()["recipientKeys"]) == 1 for k in dd.service
-        )
+        assert all(len(dd.service[k].to_dict()["recipientKeys"]) == 1 for k in dd.service)
         assert (
             "routingKeys"
             not in dd.service["did:sov:LjgpST2rjsoxYegQDRm7EL;indy"].to_dict()
@@ -355,9 +352,7 @@ class TestDIDDoc(IsolatedAsyncioTestCase):
         assert canon_ref(dd.did, "99", "#") in dd.pubkey
         assert len(dd.authnkey) == 1
 
-        service = Service(
-            dd.did, "abc", "IndyAgent", [pk], [pk], "http://www.abc.ca/123"
-        )
+        service = Service(dd.did, "abc", "IndyAgent", [pk], [pk], "http://www.abc.ca/123")
         dd.set(service)
         assert len(dd.service) == 4
         assert canon_ref(dd.did, "abc", ";") in dd.service
@@ -454,9 +449,7 @@ class TestDIDDoc(IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             canon_ref(valid_did, ref="did:sov:not-a-DID", delimiter="#")
 
-        urlref = (
-            "https://www.clafouti-quasar.ca:8443/supply-management/fruit/index.html"
-        )
+        urlref = "https://www.clafouti-quasar.ca:8443/supply-management/fruit/index.html"
         assert canon_ref(valid_did, ref=urlref) == urlref
         # print('\n\n== 13 == Reference canonicalization operates as expected')
 

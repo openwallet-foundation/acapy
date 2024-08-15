@@ -102,9 +102,7 @@ class ProtocolIdentifier:
 
             raise ValueError(f"Invalid protocol identifier: {message_type}")
         elif isinstance(message_type, MessageType):
-            return cls(
-                message_type.doc_uri, message_type.protocol, message_type.version
-            )
+            return cls(message_type.doc_uri, message_type.protocol, message_type.version)
         else:
             raise TypeError(f"Invalid message type: {message_type}")
 

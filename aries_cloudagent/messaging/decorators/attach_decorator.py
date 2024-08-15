@@ -664,9 +664,7 @@ class AttachDecorator(BaseModel):
             mime_type="application/json",
             lastmod_time=lastmod_time,
             byte_count=byte_count,
-            data=AttachDecoratorData(
-                base64_=bytes_to_b64(json.dumps(mapping).encode())
-            ),
+            data=AttachDecoratorData(base64_=bytes_to_b64(json.dumps(mapping).encode())),
         )
 
     @classmethod
