@@ -41,16 +41,22 @@ class PaginatedQuerySchema(OpenAPISchema):
     )
 
 
-def get_limit_offset(request: BaseRequest) -> Tuple[int, int]:
-    """Read the limit and offset query parameters from a request as ints, with defaults.
+def get_paginated_query_params(request: BaseRequest) -> Tuple[int, int, str, bool]:
+    """Read the limit, offset, order_by, and descending query parameters from a request.
 
     Args:
-        request: aiohttp request object
+        request: aiohttp request object.
 
     Returns:
-        A tuple of the limit and offset values
+        A tuple containing:
+        - limit (int): The number of results to return, defaulting to DEFAULT_PAGE_SIZE.
+        - offset (int): The offset for pagination, defaulting to 0.
+        - order_by (str): The field by which to order results, defaulting to "id".
+        - descending (bool): Whether to order results in descending order, defaulting to False.
     """
 
     limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
     offset = int(request.query.get("offset", 0))
-    return limit, offset
+    order_by = request.query.get("order_by", "id")
+    descending = bool(request.query.get("descending", False))
+    return limit, offset, order_by, descending
