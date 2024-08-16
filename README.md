@@ -14,6 +14,8 @@
 Full access to an organized set of all of the ACA-Py documents is available at [https://aca-py.org](https://aca-py.org).
 Check it out! It's much easier to navigate than this GitHub repo for reading the documentation.
 
+:new: ACA-Py Plugins have their own store! Visit [https://plugins.aca-py.org](https://plugins.aca-py.org) to find ready-to-use functionality to add to your ACA-Py deployment, and to learn how to build your own plugins.
+
 ## Overview
 
 Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building Verifiable Credential (VC) ecosystems. It operates in the second and third layers of the [Trust Over IP framework (PDF)](https://trustoverip.org/wp-content/uploads/2020/05/toip_050520_primer.pdf) using [DIDComm messaging](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0005-didcomm) and [Hyperledger Aries](https://www.hyperledger.org/use/aries) protocols. The "cloud" in the name means that ACA-Py runs on servers (cloud, enterprise, IoT devices, and so forth), and is not designed to run on mobile devices.
