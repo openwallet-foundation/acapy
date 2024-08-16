@@ -51,4 +51,4 @@ jobs:
         tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
     with:
       tag: ${{ matrix.tag }}
-      platforms: "linux/amd64"
+      platforms: "linux/amd64,linux/arm64"
