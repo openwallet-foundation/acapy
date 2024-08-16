@@ -3,12 +3,13 @@
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import KEY
 from ...wallet.base import BaseWallet
+from ...core.profile import Profile
 
 
 class DidKeyManager:
     """Class for managing key dids."""
 
-    def __init__(self, profile):
+    def __init__(self, profile: Profile):
         """Initialize a new `DidKeyManager` instance."""
         self.profile = profile
 
