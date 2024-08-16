@@ -15,7 +15,7 @@
         <link rel="next" href="../Multitenancy/">
       
       
-      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/docs/assets/aries-favicon.png">
+      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.31">
     
     
@@ -94,7 +94,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-header__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
       
-  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -365,7 +365,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-nav__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
       
-  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
 
     </a>
     Hyperledger Aries ACA-Py Docs
@@ -696,13 +696,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#whats-in-a-plug-in-and-how-does-it-work" class="md-nav__link">
+  <a href="#whats-in-a-plug-in-and-how-does-they-work" class="md-nav__link">
     <span class="md-ellipsis">
-      What's in a Plug-In and How does it Work?
+      What's in a Plug-In and How Does They Work?
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="What's in a Plug-In and How does it Work?">
+    <nav class="md-nav" aria-label="What's in a Plug-In and How Does They Work?">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -749,7 +749,7 @@
         <li class="md-nav__item">
   <a href="#loading-aca-py-plug-ins-at-runtime" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Aca-Py Plug-Ins at Runtime
+      Loading ACA-Py Plug-Ins at Runtime
     </span>
   </a>
   
@@ -789,9 +789,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#aca-py-plug-ins" class="md-nav__link">
+  <a href="#aca-py-plug-ins-repository" class="md-nav__link">
     <span class="md-ellipsis">
-      Aca-Py Plug-ins
+      ACA-Py Plug-ins Repository
     </span>
   </a>
   
@@ -2365,13 +2365,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#whats-in-a-plug-in-and-how-does-it-work" class="md-nav__link">
+  <a href="#whats-in-a-plug-in-and-how-does-they-work" class="md-nav__link">
     <span class="md-ellipsis">
-      What's in a Plug-In and How does it Work?
+      What's in a Plug-In and How Does They Work?
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="What's in a Plug-In and How does it Work?">
+    <nav class="md-nav" aria-label="What's in a Plug-In and How Does They Work?">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2418,7 +2418,7 @@
         <li class="md-nav__item">
   <a href="#loading-aca-py-plug-ins-at-runtime" class="md-nav__link">
     <span class="md-ellipsis">
-      Loading Aca-Py Plug-Ins at Runtime
+      Loading ACA-Py Plug-Ins at Runtime
     </span>
   </a>
   
@@ -2458,9 +2458,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#aca-py-plug-ins" class="md-nav__link">
+  <a href="#aca-py-plug-ins-repository" class="md-nav__link">
     <span class="md-ellipsis">
-      Aca-Py Plug-ins
+      ACA-Py Plug-ins Repository
     </span>
   </a>
   
@@ -2493,18 +2493,19 @@
   
 
 
-<h1 id="deeper-dive-aca-py-plug-ins">Deeper Dive: Aca-Py Plug-Ins<a class="headerlink" href="#deeper-dive-aca-py-plug-ins" title="Permanent link">&para;</a></h1>
-<h2 id="whats-in-a-plug-in-and-how-does-it-work">What's in a Plug-In and How does it Work?<a class="headerlink" href="#whats-in-a-plug-in-and-how-does-it-work" title="Permanent link">&para;</a></h2>
-<p>Plug-ins are loaded on Aca-Py startup based on the following parameters:</p>
+<h1 id="deeper-dive-aca-py-plug-ins">Deeper Dive: ACA-Py Plug-Ins<a class="headerlink" href="#deeper-dive-aca-py-plug-ins" title="Permanent link">&para;</a></h1>
+<p>ACA-Py plugins enable standardized extensibility without overloading the core ACA-Py code base. Plugins may be features that you create specific to your deployment, or that you deploy from the <a href="https://plugins.aca-py.org">ACA-Py Plugins "Store"</a>. Visit the Plugins Store to find all of the open source plugins that have been contributed.</p>
+<h2 id="whats-in-a-plug-in-and-how-does-they-work">What's in a Plug-In and How Does They Work?<a class="headerlink" href="#whats-in-a-plug-in-and-how-does-they-work" title="Permanent link">&para;</a></h2>
+<p>Plug-ins are loaded on ACA-Py startup based on the following parameters:</p>
 <ul>
 <li><code>--plugin</code> - identifies the plug-in library to load</li>
 <li><code>--block-plugin</code> - identifies plug-ins (including built-ins) that are <em>not</em> to be loaded</li>
 <li><code>--plugin-config</code> - identify a configuration parameter for a plug-in</li>
 <li><code>--plugin-config-value</code> - identify a <em>value</em> for a plug-in configuration</li>
 </ul>
-<p>The <code>--plug-in</code> parameter specifies a package that is loaded by Aca-Py at runtime, and extends Aca-Py by adding support for additional protocols and message types, and/or extending the Admin API with additional endpoints.</p>
+<p>The <code>--plug-in</code> parameter specifies a package that is loaded by ACA-Py at runtime, and extends ACA-Py by adding support for additional protocols and message types, and/or extending the Admin API with additional endpoints.</p>
 <p>The original plug-in design (which we will call the "old" model) explicitly included <code>message_types.py</code> <code>routes.py</code> (to add Admin API's).  But functionality was added later (we'll call this the "new" model) to allow the plug-in to include a generic <code>setup</code> package that could perform arbitrary initialization.  The "new" model also includes support for a <code>definition.py</code> file that can specify plug-in version information  (major/minor plug-in version, as well as the minimum supported version (if another agent is running an older version of the plug-in)).</p>
-<p>You can discover which plug-ins are installed in an aca-py instance by calling (in the "server" section) the <code>GET /plugins</code> endpoint.  (Note that this will return all loaded protocols, including the built-ins.  You can call the <code>GET /status/config</code> to inspect the Aca-Py configuration, which will include the configuration for the <em>external</em> plug-ins.)</p>
+<p>You can discover which plug-ins are installed in an ACA-Py instance by calling (in the "server" section) the <code>GET /plugins</code> endpoint.  (Note that this will return all loaded protocols, including the built-ins.  You can call the <code>GET /status/config</code> to inspect the ACA-Py configuration, which will include the configuration for the <em>external</em> plug-ins.)</p>
 <h3 id="setup-method">setup method<a class="headerlink" href="#setup-method" title="Permanent link">&para;</a></h3>
 <p>If a setup method is provided, it will be called.  If not, the <code>message_types.py</code> and <code>routes.py</code> will be explicitly loaded.</p>
 <p>This would be in the <code>package/module __init__.py</code>:</p>
@@ -2513,19 +2514,19 @@
 </code></pre></div>
 <p>TODO I couldn't find an implementation of a custom <code>setup</code> in any of the existing plug-ins, so I'm not completely sure what are the best practices for this option.</p>
 <h3 id="message_typespy">message_types.py<a class="headerlink" href="#message_typespy" title="Permanent link">&para;</a></h3>
-<p>When loading a plug-in, if there is a <code>message_types.py</code> available, Aca-Py will check the following attributes to initialize the protocol(s):</p>
+<p>When loading a plug-in, if there is a <code>message_types.py</code> available, ACA-Py will check the following attributes to initialize the protocol(s):</p>
 <ul>
 <li><code>MESSAGE_TYPES</code> - identifies message types supported by the protocol</li>
 <li><code>CONTROLLERS</code> - identifies protocol controllers</li>
 </ul>
 <h3 id="routespy">routes.py<a class="headerlink" href="#routespy" title="Permanent link">&para;</a></h3>
-<p>If <code>routes.py</code> is available, then Aca-Py will call the following functions to initialize the Admin endpoints:</p>
+<p>If <code>routes.py</code> is available, then ACA-Py will call the following functions to initialize the Admin endpoints:</p>
 <ul>
 <li><code>register()</code> - registers routes for the new Admin endpoints</li>
 <li><code>register_events()</code> - registers an events this package will listen for/respond to</li>
 </ul>
 <h3 id="definitionpy">definition.py<a class="headerlink" href="#definitionpy" title="Permanent link">&para;</a></h3>
-<p>If <code>definition.py</code> is available, Aca-Py will read this package to determine protocol version information.  An example follows (this is an example that specifies two protocol versions):</p>
+<p>If <code>definition.py</code> is available, ACA-Py will read this package to determine protocol version information.  An example follows (this is an example that specifies two protocol versions):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">versio</span><span class="kc">ns</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nt">&quot;major_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
@@ -2548,11 +2549,11 @@
 <li><code>minimum_minor_version</code> - specifies the minimum supported version (if a lower version is installed in another agent)</li>
 <li><code>path</code> - specifies the sub-path within the package for this version</li>
 </ul>
-<h2 id="loading-aca-py-plug-ins-at-runtime">Loading Aca-Py Plug-Ins at Runtime<a class="headerlink" href="#loading-aca-py-plug-ins-at-runtime" title="Permanent link">&para;</a></h2>
-<p>The load sequence for a plug-in (the "Startup" class depends on how Aca-Py is running - <code>upgrade</code>, <code>provision</code> or <code>start</code>):</p>
+<h2 id="loading-aca-py-plug-ins-at-runtime">Loading ACA-Py Plug-Ins at Runtime<a class="headerlink" href="#loading-aca-py-plug-ins-at-runtime" title="Permanent link">&para;</a></h2>
+<p>The load sequence for a plug-in (the "Startup" class depends on how ACA-Py is running - <code>upgrade</code>, <code>provision</code> or <code>start</code>):</p>
 <pre class="mermaid"><code>sequenceDiagram
   participant Startup
-  Note right of Startup: Configuration is loaded on startup&lt;br/&gt;from aca-py config params
+  Note right of Startup: Configuration is loaded on startup&lt;br/&gt;from ACA-Py config params
     Startup-&gt;&gt;+ArgParse: configure
     ArgParse-&gt;&gt;settings:  ["external_plugins"]
     ArgParse-&gt;&gt;settings:  ["blocked_plugins"]
@@ -2613,129 +2614,11 @@
 <li>If you are providing any other functionality, you should provide a <code>setup.py</code> file to initialize the custom functionality.  No guidance is <em>currently</em> available for this option.</li>
 </ul>
 <h3 id="pip-vs-poetry-support">PIP vs Poetry Support<a class="headerlink" href="#pip-vs-poetry-support" title="Permanent link">&para;</a></h3>
-<p>Most Aca-Py plug-ins provide support for installing the plug-in using <a href="https://python-poetry.org/">poetry</a>.  It is <em>recommended</em> to include support in your package for installing using <em>either</em> pip or poetry, to provide maximum support for users of your plug-in.</p>
+<p>Most ACA-Py plug-ins provide support for installing the plug-in using <a href="https://python-poetry.org/">poetry</a>.  It is <em>recommended</em> to include support in your package for installing using <em>either</em> pip or poetry, to provide maximum support for users of your plug-in.</p>
 <h3 id="plug-in-demo">Plug-In Demo<a class="headerlink" href="#plug-in-demo" title="Permanent link">&para;</a></h3>
 <p>TBD</p>
-<h2 id="aca-py-plug-ins">Aca-Py Plug-ins<a class="headerlink" href="#aca-py-plug-ins" title="Permanent link">&para;</a></h2>
-<p>This list was originally published in <a href="https://hackmd.io/m2AZebwJRkm6sWgO64-5xQ">this hackmd document</a>.</p>
-<table>
-<thead>
-<tr>
-<th>Maintainer</th>
-<th>Name</th>
-<th>Features</th>
-<th>Last Update</th>
-<th>Link</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>BCGov</td>
-<td>Redis Events</td>
-<td>Inbound/Outbound message queue</td>
-<td>Sep 2022</td>
-<td><a href="https://github.com/bcgov/aries-acapy-plugin-redis-events">https://github.com/bcgov/aries-acapy-plugin-redis-events</a></td>
-</tr>
-<tr>
-<td>Hyperledger</td>
-<td>Aries Toolbox</td>
-<td>UI for ACA-py</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/hyperledger/aries-toolbox">https://github.com/hyperledger/aries-toolbox</a></td>
-</tr>
-<tr>
-<td>Hyperledger</td>
-<td>Aries ACApy Plugin Toolbox</td>
-<td>Protocol Handlers</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/hyperledger/aries-acapy-plugin-toolbox">https://github.com/hyperledger/aries-acapy-plugin-toolbox</a></td>
-</tr>
-<tr>
-<td>Indicio</td>
-<td>Data Transfer</td>
-<td>Specific Data import</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/Indicio-tech/aries-acapy-plugin-data-transfer">https://github.com/Indicio-tech/aries-acapy-plugin-data-transfer</a></td>
-</tr>
-<tr>
-<td>Indicio</td>
-<td>Question &amp; Answer</td>
-<td>Non-Aries Protocol</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/Indicio-tech/acapy-plugin-qa">https://github.com/Indicio-tech/acapy-plugin-qa</a></td>
-</tr>
-<tr>
-<td>Indicio</td>
-<td>Acapy-plugin-pickup</td>
-<td>Fetching Messages from Mediator</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/Indicio-tech/acapy-plugin-pickup">https://github.com/Indicio-tech/acapy-plugin-pickup</a></td>
-</tr>
-<tr>
-<td>Indicio</td>
-<td>Machine Readable GF</td>
-<td>Governance Framework</td>
-<td>Mar 2022</td>
-<td><a href="https://github.com/Indicio-tech/mrgf">https://github.com/Indicio-tech/mrgf</a></td>
-</tr>
-<tr>
-<td>Indicio</td>
-<td>Cache Redis</td>
-<td>Cache for Scalability</td>
-<td>Jul 2022</td>
-<td><a href="https://github.com/Indicio-tech/aries-acapy-cache-redis">https://github.com/Indicio-tech/aries-acapy-cache-redis</a></td>
-</tr>
-<tr>
-<td>SICPA Dlab</td>
-<td>Kafka Events</td>
-<td>Event Bus Integration</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/sicpa-dlab/aries-acapy-plugin-kafka-events">https://github.com/sicpa-dlab/aries-acapy-plugin-kafka-events</a></td>
-</tr>
-<tr>
-<td>SICPA Dlab</td>
-<td>DidComm Resolver</td>
-<td>Universal Resolver for DIDComm</td>
-<td>Aug 2022</td>
-<td><a href="https://github.com/sicpa-dlab/acapy-resolver-didcomm">https://github.com/sicpa-dlab/acapy-resolver-didcomm</a></td>
-</tr>
-<tr>
-<td>SICPA Dlab</td>
-<td>Universal Resolver</td>
-<td>Multi-ledger Reading</td>
-<td>Jul 2021</td>
-<td><a href="https://github.com/sicpa-dlab/acapy-resolver-universal">https://github.com/sicpa-dlab/acapy-resolver-universal</a></td>
-</tr>
-<tr>
-<td>DDX</td>
-<td>mydata-did-protocol</td>
-<td></td>
-<td>Oct 2022</td>
-<td><a href="https://github.com/decentralised-dataexchange/acapy-mydata-did-protocol">https://github.com/decentralised-dataexchange/acapy-mydata-did-protocol</a></td>
-</tr>
-<tr>
-<td>BCGov</td>
-<td>Basic Message Storage</td>
-<td>Basic message storage (traction)</td>
-<td>Dec 2022</td>
-<td><a href="https://github.com/bcgov/traction/tree/develop/plugins/basicmessage_storage">https://github.com/bcgov/traction/tree/develop/plugins/basicmessage_storage</a></td>
-</tr>
-<tr>
-<td>BCGov</td>
-<td>Multi-tenant Provider</td>
-<td>Multi-tenant Provider (traction)</td>
-<td>Dec 2022</td>
-<td><a href="https://github.com/bcgov/traction/tree/develop/plugins/multitenant_provider">https://github.com/bcgov/traction/tree/develop/plugins/multitenant_provider</a></td>
-</tr>
-<tr>
-<td>BCGov</td>
-<td>Traction Innkeeper</td>
-<td>Innkeeper (traction)</td>
-<td>Feb 2023</td>
-<td><a href="https://github.com/bcgov/traction/tree/develop/plugins/traction_innkeeper">https://github.com/bcgov/traction/tree/develop/plugins/traction_innkeeper</a></td>
-</tr>
-</tbody>
-</table>
+<h2 id="aca-py-plug-ins-repository">ACA-Py Plug-ins Repository<a class="headerlink" href="#aca-py-plug-ins-repository" title="Permanent link">&para;</a></h2>
+<p>Checkout the "Plugins" tab in the <a href="https://plugins.aca-py.org">ACA-Py Plugins "Store"</a> to find a list of plugins that might be useful in your deployment. Instructions are included for how you can contribute your plugin to the list.</p>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <p>The following links may be helpful or provide additional context for the current plug-in support.  (These are links to issues or pull requests that were raised during plug-in development.)</p>
 <p>Configuration params:</p>
