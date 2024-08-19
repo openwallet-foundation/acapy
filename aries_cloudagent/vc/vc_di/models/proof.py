@@ -95,8 +95,8 @@ class DIProofSchema(BaseModelSchema):
         metadata={
             "description": "The proof purpose acts as a safeguard to prevent the proof \
                 from being misused by being applied to a purpose other than the one that \
-                    was intended.", 
-            "example": "assertionMethod"
+                    was intended.",
+            "example": "assertionMethod",
         },
     )
 
@@ -192,9 +192,7 @@ class DIProofSchema(BaseModelSchema):
         metadata={
             "description": "Each value identifies another data integrity proof that \
                 MUST verify before the current proof is processed.",
-            "example": (
-                "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5"
-            ),
+            "example": ("urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5"),
         },
     )
 

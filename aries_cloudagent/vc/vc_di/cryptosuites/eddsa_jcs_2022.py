@@ -9,6 +9,7 @@ from ....utils.multiformats import multibase
 from ....core.profile import Profile
 from .. import DataIntegrityProofException
 
+
 class EddsaJcs2022:
     """EddsaJcs2022 suite."""
 
@@ -20,12 +21,12 @@ class EddsaJcs2022:
         """
         super().__init__()
         self.profile = profile
-        
+
     async def _serialization(self, hash_data, options):
         # https://www.w3.org/TR/vc-di-eddsa/#proof-serialization-eddsa-jcs-2022
         async with self.profile.session() as session:
             did_info = await session.inject(BaseWallet).get_local_did(
-                options['verificationMethod'].split('#')[0]
+                options["verificationMethod"].split("#")[0]
             )
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -47,42 +48,37 @@ class EddsaJcs2022:
             verification_response: Whether the signature is valid for the data
 
         """
-        
-        existing_proof = document.pop('proof', [])
+
+        existing_proof = document.pop("proof", [])
         assert isinstance(existing_proof, list) or isinstance(existing_proof, dict)
-        existing_proof = \
-            [existing_proof] \
-            if isinstance(existing_proof, dict) \
-                else existing_proof
-            
+        existing_proof = (
+            [existing_proof] if isinstance(existing_proof, dict) else existing_proof
+        )
+
         assert proof_options["type"] == "DataIntegrityProof"
         assert proof_options["cryptosuite"] == "eddsa-jcs-2022"
         assert proof_options["proofPurpose"]
         assert proof_options["verificationMethod"]
-            
+
         try:
             hash_data = (
-                sha256(canonicaljson.encode_canonical_json(document)).digest()+
-                sha256(canonicaljson.encode_canonical_json(proof_options)).digest()
+                sha256(canonicaljson.encode_canonical_json(document)).digest()
+                + sha256(canonicaljson.encode_canonical_json(proof_options)).digest()
             )
             proof_bytes = await self._serialization(hash_data, proof_options)
 
             proof = proof_options.copy()
-            proof['proofValue'] = multibase.encode(proof_bytes, "base58btc")
-            
+            proof["proofValue"] = multibase.encode(proof_bytes, "base58btc")
+
             secured_document = document.copy()
-            secured_document['proof'] = existing_proof
-            secured_document['proof'].append(proof)
+            secured_document["proof"] = existing_proof
+            secured_document["proof"].append(proof)
 
             return secured_document
         except Exception:
             raise DataIntegrityProofException()
 
-    async def verify_proof(
-        self, 
-        unsecured_document,
-        proof
-    ):
+    async def verify_proof(self, unsecured_document, proof):
         # https://www.w3.org/TR/vc-data-integrity/#verify-proof
         """Verify the data against the proof.
 
@@ -100,16 +96,16 @@ class EddsaJcs2022:
             assert proof["proofPurpose"]
             assert proof["proofValue"]
             assert proof["verificationMethod"]
-                
+
             proof_options = proof.copy()
-            proof_value = proof_options.pop('proofValue')
+            proof_value = proof_options.pop("proofValue")
             proof_bytes = multibase.decode(proof_value)
-            
+
             hash_data = (
-                sha256(canonicaljson.encode_canonical_json(unsecured_document)).digest()+
-                sha256(canonicaljson.encode_canonical_json(proof_options)).digest()
+                sha256(canonicaljson.encode_canonical_json(unsecured_document)).digest()
+                + sha256(canonicaljson.encode_canonical_json(proof_options)).digest()
             )
-            verification_method = proof['verificationMethod']
+            verification_method = proof["verificationMethod"]
             did = verification_method.split("#")[0]
             if did.split(":")[1] == "key":
                 pub_key = multibase.decode(did.split(":")[-1])

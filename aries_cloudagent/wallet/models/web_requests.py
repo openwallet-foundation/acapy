@@ -373,38 +373,28 @@ class MediationIDSchema(OpenAPISchema):
 class DISignRequestSchema(OpenAPISchema):
     """Request schema to add a DI proof to a document."""
 
-    document = fields.Dict(
-        required=True,
-        metadata={"example": 
-            {
-                "hello": "world"
-            }
-        }
-    )
+    document = fields.Dict(required=True, metadata={"example": {"hello": "world"}})
     options = fields.Nested(
         DIProofOptionsSchema,
-        metadata={"example": 
-            {
+        metadata={
+            "example": {
                 "type": "DataIntegrityProof",
                 "cryptosuite": "eddsa-jcs-2022",
                 "proofPurpose": "assertionMethod",
                 "verificationMethod": "did:key:z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviL\
                     M32tvQ#z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ",
             }
-        }
+        },
     )
-    
+
+
 class DISignResponseSchema(OpenAPISchema):
     """Request schema to add a DI proof to a document."""
 
     secured_document = fields.Dict(
-        required=True,
-        metadata={"example": 
-            {
-                "hello": "world"
-            }
-        }
+        required=True, metadata={"example": {"hello": "world"}}
     )
+
 
 class DIVerifyRequestSchema(OpenAPISchema):
     """Request schema to add a DI proof to a document."""
@@ -412,30 +402,26 @@ class DIVerifyRequestSchema(OpenAPISchema):
     secured_document = fields.Dict(
         data_key="securedDocument",
         required=True,
-        metadata={"example": 
-            {
+        metadata={
+            "example": {
                 "hello": "world",
                 "proof": [
-                {
-                    "cryptosuite": "eddsa-jcs-2022",
-                    "proofPurpose": "assertionMethod",
-                    "type": "DataIntegrityProof",
-                    "verificationMethod": "did:key:z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7\
+                    {
+                        "cryptosuite": "eddsa-jcs-2022",
+                        "proofPurpose": "assertionMethod",
+                        "type": "DataIntegrityProof",
+                        "verificationMethod": "did:key:z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7\
                         jm8MscbDmy8#z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8",
-                    "proofValue": "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhufjPjbeRmys\
-                        HvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E"
-                }
-                ]
+                        "proofValue": "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhufjPjbeRmys\
+                        HvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E",
+                    }
+                ],
             }
-        }
+        },
     )
+
 
 class DIVerifyResponseSchema(OpenAPISchema):
     """Request schema to add a DI proof to a document."""
 
-    verified = fields.Bool(
-        metadata={
-            "description": "Verified",
-            "example": True
-        }
-    )
+    verified = fields.Bool(metadata={"description": "Verified", "example": True})

@@ -5,8 +5,10 @@ from .prove import (
 )
 from .verify import verify_signed_anoncredspresentation
 
+
 class DataIntegrityProofException(Exception):
     """Base exception for data integrity proofs."""
+
 
 __all__ = [
     "DataIntegrityProofException",

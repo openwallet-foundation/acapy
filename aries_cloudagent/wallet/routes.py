@@ -43,7 +43,7 @@ from ..storage.record import StorageRecord
 from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
-from ..vc.vc_di.cryptosuites import CRYPTOSUITES 
+from ..vc.vc_di.cryptosuites import CRYPTOSUITES
 from ..vc.vc_di import DataIntegrityProofException
 from .anoncreds_upgrade import (
     UPGRADING_RECORD_IN_PROGRESS,
@@ -76,10 +76,11 @@ from .models.web_requests import (
     AttribConnIdMatchInfoSchema,
     MediationIDSchema,
     DISignRequestSchema,
-    DIVerifyRequestSchema
+    DIVerifyRequestSchema,
 )
 
 LOGGER = logging.getLogger(__name__)
+
 
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
@@ -92,6 +93,7 @@ def format_did_info(info: DIDInfo):
             "method": info.method.method_name,
             "metadata": info.metadata,
         }
+
 
 @docs(tags=["wallet"], summary="List wallet DIDs")
 @querystring_schema(DIDListQueryStringSchema())
@@ -883,7 +885,7 @@ async def wallet_di_sign(request: web.BaseRequest):
     document = body.get("document")
     options = body.get("options")
     try:
-        suite = CRYPTOSUITES[options['cryptosuite']](profile=context.profile)
+        suite = CRYPTOSUITES[options["cryptosuite"]](profile=context.profile)
         secured_document = await suite.add_proof(document, options)
         return web.json_response({"securedDocument": secured_document})
     except ValueError as err:
@@ -909,15 +911,15 @@ async def wallet_di_verify(request: web.BaseRequest):
 
     try:
         unsecured_document = secured_document.copy()
-        proofs = unsecured_document.pop('proof')
+        proofs = unsecured_document.pop("proof")
         verification_response = {
             "verifiedDocument": unsecured_document,
             "proofs": [],
         }
         for proof in proofs:
-            suite = CRYPTOSUITES[proof['cryptosuite']](profile=context.profile)
+            suite = CRYPTOSUITES[proof["cryptosuite"]](profile=context.profile)
             verified = await suite.verify_proof(unsecured_document, proof)
-            verification_response['proofs'].append(proof | {"verified": verified})
+            verification_response["proofs"].append(proof | {"verified": verified})
         return web.json_response({"verificationResults": verification_response})
     except ValueError as err:
         raise web.HTTPBadRequest(reason="Bad did or verification method") from err
