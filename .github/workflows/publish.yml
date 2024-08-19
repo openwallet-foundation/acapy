@@ -103,14 +103,23 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           platforms: ${{ env.PLATFORMS }}
 
+      - name: Setup Image Metadata (BBS)
+        id: meta-bbs
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-bbs
+          tags: |
+            type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
+
       - name: Build and Push extended Image to ghcr.io
         uses: docker/build-push-action@v5
         with:
           push: true
           context: .
           file: docker/Dockerfile
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-bbs.outputs.tags }}
+          labels: ${{ steps.meta-bbs.outputs.labels }}
           target: main
           build-args: |
             python_version=${{ matrix.python-version }}
