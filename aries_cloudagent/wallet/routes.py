@@ -51,10 +51,10 @@ from .anoncreds_upgrade import (
 )
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import KEY, PEER2, PEER4, SOV, DIDMethod, DIDMethods, HolderDefinedDid
+from .did_method import PEER2, PEER4, DIDMethod, DIDMethods, HolderDefinedDid
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, KeyTypes
+from .key_type import ED25519, KeyTypes
 from .singletons import UpgradeInProgressSingleton
 from .util import EVENT_LISTENER_PATTERN
 from .models.web_requests import (
@@ -75,7 +75,8 @@ from .models.web_requests import (
     CreateAttribTxnForEndorserOptionSchema,
     AttribConnIdMatchInfoSchema,
     MediationIDSchema,
-    DISignSchema
+    DISignRequestSchema,
+    DIVerifyRequestSchema
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -867,11 +868,11 @@ async def wallet_sd_jwt_verify(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Add a DataIntegrityProof to a document.")
-@request_schema(DISignSchema())
+@request_schema(DISignRequestSchema())
 @response_schema(WalletModuleResponseSchema(), description="")
 @tenant_authentication
 async def wallet_di_sign(request: web.BaseRequest):
-    """Request handler for creating di proofs using did.
+    """Request handler for creating di proofs.
 
     Args:
         request: aiohttp request object
@@ -881,11 +882,43 @@ async def wallet_di_sign(request: web.BaseRequest):
     body = await request.json()
     document = body.get("document")
     options = body.get("options")
+    try:
+        suite = CRYPTOSUITES[options['cryptosuite']](profile=context.profile)
+        secured_document = await suite.add_proof(document, options)
+        return web.json_response({"securedDocument": secured_document})
+    except ValueError as err:
+        raise web.HTTPBadRequest(reason="Bad did or verification method") from err
+    except (WalletNotFoundError, WalletError, DataIntegrityProofException) as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+
+@docs(tags=["wallet"], summary="Verify a DataIntegrityProof secured document.")
+@request_schema(DIVerifyRequestSchema())
+@response_schema(WalletModuleResponseSchema(), description="")
+@tenant_authentication
+async def wallet_di_verify(request: web.BaseRequest):
+    """Request handler for verifying di proofs.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    secured_document = body.get("securedDocument")
 
     try:
-        suite = CRYPTOSUITES[options['cryptosuite']]
-        secured_document = await suite(profile=context.profile).add_proof(document, options)
-        return web.json_response({"securedDocument": secured_document})
+        unsecured_document = secured_document.copy()
+        proofs = unsecured_document.pop('proof')
+        verification_response = {
+            "verifiedDocument": unsecured_document,
+            "proofs": [],
+        }
+        for proof in proofs:
+            suite = CRYPTOSUITES[proof['cryptosuite']](profile=context.profile)
+            verified = await suite.verify_proof(unsecured_document, proof)
+            verification_response['proofs'].append(proof | {"verified": verified})
+        return web.json_response({"verificationResults": verification_response})
     except ValueError as err:
         raise web.HTTPBadRequest(reason="Bad did or verification method") from err
     except (WalletNotFoundError, WalletError, DataIntegrityProofException) as err:
@@ -1121,7 +1154,8 @@ async def register(app: web.Application):
             web.post("/wallet/jwt/verify", wallet_jwt_verify),
             web.post("/wallet/sd-jwt/sign", wallet_sd_jwt_sign),
             web.post("/wallet/sd-jwt/verify", wallet_sd_jwt_verify),
-            web.post("/wallet/di/sign", wallet_di_sign),
+            web.post("/wallet/di/add-proof", wallet_di_sign),
+            web.post("/wallet/di/verify", wallet_di_verify),
             web.get(
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),

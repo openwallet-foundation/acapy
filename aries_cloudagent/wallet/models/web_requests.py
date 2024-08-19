@@ -1,3 +1,4 @@
+"""Web Requests and Responses schemas."""
 
 from marshmallow import fields, validate
 from ..key_type import BLS12381G2, ED25519
@@ -387,7 +388,8 @@ class DISignRequestSchema(OpenAPISchema):
                 "type": "DataIntegrityProof",
                 "cryptosuite": "eddsa-jcs-2022",
                 "proofPurpose": "assertionMethod",
-                "verificationMethod": "did:key:z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ#z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ",
+                "verificationMethod": "did:key:z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviL\
+                    M32tvQ#z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ",
             }
         }
     )
@@ -407,22 +409,23 @@ class DISignResponseSchema(OpenAPISchema):
 class DIVerifyRequestSchema(OpenAPISchema):
     """Request schema to add a DI proof to a document."""
 
-    document = fields.Dict(
+    secured_document = fields.Dict(
+        data_key="securedDocument",
         required=True,
         metadata={"example": 
             {
-                "hello": "world"
-            }
-        }
-    )
-    options = fields.Nested(
-        DIProofOptionsSchema,
-        metadata={"example": 
-            {
-                "type": "DataIntegrityProof",
-                "cryptosuite": "eddsa-jcs-2022",
-                "proofPurpose": "assertionMethod",
-                "verificationMethod": "did:key:z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ#z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ",
+                "hello": "world",
+                "proof": [
+                {
+                    "cryptosuite": "eddsa-jcs-2022",
+                    "proofPurpose": "assertionMethod",
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "did:key:z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7\
+                        jm8MscbDmy8#z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8",
+                    "proofValue": "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhufjPjbeRmys\
+                        HvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E"
+                }
+                ]
             }
         }
     )
@@ -432,11 +435,7 @@ class DIVerifyResponseSchema(OpenAPISchema):
 
     verified = fields.Bool(
         metadata={
-            "description": "Mediation identifier",
+            "description": "Verified",
             "example": True
         }
-    )
-
-    mediation_id = fields.Str(
-        required=False, metadata={"description": "Mediation identifier"}
     )
