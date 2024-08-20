@@ -470,40 +470,43 @@ class OutboundTransportManager:
         )
         return queued.task
 
+    def _finished_deliver_error_handler(self, queued: QueuedOutboundMessage, retry: bool):
+        if retry:
+            LOGGER.debug(
+                (
+                    ">>> Error when posting to: %s; "
+                    "Error: %s; "
+                    "Payload: %s; Re-queue failed message ..."
+                ),
+                queued.endpoint,
+                queued.error,
+                queued.payload,
+            )
+        else:
+            err_msg = ">>> Outbound message failed to deliver, NOT Re-queued."
+            if "/webhook/topic" in queued.endpoint:
+                LOGGER.warning(
+                    err_msg,
+                    exc_info=queued.error,
+                )
+            else:
+                LOGGER.exception(
+                    err_msg,
+                    exc_info=queued.error,
+                )
+
     def finished_deliver(self, queued: QueuedOutboundMessage, completed: CompletedTask):
         """Handle completion of queued message delivery."""
         if completed.exc_info:
             queued.error = completed.exc_info
 
             if queued.retries:
-                if LOGGER.isEnabledFor(logging.DEBUG):
-                    LOGGER.error(
-                        (
-                            ">>> Error when posting to: %s; "
-                            "Error: %s; "
-                            "Payload: %s; Re-queue failed message ..."
-                        ),
-                        queued.endpoint,
-                        queued.error,
-                        queued.payload,
-                    )
-                else:
-                    LOGGER.error(
-                        (
-                            ">>> Error when posting to: %s; "
-                            "Error: %s; Re-queue failed message ..."
-                        ),
-                        queued.endpoint,
-                        queued.error,
-                    )
+                self._finished_deliver_error_handler(queued, retry=True)
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:
-                LOGGER.exception(
-                    ">>> Outbound message failed to deliver, NOT Re-queued.",
-                    exc_info=queued.error,
-                )
+                self._finished_deliver_error_handler(queued, retry=False)
                 queued.state = QueuedOutboundMessage.STATE_DONE
         else:
             queued.error = None
