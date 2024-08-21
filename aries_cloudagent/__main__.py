@@ -26,7 +26,7 @@ def init_debug(args):
             import debugpy
 
             debugpy.listen((PTVSD_HOST, PTVSD_PORT))
-            print("=== Waiting for debugger to attach ===")
+            print(f"=== Waiting for debugger to attach to {PTVSD_HOST}:{PTVSD_PORT} ===")
             debugpy.wait_for_client()
         except ImportError:
             print("debugpy library was not found")

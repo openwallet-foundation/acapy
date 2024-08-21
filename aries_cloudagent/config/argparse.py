@@ -213,12 +213,11 @@ class AdminGroup(ArgumentGroup):
             )
         return settings
 
+@group(CAT_PROVISION, CAT_START, CAT_UPGRADE)
+class DebuggerGroup(ArgumentGroup):
+    """Debugger settings."""
 
-@group(CAT_START)
-class DebugGroup(ArgumentGroup):
-    """Debug settings."""
-
-    GROUP_NAME = "Debug"
+    GROUP_NAME = "Debugger"
 
     def add_arguments(self, parser: ArgumentParser):
         """Add debug command line arguments to the parser."""
@@ -232,6 +231,23 @@ class DebugGroup(ArgumentGroup):
                 "for the debugger to connect at start-up. Default: false."
             ),
         )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract debug settings."""
+        settings = {}
+        if args.debug:
+            settings["debug.enabled"] = True
+        return settings
+
+
+@group(CAT_START)
+class DebugGroup(ArgumentGroup):
+    """Debug settings."""
+
+    GROUP_NAME = "Debug"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add debug command line arguments to the parser."""
         parser.add_argument(
             "--debug-seed",
             dest="debug_seed",
@@ -415,8 +431,6 @@ class DebugGroup(ArgumentGroup):
     def get_settings(self, args: Namespace) -> dict:
         """Extract debug settings."""
         settings = {}
-        if args.debug:
-            settings["debug.enabled"] = True
         if args.debug_connections:
             settings["debug.connections"] = True
         if args.debug_credentials:
