@@ -182,7 +182,18 @@ For example:
 ./scripts/run_docker start --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
 ```
 
-To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Visual Studio/VSCode use the `--debug` command line parameter.
+To enable the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/) using the [debugpy implementation for Python 3](https://github.com/microsoft/debugpy/) Python debugger for Visual Studio/VSCode use the `--debug` command line parameter.
+
+When debugging an agent running within a docker container, you will need to set the DAP_HOST environment variable (defaults to ```localhost```)  to ```0.0.0.0``` to allow forwarding from within your docker container.
+
+Note that you may still find references to [PTVSD](https://github.com/microsoft/ptvsd), the deprecated implementation of DAP. PTVSD_HOST and PTVSD_PORT are interchangeable with DAP_HOST and DAP_PORT.
+
+Example:
+
+```bash
+ENV_VARS="DAP_HOST=0.0.0.0" scripts/run_docker provision --log-level debug  --wallet-type askar --wallet-name $(whoami) --wallet-key mysecretkey --endpoint http://localhost:8080 --no-ledger --debug
+```
+
 
 Any ports you will be using from the docker container should be published using the `PORTS` environment variable. For example:
 
