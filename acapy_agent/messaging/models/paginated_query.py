@@ -27,12 +27,14 @@ class PaginatedQuerySchema(OpenAPISchema):
     )
     order_by = fields.Str(
         required=False,
-        load_default=None,
-        dump_only=True,  # Hide from schema by making it dump-only
-        load_only=True,  # Ensure it can still be loaded/validated
-        validate=OneOf(["id"]),  # Example of possible fields
-        metadata={"description": "Order results in descending order if true"},
-        error_messages={"validator_failed": "Ordering only support for column `id`"},
+        load_default="id",
+        validate=OneOf(["id"]),  # only one possible column supported in askar
+        metadata={
+            "description": (
+                'The column to order results by. Only "id" is currently supported.'
+            )
+        },
+        error_messages={"validator_failed": '`order_by` only supports column "id"'},
     )
     descending = fields.Bool(
         required=False,
