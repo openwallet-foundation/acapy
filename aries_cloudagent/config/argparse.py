@@ -213,6 +213,7 @@ class AdminGroup(ArgumentGroup):
             )
         return settings
 
+
 @group(CAT_PROVISION, CAT_START, CAT_UPGRADE)
 class DebuggerGroup(ArgumentGroup):
     """Debugger settings."""
@@ -227,8 +228,9 @@ class DebuggerGroup(ArgumentGroup):
             env_var="ACAPY_DEBUG",
             help=(
                 "Enables a remote debugging service that can be accessed "
-                "using ptvsd for Visual Studio Code. The framework will wait "
-                "for the debugger to connect at start-up. Default: false."
+                "using the Debug Adapter Protocol (supported by Visual Studio Code). "
+                "The framework will wait for the debugger to connect at start-up. "
+                "Default: false."
             ),
         )
 
