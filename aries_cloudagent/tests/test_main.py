@@ -34,9 +34,9 @@ class TestMain(TestCase):
             test_module.init_debug(["aca-py", "--debug"])
 
             mock_import.assert_called_once()
-            self.assertEqual(mock_import.call_args[0][0], "ptvsd")
-            mock_import.return_value.enable_attach.assert_called_once()
-            mock_import.return_value.wait_for_attach.assert_called_once()
+            self.assertEqual(mock_import.call_args[0][0], "debugpy")
+            mock_import.return_value.listen.assert_called_once()
+            mock_import.return_value.wait_for_client.assert_called_once()
 
     def test_ptvsd_import_x(self):
         with mock.patch("builtins.__import__") as mock_import:

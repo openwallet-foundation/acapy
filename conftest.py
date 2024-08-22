@@ -146,19 +146,24 @@ def stub_ursa_bbs_signatures() -> Stub:
 
 def pytest_sessionstart(session):
     global STUBS, POSTGRES_URL, ENABLE_PTVSD
-    ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", False)
-    # --debug-vs to use microsoft's visual studio remote debugger
-    if ENABLE_PTVSD or "--debug" in sys.argv:
-        try:
-            import ptvsd
+    args = sys.argv
+    
+    # copied from __main__.py:init_debug
+    ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", "").lower()
+    ENABLE_PTVSD = ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0")
 
-            ptvsd.enable_attach(address=("0.0.0.0", 5678))
-            print("ptvsd is running")
-            print("=== Waiting for debugger to attach ===")
-            # To pause execution until the debugger is attached:
-            ptvsd.wait_for_attach()
+    # --debug to use microsoft's visual studio remote debugger
+    if ENABLE_PTVSD or "--debug" in args:
+        DAP_HOST = os.getenv("PTVSD_HOST", None) or os.getenv("DAP_HOST", "localhost")
+        DAP_PORT = os.getenv("PTVSD_PORT", None) or os.getenv("DAP_PORT", 5678)
+        try:
+            import debugpy
+
+            debugpy.listen((DAP_HOST, DAP_PORT))
+            print(f"=== Waiting for debugger to attach to {DAP_HOST}:{DAP_PORT} ===")
+            debugpy.wait_for_client()
         except ImportError:
-            print("ptvsd library was not found")
+            print("debugpy library was not found")
 
     POSTGRES_URL = os.getenv("POSTGRES_URL")
 
