@@ -69,7 +69,6 @@ ruff = "0.6.1"
 sphinx="^5.3.0"
 sphinx-rtd-theme=">=0.4.3"
 
-ptvsd="4.3.2"
 pydevd="1.5.1"
 
 pydevd-pycharm="~193.7288.30"
@@ -79,6 +78,7 @@ pytest = "^8.3.2"
 pytest-asyncio = "^0.23.6"
 pytest-cov = "^5.0.0"
 pytest-ruff = "^0.4.1"
+debugpy = "^1.8.5"
 
 [tool.poetry.extras]
 askar = [
