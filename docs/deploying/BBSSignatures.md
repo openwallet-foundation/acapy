@@ -24,4 +24,4 @@ WARNNG: if you do NOT have `bbs` installed you should exclude the BBS specific i
 ./run_bdd -t ~@BBS
 ```
 
-See the [Unit](../testing/UnitTests.md) and [Integration](../testing/INTEGRATION-TESTS.md) testing docs for more information on how to run tests.
+See the [Unit](../testing/UnitTests.md) and [Integration](../testing/BDDTests.md) testing docs for more information on how to run tests.

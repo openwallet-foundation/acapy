@@ -12,7 +12,7 @@ Feature: RFC 0160 Aries agent connection functions
       Then "Acme" has an active connection
       And "Bob" has an active connection
 
-      @PR @Release @UnqualifiedDids
+      @Release @UnqualifiedDids
       Examples:
          | Acme_capabilities                               | Acme_extra        | Bob_capabilities                   | Bob_extra         |
          | --public-did --did-exchange --emit-did-peer-2                     | | --did-exchange --emit-did-peer-2                     | |
@@ -40,7 +40,7 @@ Feature: RFC 0160 Aries agent connection functions
          | --did-exchange --emit-did-peer-4                                  | | --emit-did-peer-4                                    | |
          | --did-exchange --reuse-connections --emit-did-peer-4              | | --reuse-connections --emit-did-peer-4                | |
 
-      @PR @Release @MultiUseConnectionReuse
+      @Release @MultiUseConnectionReuse
       Examples:
          | Acme_capabilities                                                       | Acme_extra        | Bob_capabilities                   | Bob_extra         |
          | --did-exchange --multi-use-invitations --emit-did-peer-2                                  | | --emit-did-peer-2                                    | |
@@ -56,7 +56,7 @@ Feature: RFC 0160 Aries agent connection functions
          | --public-did --did-exchange --multi-use-invitations --emit-did-peer-4                     | | --did-exchange --emit-did-peer-2                     | |
          | --public-did --did-exchange --multi-use-invitations --reuse-connections --emit-did-peer-2 | | --did-exchange --reuse-connections --emit-did-peer-4 | |
 
-      @PR @Release @WalletType_Askar_AnonCreds
+      @Release @WalletType_Askar_AnonCreds
       Examples:
          | Acme_capabilities                                                             | Acme_extra        | Bob_capabilities                                                 | Bob_extra         |
          | --public-did --did-exchange --wallet-type askar-anoncreds --emit-did-peer-2                     | | --did-exchange --wallet-type askar-anoncreds --emit-did-peer-2                     | |

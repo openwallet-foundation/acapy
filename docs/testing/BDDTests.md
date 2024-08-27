@@ -28,7 +28,7 @@ cd aries-cloudagent-python/demo
 
 Note that an Indy ledger and tails server are both required (these can also be specified using environment variables).
 
-Note also that some tests require a ledger with TAA enabled, how to run these tests will be described later.
+Note also that some tests require a ledger with TAA enabled, how to run tEhese tests will be described later.
 
 By default the test suite runs using a default (SQLite) wallet, to run the tests using postgres run the following:
 
