@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "scenarios"
+version = "0.1.0"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+acapy-controller = {git = "https://github.com/indicio-tech/acapy-minimal-example.git", tag="v0.2.0"}
+pytest = "^8.3.2"
+pytest-asyncio = "^0.23.8"
+pydantic = "^2.8.2"
+
+[tool.pytest.ini_options]
+markers = "examples: test the examples"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -58,7 +58,6 @@ test-reports/
 
 # Django stuff:
 *.log
-*.lock
 local_settings.py
 db.sqlite3
 

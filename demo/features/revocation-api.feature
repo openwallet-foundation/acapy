@@ -1,6 +1,6 @@
 Feature: ACA-Py Revocation API 
 
-   @Revoc-api @PR @Release
+   @Revoc-api @Release
    Scenario Outline: Using revocation api, issue and revoke credentials
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -19,7 +19,7 @@ Feature: ACA-Py Revocation API
          #| Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
          | Acme   | --revocation --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @Revoc-api @PR @Release
+   @Revoc-api @Release
    Scenario Outline: Using revocation api, issue, revoke credentials and publish
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -76,7 +76,7 @@ Feature: ACA-Py Revocation API
          | Acme   | --revocation --public-did --did-exchange --multitenant --wallet-type askar | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
          | Acme   | --revocation --public-did --did-exchange --multitenant --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @Revoc-api @PR @Release
+   @Revoc-api @Release
    Scenario Outline: Using revocation api, rotate revocation 
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -93,7 +93,7 @@ Feature: ACA-Py Revocation API
          #| Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
          | Acme   | --revocation --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @Revoc-api @PR @Release
+   @Revoc-api @Release
    Scenario Outline: Using revocation api, fill registry (need to run with "TAILS_FILE_COUNT": "4" env var)
       Given we have "2" agents
          | name  | role     | capabilities        |

@@ -1,4 +1,4 @@
-name: acapy-integration-tests
+name: BDD Integration Tests
 
 on:
   schedule:

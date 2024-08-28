@@ -145,7 +145,7 @@ nav:
 - Testing/Troubleshooting:
     - Running and Creating Unit Tests: testing/UnitTests.md
     - Managing Logging: testing/Logging.md
-    - ACA-Py Integration Tests: testing/INTEGRATION-TESTS.md
+    - ACA-Py Integration BDD Tests: testing/BDDTests.md
     - Protocol Tracing: testing/AgentTracing.md
     - Troubleshooting: testing/Troubleshooting.md
 - Contributing:
