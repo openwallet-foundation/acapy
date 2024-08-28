@@ -318,24 +318,25 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        if context.settings.get("transport.disabled"):
-            LoggingConfigurator.print_banner(
-                default_label,
-                None,
-                None,
-                self.setup_public_did and self.setup_public_did.did,
-                self.admin_server,
-            )
-        else:
-            LoggingConfigurator.print_banner(
-                default_label,
-                self.inbound_transport_manager.registered_transports,
-                self.outbound_transport_manager.registered_transports,
-                self.setup_public_did and self.setup_public_did.did,
-                self.admin_server,
-            )
+        if context.settings.get("log.banner", True):
+            if context.settings.get("transport.disabled"):
+                LoggingConfigurator.print_banner(
+                    default_label,
+                    None,
+                    None,
+                    self.setup_public_did and self.setup_public_did.did,
+                    self.admin_server,
+                )
+            else:
+                LoggingConfigurator.print_banner(
+                    default_label,
+                    self.inbound_transport_manager.registered_transports,
+                    self.outbound_transport_manager.registered_transports,
+                    self.setup_public_did and self.setup_public_did.did,
+                    self.admin_server,
+                )
 
-        LoggingConfigurator.print_notices(context.settings)
+            LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
         from_version_storage = None

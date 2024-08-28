@@ -1028,6 +1028,13 @@ class LoggingGroup(ArgumentGroup):
                 "('debug', 'info', 'warning', 'error', 'critical')"
             ),
         )
+        parser.add_argument(
+            "--no-banner",
+            action="store_true",
+            env_var="ACAPY_NO_BANNER",
+            default=False,
+            help=("Suppress banner in logs"),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract logging settings."""
@@ -1038,6 +1045,7 @@ class LoggingGroup(ArgumentGroup):
             settings["log.file"] = args.log_file
         if args.log_level:
             settings["log.level"] = args.log_level
+        settings["log.banner"] = not args.no_banner
         return settings
 
 
