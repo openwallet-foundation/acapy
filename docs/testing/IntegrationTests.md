@@ -11,7 +11,7 @@ Interoperability is extremely important in the aries community. When implementin
 
 These tests are contained in a separate repo [AATH](https://github.com/hyperledger/aries-agent-test-harness). They use the gherkin syntax and a http back channel. Changes to the tests need to be added and merged into this repo before they will be reflected in the automatic testing workflows. There has been a lot of work to make developing and debugging tests easier. See (AATH Dev Containers)[https://github.com/hyperledger/aries-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath]
 
-The tests will then be ran for PR's and scheduled workflows for ACA-Py <--> ACA-Py agents. These tests are important because having them allows the AATH project to more easily test credo-ts <--> ACA-Py scenarios and ensure interoperability with mobile agents using interacting with python agents.
+The tests will then be ran for PR's and scheduled workflows for ACA-Py <--> ACA-Py agents. These tests are important because having them allows the AATH project to more easily test credo-ts <--> ACA-Py scenarios and ensure interoperability with mobile agents interacting with python agents.
 
 ## ACA-Py specific BDD tests
 
