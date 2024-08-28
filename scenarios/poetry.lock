@@ -20,8 +20,8 @@ models = ["pydantic (>=2.8.2,<3.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/indicio-tech/acapy-minimal-example.git"
-reference = "HEAD"
-resolved_reference = "8f82678d7ef0d8529b2c83342a2ceccc04cb823c"
+reference = "v0.2.0"
+resolved_reference = "53f5b5ebaa9bf716d3bb13c9342db584c76cd7c6"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -787,4 +787,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a720a99686fb2c6298e7ad36bbd987feadb3cadaaf171a62edf9fa2660e75fb0"
+content-hash = "e8aa0151ffa6413ce23acaee081a506017431e7d2cb37efde4b1a8bf71ec3162"
