@@ -29,12 +29,12 @@ from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit
 from ....messaging.valid import (
     INDY_EXTRA_WQL_EXAMPLE,
     INDY_EXTRA_WQL_VALIDATE,
-    NUM_STR_NATURAL_EXAMPLE,
-    NUM_STR_NATURAL_VALIDATE,
-    NUM_STR_WHOLE_EXAMPLE,
-    NUM_STR_WHOLE_VALIDATE,
+    NATURAL_NUM_EXAMPLE,
+    NATURAL_NUM_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
+    WHOLE_NUM_EXAMPLE,
+    WHOLE_NUM_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
@@ -235,21 +235,22 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
             "example": "1_name_uuid,2_score_uuid",
         },
     )
-    start = fields.Str(
+    start = fields.Int(
         required=False,
-        validate=NUM_STR_WHOLE_VALIDATE,
+        load_default=0,
+        validate=WHOLE_NUM_VALIDATE,
         metadata={
             "description": "Start index",
-            "strict": True,
-            "example": NUM_STR_WHOLE_EXAMPLE,
+            "example": WHOLE_NUM_EXAMPLE,
         },
     )
-    count = fields.Str(
+    count = fields.Int(
         required=False,
-        validate=NUM_STR_NATURAL_VALIDATE,
+        load_default=10,
+        validate=NATURAL_NUM_VALIDATE,
         metadata={
             "description": "Maximum number to retrieve",
-            "example": NUM_STR_NATURAL_EXAMPLE,
+            "example": NATURAL_NUM_EXAMPLE,
         },
     )
     extra_query = fields.Str(
@@ -413,16 +414,12 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    start = request.query.get("start")
-    count = request.query.get("count")
+    start = int(request.query.get("start", 0))
+    count = int(request.query.get("count", 10))
 
     # url encoded json extra_query
     encoded_extra_query = request.query.get("extra_query") or "{}"
     extra_query = json.loads(encoded_extra_query)
-
-    # defaults
-    start = int(start) if isinstance(start, str) else 0
-    count = int(count) if isinstance(count, str) else 10
 
     holder = profile.inject(IndyHolder)
     try:

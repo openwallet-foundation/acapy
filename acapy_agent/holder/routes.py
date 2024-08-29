@@ -27,11 +27,13 @@ from ..messaging.valid import (
     ENDPOINT_VALIDATE,
     INDY_WQL_EXAMPLE,
     INDY_WQL_VALIDATE,
-    NUM_STR_NATURAL_EXAMPLE,
-    NUM_STR_NATURAL_VALIDATE,
+    NATURAL_NUM_EXAMPLE,
+    NATURAL_NUM_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
+    WHOLE_NUM_EXAMPLE,
+    WHOLE_NUM_VALIDATE,
 )
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
@@ -64,17 +66,22 @@ class CredInfoListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Str(
+    start = fields.Int(
         required=False,
-        validate=NUM_STR_WHOLE_VALIDATE,
-        metadata={"description": "Start index", "example": NUM_STR_WHOLE_EXAMPLE},
+        load_default=0,
+        validate=WHOLE_NUM_VALIDATE,
+        metadata={
+            "description": "Start index",
+            "example": WHOLE_NUM_EXAMPLE,
+        },
     )
-    count = fields.Str(
+    count = fields.Int(
         required=False,
-        validate=NUM_STR_NATURAL_VALIDATE,
+        load_default=10,
+        validate=NATURAL_NUM_VALIDATE,
         metadata={
             "description": "Maximum number to retrieve",
-            "example": NUM_STR_NATURAL_EXAMPLE,
+            "example": NATURAL_NUM_EXAMPLE,
         },
     )
     wql = fields.Str(
@@ -379,16 +386,12 @@ async def credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    start = request.query.get("start")
-    count = request.query.get("count")
+    start = int(request.query.get("start", 0))
+    count = int(request.query.get("count", 10))
 
     # url encoded json wql
     encoded_wql = request.query.get("wql") or "{}"
     wql = json.loads(encoded_wql)
-
-    # defaults
-    start = int(start) if isinstance(start, str) else 0
-    count = int(count) if isinstance(count, str) else 10
 
     if context.settings.get(wallet_type_config) == "askar-anoncreds":
         holder = AnonCredsHolder(context.profile)
