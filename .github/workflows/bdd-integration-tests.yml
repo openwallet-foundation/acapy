@@ -31,10 +31,10 @@ jobs:
       - name: Check if PR is a release
         uses: ./.github/actions/is-release
         id: check_if_release
-      - name: run-pr-integration-tests
+      - name: Run PR or Nightly Integration Tests
         uses: ./.github/actions/run-integration-tests
         if: (steps.check_if_release.outputs.is_release != 'true')
-      - name: run-release-or-cron-integration-tests
+      - name: Run Release Integration Tests
         if: (steps.check_if_release.outputs.is_release == 'true')
         uses: ./.github/actions/run-integration-tests
         with:
