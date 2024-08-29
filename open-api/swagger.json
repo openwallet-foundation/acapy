@@ -1720,15 +1720,17 @@
           "in" : "query",
           "description" : "Maximum number to retrieve",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[1-9][0-9]*$"
+          "type" : "integer",
+          "default" : 10,
+          "minimum" : 1
         }, {
           "name" : "start",
           "in" : "query",
           "description" : "Start index",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[0-9]*$"
+          "type" : "integer",
+          "default" : 0,
+          "minimum" : 0
         }, {
           "name" : "wql",
           "in" : "query",
@@ -1764,15 +1766,17 @@
           "in" : "query",
           "description" : "Maximum number to retrieve",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[1-9][0-9]*$"
+          "type" : "integer",
+          "default" : 10,
+          "minimum" : 1
         }, {
           "name" : "start",
           "in" : "query",
           "description" : "Start index",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[0-9]*$"
+          "type" : "integer",
+          "default" : 0,
+          "minimum" : 0
         }, {
           "name" : "wql",
           "in" : "query",
@@ -4052,8 +4056,9 @@
           "in" : "query",
           "description" : "Maximum number to retrieve",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[1-9][0-9]*$"
+          "type" : "integer",
+          "default" : 10,
+          "minimum" : 1
         }, {
           "name" : "extra_query",
           "in" : "query",
@@ -4072,8 +4077,9 @@
           "in" : "query",
           "description" : "Start index",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[0-9]*$"
+          "type" : "integer",
+          "default" : 0,
+          "minimum" : 0
         } ],
         "responses" : {
           "200" : {
@@ -4391,8 +4397,9 @@
           "in" : "query",
           "description" : "Maximum number to retrieve",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[1-9][0-9]*$"
+          "type" : "integer",
+          "default" : 10,
+          "minimum" : 1
         }, {
           "name" : "extra_query",
           "in" : "query",
@@ -4411,8 +4418,9 @@
           "in" : "query",
           "description" : "Start index",
           "required" : false,
-          "type" : "string",
-          "pattern" : "^[0-9]*$"
+          "type" : "integer",
+          "default" : 0,
+          "minimum" : 0
         } ],
         "deprecated" : true,
         "responses" : {

@@ -2058,16 +2058,18 @@
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "pattern" : "^[1-9][0-9]*$",
-            "type" : "string"
+            "default" : 10,
+            "minimum" : 1,
+            "type" : "integer"
           }
         }, {
           "description" : "Start index",
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
           }
         }, {
           "description" : "(JSON) WQL query",
@@ -2101,16 +2103,18 @@
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "pattern" : "^[1-9][0-9]*$",
-            "type" : "string"
+            "default" : 10,
+            "minimum" : 1,
+            "type" : "integer"
           }
         }, {
           "description" : "Start index",
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
           }
         }, {
           "description" : "(JSON) WQL query",
@@ -4927,8 +4931,9 @@
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "pattern" : "^[1-9][0-9]*$",
-            "type" : "string"
+            "default" : 10,
+            "minimum" : 1,
+            "type" : "integer"
           }
         }, {
           "description" : "(JSON) object mapping referents to extra WQL queries",
@@ -4950,8 +4955,9 @@
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
           }
         } ],
         "responses" : {
@@ -5345,8 +5351,9 @@
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "pattern" : "^[1-9][0-9]*$",
-            "type" : "string"
+            "default" : 10,
+            "minimum" : 1,
+            "type" : "integer"
           }
         }, {
           "description" : "(JSON) object mapping referents to extra WQL queries",
@@ -5368,8 +5375,9 @@
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
           }
         } ],
         "responses" : {
