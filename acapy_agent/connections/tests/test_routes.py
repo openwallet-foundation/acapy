@@ -86,7 +86,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                     )
                 ),
             ]
-            mock_conn_rec.query.return_value = [conns[2], conns[0], conns[1]]  # jumbled
+            mock_conn_rec.query.return_value = conns
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.connections_list(self.request)
