@@ -39,7 +39,10 @@ class PaginatedQuerySchema(OpenAPISchema):
     descending = fields.Bool(
         required=False,
         load_default=False,
+        truthy={"true", "1", "yes"},
+        falsy={"false", "0", "no"},
         metadata={"description": "Order results in descending order if true"},
+        error_messages={"invalid": "Not a valid boolean."},
     )
 
 
@@ -60,5 +63,9 @@ def get_paginated_query_params(request: BaseRequest) -> Tuple[int, int, str, boo
     limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
     offset = int(request.query.get("offset", 0))
     order_by = request.query.get("order_by", "id")
-    descending = bool(request.query.get("descending", False))
+
+    # Convert the 'descending' parameter to a boolean
+    descending_str = request.query.get("descending", "False").lower()
+    descending = descending_str in {"true", "1", "yes"}
+
     return limit, offset, order_by, descending
