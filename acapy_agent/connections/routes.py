@@ -250,20 +250,6 @@ class EndpointsResultSchema(OpenAPISchema):
     )
 
 
-def connection_sort_key(conn):
-    """Get the sorting key for a particular connection."""
-
-    conn_rec_state = ConnRecord.State.get(conn["state"])
-    if conn_rec_state is ConnRecord.State.ABANDONED:
-        pfx = "2"
-    elif conn_rec_state is ConnRecord.State.INVITATION:
-        pfx = "1"
-    else:
-        pfx = "0"
-
-    return pfx + conn["created_at"]
-
-
 @docs(
     tags=["connection"],
     summary="Query agent-to-agent connections",
@@ -324,7 +310,6 @@ async def connections_list(request: web.BaseRequest):
                 alt=True,
             )
         results = [record.serialize() for record in records]
-        results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

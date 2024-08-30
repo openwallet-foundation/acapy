@@ -397,7 +397,6 @@ async def wallets_list(request: web.BaseRequest):
                 descending=descending,
             )
         results = [format_wallet_record(record) for record in records]
-        results.sort(key=lambda w: w["created_at"])
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
