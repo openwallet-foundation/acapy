@@ -9,14 +9,18 @@
       
       
       
+        <link rel="prev" href="../UnitTests/">
+      
+      
+        <link rel="next" href="../Logging/">
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.33">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.33">
     
     
       
-        <title>Integration Test Plan - Hyperledger Aries ACA-Py Docs</title>
+        <title>Integration Tests - Hyperledger Aries ACA-Py Docs</title>
       
     
     
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Integration Test Plan
+              Integration Tests
             
           </span>
         </div>
@@ -296,10 +300,12 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../UnitTests/" class="md-tabs__link">
           
   
@@ -1857,25 +1863,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -1886,7 +1895,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Testing/Troubleshooting
@@ -1909,6 +1918,94 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Integration Tests
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Integration Tests
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#interop-profile-aath-bdd-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interop profile (AATH) BDD tests
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aca-py-specific-bdd-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      ACA-Py specific BDD tests
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scenario testing
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2157,6 +2254,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Managing-ACA-Py-Doc-Site/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Managing the ACA-Py Documentation Site
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../UpdateRTD/" class="md-nav__link">
         
   
@@ -2250,16 +2368,18 @@
 
 
 <h1 id="integration-test-plan">Integration Test Plan<a class="headerlink" href="#integration-test-plan" title="Permanent link">&para;</a></h1>
-<p>Integration testing in ACA-Py consists of 3 different levels or types.
-1. Interop profile (AATH) BDD tests. 
-2. ACA-Py specific BDD tests.
-3. Scenario testing.</p>
+<p>Integration testing in ACA-Py consists of 3 different levels or types.</p>
+<ol>
+<li>Interop profile (AATH) BDD tests.</li>
+<li>ACA-Py specific BDD tests.</li>
+<li>Scenario testing.</li>
+</ol>
 <h2 id="interop-profile-aath-bdd-tests">Interop profile (AATH) BDD tests<a class="headerlink" href="#interop-profile-aath-bdd-tests" title="Permanent link">&para;</a></h2>
-<p>Interoperability is extremely important in the aries community. When implementing or changing features that are included in the <a href="https://github.com/hyperledger/aries-rfcs/blob/main/concepts/0302-aries-interop-profile/README.md">aries interop profile</a> the developer should try to add tests to this test suite. </p>
-<p>These tests are contained in a separate repo <a href="https://github.com/hyperledger/aries-agent-test-harness">AATH</a>. They use the gherkin syntax and a http back channel. Changes to the tests need to be added and merged into this repo before they will be reflected in the automatic testing workflows. There has been a lot of work to make developing and debugging tests easier. See (AATH Dev Containers)[<a href="https://github.com/hyperledger/aries-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath">https://github.com/hyperledger/aries-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath</a>]</p>
+<p>Interoperability is extremely important in the aries community. When implementing or changing features that are included in the <a href="https://github.com/hyperledger/aries-rfcs/blob/main/concepts/0302-aries-interop-profile/README.md">aries interop profile</a> the developer should try to add tests to this test suite.</p>
+<p>These tests are contained in a separate repo <a href="https://github.com/hyperledger/aries-agent-test-harness">AATH</a>. They use the gherkin syntax and a http back channel. Changes to the tests need to be added and merged into this repo before they will be reflected in the automatic testing workflows. There has been a lot of work to make developing and debugging tests easier. See (AATH Dev Containers)[<a href="https://github.com/hyperledger/aries-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath">https://github.com/hyperledger/aries-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath</a>].</p>
 <p>The tests will then be ran for PR's and scheduled workflows for ACA-Py &harr; ACA-Py agents. These tests are important because having them allows the AATH project to more easily test credo-ts &harr; ACA-Py scenarios and ensure interoperability with mobile agents interacting with python agents.</p>
 <h2 id="aca-py-specific-bdd-tests">ACA-Py specific BDD tests<a class="headerlink" href="#aca-py-specific-bdd-tests" title="Permanent link">&para;</a></h2>
-<p>These tests leverage the <a href="../../demo/README.md">demo agent</a> and also use gherkin syntax and a back channel. See <a href="../BDDTests/">README</a></p>
+<p>These tests leverage the <a href="../../demo/">demo agent</a> and also use gherkin syntax and a back channel. See <a href="../BDDTests/">README</a>.</p>
 <p>These tests are another tool for leveraging the demo agent and the gherkin syntax. They should not be used to test features that involve the interop profile, as they can not be used to test against other frameworks. None of the tests that are covered by the AATH tests will be ran automatically. They are here because some developers may prefer the testing strategy and can be useful for explicit testing steps and protocols not included in the interop profile.  </p>
 <h2 id="scenario-testing">Scenario testing<a class="headerlink" href="#scenario-testing" title="Permanent link">&para;</a></h2>
 <p>These tests utilize the minimal example <a href="https://github.com/Indicio-tech/acapy-minimal-example">agent</a> produced by Indicio. They exist in the <code>scenarios</code> directory. They are very useful for running specific test plans and checking webhooks.</p>
@@ -2293,6 +2413,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../UnitTests/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Running and Creating Unit Tests">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Running and Creating Unit Tests
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../Logging/" class="md-footer__link md-footer__link--next" aria-label="Next: Managing Logging">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Managing Logging
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">

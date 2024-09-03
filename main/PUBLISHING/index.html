@@ -12,11 +12,11 @@
         <link rel="prev" href="../SECURITY/">
       
       
-        <link rel="next" href="../UpdateRTD/">
+        <link rel="next" href="../Managing-ACA-Py-Doc-Site/">
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.33">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.33">
     
     
       
@@ -1927,6 +1927,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../testing/IntegrationTests/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integration Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../testing/Logging/" class="md-nav__link">
         
   
@@ -2176,6 +2197,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../Managing-ACA-Py-Doc-Site/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Managing the ACA-Py Documentation Site
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../UpdateRTD/" class="md-nav__link">
         
   
@@ -2250,33 +2292,22 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
    file as necessary. On completion of the testing, run the script
    <code>./scripts/prepmkdocs.sh clean</code> to undo the temporary changes to the docs. Be
    sure to do the last <code>clean</code> step -- <strong>DO NOT MERGE THE TEMPORARY DOC
-   CHANGES.</strong></p>
+   CHANGES.</strong> For more details see the <a href="../Managing-ACA-Py-Doc-Site/">Managing the ACA-Py Documentation Site</a> document.</p>
 </li>
 <li>
-<p>Update the CHANGELOG.md to add the new release.  Only create a new section when working on the first release candidate for a new release. When transitioning from one release candidate to the next, or to an official release, just update the title and date of the change log section.</p>
+<p>Update the CHANGELOG.md to add the new release.  Only create a new section
+   when working on the first release candidate for a new release. When
+   transitioning from one release candidate to the next, or to an official
+   release, just update the title and date of the change log section.</p>
 </li>
 <li>
-<p>Include details of the merged PRs included in this release. General process to follow:</p>
+<p>Collect the details of the merged PRs included in this release -- a list of PR
+   title, number, link to PR, author's github ID, and a link to the author's
+   github account. Gathering that data can be painful. Here are is the current
+   easiest way to do this -- using <a href="https://chat.openai.com">OpenAI ChatGPT</a>:</p>
 </li>
-<li>
-<p>Gather the set of PRs since the last release and put them into a list. A good
-  tool to use for this is the
-  <a href="https://github.com/github-changelog-generator/github-changelog-generator">github-changelog-generator</a>.
-  Steps:</p>
-</li>
-<li>Create a read only GitHub token for your account on this page:
-    <a href="https://github.com/settings/tokens/new?description=GitHub%20Changelog%20Generator%20token">https://github.com/settings/tokens</a>
-    with a scope of <code>repo</code> / <code>public_repo</code>.</li>
-<li>Use a command like the following, adjusting the tag parameters as
-    appropriate. <code>docker run -it --rm -v "$(pwd)":/usr/local/src/your-app
-    githubchangeloggenerator/github-changelog-generator --user hyperledger
-    --project aries-cloudagent-python --output 0.11.0rc2.md --since-tag 0.10.4
-    --future-release 0.11.1rc2 --release-branch main --token &lt;your-token&gt;</code></li>
-<li>In the generated file, use only the PR list -- we don't include the list of
-    closed issues in the Change Log.</li>
 </ol>
-<p>In some cases, the approach above fails because of too many API calls. An
-alternate approach to getting the list of PRs in the right format is to use <a href="https://chat.openai.com">OpenAI ChatGPT</a>.</p>
+<blockquote>
 <p>Prepare the following ChatGPT request. Don't hit enter yet--you have to add the data.</p>
 <p><code>Generate from this the github pull request number, the github id of the author and the title of the pull request in a tab-delimited list</code></p>
 <p>Get a list of the merged PRs since the last release by displaying the PR list in
@@ -2287,44 +2318,7 @@ should have a list of the PRs in a nice table with a <code>Copy</code> link that
 paste in the ChatGPT data. A formula in column <code>E</code> will have the properly
 formatted changelog entries. Double check the list with the GitHub UI to make
 sure that ChatGPT isn't messing with you and you have the needed data.</p>
-<p>If using ChatGPT doesn't appeal to you, try this scary <code>sed</code>/command line approach:</p>
-<ul>
-<li>Put the following commands into a file called <code>changelog.sed</code></li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>/Approved/d
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>/updated<span class="w"> </span>/d
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>/^$/d
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>/^<span class="w"> </span><span class="o">[</span><span class="m">0</span>-9<span class="o">]</span>/d
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>s/was<span class="w"> </span>merged.*//
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>/^@/d
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>s#<span class="w"> </span>by<span class="w"> </span><span class="se">\(</span>.*<span class="se">\)</span><span class="w"> </span><span class="c1"># [\1](https://github.com/\1)#</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>s/^<span class="w"> </span>//
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>s#<span class="w">  </span><span class="se">\#\(</span><span class="o">[</span><span class="m">0</span>-9<span class="o">]</span>*<span class="se">\)</span><span class="c1"># [\#\1](https://github.com/hyperledger/aries-cloudagent-python/pull/\1) #</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>s/<span class="w">  </span>/<span class="w"> </span>/g
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>/^Version/d
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>/tasks<span class="w"> </span><span class="k">done</span>/d
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>s/^/-<span class="w"> </span>/
-</code></pre></div>
-<ul>
-<li>Navigate in your browser to the paged list of PRs merged since the last
-  release (using in the GitHub UI a filter such as <code>is:pr is:merged sort:updated
-  merged:&gt;2022-04-07</code>) and for each page, highlight, and copy the text
-  of only the list of PRs on the page to use in the following step.</li>
-<li>For each page, run the command
-  <code>sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' &lt;&lt;EOF | sed -f changelog.sed</code>,
-  paste in the copied text and then type <code>EOF</code>.
-  Redirect the output to a file, appending each page of output to the file.</li>
-<li>The first <code>sed</code> command in the pipeline merges the PR title and PR number
-    plus author lines onto a single line. The commands in the <code>changelog.sed</code>
-    file just clean up the data, removing unwanted lines, etc.</li>
-<li>At the end of that process, you should have a list of all of the PRs in a form you can
-  use in the CHANGELOG.md file.</li>
-<li>To verify you have right number of PRs, you can do a <code>wc</code> of the file and there
-  should be one line per PR. You should scan the file as well, looking for
-  anomalies, such as missing <code>\</code>s before <code>#</code> characters. It's a pretty ugly process.</li>
-<li>Using a <code>curl</code> command and the GitHub API is probably a much better and more
-  robust way to do this, but this was quick and dirty...</li>
-</ul>
+</blockquote>
 <p>Once you have the list of PRs:</p>
 <ul>
 <li>Organize the list into suitable categories, update (if necessary) the PR description and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.</li>
@@ -2359,7 +2353,7 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 </li>
 <li>
 <p>Regenerate openapi.json and swagger.json by running
-   <code>../scripts/generate-open-api-spec</code> from within the <code>aries_cloudagent</code> folder.</p>
+   <code>scripts/generate-open-api-spec</code> from within the <code>aries_cloudagent</code> folder.</p>
 </li>
 </ul>
 <p>Command: <code>cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..</code></p>
@@ -2392,16 +2386,25 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 </ol>
 <p>Additional information about the container image publication process can be
    found in the document <a href="../deploying/ContainerImagesAndGithubActions/">Container Images and Github Actions</a>.</p>
+<p>In addition, the published documentation site <a href="https://aca-py.org">https://aca-py.org</a> should be automatically updated to include the new release via the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-docs.yml">publish-docs</a> GitHub Action.
+   Additional information about that process and some related maintainance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.</p>
 <ol>
 <li>
-<p>Update the ACA-Py Read The Docs site by building the new "latest" (main
-    branch) and activating and building the new release. Appropriate permissions
-    are required to publish the new documentation version.</p>
+<p>When a new release is tagged, create a new branch at the same commit with
+    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.0.0</code>.
+    The creation of the branch triggers the execution of the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-docs.yml">publish-docs</a>
+    GitHub Action which generates the documentation for the new release,
+    publishing it at <a href="https://aca-py.org">https://aca-py.org</a>. The GitHub Action also executes when
+    the <code>main</code> branch is updated via a merge, publishing an update to the <code>main</code>
+    branch documentation. Additional information about that documentation
+    publishing process and some related maintenance activities that are needed
+    from time to time can be found in the <a href="../Managing-ACA-Py-Doc-Site/">Managing the ACA-Py Documentation Site</a> document.</p>
 </li>
 <li>
-<p>Update the <a href="https://aca-py.org">https://aca-py.org</a> website with the latest documentation by
-    creating a PR and tag of the latest documentation from this site. Details
-    are provided in the <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> repository.</p>
+<p>Update the <a href="https://aries-cloud-agent-python.readthedocs.io/en/latest/">ACA-Py Read The Docs site</a> by logging into Read The Docs
+    administration site, building a new "latest" (main branch) and activating
+    and building the new release by version ID. Appropriate permissions are
+    required to publish the new documentation version.</p>
 </li>
 </ol>
 
@@ -2456,13 +2459,13 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
         
         
           
-          <a href="../UpdateRTD/" class="md-footer__link md-footer__link--next" aria-label="Next: Updating the ACA-Py ReadTheDocs Site">
+          <a href="../Managing-ACA-Py-Doc-Site/" class="md-footer__link md-footer__link--next" aria-label="Next: Managing the ACA-Py Documentation Site">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Updating the ACA-Py ReadTheDocs Site
+                Managing the ACA-Py Documentation Site
               </div>
             </div>
             <div class="md-footer__button md-icon">
