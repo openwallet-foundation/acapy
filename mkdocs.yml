@@ -144,6 +144,7 @@ nav:
     - The askar-anoncreds Wallet Type: deploying/AnonCredsWalletType.md
 - Testing/Troubleshooting:
     - Running and Creating Unit Tests: testing/UnitTests.md
+    - Integration Tests: testing/IntegrationTests.md
     - Managing Logging: testing/Logging.md
     - ACA-Py Integration BDD Tests: testing/BDDTests.md
     - Protocol Tracing: testing/AgentTracing.md
@@ -154,4 +155,5 @@ nav:
     - Hyperledger Code of Conduct: CODE_OF_CONDUCT.md
     - Security Vulnerability Reporting: SECURITY.md
     - Publishing an ACA-Py Release: PUBLISHING.md
+    - Managing the ACA-Py Documentation Site: Managing-ACA-Py-Doc-Site.md
     - Updating the ACA-Py ReadTheDocs Site: UpdateRTD.md

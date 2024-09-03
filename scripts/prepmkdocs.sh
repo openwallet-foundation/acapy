@@ -13,12 +13,16 @@ if [[ "$1" == "clean" ]]; then
         docs/MAINTAINERS.md \
         docs/PUBLISHING.md \
         docs/LTS-Strategy.md \
+        docs/aca-py_architecture.png \
+        docs/Managing-ACA-Py-Doc-Site.md \
         docs/SECURITY.md
     ## Update the following line to "clean" any changes made below to files that remain in the `docs` folder
     git checkout -- docs/README.md docs/demo/AriesOpenAPIDemo.md docs/demo/AliceGetsAPhone.md docs/features/DevReadMe.md
 else
     # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
     for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
+    # Copy the architecture drawing
+    cp aca-py_architecture.png docs
     # Fix references in DevReadMe.md to moved files
     sed -e "s#\.\./\.\./#../#g" docs/features/DevReadMe.md >tmp.md; mv tmp.md docs/features/DevReadMe.md
     # Fix image references in demo documents so they work in GitHub and mkdocs

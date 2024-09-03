@@ -29,37 +29,13 @@ jobs:
         with:
           fetch-depth: 0
       - name: Check if PR is a release
+        uses: ./.github/actions/is-release
         id: check_if_release
-        continue-on-error: true
-        run: |
-          # Get the diff between the current commit and the last merge commit on the upstream/main branch
-          git remote add upstream https://github.com/hyperledger/aries-cloudagent-python.git
-          git fetch upstream
-          
-          last_merge=$(git rev-list --no-merges -n 1 upstream/main)
-          
-          echo event = ${{ github.event_name }}
-
-          echo last upstream commit = "$last_merge"
-          echo current pr commit = "${{ github.sha }}"
-
-          echo Will exit with code 1 if the pull request is not a release
-
-          changes=$(git diff "${{ github.sha }}" "$last_merge" pyproject.toml)
-
-          # Extract the version of aries-cloudagent from the diff of pyproject.toml
-          version=$(echo "$changes" | grep -A1 'name = "aries_cloudagent"' | head -n 2 | tail -n 1 | awk '{print $3}' | tr -d '"')
-
-          echo "$version"
-          if [ "$version" ]; then
-            echo "This is a release because the aries-cloudagent version in pyproject.toml has changes"
-            echo is_release=true >> $GITHUB_OUTPUT
-          fi
-      - name: run-pr-integration-tests
+      - name: Run PR or Nightly Integration Tests
         uses: ./.github/actions/run-integration-tests
-        if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request')
-      - name: run-release-or-cron-integration-tests
-        if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        if: (steps.check_if_release.outputs.is_release != 'true')
+      - name: Run Release Integration Tests
+        if: (steps.check_if_release.outputs.is_release == 'true')
         uses: ./.github/actions/run-integration-tests
         with:
           TEST_SCOPE: "-t @Release -t ~@BBS"
