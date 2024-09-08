@@ -1,10 +1,11 @@
 """Test VCDIManager."""
 
 import pytest
+from anoncreds import W3cPresentation
 
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.tests import mock
-from anoncreds import W3cPresentation
+
 from ....core.in_memory.profile import InMemoryProfile
 from ....core.profile import Profile
 from ....resolver.default.key import KeyDIDResolver
@@ -15,9 +16,8 @@ from ....wallet.default_verification_key_strategy import (
 )
 from ....wallet.did_method import DIDMethods
 from ...ld_proofs.document_loader import DocumentLoader
-from ..manager import VcDiManager, VcDiManagerError
 from ...vc_ld.models.presentation import VerifiablePresentation
-
+from ..manager import VcDiManager, VcDiManagerError
 
 CHALLENGE = "3fa85f64-5717-4562-b3fc-2c963f66afa7"
 OPTIONS = {

@@ -1,14 +1,11 @@
+from unittest import TestCase, mock
+
 import pytest
 
-from unittest import mock
-from unittest import TestCase
-
 from .....messaging.models.base import BaseModelError
-
 from ....didcomm_prefix import DIDCommPrefix
-
-from ..message_types import PROBLEM_REPORT
 from ..message import ProblemReport, ProblemReportSchema
+from ..message_types import PROBLEM_REPORT
 
 
 class TestProblemReport(TestCase):

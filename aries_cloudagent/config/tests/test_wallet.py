@@ -1,16 +1,16 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import ProfileManager, ProfileSession
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
-from ...version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ...version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ...wallet.base import BaseWallet
-
 from .. import wallet as test_module
-from ..injector import Injector
 from ..injection_context import InjectionContext
+from ..injector import Injector
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"

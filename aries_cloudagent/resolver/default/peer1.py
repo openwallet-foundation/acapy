@@ -12,7 +12,6 @@ from ...core.profile import Profile
 from ...resolver.base import BaseDIDResolver, DIDNotFound, ResolverType
 from ...storage.error import StorageNotFoundError
 
-
 LOGGER = logging.getLogger(__name__)
 
 

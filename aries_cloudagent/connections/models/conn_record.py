@@ -25,12 +25,8 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
 )
 from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
 from ...protocols.didcomm_prefix import DIDCommPrefix
-from ...protocols.didexchange.v1_0.message_types import (
-    ARIES_PROTOCOL as DIDEX_1_1,
-)
-from ...protocols.didexchange.v1_0.message_types import (
-    DIDEX_1_0,
-)
+from ...protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
+from ...protocols.didexchange.v1_0.message_types import DIDEX_1_0
 from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
 from ...protocols.out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitation,

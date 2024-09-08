@@ -16,9 +16,7 @@ from aries_cloudagent.anoncreds.revocation import AnonCredsRevocation
 from aries_cloudagent.anoncreds.revocation_setup import DefaultRevocationSetup
 from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
 from aries_cloudagent.core.event_bus import MockEventBus
-from aries_cloudagent.core.in_memory.profile import (
-    InMemoryProfile,
-)
+from aries_cloudagent.core.in_memory.profile import InMemoryProfile
 from aries_cloudagent.tests import mock
 
 from ...askar.profile import AskarProfile

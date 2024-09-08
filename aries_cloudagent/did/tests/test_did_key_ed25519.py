@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ...wallet.key_type import ED25519
 from ...wallet.util import b58_to_bytes
-from ..did_key import DIDKey, DID_KEY_RESOLVERS
+from ..did_key import DID_KEY_RESOLVERS, DIDKey
 from .test_dids import DID_ED25519_z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th
 
 TEST_ED25519_BASE58_KEY = "8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"

@@ -1,12 +1,10 @@
 from tempfile import NamedTemporaryFile
-
 from unittest import IsolatedAsyncioTestCase
 
 from ...cache.base import BaseCache
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
 from ...transport.wire_format import BaseWireFormat
-
 from ..default_context import DefaultContextBuilder
 from ..injection_context import InjectionContext
 

@@ -1,10 +1,7 @@
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CRED_20_ACK
-
 from .. import cred_ack as test_module
 from ..cred_ack import V20CredAck
 

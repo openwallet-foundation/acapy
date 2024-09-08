@@ -13,9 +13,7 @@ from bdd_support.agent_backchannel_client import (
     read_schema_data,
 )
 from behave import given, then, when
-from runners.support.agent import (
-    DID_METHOD_KEY,
-)
+from runners.support.agent import DID_METHOD_KEY
 
 
 def is_anoncreds(agent):

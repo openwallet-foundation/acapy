@@ -7,7 +7,6 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 from .....storage.error import StorageError
-
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.endorsed_transaction_response import EndorsedTransactionResponse
 

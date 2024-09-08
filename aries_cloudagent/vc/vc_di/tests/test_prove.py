@@ -1,12 +1,15 @@
 """test prove.py"""
 
 import pytest
+from anoncreds import CredentialRevocationState, RevocationStatusList
+
 from aries_cloudagent.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.anoncreds.tests.mock_objects import MOCK_W3CPRES
 from aries_cloudagent.revocation.models.revocation_registry import RevocationRegistry
-from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
-from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.tests import mock
+from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
+
 from ....core.in_memory.profile import InMemoryProfile
 from ....core.profile import Profile
 from ....resolver.default.key import KeyDIDResolver
@@ -17,7 +20,6 @@ from ....wallet.default_verification_key_strategy import (
 )
 from ....wallet.did_method import DIDMethods
 from ...ld_proofs.document_loader import DocumentLoader
-
 from ..prove import (
     _extract_cred_idx,
     _get_predicate_type_and_value,
@@ -26,7 +28,6 @@ from ..prove import (
     create_signed_anoncreds_presentation,
 )
 from .test_manager import VC
-from anoncreds import RevocationStatusList, CredentialRevocationState
 
 
 @pytest.fixture

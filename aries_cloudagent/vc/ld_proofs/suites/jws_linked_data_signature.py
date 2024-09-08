@@ -1,18 +1,15 @@
 """JWS Linked Data class."""
 
 import json
-
 from datetime import datetime
 from typing import Optional, Union
 
 from pyld.jsonld import JsonLdProcessor
 
-from ....wallet.util import b64_to_bytes, bytes_to_b64, str_to_b64, b64_to_str
-
+from ....wallet.util import b64_to_bytes, b64_to_str, bytes_to_b64, str_to_b64
 from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
-
 from .linked_data_signature import LinkedDataSignature
 
 

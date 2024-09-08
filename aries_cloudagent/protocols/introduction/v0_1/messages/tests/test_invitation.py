@@ -1,11 +1,8 @@
-from unittest import mock
-
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
-
-from ..invitation import Invitation as IntroInvitation
 from ...message_types import PROTOCOL_PACKAGE
+from ..invitation import Invitation as IntroInvitation
 
 
 class TestInvitation(IsolatedAsyncioTestCase):

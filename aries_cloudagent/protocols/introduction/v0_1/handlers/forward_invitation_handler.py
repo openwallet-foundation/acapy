@@ -6,10 +6,8 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-
 from ....connections.v1_0.manager import ConnectionManager, ConnectionManagerError
 from ....problem_report.v1_0.message import ProblemReport
-
 from ..messages.forward_invitation import ForwardInvitation
 
 

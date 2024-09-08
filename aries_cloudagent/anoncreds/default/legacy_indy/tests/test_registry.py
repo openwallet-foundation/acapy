@@ -13,9 +13,7 @@ from anoncreds import (
 )
 from base58 import alphabet
 
-from .....anoncreds.base import (
-    AnonCredsSchemaAlreadyExists,
-)
+from .....anoncreds.base import AnonCredsSchemaAlreadyExists
 from .....anoncreds.models.anoncreds_schema import (
     AnonCredsSchema,
     GetSchemaResult,
@@ -31,9 +29,7 @@ from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from .....messaging.responder import BaseResponder
-from .....protocols.endorse_transaction.v1_0.manager import (
-    TransactionManager,
-)
+from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecord,
 )

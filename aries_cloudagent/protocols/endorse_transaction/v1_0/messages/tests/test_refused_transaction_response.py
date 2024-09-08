@@ -1,12 +1,7 @@
-from unittest import mock
-from unittest import TestCase
-
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, TestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import REFUSED_TRANSACTION_RESPONSE
-
 from ..refused_transaction_response import RefusedTransactionResponse
 
 

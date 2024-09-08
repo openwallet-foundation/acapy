@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE
 
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
-
 from ..message_types import CRED_20_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.cred_ack_handler.V20CredAckHandler"

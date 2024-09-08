@@ -1,12 +1,11 @@
 """Wallet utility functions."""
 
+import base64
 import re
 
 import base58
-import base64
-
-import nacl.utils
 import nacl.bindings
+import nacl.utils
 
 from ..core.profile import Profile
 

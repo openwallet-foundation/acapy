@@ -9,14 +9,14 @@ from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....resolver.default.key import KeyDIDResolver
 from ....resolver.did_resolver import DIDResolver
-from ....wallet.base import BaseWallet
 from ....storage.vc_holder.base import VCHolder
+from ....wallet.base import BaseWallet
 from ....wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
 )
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import DIDMethod, DIDMethods, KEY, SOV
+from ....wallet.did_method import KEY, SOV, DIDMethod, DIDMethods
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519
 from ...ld_proofs.constants import (

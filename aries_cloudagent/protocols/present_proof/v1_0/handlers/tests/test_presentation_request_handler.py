@@ -1,6 +1,6 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.tests import mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......indy.holder import IndyHolder
@@ -13,12 +13,9 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...messages.presentation_proposal import PresentationProposal
 from ...messages.presentation_request import PresentationRequest
-
 from .. import presentation_request_handler as test_module
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"

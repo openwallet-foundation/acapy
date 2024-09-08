@@ -1,17 +1,19 @@
 """Test MediationManager."""
 
+from typing import AsyncIterable, Iterable
+
 import pytest
 
 from aries_cloudagent.tests import mock
-from typing import AsyncIterable, Iterable
 
-from .. import manager as test_module
 from .....core.event_bus import EventBus, MockEventBus
 from .....core.in_memory import InMemoryProfile
 from .....core.profile import Profile, ProfileSession
 from .....did.did_key import DIDKey
 from .....storage.error import StorageNotFoundError
+from .....wallet.did_method import DIDMethods
 from ....routing.v1_0.models.route_record import RouteRecord
+from .. import manager as test_module
 from ..manager import (
     MediationAlreadyExists,
     MediationManager,
@@ -24,7 +26,6 @@ from ..messages.mediate_deny import MediationDeny
 from ..messages.mediate_grant import MediationGrant
 from ..messages.mediate_request import MediationRequest
 from ..models.mediation_record import MediationRecord
-from .....wallet.did_method import DIDMethods
 
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"

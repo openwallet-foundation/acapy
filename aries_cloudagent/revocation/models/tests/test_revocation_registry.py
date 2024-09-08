@@ -1,19 +1,14 @@
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
 from copy import deepcopy
 from pathlib import Path
 from shutil import rmtree
+from unittest import IsolatedAsyncioTestCase, mock
 
 import base58
 
 from ....indy.util import indy_client_dir
-
 from ...error import RevocationError
-
-from ..revocation_registry import RevocationRegistry
-
 from .. import revocation_registry as test_module
-
+from ..revocation_registry import RevocationRegistry
 
 TEST_DID = "FkjWznKwA4N1JEp2iPiKPG"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"

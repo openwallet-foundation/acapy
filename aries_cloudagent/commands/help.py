@@ -1,14 +1,15 @@
 """Help command for indexing available commands."""
 
-from configargparse import ArgumentParser
 from typing import Sequence
+
+from configargparse import ArgumentParser
 
 from ..version import __version__
 
 
 def execute(argv: Sequence[str] = None):
     """Execute the help command."""
-    from . import available_commands, load_command, PROG
+    from . import PROG, available_commands, load_command
 
     parser = ArgumentParser(prog=PROG)
     parser.add_argument(

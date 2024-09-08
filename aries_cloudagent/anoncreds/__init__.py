@@ -2,7 +2,6 @@ import logging
 
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
-
 from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)

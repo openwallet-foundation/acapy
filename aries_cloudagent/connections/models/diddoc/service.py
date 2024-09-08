@@ -18,8 +18,8 @@ limitations under the License.
 
 from typing import List, Sequence, Union
 
-from .util import canon_did, canon_ref
 from .publickey import PublicKey
+from .util import canon_did, canon_ref
 
 
 class Service:

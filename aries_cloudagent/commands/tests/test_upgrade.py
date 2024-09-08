@@ -1,16 +1,15 @@
 import asyncio
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ...core.in_memory import InMemoryProfile
+from aries_cloudagent.tests import mock
+
 from ...connections.models.conn_record import ConnRecord
+from ...core.in_memory import InMemoryProfile
 from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.in_memory import InMemoryStorage
 from ...storage.record import StorageRecord
 from ...version import __version__
 from ...wallet.models.wallet_record import WalletRecord
-
 from .. import upgrade as test_module
 from ..upgrade import UpgradeError
 

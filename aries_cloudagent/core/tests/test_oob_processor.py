@@ -1,8 +1,8 @@
 import json
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 from unittest.mock import ANY
+
+from aries_cloudagent.tests import mock
 
 from ...connections.models.conn_record import ConnRecord
 from ...messaging.decorators.attach_decorator import AttachDecorator

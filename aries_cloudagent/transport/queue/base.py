@@ -1,7 +1,7 @@
 """Abstract message queue."""
 
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
 
 
 class BaseMessageQueue(ABC):

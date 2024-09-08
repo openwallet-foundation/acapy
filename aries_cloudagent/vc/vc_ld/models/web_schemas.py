@@ -1,20 +1,12 @@
 """VC-API routes web requests schemas."""
 
 from marshmallow import fields
-from ....messaging.models.openapi import OpenAPISchema
 
-from ..validation_result import (
-    PresentationVerificationResultSchema,
-)
+from ....messaging.models.openapi import OpenAPISchema
+from ..validation_result import PresentationVerificationResultSchema
+from .credential import CredentialSchema, VerifiableCredentialSchema
 from .options import LDProofVCOptionsSchema
-from .credential import (
-    CredentialSchema,
-    VerifiableCredentialSchema,
-)
-from .presentation import (
-    PresentationSchema,
-    VerifiablePresentationSchema,
-)
+from .presentation import PresentationSchema, VerifiablePresentationSchema
 
 
 class ListCredentialsResponse(OpenAPISchema):

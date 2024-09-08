@@ -1,16 +1,15 @@
-from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 import json
+from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......connections.models.connection_target import ConnectionTarget
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
-from ...models.route_record import RouteRecord
 from ...messages.forward import Forward
-
+from ...models.route_record import RouteRecord
 from .. import forward_handler as test_module
 
 TEST_CONN_ID = "conn-id"

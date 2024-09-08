@@ -13,13 +13,8 @@ from did_peer_2 import KeySpec, generate
 from did_peer_4 import encode, long_to_short
 from did_peer_4.input_doc import KeySpec as KeySpec_DP4
 from did_peer_4.input_doc import input_doc_from_keys_and_services
-from pydid import (
-    BaseDIDDocument as ResolvedDocument,
-)
-from pydid import (
-    DIDCommService,
-    VerificationMethod,
-)
+from pydid import BaseDIDDocument as ResolvedDocument
+from pydid import DIDCommService, VerificationMethod
 from pydid.verification_method import (
     Ed25519VerificationKey2018,
     Ed25519VerificationKey2020,

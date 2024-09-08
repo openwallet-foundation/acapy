@@ -1,10 +1,9 @@
-from behave import given, when, then
-
 from bdd_support.agent_backchannel_client import (
     agent_container_GET,
     agent_container_POST,
     agent_container_PUT,
 )
+from behave import given, then, when
 
 
 @given('"{issuer}" connects to a ledger that requires acceptance of the TAA')

@@ -3,16 +3,11 @@
 from collections import OrderedDict
 from typing import Optional, Sequence, Tuple
 
-from aries_askar import (
-    crypto_box,
-    Key,
-    KeyAlg,
-    Session,
-)
+from aries_askar import Key, KeyAlg, Session, crypto_box
 from aries_askar.bindings import key_get_secret_bytes
 from marshmallow import ValidationError
 
-from ...utils.jwe import b64url, JweEnvelope, JweRecipient
+from ...utils.jwe import JweEnvelope, JweRecipient, b64url
 from ...wallet.base import WalletError
 from ...wallet.crypto import extract_pack_recipients
 from ...wallet.util import b58_to_bytes, bytes_to_b58

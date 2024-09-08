@@ -1,8 +1,7 @@
 """Credential offer message handler."""
 
-from .....wallet.util import default_did_from_verkey
-from .....core.oob_processor import OobMessageProcessor
 from .....anoncreds.holder import AnonCredsHolderError
+from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -10,8 +9,8 @@ from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError
-from .....utils.tracing import trace_event, get_timer
-
+from .....utils.tracing import get_timer, trace_event
+from .....wallet.util import default_did_from_verkey
 from .. import problem_report_for_record
 from ..manager import V20CredManager, V20CredManagerError
 from ..messages.cred_offer import V20CredOffer

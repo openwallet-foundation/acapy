@@ -1,7 +1,7 @@
 """Manager for multiple ledger."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, Mapping, List
+from typing import List, Mapping, Optional, Tuple
 
 from ...core.error import BaseError
 from ...core.profile import Profile

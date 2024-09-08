@@ -5,14 +5,7 @@ import json
 import logging
 from typing import List, Optional, Sequence, Tuple, Union, cast
 
-from aries_askar import (
-    AskarError,
-    AskarErrorCode,
-    Entry,
-    Key,
-    KeyAlg,
-    SeedMethod,
-)
+from aries_askar import AskarError, AskarErrorCode, Entry, Key, KeyAlg, SeedMethod
 
 from ..askar.didcomm.v1 import pack_message, unpack_message
 from ..askar.profile import AskarProfileSession
@@ -22,11 +15,7 @@ from ..ledger.error import LedgerConfigError
 from ..storage.askar import AskarStorage
 from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
 from .base import BaseWallet, DIDInfo, KeyInfo
-from .crypto import (
-    sign_message,
-    validate_seed,
-    verify_signed_message,
-)
+from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation

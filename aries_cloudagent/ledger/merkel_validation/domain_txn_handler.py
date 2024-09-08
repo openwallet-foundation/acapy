@@ -1,65 +1,65 @@
 """Utilities for Processing Replies to Domain Read Requests."""
 
-import base58
 import base64
 import hashlib
 import json
-
 from binascii import hexlify
 from copy import deepcopy
 
-from .utils import audit_path_length
+import base58
+
 from .constants import (
     ACCUM_FROM,
     ACCUM_TO,
     ALL_ATR_KEYS,
-    LAST_SEQ_NO,
-    VAL,
-    VALUE,
+    ATTR_NAMES,
+    ATTRIB,
+    AUDIT_PATH,
+    CLAIM_DEF,
+    CRED_DEF_ID,
+    DATA,
+    DEST,
+    FROM,
+    GET_ATTR,
+    GET_CLAIM_DEF,
+    GET_NYM,
+    GET_REVOC_REG_DEF,
+    GET_REVOC_REG_DELTA,
+    GET_REVOC_REG_ENTRY,
+    GET_SCHEMA,
     HASH,
+    LAST_SEQ_NO,
     LAST_UPDATE_TIME,
-    MARKER_CLAIM_DEF,
-    MARKER_SCHEMA,
     MARKER_ATTR,
+    MARKER_CLAIM_DEF,
     MARKER_REVOC_DEF,
     MARKER_REVOC_REG_ENTRY,
     MARKER_REVOC_REG_ENTRY_ACCUM,
-    GET_NYM,
-    GET_ATTR,
-    GET_CLAIM_DEF,
-    GET_REVOC_REG_DEF,
-    GET_REVOC_REG_ENTRY,
-    GET_REVOC_REG_DELTA,
-    GET_SCHEMA,
-    NYM,
-    ATTRIB,
-    SCHEMA,
-    CLAIM_DEF,
-    REVOC_REG_DEF,
-    REVOC_REG_ENTRY,
-    DEST,
-    RESULT,
-    DATA,
-    SEQ_NO,
-    TXN_METADATA,
-    TXN_TIME,
-    TXN,
-    NAME,
-    VERSION,
-    ATTR_NAMES,
-    FROM,
+    MARKER_SCHEMA,
     METADATA,
+    NAME,
+    NYM,
+    PROOF_NODES,
     REF,
-    CRED_DEF_ID,
+    RESULT,
     REVOC_DEF_TYPE,
     REVOC_DEF_TYPE_ID,
-    AUDIT_PATH,
+    REVOC_REG_DEF,
+    REVOC_REG_ENTRY,
     ROOT_HASH,
+    SCHEMA,
+    SEQ_NO,
     STATE_PROOF,
     STATE_PROOF_FROM,
-    PROOF_NODES,
     TAG,
+    TXN,
+    TXN_METADATA,
+    TXN_TIME,
+    VAL,
+    VALUE,
+    VERSION,
 )
+from .utils import audit_path_length
 
 
 def _extract_attr_typed_value(txn_data):

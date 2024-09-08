@@ -1,14 +1,12 @@
 """present-proof-v2 format handler - supports DIF and INDY."""
 
-from abc import ABC, abstractclassmethod, abstractmethod
 import logging
-
+from abc import ABC, abstractclassmethod, abstractmethod
 from typing import Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
 from .....messaging.decorators.attach_decorator import AttachDecorator
-
 from ..messages.pres import V20Pres
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord

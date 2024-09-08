@@ -1,7 +1,7 @@
 import asyncio
+from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 
 from .. import basic as test_module
 from ..basic import BasicMessageQueue

@@ -6,14 +6,15 @@ Allows keeping some context in local filesystem.
 import logging
 import re
 import string
-from typing import Dict, Optional
 import urllib.parse as urllib_parse
 from importlib import resources
-from ...version import __version__
+from typing import Dict, Optional
 
 import requests
 from pyld import jsonld
-from pyld.jsonld import JsonLdError, parse_link_header, LINK_HEADER_REL
+from pyld.jsonld import LINK_HEADER_REL, JsonLdError, parse_link_header
+
+from ...version import __version__
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 """Test Base DID Resolver methods."""
 
-import pytest
 import re
-
 from unittest import mock
+
+import pytest
 from pydid import DIDDocument
 
 from ..base import BaseDIDResolver, DIDMethodNotSupported, ResolverType

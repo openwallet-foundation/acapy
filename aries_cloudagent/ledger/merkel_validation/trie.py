@@ -1,28 +1,20 @@
 """Validates State Proof."""
 
 import json
+from collections import OrderedDict
 
-from collections import (
-    OrderedDict,
-)
-from rlp import (
-    encode as rlp_encode,
-    decode as rlp_decode,
-    DecodingError,
-)
-from .utils import (
-    sha3_256,
-    NIBBLE_TERMINATOR,
-    unpack_to_nibbles,
-)
+from rlp import DecodingError
+from rlp import decode as rlp_decode
+from rlp import encode as rlp_encode
 
 from .constants import (
-    NODE_TYPE_BLANK,
-    NODE_TYPE_LEAF,
-    NODE_TYPE_EXTENSION,
-    NODE_TYPE_BRANCH,
     BLANK_NODE,
+    NODE_TYPE_BLANK,
+    NODE_TYPE_BRANCH,
+    NODE_TYPE_EXTENSION,
+    NODE_TYPE_LEAF,
 )
+from .utils import NIBBLE_TERMINATOR, sha3_256, unpack_to_nibbles
 
 
 class SubTrie:

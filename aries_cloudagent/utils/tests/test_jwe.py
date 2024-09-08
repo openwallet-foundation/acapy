@@ -1,8 +1,7 @@
 import json
-
 from unittest import TestCase
 
-from ..jwe import b64url, JweEnvelope, JweRecipient, from_b64url
+from ..jwe import JweEnvelope, JweRecipient, b64url, from_b64url
 
 IV = b"test nonce"
 TAG = b"test tag"

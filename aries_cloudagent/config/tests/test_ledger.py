@@ -1,13 +1,14 @@
-import pytest
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .. import argparse
+import pytest
+
+from aries_cloudagent.tests import mock
+
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.base import BaseWallet
-
+from .. import argparse
 from .. import ledger as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

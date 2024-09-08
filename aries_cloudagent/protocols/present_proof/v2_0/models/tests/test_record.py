@@ -1,14 +1,13 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-
 from ...message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL
 from ...messages.pres_format import V20PresFormat
 from ...messages.pres_proposal import V20PresProposal
-
 from .. import pres_exchange as test_module
 from ..pres_exchange import V20PresExRecord
 

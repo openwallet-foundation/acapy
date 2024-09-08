@@ -1,13 +1,8 @@
-from unittest import mock
-from unittest import TestCase
-
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, TestCase, mock
 
 from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import FORWARD_INVITATION, PROTOCOL_PACKAGE
-
 from ..forward_invitation import ForwardInvitation
 
 

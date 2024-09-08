@@ -1,9 +1,9 @@
 # pylint: disable=redefined-outer-name
 
-from functools import wraps
 import logging
 import os
 import time
+from functools import wraps
 
 import pytest
 import requests

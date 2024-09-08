@@ -1,13 +1,8 @@
-from unittest import mock
-from unittest import TestCase
-
+from unittest import TestCase, mock
 
 from ......messaging.models.base import BaseModelError
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import DISCLOSURES, PROTOCOL_PACKAGE
-
 from ..disclosures import Disclosures
 
 

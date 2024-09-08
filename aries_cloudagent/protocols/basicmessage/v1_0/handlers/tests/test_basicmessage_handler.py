@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from ......core.event_bus import EventBus, MockEventBus, Event
+from ......core.event_bus import Event, EventBus, MockEventBus
 from ......messaging.decorators.localization_decorator import LocalizationDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

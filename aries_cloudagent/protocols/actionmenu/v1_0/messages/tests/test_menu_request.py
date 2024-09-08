@@ -1,10 +1,7 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import MENU_REQUEST, PROTOCOL_PACKAGE
-
 from ..menu_request import MenuRequest
 
 

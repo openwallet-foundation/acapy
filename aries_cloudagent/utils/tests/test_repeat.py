@@ -1,5 +1,4 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .. import repeat as test_module
 

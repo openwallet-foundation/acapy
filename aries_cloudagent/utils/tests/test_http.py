@@ -4,7 +4,7 @@ import tempfile
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
 
-from ..http import fetch, fetch_stream, FetchError, put_file, PutError
+from ..http import FetchError, PutError, fetch, fetch_stream, put_file
 
 
 class TempFile:

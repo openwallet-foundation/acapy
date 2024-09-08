@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Iterable, Optional, Pattern, Sequence, Union, Text
+from typing import Iterable, Optional, Pattern, Sequence, Text, Union
 
 import aiohttp
 

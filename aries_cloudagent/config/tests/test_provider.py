@@ -1,19 +1,16 @@
 from tempfile import NamedTemporaryFile
+from unittest import IsolatedAsyncioTestCase, mock
 from weakref import ref
 
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
-
 from ...utils.stats import Collector
-
 from ..base import InjectionError
 from ..injection_context import InjectionContext
 from ..provider import (
     BaseProvider,
+    CachedProvider,
     ClassProvider,
     InstanceProvider,
     StatsProvider,
-    CachedProvider,
 )
 from ..settings import Settings
 

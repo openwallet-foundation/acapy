@@ -1,10 +1,10 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers import transaction_job_to_send_handler as test_module
 from ...messages.transaction_job_to_send import TransactionJobToSend
 

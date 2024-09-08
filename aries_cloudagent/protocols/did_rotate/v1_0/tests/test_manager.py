@@ -1,8 +1,6 @@
 from unittest import IsolatedAsyncioTestCase
 
-from .....connections.base_manager import (
-    BaseConnectionManager,
-)
+from .....connections.base_manager import BaseConnectionManager
 from .....core.in_memory.profile import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
@@ -12,9 +10,7 @@ from .....protocols.did_rotate.v1_0.manager import (
     UnrecordableKeysError,
 )
 from .....protocols.did_rotate.v1_0.messages.ack import RotateAck
-from .....protocols.did_rotate.v1_0.messages.problem_report import (
-    RotateProblemReport,
-)
+from .....protocols.did_rotate.v1_0.messages.problem_report import RotateProblemReport
 from .....protocols.did_rotate.v1_0.messages.rotate import Rotate
 from .....protocols.did_rotate.v1_0.models.rotate_record import RotateRecord
 from .....protocols.didcomm_prefix import DIDCommPrefix

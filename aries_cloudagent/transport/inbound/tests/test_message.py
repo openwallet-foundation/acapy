@@ -1,5 +1,4 @@
 import asyncio
-
 from unittest import IsolatedAsyncioTestCase
 
 from ..message import InboundMessage

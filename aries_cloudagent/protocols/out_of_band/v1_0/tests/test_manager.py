@@ -5,10 +5,10 @@ import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import List
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
 from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
@@ -24,10 +24,10 @@ from .....messaging.util import datetime_now, datetime_to_str, str_to_epoch
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
-from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.messages.credential_offer import (
     CredentialOffer as V10CredOffer,
@@ -49,7 +49,6 @@ from .....protocols.issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
 )
-
 from .....protocols.present_proof.v1_0.message_types import (
     ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT,
 )
@@ -57,7 +56,6 @@ from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from .....protocols.present_proof.v1_0.messages.presentation_request import (
     PresentationRequest,
 )
-
 from .....protocols.present_proof.v2_0.message_types import (
     ATTACHMENT_FORMAT as V20_PRES_ATTACH_FORMAT,
 )

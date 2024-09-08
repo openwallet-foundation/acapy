@@ -1,12 +1,10 @@
 """Test did resolver registry."""
 
+import re
 from typing import Pattern
 
-import re
-
 import pytest
-
-from pydid import DID, DIDDocument, VerificationMethod, BasicDIDDocument
+from pydid import DID, BasicDIDDocument, DIDDocument, VerificationMethod
 
 from ...core.in_memory import InMemoryProfile
 from ..base import (
@@ -18,7 +16,6 @@ from ..base import (
     ResolverType,
 )
 from ..did_resolver import DIDResolver
-
 from . import DOC
 
 TEST_DID0 = "did:sov:Kkyqu7CJFuQSvBp468uaDe"

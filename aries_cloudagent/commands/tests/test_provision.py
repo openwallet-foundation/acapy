@@ -1,12 +1,13 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError
-from .. import provision as test_module
 from ...protocols.coordinate_mediation.mediation_invite_store import (
     MediationInviteRecord,
 )
+from .. import provision as test_module
 
 
 class TestProvision(IsolatedAsyncioTestCase):

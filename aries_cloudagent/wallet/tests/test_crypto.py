@@ -1,14 +1,13 @@
-import pytest
 import json
+from unittest import TestCase, mock
 
-from unittest import mock
-from unittest import TestCase
+import pytest
 
-from ..key_type import BLS12381G1, ED25519
-from ..error import WalletError
 from ...utils.jwe import JweRecipient
-from ..util import str_to_b64
 from .. import crypto as test_module
+from ..error import WalletError
+from ..key_type import BLS12381G1, ED25519
+from ..util import str_to_b64
 
 SEED_B64 = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
 SEED = "00000000000000000000000000000000"

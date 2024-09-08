@@ -4,7 +4,6 @@ from unittest import TestCase
 from ...util import datetime_to_str
 from ..timing_decorator import TimingDecorator
 
-
 NOW = datetime.now()
 
 

@@ -1,7 +1,7 @@
 """Ed25519Signature2018 suite."""
 
 from datetime import datetime
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 from ....utils.multiformats import multibase
 from ..crypto import _KeyPair as KeyPair

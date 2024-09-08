@@ -3,14 +3,14 @@
 import re
 from typing import Dict, Union
 
-from aries_cloudagent.tests import mock
 import pytest
+
+from aries_cloudagent.tests import mock
 
 from ....config.settings import Settings
 from ....core.in_memory import InMemoryProfile
-
-from .. import universal as test_module
 from ...base import DIDNotFound, ResolverError
+from .. import universal as test_module
 from ..universal import UniversalResolver
 
 

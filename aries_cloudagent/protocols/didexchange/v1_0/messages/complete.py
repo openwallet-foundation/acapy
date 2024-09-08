@@ -1,9 +1,8 @@
 """Represents a DID exchange complete message under RFC 23."""
 
-from marshmallow import EXCLUDE, pre_dump, ValidationError
+from marshmallow import EXCLUDE, ValidationError, pre_dump
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import DIDX_COMPLETE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.complete_handler.DIDXCompleteHandler"

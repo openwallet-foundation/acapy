@@ -1,14 +1,12 @@
 from .issue import issue as issue_vc
-from .verify import verify_presentation, verify_credential
-from .prove import create_presentation, sign_presentation, derive_credential
+from .models import _CredentialSchema as CredentialSchema
+from .models import _LDProof as LDProof
+from .models import _LinkedDataProofSchema as LinkedDataProofSchema
+from .models import _VerifiableCredential as VerifiableCredential
+from .models import _VerifiableCredentialSchema as VerifiableCredentialSchema
+from .prove import create_presentation, derive_credential, sign_presentation
 from .validation_result import PresentationVerificationResult
-from .models import (
-    _VerifiableCredential as VerifiableCredential,
-    _LDProof as LDProof,
-    _LinkedDataProofSchema as LinkedDataProofSchema,
-    _VerifiableCredentialSchema as VerifiableCredentialSchema,
-    _CredentialSchema as CredentialSchema,
-)
+from .verify import verify_credential, verify_presentation
 
 __all__ = [
     "issue_vc",

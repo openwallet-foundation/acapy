@@ -1,25 +1,24 @@
 """Verifiable Credential and Presentation proving methods."""
 
 import asyncio
-from hashlib import sha256
 import re
+from hashlib import sha256
 from typing import Any, Optional, Tuple
+
+from anoncreds import (
+    AnoncredsError,
+    CredentialRevocationState,
+    RevocationStatusList,
+    W3cCredential,
+)
 
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.revocation.models.revocation_registry import RevocationRegistry
-from ..ld_proofs import (
-    ProofPurpose,
-    LinkedDataProofException,
-)
+
 from ...anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ...anoncreds.verifier import AnonCredsVerifier
 from ...core.profile import Profile
-from anoncreds import (
-    W3cCredential,
-    RevocationStatusList,
-    CredentialRevocationState,
-    AnoncredsError,
-)
+from ..ld_proofs import LinkedDataProofException, ProofPurpose
 
 
 async def create_signed_anoncreds_presentation(

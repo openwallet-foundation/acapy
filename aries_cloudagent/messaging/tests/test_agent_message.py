@@ -5,10 +5,9 @@ from marshmallow import EXCLUDE, fields
 from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.key_type import ED25519
-
 from ..agent_message import AgentMessage, AgentMessageSchema
 from ..decorators.signature_decorator import SignatureDecorator
-from ..decorators.trace_decorator import TraceReport, TRACE_LOG_TARGET
+from ..decorators.trace_decorator import TRACE_LOG_TARGET, TraceReport
 from ..models.base import BaseModelError
 
 

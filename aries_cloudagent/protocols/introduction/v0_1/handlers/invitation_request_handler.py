@@ -6,11 +6,9 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-
 from ....connections.v1_0.manager import ConnectionManager
-
-from ..messages.invitation_request import InvitationRequest as IntroInvitationRequest
 from ..messages.invitation import Invitation as IntroInvitation
+from ..messages.invitation_request import InvitationRequest as IntroInvitationRequest
 
 
 class InvitationRequestHandler(BaseHandler):

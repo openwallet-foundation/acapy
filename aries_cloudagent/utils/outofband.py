@@ -1,7 +1,6 @@
 """Utilities for creating out-of-band messages."""
 
 import json
-
 from urllib.parse import quote, urljoin
 
 from ..messaging.agent_message import AgentMessage

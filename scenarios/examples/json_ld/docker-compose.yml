@@ -1,0 +1,65 @@
+ services:
+  alice:
+    image: acapy-test
+    ports:
+      - "3001:3001"
+    command: >
+      start -it http 0.0.0.0 3000
+        --label Alice
+        -ot http
+        -e http://alice:3000
+        --admin 0.0.0.0 3001 --admin-insecure-mode
+        --log-level debug
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name alice
+        --wallet-key insecure
+        --auto-provision
+        --debug-webhooks
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+
+  bob:
+    image: acapy-test
+    ports:
+      - "3002:3001"
+    command: >
+      start -it http 0.0.0.0 3000
+        --label Bob
+        -ot http
+        -e http://bob:3000
+        --admin 0.0.0.0 3001 --admin-insecure-mode
+        --log-level debug
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name bob
+        --wallet-key insecure
+        --auto-provision
+        --debug-webhooks
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  example:
+    container_name: controller
+    build:
+      context: ../..
+    environment:
+      - ALICE=http://alice:3001
+      - BOB=http://bob:3001
+    volumes:
+      - ./example.py:/usr/src/app/example.py:ro,z
+    command: python -m example
+    depends_on:
+      alice:
+        condition: service_healthy
+      bob:
+        condition: service_healthy

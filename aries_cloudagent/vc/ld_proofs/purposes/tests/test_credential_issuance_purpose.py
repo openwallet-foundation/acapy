@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from unittest import IsolatedAsyncioTestCase, mock
 
+from ....tests.data import TEST_VC_DOCUMENT_SIGNED_ED25519
+from ....tests.document_loader import custom_document_loader
 from ...validation_result import PurposeResult
 from ..assertion_proof_purpose import AssertionProofPurpose
 from ..credential_issuance_purpose import CredentialIssuancePurpose
-from ....tests.data import TEST_VC_DOCUMENT_SIGNED_ED25519
-from ....tests.document_loader import custom_document_loader
 
 
 class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):

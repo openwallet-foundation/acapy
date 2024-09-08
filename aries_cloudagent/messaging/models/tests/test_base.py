@@ -1,7 +1,6 @@
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
-from marshmallow import EXCLUDE, INCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, INCLUDE, ValidationError, fields, validates_schema
 
 from ..base import BaseModel, BaseModelError, BaseModelSchema
 

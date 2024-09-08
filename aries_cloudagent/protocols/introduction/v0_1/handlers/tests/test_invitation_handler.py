@@ -1,4 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ......messaging.base_handler import HandlerException
@@ -7,9 +8,7 @@ from ......messaging.responder import MockResponder
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
-
 from ...messages.invitation import Invitation
-
 from .. import invitation_handler as test_module
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

@@ -4,8 +4,8 @@ repo_url: https://github.com/hyperledger/aries-cloudagent-python
 theme:
   name: material
   custom_dir: overrides
-  logo: https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png
-  favicon: https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/docs/assets/aries-favicon.png
+  logo: https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png
+  favicon: https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico
   icon:
     repo: fontawesome/brands/github
   palette:
@@ -144,8 +144,9 @@ nav:
     - The askar-anoncreds Wallet Type: deploying/AnonCredsWalletType.md
 - Testing/Troubleshooting:
     - Running and Creating Unit Tests: testing/UnitTests.md
+    - Integration Tests: testing/IntegrationTests.md
     - Managing Logging: testing/Logging.md
-    - ACA-Py Integration Tests: testing/INTEGRATION-TESTS.md
+    - ACA-Py Integration BDD Tests: testing/BDDTests.md
     - Protocol Tracing: testing/AgentTracing.md
     - Troubleshooting: testing/Troubleshooting.md
 - Contributing:
@@ -154,4 +155,5 @@ nav:
     - Hyperledger Code of Conduct: CODE_OF_CONDUCT.md
     - Security Vulnerability Reporting: SECURITY.md
     - Publishing an ACA-Py Release: PUBLISHING.md
+    - Managing the ACA-Py Documentation Site: Managing-ACA-Py-Doc-Site.md
     - Updating the ACA-Py ReadTheDocs Site: UpdateRTD.md

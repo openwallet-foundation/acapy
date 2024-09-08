@@ -2,7 +2,6 @@ from unittest import IsolatedAsyncioTestCase
 
 from ...config.base import InjectionError
 from ...config.injection_context import InjectionContext
-
 from ..error import ProfileSessionInactiveError
 from ..profile import Profile, ProfileManagerProvider, ProfileSession
 

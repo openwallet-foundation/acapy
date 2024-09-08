@@ -1,15 +1,14 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...messages.credential_request import CredentialRequest
 from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from ...models.credential_exchange import V10CredentialExchange
-
 from .. import credential_request_handler as test_module
 
 CD_ID = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"

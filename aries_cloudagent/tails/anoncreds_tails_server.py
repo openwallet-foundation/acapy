@@ -1,15 +1,12 @@
 """AnonCreds tails server interface class."""
 
 import logging
-
 from typing import Tuple
 
 from ..config.injection_context import InjectionContext
-from ..utils.http import put_file, PutError
-
+from ..utils.http import PutError, put_file
 from .base import BaseTailsServer
 from .error import TailsServerNotConfiguredError
-
 
 LOGGER = logging.getLogger(__name__)
 

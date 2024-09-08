@@ -1,6 +1,6 @@
 """Base class for OpenAPI artifact schema."""
 
-from marshmallow import Schema, EXCLUDE
+from marshmallow import EXCLUDE, Schema
 
 
 class OpenAPISchema(Schema):

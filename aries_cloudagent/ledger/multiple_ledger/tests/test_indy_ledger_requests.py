@@ -1,15 +1,14 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
-
 from ...base import BaseLedger
+from ...indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ...multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
-from ...indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
-
 from ..ledger_requests_executor import IndyLedgerRequestsExecutor
 
 

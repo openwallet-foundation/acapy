@@ -2,18 +2,16 @@
 
 import asyncio
 import logging
-
-from typing import Tuple, Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 from ....core.error import BaseError
+from ....core.goal_code_registry import GoalCodeRegistry
 from ....core.profile import Profile
 from ....core.protocol_registry import ProtocolRegistry
-from ....core.goal_code_registry import GoalCodeRegistry
-from ....storage.error import StorageNotFoundError
 from ....messaging.responder import BaseResponder
-
+from ....storage.error import StorageNotFoundError
 from .messages.disclosures import Disclosures
-from .messages.queries import QueryItem, Queries
+from .messages.queries import Queries, QueryItem
 from .models.discovery_record import V20DiscoveryExchangeRecord
 
 

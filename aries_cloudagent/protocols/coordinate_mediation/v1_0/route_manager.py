@@ -3,8 +3,8 @@
 Set up routing for newly formed connections.
 """
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import List, NamedTuple, Optional
 
 from ....connections.models.conn_record import ConnRecord
@@ -19,11 +19,7 @@ from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
-from .normalization import (
-    normalize_from_did_key,
-    normalize_to_did_key,
-)
-
+from .normalization import normalize_from_did_key, normalize_to_did_key
 
 LOGGER = logging.getLogger(__name__)
 

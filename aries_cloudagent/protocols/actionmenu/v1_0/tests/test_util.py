@@ -1,11 +1,10 @@
 from unittest import IsolatedAsyncioTestCase
 
-from .....core.event_bus import EventBus, MockEventBus
 from .....admin.request_context import AdminRequestContext
-
+from .....core.event_bus import EventBus, MockEventBus
 from .. import util as test_module
-from ..models.menu_form_param import MenuFormParam
 from ..models.menu_form import MenuForm
+from ..models.menu_form_param import MenuFormParam
 from ..models.menu_option import MenuOption
 
 

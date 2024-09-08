@@ -1,17 +1,15 @@
-import pytest
-
 from unittest import TestCase
 
-from ......messaging.models.base import BaseModelError
-from ......did.did_key import DIDKey
-from ......wallet.key_type import ED25519
+import pytest
 
+from ......did.did_key import DIDKey
+from ......messaging.models.base import BaseModelError
+from ......wallet.key_type import ED25519
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
-from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1, DIDEX_1_0
+from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
+from .....didexchange.v1_0.message_types import DIDEX_1_0
 from .....didexchange.v1_0.messages.request import DIDXRequest
-
-
 from .. import invitation as test_module
 from ..invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from ..service import Service

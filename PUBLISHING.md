@@ -15,85 +15,34 @@ Once ready to do a release, create a local branch that includes the following up
    file as necessary. On completion of the testing, run the script
    `./scripts/prepmkdocs.sh clean` to undo the temporary changes to the docs. Be
    sure to do the last `clean` step -- **DO NOT MERGE THE TEMPORARY DOC
-   CHANGES.**
+   CHANGES.** For more details see the [Managing the ACA-Py Documentation Site] document.
 
-3. Update the CHANGELOG.md to add the new release.  Only create a new section when working on the first release candidate for a new release. When transitioning from one release candidate to the next, or to an official release, just update the title and date of the change log section.
+3. Update the CHANGELOG.md to add the new release.  Only create a new section
+   when working on the first release candidate for a new release. When
+   transitioning from one release candidate to the next, or to an official
+   release, just update the title and date of the change log section.
 
-4. Include details of the merged PRs included in this release. General process to follow:
+4. Collect the details of the merged PRs included in this release -- a list of PR
+   title, number, link to PR, author's github ID, and a link to the author's
+   github account. Gathering that data can be painful. Here are is the current
+   easiest way to do this -- using [OpenAI ChatGPT]:
 
-- Gather the set of PRs since the last release and put them into a list. A good
-  tool to use for this is the
-  [github-changelog-generator](https://github.com/github-changelog-generator/github-changelog-generator).
-  Steps:
-  - Create a read only GitHub token for your account on this page:
-    [https://github.com/settings/tokens](https://github.com/settings/tokens/new?description=GitHub%20Changelog%20Generator%20token)
-    with a scope of `repo` / `public_repo`.
-  - Use a command like the following, adjusting the tag parameters as
-    appropriate. `docker run -it --rm -v "$(pwd)":/usr/local/src/your-app
-    githubchangeloggenerator/github-changelog-generator --user hyperledger
-    --project aries-cloudagent-python --output 0.11.0rc2.md --since-tag 0.10.4
-    --future-release 0.11.1rc2 --release-branch main --token <your-token>`
-  - In the generated file, use only the PR list -- we don't include the list of
-    closed issues in the Change Log.
-
-In some cases, the approach above fails because of too many API calls. An
-alternate approach to getting the list of PRs in the right format is to use [OpenAI ChatGPT].
-
-Prepare the following ChatGPT request. Don't hit enter yet--you have to add the data.
-
-`Generate from this the github pull request number, the github id of the author and the title of the pull request in a tab-delimited list`
-
-Get a list of the merged PRs since the last release by displaying the PR list in
-the GitHub UI, highlighting/copying the PRs and pasting them below the ChatGPT
-request, one page after another. Hit `<Enter>`, let the AI magic work, and you
-should have a list of the PRs in a nice table with a `Copy` link that you should click.
-
-Once you have that, open this [Google Sheet] and highlight the `A1` cell and
-paste in the ChatGPT data. A formula in column `E` will have the properly
-formatted changelog entries. Double check the list with the GitHub UI to make
-sure that ChatGPT isn't messing with you and you have the needed data.
+> Prepare the following ChatGPT request. Don't hit enter yet--you have to add the data.
+>
+> `Generate from this the github pull request number, the github id of the author and the title of the pull request in a tab-delimited list`
+>
+> Get a list of the merged PRs since the last release by displaying the PR list in
+> the GitHub UI, highlighting/copying the PRs and pasting them below the ChatGPT
+> request, one page after another. Hit `<Enter>`, let the AI magic work, and you
+> should have a list of the PRs in a nice table with a `Copy` link that you should click.
+> 
+> Once you have that, open this [Google Sheet] and highlight the `A1` cell and
+> paste in the ChatGPT data. A formula in column `E` will have the properly
+> formatted changelog entries. Double check the list with the GitHub UI to make
+> sure that ChatGPT isn't messing with you and you have the needed data.
 
 [OpenAI ChatGPT]: https://chat.openai.com
 [Google Sheet]: https://docs.google.com/spreadsheets/d/1gIjPirZ42g5eM-JBtVt8xN5Jm0PQuEv91a8woRAuDEg/edit?usp=sharing
-
-If using ChatGPT doesn't appeal to you, try this scary `sed`/command line approach:
-
-- Put the following commands into a file called `changelog.sed`
-
-``` bash
-/Approved/d
-/updated /d
-/^$/d
-/^ [0-9]/d
-s/was merged.*//
-/^@/d
-s# by \(.*\) # [\1](https://github.com/\1)#
-s/^ //
-s#  \#\([0-9]*\)# [\#\1](https://github.com/hyperledger/aries-cloudagent-python/pull/\1) #
-s/  / /g
-/^Version/d
-/tasks done/d
-s/^/- /
-```
-
-- Navigate in your browser to the paged list of PRs merged since the last
-  release (using in the GitHub UI a filter such as `is:pr is:merged sort:updated
-  merged:>2022-04-07`) and for each page, highlight, and copy the text
-  of only the list of PRs on the page to use in the following step.
-- For each page, run the command
-  `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF | sed -f changelog.sed`,
-  paste in the copied text and then type `EOF`.
-  Redirect the output to a file, appending each page of output to the file.
-  - The first `sed` command in the pipeline merges the PR title and PR number
-    plus author lines onto a single line. The commands in the `changelog.sed`
-    file just clean up the data, removing unwanted lines, etc.
-- At the end of that process, you should have a list of all of the PRs in a form you can
-  use in the CHANGELOG.md file.
-- To verify you have right number of PRs, you can do a `wc` of the file and there
-  should be one line per PR. You should scan the file as well, looking for
-  anomalies, such as missing `\`s before `#` characters. It's a pretty ugly process.
-  - Using a `curl` command and the GitHub API is probably a much better and more
-  robust way to do this, but this was quick and dirty...
 
 Once you have the list of PRs:
 
@@ -124,7 +73,7 @@ Once you have the list of PRs:
    to better follow the semver rules.
 
 8. Regenerate openapi.json and swagger.json by running
-   `../scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
+   `scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
 
    Command: `cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..`
 
@@ -142,7 +91,7 @@ Once you have the list of PRs:
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
 
-11. New images for the release are automatically published by the GitHubAction
+11.  New images for the release are automatically published by the GitHubAction
    Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
    when a release is tagged, so no manual action is needed. The images are
    published in the [Hyperledger Package Repository under
@@ -153,16 +102,29 @@ Once you have the list of PRs:
    Additional information about the container image publication process can be
    found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 
+   In addition, the published documentation site [https://aca-py.org] should be automatically updated to include the new release via the [publish-docs] GitHub Action.
+   Additional information about that process and some related maintainance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.
+
 [publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
 
-12. Update the ACA-Py Read The Docs site by building the new "latest" (main
-    branch) and activating and building the new release. Appropriate permissions
-    are required to publish the new documentation version.
+1.  When a new release is tagged, create a new branch at the same commit with
+    the branch name in the format `docs-v<version>`, for example, `docs-v1.0.0`.
+    The creation of the branch triggers the execution of the [publish-docs]
+    GitHub Action which generates the documentation for the new release,
+    publishing it at [https://aca-py.org]. The GitHub Action also executes when
+    the `main` branch is updated via a merge, publishing an update to the `main`
+    branch documentation. Additional information about that documentation
+    publishing process and some related maintenance activities that are needed
+    from time to time can be found in the [Managing the ACA-Py Documentation Site] document.
 
-13. Update the [https://aca-py.org] website with the latest documentation by
-    creating a PR and tag of the latest documentation from this site. Details
-    are provided in the [aries-acapy-docs] repository.
-
+[publish-docs]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-docs.yml
+[Managing the ACA-Py Documentation Site]: Managing-ACA-Py-Doc-Site.md
 [https://aca-py.org]: https://aca-py.org
-[aries-acapy-docs]: https://github.com/hyperledger/aries-acapy-docs
+
+13.  Update the [ACA-Py Read The Docs site] by logging into Read The Docs
+    administration site, building a new "latest" (main branch) and activating
+    and building the new release by version ID. Appropriate permissions are
+    required to publish the new documentation version.
+
+[ACA-Py Read The Docs site]: https://aries-cloud-agent-python.readthedocs.io/en/latest/

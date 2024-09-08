@@ -5,7 +5,6 @@ from pydid import DIDDocument
 
 from aries_cloudagent.tests import mock
 
-from .. import manager as test_module
 from .....admin.server import AdminResponder
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -24,7 +23,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import DIDMethods, PEER2, PEER4, SOV
+from .....wallet.did_method import PEER2, PEER4, SOV, DIDMethods
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -36,6 +35,7 @@ from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
+from .. import manager as test_module
 from ..manager import DIDXManager, DIDXManagerError
 from ..message_types import DIDEX_1_0, DIDEX_1_1
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason

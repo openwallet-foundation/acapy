@@ -1,8 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ..base import BaseProvider, BaseInjector, BaseSettings, InjectionError
+from ..base import BaseInjector, BaseProvider, BaseSettings, InjectionError
 from ..injector import Injector
-from ..provider import ClassProvider, CachedProvider
+from ..provider import CachedProvider, ClassProvider
 
 
 class MockProvider(BaseProvider):

@@ -1,7 +1,6 @@
-from configargparse import ArgumentTypeError
+from unittest import IsolatedAsyncioTestCase, mock
 
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
+from configargparse import ArgumentTypeError
 
 from .. import argparse
 from ..util import BoundedInt, ByteSize

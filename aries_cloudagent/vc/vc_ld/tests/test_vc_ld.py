@@ -1,40 +1,39 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest import mock
 from datetime import datetime
+from unittest import IsolatedAsyncioTestCase, mock
 
 import pytest
 
-from ....wallet.key_type import BLS12381G2, ED25519
+from ....core.in_memory import InMemoryProfile
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
-from ....core.in_memory import InMemoryProfile
+from ....wallet.key_type import BLS12381G2, ED25519
 from ...ld_proofs import (
+    BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
     WalletKeyPair,
-    BbsBlsSignature2020,
-)
-from ...vc_ld import (
-    issue_vc as issue,
-    verify_credential,
-    create_presentation,
-    sign_presentation,
-    verify_presentation,
-    derive_credential,
 )
 from ...ld_proofs.error import LinkedDataProofException
 from ...tests.document_loader import custom_document_loader
+from ...vc_ld import (
+    create_presentation,
+    derive_credential,
+    sign_presentation,
+    verify_credential,
+    verify_presentation,
+)
+from ...vc_ld import issue_vc as issue
 from .test_credential import (
-    CREDENTIAL_TEMPLATE,
     CREDENTIAL_ISSUED,
-    CREDENTIAL_VERIFIED,
-    CREDENTIAL_TEMPLATE_2020,
     CREDENTIAL_ISSUED_2020,
+    CREDENTIAL_ISSUED_BBS,
+    CREDENTIAL_TEMPLATE,
+    CREDENTIAL_TEMPLATE_2020,
+    CREDENTIAL_TEMPLATE_BBS,
+    CREDENTIAL_VERIFIED,
     CREDENTIAL_VERIFIED_2020,
     PRESENTATION_SIGNED,
     PRESENTATION_UNSIGNED,
-    CREDENTIAL_TEMPLATE_BBS,
-    CREDENTIAL_ISSUED_BBS,
 )
 
 

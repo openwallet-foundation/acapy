@@ -1,6 +1,6 @@
 """Functions for performing Key Agreement using ECDH-1PU."""
 
-from .derive_ecdh import derive_shared_secret, concat_kdf
+from .derive_ecdh import concat_kdf, derive_shared_secret
 
 
 def derive_1pu(ze, zs, alg, apu, apv, keydatalen):

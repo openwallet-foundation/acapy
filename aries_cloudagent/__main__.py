@@ -20,16 +20,16 @@ def init_debug(args):
 
     # --debug to use microsoft's visual studio remote debugger
     if ENABLE_PTVSD or "--debug" in args:
+        DAP_HOST = os.getenv("PTVSD_HOST", None) or os.getenv("DAP_HOST", "localhost")
+        DAP_PORT = os.getenv("PTVSD_PORT", None) or os.getenv("DAP_PORT", 5678)
         try:
-            import ptvsd
+            import debugpy
 
-            ptvsd.enable_attach()
-            print("ptvsd is running")
-            print("=== Waiting for debugger to attach ===")
-            # To pause execution until the debugger is attached:
-            ptvsd.wait_for_attach()
+            debugpy.listen((DAP_HOST, DAP_PORT))
+            print(f"=== Waiting for debugger to attach to {DAP_HOST}:{DAP_PORT} ===")
+            debugpy.wait_for_client()
         except ImportError:
-            print("ptvsd library was not found")
+            print("debugpy library was not found")
 
     if ENABLE_PYDEVD_PYCHARM or "--debug-pycharm" in args:
         try:

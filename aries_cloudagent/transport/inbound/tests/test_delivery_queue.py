@@ -2,7 +2,6 @@ from unittest import IsolatedAsyncioTestCase
 
 from ....connections.models.connection_target import ConnectionTarget
 from ....transport.outbound.message import OutboundMessage
-
 from ..delivery_queue import DeliveryQueue
 
 

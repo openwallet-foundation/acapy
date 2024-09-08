@@ -1,18 +1,17 @@
 """DID Key class and resolver methods."""
 
+from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
 from ..wallet.crypto import ed25519_pk_to_curve25519
 from ..wallet.key_type import (
-    BLS12381G1G2,
-    ED25519,
-    KeyType,
     BLS12381G1,
-    X25519,
+    BLS12381G1G2,
     BLS12381G2,
+    ED25519,
+    X25519,
+    KeyType,
     KeyTypes,
 )
 from ..wallet.util import b58_to_bytes, bytes_to_b58
-
-from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
 
 
 class DIDKey:

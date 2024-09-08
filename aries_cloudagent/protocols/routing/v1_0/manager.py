@@ -6,13 +6,8 @@ from typing import Sequence
 
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....storage.error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-)
-
+from ....storage.error import StorageDuplicateError, StorageNotFoundError
 from .models.route_record import RouteRecord
-
 
 LOGGER = logging.getLogger(__name__)
 

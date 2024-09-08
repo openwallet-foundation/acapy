@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from enum import Enum, auto
-from typing import Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Type
 
 if TYPE_CHECKING:
     from .base_handler import BaseHandler

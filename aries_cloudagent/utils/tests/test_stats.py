@@ -1,5 +1,4 @@
 from tempfile import NamedTemporaryFile
-
 from unittest import IsolatedAsyncioTestCase
 
 from ..stats import Collector

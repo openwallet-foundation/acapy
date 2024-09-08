@@ -2,7 +2,6 @@ from typing import Coroutine, Union
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
-
 from .messages.presentation_problem_report import (
     PresentationProblemReport,
     ProblemReportReason,

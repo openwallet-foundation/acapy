@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Optional, Union
 
 from ..crypto import _KeyPair as KeyPair
-
 from .jws_linked_data_signature import JwsLinkedDataSignature
 
 

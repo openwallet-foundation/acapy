@@ -4,11 +4,11 @@ from typing import Optional
 
 from aries_cloudagent.did.did_key import DIDKey
 from aries_cloudagent.wallet.did_method import (
-    DIDMethods,
-    DIDMethod,
-    HolderDefinedDid,
     KEY,
     SOV,
+    DIDMethod,
+    DIDMethods,
+    HolderDefinedDid,
 )
 from aries_cloudagent.wallet.error import WalletError
 from aries_cloudagent.wallet.key_type import KeyType

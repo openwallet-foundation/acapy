@@ -3,7 +3,6 @@ from unittest import IsolatedAsyncioTestCase
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import ProfileSession
 from ...utils.stats import Collector
-
 from .. import request_context as test_module
 
 

@@ -1,18 +1,16 @@
 import json
-import requests
-
 from unittest import IsolatedAsyncioTestCase
 
-from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
+import requests
+
+from ...messaging.decorators.trace_decorator import TRACE_MESSAGE_TARGET, TraceDecorator
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
+from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
+from ...protocols.trustping.v1_0.messages.ping import Ping
 from ...transport.inbound.message import InboundMessage
 from ...transport.outbound.message import OutboundMessage
-
-from ...messaging.decorators.trace_decorator import TraceDecorator, TRACE_MESSAGE_TARGET
-from ...protocols.trustping.v1_0.messages.ping import Ping
-
 from .. import tracing as test_module
 
 

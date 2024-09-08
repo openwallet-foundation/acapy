@@ -1,6 +1,9 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
 from typing import Mapping, Union
+
+from marshmallow import EXCLUDE, fields
+
 from .......messaging.models.base import BaseModel, BaseModelSchema
 from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -9,8 +12,6 @@ from .......messaging.valid import (
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
-
-from marshmallow import EXCLUDE, fields
 
 
 class AnoncredsLinkSecretRequest(BaseModel):

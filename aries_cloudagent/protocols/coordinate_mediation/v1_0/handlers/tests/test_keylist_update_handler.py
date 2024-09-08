@@ -1,19 +1,18 @@
 """Test handler for keylist-update message."""
 
-import pytest
 from unittest import IsolatedAsyncioTestCase
+
+import pytest
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.keylist_update import KeylistUpdate
 from ...messages.keylist_update_response import KeylistUpdateResponse
 from ...messages.problem_report import CMProblemReport
 from ...models.mediation_record import MediationRecord
-
 from ..keylist_update_handler import KeylistUpdateHandler
 
 TEST_CONN_ID = "conn-id"

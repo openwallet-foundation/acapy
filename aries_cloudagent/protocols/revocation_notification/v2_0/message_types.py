@@ -2,7 +2,6 @@
 
 from ...didcomm_prefix import DIDCommPrefix
 
-
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/blob/main/features/"
     "0721-revocation-notification-v2/README.md"

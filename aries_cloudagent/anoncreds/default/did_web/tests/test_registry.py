@@ -1,7 +1,9 @@
 """Test DIDWebRegistry."""
 
-import pytest
 import re
+
+import pytest
+
 from ..registry import DIDWebRegistry
 
 DID_WEB = re.compile(

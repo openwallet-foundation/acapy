@@ -1,36 +1,33 @@
+from datetime import datetime, timezone
 from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
-from datetime import datetime, timezone
-
-
-from ....wallet.key_type import BLS12381G2, ED25519
+from ....core.in_memory import InMemoryProfile
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
-from ....core.in_memory import InMemoryProfile
-
+from ....wallet.key_type import BLS12381G2, ED25519
 from ...ld_proofs import (
-    sign,
+    AssertionProofPurpose,
+    BbsBlsSignature2020,
+    BbsBlsSignatureProof2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
     WalletKeyPair,
-    AssertionProofPurpose,
-    verify,
-    BbsBlsSignature2020,
-    BbsBlsSignatureProof2020,
     derive,
+    sign,
+    verify,
 )
 from ...tests.document_loader import custom_document_loader
-
 from .test_doc import (
     DOC_DERIVED_BBS,
+    DOC_FRAME_BBS,
+    DOC_SIGNED,
+    DOC_SIGNED_2020,
     DOC_SIGNED_BBS,
     DOC_TEMPLATE,
     DOC_TEMPLATE_2020,
-    DOC_SIGNED,
-    DOC_SIGNED_2020,
     DOC_TEMPLATE_BBS,
-    DOC_FRAME_BBS,
     DOC_VERIFIED,
     DOC_VERIFIED_2020,
 )

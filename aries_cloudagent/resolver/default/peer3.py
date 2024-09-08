@@ -8,7 +8,8 @@ import logging
 import re
 from typing import Optional, Pattern, Sequence, Text
 
-from did_peer_2 import PATTERN as PEER2_PATTERN, PEER3_PATTERN, peer2to3, resolve_peer3
+from did_peer_2 import PATTERN as PEER2_PATTERN
+from did_peer_2 import PEER3_PATTERN, peer2to3, resolve_peer3
 
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event, EventBus
@@ -17,7 +18,6 @@ from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
-
 
 LOGGER = logging.getLogger(__name__)
 

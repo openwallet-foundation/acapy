@@ -3,9 +3,7 @@ from typing import Callable
 import pytest
 
 from ....messaging.models.base import BaseModelError
-
 from ..vc_record import VCRecord
-
 
 sample_json_cred_1 = """
     {

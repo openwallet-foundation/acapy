@@ -1,8 +1,7 @@
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.resolver.base import BaseDIDResolver
-from aries_cloudagent.tests.mock import MagicMock, AsyncMock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.askar.profile import AskarProfile, AskarProfileSession
+from aries_cloudagent.config.injection_context import InjectionContext
 from aries_cloudagent.core.event_bus import EventBus
 from aries_cloudagent.core.in_memory.profile import InMemoryProfile
 from aries_cloudagent.core.profile import Profile
@@ -10,12 +9,12 @@ from aries_cloudagent.core.protocol_registry import ProtocolRegistry
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.route_manager import (
     RouteManager,
 )
-
+from aries_cloudagent.resolver.base import BaseDIDResolver
+from aries_cloudagent.resolver.did_resolver import DIDResolver
+from aries_cloudagent.tests.mock import AsyncMock, MagicMock
 from aries_cloudagent.utils.stats import Collector
 
 from ..adapters import ResolverAdapter, SecretsAdapter, SecretsAdapterError
-from aries_cloudagent.resolver.did_resolver import DIDResolver
-from aries_cloudagent.askar.profile import AskarProfileSession, AskarProfile
 
 
 def make_profile() -> Profile:

@@ -1,17 +1,16 @@
 """Test PeerDIDResolver."""
 
 import pytest
-from aries_cloudagent.connections.models.conn_record import ConnRecord
-
-from aries_cloudagent.core.event_bus import EventBus
-
-from .. import peer3 as test_module
-from ....core.in_memory import InMemoryProfile
-from ....core.profile import Profile
-from ..peer2 import PeerDID2Resolver
-from ..peer3 import PeerDID3Resolver
 from did_peer_2 import peer2to3
 
+from aries_cloudagent.connections.models.conn_record import ConnRecord
+from aries_cloudagent.core.event_bus import EventBus
+
+from ....core.in_memory import InMemoryProfile
+from ....core.profile import Profile
+from .. import peer3 as test_module
+from ..peer2 import PeerDID2Resolver
+from ..peer3 import PeerDID3Resolver
 
 TEST_DP2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
 

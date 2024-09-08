@@ -9,21 +9,15 @@ except ImportError as err:
     raise ImportError("Install the didcommv2 extra to use this module.") from err
 
 import json
-
 from typing import Sequence, Tuple, Union
 
 from ..core.profile import ProfileSession
-
-
-from ..messaging.util import time_now
 from ..messaging.base_message import DIDCommVersion
+from ..messaging.util import time_now
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletNotFoundError
-
-
 from .error import WireFormatParseError
 from .inbound.receipt import MessageReceipt
-
 from .wire_format import BaseWireFormat
 
 LOGGER = logging.getLogger(__name__)

@@ -118,7 +118,7 @@ def fileConfig(
         except configparser.ParsingError as e:
             raise RuntimeError(f"{fname} is invalid: {e}")
 
-    if new_file_path:
+    if new_file_path and cp.has_section("handler_timed_file_handler"):
         cp.set(
             "handler_timed_file_handler",
             "args",

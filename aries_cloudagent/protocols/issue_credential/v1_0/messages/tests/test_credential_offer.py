@@ -1,10 +1,7 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from ..credential_offer import CredentialOffer
 from ..inner.credential_preview import CredAttrSpec, CredentialPreview

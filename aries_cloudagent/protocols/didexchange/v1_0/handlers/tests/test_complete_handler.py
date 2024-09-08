@@ -1,16 +1,15 @@
 import pytest
+
 from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
+from ......wallet.did_method import DIDMethods
 from ...manager import DIDXManagerError
 from ...messages.complete import DIDXComplete
 from ...messages.problem_report import ProblemReportReason
-
 from .. import complete_handler as test_module
-from ......wallet.did_method import DIDMethods
 
 
 @pytest.fixture()

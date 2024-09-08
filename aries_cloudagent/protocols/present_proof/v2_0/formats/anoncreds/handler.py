@@ -2,32 +2,29 @@
 
 import json
 import logging
-
-from marshmallow import RAISE
 from typing import Mapping, Tuple
 
+from marshmallow import RAISE
+
 from ......anoncreds.holder import AnonCredsHolder
+from ......anoncreds.util import generate_pr_nonce
+from ......anoncreds.verifier import AnonCredsVerifier
 from ......indy.models.predicate import Predicate
 from ......indy.models.proof import IndyProofSchema
 from ......indy.models.proof_request import IndyProofRequestSchema
 from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
-from ......anoncreds.util import generate_pr_nonce
-from ......anoncreds.verifier import AnonCredsVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
-
 from ....anoncreds.pres_exch_handler import AnonCredsPresExchHandler
-
 from ...message_types import (
     ATTACHMENT_FORMAT,
-    PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
 )
 from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord
-
 from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
 
 LOGGER = logging.getLogger(__name__)

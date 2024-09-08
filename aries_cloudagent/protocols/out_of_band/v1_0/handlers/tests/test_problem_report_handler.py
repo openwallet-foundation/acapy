@@ -9,7 +9,6 @@ from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers import problem_report_handler as test_module
 from ...manager import OutOfBandManagerError
 from ...messages.problem_report import OOBProblemReport, ProblemReportReason

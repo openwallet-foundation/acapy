@@ -1,13 +1,10 @@
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from .....didcomm_prefix import DIDCommPrefix
-
+from ...message_types import MENU, PROTOCOL_PACKAGE
 from ...models.menu_form import MenuForm
 from ...models.menu_form_param import MenuFormParam
 from ...models.menu_option import MenuOption
-from ...message_types import MENU, PROTOCOL_PACKAGE
-
 from ..menu import Menu
 
 

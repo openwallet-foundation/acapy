@@ -1,0 +1,41 @@
+name: BDD Integration Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    outputs:
+      is_release: ${{ steps.check_if_release.outputs.is_release }}
+    steps:
+      - name: checkout-acapy
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check if PR is a release
+        uses: ./.github/actions/is-release
+        id: check_if_release
+      - name: Run PR or Nightly Integration Tests
+        uses: ./.github/actions/run-integration-tests
+        if: (steps.check_if_release.outputs.is_release != 'true')
+      - name: Run Release Integration Tests
+        if: (steps.check_if_release.outputs.is_release == 'true')
+        uses: ./.github/actions/run-integration-tests
+        with:
+          TEST_SCOPE: "-t @Release -t ~@BBS"

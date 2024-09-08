@@ -3,7 +3,6 @@
 from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
 from ..messages.problem_report import CMProblemReport
 
 

@@ -14,7 +14,6 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 from ....messaging.valid import IndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
-
 from ...base import DIDNotFound, ResolverError
 from ..indy import IndyDIDResolver, _routing_keys_as_did_key_urls
 

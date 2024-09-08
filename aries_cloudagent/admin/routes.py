@@ -4,10 +4,7 @@ import asyncio
 import re
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    response_schema,
-)
+from aiohttp_apispec import docs, response_schema
 from marshmallow import fields
 
 from ..core.plugin_registry import PluginRegistry
