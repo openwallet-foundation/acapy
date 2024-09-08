@@ -11,7 +11,7 @@ from .web_requests import (
     DIDKeyRegistrationRequest,
     DIDKeyRegistrationResponse,
 )
-from . import DidOperationError, DidKeyManager
+from . import DIDKey, DidOperationError
 
 KEY_MAPPINGS = {"ed25519": ED25519}
 
@@ -31,7 +31,7 @@ async def register_did_key(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     try:
         key_type = body["key_type"]
-        did_doc = await DidKeyManager(context.profile).register(KEY_MAPPINGS[key_type])
+        did_doc = await DIDKey().register(KEY_MAPPINGS[key_type], context.profile)
         return web.json_response({"didDocument": did_doc}, status=201)
     except (KeyError, ValidationError, DidOperationError) as err:
         return web.json_response({"message": str(err)}, status=400)

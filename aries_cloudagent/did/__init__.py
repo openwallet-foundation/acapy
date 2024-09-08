@@ -1,4 +1,4 @@
-from .key.manager import DidKeyManager
+from .did_key import DIDKey
 
 
 class DidOperationError(Exception):
@@ -6,6 +6,6 @@ class DidOperationError(Exception):
 
 
 __all__ = [
-    "DidKeyManager",
+    "DIDKey",
     "DidOperationError",
 ]

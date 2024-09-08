@@ -1,6 +1,9 @@
 """DID Key class and resolver methods."""
 
 from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
+from ..core.profile import Profile
+from ..wallet.did_method import KEY
+from ..wallet.base import BaseWallet
 from ..wallet.crypto import ed25519_pk_to_curve25519
 from ..wallet.key_type import (
     BLS12381G1,
@@ -20,10 +23,30 @@ class DIDKey:
     _key_type: KeyType
     _public_key: bytes
 
-    def __init__(self, public_key: bytes, key_type: KeyType) -> None:
+    def __init__(self, public_key: bytes = None, key_type: KeyType = None) -> None:
         """Initialize new DIDKey instance."""
         self._public_key = public_key
         self._key_type = key_type
+
+    @classmethod
+    async def register(self, key_type: KeyType, profile: Profile):
+        """Register a new key DID.
+
+        Args:
+            key_type: The key type to use for the DID
+            profile: The profile to use for storing the DID keypair
+
+        Returns:
+            A string representing the created DID
+
+        Raises:
+            DidOperationError: If the an error occures during did registration
+
+        """
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            info = await wallet.create_local_did(method=KEY, key_type=key_type)
+        return info.did
 
     @classmethod
     def from_public_key(cls, public_key: bytes, key_type: KeyType) -> "DIDKey":
