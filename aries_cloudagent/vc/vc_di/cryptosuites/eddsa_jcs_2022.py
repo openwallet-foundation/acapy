@@ -14,7 +14,8 @@ class EddsaJcs2022:
     """EddsaJcs2022 suite."""
 
     def __init__(self, *, profile: Profile):
-        """Create new EddsaJcs2022 instance.
+        """Create new EddsaJcs2022 Cryptosuite instance.
+        https://www.w3.org/TR/vc-di-eddsa/#eddsa-rdfc-2022
 
         Args:
             profile: Key profile to use.
@@ -23,7 +24,10 @@ class EddsaJcs2022:
         self.profile = profile
 
     async def _serialization(self, hash_data, options):
-        # https://www.w3.org/TR/vc-di-eddsa/#proof-serialization-eddsa-jcs-2022
+        """
+        Data Integrity Proof Serialization Algorithm
+        https://www.w3.org/TR/vc-di-eddsa/#proof-serialization-eddsa-jcs-2022
+        """
         async with self.profile.session() as session:
             did_info = await session.inject(BaseWallet).get_local_did(
                 options["verificationMethod"].split("#")[0]
@@ -37,15 +41,16 @@ class EddsaJcs2022:
         return proof_bytes
 
     async def add_proof(self, document, proof_options):
-        # https://www.w3.org/TR/vc-data-integrity/#add-proof
-        """Verify the data against the proof.
+        """
+        Data Integrity Add Proof Algorithm
+        https://www.w3.org/TR/vc-data-integrity/#add-proof
 
         Args:
             document: The data to sign.
             proof_options: The proof options.
 
         Returns:
-            verification_response: Whether the signature is valid for the data
+            secured_document: The document with a new proof attached
 
         """
 
@@ -79,8 +84,9 @@ class EddsaJcs2022:
             raise DataIntegrityProofException()
 
     async def verify_proof(self, unsecured_document, proof):
-        # https://www.w3.org/TR/vc-data-integrity/#verify-proof
-        """Verify the data against the proof.
+        """
+        Data Integrity Verify Proof Algorithm
+        https://www.w3.org/TR/vc-data-integrity/#verify-proof
 
         Args:
             unsecured_document: The data to check.
