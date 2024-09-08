@@ -90,7 +90,7 @@ variants and between the BC Gov ACA-Py images.
 - Publish (`.github/workflows/publish.yml`) - Run on new release published or
   when manually triggered; builds and pushes the Standard ACA-Py variant to the
   Github Container Registry.
-- Integration Tests (`.github/workflows/integrationtests.yml`) - Run on pull
+- BDD Integration Tests (`.github/workflows/BDDTests.yml`) - Run on pull
   requests (to the hyperledger fork only); runs BDD integration tests.
 - Format (`.github/workflows/format.yml`) - Run on pull requests;
   checks formatting of files modified by the PR.

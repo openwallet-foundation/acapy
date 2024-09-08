@@ -1,0 +1,66 @@
+name: BDD Interop Integration Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    outputs:
+      is_release: ${{ steps.check_if_release.outputs.is_release }}
+    steps:
+      - name: checkout-acapy
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check if PR is a release
+        uses: ./.github/actions/is-release
+        id: check_if_release
+      - name: Request GitHub API for PR data
+        uses: octokit/request-action@v2.x
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: get_pr_data
+        with:
+          route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ github.event.number }}
+      - name: Prepare Interop Tests
+        run: |
+          # Get AATH 
+          git clone https://github.com/hyperledger/aries-agent-test-harness.git
+
+          # Change fork and branch for pull requests
+          if [ ${{ github.event_name }} == 'pull_request' ]; then
+            echo ${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}
+            echo ${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
+            sed -i 's|@git+https://github.com/hyperledger/aries-cloudagent-python@main|@git+${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}@${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}|g' ./aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
+          fi
+          cat aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
+
+          cd aries-agent-test-harness
+          ./manage build -a acapy-main
+      - name: Run PR Interop Tests
+        if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request')
+        run: |
+          cd aries-agent-test-harness
+          NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound
+      - name: Run Release or Nightly Interop Tests
+        if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: |
+          cd aries-agent-test-harness
+          NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @AcceptanceTest -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound
+

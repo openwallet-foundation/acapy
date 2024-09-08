@@ -201,7 +201,7 @@ class V20CredExRecord(BaseExchangeRecord):
         # serialize payload before checking for webhook contents
         if not payload:
             payload = self.serialize()
-        else:
+        if not session.profile.settings.get("debug.webhooks"):
             payload = V20CredExRecordWebhook(**payload)
             payload = payload.__dict__
 
