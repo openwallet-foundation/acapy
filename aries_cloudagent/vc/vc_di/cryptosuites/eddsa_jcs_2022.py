@@ -15,18 +15,21 @@ class EddsaJcs2022:
 
     def __init__(self, *, profile: Profile):
         """Create new EddsaJcs2022 Cryptosuite instance.
+
         https://www.w3.org/TR/vc-di-eddsa/#eddsa-rdfc-2022
 
         Args:
             profile: Key profile to use.
+
         """
         super().__init__()
         self.profile = profile
 
     async def _serialization(self, hash_data, options):
-        """
-        Data Integrity Proof Serialization Algorithm
+        """Data Integrity Proof Serialization Algorithm.
+
         https://www.w3.org/TR/vc-di-eddsa/#proof-serialization-eddsa-jcs-2022
+
         """
         async with self.profile.session() as session:
             did_info = await session.inject(BaseWallet).get_local_did(
@@ -41,8 +44,8 @@ class EddsaJcs2022:
         return proof_bytes
 
     async def add_proof(self, document, proof_options):
-        """
-        Data Integrity Add Proof Algorithm
+        """Data Integrity Add Proof Algorithm.
+
         https://www.w3.org/TR/vc-data-integrity/#add-proof
 
         Args:
@@ -84,8 +87,8 @@ class EddsaJcs2022:
             raise DataIntegrityProofException()
 
     async def verify_proof(self, unsecured_document, proof):
-        """
-        Data Integrity Verify Proof Algorithm
+        """Data Integrity Verify Proof Algorithm.
+
         https://www.w3.org/TR/vc-data-integrity/#verify-proof
 
         Args:

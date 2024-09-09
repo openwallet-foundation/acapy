@@ -381,8 +381,9 @@ class DISignRequestSchema(OpenAPISchema):
                 "type": "DataIntegrityProof",
                 "cryptosuite": "eddsa-jcs-2022",
                 "proofPurpose": "assertionMethod",
-                "verificationMethod": "did:key:z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviL\
-                    M32tvQ#z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ",
+                "verificationMethod": "did:key:\
+                    z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ#\
+                        z6MktCbksa2qXGqxPNRWni9d7AcaXJKfX48bVXTviLM32tvQ",
             }
         },
     )
@@ -410,10 +411,11 @@ class DIVerifyRequestSchema(OpenAPISchema):
                         "cryptosuite": "eddsa-jcs-2022",
                         "proofPurpose": "assertionMethod",
                         "type": "DataIntegrityProof",
-                        "verificationMethod": "did:key:z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7\
-                        jm8MscbDmy8#z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8",
-                        "proofValue": "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhufjPjbeRmys\
-                        HvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E",
+                        "verificationMethod": "did:key:\
+                            z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8#\
+                                z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8",
+                        "proofValue": "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhu\
+                            fjPjbeRmysHvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E",
                     }
                 ],
             }
