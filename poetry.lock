@@ -2611,13 +2611,13 @@ files = [
 
 [[package]]
 name = "unflatten"
-version = "0.1.1"
+version = "0.2.0"
 description = "Unflatten dict to dict with nested dict/arrays"
 optional = false
 python-versions = "*"
 files = [
-    {file = "unflatten-0.1.1-py2.py3-none-any.whl", hash = "sha256:42de0eae963f34cbb8d80a35cdab962f723b879a3e93c603fac9ca6062e96de3"},
-    {file = "unflatten-0.1.1.tar.gz", hash = "sha256:5d695d6b0a70ff7aca5d63474b79cd397ed5f7d87de0e990aaf0b04db77784a5"},
+    {file = "unflatten-0.2.0-py2.py3-none-any.whl", hash = "sha256:a0afa7ff22313dcc60ff45110b796ed5b4e908614826e8672a9f76d3a20c1f54"},
+    {file = "unflatten-0.2.0.tar.gz", hash = "sha256:9710bc558882f697bc36a95a97614be296f07c8f8df1bc2b4ef96c189ce5cf84"},
 ]
 
 [[package]]
@@ -2898,4 +2898,4 @@ didcommv2 = ["didcomm-messaging"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "036c571c808952dc6bd3b31a40358d127594b3cf14fe19afb62e5564b4d8b63c"
+content-hash = "d59d92949e412ba574e2b5cbe5f0b193365f76cc2081bb31a2bb7e248759f489"
