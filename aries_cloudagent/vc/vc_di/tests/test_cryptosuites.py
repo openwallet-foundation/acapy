@@ -14,7 +14,7 @@ class TestDIProof:
     """Tests for DI sign and verify."""
 
     @pytest.mark.asyncio
-    async def test_eddsa_jcs_2022(self, profile: Profile, in_memory_wallet):
+    async def test_eddsa_jcs_2022(self, in_memory_wallet):
         did_info = await in_memory_wallet.create_local_did(KEY, ED25519, SEED)
         did = did_info.did
         verification_method = f"{did}#{did.split(':')[-1]}"
@@ -25,7 +25,7 @@ class TestDIProof:
             "proofPurpose": "assertionMethod",
             "verificationMethod": verification_method,
         }
-        suite = CRYPTOSUITES[options["cryptosuite"]](profile=profile)
+        suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
         secured_document = suite.add_proof(unsecured_document, options)
         assert isinstance(secured_document["proof"], list)
         for proof in secured_document["proof"]:
