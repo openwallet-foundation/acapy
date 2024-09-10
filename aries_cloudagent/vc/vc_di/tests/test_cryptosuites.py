@@ -2,6 +2,7 @@
 
 import pytest
 from ..cryptosuites import CRYPTOSUITES
+from ....core.profile import Profile
 from ....wallet.did_method import KEY
 from ....wallet.key_type import ED25519
 
@@ -13,7 +14,7 @@ class TestDIProof:
     """Tests for DI sign and verify."""
 
     @pytest.mark.asyncio
-    async def test_eddsa_jcs_2022(self, profile, in_memory_wallet):
+    async def test_eddsa_jcs_2022(self, profile: Profile, in_memory_wallet):
         did_info = await in_memory_wallet.create_local_did(KEY, ED25519, SEED)
         did = did_info.did
         verification_method = f"{did}#{did.split(':')[-1]}"
