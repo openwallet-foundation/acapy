@@ -26,14 +26,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check changed files
+        id: check-changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files_yaml: |
+            scenarios: "scenarios/**/*"
+            src: "aries_cloudagent/**/*"
+      - name: Check if scenarios or src files changed
+        id: check-if-scenarios-or-src-changed
+        run: |
+          if [ "${{ steps.check-changed-files.outputs.scenarios_any_changed }}" != "true" ] && [ "${{ steps.check-changed-files.outputs.src_any_changed }}" != "true" ] && [ '${{ github.event_name }}' == 'pull_request' ]; then
+            echo "No scenarios or src files changed..."
+            echo run_tests=false >> $GITHUB_OUTPUT
+          fi
       - name: Install poetry
+        if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         run: pipx install poetry
         id: setup-poetry
       - uses: actions/setup-python@v5
+        if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         with:
           python-version: "3.12"
           cache: "poetry"
       - name: Run Scenario Tests
+        if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         run: |
           # Build the docker image for testing
           docker build -t acapy-test -f docker/Dockerfile.run .

@@ -28,14 +28,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check changed files
+        id: check-changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files_yaml: |
+            src: "aries_cloudagent/**/*"
+            demo: "demo/**/*"
+      - name: Check if demo or src files changed
+        id: check-if-demo-or-src-changed
+        run: |
+          if [ "${{ steps.check-changed-files.outputs.demo_any_changed }}" != "true" ] && [ "${{ steps.check-changed-files.outputs.src_any_changed }}" != "true" ] && [ '${{ github.event_name }}' == 'pull_request' ]; then
+            echo "No demo or src files changed..."
+            echo run_tests=false >> $GITHUB_OUTPUT
+          fi
       - name: Check if PR is a release
+        if: steps.check-if-demo-or-src-changed.outputs.run_tests != 'false'
         uses: ./.github/actions/is-release
         id: check_if_release
       - name: Run PR or Nightly Integration Tests
+        if: (steps.check_if_release.outputs.is_release != 'true' && steps.check-if-demo-or-src-changed.outputs.run_tests != 'false')
         uses: ./.github/actions/run-integration-tests
-        if: (steps.check_if_release.outputs.is_release != 'true')
       - name: Run Release Integration Tests
-        if: (steps.check_if_release.outputs.is_release == 'true')
+        if: (steps.check_if_release.outputs.is_release == 'true' && steps.check-if-demo-or-src-changed.outputs.run_tests != 'false')
         uses: ./.github/actions/run-integration-tests
         with:
           TEST_SCOPE: "-t @Release -t ~@BBS"
