@@ -32,7 +32,9 @@ jobs:
         with:
           files_yaml: |
             scenarios: "scenarios/**/*"
-            src: "aries_cloudagent/**/*"
+            src: 
+              - aries_cloudagent/**/*
+              - poetry.lock 
       - name: Check if scenarios or src files changed
         id: check-if-scenarios-or-src-changed
         run: |

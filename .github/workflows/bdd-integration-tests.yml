@@ -33,7 +33,9 @@ jobs:
         uses: tj-actions/changed-files@v45
         with:
           files_yaml: |
-            src: "aries_cloudagent/**/*"
+            src: 
+              - aries_cloudagent/**/*
+              - poetry.lock
             demo: "demo/**/*"
       - name: Check if demo or src files changed
         id: check-if-demo-or-src-changed
