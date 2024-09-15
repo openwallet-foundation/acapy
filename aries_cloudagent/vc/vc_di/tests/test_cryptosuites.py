@@ -9,9 +9,10 @@ from ....wallet.did_method import KEY, DIDMethods
 
 TEST_SEED = "00000000000000000000000000000000"
 
+
 class TestEddsaJcs2022(IsolatedAsyncioTestCase):
     """Tests for DI sign and verify."""
-    
+
     unsecured_document = {"hello": "world"}
     options = {
         "type": "DataIntegrityProof",
@@ -19,16 +20,12 @@ class TestEddsaJcs2022(IsolatedAsyncioTestCase):
         "proofPurpose": "assertionMethod",
         "verificationMethod": "did:key:z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i#z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
     }
-    
+
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile({},{DIDMethods: DIDMethods()})
+        self.profile = InMemoryProfile.test_profile({}, {DIDMethods: DIDMethods()})
         self.wallet = InMemoryWallet(self.profile)
-        await self.wallet.create_local_did(
-            method=KEY, key_type=ED25519, seed=TEST_SEED
-        )
-        self.cryptosuite = CRYPTOSUITES[self.options["cryptosuite"]](
-            profile=self.profile
-        )
+        await self.wallet.create_local_did(method=KEY, key_type=ED25519, seed=TEST_SEED)
+        self.cryptosuite = CRYPTOSUITES[self.options["cryptosuite"]](profile=self.profile)
 
     async def test_add_proof(self):
         secured_document = await self.cryptosuite.add_proof(
