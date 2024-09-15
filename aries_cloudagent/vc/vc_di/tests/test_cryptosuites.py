@@ -8,88 +8,65 @@ from ....core.in_memory import InMemoryProfile
 from ....did.did_key import DIDKey
 
 
-class TestDIProof:
+class TestEddsaJcs2022:
     """Tests for DI sign and verify."""
 
-    test_seed = "testseed000000000000000000000001"
+    test_seed = "00000000000000000000000000000000"
     unsecured_document = {"hello": "world"}
+    options = {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:key:z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i#z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
+    }
 
     async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
-        self.wallet = InMemoryWallet(self.profile)
-        self.eddsa_key_info = await self.wallet.create_signing_key(
+        self.cryptosuite = CRYPTOSUITES[self.options["cryptosuite"]](
+            profile=self.profile
+        )
+        await InMemoryWallet(self.profile).create_signing_key(
             key_type=ED25519, seed=self.test_seed
         )
-        self.eddsa_verification_method = DIDKey.from_public_key_b58(
-            self.eddsa_key_info.verkey, ED25519
-        ).key_id
 
-    async def test_eddsa_jcs_2022_add_proof(self):
-        options = {
-            "type": "DataIntegrityProof",
-            "cryptosuite": "eddsa-jcs-2022",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": self.eddsa_verification_method,
-        }
-        suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(self.unsecured_document, options)
+    async def test_add_proof(self):
+        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
         proof = secured_document.pop("proof", None)
         assert isinstance(proof, list)
         assert len(proof) == 1
-        assert proof["type"] == "DataIntegrityProof"
-        assert proof["cryptosuite"] == "eddsa-jcs-2022"
-        assert proof["proofPurpose"] == "assertionMethod"
+        assert proof["type"] == self.options["type"]
+        assert proof["cryptosuite"] == self.options["cryptosuite"]
+        assert proof["proofPurpose"] == self.options["proofPurpose"]
+        assert proof["verificationMethod"] == self.options["verificationMethod"]
         assert proof["proofValue"]
-        assert proof["verificationMethod"] == self.eddsa_verification_method
 
-    async def test_eddsa_jcs_2022_proof_set(self):
-        options = {
-            "type": "DataIntegrityProof",
-            "cryptosuite": "eddsa-jcs-2022",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": self.eddsa_verification_method,
-        }
-        suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(self.unsecured_document, options)
-        secured_document = suite.add_proof(secured_document, options)
+    async def test_proof_set(self):
+        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
+        secured_document = self.cryptosuite.add_proof(secured_document, self.options)
         proof_set = proof_set.pop("proof", None)
         assert isinstance(proof_set, list)
         assert len(proof_set) == 2
         for proof in proof_set:
-            assert proof["type"] == "DataIntegrityProof"
-            assert proof["cryptosuite"] == "eddsa-jcs-2022"
-            assert proof["proofPurpose"] == "assertionMethod"
+            assert proof["type"] == self.options["type"]
+            assert proof["cryptosuite"] == self.options["cryptosuite"]
+            assert proof["proofPurpose"] == self.options["proofPurpose"]
+            assert proof["verificationMethod"] == self.options["verificationMethod"]
             assert proof["proofValue"]
-            assert proof["verificationMethod"] == self.eddsa_verification_method
 
     async def test_eddsa_jcs_2022_verify_proof(self):
-        options = {
-            "type": "DataIntegrityProof",
-            "cryptosuite": "eddsa-jcs-2022",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": self.eddsa_verification_method,
-        }
-        suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(self.unsecured_document, options)
+        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
         proof = secured_document.pop("proof", None)
-        assert await suite.verify_proof(secured_document, proof)
+        assert await self.cryptosuite.verify_proof(secured_document, proof)
         bad_proof = proof.copy()
         bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
-        assert not await suite.verify_proof(secured_document, proof)
+        assert not await self.cryptosuite.verify_proof(secured_document, proof)
 
     async def test_eddsa_jcs_2022_verify_proof_set(self):
-        options = {
-            "type": "DataIntegrityProof",
-            "cryptosuite": "eddsa-jcs-2022",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": self.eddsa_verification_method,
-        }
-        suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(self.unsecured_document, options)
-        secured_document = suite.add_proof(secured_document, options)
+        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
+        secured_document = self.cryptosuite.add_proof(secured_document, self.options)
         proof_set = secured_document.pop("proof", None)
         for proof in proof_set:
-            assert await suite.verify_proof(secured_document, proof)
+            assert await self.cryptosuite.verify_proof(secured_document, proof)
             bad_proof = proof.copy()
             bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
-            assert not await suite.verify_proof(secured_document, proof)
+            assert not await self.cryptosuite.verify_proof(secured_document, proof)
