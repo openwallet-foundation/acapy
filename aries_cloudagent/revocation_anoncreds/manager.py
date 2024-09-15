@@ -145,6 +145,18 @@ class RevocationManager:
                 f"No revocation registry record found for id: {rev_reg_id}"
             )
 
+        if notify:
+            thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
+            rev_notify_rec = RevNotificationRecord(
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+                thread_id=thread_id,
+                connection_id=connection_id,
+                comment=comment,
+                version=notify_version,
+            )
+            async with self._profile.session() as session:
+                await rev_notify_rec.save(session, reason="New revocation notification")
         if publish:
             await revoc.get_or_fetch_local_tails_path(rev_reg_def)
             result = await revoc.revoke_pending_credentials(
@@ -164,18 +176,6 @@ class RevocationManager:
 
         else:
             await revoc.mark_pending_revocations(rev_reg_id, int(cred_rev_id))
-        if notify:
-            thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
-            rev_notify_rec = RevNotificationRecord(
-                rev_reg_id=rev_reg_id,
-                cred_rev_id=cred_rev_id,
-                thread_id=thread_id,
-                connection_id=connection_id,
-                comment=comment,
-                version=notify_version,
-            )
-            async with self._profile.session() as session:
-                await rev_notify_rec.save(session, reason="New revocation notification")
 
     async def update_rev_reg_revoked_state(
         self,
