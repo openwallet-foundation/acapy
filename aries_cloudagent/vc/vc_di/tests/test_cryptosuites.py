@@ -2,22 +2,17 @@
 
 import pytest
 from ..cryptosuites import CRYPTOSUITES
-from ....core.profile import Profile
-from ....wallet.did_method import KEY
 from ....wallet.key_type import ED25519
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile
 from ....did.did_key import DIDKey
 
 
-SEED = "testseed000000000000000000000001"
-UNSECUURED_DOCUMENT = {"hello": "world"}
-
-
 class TestDIProof:
     """Tests for DI sign and verify."""
 
     test_seed = "testseed000000000000000000000001"
+    unsecured_document = {"hello": "world"}
 
     async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
@@ -38,7 +33,7 @@ class TestDIProof:
             "verificationMethod": self.eddsa_verification_method,
         }
         suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(UNSECUURED_DOCUMENT, options)
+        secured_document = suite.add_proof(self.unsecured_document, options)
         proof = secured_document.pop("proof", None)
         assert isinstance(proof, list)
         assert len(proof) == 1
@@ -49,7 +44,7 @@ class TestDIProof:
         assert proof["verificationMethod"] == self.eddsa_verification_method
 
     @pytest.mark.eddsa_jcs_2022
-    async def test_eddsa_jcs_2022_add_proof_set(self):
+    async def test_eddsa_jcs_2022_proof_set(self):
         options = {
             "type": "DataIntegrityProof",
             "cryptosuite": "eddsa-jcs-2022",
@@ -57,7 +52,7 @@ class TestDIProof:
             "verificationMethod": self.eddsa_verification_method,
         }
         suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(UNSECUURED_DOCUMENT, options)
+        secured_document = suite.add_proof(self.unsecured_document, options)
         secured_document = suite.add_proof(secured_document, options)
         proof_set = proof_set.pop("proof", None)
         assert isinstance(proof_set, list)
@@ -78,7 +73,7 @@ class TestDIProof:
             "verificationMethod": self.eddsa_verification_method,
         }
         suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(UNSECUURED_DOCUMENT, options)
+        secured_document = suite.add_proof(self.unsecured_document, options)
         proof = secured_document.pop("proof", None)
         assert await suite.verify_proof(secured_document, proof)
         bad_proof = proof.copy()
@@ -94,7 +89,7 @@ class TestDIProof:
             "verificationMethod": self.eddsa_verification_method,
         }
         suite = CRYPTOSUITES[options["cryptosuite"]](profile=self.profile)
-        secured_document = suite.add_proof(UNSECUURED_DOCUMENT, options)
+        secured_document = suite.add_proof(self.unsecured_document, options)
         secured_document = suite.add_proof(secured_document, options)
         proof_set = secured_document.pop("proof", None)
         for proof in proof_set:
