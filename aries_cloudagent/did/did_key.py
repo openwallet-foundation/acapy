@@ -36,6 +36,7 @@ class DIDKey:
 
         Args:
             key_type: The key type to use for the DID
+            seed: An optional seed for generating the keypair
             kid: An optional verification method to associate with the DID
             profile: The profile to use for storing the DID keypair
 
@@ -65,8 +66,8 @@ class DIDKey:
         """Create a new key DID.
 
         Args:
-            key_type: The key type to use for the DID
-            kid: An optional verification method to associate with the DID
+            did: The DID with which to bind the kid
+            kid: The new verification method to bind
             profile: The profile to use for storing the DID keypair
 
         Returns:
