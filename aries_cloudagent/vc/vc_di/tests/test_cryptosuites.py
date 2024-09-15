@@ -24,7 +24,6 @@ class TestDIProof:
             self.eddsa_key_info.verkey, ED25519
         ).key_id
 
-    @pytest.mark.eddsa_jcs_2022
     async def test_eddsa_jcs_2022_add_proof(self):
         options = {
             "type": "DataIntegrityProof",
@@ -43,7 +42,6 @@ class TestDIProof:
         assert proof["proofValue"]
         assert proof["verificationMethod"] == self.eddsa_verification_method
 
-    @pytest.mark.eddsa_jcs_2022
     async def test_eddsa_jcs_2022_proof_set(self):
         options = {
             "type": "DataIntegrityProof",
@@ -64,7 +62,6 @@ class TestDIProof:
             assert proof["proofValue"]
             assert proof["verificationMethod"] == self.eddsa_verification_method
 
-    @pytest.mark.eddsa_jcs_2022
     async def test_eddsa_jcs_2022_verify_proof(self):
         options = {
             "type": "DataIntegrityProof",
@@ -80,7 +77,6 @@ class TestDIProof:
         bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
         assert not await suite.verify_proof(secured_document, proof)
 
-    @pytest.mark.eddsa_jcs_2022
     async def test_eddsa_jcs_2022_verify_proof_set(self):
         options = {
             "type": "DataIntegrityProof",
