@@ -1,6 +1,5 @@
 """Test Data Integrity Cryptosuites."""
 
-import pytest
 from ..cryptosuites import CRYPTOSUITES
 from ....wallet.key_type import ED25519
 from ....wallet.in_memory import InMemoryWallet
@@ -29,7 +28,7 @@ class TestEddsaJcs2022:
         )
 
     async def test_add_proof(self):
-        secured_document = self.cryptosuite.add_proof(
+        secured_document = await self.cryptosuite.add_proof(
             self.unsecured_document, self.options
         )
         proof = secured_document.pop("proof", None)
@@ -42,11 +41,11 @@ class TestEddsaJcs2022:
         assert proof["proofValue"]
 
     async def test_proof_set(self):
-        secured_document = self.cryptosuite.add_proof(
+        secured_document = await self.cryptosuite.add_proof(
             self.unsecured_document, self.options
         )
-        secured_document = self.cryptosuite.add_proof(secured_document, self.options)
-        proof_set = proof_set.pop("proof", None)
+        secured_document = await self.cryptosuite.add_proof(secured_document, self.options)
+        proof_set = secured_document.pop("proof", None)
         assert isinstance(proof_set, list)
         assert len(proof_set) == 2
         for proof in proof_set:
@@ -57,7 +56,7 @@ class TestEddsaJcs2022:
             assert proof["proofValue"]
 
     async def test_eddsa_jcs_2022_verify_proof(self):
-        secured_document = self.cryptosuite.add_proof(
+        secured_document = await self.cryptosuite.add_proof(
             self.unsecured_document, self.options
         )
         proof = secured_document.pop("proof", None)
@@ -67,10 +66,10 @@ class TestEddsaJcs2022:
         assert not await self.cryptosuite.verify_proof(secured_document, proof)
 
     async def test_eddsa_jcs_2022_verify_proof_set(self):
-        secured_document = self.cryptosuite.add_proof(
+        secured_document = await self.cryptosuite.add_proof(
             self.unsecured_document, self.options
         )
-        secured_document = self.cryptosuite.add_proof(secured_document, self.options)
+        secured_document = await self.cryptosuite.add_proof(secured_document, self.options)
         proof_set = secured_document.pop("proof", None)
         for proof in proof_set:
             assert await self.cryptosuite.verify_proof(secured_document, proof)
