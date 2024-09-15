@@ -19,11 +19,12 @@ class TestEddsaJcs2022:
         "proofPurpose": "assertionMethod",
         "verificationMethod": "did:key:z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i#z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
     }
+    cryptosuite = CRYPTOSUITES[options["cryptosuite"]](
+        profile=InMemoryProfile.test_profile()
+    )
 
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.cryptosuite = CRYPTOSUITES[self.options["cryptosuite"]](profile=self.profile)
-        await InMemoryWallet(self.profile).create_signing_key(
+        await InMemoryWallet(InMemoryProfile.test_profile()).create_signing_key(
             key_type=ED25519, seed=self.test_seed
         )
 
