@@ -1,6 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 from ..did_key import DIDKey
 from ...core.in_memory import InMemoryProfile
+from ...core.in_memory import InMemoryProfile
+from ...wallet.did_method import DIDMethods
 
 
 class TestDIDKeyOperations(IsolatedAsyncioTestCase):
@@ -9,7 +11,7 @@ class TestDIDKeyOperations(IsolatedAsyncioTestCase):
     kid = "did:key:z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i#z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
     new_kid = "did:web:example.com#key-01"
     multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile({}, {DIDMethods: DIDMethods()})
 
     async def test_create_ed25519_did_key(self):
         results = await DIDKey().create(
