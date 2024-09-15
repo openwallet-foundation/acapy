@@ -263,6 +263,7 @@ class InMemoryWallet(BaseWallet):
             key_type: The key type to use for the DID
             seed: Optional seed to use for DID
             did: The DID to use
+            kid:  Optional kid to assign to the DID
             metadata: Metadata to store with DID
 
         Returns:
@@ -296,6 +297,13 @@ class InMemoryWallet(BaseWallet):
             "metadata": metadata.copy() if metadata else {},
             "key_type": key_type,
             "method": method,
+        }
+        self.profile.keys[verkey_enc] = {
+            "seed": seed,
+            "secret": secret,
+            "verkey": verkey_enc,
+            "metadata": metadata.copy() if metadata else {},
+            "key_type": key_type,
         }
         return DIDInfo(
             did=did,

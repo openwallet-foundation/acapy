@@ -236,6 +236,7 @@ class AskarWallet(BaseWallet):
             seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
+            kid: Optional key identifier
 
         Returns:
             A `DIDInfo` instance representing the created DID

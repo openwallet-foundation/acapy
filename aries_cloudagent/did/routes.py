@@ -10,29 +10,63 @@ from ..admin.request_context import AdminRequestContext
 from .web_requests import (
     DIDKeyRegistrationRequest,
     DIDKeyRegistrationResponse,
+    DIDKeyBindingRequest,
+    DIDKeyBindingResponse,
 )
 from . import DIDKey, DidOperationError
 
 KEY_MAPPINGS = {"ed25519": ED25519}
 
 
-@docs(tags=["did"], summary="Register Key DID")
+@docs(tags=["did"], summary="Create DID Key")
 @request_schema(DIDKeyRegistrationRequest())
-@response_schema(DIDKeyRegistrationResponse(), 201, description="Register new DID key")
+@response_schema(DIDKeyRegistrationResponse(), 201, description="Create new DID key")
 @tenant_authentication
-async def register_did_key(request: web.BaseRequest):
+async def create_did_key(request):
     """Request handler for registering a Key DID.
 
     Args:
         request: aiohttp request object
 
     """
-    body = await request.json()
-    context: AdminRequestContext = request["context"]
     try:
-        key_type = body["key_type"]
-        did_doc = await DIDKey().register(KEY_MAPPINGS[key_type], context.profile)
-        return web.json_response({"didDocument": did_doc}, status=201)
+        return web.json_response(
+            await DIDKey().create(
+                profile=request["context"].profile,
+                key_type=KEY_MAPPINGS[
+                    request["data"]["type"] if "type" in request["data"] else "ed25519"
+                ],
+                kid=request["data"]["kid"] if "kid" in request["data"] else None,
+                seed=request["data"]["seed"] if "seed" in request["data"] else None,
+            ),
+            status=201,
+        )
+    except (KeyError, ValidationError, DidOperationError) as err:
+        return web.json_response({"message": str(err)}, status=400)
+
+
+@docs(tags=["did"], summary="Bind DID Key")
+@request_schema(DIDKeyBindingRequest())
+@response_schema(
+    DIDKeyBindingResponse(), 201, description="Bind existing DID key to new KID"
+)
+@tenant_authentication
+async def bind_did_key(request):
+    """Request handler for binding a Key DID.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    try:
+        return web.json_response(
+            await DIDKey().bind(
+                profile=request["context"].profile,
+                did=request["data"]["did"],
+                kid=request["data"]["kid"],
+            ),
+            status=200,
+        )
     except (KeyError, ValidationError, DidOperationError) as err:
         return web.json_response({"message": str(err)}, status=400)
 
@@ -42,7 +76,8 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.post("/did/key", register_did_key),
+            web.post("/did/key/create", create_did_key),
+            web.post("/did/key/bind", bind_did_key),
         ]
     )
 

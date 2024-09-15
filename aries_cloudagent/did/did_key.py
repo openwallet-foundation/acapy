@@ -29,11 +29,14 @@ class DIDKey:
         self._key_type = key_type
 
     @classmethod
-    async def register(self, key_type: KeyType, profile: Profile):
-        """Register a new key DID.
+    async def create(
+        self, key_type: KeyType, profile: Profile, kid: str = None, seed: str = None
+    ):
+        """Create a new key DID.
 
         Args:
             key_type: The key type to use for the DID
+            kid: An optional verification method to associate with the DID
             profile: The profile to use for storing the DID keypair
 
         Returns:
@@ -45,8 +48,40 @@ class DIDKey:
         """
         async with profile.session() as session:
             wallet = session.inject(BaseWallet)
-            info = await wallet.create_local_did(method=KEY, key_type=key_type)
-        return info.did
+            did_info = await wallet.create_local_did(
+                method=KEY, key_type=key_type, seed=seed
+            )
+            kid = kid if kid else f"{did_info.did}#" + did_info.did.split(":")[-1]
+            await wallet.assign_kid_to_key(verkey=did_info.verkey, kid=kid)
+            await wallet.get_key_by_kid(kid=kid)
+        return {
+            "did": did_info.did,
+            "verificationMethod": kid,
+            "multikey": did_info.did.split(":")[-1],
+        }
+
+    @classmethod
+    async def bind(self, profile: Profile, did: str, kid: str):
+        """Create a new key DID.
+
+        Args:
+            key_type: The key type to use for the DID
+            kid: An optional verification method to associate with the DID
+            profile: The profile to use for storing the DID keypair
+
+        Returns:
+            A string representing the created DID
+
+        Raises:
+            DidOperationError: If the an error occures during did registration
+
+        """
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.get_local_did(did=did)
+            await wallet.assign_kid_to_key(verkey=did_info.verkey, kid=kid)
+            await wallet.get_key_by_kid(kid=kid)
+        return {"did": did, "verificationMethod": kid, "multikey": did.split(":")[-1]}
 
     @classmethod
     def from_public_key(cls, public_key: bytes, key_type: KeyType) -> "DIDKey":
