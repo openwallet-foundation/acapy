@@ -6,7 +6,6 @@ from marshmallow.exceptions import ValidationError
 
 from ..wallet.key_type import ED25519
 from ..admin.decorators.auth import tenant_authentication
-from ..admin.request_context import AdminRequestContext
 from .web_requests import (
     DIDKeyRegistrationRequest,
     DIDKeyRegistrationResponse,
