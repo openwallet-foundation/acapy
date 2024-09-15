@@ -17,20 +17,20 @@ class TestEddsaJcs2022:
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
         "proofPurpose": "assertionMethod",
-        "verificationMethod": "did:key:z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i#z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
+        "verificationMethod": "did:key:z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i#z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
     }
 
     async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
-        self.cryptosuite = CRYPTOSUITES[self.options["cryptosuite"]](
-            profile=self.profile
-        )
+        self.cryptosuite = CRYPTOSUITES[self.options["cryptosuite"]](profile=self.profile)
         await InMemoryWallet(self.profile).create_signing_key(
             key_type=ED25519, seed=self.test_seed
         )
 
     async def test_add_proof(self):
-        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
+        secured_document = self.cryptosuite.add_proof(
+            self.unsecured_document, self.options
+        )
         proof = secured_document.pop("proof", None)
         assert isinstance(proof, list)
         assert len(proof) == 1
@@ -41,7 +41,9 @@ class TestEddsaJcs2022:
         assert proof["proofValue"]
 
     async def test_proof_set(self):
-        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
+        secured_document = self.cryptosuite.add_proof(
+            self.unsecured_document, self.options
+        )
         secured_document = self.cryptosuite.add_proof(secured_document, self.options)
         proof_set = proof_set.pop("proof", None)
         assert isinstance(proof_set, list)
@@ -54,7 +56,9 @@ class TestEddsaJcs2022:
             assert proof["proofValue"]
 
     async def test_eddsa_jcs_2022_verify_proof(self):
-        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
+        secured_document = self.cryptosuite.add_proof(
+            self.unsecured_document, self.options
+        )
         proof = secured_document.pop("proof", None)
         assert await self.cryptosuite.verify_proof(secured_document, proof)
         bad_proof = proof.copy()
@@ -62,7 +66,9 @@ class TestEddsaJcs2022:
         assert not await self.cryptosuite.verify_proof(secured_document, proof)
 
     async def test_eddsa_jcs_2022_verify_proof_set(self):
-        secured_document = self.cryptosuite.add_proof(self.unsecured_document, self.options)
+        secured_document = self.cryptosuite.add_proof(
+            self.unsecured_document, self.options
+        )
         secured_document = self.cryptosuite.add_proof(secured_document, self.options)
         proof_set = secured_document.pop("proof", None)
         for proof in proof_set:
