@@ -90,6 +90,13 @@ PEER4 = DIDMethod(
     holder_defined_did=HolderDefinedDid.NO,
 )
 
+TDW = DIDMethod(
+    name="tdw",
+    key_types=[ED25519, X25519],
+    rotation=False,
+    holder_defined_did=HolderDefinedDid.NO,
+)
+
 
 class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
@@ -102,6 +109,7 @@ class DIDMethods:
             WEB.method_name: WEB,
             PEER2.method_name: PEER2,
             PEER4.method_name: PEER4,
+            TDW.method_name: TDW,
         }
 
     def registered(self, method: str) -> bool:

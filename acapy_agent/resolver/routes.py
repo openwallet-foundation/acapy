@@ -1,9 +1,10 @@
 """Resolve did document admin routes."""
 
+import re
+
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
 from marshmallow import fields, validate
-from pydid.common import DID_PATTERN
 
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
@@ -23,7 +24,10 @@ class W3cDID(validate.Regexp):
     """Validate value against w3c DID."""
 
     EXAMPLE = "did:ted:WgWxqztrNooG92RXvxSTWv"
-    PATTERN = DID_PATTERN
+    # Did or DidUrl regex
+    PATTERN = re.compile(
+        "^did:([a-z0-9]+):((?:[a-zA-Z0-9._%-]*:)*[a-zA-Z0-9._%-]+)(#\w+)?$"
+    )
 
     def __init__(self):
         """Initialize the instance."""
