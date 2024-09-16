@@ -19,14 +19,16 @@ class TestDIDKeyOperations(IsolatedAsyncioTestCase):
             key_type=ED25519, profile=self.profile, seed=self.test_seed
         )
         assert results["did"] == self.did
-        assert results["kid"] == self.kid
         assert results["multikey"] == self.multikey
+        assert results["verificationMethod"] == self.kid
 
     async def test_bind_did_key(self):
         results = await DIDKey().create(
             key_type=ED25519, profile=self.profile, seed=self.test_seed
         )
-        results = await DIDKey().bind(did=results["did"], kid=self.new_kid)
+        results = await DIDKey().bind(
+            profile=self.profile, did=results["did"], kid=self.new_kid
+        )
         assert results["did"] == self.did
-        assert results["kid"] == self.new_kid
         assert results["multikey"] == self.multikey
+        assert results["verificationMethod"] == self.new_kid
