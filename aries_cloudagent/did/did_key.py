@@ -30,7 +30,7 @@ class DIDKey:
 
     @classmethod
     async def create(
-        self, key_type: KeyType, profile: Profile, kid: str = None, seed: str = None
+        cls, key_type: KeyType, profile: Profile, kid: str = None, seed: str = None
     ):
         """Create a new key DID.
 
@@ -62,7 +62,7 @@ class DIDKey:
         }
 
     @classmethod
-    async def bind(self, profile: Profile, did: str, kid: str):
+    async def bind(cls, profile: Profile, did: str, kid: str):
         """Create a new key DID.
 
         Args:
