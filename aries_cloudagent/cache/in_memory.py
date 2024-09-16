@@ -1,7 +1,7 @@
 """Basic in-memory cache implementation."""
 
 import time
-from typing import Any, Sequence, Text, Union
+from typing import Any, Optional, Sequence, Text, Union
 
 from .base import BaseCache
 
@@ -38,7 +38,9 @@ class InMemoryCache(BaseCache):
         self._remove_expired_cache_items()
         return self._cache.get(key)["value"] if self._cache.get(key) else None
 
-    async def set(self, keys: Union[Text, Sequence[Text]], value: Any, ttl: int = None):
+    async def set(
+        self, keys: Union[Text, Sequence[Text]], value: Any, ttl: Optional[int] = None
+    ):
         """Add an item to the cache with an optional ttl.
 
         Overwrites existing cache entries.

@@ -1,5 +1,7 @@
 """Represents a connection response message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -22,7 +24,7 @@ class ConnectionResponse(AgentMessage):
         schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
 
-    def __init__(self, *, connection: ConnectionDetail = None, **kwargs):
+    def __init__(self, *, connection: Optional[ConnectionDetail] = None, **kwargs):
         """Initialize connection response object.
 
         Args:

@@ -1,7 +1,7 @@
 """Classes representing inbound messages."""
 
 import asyncio
-from typing import Union
+from typing import Optional, Union
 
 from .receipt import MessageReceipt
 
@@ -14,9 +14,9 @@ class InboundMessage:
         payload: Union[str, bytes],
         receipt: MessageReceipt,
         *,
-        connection_id: str = None,
-        session_id: str = None,
-        transport_type: str = None,
+        connection_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        transport_type: Optional[str] = None,
     ):
         """Initialize the inbound message."""
         self.connection_id = connection_id

@@ -43,11 +43,11 @@ class RevocationManager:
         cred_ex_id: str,
         publish: bool = False,
         notify: bool = False,
-        notify_version: str = None,
-        thread_id: str = None,
-        connection_id: str = None,
-        endorser_conn_id: str = None,
-        comment: str = None,
+        notify_version: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        endorser_conn_id: Optional[str] = None,
+        comment: Optional[str] = None,
         write_ledger: bool = True,
     ):
         """Revoke a credential by its credential exchange identifier at issue.
@@ -113,11 +113,11 @@ class RevocationManager:
         cred_rev_id: str,
         publish: bool = False,
         notify: bool = False,
-        notify_version: str = None,
-        thread_id: str = None,
-        connection_id: str = None,
-        endorser_conn_id: str = None,
-        comment: str = None,
+        notify_version: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        endorser_conn_id: Optional[str] = None,
+        comment: Optional[str] = None,
         write_ledger: bool = True,
     ) -> Optional[dict]:
         """Revoke a credential.
@@ -253,7 +253,7 @@ class RevocationManager:
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
         write_ledger: bool = True,
-        connection_id: str = None,
+        connection_id: Optional[str] = None,
     ) -> Tuple[Optional[dict], Mapping[Text, Sequence[Text]]]:
         """Publish pending revocations to the ledger.
 

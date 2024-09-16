@@ -331,7 +331,10 @@ class ConnRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_invitation_key(
-        cls, session: ProfileSession, invitation_key: str, their_role: str = None
+        cls,
+        session: ProfileSession,
+        invitation_key: str,
+        their_role: Optional[str] = None,
     ) -> "ConnRecord":
         """Retrieve a connection record by invitation key.
 
@@ -354,7 +357,10 @@ class ConnRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_invitation_msg_id(
-        cls, session: ProfileSession, invitation_msg_id: str, their_role: str = None
+        cls,
+        session: ProfileSession,
+        invitation_msg_id: str,
+        their_role: Optional[str] = None,
     ) -> Optional["ConnRecord"]:
         """Retrieve a connection record by invitation_msg_id.
 
@@ -396,7 +402,7 @@ class ConnRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_request_id(
-        cls, session: ProfileSession, request_id: str, their_role: str = None
+        cls, session: ProfileSession, request_id: str, their_role: Optional[str] = None
     ) -> "ConnRecord":
         """Retrieve a connection record from our previous request ID.
 
@@ -565,7 +571,7 @@ class ConnRecord(BaseRecord):
         await self.save(session, reason=reason)
 
     async def metadata_get(
-        self, session: ProfileSession, key: str, default: Any = None
+        self, session: ProfileSession, key: str, default: Optional[Any] = None
     ) -> Any:
         """Retrieve arbitrary metadata associated with this connection.
 

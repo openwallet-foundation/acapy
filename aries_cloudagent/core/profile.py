@@ -20,7 +20,7 @@ LOGGER = logging.getLogger(__name__)
 class Profile(ABC):
     """Base abstraction for handling identity-related state."""
 
-    BACKEND_NAME: str = None
+    BACKEND_NAME: Optional[str] = None
     DEFAULT_NAME: str = "default"
 
     def __init__(
@@ -64,11 +64,11 @@ class Profile(ABC):
         return self._context.settings
 
     @abstractmethod
-    def session(self, context: InjectionContext = None) -> "ProfileSession":
+    def session(self, context: Optional[InjectionContext] = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
 
     @abstractmethod
-    def transaction(self, context: InjectionContext = None) -> "ProfileSession":
+    def transaction(self, context: Optional[InjectionContext] = None) -> "ProfileSession":
         """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
@@ -157,7 +157,7 @@ class ProfileSession(ABC):
         self,
         profile: Profile,
         *,
-        context: InjectionContext = None,
+        context: Optional[InjectionContext] = None,
         settings: Mapping[str, Any] = None,
     ):
         """Initialize a base profile session."""
@@ -173,7 +173,7 @@ class ProfileSession(ABC):
     async def _setup(self):
         """Create the underlying session or transaction."""
 
-    async def _teardown(self, commit: bool = None):
+    async def _teardown(self, commit: Optional[bool] = None):
         """Dispose of the underlying session or transaction."""
 
     def __await__(self):

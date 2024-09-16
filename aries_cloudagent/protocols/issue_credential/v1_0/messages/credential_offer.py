@@ -1,6 +1,6 @@
 """A credential offer content message."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -29,10 +29,10 @@ class CredentialOffer(AgentMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         *,
-        comment: str = None,
-        credential_preview: CredentialPreview = None,
+        comment: Optional[str] = None,
+        credential_preview: Optional[CredentialPreview] = None,
         offers_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):

@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import time
+from typing import Optional
 
 import requests
 from marshmallow import fields
@@ -111,9 +112,9 @@ def decode_inbound_message(message):
 def trace_event(
     context,
     message,
-    handler: str = None,
-    outcome: str = None,
-    perf_counter: float = None,
+    handler: Optional[str] = None,
+    outcome: Optional[str] = None,
+    perf_counter: Optional[float] = None,
     force_trace: bool = False,
     raise_errors: bool = False,
 ) -> float:

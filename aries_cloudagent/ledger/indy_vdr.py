@@ -71,11 +71,11 @@ class IndyVdrLedgerPool:
         name: str,
         *,
         keepalive: int = 0,
-        cache: BaseCache = None,
+        cache: Optional[BaseCache] = None,
         cache_duration: int = 600,
-        genesis_transactions: str = None,
+        genesis_transactions: Optional[str] = None,
         read_only: bool = False,
-        socks_proxy: str = None,
+        socks_proxy: Optional[str] = None,
     ):
         """Initialize an IndyLedger instance.
 
@@ -94,13 +94,13 @@ class IndyVdrLedgerPool:
         self.close_task: asyncio.Future = None
         self.cache = cache
         self.cache_duration: int = cache_duration
-        self.handle: Pool = None
+        self.handle: Optional[Pool] = None
         self.name = name
-        self.cfg_path_cache: Path = None
-        self.genesis_hash_cache: str = None
+        self.cfg_path_cache: Optional[Path] = None
+        self.genesis_hash_cache: Optional[str] = None
         self.genesis_txns_cache = genesis_transactions
         self.init_config = bool(genesis_transactions)
-        self.taa_cache: str = None
+        self.taa_cache: Optional[str] = None
         self.read_only: bool = read_only
         self.socks_proxy: str = socks_proxy
 
@@ -307,8 +307,8 @@ class IndyVdrLedger(BaseLedger):
     async def _submit(
         self,
         request: Union[str, Request],
-        sign: bool = None,
-        taa_accept: bool = None,
+        sign: Optional[bool] = None,
+        taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
     ) -> dict:
@@ -375,7 +375,7 @@ class IndyVdrLedger(BaseLedger):
         public_info: DIDInfo,
         schema_json: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a schema."""
         try:
@@ -393,7 +393,7 @@ class IndyVdrLedger(BaseLedger):
         public_info: DIDInfo,
         revoc_reg_def_json: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a revocation registry definition."""
         try:
@@ -415,7 +415,7 @@ class IndyVdrLedger(BaseLedger):
         revoc_def_type: str,
         revoc_reg_entry_json: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a revocation registry definition."""
         try:
@@ -531,7 +531,7 @@ class IndyVdrLedger(BaseLedger):
         public_info: DIDInfo,
         credential_definition_json: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a credential definition."""
         try:
@@ -674,7 +674,7 @@ class IndyVdrLedger(BaseLedger):
         return endpoints
 
     async def get_endpoint_for_did(
-        self, did: str, endpoint_type: EndpointType = None
+        self, did: str, endpoint_type: Optional[EndpointType] = None
     ) -> str:
         """Fetch the endpoint for a ledger DID.
 
@@ -709,10 +709,10 @@ class IndyVdrLedger(BaseLedger):
         self,
         did: str,
         endpoint: str,
-        endpoint_type: EndpointType = None,
+        endpoint_type: Optional[EndpointType] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
-        routing_keys: List[str] = None,
+        endorser_did: Optional[str] = None,
+        routing_keys: Optional[List[str]] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -777,10 +777,10 @@ class IndyVdrLedger(BaseLedger):
         self,
         did: str,
         verkey: str,
-        alias: str = None,
-        role: str = None,
+        alias: Optional[str] = None,
+        role: Optional[str] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[bool, dict]:
         """Register a nym on the ledger.
 
@@ -868,7 +868,7 @@ class IndyVdrLedger(BaseLedger):
         response_json = await self._submit(request_json)
         return response_json
 
-    async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
+    async def rotate_public_did_keypair(self, next_seed: Optional[str] = None) -> None:
         """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
@@ -962,7 +962,7 @@ class IndyVdrLedger(BaseLedger):
         )
 
     async def accept_txn_author_agreement(
-        self, taa_record: dict, mechanism: str, accept_time: int = None
+        self, taa_record: dict, mechanism: str, accept_time: Optional[int] = None
     ):
         """Save a new record recording the acceptance of the TAA."""
         if not accept_time:
@@ -1127,9 +1127,9 @@ class IndyVdrLedger(BaseLedger):
     async def send_revoc_reg_def(
         self,
         revoc_reg_def: dict,
-        issuer_did: str = None,
+        issuer_did: Optional[str] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
@@ -1207,9 +1207,9 @@ class IndyVdrLedger(BaseLedger):
         revoc_reg_id: str,
         revoc_def_type: str,
         revoc_reg_entry: dict,
-        issuer_did: str = None,
+        issuer_did: Optional[str] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
         async with self.profile.session() as session:
@@ -1288,7 +1288,7 @@ class IndyVdrLedger(BaseLedger):
     async def txn_endorse(
         self,
         request_json: str,
-        endorse_did: DIDInfo = None,
+        endorse_did: Optional[DIDInfo] = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
         try:
@@ -1315,7 +1315,7 @@ class IndyVdrLedger(BaseLedger):
         self,
         request_json: str,
         sign: bool,
-        taa_accept: bool = None,
+        taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
     ) -> str:

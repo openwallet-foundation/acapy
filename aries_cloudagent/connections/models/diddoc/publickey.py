@@ -18,6 +18,7 @@ limitations under the License.
 
 from collections import namedtuple
 from enum import Enum
+from typing import Optional
 
 from .util import canon_did, canon_ref
 
@@ -100,8 +101,8 @@ class PublicKey:
         did: str,
         ident: str,
         value: str,
-        pk_type: PublicKeyType = None,
-        controller: str = None,
+        pk_type: Optional[PublicKeyType] = None,
+        controller: Optional[str] = None,
         authn: bool = False,
     ) -> None:
         """Retain key specification particulars.

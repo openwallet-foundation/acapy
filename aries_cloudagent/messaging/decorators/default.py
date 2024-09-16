@@ -1,5 +1,7 @@
 """Default decorator set implementation."""
 
+from typing import Optional
+
 from .base import BaseDecoratorSet
 from .localization_decorator import LocalizationDecorator
 from .service_decorator import ServiceDecorator
@@ -23,6 +25,6 @@ DEFAULT_MODELS = {
 class DecoratorSet(BaseDecoratorSet):
     """Default decorator set implementation."""
 
-    def __init__(self, models: dict = None):
+    def __init__(self, models: Optional[dict] = None):
         """Initialize the decorator set."""
         super().__init__(DEFAULT_MODELS if models is None else models)

@@ -42,9 +42,9 @@ class BaseResponder(ABC):
     def __init__(
         self,
         *,
-        connection_id: str = None,
-        reply_session_id: str = None,
-        reply_to_verkey: str = None,
+        connection_id: Optional[str] = None,
+        reply_session_id: Optional[str] = None,
+        reply_to_verkey: Optional[str] = None,
     ):
         """Initialize a base responder."""
         self.connection_id = connection_id
@@ -55,12 +55,12 @@ class BaseResponder(ABC):
         self,
         message: Union[BaseMessage, str, bytes],
         *,
-        connection_id: str = None,
-        reply_session_id: str = None,
-        reply_thread_id: str = None,
-        reply_to_verkey: str = None,
-        reply_from_verkey: str = None,
-        target: ConnectionTarget = None,
+        connection_id: Optional[str] = None,
+        reply_session_id: Optional[str] = None,
+        reply_thread_id: Optional[str] = None,
+        reply_to_verkey: Optional[str] = None,
+        reply_from_verkey: Optional[str] = None,
+        target: Optional[ConnectionTarget] = None,
         target_list: Sequence[ConnectionTarget] = None,
         to_session_only: bool = False,
     ) -> OutboundMessage:
@@ -111,8 +111,8 @@ class BaseResponder(ABC):
         self,
         message: Union[BaseMessage, str, bytes],
         *,
-        connection_id: str = None,
-        target: ConnectionTarget = None,
+        connection_id: Optional[str] = None,
+        target: Optional[ConnectionTarget] = None,
         target_list: Sequence[ConnectionTarget] = None,
     ) -> OutboundSendStatus:
         """Send a reply to an incoming message.

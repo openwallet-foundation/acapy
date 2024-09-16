@@ -1,5 +1,7 @@
 """Represents a forwarded invitation from another agent."""
 
+from typing import Optional
+
 from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -25,7 +27,11 @@ class ForwardInvitation(AgentMessage):
         schema_class = "ForwardInvitationSchema"
 
     def __init__(
-        self, *, invitation: ConnectionInvitation = None, message: str = None, **kwargs
+        self,
+        *,
+        invitation: Optional[ConnectionInvitation] = None,
+        message: Optional[str] = None,
+        **kwargs,
     ):
         """Initialize invitation object.
 

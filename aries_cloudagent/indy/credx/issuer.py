@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from aries_askar import AskarError
 from indy_credx import (
@@ -112,8 +112,8 @@ class IndyCredxIssuer(IndyIssuer):
         self,
         origin_did: str,
         schema: dict,
-        signature_type: str = None,
-        tag: str = None,
+        signature_type: Optional[str] = None,
+        tag: Optional[str] = None,
         support_revocation: bool = False,
     ) -> Tuple[str, str]:
         """Create a new credential definition and store it in the wallet.
@@ -220,8 +220,8 @@ class IndyCredxIssuer(IndyIssuer):
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        revoc_reg_id: str = None,
-        tails_file_path: str = None,
+        revoc_reg_id: Optional[str] = None,
+        tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
         """Create a credential.
 

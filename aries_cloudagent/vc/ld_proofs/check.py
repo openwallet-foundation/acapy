@@ -1,6 +1,6 @@
 """Validator methods to check for properties without a context."""
 
-from typing import Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 from pyld import jsonld
 
@@ -10,7 +10,7 @@ from .document_loader import DocumentLoaderMethod
 def diff_dict_keys(
     full: dict,
     with_missing: dict,
-    prefix: str = None,
+    prefix: Optional[str] = None,
     *,
     document_loader: DocumentLoaderMethod,
     context,

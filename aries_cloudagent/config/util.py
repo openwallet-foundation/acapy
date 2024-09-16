@@ -2,7 +2,7 @@
 
 import os
 import re
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 from configargparse import ArgumentTypeError
 
@@ -27,7 +27,7 @@ def common_config(settings: Mapping[str, Any]):
 class BoundedInt:
     """Argument value parser for a bounded integer."""
 
-    def __init__(self, min: int = None, max: int = None):
+    def __init__(self, min: Optional[int] = None, max: Optional[int] = None):
         """Initialize the ByteBoundedIntSize parser."""
         self.min_val = min
         self.max_val = max
@@ -56,7 +56,7 @@ class BoundedInt:
 class ByteSize:
     """Argument value parser for byte sizes."""
 
-    def __init__(self, min: int = 0, max: int = None):
+    def __init__(self, min: int = 0, max: Optional[int] = None):
         """Initialize the ByteSize parser."""
         self.min_size = min
         self.max_size = max

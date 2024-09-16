@@ -1,6 +1,6 @@
 """Cred abstract artifacts to attach to RFC 453 messages."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -25,8 +25,8 @@ class IndyKeyCorrectnessProof(BaseModel):
 
     def __init__(
         self,
-        c: str = None,
-        xz_cap: str = None,
+        c: Optional[str] = None,
+        xz_cap: Optional[str] = None,
         xr_cap: Sequence[Sequence[str]] = None,
         **kwargs,
     ):
@@ -92,10 +92,10 @@ class IndyCredAbstract(BaseModel):
 
     def __init__(
         self,
-        schema_id: str = None,
-        cred_def_id: str = None,
-        nonce: str = None,
-        key_correctness_proof: str = None,
+        schema_id: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        nonce: Optional[str] = None,
+        key_correctness_proof: Optional[str] = None,
         **kwargs,
     ):
         """Initialize indy cred abstract object.

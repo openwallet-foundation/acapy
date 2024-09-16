@@ -42,7 +42,7 @@ class V20DiscoveryMgr:
         return self._profile
 
     async def receive_disclose(
-        self, disclose_msg: Disclosures, connection_id: str = None
+        self, disclose_msg: Disclosures, connection_id: Optional[str] = None
     ) -> V20DiscoveryExchangeRecord:
         """Receive Disclose message and return updated V20DiscoveryExchangeRecord."""
         if disclose_msg._thread:
@@ -192,9 +192,9 @@ class V20DiscoveryMgr:
 
     async def create_and_send_query(
         self,
-        connection_id: str = None,
-        query_protocol: str = None,
-        query_goal_code: str = None,
+        connection_id: Optional[str] = None,
+        query_protocol: Optional[str] = None,
+        query_goal_code: Optional[str] = None,
     ) -> V20DiscoveryExchangeRecord:
         """Create and send a Query message."""
         queries = []

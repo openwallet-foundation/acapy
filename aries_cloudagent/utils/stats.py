@@ -3,7 +3,7 @@
 import functools
 import inspect
 import time
-from typing import Sequence, TextIO, Union
+from typing import Optional, Sequence, TextIO, Union
 
 
 class Stats:
@@ -95,10 +95,10 @@ class Timer:
 class Collector:
     """Collector for a set of statistics."""
 
-    def __init__(self, *, enabled: bool = True, log_path: str = None):
+    def __init__(self, *, enabled: bool = True, log_path: Optional[str] = None):
         """Initialize the Collector instance."""
         self._enabled = enabled
-        self._log_file: TextIO = None
+        self._log_file: Optional[TextIO] = None
         self._log_path = log_path
         self._stats = None
         self.reset()
@@ -122,7 +122,7 @@ class Collector:
         """Setter for the collector's enabled property."""
         self._enabled = val
 
-    def log(self, name: str, duration: float, start: float = None):
+    def log(self, name: str, duration: float, start: Optional[float] = None):
         """Log an entry in the statistics if the collector is enabled."""
         if self._enabled:
             self._stats.log(name, duration)

@@ -27,9 +27,9 @@ async def create_signed_anoncreds_presentation(
     pres_definition: dict,
     presentation: dict,
     credentials: list,
-    purpose: ProofPurpose = None,
+    purpose: Optional[ProofPurpose] = None,
     challenge: str,
-    domain: str = None,
+    domain: Optional[str] = None,
 ) -> tuple[dict, dict, list]:
     """Sign the presentation with the passed signature suite.
 

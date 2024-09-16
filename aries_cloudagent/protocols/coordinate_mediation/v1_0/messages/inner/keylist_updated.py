@@ -3,6 +3,8 @@
 Represents single item in keylist-update-response.updated list.
 """
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
@@ -26,9 +28,9 @@ class KeylistUpdated(BaseModel):
     def __init__(
         self,
         *,
-        recipient_key: str = None,
-        action: str = None,
-        result: str = None,
+        recipient_key: Optional[str] = None,
+        action: Optional[str] = None,
+        result: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a KeylistUpdated instance.

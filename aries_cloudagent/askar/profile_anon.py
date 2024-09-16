@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import time
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 from weakref import ref
 
 from aries_askar import AskarError, Session, Store
@@ -39,14 +39,14 @@ class AskarAnoncredsProfile(Profile):
     def __init__(
         self,
         opened: AskarOpenStore,
-        context: InjectionContext = None,
+        context: Optional[InjectionContext] = None,
         *,
-        profile_id: str = None,
+        profile_id: Optional[str] = None,
     ):
         """Create a new AskarProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
-        self.ledger_pool: IndyVdrLedgerPool = None
+        self.ledger_pool: Optional[IndyVdrLedgerPool] = None
         self.profile_id = profile_id
         self.init_ledger_pool()
         self.bind_providers()
@@ -159,12 +159,14 @@ class AskarAnoncredsProfile(Profile):
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )
 
-    def session(self, context: InjectionContext = None) -> "AskarAnoncredsProfileSession":
+    def session(
+        self, context: Optional[InjectionContext] = None
+    ) -> "AskarAnoncredsProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return AskarAnoncredsProfileSession(self, False, context=context)
 
     def transaction(
-        self, context: InjectionContext = None
+        self, context: Optional[InjectionContext] = None
     ) -> "AskarAnoncredsProfileSession":
         """Start a new interactive session with commit and rollback support.
 
@@ -188,7 +190,7 @@ class AskarAnoncredsProfileSession(ProfileSession):
         profile: AskarAnoncredsProfile,
         is_txn: bool,
         *,
-        context: InjectionContext = None,
+        context: Optional[InjectionContext] = None,
         settings: Mapping[str, Any] = None,
     ):
         """Create a new AskarAnoncredsProfileSession instance."""
@@ -198,9 +200,9 @@ class AskarAnoncredsProfileSession(ProfileSession):
         else:
             self._opener = self.profile.store.session(profile.profile_id)
         self._profile = profile
-        self._handle: Session = None
-        self._acquire_start: float = None
-        self._acquire_end: float = None
+        self._handle: Optional[Session] = None
+        self._acquire_start: Optional[float] = None
+        self._acquire_end: Optional[float] = None
 
     @property
     def handle(self) -> Session:
@@ -239,7 +241,7 @@ class AskarAnoncredsProfileSession(ProfileSession):
             ClassProvider("aries_cloudagent.storage.askar.AskarStorage", ref(self)),
         )
 
-    async def _teardown(self, commit: bool = None):
+    async def _teardown(self, commit: Optional[bool] = None):
         """Dispose of the session or transaction connection."""
         if commit:
             try:
@@ -289,6 +291,6 @@ class AskarAnonProfileManager(ProfileManager):
         return AskarAnoncredsProfile(opened, context)
 
     @classmethod
-    async def generate_store_key(self, seed: str = None) -> str:
+    async def generate_store_key(self, seed: Optional[str] = None) -> str:
         """Generate a raw store key."""
         return Store.generate_raw_key(validate_seed(seed))

@@ -1,7 +1,7 @@
 """Websockets outbound transport."""
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 from aiohttp import ClientSession, DummyCookieJar
 
@@ -35,8 +35,8 @@ class WsTransport(BaseOutboundTransport):
         profile: Profile,
         payload: Union[str, bytes],
         endpoint: str,
-        metadata: dict = None,
-        api_key: str = None,
+        metadata: Optional[dict] = None,
+        api_key: Optional[str] = None,
     ):
         """Handle message from queue.
 

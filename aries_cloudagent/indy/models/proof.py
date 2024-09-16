@@ -1,6 +1,6 @@
 """Marshmallow bindings for indy proofs."""
 
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from marshmallow import EXCLUDE, fields, validate
 
@@ -38,11 +38,11 @@ class IndyEQProof(BaseModel):
     def __init__(
         self,
         revealed_attrs: Mapping[str, str] = None,
-        a_prime: str = None,
-        e: str = None,
-        v: str = None,
+        a_prime: Optional[str] = None,
+        e: Optional[str] = None,
+        v: Optional[str] = None,
         m: Mapping[str, str] = None,
-        m2: str = None,
+        m2: Optional[str] = None,
         **kwargs,
     ):
         """Initialize equality proof object."""
@@ -100,9 +100,9 @@ class IndyGEProofPred(BaseModel):
 
     def __init__(
         self,
-        attr_name: str = None,
-        p_type: str = None,
-        value: int = None,
+        attr_name: Optional[str] = None,
+        p_type: Optional[str] = None,
+        value: Optional[int] = None,
         **kwargs,
     ):
         """Initialize indy GE proof predicate."""
@@ -143,10 +143,10 @@ class IndyGEProof(BaseModel):
         self,
         u: Mapping[str, str] = None,
         r: Mapping[str, str] = None,
-        mj: str = None,
-        alpha: str = None,
+        mj: Optional[str] = None,
+        alpha: Optional[str] = None,
         t: Mapping[str, str] = None,
-        predicate: IndyGEProofPred = None,
+        predicate: Optional[IndyGEProofPred] = None,
         **kwargs,
     ):
         """Initialize GE proof object."""
@@ -205,7 +205,7 @@ class IndyPrimaryProof(BaseModel):
 
     def __init__(
         self,
-        eq_proof: IndyEQProof = None,
+        eq_proof: Optional[IndyEQProof] = None,
         ge_proofs: Sequence[IndyGEProof] = None,
         **kwargs,
     ):
@@ -247,8 +247,8 @@ class IndyNonRevocProof(BaseModel):
 
     def __init__(
         self,
-        x_list: Mapping = None,
-        c_list: Mapping = None,
+        x_list: Optional[Mapping] = None,
+        c_list: Optional[Mapping] = None,
         **kwargs,
     ):
         """Initialize indy non-revocation proof."""
@@ -280,8 +280,8 @@ class IndyProofProofProofsProof(BaseModel):
 
     def __init__(
         self,
-        primary_proof: IndyPrimaryProof = None,
-        non_revoc_proof: IndyNonRevocProof = None,
+        primary_proof: Optional[IndyPrimaryProof] = None,
+        non_revoc_proof: Optional[IndyNonRevocProof] = None,
         **kwargs,
     ):
         """Initialize proof.proof.proofs constituent proof."""
@@ -319,7 +319,7 @@ class IndyProofProofAggregatedProof(BaseModel):
 
     def __init__(
         self,
-        c_hash: str = None,
+        c_hash: Optional[str] = None,
         c_list: Sequence[Sequence[int]] = None,
         **kwargs,
     ):
@@ -356,7 +356,7 @@ class IndyProofProof(BaseModel):
     def __init__(
         self,
         proofs: Sequence[IndyProofProofProofsProof] = None,
-        aggregated_proof: IndyProofProofAggregatedProof = None,
+        aggregated_proof: Optional[IndyProofProofAggregatedProof] = None,
         **kwargs,
     ):
         """Initialize indy proof.proof content."""
@@ -395,8 +395,8 @@ class RawEncoded(BaseModel):
 
     def __init__(
         self,
-        raw: str = None,
-        encoded: str = None,
+        raw: Optional[str] = None,
+        encoded: Optional[str] = None,
         **kwargs,
     ):
         """Initialize raw and encoded attribute values."""
@@ -431,7 +431,7 @@ class IndyProofRequestedProofRevealedAttr(RawEncoded):
 
     def __init__(
         self,
-        sub_proof_index: int = None,
+        sub_proof_index: Optional[int] = None,
         **kwargs,
     ):
         """Initialize indy proof requested proof revealed attr."""
@@ -463,7 +463,7 @@ class IndyProofRequestedProofRevealedAttrGroup(BaseModel):
 
     def __init__(
         self,
-        sub_proof_index: int = None,
+        sub_proof_index: Optional[int] = None,
         values: Mapping[str, RawEncoded] = None,
         **kwargs,
     ):
@@ -504,7 +504,7 @@ class IndyProofRequestedProofPredicate(BaseModel):
 
     def __init__(
         self,
-        sub_proof_index: int = None,
+        sub_proof_index: Optional[int] = None,
         **kwargs,
     ):
         """Initialize indy proof requested proof predicate."""
@@ -541,8 +541,8 @@ class IndyProofRequestedProof(BaseModel):
             str,
             IndyProofRequestedProofRevealedAttrGroup,
         ] = None,
-        self_attested_attrs: Mapping = None,
-        unrevealed_attrs: Mapping = None,
+        self_attested_attrs: Optional[Mapping] = None,
+        unrevealed_attrs: Optional[Mapping] = None,
         predicates: Mapping[str, IndyProofRequestedProofPredicate] = None,
         **kwargs,
     ):
@@ -597,10 +597,10 @@ class IndyProofIdentifier(BaseModel):
 
     def __init__(
         self,
-        schema_id: str = None,
-        cred_def_id: str = None,
-        rev_reg_id: str = None,
-        timestamp: int = None,
+        schema_id: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        timestamp: Optional[int] = None,
         **kwargs,
     ):
         """Initialize indy proof identifier."""
@@ -663,8 +663,8 @@ class IndyProof(BaseModel):
 
     def __init__(
         self,
-        proof: IndyProofProof = None,
-        requested_proof: IndyProofRequestedProof = None,
+        proof: Optional[IndyProofProof] = None,
+        requested_proof: Optional[IndyProofRequestedProof] = None,
         identifiers: Sequence[IndyProofIdentifier] = None,
         **kwargs,
     ):

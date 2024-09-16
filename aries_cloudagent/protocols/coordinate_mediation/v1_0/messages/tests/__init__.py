@@ -1,5 +1,6 @@
 """Helper classes and functions for message tests."""
 
+from typing import Optional
 from unittest import mock
 
 from ......messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -9,7 +10,7 @@ from .....didcomm_prefix import DIDCommPrefix
 class MessageTest:
     """Base class for message tests."""
 
-    TYPE: str = None
+    TYPE: Optional[str] = None
     CLASS = AgentMessage
     SCHEMA = AgentMessageSchema
     VALUES: dict = {}

@@ -57,7 +57,7 @@ class AskarStorage(BaseStorage):
             raise StorageError("Error when adding storage record") from err
 
     async def get_record(
-        self, record_type: str, record_id: str, options: Mapping = None
+        self, record_type: str, record_id: str, options: Optional[Mapping] = None
     ) -> StorageRecord:
         """Fetch a record from the store by type and ID.
 
@@ -140,7 +140,7 @@ class AskarStorage(BaseStorage):
                 raise StorageError("Error when removing storage record") from err
 
     async def find_record(
-        self, type_filter: str, tag_query: Mapping, options: Mapping = None
+        self, type_filter: str, tag_query: Mapping, options: Optional[Mapping] = None
     ) -> StorageRecord:
         """Find a record using a unique tag filter.
 
@@ -171,7 +171,7 @@ class AskarStorage(BaseStorage):
     async def find_paginated_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
+        tag_query: Optional[Mapping] = None,
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
     ) -> Sequence[StorageRecord]:
@@ -205,8 +205,8 @@ class AskarStorage(BaseStorage):
     async def find_all_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
-        options: Mapping = None,
+        tag_query: Optional[Mapping] = None,
+        options: Optional[Mapping] = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
         for_update = bool(options and options.get("forUpdate"))
@@ -227,7 +227,7 @@ class AskarStorage(BaseStorage):
     async def delete_all_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
+        tag_query: Optional[Mapping] = None,
     ):
         """Remove all records matching a particular type filter and tag query."""
         await self._session.handle.remove_all(type_filter, tag_query)
@@ -247,9 +247,9 @@ class AskarStorageSearch(BaseStorageSearch):
     def search_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
-        page_size: int = None,
-        options: Mapping = None,
+        tag_query: Optional[Mapping] = None,
+        page_size: Optional[int] = None,
+        options: Optional[Mapping] = None,
     ) -> "AskarStorageSearchSession":
         """Search stored records.
 
@@ -276,8 +276,8 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         profile: AskarProfile,
         type_filter: str,
         tag_query: Mapping,
-        page_size: int = None,
-        options: Mapping = None,
+        page_size: Optional[int] = None,
+        options: Optional[Mapping] = None,
     ):
         """Initialize a `AskarStorageSearchSession` instance.
 

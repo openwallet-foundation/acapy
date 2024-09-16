@@ -1,6 +1,6 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -24,11 +24,11 @@ class IndyCredRequest(BaseModel):
 
     def __init__(
         self,
-        prover_did: str = None,
-        cred_def_id: str = None,
-        blinded_ms: Mapping = None,
-        blinded_ms_correctness_proof: Mapping = None,
-        nonce: str = None,
+        prover_did: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        blinded_ms: Optional[Mapping] = None,
+        blinded_ms_correctness_proof: Optional[Mapping] = None,
+        nonce: Optional[str] = None,
         **kwargs,
     ):
         """Initialize indy credential request."""

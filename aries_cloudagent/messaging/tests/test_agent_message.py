@@ -1,3 +1,4 @@
+from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import EXCLUDE, fields
@@ -21,7 +22,7 @@ class SignedAgentMessage(AgentMessage):
         schema_class = "SignedAgentMessageSchema"
         message_type = "doc/protocol/1.0/signed-agent-message"
 
-    def __init__(self, value: str = None, **kwargs):
+    def __init__(self, value: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.value = value
 

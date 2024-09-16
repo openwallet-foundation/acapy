@@ -1,6 +1,6 @@
 """A presentation request content message."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -29,9 +29,9 @@ class PresentationRequest(AgentMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         *,
-        comment: str = None,
+        comment: Optional[str] = None,
         request_presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):

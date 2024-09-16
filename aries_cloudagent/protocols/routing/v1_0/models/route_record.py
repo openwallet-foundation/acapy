@@ -1,5 +1,7 @@
 """An object for containing information on an individual route."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....core.profile import ProfileSession
@@ -23,11 +25,11 @@ class RouteRecord(BaseRecord):
     def __init__(
         self,
         *,
-        record_id: str = None,
-        role: str = None,
-        connection_id: str = None,
-        wallet_id: str = None,
-        recipient_key: str = None,
+        record_id: Optional[str] = None,
+        role: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        wallet_id: Optional[str] = None,
+        recipient_key: Optional[str] = None,
         **kwargs,
     ):
         """Initialize route record.

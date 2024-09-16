@@ -60,31 +60,31 @@ class V10CredentialExchange(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        credential_exchange_id: str = None,
+        credential_exchange_id: Optional[str] = None,
         connection_id: Optional[str] = None,
-        thread_id: str = None,
-        parent_thread_id: str = None,
-        initiator: str = None,
-        role: str = None,
-        state: str = None,
-        credential_definition_id: str = None,
-        schema_id: str = None,
+        thread_id: Optional[str] = None,
+        parent_thread_id: Optional[str] = None,
+        initiator: Optional[str] = None,
+        role: Optional[str] = None,
+        state: Optional[str] = None,
+        credential_definition_id: Optional[str] = None,
+        schema_id: Optional[str] = None,
         credential_proposal_dict: Union[
             Mapping, CredentialProposal
         ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
         credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
         credential_request: Union[Mapping, IndyCredRequest] = None,  # indy artifact
-        credential_request_metadata: Mapping = None,
-        credential_id: str = None,
+        credential_request_metadata: Optional[Mapping] = None,
+        credential_id: Optional[str] = None,
         raw_credential: Union[Mapping, IndyCredential] = None,  # indy cred as received
         credential: Union[Mapping, IndyCredInfo] = None,  # indy cred as stored
-        revoc_reg_id: str = None,
-        revocation_id: str = None,
+        revoc_reg_id: Optional[str] = None,
+        revocation_id: Optional[str] = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
-        error_msg: str = None,
+        error_msg: Optional[str] = None,
         trace: bool = False,  # backward-compat: BaseRecord.from_storage()
         **kwargs,
     ):
@@ -193,8 +193,8 @@ class V10CredentialExchange(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
-        reason: str = None,
+        state: Optional[str] = None,
+        reason: Optional[str] = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
     ):
@@ -226,7 +226,7 @@ class V10CredentialExchange(BaseExchangeRecord):
             LOGGER.exception("Error saving credential exchange error state")
 
     # Override
-    async def emit_event(self, session: ProfileSession, payload: Any = None):
+    async def emit_event(self, session: ProfileSession, payload: Optional[Any] = None):
         """Emit an event.
 
         Args:

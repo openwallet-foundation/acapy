@@ -89,7 +89,7 @@ class IndyDIDResolver(BaseDIDResolver):
         self,
         builder: DIDDocumentBuilder,
         endpoints: Optional[dict],
-        recipient_key: VerificationMethod = None,
+        recipient_key: Optional[VerificationMethod] = None,
         service_accept: Optional[Sequence[Text]] = None,
     ):
         """Add services."""

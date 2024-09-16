@@ -1,5 +1,7 @@
 """Represents an explicit RFC 15 ack message, adopted into present-proof protocol."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields, validate
 
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
@@ -20,7 +22,12 @@ class PresentationAck(V10Ack):
         message_type = PRESENTATION_ACK
         schema_class = "PresentationAckSchema"
 
-    def __init__(self, status: str = None, verification_result: str = None, **kwargs):
+    def __init__(
+        self,
+        status: Optional[str] = None,
+        verification_result: Optional[str] = None,
+        **kwargs,
+    ):
         """Initialize an explicit ack message instance.
 
         Args:

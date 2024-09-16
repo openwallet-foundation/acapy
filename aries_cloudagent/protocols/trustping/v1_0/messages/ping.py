@@ -1,5 +1,7 @@
 """Represents a trust ping message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -18,7 +20,9 @@ class Ping(AgentMessage):
         message_type = PING
         schema_class = "PingSchema"
 
-    def __init__(self, *, response_requested: bool = True, comment: str = None, **kwargs):
+    def __init__(
+        self, *, response_requested: bool = True, comment: Optional[str] = None, **kwargs
+    ):
         """Initialize a Ping message instance.
 
         Args:

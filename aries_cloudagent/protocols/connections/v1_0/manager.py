@@ -352,9 +352,9 @@ class ConnectionManager(BaseConnectionManager):
     async def create_request(
         self,
         connection: ConnRecord,
-        my_label: str = None,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> ConnectionRequest:
         """Create a new connection request for a previously-received invitation.
 
@@ -592,8 +592,8 @@ class ConnectionManager(BaseConnectionManager):
     async def create_response(
         self,
         connection: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> ConnectionResponse:
         """Create a connection response for a received connection request.
 

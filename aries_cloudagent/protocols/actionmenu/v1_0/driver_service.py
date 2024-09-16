@@ -1,6 +1,7 @@
 """Driver-based action menu service classes."""
 
 import logging
+from typing import Optional
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
@@ -17,8 +18,8 @@ class DriverMenuService(BaseMenuService):
     async def get_active_menu(
         self,
         profile: Profile,
-        connection: ConnRecord = None,
-        thread_id: str = None,
+        connection: Optional[ConnRecord] = None,
+        thread_id: Optional[str] = None,
     ) -> Menu:
         """Render the current menu.
 
@@ -41,8 +42,8 @@ class DriverMenuService(BaseMenuService):
         profile: Profile,
         action_name: str,
         action_params: dict,
-        connection: ConnRecord = None,
-        thread_id: str = None,
+        connection: Optional[ConnRecord] = None,
+        thread_id: Optional[str] = None,
     ) -> AgentMessage:
         """Perform an action defined by the active menu.
 

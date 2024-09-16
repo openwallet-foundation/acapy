@@ -3,7 +3,7 @@
 import logging
 from collections import OrderedDict
 from types import ModuleType
-from typing import Iterable, Sequence
+from typing import Iterable, Optional, Sequence
 
 from ..config.injection_context import InjectionContext
 from ..core.event_bus import EventBus
@@ -215,7 +215,7 @@ class PluginRegistry:
         self,
         context: InjectionContext,
         mod: ModuleType,
-        version_definition: dict = None,
+        version_definition: Optional[dict] = None,
     ):
         """Load a particular protocol version."""
         protocol_registry = context.inject(ProtocolRegistry)

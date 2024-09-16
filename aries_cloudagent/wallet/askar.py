@@ -551,10 +551,10 @@ class AskarWallet(BaseWallet):
         did: str,
         endpoint: str,
         ledger: BaseLedger,
-        endpoint_type: EndpointType = None,
+        endpoint_type: Optional[EndpointType] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
-        routing_keys: List[str] = None,
+        endorser_did: Optional[str] = None,
+        routing_keys: Optional[List[str]] = None,
     ):
         """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
@@ -612,7 +612,9 @@ class AskarWallet(BaseWallet):
 
         await self.replace_local_did_metadata(did, metadata)
 
-    async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keypair_start(
+        self, did: str, next_seed: Optional[str] = None
+    ) -> str:
         """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
@@ -781,7 +783,7 @@ class AskarWallet(BaseWallet):
         )
 
     async def pack_message(
-        self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
+        self, message: str, to_verkeys: Sequence[str], from_verkey: Optional[str] = None
     ) -> bytes:
         """Pack a message for one or more recipients.
 

@@ -86,8 +86,8 @@ class CredentialManager:
         self,
         connection_id: str,
         credential_proposal: CredentialProposal,
-        auto_remove: bool = None,
-        comment: str = None,
+        auto_remove: Optional[bool] = None,
+        comment: Optional[str] = None,
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
         """Set up a new credential exchange for an automated send.
 
@@ -123,16 +123,16 @@ class CredentialManager:
         self,
         connection_id: str,
         *,
-        auto_offer: bool = None,
-        auto_remove: bool = None,
-        comment: str = None,
-        credential_preview: CredentialPreview = None,
-        schema_id: str = None,
-        schema_issuer_did: str = None,
-        schema_name: str = None,
-        schema_version: str = None,
-        cred_def_id: str = None,
-        issuer_did: str = None,
+        auto_offer: Optional[bool] = None,
+        auto_remove: Optional[bool] = None,
+        comment: Optional[str] = None,
+        credential_preview: Optional[CredentialPreview] = None,
+        schema_id: Optional[str] = None,
+        schema_issuer_did: Optional[str] = None,
+        schema_name: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        issuer_did: Optional[str] = None,
         trace: bool = False,
     ) -> V10CredentialExchange:
         """Create a credential proposal.
@@ -220,8 +220,8 @@ class CredentialManager:
     async def create_offer(
         self,
         cred_ex_record: V10CredentialExchange,
-        counter_proposal: CredentialProposal = None,
-        comment: str = None,
+        counter_proposal: Optional[CredentialProposal] = None,
+        comment: Optional[str] = None,
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
         """Create a credential offer, update credential exchange record.
 
@@ -569,7 +569,7 @@ class CredentialManager:
         self,
         cred_ex_record: V10CredentialExchange,
         *,
-        comment: str = None,
+        comment: Optional[str] = None,
         retries: int = 5,
     ) -> Tuple[V10CredentialExchange, CredentialIssue]:
         """Issue a credential.
@@ -768,7 +768,7 @@ class CredentialManager:
         return cred_ex_record
 
     async def store_credential(
-        self, cred_ex_record: V10CredentialExchange, credential_id: str = None
+        self, cred_ex_record: V10CredentialExchange, credential_id: Optional[str] = None
     ) -> V10CredentialExchange:
         """Store a credential in holder wallet; send ack to issuer.
 

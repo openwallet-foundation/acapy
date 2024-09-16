@@ -5,7 +5,7 @@ and constrained.
 """
 
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from marshmallow import EXCLUDE, fields
 
@@ -29,7 +29,7 @@ class TimingDecorator(BaseModel):
         out_time: Union[str, datetime] = None,
         stale_time: Union[str, datetime] = None,
         expires_time: Union[str, datetime] = None,
-        delay_milli: int = None,
+        delay_milli: Optional[int] = None,
         wait_until_time: Union[str, datetime] = None,
     ):
         """Initialize a TimingDecorator instance.

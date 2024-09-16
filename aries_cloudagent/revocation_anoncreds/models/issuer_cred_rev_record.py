@@ -1,6 +1,6 @@
 """Issuer credential revocation information."""
 
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from marshmallow import fields
 
@@ -38,13 +38,13 @@ class IssuerCredRevRecord(BaseRecord):
     def __init__(
         self,
         *,
-        record_id: str = None,
-        state: str = None,
-        cred_ex_id: str = None,
-        rev_reg_id: str = None,
-        cred_rev_id: str = None,
-        cred_def_id: str = None,  # Marshmallow formalism: leave None
-        cred_ex_version: str = None,
+        record_id: Optional[str] = None,
+        state: Optional[str] = None,
+        cred_ex_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        cred_rev_id: Optional[str] = None,
+        cred_def_id: Optional[str] = None,  # Marshmallow formalism: leave None
+        cred_ex_version: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a new IssuerCredRevRecord."""
@@ -65,9 +65,9 @@ class IssuerCredRevRecord(BaseRecord):
         cls,
         session: ProfileSession,
         *,
-        cred_def_id: str = None,
-        rev_reg_id: str = None,
-        state: str = None,
+        cred_def_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        state: Optional[str] = None,
     ) -> Sequence["IssuerCredRevRecord"]:
         """Retrieve issuer cred rev records by cred def id and/or rev reg id.
 
@@ -111,7 +111,7 @@ class IssuerCredRevRecord(BaseRecord):
         """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
         return await cls.retrieve_by_tag_filter(session, {"cred_ex_id": cred_ex_id})
 
-    async def set_state(self, session: ProfileSession, state: str = None):
+    async def set_state(self, session: ProfileSession, state: Optional[str] = None):
         """Change the issuer cred rev record state (default issued)."""
         self.state = state or IssuerCredRevRecord.STATE_ISSUED
         await self.save(session, reason=f"Marked {self.state}")

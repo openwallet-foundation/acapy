@@ -1,5 +1,7 @@
 """Record used to represent a parameter in a menu form."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
@@ -16,12 +18,12 @@ class MenuFormParam(BaseModel):
     def __init__(
         self,
         *,
-        name: str = None,
-        title: str = None,
-        default: str = None,
-        description: str = None,
-        input_type: str = None,
-        required: bool = None,
+        name: Optional[str] = None,
+        title: Optional[str] = None,
+        default: Optional[str] = None,
+        description: Optional[str] = None,
+        input_type: Optional[str] = None,
+        required: Optional[bool] = None,
     ):
         """Initialize a MenuFormParam instance.
 

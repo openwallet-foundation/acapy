@@ -2,6 +2,7 @@
 
 import base64
 import re
+from typing import Optional
 
 import base58
 import nacl.bindings
@@ -93,7 +94,7 @@ def default_did_from_verkey(verkey: str) -> str:
     return did
 
 
-def abbr_verkey(full_verkey: str, did: str = None) -> str:
+def abbr_verkey(full_verkey: str, did: Optional[str] = None) -> str:
     """Given a full verkey and DID, return the abbreviated verkey."""
     did_len = len(b58_to_bytes(did.split(":")[-1])) if did else 16
     return f"~{bytes_to_b58(b58_to_bytes(full_verkey)[did_len:])}"

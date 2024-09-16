@@ -179,7 +179,9 @@ class InMemoryWallet(BaseWallet):
             raise WalletNotFoundError("Key not found: {}".format(verkey))
         self.profile.keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
-    async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keypair_start(
+        self, did: str, next_seed: Optional[str] = None
+    ) -> str:
         """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
@@ -545,7 +547,7 @@ class InMemoryWallet(BaseWallet):
         return verified
 
     async def pack_message(
-        self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
+        self, message: str, to_verkeys: Sequence[str], from_verkey: Optional[str] = None
     ) -> bytes:
         """Pack a message for one or more recipients.
 

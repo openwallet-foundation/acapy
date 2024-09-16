@@ -1,7 +1,7 @@
 """Manage in-memory profile interaction."""
 
 from collections import OrderedDict
-from typing import Any, Mapping, Type
+from typing import Any, Mapping, Optional, Type
 from weakref import ref
 
 from aries_askar import Session
@@ -30,9 +30,9 @@ class InMemoryProfile(Profile):
     def __init__(
         self,
         *,
-        context: InjectionContext = None,
-        name: str = None,
-        profile_class: Any = None,
+        context: Optional[InjectionContext] = None,
+        name: Optional[str] = None,
+        profile_class: Optional[Any] = None,
     ):
         """Create a new InMemoryProfile instance."""
         super().__init__(context=context, name=name, created=True)
@@ -62,11 +62,11 @@ class InMemoryProfile(Profile):
             ),
         )
 
-    def session(self, context: InjectionContext = None) -> "ProfileSession":
+    def session(self, context: Optional[InjectionContext] = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return InMemoryProfileSession(self, context=context)
 
-    def transaction(self, context: InjectionContext = None) -> "ProfileSession":
+    def transaction(self, context: Optional[InjectionContext] = None) -> "ProfileSession":
         """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
@@ -79,7 +79,7 @@ class InMemoryProfile(Profile):
         cls,
         settings: Mapping[str, Any] = None,
         bind: Mapping[Type, Any] = None,
-        profile_class: Any = None,
+        profile_class: Optional[Any] = None,
     ) -> "InMemoryProfile":
         """Used in tests to create a standard InMemoryProfile."""
         profile = InMemoryProfile(
@@ -100,7 +100,7 @@ class InMemoryProfile(Profile):
         cls,
         settings: Mapping[str, Any] = None,
         bind: Mapping[Type, Any] = None,
-        profile_class: Any = None,
+        profile_class: Optional[Any] = None,
     ) -> "InMemoryProfileSession":
         """Used in tests to quickly create InMemoryProfileSession."""
         if profile_class is not None:
@@ -126,7 +126,7 @@ class InMemoryProfileSession(ProfileSession):
         self,
         profile: Profile,
         *,
-        context: InjectionContext = None,
+        context: Optional[InjectionContext] = None,
         settings: Mapping[str, Any] = None,
     ):
         """Create a new InMemoryProfileSession instance."""
@@ -136,7 +136,7 @@ class InMemoryProfileSession(ProfileSession):
         """Create the session or transaction connection, if needed."""
         await super()._setup()
         self._init_context()
-        self._handle: Session = None
+        self._handle: Optional[Session] = None
 
     def _init_context(self):
         """Initialize the session context."""

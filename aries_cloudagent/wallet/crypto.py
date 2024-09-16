@@ -21,7 +21,9 @@ from .key_type import BLS12381G2, ED25519, KeyType
 from .util import b58_to_bytes, b64_to_bytes, bytes_to_b58, random_seed
 
 
-def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]:
+def create_keypair(
+    key_type: KeyType, seed: Optional[bytes] = None
+) -> Tuple[bytes, bytes]:
     """Create a public and private keypair from a seed value.
 
     Args:
@@ -45,7 +47,7 @@ def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]
         raise WalletError(f"Unsupported key type: {key_type.key_type}")
 
 
-def create_ed25519_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
+def create_ed25519_keypair(seed: Optional[bytes] = None) -> Tuple[bytes, bytes]:
     """Create a public and private ed25519 keypair from a seed value.
 
     Args:
@@ -238,7 +240,7 @@ def add_pack_recipients(
     wrapper: JweEnvelope,
     cek: bytes,
     to_verkeys: Sequence[bytes],
-    from_secret: bytes = None,
+    from_secret: Optional[bytes] = None,
 ):
     """Assemble the recipients block of a packed message.
 
@@ -337,7 +339,7 @@ def decrypt_plaintext(
 
 
 def encode_pack_message(
-    message: str, to_verkeys: Sequence[bytes], from_secret: bytes = None
+    message: str, to_verkeys: Sequence[bytes], from_secret: Optional[bytes] = None
 ) -> bytes:
     """Assemble a packed message for a set of recipients, optionally including the sender.
 

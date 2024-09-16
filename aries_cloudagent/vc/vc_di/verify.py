@@ -1,5 +1,7 @@
 """Verifiable Credential and Presentation verification methods."""
 
+from typing import Optional
+
 from anoncreds import AnoncredsError
 
 from aries_cloudagent.anoncreds.holder import AnonCredsHolderError
@@ -15,10 +17,10 @@ async def verify_signed_anoncredspresentation(
     *,
     profile: Profile,
     presentation: dict,
-    purpose: ProofPurpose = None,
-    challenge: str = None,
-    domain: str = None,
-    pres_req: dict = None,
+    purpose: Optional[ProofPurpose] = None,
+    challenge: Optional[str] = None,
+    domain: Optional[str] = None,
+    pres_req: Optional[dict] = None,
 ) -> PresentationVerificationResult:
     """Verify presentation structure, credentials, proof purpose and signature.
 

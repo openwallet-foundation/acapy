@@ -19,6 +19,7 @@ from logging.config import (
 )
 from logging.handlers import BaseRotatingHandler
 from random import randint
+from typing import Optional
 
 import yaml
 from portalocker import LOCK_EX, lock, unlock
@@ -57,7 +58,7 @@ class ContextFilter(logging.Filter):
             return True
 
 
-def load_resource(path: str, encoding: str = None):
+def load_resource(path: str, encoding: Optional[str] = None):
     """Open a resource file located in a python package or the local filesystem.
 
     Args:
@@ -148,9 +149,9 @@ class LoggingConfigurator:
     @classmethod
     def configure(
         cls,
-        log_config_path: str = None,
-        log_level: str = None,
-        log_file: str = None,
+        log_config_path: Optional[str] = None,
+        log_level: Optional[str] = None,
+        log_file: Optional[str] = None,
         multitenant: bool = False,
     ):
         """Configure logger.

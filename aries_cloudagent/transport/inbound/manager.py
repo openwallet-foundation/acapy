@@ -2,7 +2,7 @@
 
 import logging
 from collections import OrderedDict
-from typing import Callable, Coroutine
+from typing import Callable, Coroutine, Optional
 
 from uuid_utils import uuid4
 
@@ -31,7 +31,7 @@ class InboundTransportManager:
         self,
         profile: Profile,
         receive_inbound: Coroutine,
-        return_inbound: Callable = None,
+        return_inbound: Optional[Callable] = None,
     ):
         """Initialize an `InboundTransportManager` instance."""
         self.profile = profile
@@ -42,7 +42,7 @@ class InboundTransportManager:
         self.running_transports = {}
         self.sessions = OrderedDict()
         self.task_queue = TaskQueue()
-        self.undelivered_queue: DeliveryQueue = None
+        self.undelivered_queue: Optional[DeliveryQueue] = None
 
     async def setup(self):
         """Perform setup operations."""
@@ -142,8 +142,8 @@ class InboundTransportManager:
         *,
         accept_undelivered: bool = False,
         can_respond: bool = False,
-        client_info: dict = None,
-        wire_format: BaseWireFormat = None,
+        client_info: Optional[dict] = None,
+        wire_format: Optional[BaseWireFormat] = None,
     ):
         """Create a new inbound session.
 

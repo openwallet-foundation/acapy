@@ -1,12 +1,13 @@
 """Common exception classes."""
 
 import re
+from typing import Optional
 
 
 class BaseError(Exception):
     """Generic exception class which other exceptions should inherit from."""
 
-    def __init__(self, *args, error_code: str = None, **kwargs):
+    def __init__(self, *args, error_code: Optional[str] = None, **kwargs):
         """Initialize a BaseError instance."""
         super().__init__(*args, **kwargs)
         self.error_code = error_code if error_code else None

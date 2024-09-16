@@ -1,5 +1,7 @@
 """Record used to represent individual menu options in an action menu."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
@@ -17,11 +19,11 @@ class MenuOption(BaseModel):
     def __init__(
         self,
         *,
-        name: str = None,
-        title: str = None,
-        description: str = None,
-        disabled: bool = None,
-        form: MenuForm = None,
+        name: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        disabled: Optional[bool] = None,
+        form: Optional[MenuForm] = None,
     ):
         """Initialize a MenuOption instance.
 

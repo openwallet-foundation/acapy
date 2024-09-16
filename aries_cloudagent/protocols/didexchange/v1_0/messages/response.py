@@ -28,7 +28,7 @@ class DIDXResponse(AgentMessage):
     def __init__(
         self,
         *,
-        did: str = None,
+        did: Optional[str] = None,
         did_doc_attach: Optional[AttachDecorator] = None,
         did_rotate_attach: Optional[AttachDecorator] = None,
         **kwargs,

@@ -1,6 +1,7 @@
 """Indy non-revocation interval."""
 
 from time import time
+from typing import Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -16,7 +17,7 @@ class IndyNonRevocationInterval(BaseModel):
 
         schema_class = "IndyNonRevocationIntervalSchema"
 
-    def __init__(self, fro: int = None, to: int = None, **kwargs):
+    def __init__(self, fro: Optional[int] = None, to: Optional[int] = None, **kwargs):
         """Initialize non-revocation interval.
 
         Args:
@@ -29,7 +30,7 @@ class IndyNonRevocationInterval(BaseModel):
         self.fro = fro
         self.to = to
 
-    def covers(self, timestamp: int = None) -> bool:
+    def covers(self, timestamp: Optional[int] = None) -> bool:
         """Whether input timestamp (default now) lies within non-revocation interval.
 
         Args:

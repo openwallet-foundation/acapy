@@ -1,5 +1,7 @@
 """A credential proposal content message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -33,16 +35,16 @@ class CredentialProposal(AgentMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         *,
-        comment: str = None,
-        credential_proposal: CredentialPreview = None,
-        schema_id: str = None,
-        schema_issuer_did: str = None,
-        schema_name: str = None,
-        schema_version: str = None,
-        cred_def_id: str = None,
-        issuer_did: str = None,
+        comment: Optional[str] = None,
+        credential_proposal: Optional[CredentialPreview] = None,
+        schema_id: Optional[str] = None,
+        schema_issuer_did: Optional[str] = None,
+        schema_name: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        issuer_did: Optional[str] = None,
         **kwargs,
     ):
         """Initialize credential proposal object.

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Tuple
+from typing import Mapping, Optional, Tuple
 
 from marshmallow import RAISE
 
@@ -241,7 +241,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Receive indy credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create indy credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
@@ -377,7 +377,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store indy credential."""
         cred = cred_ex_record.cred_issue.attachment(AnonCredsCredFormatHandler.format)

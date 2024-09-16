@@ -1,5 +1,7 @@
 """Schema for configuring multiple ledgers."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields, pre_load
 from uuid_utils import uuid4
 
@@ -18,11 +20,11 @@ class LedgerConfigInstance(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
+        id: Optional[str] = None,
         is_production: str = True,
-        genesis_transactions: str = None,
-        genesis_file: str = None,
-        genesis_url: str = None,
+        genesis_transactions: Optional[str] = None,
+        genesis_file: Optional[str] = None,
+        genesis_url: Optional[str] = None,
     ):
         """Initialize LedgerConfigInstance."""
         self.id = id

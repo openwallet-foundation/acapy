@@ -233,7 +233,7 @@ class BaseMultitenantManager(ABC):
 
         return wallet_record
 
-    async def remove_wallet(self, wallet_id: str, wallet_key: str = None):
+    async def remove_wallet(self, wallet_id: str, wallet_key: Optional[str] = None):
         """Remove the wallet with specified wallet id.
 
         Args:
@@ -283,7 +283,7 @@ class BaseMultitenantManager(ABC):
         """
 
     async def create_auth_token(
-        self, wallet_record: WalletRecord, wallet_key: str = None
+        self, wallet_record: WalletRecord, wallet_key: Optional[str] = None
     ) -> str:
         """Create JWT auth token for specified wallet record.
 
@@ -419,7 +419,7 @@ class BaseMultitenantManager(ABC):
         return await self.get_wallet_profile(context, wallet)
 
     async def get_wallets_by_message(
-        self, message_body, wire_format: BaseWireFormat = None
+        self, message_body, wire_format: Optional[BaseWireFormat] = None
     ) -> List[WalletRecord]:
         """Get the wallet records associated with the message boy.
 

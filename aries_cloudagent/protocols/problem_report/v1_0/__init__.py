@@ -1,4 +1,4 @@
-from typing import Coroutine, Union
+from typing import Coroutine, Optional, Union
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -11,7 +11,7 @@ async def internal_error(
     http_error_class,
     record: Union[ConnRecord, BaseRecord],
     outbound_handler: Coroutine,
-    code: str = None,
+    code: Optional[str] = None,
 ):
     """Send problem report and raise corresponding HTTP error."""
     if record:

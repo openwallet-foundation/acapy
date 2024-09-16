@@ -23,14 +23,14 @@ class MessagesAttach(AgentMessage):
     def __init__(
         self,
         *,
-        author_did: str = None,
-        author_verkey: str = None,
-        endorser_did: str = None,
+        author_did: Optional[str] = None,
+        author_verkey: Optional[str] = None,
+        endorser_did: Optional[str] = None,
         transaction_message: Optional[dict] = None,
-        transaction_type: str = None,
-        mechanism: str = None,
-        taaDigest: str = None,
-        time: int = None,
+        transaction_type: Optional[str] = None,
+        mechanism: Optional[str] = None,
+        taaDigest: Optional[str] = None,
+        time: Optional[int] = None,
         **kwargs,
     ):
         """Initialize the attached message object.

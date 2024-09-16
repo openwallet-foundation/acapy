@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.tests import mock
@@ -279,7 +279,7 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
             test_module.web, "json_response", mock.Mock()
         ) as json_response:
             success: bool = True
-            txn: dict = None
+            txn: Optional[dict] = None
             self.ledger.register_nym.return_value: Tuple[bool, dict] = (success, txn)
             result = await test_module.register_ledger_nym(self.request)
             json_response.assert_called_once_with({"success": success})

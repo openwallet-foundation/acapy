@@ -57,12 +57,12 @@ class V10PresentationExchange(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        presentation_exchange_id: str = None,
+        presentation_exchange_id: Optional[str] = None,
         connection_id: Optional[str] = None,
-        thread_id: str = None,
-        initiator: str = None,
-        role: str = None,
-        state: str = None,
+        thread_id: Optional[str] = None,
+        initiator: Optional[str] = None,
+        role: Optional[str] = None,
+        state: Optional[str] = None,
         presentation_proposal_dict: Union[
             PresentationProposal, Mapping
         ] = None,  # aries message: ..._dict for historic compat on all aries msgs
@@ -71,11 +71,11 @@ class V10PresentationExchange(BaseExchangeRecord):
             PresentationRequest, Mapping
         ] = None,  # aries message
         presentation: Union[IndyProof, Mapping] = None,  # indy proof
-        verified: str = None,
-        verified_msgs: list = None,
+        verified: Optional[str] = None,
+        verified_msgs: Optional[list] = None,
         auto_present: bool = False,
         auto_verify: bool = False,
-        error_msg: str = None,
+        error_msg: Optional[str] = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
         auto_remove: bool = False,
         **kwargs,
@@ -161,8 +161,8 @@ class V10PresentationExchange(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
-        reason: str = None,
+        state: Optional[str] = None,
+        reason: Optional[str] = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
     ):
@@ -194,7 +194,7 @@ class V10PresentationExchange(BaseExchangeRecord):
             LOGGER.exception(err)
 
     # Override
-    async def emit_event(self, session: ProfileSession, payload: Any = None):
+    async def emit_event(self, session: ProfileSession, payload: Optional[Any] = None):
         """Emit an event.
 
         Args:

@@ -4,7 +4,7 @@ A trace decorator identifies a responsibility on the processor
 to record information on message processing events.
 """
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -26,14 +26,14 @@ class TraceReport(BaseModel):
     def __init__(
         self,
         *,
-        msg_id: str = None,
-        thread_id: str = None,
-        traced_type: str = None,
-        timestamp: str = None,
-        str_time: str = None,
-        handler: str = None,
-        elapsed_milli: int = None,
-        outcome: str = None,
+        msg_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        traced_type: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        str_time: Optional[str] = None,
+        handler: Optional[str] = None,
+        elapsed_milli: Optional[int] = None,
+        outcome: Optional[str] = None,
     ):
         """Initialize a TraceReport instance.
 
@@ -149,9 +149,9 @@ class TraceDecorator(BaseModel):
     def __init__(
         self,
         *,
-        target: str = None,
+        target: Optional[str] = None,
         full_thread: bool = True,
-        trace_reports: Sequence = None,
+        trace_reports: Optional[Sequence] = None,
     ):
         """Initialize a TraceDecorator instance.
 

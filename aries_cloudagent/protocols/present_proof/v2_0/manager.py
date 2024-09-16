@@ -39,8 +39,8 @@ class V20PresManager:
         self,
         connection_id: str,
         pres_proposal_message: V20PresProposal,
-        auto_present: bool = None,
-        auto_remove: bool = None,
+        auto_present: Optional[bool] = None,
+        auto_remove: Optional[bool] = None,
     ):
         """Create a presentation exchange record for input presentation proposal.
 
@@ -103,8 +103,8 @@ class V20PresManager:
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
-        comment: str = None,
+        request_data: Optional[dict] = None,
+        comment: Optional[str] = None,
     ):
         """Create a presentation request bound to a proposal.
 
@@ -159,8 +159,8 @@ class V20PresManager:
         self,
         connection_id: str,
         pres_request_message: V20PresRequest,
-        auto_verify: bool = None,
-        auto_remove: bool = None,
+        auto_verify: Optional[bool] = None,
+        auto_remove: Optional[bool] = None,
     ):
         """Create a presentation exchange record for input presentation request.
 
@@ -216,7 +216,7 @@ class V20PresManager:
         pres_ex_record: V20PresExRecord,
         request_data: Optional[dict] = None,
         *,
-        comment: str = None,
+        comment: Optional[str] = None,
     ) -> Tuple[V20PresExRecord, V20Pres]:
         """Create a presentation.
 

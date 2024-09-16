@@ -167,7 +167,7 @@ class InvitationMessage(AgentMessage):
         """Convert an aries message to an attachment decorator."""
         return AttachDecorator.data_json(mapping=message, ident="request-0")
 
-    def to_url(self, base_url: str = None) -> str:
+    def to_url(self, base_url: Optional[str] = None) -> str:
         """Convert an invitation message to URL format for sharing.
 
         Returns:

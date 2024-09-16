@@ -276,7 +276,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Receive indy credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create indy credential request."""
         # Temporary shim while the new anoncreds library integration is in progress
@@ -513,7 +513,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
