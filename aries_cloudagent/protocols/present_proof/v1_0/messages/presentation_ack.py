@@ -22,7 +22,12 @@ class PresentationAck(V10Ack):
         message_type = PRESENTATION_ACK
         schema_class = "PresentationAckSchema"
 
-    def __init__(self, status: Optional[str] = None, verification_result: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        status: Optional[str] = None,
+        verification_result: Optional[str] = None,
+        **kwargs,
+    ):
         """Initialize an explicit ack message instance.
 
         Args:

@@ -331,7 +331,10 @@ class ConnRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_invitation_key(
-        cls, session: ProfileSession, invitation_key: str, their_role: Optional[str] = None
+        cls,
+        session: ProfileSession,
+        invitation_key: str,
+        their_role: Optional[str] = None,
     ) -> "ConnRecord":
         """Retrieve a connection record by invitation key.
 
@@ -354,7 +357,10 @@ class ConnRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_invitation_msg_id(
-        cls, session: ProfileSession, invitation_msg_id: str, their_role: Optional[str] = None
+        cls,
+        session: ProfileSession,
+        invitation_msg_id: str,
+        their_role: Optional[str] = None,
     ) -> Optional["ConnRecord"]:
         """Retrieve a connection record by invitation_msg_id.
 

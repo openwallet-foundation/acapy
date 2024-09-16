@@ -51,7 +51,9 @@ class ConnectionDetail(BaseModel):
 
         schema_class = "ConnectionDetailSchema"
 
-    def __init__(self, *, did: Optional[str] = None, did_doc: Optional[DIDDoc] = None, **kwargs):
+    def __init__(
+        self, *, did: Optional[str] = None, did_doc: Optional[DIDDoc] = None, **kwargs
+    ):
         """Initialize a ConnectionDetail instance.
 
         Args:

@@ -31,7 +31,9 @@ class VCRecord(BaseModel):
         proof_types: Sequence[str],  # one or more proof types may be present
         cred_value: Mapping,  # the credential value as a JSON-serializable mapping
         given_id: Optional[str] = None,  # value of the credential 'id' property, if any
-        cred_tags: Optional[Mapping] = None,  # tags for retrieval (derived from attribute values)
+        cred_tags: Optional[
+            Mapping
+        ] = None,  # tags for retrieval (derived from attribute values)
         record_id: Optional[str] = None,  # specify the storage record ID
     ):
         """Initialize some defaults on record."""

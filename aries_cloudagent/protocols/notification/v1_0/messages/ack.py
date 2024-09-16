@@ -1,4 +1,5 @@
 """Represents an explicit RFC 15 ack message, adopted into present-proof protocol."""
+
 from typing import Optional
 
 from marshmallow import EXCLUDE, fields

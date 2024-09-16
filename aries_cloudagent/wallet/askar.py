@@ -612,7 +612,9 @@ class AskarWallet(BaseWallet):
 
         await self.replace_local_did_metadata(did, metadata)
 
-    async def rotate_did_keypair_start(self, did: str, next_seed: Optional[str] = None) -> str:
+    async def rotate_did_keypair_start(
+        self, did: str, next_seed: Optional[str] = None
+    ) -> str:
         """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:

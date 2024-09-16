@@ -1,4 +1,5 @@
 """Classes for managing a set of asyncio tasks."""
+
 import asyncio
 import logging
 import time
@@ -123,7 +124,10 @@ class TaskQueue:
     """A class for managing a set of asyncio tasks."""
 
     def __init__(
-        self, max_active: int = 0, timed: bool = False, trace_fn: Optional[Callable] = None
+        self,
+        max_active: int = 0,
+        timed: bool = False,
+        trace_fn: Optional[Callable] = None,
     ):
         """Initialize the task queue.
 
@@ -303,7 +307,10 @@ class TaskQueue:
         return self.add_active(task, task_complete, ident, timing)
 
     def put(
-        self, coro: Coroutine, task_complete: Optional[Callable] = None, ident: Optional[str] = None
+        self,
+        coro: Coroutine,
+        task_complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
     ) -> PendingTask:
         """Add a new task to the queue, delaying execution if busy.
 

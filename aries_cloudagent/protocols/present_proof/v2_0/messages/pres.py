@@ -1,4 +1,5 @@
 """A (proof) presentation content message."""
+
 from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, ValidationError, fields, validates_schema

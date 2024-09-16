@@ -25,7 +25,11 @@ class Invitation(AgentMessage):
         schema_class = "InvitationSchema"
 
     def __init__(
-        self, *, invitation: Optional[ConnectionInvitation] = None, message: Optional[str] = None, **kwargs
+        self,
+        *,
+        invitation: Optional[ConnectionInvitation] = None,
+        message: Optional[str] = None,
+        **kwargs,
     ):
         """Initialize invitation object.
 

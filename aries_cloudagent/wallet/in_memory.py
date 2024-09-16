@@ -179,7 +179,9 @@ class InMemoryWallet(BaseWallet):
             raise WalletNotFoundError("Key not found: {}".format(verkey))
         self.profile.keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
-    async def rotate_did_keypair_start(self, did: str, next_seed: Optional[str] = None) -> str:
+    async def rotate_did_keypair_start(
+        self, did: str, next_seed: Optional[str] = None
+    ) -> str:
         """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:

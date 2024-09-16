@@ -1,4 +1,5 @@
 """V2.0 present-proof indy presentation-exchange format handler."""
+
 import json
 import logging
 from typing import Mapping, Optional, Tuple

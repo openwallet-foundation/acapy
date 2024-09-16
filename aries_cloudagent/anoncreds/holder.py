@@ -515,7 +515,10 @@ class AnonCredsHolder:
             raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, credential_id: str, timestamp_from: Optional[int] = None, timestamp_to: Optional[int] = None
+        self,
+        credential_id: str,
+        timestamp_from: Optional[int] = None,
+        timestamp_to: Optional[int] = None,
     ) -> bool:
         """Check ledger for revocation status of credential by credential id.
 

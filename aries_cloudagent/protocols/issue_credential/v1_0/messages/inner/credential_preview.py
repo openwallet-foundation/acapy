@@ -18,7 +18,9 @@ class CredAttrSpec(BaseModel):
 
         schema_class = "CredAttrSpecSchema"
 
-    def __init__(self, *, name: str, value: str, mime_type: Optional[str] = None, **kwargs):
+    def __init__(
+        self, *, name: str, value: str, mime_type: Optional[str] = None, **kwargs
+    ):
         """Initialize attribute preview object.
 
         Args:
@@ -106,7 +108,11 @@ class CredentialPreview(BaseModel):
         message_type = CREDENTIAL_PREVIEW
 
     def __init__(
-        self, *, _type: Optional[str] = None, attributes: Sequence[CredAttrSpec] = None, **kwargs
+        self,
+        *,
+        _type: Optional[str] = None,
+        attributes: Sequence[CredAttrSpec] = None,
+        **kwargs,
     ):
         """Initialize credential preview object.
 

@@ -71,7 +71,9 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_remove: bool = True,
         error_msg: Optional[str] = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
-        cred_id_stored: Optional[str] = None,  # backward compat: BaseRecord.from_storage()
+        cred_id_stored: Optional[
+            str
+        ] = None,  # backward compat: BaseRecord.from_storage()
         conn_id: Optional[str] = None,  # backward compat: BaseRecord.from_storage()
         by_format: Optional[Mapping] = None,  # backward compat: BaseRecord.from_storage()
         **kwargs,

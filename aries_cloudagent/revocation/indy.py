@@ -203,7 +203,10 @@ class IndyRevocation:
             return await IssuerRevRegRecord.query(session)
 
     async def get_issuer_rev_reg_delta(
-        self, rev_reg_id: str, timestamp_from: Optional[int] = None, timestamp_to: Optional[int] = None
+        self,
+        rev_reg_id: str,
+        timestamp_from: Optional[int] = None,
+        timestamp_to: Optional[int] = None,
     ) -> dict:
         """Check ledger for revocation status for a given revocation registry.
 

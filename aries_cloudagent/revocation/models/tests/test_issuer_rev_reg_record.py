@@ -120,7 +120,9 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         }
 
         class TestProfile(InMemoryProfile):
-            def session(self, context: Optional[InjectionContext] = None) -> "ProfileSession":
+            def session(
+                self, context: Optional[InjectionContext] = None
+            ) -> "ProfileSession":
                 return TestProfileSession(self, context=context)
 
             @classmethod

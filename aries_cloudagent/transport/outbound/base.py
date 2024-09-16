@@ -1,4 +1,5 @@
 """Base outbound transport."""
+
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Optional, Union

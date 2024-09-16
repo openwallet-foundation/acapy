@@ -424,7 +424,9 @@ class AttachDecoratorData(BaseModel):
                 )
             self.jws_ = AttachDecoratorDataJWS.deserialize(jws)
 
-    async def verify(self, wallet: BaseWallet, signer_verkey: Optional[str] = None) -> bool:
+    async def verify(
+        self, wallet: BaseWallet, signer_verkey: Optional[str] = None
+    ) -> bool:
         """Verify the signature(s).
 
         Args:

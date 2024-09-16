@@ -1,4 +1,5 @@
 """Represents a transaction resend message."""
+
 from typing import Optional
 
 from marshmallow import EXCLUDE, fields

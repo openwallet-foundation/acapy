@@ -25,7 +25,9 @@ class IndyAttrValue(BaseModel):
 
         schema_class = "IndyAttrValueSchema"
 
-    def __init__(self, raw: Optional[str] = None, encoded: Optional[str] = None, **kwargs):
+    def __init__(
+        self, raw: Optional[str] = None, encoded: Optional[str] = None, **kwargs
+    ):
         """Initialize indy (credential) attribute value."""
         super().__init__(**kwargs)
         self.raw = raw

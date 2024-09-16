@@ -117,7 +117,9 @@ class ClassLoader:
         return resolved
 
     @classmethod
-    def load_subclass_of(cls, base_class: Type, mod_path: str, package: Optional[str] = None):
+    def load_subclass_of(
+        cls, base_class: Type, mod_path: str, package: Optional[str] = None
+    ):
         """Resolve an implementation of a base path within a module.
 
         Args:

@@ -159,7 +159,9 @@ class AskarAnoncredsProfile(Profile):
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )
 
-    def session(self, context: Optional[InjectionContext] = None) -> "AskarAnoncredsProfileSession":
+    def session(
+        self, context: Optional[InjectionContext] = None
+    ) -> "AskarAnoncredsProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return AskarAnoncredsProfileSession(self, False, context=context)
 

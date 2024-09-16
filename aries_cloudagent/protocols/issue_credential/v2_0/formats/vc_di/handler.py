@@ -2,6 +2,7 @@
 
 indy compatible, attachment is a valid verifiable credential
 """
+
 import datetime
 import json
 import logging

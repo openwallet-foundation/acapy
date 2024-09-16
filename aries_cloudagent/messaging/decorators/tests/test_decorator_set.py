@@ -12,7 +12,13 @@ class SimpleModel(BaseModel):
     class Meta:
         schema_class = "SimpleModelSchema"
 
-    def __init__(self, *, value: Optional[str] = None, handled_decorator: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        *,
+        value: Optional[str] = None,
+        handled_decorator: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.handled_decorator = handled_decorator
         self.value = value

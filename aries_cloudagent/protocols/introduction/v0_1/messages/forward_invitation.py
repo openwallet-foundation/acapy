@@ -27,7 +27,11 @@ class ForwardInvitation(AgentMessage):
         schema_class = "ForwardInvitationSchema"
 
     def __init__(
-        self, *, invitation: Optional[ConnectionInvitation] = None, message: Optional[str] = None, **kwargs
+        self,
+        *,
+        invitation: Optional[ConnectionInvitation] = None,
+        message: Optional[str] = None,
+        **kwargs,
     ):
         """Initialize invitation object.
 

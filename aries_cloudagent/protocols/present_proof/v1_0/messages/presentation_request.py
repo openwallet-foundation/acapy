@@ -1,4 +1,5 @@
 """A presentation request content message."""
+
 from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields

@@ -1,4 +1,5 @@
 """An object for containing information on an individual route."""
+
 from typing import Optional
 
 from marshmallow import EXCLUDE, ValidationError, fields, validates_schema

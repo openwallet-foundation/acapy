@@ -1,4 +1,5 @@
 """Basic in-memory storage implementation of VC holder interface."""
+
 from typing import Mapping, Optional, Sequence
 
 from dateutil.parser import ParserError

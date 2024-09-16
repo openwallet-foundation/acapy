@@ -18,7 +18,9 @@ class V20CredAttrSpec(BaseModel):
 
         schema_class = "V20CredAttrSpecSchema"
 
-    def __init__(self, *, name: str, value: str, mime_type: Optional[str] = None, **kwargs):
+    def __init__(
+        self, *, name: str, value: str, mime_type: Optional[str] = None, **kwargs
+    ):
         """Initialize attribute preview object.
 
         Args:

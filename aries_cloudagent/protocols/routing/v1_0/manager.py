@@ -77,7 +77,9 @@ class RoutingManager:
                 await asyncio.sleep(RECIP_ROUTE_PAUSE)
 
     async def get_routes(
-        self, client_connection_id: Optional[str] = None, tag_filter: Optional[dict] = None
+        self,
+        client_connection_id: Optional[str] = None,
+        tag_filter: Optional[dict] = None,
     ) -> Sequence[RouteRecord]:
         """Fetch all routes associated with the current connection.
 

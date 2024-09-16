@@ -474,7 +474,10 @@ class MediationManager:
             await record.save(session, reason="Mediation request denied.")
 
     async def prepare_keylist_query(
-        self, filter_: Optional[dict] = None, paginate_limit: int = -1, paginate_offset: int = 0
+        self,
+        filter_: Optional[dict] = None,
+        paginate_limit: int = -1,
+        paginate_offset: int = 0,
     ) -> KeylistQuery:
         """Prepare keylist query message.
 

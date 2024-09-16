@@ -63,13 +63,19 @@ class Dispatcher:
         )
 
     def put_task(
-        self, coro: Coroutine, complete: Optional[Callable] = None, ident: Optional[str] = None
+        self,
+        coro: Coroutine,
+        complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
     ) -> PendingTask:
         """Run a task in the task queue, potentially blocking other handlers."""
         return self.task_queue.put(coro, complete, ident)
 
     def run_task(
-        self, coro: Coroutine, complete: Optional[Callable] = None, ident: Optional[str] = None
+        self,
+        coro: Coroutine,
+        complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
     ) -> asyncio.Task:
         """Run a task in the task queue, potentially blocking other handlers."""
         return self.task_queue.run(coro, complete, ident)

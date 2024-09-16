@@ -21,7 +21,9 @@ from .key_type import BLS12381G2, ED25519, KeyType
 from .util import b58_to_bytes, b64_to_bytes, bytes_to_b58, random_seed
 
 
-def create_keypair(key_type: KeyType, seed: Optional[bytes] = None) -> Tuple[bytes, bytes]:
+def create_keypair(
+    key_type: KeyType, seed: Optional[bytes] = None
+) -> Tuple[bytes, bytes]:
     """Create a public and private keypair from a seed value.
 
     Args:

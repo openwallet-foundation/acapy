@@ -1,4 +1,5 @@
 """Linked data proof specific credential exchange information with non-secrets storage."""
+
 from typing import Any, Optional, Sequence
 
 from marshmallow import EXCLUDE, fields

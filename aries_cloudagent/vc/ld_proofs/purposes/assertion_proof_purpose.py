@@ -11,7 +11,12 @@ class AssertionProofPurpose(ControllerProofPurpose):
 
     term = "assertionMethod"
 
-    def __init__(self, *, date: Optional[datetime] = None, max_timestamp_delta: Optional[timedelta] = None):
+    def __init__(
+        self,
+        *,
+        date: Optional[datetime] = None,
+        max_timestamp_delta: Optional[timedelta] = None,
+    ):
         """Initialize new instance of AssertionProofPurpose."""
         super().__init__(
             term=AssertionProofPurpose.term,

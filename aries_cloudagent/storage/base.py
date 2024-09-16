@@ -1,4 +1,5 @@
 """Abstract base classes for non-secrets storage."""
+
 from abc import ABC, abstractmethod
 from typing import Mapping, Optional, Sequence
 
@@ -70,7 +71,10 @@ class BaseStorage(ABC):
         """
 
     async def find_record(
-        self, type_filter: str, tag_query: Optional[Mapping] = None, options: Optional[Mapping] = None
+        self,
+        type_filter: str,
+        tag_query: Optional[Mapping] = None,
+        options: Optional[Mapping] = None,
     ) -> StorageRecord:
         """Find a record using a unique tag filter.
 

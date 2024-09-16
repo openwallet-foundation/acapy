@@ -70,7 +70,9 @@ class JweRecipientSchema(Schema):
 class JweRecipient:
     """A single message recipient."""
 
-    def __init__(self, *, encrypted_key: bytes, header: Optional[dict] = None) -> "JweRecipient":
+    def __init__(
+        self, *, encrypted_key: bytes, header: Optional[dict] = None
+    ) -> "JweRecipient":
         """Initialize the JWE recipient."""
         self.encrypted_key = encrypted_key
         self.header = header or {}
@@ -262,7 +264,9 @@ class JweEnvelope:
             self.protected_b64.encode("utf-8") if self.protected_b64 is not None else None
         )
 
-    def set_payload(self, ciphertext: bytes, iv: bytes, tag: bytes, aad: Optional[bytes] = None):
+    def set_payload(
+        self, ciphertext: bytes, iv: bytes, tag: bytes, aad: Optional[bytes] = None
+    ):
         """Set the payload of the JWE envelope."""
         self.ciphertext = ciphertext
         self.iv = iv

@@ -21,7 +21,9 @@ class Forward(AgentMessage):
         message_type = FORWARD
         schema_class = "ForwardSchema"
 
-    def __init__(self, *, to: Optional[str] = None, msg: Union[dict, str] = None, **kwargs):
+    def __init__(
+        self, *, to: Optional[str] = None, msg: Union[dict, str] = None, **kwargs
+    ):
         """Initialize forward message object.
 
         Args:

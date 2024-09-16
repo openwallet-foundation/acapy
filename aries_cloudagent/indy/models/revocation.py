@@ -275,7 +275,9 @@ class IndyRevRegEntry(BaseModel):
 
         schema_class = "IndyRevRegEntrySchema"
 
-    def __init__(self, ver: Optional[str] = None, value: Optional[IndyRevRegEntryValue] = None):
+    def __init__(
+        self, ver: Optional[str] = None, value: Optional[IndyRevRegEntryValue] = None
+    ):
         """Initialize."""
 
         self.ver = ver

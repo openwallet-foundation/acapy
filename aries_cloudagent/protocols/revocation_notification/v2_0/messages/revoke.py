@@ -1,4 +1,5 @@
 """Revoke message."""
+
 from typing import Optional
 
 from marshmallow import fields, validate

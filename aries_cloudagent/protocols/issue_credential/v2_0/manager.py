@@ -326,7 +326,10 @@ class V20CredManager:
         return cred_ex_record
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, holder_did: str, comment: Optional[str] = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        holder_did: str,
+        comment: Optional[str] = None,
     ) -> Tuple[V20CredExRecord, V20CredRequest]:
         """Create a credential request.
 

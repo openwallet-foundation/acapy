@@ -1,4 +1,5 @@
 """Inbound transport manager."""
+
 import logging
 from collections import OrderedDict
 from typing import Callable, Coroutine, Optional

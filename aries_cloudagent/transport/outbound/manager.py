@@ -96,7 +96,9 @@ class OutboundTransportManager:
         return self.register_class(imported_class)
 
     def register_class(
-        self, transport_class: Type[BaseOutboundTransport], transport_id: Optional[str] = None
+        self,
+        transport_class: Type[BaseOutboundTransport],
+        transport_id: Optional[str] = None,
     ) -> str:
         """Register a new outbound transport class.
 

@@ -57,7 +57,11 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         """
 
     def make_credential_definition_id(
-        self, origin_did: str, schema: dict, signature_type: Optional[str] = None, tag: Optional[str] = None
+        self,
+        origin_did: str,
+        schema: dict,
+        signature_type: Optional[str] = None,
+        tag: Optional[str] = None,
     ) -> str:
         """Derive the ID for a credential definition."""
         signature_type = signature_type or DEFAULT_SIGNATURE_TYPE

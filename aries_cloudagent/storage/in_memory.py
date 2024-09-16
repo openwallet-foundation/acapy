@@ -1,4 +1,5 @@
 """Basic in-memory storage implementation (non-wallet)."""
+
 from typing import Mapping, Optional, Sequence
 
 from ..core.in_memory import InMemoryProfile
