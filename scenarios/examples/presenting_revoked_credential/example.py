@@ -72,8 +72,7 @@ async def main():
                         "role": "ENDORSER",
                     },
                 ) as resp:
-                    if resp.ok:
-                        return await resp.json()
+                    assert resp.ok
 
             await alice.post("/wallet/did/public", params=params(did=public_did.did))
         schema, cred_def = await indy_anoncred_credential_artifacts(

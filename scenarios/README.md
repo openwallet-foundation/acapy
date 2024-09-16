@@ -10,7 +10,7 @@ Every test example will have a docker-compose.yml file for all the agents and se
 - From the scenarios directory. 
 - Make sure the local acapy image is up to date. 
  - `cd ..`
- - `docker build -t acapy-test -f ../docker/Dockerfile.run .`
+ - `docker build -t acapy-test -f ./docker/Dockerfile.run .`
  - `cd scenarios`
 - Navigate to the base example. `cd examples/simple`
 - `docker compose up`
@@ -19,7 +19,7 @@ To run all the tests with pytest:
 - From the scenarios directory. 
 - Make sure the local acapy image is up to date. 
  - `cd ..`
- - `docker build -t acapy-test -f ../docker/Dockerfile.run .`
+ - `docker build -t acapy-test -f ./docker/Dockerfile.run .`
  - `cd scenarios`
 - `poetry run pytest -m examples`
 - TODO: easily run individual tests with pytest.
