@@ -2373,7 +2373,7 @@
 </code></pre></div>
 <p>When Aca-Py is run with this wallet type it will run with an Askar format wallet (and askar libraries) but will use <code>anoncreds-rs</code> instead of <code>credx</code>.</p>
 <p>There is a new package under <code>aries_cloudagent/anoncreds</code> with code that supports the new library.</p>
-<p>There are new endpoints (under <code>/anoncreds</code>) for creating a Schema and Credential Definition.  However the new anoncreds code is integrated into the existing Credential and Presentation endpoints (V2.0 endpoints only).</p>
+<p>There are new endpoints (under <code>/anoncreds</code>) for managing schemas, cred defs and revocation objects.  However the new anoncreds code is integrated into the existing Credential and Presentation endpoints (V2.0 endpoints only).</p>
 <p>Within the protocols, there are new <code>handler</code> libraries to support the new <code>anoncreds</code> format (these are in parallel to the existing <code>indy</code> libraries).</p>
 <p>The existing <code>indy</code> code are in:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aries_cloudagent/protocols/issue_credential/v2_0/formats/indy/handler.py
@@ -2403,7 +2403,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>--wallet-type<span class="w"> </span>askar-anoncreds
 </code></pre></div>
 <p>Everything should just work!!!</p>
-<p>Theoretically ATH should work with anoncreds as well, by setting the wallet type (see <a href="https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters">https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters</a>).</p>
+<p>Theoretically AATH should work with anoncreds as well, by setting the wallet type (see <a href="https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters">https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters</a>).</p>
 <h2 id="revocation-new-in-anoncreds">Revocation (new in anoncreds)<a class="headerlink" href="#revocation-new-in-anoncreds" title="Permanent link">&para;</a></h2>
 <p>The changes are significant.  Notably:</p>
 <ul>
@@ -2418,19 +2418,8 @@
 </ul>
 <h2 id="outstanding-work">Outstanding work<a class="headerlink" href="#outstanding-work" title="Permanent link">&para;</a></h2>
 <ul>
-<li>revocation notifications (not sure if they're included in <code>anoncreds-rs</code> updates, haven't tested them ...)</li>
-<li>revocation support - complete the revocation implementation (support for unhappy path scenarios)</li>
-<li>
-<p>testing - various scenarios like mediation, multitenancy etc.</p>
-</li>
-<li>
-<p>unit tests (in the new anoncreds package) (see <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2596/commits/229ffbba209aff0ea7def5bad6556d93057f3c2a">https://github.com/hyperledger/aries-cloudagent-python/pull/2596/commits/229ffbba209aff0ea7def5bad6556d93057f3c2a</a>)</p>
-</li>
+<li>more testing - various scenarios like mediation, multitenancy etc.</li>
 <li>unit tests (review and possibly update unit tests for the credential and presentation integration)</li>
-<li>endorsement (not implemented with new anoncreds code)</li>
-<li>wallet upgrade (askar to askar-anoncreds)</li>
-<li>update V1.0 versions of the Credential and Presentation endpoints to use anoncreds</li>
-<li>any other anoncreds issues - <a href="https://github.com/hyperledger/aries-cloudagent-python/issues?q=is%3Aopen+is%3Aissue+label%3AAnonCreds">https://github.com/hyperledger/aries-cloudagent-python/issues?q=is%3Aopen+is%3Aissue+label%3AAnonCreds</a></li>
 </ul>
 <h2 id="retiring-old-indy-and-askar-credx-code">Retiring old Indy and Askar (credx) Code<a class="headerlink" href="#retiring-old-indy-and-askar-credx-code" title="Permanent link">&para;</a></h2>
 <p>The main changes for the Credential and Presentation support are in the following two files:</p>
