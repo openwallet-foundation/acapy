@@ -1,7 +1,6 @@
 from unittest import IsolatedAsyncioTestCase
 from ..did_key import DIDKey
 from ...core.in_memory import InMemoryProfile
-from ...core.in_memory import InMemoryProfile
 from ...wallet.did_method import DIDMethods
 from ...wallet.key_type import ED25519
 
