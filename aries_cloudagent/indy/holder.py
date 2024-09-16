@@ -1,7 +1,7 @@
 """Base Indy Holder class."""
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 from ..core.error import BaseError
 from ..ledger.base import BaseLedger
@@ -40,8 +40,8 @@ class IndyHolder(ABC, metaclass=ABCMeta):
         self,
         ledger: BaseLedger,
         credential_id: str,
-        timestamp_from: int = None,
-        timestamp_to: int = None,
+        timestamp_from: Optional[int] = None,
+        timestamp_to: Optional[int] = None,
     ) -> bool:
         """Check ledger for revocation status of credential by cred id.
 
@@ -68,7 +68,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_mime_type(
-        self, credential_id: str, attr: str = None
+        self, credential_id: str, attr: Optional[str] = None
     ) -> Union[dict, str]:
         """Get MIME type per attribute (or for all attributes).
 
@@ -88,7 +88,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
         requested_credentials: dict,
         schemas: dict,
         credential_definitions: dict,
-        rev_states: dict = None,
+        rev_states: Optional[dict] = None,
     ) -> str:
         """Get credentials stored in the wallet.
 
@@ -123,8 +123,8 @@ class IndyHolder(ABC, metaclass=ABCMeta):
         credential_data: dict,
         credential_request_metadata: dict,
         credential_attr_mime_types=None,
-        credential_id: str = None,
-        rev_reg_def: dict = None,
+        credential_id: Optional[str] = None,
+        rev_reg_def: Optional[dict] = None,
     ):
         """Store a credential in the wallet.
 

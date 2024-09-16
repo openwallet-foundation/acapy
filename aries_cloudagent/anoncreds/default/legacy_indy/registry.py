@@ -805,7 +805,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         rev_reg_def_type: str,
         entry: dict,
         write_ledger: bool,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Send a revocation registry entry to the ledger with fixes if needed."""
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
@@ -1078,7 +1078,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         apply_ledger_update: bool,
         genesis_transactions: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[dict, dict, dict]:
         """Fix the ledger entry to match wallet-recorded credentials."""
 
@@ -1209,8 +1209,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self,
         ledger: BaseLedger,
         ledger_transaction: str,
-        sign: bool = None,
-        taa_accept: bool = None,
+        sign: Optional[bool] = None,
+        taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
     ) -> str:

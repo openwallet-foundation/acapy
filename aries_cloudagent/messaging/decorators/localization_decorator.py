@@ -1,6 +1,6 @@
 """The localization decorator (~l10n) for message localization information."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -18,7 +18,7 @@ class LocalizationDecorator(BaseModel):
     def __init__(
         self,
         *,
-        locale: str = None,
+        locale: Optional[str] = None,
         localizable: Sequence[str] = None,
         catalogs: Sequence[str] = None,
     ):

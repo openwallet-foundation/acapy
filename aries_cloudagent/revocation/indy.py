@@ -43,11 +43,11 @@ class IndyRevocation:
     async def init_issuer_registry(
         self,
         cred_def_id: str,
-        max_cred_num: int = None,
-        revoc_def_type: str = None,
-        tag: str = None,
+        max_cred_num: Optional[int] = None,
+        revoc_def_type: Optional[str] = None,
+        tag: Optional[str] = None,
         create_pending_rev_reg: bool = False,
-        endorser_connection_id: str = None,
+        endorser_connection_id: Optional[str] = None,
         notify: bool = True,
     ) -> IssuerRevRegRecord:
         """Create a new revocation registry record for a credential definition."""
@@ -203,7 +203,7 @@ class IndyRevocation:
             return await IssuerRevRegRecord.query(session)
 
     async def get_issuer_rev_reg_delta(
-        self, rev_reg_id: str, timestamp_from: int = None, timestamp_to: int = None
+        self, rev_reg_id: str, timestamp_from: Optional[int] = None, timestamp_to: Optional[int] = None
     ) -> dict:
         """Check ledger for revocation status for a given revocation registry.
 

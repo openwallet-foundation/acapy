@@ -39,13 +39,13 @@ class RevNotificationRecord(BaseRecord):
     def __init__(
         self,
         *,
-        revocation_notification_id: str = None,
-        rev_reg_id: str = None,
-        cred_rev_id: str = None,
-        connection_id: str = None,
-        thread_id: str = None,
-        comment: str = None,
-        version: str = None,
+        revocation_notification_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        cred_rev_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        comment: Optional[str] = None,
+        version: Optional[str] = None,
         **kwargs,
     ):
         """Construct record."""

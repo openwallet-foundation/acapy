@@ -33,7 +33,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         non_production_ledgers: Optional[OrderedDict] = None,
         writable_ledgers: Optional[set] = None,
         endorser_map: Optional[dict] = None,
-        cache_ttl: int = None,
+        cache_ttl: Optional[int] = None,
     ):
         """Initialize MultiIndyLedgerManager.
 

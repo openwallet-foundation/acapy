@@ -1,5 +1,7 @@
 """An object for containing the connection request/response DID information."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....connections.models.diddoc import DIDDoc
@@ -49,7 +51,7 @@ class ConnectionDetail(BaseModel):
 
         schema_class = "ConnectionDetailSchema"
 
-    def __init__(self, *, did: str = None, did_doc: DIDDoc = None, **kwargs):
+    def __init__(self, *, did: Optional[str] = None, did_doc: Optional[DIDDoc] = None, **kwargs):
         """Initialize a ConnectionDetail instance.
 
         Args:

@@ -1,7 +1,7 @@
 import importlib
 import json
 from os.path import join
-from typing import Any, Mapping, Type
+from typing import Any, Mapping, Optional, Type
 from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.tests import mock
@@ -120,7 +120,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         }
 
         class TestProfile(InMemoryProfile):
-            def session(self, context: InjectionContext = None) -> "ProfileSession":
+            def session(self, context: Optional[InjectionContext] = None) -> "ProfileSession":
                 return TestProfileSession(self, context=context)
 
             @classmethod
@@ -159,7 +159,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                 self,
                 profile: Profile,
                 *,
-                context: InjectionContext = None,
+                context: Optional[InjectionContext] = None,
                 settings: Mapping[str, Any] = None,
             ):
                 super().__init__(profile=profile, context=context, settings=settings)

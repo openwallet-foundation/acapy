@@ -1,6 +1,6 @@
 """Indy-specific credential exchange information with non-secrets storage."""
 
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -31,13 +31,13 @@ class V20CredExRecordIndy(BaseRecord):
 
     def __init__(
         self,
-        cred_ex_indy_id: str = None,
+        cred_ex_indy_id: Optional[str] = None,
         *,
-        cred_ex_id: str = None,
-        cred_id_stored: str = None,
-        cred_request_metadata: Mapping = None,
-        rev_reg_id: str = None,
-        cred_rev_id: str = None,
+        cred_ex_id: Optional[str] = None,
+        cred_id_stored: Optional[str] = None,
+        cred_request_metadata: Optional[Mapping] = None,
+        rev_reg_id: Optional[str] = None,
+        cred_rev_id: Optional[str] = None,
         **kwargs,
     ):
         """Initialize indy credential exchange record details."""

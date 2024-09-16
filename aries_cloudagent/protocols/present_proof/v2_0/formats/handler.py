@@ -1,8 +1,7 @@
 """present-proof-v2 format handler - supports DIF and INDY."""
-
 import logging
 from abc import ABC, abstractclassmethod, abstractmethod
-from typing import Tuple
+from typing import Optional, Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
@@ -64,7 +63,7 @@ class V20PresFormatHandler(ABC):
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        request_data: Optional[dict] = None,
     ) -> PresFormatAttachment:
         """Create a presentation request bound to a proposal."""
 
@@ -72,7 +71,7 @@ class V20PresFormatHandler(ABC):
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        request_data: Optional[dict] = None,
     ) -> PresFormatAttachment:
         """Create a presentation."""
 

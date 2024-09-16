@@ -1,4 +1,5 @@
 """Represents a transaction resend message."""
+from typing import Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -24,8 +25,8 @@ class TransactionResend(AgentMessage):
     def __init__(
         self,
         *,
-        state: str = None,
-        thread_id: str = None,
+        state: Optional[str] = None,
+        thread_id: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a transaction resend object.

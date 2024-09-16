@@ -1,5 +1,6 @@
 import gc
 import json
+from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
@@ -108,7 +109,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
                 await test_module.ready_middleware(request, handler)
 
     def get_admin_server(
-        self, settings: dict = None, context: InjectionContext = None
+        self, settings: Optional[dict] = None, context: Optional[InjectionContext] = None
     ) -> AdminServer:
         if not context:
             context = InjectionContext()

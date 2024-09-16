@@ -1,8 +1,7 @@
 """Base outbound transport."""
-
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Optional, Union
 
 from ...connections.models.connection_target import ConnectionTarget
 from ...core.profile import Profile
@@ -32,17 +31,17 @@ class QueuedOutboundMessage:
         """Initialize the queued outbound message."""
         self.profile = profile
         self.endpoint = target and target.endpoint
-        self.error: Exception = None
+        self.error: Optional[Exception] = None
         self.message = message
         self.payload: Union[str, bytes] = None
         self.retries = None
-        self.retry_at: float = None
+        self.retry_at: Optional[float] = None
         self.state = self.STATE_NEW
         self.target = target
         self.task: asyncio.Task = None
         self.transport_id: str = transport_id
-        self.metadata: dict = None
-        self.api_key: str = None
+        self.metadata: Optional[dict] = None
+        self.api_key: Optional[str] = None
 
 
 class BaseOutboundTransport(ABC):
@@ -50,8 +49,8 @@ class BaseOutboundTransport(ABC):
 
     def __init__(
         self,
-        wire_format: BaseWireFormat = None,
-        root_profile: Profile = None,
+        wire_format: Optional[BaseWireFormat] = None,
+        root_profile: Optional[Profile] = None,
     ) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
@@ -102,7 +101,7 @@ class BaseOutboundTransport(ABC):
         profile: Profile,
         outbound_message: QueuedOutboundMessage,
         endpoint: str,
-        metadata: dict = None,
+        metadata: Optional[dict] = None,
     ):
         """Handle message.
 

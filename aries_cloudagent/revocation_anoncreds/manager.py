@@ -40,10 +40,10 @@ class RevocationManager:
         cred_ex_id: str,
         publish: bool = False,
         notify: bool = False,
-        notify_version: str = None,
-        thread_id: str = None,
-        connection_id: str = None,
-        comment: str = None,
+        notify_version: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        comment: Optional[str] = None,
         options: Optional[dict] = None,
     ):
         """Revoke a credential by its credential exchange identifier at issue.
@@ -105,10 +105,10 @@ class RevocationManager:
         cred_rev_id: str,
         publish: bool = False,
         notify: bool = False,
-        notify_version: str = None,
-        thread_id: str = None,
-        connection_id: str = None,
-        comment: str = None,
+        notify_version: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        comment: Optional[str] = None,
         options: Optional[dict] = None,
     ):
         """Revoke a credential.

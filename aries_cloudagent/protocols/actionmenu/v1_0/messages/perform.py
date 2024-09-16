@@ -1,6 +1,6 @@
 """Represents a request to perform a menu action."""
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -20,7 +20,7 @@ class Perform(AgentMessage):
         message_type = PERFORM
         schema_class = "PerformSchema"
 
-    def __init__(self, *, name: str = None, params: Mapping[str, str] = None, **kwargs):
+    def __init__(self, *, name: Optional[str] = None, params: Mapping[str, str] = None, **kwargs):
         """Initialize a Perform object.
 
         Args:

@@ -1,3 +1,4 @@
+from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.base import InjectionError
@@ -7,10 +8,10 @@ from ..profile import Profile, ProfileManagerProvider, ProfileSession
 
 
 class MockProfile(Profile):
-    def session(self, context: InjectionContext = None) -> ProfileSession:
+    def session(self, context: Optional[InjectionContext] = None) -> ProfileSession:
         """Start a new interactive session with no transaction support requested."""
 
-    def transaction(self, context: InjectionContext = None) -> ProfileSession:
+    def transaction(self, context: Optional[InjectionContext] = None) -> ProfileSession:
         """
         Start a new interactive session with commit and rollback support.
 

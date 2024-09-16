@@ -1,6 +1,5 @@
 """Basic in-memory storage implementation of VC holder interface."""
-
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from dateutil.parser import ParserError
 from dateutil.parser import parse as dateutil_parser
@@ -77,12 +76,12 @@ class InMemoryVCHolder(VCHolder):
         self,
         contexts: Sequence[str] = None,
         types: Sequence[str] = None,
-        schema_ids: str = None,
-        issuer_id: str = None,
-        subject_ids: str = None,
+        schema_ids: Optional[str] = None,
+        issuer_id: Optional[str] = None,
+        subject_ids: Optional[str] = None,
         proof_types: Sequence[str] = None,
-        given_id: str = None,
-        tag_query: Mapping = None,
+        given_id: Optional[str] = None,
+        tag_query: Optional[Mapping] = None,
         pd_uri_list: Sequence[str] = None,
     ) -> "VCRecordSearch":
         """Start a new VC record search.
@@ -144,7 +143,7 @@ class InMemoryVCRecordSearch(VCRecordSearch):
         """Initialize the in-memory VC record search."""
         self._search = search
 
-    async def fetch(self, max_count: int = None) -> Sequence[VCRecord]:
+    async def fetch(self, max_count: Optional[int] = None) -> Sequence[VCRecord]:
         """Fetch the next list of VC records from the store.
 
         Args:

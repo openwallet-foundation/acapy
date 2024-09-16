@@ -1,4 +1,5 @@
 """Represents an explicit RFC 15 ack message, adopted into present-proof protocol."""
+from typing import Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -18,7 +19,7 @@ class V10Ack(AgentMessage):
         message_type = NOTIF_10_ACK
         schema_class = "V10AckSchema"
 
-    def __init__(self, status: str = None, **kwargs):
+    def __init__(self, status: Optional[str] = None, **kwargs):
         """Initialize an explicit ack message instance.
 
         Args:

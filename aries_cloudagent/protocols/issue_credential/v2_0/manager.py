@@ -52,8 +52,8 @@ class V20CredManager:
         connection_id: str,
         cred_proposal: V20CredProposal,
         verification_method: Optional[str] = None,
-        auto_remove: bool = None,
-        replacement_id: str = None,
+        auto_remove: Optional[bool] = None,
+        replacement_id: Optional[str] = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """Set up a new credential exchange record for an automated send.
 
@@ -91,8 +91,8 @@ class V20CredManager:
         self,
         connection_id: str,
         *,
-        auto_remove: bool = None,
-        comment: str = None,
+        auto_remove: Optional[bool] = None,
+        comment: Optional[str] = None,
         cred_preview: V20CredPreview,
         fmt2filter: Mapping[V20CredFormat.Format, Mapping[str, str]],
         trace: bool = False,
@@ -197,9 +197,9 @@ class V20CredManager:
     async def create_offer(
         self,
         cred_ex_record: V20CredExRecord,
-        counter_proposal: V20CredProposal = None,
-        replacement_id: str = None,
-        comment: str = None,
+        counter_proposal: Optional[V20CredProposal] = None,
+        replacement_id: Optional[str] = None,
+        comment: Optional[str] = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """Create credential offer, update credential exchange record.
 
@@ -326,7 +326,7 @@ class V20CredManager:
         return cred_ex_record
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, holder_did: str, comment: str = None
+        self, cred_ex_record: V20CredExRecord, holder_did: str, comment: Optional[str] = None
     ) -> Tuple[V20CredExRecord, V20CredRequest]:
         """Create a credential request.
 
@@ -485,7 +485,7 @@ class V20CredManager:
         self,
         cred_ex_record: V20CredExRecord,
         *,
-        comment: str = None,
+        comment: Optional[str] = None,
     ) -> Tuple[V20CredExRecord, V20CredIssue]:
         """Issue a credential.
 
@@ -612,7 +612,7 @@ class V20CredManager:
         return cred_ex_record
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> Tuple[V20CredExRecord, V20CredAck]:
         """Store a credential in holder wallet; send ack to issuer.
 

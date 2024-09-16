@@ -1,6 +1,6 @@
 """Credential issue message."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
@@ -28,10 +28,10 @@ class V20CredIssue(AgentMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         *,
-        replacement_id: str = None,
-        comment: str = None,
+        replacement_id: Optional[str] = None,
+        comment: Optional[str] = None,
         formats: Sequence[V20CredFormat] = None,
         credentials_attach: Sequence[AttachDecorator] = None,
         **kwargs,

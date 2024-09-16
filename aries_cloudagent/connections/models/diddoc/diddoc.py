@@ -18,7 +18,7 @@ limitations under the License.
 
 import json
 import logging
-from typing import List, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 from ....did.did_key import DIDKey
 from .publickey import PublicKey, PublicKeyType
@@ -37,7 +37,7 @@ class DIDDoc:
 
     CONTEXT = "https://w3id.org/did/v1"
 
-    def __init__(self, did: str = None) -> None:
+    def __init__(self, did: Optional[str] = None) -> None:
         """Initialize the DIDDoc instance.
 
         Retain DID ('id' in DIDDoc context); initialize verification keys

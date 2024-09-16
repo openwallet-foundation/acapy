@@ -2,7 +2,7 @@
 
 import logging
 from json.decoder import JSONDecodeError
-from typing import Mapping
+from typing import Mapping, Optional
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -913,14 +913,14 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
 async def _create_free_offer(
     profile: Profile,
-    filt_spec: Mapping = None,
-    connection_id: str = None,
+    filt_spec: Optional[Mapping] = None,
+    connection_id: Optional[str] = None,
     auto_issue: bool = False,
     auto_remove: bool = False,
-    replacement_id: str = None,
-    preview_spec: dict = None,
-    comment: str = None,
-    trace_msg: bool = None,
+    replacement_id: Optional[str] = None,
+    preview_spec: Optional[dict] = None,
+    comment: Optional[str] = None,
+    trace_msg: Optional[bool] = None,
 ):
     """Create a credential offer and related exchange record."""
 

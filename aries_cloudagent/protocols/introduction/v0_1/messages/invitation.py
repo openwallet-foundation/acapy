@@ -1,5 +1,7 @@
 """Represents an invitation returned to the introduction service."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -23,7 +25,7 @@ class Invitation(AgentMessage):
         schema_class = "InvitationSchema"
 
     def __init__(
-        self, *, invitation: ConnectionInvitation = None, message: str = None, **kwargs
+        self, *, invitation: Optional[ConnectionInvitation] = None, message: Optional[str] = None, **kwargs
     ):
         """Initialize invitation object.
 

@@ -1,6 +1,6 @@
 """Response to keylist-query message."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import fields
 
@@ -29,7 +29,7 @@ class Keylist(AgentMessage):
         self,
         *,
         keys: Sequence[str] = None,
-        pagination: KeylistQueryPaginate = None,
+        pagination: Optional[KeylistQueryPaginate] = None,
         **kwargs,
     ):
         """Initialize keylist query response object.

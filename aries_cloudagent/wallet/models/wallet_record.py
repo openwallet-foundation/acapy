@@ -29,12 +29,12 @@ class WalletRecord(BaseRecord):
     def __init__(
         self,
         *,
-        wallet_id: str = None,
-        key_management_mode: str = None,
-        settings: dict = None,
+        wallet_id: Optional[str] = None,
+        key_management_mode: Optional[str] = None,
+        settings: Optional[dict] = None,
         # MTODO: how to make this a tag without making it
         # a constructor param
-        wallet_name: str = None,
+        wallet_name: Optional[str] = None,
         jwt_iat: Optional[int] = None,
         **kwargs,
     ):

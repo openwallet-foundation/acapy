@@ -6,7 +6,7 @@ import re
 from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
 from hashlib import sha256
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..messaging.valid import IndyDID
@@ -26,7 +26,7 @@ LOGGER = logging.getLogger(__name__)
 class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
 
-    BACKEND_NAME: str = None
+    BACKEND_NAME: Optional[str] = None
 
     async def __aenter__(self) -> "BaseLedger":
         """Context manager entry.
@@ -84,8 +84,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     async def _construct_attr_json(
         self,
         endpoint: str,
-        endpoint_type: EndpointType = None,
-        all_exist_endpoints: dict = None,
+        endpoint_type: Optional[EndpointType] = None,
+        all_exist_endpoints: Optional[dict] = None,
         routing_keys: List[str] = None,
     ) -> str:
         """Create attr_json string.
@@ -119,7 +119,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         endpoint: str,
         endpoint_type: EndpointType = EndpointType.ENDPOINT,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
         routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
@@ -138,10 +138,10 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         self,
         did: str,
         verkey: str,
-        alias: str = None,
-        role: str = None,
+        alias: Optional[str] = None,
+        role: Optional[str] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[bool, dict]:
         """Register a nym on the ledger.
 
@@ -167,7 +167,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Format a nym with the ledger's DID prefix."""
 
     @abstractmethod
-    async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
+    async def rotate_public_did_keypair(self, next_seed: Optional[str] = None) -> None:
         """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
@@ -193,7 +193,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def accept_txn_author_agreement(
-        self, taa_record: dict, mechanism: str, accept_time: int = None
+        self, taa_record: dict, mechanism: str, accept_time: Optional[int] = None
     ):
         """Save a new record recording the acceptance of the TAA."""
 
@@ -212,7 +212,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     async def txn_endorse(
         self,
         request_json: str,
-        endorse_did: DIDInfo = None,
+        endorse_did: Optional[DIDInfo] = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
 
@@ -221,7 +221,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         self,
         request_json: str,
         sign: bool,
-        taa_accept: bool = None,
+        taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
     ) -> str:
@@ -280,7 +280,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         schema_version: str,
         attribute_names: Sequence[str],
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[str, dict]:
         """Send schema to ledger.
 
@@ -382,7 +382,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         public_info: DIDInfo,
         schema_json: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a schema."""
 
@@ -392,7 +392,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         public_info: DIDInfo,
         revoc_reg_def: dict,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a revocation registry definition."""
 
@@ -404,9 +404,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     async def send_revoc_reg_def(
         self,
         revoc_reg_def: dict,
-        issuer_did: str = None,
+        issuer_did: Optional[str] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Publish a revocation registry definition to the ledger."""
 
@@ -416,9 +416,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         revoc_reg_id: str,
         revoc_def_type: str,
         revoc_reg_entry: dict,
-        issuer_did: str = None,
+        issuer_did: Optional[str] = None,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
 
@@ -426,11 +426,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         self,
         issuer: IndyIssuer,
         schema_id: str,
-        signature_type: str = None,
-        tag: str = None,
+        signature_type: Optional[str] = None,
+        tag: Optional[str] = None,
         support_revocation: bool = False,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[str, dict, bool]:
         """Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -544,7 +544,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         public_info: DIDInfo,
         credential_definition_json: str,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ):
         """Create the ledger request for publishing a credential definition."""
 
@@ -599,7 +599,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         schema_id: str,
         schema_def: dict,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[str, dict]:
         """Send schema to the ledger.
 
@@ -718,7 +718,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         cred_def_id: str,
         cred_def: dict,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> Tuple[str, dict, bool]:
         """Send credential definition to ledger and store relevant key matter in wallet.
 

@@ -405,7 +405,7 @@ class VcLdpManager:
         return VerifiableCredential.deserialize(vc)
 
     async def store_credential(
-        self, vc: VerifiableCredential, options: LDProofVCOptions, cred_id: str = None
+        self, vc: VerifiableCredential, options: LDProofVCOptions, cred_id: Optional[str] = None
     ) -> VerifiableCredential:
         """Store a verifiable credential."""
 

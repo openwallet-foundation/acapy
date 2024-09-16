@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
@@ -50,7 +51,7 @@ class Receiver:
         self,
         context: InjectionContext,
         message: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ):
         self.messages.append((context, message, inbound))
 

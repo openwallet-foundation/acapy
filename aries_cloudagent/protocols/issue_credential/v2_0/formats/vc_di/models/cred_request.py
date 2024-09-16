@@ -1,6 +1,6 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
-from typing import Mapping, Union
+from typing import Mapping, Optional, Union
 
 from marshmallow import EXCLUDE, fields
 
@@ -24,11 +24,11 @@ class AnoncredsLinkSecretRequest(BaseModel):
 
     def __init__(
         self,
-        entropy: str = None,
-        cred_def_id: str = None,
-        blinded_ms: Mapping = None,
-        blinded_ms_correctness_proof: Mapping = None,
-        nonce: str = None,
+        entropy: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        blinded_ms: Optional[Mapping] = None,
+        blinded_ms_correctness_proof: Optional[Mapping] = None,
+        nonce: Optional[str] = None,
         **kwargs,
     ):
         """Initialize indy credential request."""
@@ -87,7 +87,7 @@ class DidcommSignedAttachmentRequest(BaseModel):
 
         schema_class = "DidcommSignedAttachmentSchema"
 
-    def __init__(self, attachment_id: str = None, **kwargs):
+    def __init__(self, attachment_id: Optional[str] = None, **kwargs):
         """Initialize DidcommSignedAttachment."""
         super().__init__(**kwargs)
         self.attachment_id = attachment_id
@@ -115,8 +115,8 @@ class BindingProof(BaseModel):
 
     def __init__(
         self,
-        anoncreds_link_secret: str = None,
-        didcomm_signed_attachment: str = None,
+        anoncreds_link_secret: Optional[str] = None,
+        didcomm_signed_attachment: Optional[str] = None,
         **kwargs,
     ):
         """Initialize binding proof."""
@@ -157,7 +157,7 @@ class VCDICredRequest(BaseModel):
 
     def __init__(
         self,
-        data_model_version: str = None,
+        data_model_version: Optional[str] = None,
         binding_proof: Union[dict, BindingProof] = None,
         **kwargs,
     ):

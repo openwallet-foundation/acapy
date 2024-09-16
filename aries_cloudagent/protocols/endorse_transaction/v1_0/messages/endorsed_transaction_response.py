@@ -1,5 +1,7 @@
 """Represents an endorsed transaction message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -25,12 +27,12 @@ class EndorsedTransactionResponse(AgentMessage):
     def __init__(
         self,
         *,
-        transaction_id: str = None,
-        thread_id: str = None,
-        signature_response: dict = None,
-        state: str = None,
-        endorser_did: str = None,
-        ledger_response: dict = None,
+        transaction_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        signature_response: Optional[dict] = None,
+        state: Optional[str] = None,
+        endorser_did: Optional[str] = None,
+        ledger_response: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize an endorsed transaction response object.

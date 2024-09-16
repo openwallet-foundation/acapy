@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from collections import namedtuple
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Optional
 
 from ...core.profile import Profile
 from ..error import TransportError
@@ -20,8 +20,8 @@ class BaseInboundTransport(ABC):
         *,
         max_message_size: int = 0,
         is_external: bool = False,
-        wire_format: BaseWireFormat = None,
-        root_profile: Profile = None,
+        wire_format: Optional[BaseWireFormat] = None,
+        root_profile: Optional[Profile] = None,
     ):
         """Initialize the inbound transport instance.
 
@@ -64,8 +64,8 @@ class BaseInboundTransport(ABC):
         *,
         accept_undelivered: bool = False,
         can_respond: bool = False,
-        client_info: dict = None,
-        wire_format: BaseWireFormat = None,
+        client_info: Optional[dict] = None,
+        wire_format: Optional[BaseWireFormat] = None,
     ) -> Awaitable[InboundSession]:
         """Create a new inbound session.
 

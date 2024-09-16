@@ -1,6 +1,6 @@
 """Verifiable Credential and Presentation proving methods."""
 
-from typing import List
+from typing import List, Optional
 
 from ..ld_proofs import (
     AuthenticationProofPurpose,
@@ -16,7 +16,7 @@ from .models.credential import VerifiableCredentialSchema
 
 
 async def create_presentation(
-    *, credentials: List[dict], presentation_id: str = None
+    *, credentials: List[dict], presentation_id: Optional[str] = None
 ) -> dict:
     """Create presentation and add the credentials to it.
 
@@ -59,9 +59,9 @@ async def sign_presentation(
     presentation: dict,
     suite: LinkedDataProof,
     document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
-    challenge: str = None,
-    domain: str = None,
+    purpose: Optional[ProofPurpose] = None,
+    challenge: Optional[str] = None,
+    domain: Optional[str] = None,
 ) -> dict:
     """Sign the presentation with the passed signature suite.
 

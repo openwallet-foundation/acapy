@@ -1,5 +1,4 @@
 """Classes for managing a revocation registry."""
-
 import hashlib
 import http
 import logging
@@ -7,6 +6,7 @@ import os
 import re
 from os.path import join
 from pathlib import Path
+from typing import Optional
 
 import base58
 from requests import Session
@@ -26,17 +26,17 @@ class RevocationRegistry:
 
     def __init__(
         self,
-        registry_id: str = None,
+        registry_id: Optional[str] = None,
         *,
-        cred_def_id: str = None,
-        issuer_did: str = None,
-        max_creds: int = None,
-        reg_def_type: str = None,
-        tag: str = None,
-        tails_local_path: str = None,
-        tails_public_uri: str = None,
-        tails_hash: str = None,
-        reg_def: dict = None,
+        cred_def_id: Optional[str] = None,
+        issuer_did: Optional[str] = None,
+        max_creds: Optional[int] = None,
+        reg_def_type: Optional[str] = None,
+        tag: Optional[str] = None,
+        tails_local_path: Optional[str] = None,
+        tails_public_uri: Optional[str] = None,
+        tails_hash: Optional[str] = None,
+        reg_def: Optional[dict] = None,
     ):
         """Initialize the revocation registry instance."""
         self._cred_def_id = cred_def_id

@@ -733,7 +733,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
-    info: DIDInfo = None
+    info: Optional[DIDInfo] = None
 
     mediation_id = request.query.get("mediation_id")
     profile = context.profile
@@ -800,13 +800,13 @@ async def promote_wallet_public_did(
     context: Union[AdminRequestContext, InjectionContext],
     did: str,
     write_ledger: bool = False,
-    profile: Profile = None,
-    connection_id: str = None,
+    profile: Optional[Profile] = None,
+    connection_id: Optional[str] = None,
     routing_keys: List[str] = None,
-    mediator_endpoint: str = None,
+    mediator_endpoint: Optional[str] = None,
 ) -> Tuple[DIDInfo, Optional[dict]]:
     """Promote supplied DID to the wallet public DID."""
-    info: DIDInfo = None
+    info: Optional[DIDInfo] = None
     endorser_did = None
 
     is_indy_did = bool(IndyDID.PATTERN.match(did))
@@ -891,7 +891,7 @@ async def promote_wallet_public_did(
                 )
             endorser_did = endorser_info["endorser_did"]
 
-    did_info: DIDInfo = None
+    did_info: Optional[DIDInfo] = None
     attrib_def = None
     async with (
         context.session() if is_ctx_admin_request else profile.session()
@@ -1264,7 +1264,7 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
-            did_info: DIDInfo = None
+            did_info: Optional[DIDInfo] = None
             did_info = await wallet.get_local_did(did)
             if did_info.metadata.get("posted", False):
                 # call from ledger API instead to propagate through ledger NYM transaction

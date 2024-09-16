@@ -96,9 +96,9 @@ class DIFPresExchHandler:
     def __init__(
         self,
         profile: Profile,
-        pres_signing_did: str = None,
-        proof_type: str = None,
-        reveal_doc: dict = None,
+        pres_signing_did: Optional[str] = None,
+        proof_type: Optional[str] = None,
+        reveal_doc: Optional[dict] = None,
     ):
         """Initialize PresExchange Handler."""
         super().__init__()
@@ -1042,7 +1042,7 @@ class DIFPresExchHandler:
         self,
         req: Requirement,
         credentials: Sequence[VCRecord],
-        records_filter: dict = None,
+        records_filter: Optional[dict] = None,
     ) -> dict:
         """Apply Requirement.
 
@@ -1197,10 +1197,10 @@ class DIFPresExchHandler:
         self,
         credentials: Sequence[VCRecord],
         pd: PresentationDefinition,
-        challenge: str = None,
-        domain: str = None,
-        records_filter: dict = None,
-        is_holder_override: bool = None,
+        challenge: Optional[str] = None,
+        domain: Optional[str] = None,
+        records_filter: Optional[dict] = None,
+        is_holder_override: Optional[bool] = None,
     ) -> Union[Sequence[dict], dict]:
         """Create VerifiablePresentation.
 

@@ -5,7 +5,7 @@ An attach decorator embeds content or specifies appended content.
 
 import copy
 import json
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, pre_load
 from uuid_utils import uuid4
@@ -89,7 +89,7 @@ class AttachDecoratorData1JWS(BaseModel):
         self,
         *,
         header: AttachDecoratorDataJWSHeader,
-        protected: str = None,
+        protected: Optional[str] = None,
         signature: str,
     ):
         """Initialize flattened single-JWS to include in attach decorator data."""
@@ -149,9 +149,9 @@ class AttachDecoratorDataJWS(BaseModel):
     def __init__(
         self,
         *,
-        header: AttachDecoratorDataJWSHeader = None,
-        protected: str = None,
-        signature: str = None,
+        header: Optional[AttachDecoratorDataJWSHeader] = None,
+        protected: Optional[str] = None,
+        signature: Optional[str] = None,
         signatures: Sequence[AttachDecoratorData1JWS] = None,
     ):
         """Initialize JWS to include in attach decorator multi-sig data."""
@@ -238,10 +238,10 @@ class AttachDecoratorData(BaseModel):
     def __init__(
         self,
         *,
-        jws_: AttachDecoratorDataJWS = None,
-        sha256_: str = None,
+        jws_: Optional[AttachDecoratorDataJWS] = None,
+        sha256_: Optional[str] = None,
         links_: Union[Sequence[str], str] = None,
-        base64_: str = None,
+        base64_: Optional[str] = None,
         json_: Union[Sequence[dict], dict] = None,
     ):
         """Initialize decorator data.
@@ -424,7 +424,7 @@ class AttachDecoratorData(BaseModel):
                 )
             self.jws_ = AttachDecoratorDataJWS.deserialize(jws)
 
-    async def verify(self, wallet: BaseWallet, signer_verkey: str = None) -> bool:
+    async def verify(self, wallet: BaseWallet, signer_verkey: Optional[str] = None) -> bool:
         """Verify the signature(s).
 
         Args:
@@ -543,12 +543,12 @@ class AttachDecorator(BaseModel):
     def __init__(
         self,
         *,
-        ident: str = None,
-        description: str = None,
-        filename: str = None,
-        mime_type: str = None,
-        lastmod_time: str = None,
-        byte_count: int = None,
+        ident: Optional[str] = None,
+        description: Optional[str] = None,
+        filename: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        lastmod_time: Optional[str] = None,
+        byte_count: Optional[int] = None,
         data: AttachDecoratorData,
         **kwargs,
     ):
@@ -603,11 +603,11 @@ class AttachDecorator(BaseModel):
         cls,
         content: str,
         *,
-        ident: str = None,
-        description: str = None,
-        filename: str = None,
-        lastmod_time: str = None,
-        byte_count: int = None,
+        ident: Optional[str] = None,
+        description: Optional[str] = None,
+        filename: Optional[str] = None,
+        lastmod_time: Optional[str] = None,
+        byte_count: Optional[int] = None,
     ):
         """Create `AttachDecorator` instance on base64-encoded string data.
 
@@ -637,11 +637,11 @@ class AttachDecorator(BaseModel):
         cls,
         mapping: Mapping,
         *,
-        ident: str = None,
-        description: str = None,
-        filename: str = None,
-        lastmod_time: str = None,
-        byte_count: int = None,
+        ident: Optional[str] = None,
+        description: Optional[str] = None,
+        filename: Optional[str] = None,
+        lastmod_time: Optional[str] = None,
+        byte_count: Optional[int] = None,
     ):
         """Create `AttachDecorator` instance on base64-encoded data from input mapping.
 
@@ -672,11 +672,11 @@ class AttachDecorator(BaseModel):
         cls,
         mapping: Union[Sequence[dict], dict],
         *,
-        ident: str = None,
-        description: str = None,
-        filename: str = None,
-        lastmod_time: str = None,
-        byte_count: int = None,
+        ident: Optional[str] = None,
+        description: Optional[str] = None,
+        filename: Optional[str] = None,
+        lastmod_time: Optional[str] = None,
+        byte_count: Optional[int] = None,
     ):
         """Create `AttachDecorator` instance on json-encoded data from input mapping.
 
@@ -706,14 +706,14 @@ class AttachDecorator(BaseModel):
     def data_links(
         cls,
         links: Union[str, Sequence[str]],
-        sha256: str = None,
+        sha256: Optional[str] = None,
         *,
-        ident: str = None,
-        mime_type: str = None,
-        description: str = None,
-        filename: str = None,
-        lastmod_time: str = None,
-        byte_count: int = None,
+        ident: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        description: Optional[str] = None,
+        filename: Optional[str] = None,
+        lastmod_time: Optional[str] = None,
+        byte_count: Optional[int] = None,
     ):
         """Create `AttachDecorator` instance on json-encoded data from input mapping.
 

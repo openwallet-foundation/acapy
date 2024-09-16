@@ -1,6 +1,6 @@
 """Record for out of band invitations."""
 
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields
 
@@ -29,13 +29,13 @@ class InvitationRecord(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        invitation_id: str = None,
-        state: str = None,
-        invi_msg_id: str = None,
+        invitation_id: Optional[str] = None,
+        state: Optional[str] = None,
+        invi_msg_id: Optional[str] = None,
         invitation: Union[InvitationMessage, Mapping] = None,  # invitation message
-        invitation_url: str = None,
-        oob_id: str = None,
-        public_did: str = None,  # backward-compat: BaseRecord.from_storage()
+        invitation_url: Optional[str] = None,
+        oob_id: Optional[str] = None,
+        public_did: Optional[str] = None,  # backward-compat: BaseRecord.from_storage()
         trace: bool = False,
         **kwargs,
     ):

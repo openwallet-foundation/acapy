@@ -2,7 +2,7 @@
 
 from enum import Enum
 from time import time
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -41,7 +41,7 @@ class IndyPresPredSpec(BaseModel):
         self,
         name: str,
         *,
-        cred_def_id: str = None,
+        cred_def_id: Optional[str] = None,
         predicate: str,
         threshold: int,
         **kwargs,
@@ -129,10 +129,10 @@ class IndyPresAttrSpec(BaseModel):
     def __init__(
         self,
         name: str,
-        cred_def_id: str = None,
-        mime_type: str = None,
-        value: str = None,
-        referent: str = None,
+        cred_def_id: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        value: Optional[str] = None,
+        referent: Optional[str] = None,
         **kwargs,
     ):
         """Initialize attribute specification object.
@@ -156,7 +156,7 @@ class IndyPresAttrSpec(BaseModel):
         self.referent = referent
 
     @staticmethod
-    def list_plain(plain: dict, cred_def_id: str, referent: str = None):
+    def list_plain(plain: dict, cred_def_id: str, referent: Optional[str] = None):
         """Return a list of `IndyPresAttrSpec` on input cred def id.
 
         Args:
@@ -269,7 +269,7 @@ class IndyPresPreview(BaseModel):
     def __init__(
         self,
         *,
-        _type: str = None,
+        _type: Optional[str] = None,
         attributes: Sequence[IndyPresAttrSpec] = None,
         predicates: Sequence[IndyPresPredSpec] = None,
         **kwargs,
@@ -315,10 +315,10 @@ class IndyPresPreview(BaseModel):
 
     async def indy_proof_request(
         self,
-        profile: Profile = None,
-        name: str = None,
-        version: str = None,
-        nonce: str = None,
+        profile: Optional[Profile] = None,
+        name: Optional[str] = None,
+        version: Optional[str] = None,
+        nonce: Optional[str] = None,
         non_revoc_intervals: Mapping[str, IndyNonRevocationInterval] = None,
     ) -> dict:
         """Return indy proof request corresponding to presentation preview.

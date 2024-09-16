@@ -61,7 +61,7 @@ class PluginSettings(BaseSettings):
             setting_dict[k] = self[k]
         return setting_dict
 
-    def get_value(self, *var_names: str, default: Any = None):
+    def get_value(self, *var_names: str, default: Optional[Any] = None):
         """Fetch a setting.
 
         Args:

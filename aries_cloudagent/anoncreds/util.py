@@ -4,6 +4,7 @@ from os import getenv, makedirs, urandom
 from os.path import isdir, join
 from pathlib import Path
 from platform import system
+from typing import Optional
 
 from aiohttp import web
 
@@ -16,7 +17,7 @@ async def generate_pr_nonce() -> str:
     return str(int.from_bytes(urandom(10), "big"))
 
 
-def indy_client_dir(subpath: str = None, create: bool = False) -> str:
+def indy_client_dir(subpath: Optional[str] = None, create: bool = False) -> str:
     """Return '/'-terminated subdirectory of indy-client directory.
 
     Args:

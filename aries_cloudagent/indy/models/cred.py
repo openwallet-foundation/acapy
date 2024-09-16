@@ -1,6 +1,6 @@
 """Credential artifacts."""
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, ValidationError, fields
 
@@ -25,7 +25,7 @@ class IndyAttrValue(BaseModel):
 
         schema_class = "IndyAttrValueSchema"
 
-    def __init__(self, raw: str = None, encoded: str = None, **kwargs):
+    def __init__(self, raw: Optional[str] = None, encoded: Optional[str] = None, **kwargs):
         """Initialize indy (credential) attribute value."""
         super().__init__(**kwargs)
         self.raw = raw
@@ -93,14 +93,14 @@ class IndyCredential(BaseModel):
 
     def __init__(
         self,
-        schema_id: str = None,
-        cred_def_id: str = None,
-        rev_reg_id: str = None,
+        schema_id: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
         values: Mapping[str, IndyAttrValue] = None,
-        signature: Mapping = None,
-        signature_correctness_proof: Mapping = None,
-        rev_reg: Mapping = None,
-        witness: Mapping = None,
+        signature: Optional[Mapping] = None,
+        signature_correctness_proof: Optional[Mapping] = None,
+        rev_reg: Optional[Mapping] = None,
+        witness: Optional[Mapping] = None,
     ):
         """Initialize indy credential."""
         self.schema_id = schema_id

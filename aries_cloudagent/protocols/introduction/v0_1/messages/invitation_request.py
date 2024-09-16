@@ -1,4 +1,5 @@
 """Represents an request for an invitation from the introduction service."""
+from typing import Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -20,7 +21,7 @@ class InvitationRequest(AgentMessage):
         message_type = INVITATION_REQUEST
         schema_class = "InvitationRequestSchema"
 
-    def __init__(self, *, responder: str = None, message: str = None, **kwargs):
+    def __init__(self, *, responder: Optional[str] = None, message: Optional[str] = None, **kwargs):
         """Initialize invitation request object.
 
         Args:

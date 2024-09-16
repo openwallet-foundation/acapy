@@ -1,6 +1,6 @@
 """Credential offer message."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
@@ -29,11 +29,11 @@ class V20CredOffer(AgentMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         *,
-        replacement_id: str = None,
-        comment: str = None,
-        credential_preview: V20CredPreview = None,
+        replacement_id: Optional[str] = None,
+        comment: Optional[str] = None,
+        credential_preview: Optional[V20CredPreview] = None,
         formats: Sequence[V20CredFormat] = None,
         offers_attach: Sequence[AttachDecorator] = None,
         **kwargs,

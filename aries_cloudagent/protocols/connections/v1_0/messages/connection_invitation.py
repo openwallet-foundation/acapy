@@ -1,6 +1,6 @@
 """Represents an invitation message for establishing connection."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import EXCLUDE, ValidationError, fields, pre_load, validates_schema
@@ -35,12 +35,12 @@ class ConnectionInvitation(AgentMessage):
     def __init__(
         self,
         *,
-        label: str = None,
-        did: str = None,
+        label: Optional[str] = None,
+        did: Optional[str] = None,
         recipient_keys: Sequence[str] = None,
-        endpoint: str = None,
+        endpoint: Optional[str] = None,
         routing_keys: Sequence[str] = None,
-        image_url: str = None,
+        image_url: Optional[str] = None,
         **kwargs,
     ):
         """Initialize connection invitation object.
@@ -74,7 +74,7 @@ class ConnectionInvitation(AgentMessage):
         )
         self.image_url = image_url
 
-    def to_url(self, base_url: str = None) -> str:
+    def to_url(self, base_url: Optional[str] = None) -> str:
         """Convert an invitation to URL format for sharing.
 
         Returns:

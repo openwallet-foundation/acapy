@@ -84,7 +84,7 @@ class CacheKeyLock:
     def __init__(self, cache: BaseCache, key: Text):
         """Initialize the key lock."""
         self.cache = cache
-        self.exception: BaseException = None
+        self.exception: Optional[BaseException] = None
         self.key = key
         self.released = False
         self._future: asyncio.Future = asyncio.get_event_loop().create_future()

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import Optional
 
 from .base import BaseMessageQueue
 
@@ -36,7 +37,7 @@ class BasicMessageQueue(BaseMessageQueue):
         self.logger.debug(f"Queue size after enqueue is: {self.queue.qsize()}")
         await self.queue.put(message)
 
-    async def dequeue(self, *, timeout: int = None):
+    async def dequeue(self, *, timeout: Optional[int] = None):
         """Dequeue a message.
 
         Returns:

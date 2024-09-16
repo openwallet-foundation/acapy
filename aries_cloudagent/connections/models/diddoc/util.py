@@ -16,12 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Optional
 from urllib.parse import urlparse
 
 from base58 import b58decode
 
 
-def resource(ref: str, delimiter: str = None) -> str:
+def resource(ref: str, delimiter: Optional[str] = None) -> str:
     """Extract the resource for an identifier.
 
     Given a (URI) reference, return up to its delimiter (exclusively), or all of it if
@@ -59,7 +60,7 @@ def canon_did(uri: str) -> str:
     )
 
 
-def canon_ref(did: str, ref: str, delimiter: str = None):
+def canon_ref(did: str, ref: str, delimiter: Optional[str] = None):
     """Given a reference in a DID document, return it in its canonical form of a URI.
 
     Args:

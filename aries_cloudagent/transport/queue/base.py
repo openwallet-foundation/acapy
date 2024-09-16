@@ -2,6 +2,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 class BaseMessageQueue(ABC):
@@ -20,7 +21,7 @@ class BaseMessageQueue(ABC):
         """
 
     @abstractmethod
-    async def dequeue(self, *, timeout: int = None):
+    async def dequeue(self, *, timeout: Optional[int] = None):
         """Dequeue a message.
 
         Returns:

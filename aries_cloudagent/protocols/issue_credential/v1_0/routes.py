@@ -1,6 +1,7 @@
 """Credential exchange admin routes."""
 
 from json.decoder import JSONDecodeError
+from typing import Optional
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -734,12 +735,12 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 async def _create_free_offer(
     profile: Profile,
     cred_def_id: str,
-    connection_id: str = None,
+    connection_id: Optional[str] = None,
     auto_issue: bool = False,
     auto_remove: bool = False,
-    preview_spec: dict = None,
-    comment: str = None,
-    trace_msg: bool = None,
+    preview_spec: Optional[dict] = None,
+    comment: Optional[str] = None,
+    trace_msg: Optional[bool] = None,
 ):
     """Create a credential offer and related exchange record."""
 

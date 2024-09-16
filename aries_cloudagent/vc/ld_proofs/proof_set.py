@@ -1,6 +1,6 @@
 """Class to represent a Linked Data proof set."""
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 from pyld.jsonld import JsonLdProcessor
 
@@ -145,7 +145,7 @@ class ProofSet:
         # But then, why do multiple proofs?
         suite: LinkedDataProof,
         document_loader: DocumentLoaderMethod,
-        nonce: bytes = None,
+        nonce: Optional[bytes] = None,
     ) -> dict:
         """Create new derived Linked Data proof(s) on document using the reveal document.
 

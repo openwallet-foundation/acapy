@@ -3,6 +3,7 @@
 import json
 import logging
 from asyncio import shield
+from typing import Optional
 
 from uuid_utils import uuid4
 
@@ -61,7 +62,7 @@ class TransactionManager:
         return self._profile
 
     async def create_record(
-        self, messages_attach: str, connection_id: str, meta_data: dict = None
+        self, messages_attach: str, connection_id: str, meta_data: Optional[dict] = None
     ):
         """Create a new Transaction Record.
 
@@ -109,12 +110,12 @@ class TransactionManager:
     async def create_request(
         self,
         transaction: TransactionRecord,
-        signature: str = None,
-        signed_request: dict = None,
-        expires_time: str = None,
+        signature: Optional[str] = None,
+        signed_request: Optional[dict] = None,
+        expires_time: Optional[str] = None,
         endorser_write_txn: bool = False,
-        author_goal_code: str = None,
-        signer_goal_code: str = None,
+        author_goal_code: Optional[str] = None,
+        signer_goal_code: Optional[str] = None,
     ):
         """Create a new Transaction Request.
 
@@ -226,7 +227,7 @@ class TransactionManager:
         self,
         transaction: TransactionRecord,
         state: str,
-        use_endorser_did: str = None,
+        use_endorser_did: Optional[str] = None,
     ):
         """Create a response to endorse a transaction.
 
@@ -792,8 +793,8 @@ class TransactionManager:
     async def endorsed_txn_post_processing(
         self,
         transaction: TransactionRecord,
-        ledger_response: dict = None,
-        connection_record: ConnRecord = None,
+        ledger_response: Optional[dict] = None,
+        connection_record: Optional[ConnRecord] = None,
     ):
         """Store record in wallet, and kick off any required post-processing.
 

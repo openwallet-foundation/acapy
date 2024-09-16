@@ -1,6 +1,6 @@
 """Record used to represent the form associated with an action menu option."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -19,10 +19,10 @@ class MenuForm(BaseModel):
     def __init__(
         self,
         *,
-        title: str = None,
-        description: str = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
         params: Sequence[MenuFormParam] = None,
-        submit_label: str = None,
+        submit_label: Optional[str] = None,
     ):
         """Initialize a MenuForm instance.
 

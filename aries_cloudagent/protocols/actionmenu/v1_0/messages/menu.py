@@ -1,6 +1,6 @@
 """Represents an action menu."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -24,9 +24,9 @@ class Menu(AgentMessage):
     def __init__(
         self,
         *,
-        title: str = None,
-        description: str = None,
-        errormsg: str = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        errormsg: Optional[str] = None,
         options: Sequence[MenuOption] = None,
         **kwargs,
     ):

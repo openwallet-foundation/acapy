@@ -54,14 +54,14 @@ class V20CredExRecord(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        cred_ex_id: str = None,
-        connection_id: str = None,
+        cred_ex_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
         verification_method: Optional[str] = None,
-        thread_id: str = None,
-        parent_thread_id: str = None,
-        initiator: str = None,
-        role: str = None,
-        state: str = None,
+        thread_id: Optional[str] = None,
+        parent_thread_id: Optional[str] = None,
+        initiator: Optional[str] = None,
+        role: Optional[str] = None,
+        state: Optional[str] = None,
         cred_proposal: Union[Mapping, V20CredProposal] = None,  # aries message
         cred_offer: Union[Mapping, V20CredOffer] = None,  # aries message
         cred_request: Union[Mapping, V20CredRequest] = None,  # aries message
@@ -69,11 +69,11 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
-        error_msg: str = None,
+        error_msg: Optional[str] = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
-        cred_id_stored: str = None,  # backward compat: BaseRecord.from_storage()
-        conn_id: str = None,  # backward compat: BaseRecord.from_storage()
-        by_format: Mapping = None,  # backward compat: BaseRecord.from_storage()
+        cred_id_stored: Optional[str] = None,  # backward compat: BaseRecord.from_storage()
+        conn_id: Optional[str] = None,  # backward compat: BaseRecord.from_storage()
+        by_format: Optional[Mapping] = None,  # backward compat: BaseRecord.from_storage()
         **kwargs,
     ):
         """Initialize a new V20CredExRecord."""
@@ -149,8 +149,8 @@ class V20CredExRecord(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
-        reason: str = None,
+        state: Optional[str] = None,
+        reason: Optional[str] = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
     ):
@@ -182,7 +182,7 @@ class V20CredExRecord(BaseExchangeRecord):
             LOGGER.exception(err)
 
     # Override
-    async def emit_event(self, session: ProfileSession, payload: Any = None):
+    async def emit_event(self, session: ProfileSession, payload: Optional[Any] = None):
         """Emit an event.
 
         Args:

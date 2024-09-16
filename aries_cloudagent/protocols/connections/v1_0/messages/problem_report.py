@@ -2,6 +2,7 @@
 
 import logging
 from enum import Enum
+from typing import Optional
 
 from marshmallow import EXCLUDE, ValidationError, validates_schema
 
@@ -38,7 +39,7 @@ class ConnectionProblemReport(ProblemReport):
         message_type = PROBLEM_REPORT
         schema_class = "ConnectionProblemReportSchema"
 
-    def __init__(self, *, problem_code: str = None, explain: str = None, **kwargs):
+    def __init__(self, *, problem_code: Optional[str] = None, explain: Optional[str] = None, **kwargs):
         """Initialize a ProblemReport message instance.
 
         Args:

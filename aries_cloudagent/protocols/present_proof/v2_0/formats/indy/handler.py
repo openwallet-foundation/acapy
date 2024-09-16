@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Tuple
+from typing import Mapping, Optional, Tuple
 
 from marshmallow import RAISE
 
@@ -113,7 +113,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation request bound to a proposal.
 
@@ -151,7 +151,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         # Temporary shim while the new anoncreds library integration is in progress

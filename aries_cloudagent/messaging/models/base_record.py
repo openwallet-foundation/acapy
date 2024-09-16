@@ -243,7 +243,7 @@ class BaseRecord(BaseModel):
         cls: Type[RecordType],
         session: ProfileSession,
         tag_filter: dict,
-        post_filter: dict = None,
+        post_filter: Optional[dict] = None,
         *,
         for_update=False,
     ) -> RecordType:
@@ -289,12 +289,12 @@ class BaseRecord(BaseModel):
     async def query(
         cls: Type[RecordType],
         session: ProfileSession,
-        tag_filter: dict = None,
+        tag_filter: Optional[dict] = None,
         *,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-        post_filter_positive: dict = None,
-        post_filter_negative: dict = None,
+        post_filter_positive: Optional[dict] = None,
+        post_filter_negative: Optional[dict] = None,
         alt: bool = False,
     ) -> Sequence[RecordType]:
         """Query stored records.
@@ -371,10 +371,10 @@ class BaseRecord(BaseModel):
         self,
         session: ProfileSession,
         *,
-        reason: str = None,
+        reason: Optional[str] = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
-        event: bool = None,
+        event: Optional[bool] = None,
     ) -> str:
         """Persist the record to storage.
 
@@ -422,7 +422,7 @@ class BaseRecord(BaseModel):
         session: ProfileSession,
         new_record: bool,
         last_state: Optional[str],
-        event: bool = None,
+        event: Optional[bool] = None,
     ):
         """Perform post-save actions.
 
@@ -453,7 +453,7 @@ class BaseRecord(BaseModel):
                 await self.emit_event(session, self.serialize())
             await storage.delete_record(self.storage_record)
 
-    async def emit_event(self, session: ProfileSession, payload: Any = None):
+    async def emit_event(self, session: ProfileSession, payload: Optional[Any] = None):
         """Emit an event.
 
         Args:
@@ -478,8 +478,8 @@ class BaseRecord(BaseModel):
     def log_state(
         cls,
         msg: str,
-        params: dict = None,
-        settings: BaseSettings = None,
+        params: Optional[dict] = None,
+        settings: Optional[BaseSettings] = None,
         override: bool = False,
     ):
         """Print a message with increased visibility (for testing)."""

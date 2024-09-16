@@ -46,7 +46,7 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         self,
         message: str,
         obj_id: str,
-        obj: T = None,
+        obj: Optional[T] = None,
         *args,
         **kwargs,
     ):

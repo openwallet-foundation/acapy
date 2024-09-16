@@ -1,5 +1,7 @@
 """Inner structure of keylist message. Represents a single item in keylist.keys."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
@@ -18,9 +20,9 @@ class KeylistKey(BaseModel):
     def __init__(
         self,
         *,
-        recipient_key: str = None,
-        action: str = None,
-        result: str = None,
+        recipient_key: Optional[str] = None,
+        action: Optional[str] = None,
+        result: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a KeylistKey instance.

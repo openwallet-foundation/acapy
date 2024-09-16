@@ -16,7 +16,7 @@ class SingleWalletAskarMultitenantManager(BaseMultitenantManager):
 
     DEFAULT_MULTITENANT_WALLET_NAME = "multitenant_sub_wallet"
 
-    def __init__(self, profile: Profile, multitenant_profile: AskarProfile = None):
+    def __init__(self, profile: Profile, multitenant_profile: Optional[AskarProfile] = None):
         """Initialize askar profile multitenant Manager.
 
         Args:

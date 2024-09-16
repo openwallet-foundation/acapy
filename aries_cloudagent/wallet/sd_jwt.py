@@ -309,8 +309,8 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
 async def sd_jwt_verify(
     profile: Profile,
     sd_jwt_presentation: str,
-    expected_aud: str = None,
-    expected_nonce: str = None,
+    expected_aud: Optional[str] = None,
+    expected_nonce: Optional[str] = None,
 ) -> SDJWTVerifyResult:
     """Verify sd-jwt using SDJWTVerifierACAPy.verify()."""
     sd_jwt_verifier = SDJWTVerifierACAPy(

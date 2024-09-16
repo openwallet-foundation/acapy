@@ -150,9 +150,9 @@ class IndyCredxHolder(IndyHolder):
         credential_definition: dict,
         credential_data: dict,
         credential_request_metadata: dict,
-        credential_attr_mime_types: dict = None,
-        credential_id: str = None,
-        rev_reg_def: dict = None,
+        credential_attr_mime_types: Optional[dict] = None,
+        credential_id: Optional[str] = None,
+        rev_reg_def: Optional[dict] = None,
     ) -> str:
         """Store a credential in the wallet.
 
@@ -375,8 +375,8 @@ class IndyCredxHolder(IndyHolder):
         self,
         ledger: BaseLedger,
         credential_id: str,
-        timestamp_from: int = None,
-        timestamp_to: int = None,
+        timestamp_from: Optional[int] = None,
+        timestamp_to: Optional[int] = None,
     ) -> bool:
         """Check ledger for revocation status of credential by cred id.
 
@@ -425,7 +425,7 @@ class IndyCredxHolder(IndyHolder):
                 raise IndyHolderError("Error deleting credential") from err
 
     async def get_mime_type(
-        self, credential_id: str, attr: str = None
+        self, credential_id: str, attr: Optional[str] = None
     ) -> Union[dict, str]:
         """Get MIME type per attribute (or for all attributes).
 
@@ -455,7 +455,7 @@ class IndyCredxHolder(IndyHolder):
         requested_credentials: dict,
         schemas: dict,
         credential_definitions: dict,
-        rev_states: dict = None,
+        rev_states: Optional[dict] = None,
     ) -> str:
         """Get credentials stored in the wallet.
 

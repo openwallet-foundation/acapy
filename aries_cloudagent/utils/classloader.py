@@ -22,7 +22,7 @@ class ClassLoader:
     """Class used to load classes from modules dynamically."""
 
     @classmethod
-    def load_module(cls, mod_path: str, package: str = None) -> ModuleType:
+    def load_module(cls, mod_path: str, package: Optional[str] = None) -> ModuleType:
         """Load a module by its absolute path.
 
         Args:
@@ -117,7 +117,7 @@ class ClassLoader:
         return resolved
 
     @classmethod
-    def load_subclass_of(cls, base_class: Type, mod_path: str, package: str = None):
+    def load_subclass_of(cls, base_class: Type, mod_path: str, package: Optional[str] = None):
         """Resolve an implementation of a base path within a module.
 
         Args:

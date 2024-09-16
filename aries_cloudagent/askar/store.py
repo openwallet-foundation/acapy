@@ -3,6 +3,7 @@
 import json
 import logging
 import urllib
+from typing import Optional
 
 from aries_askar import AskarError, AskarErrorCode, Store
 
@@ -24,7 +25,7 @@ class AskarStoreConfig:
     KEY_DERIVATION_ARGON2I_INT = "kdf:argon2i:int"
     KEY_DERIVATION_ARGON2I_MOD = "kdf:argon2i:mod"
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: Optional[dict] = None):
         """Initialize a `AskarWallet` instance.
 
         Args:

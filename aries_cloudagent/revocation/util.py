@@ -1,7 +1,7 @@
 """Revocation utilities."""
 
 import re
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..core.profile import Profile
 
@@ -19,7 +19,7 @@ async def notify_revocation_reg_init_event(
     profile: Profile,
     issuer_rev_id: str,
     create_pending_rev_reg: bool = False,
-    endorser_connection_id: str = None,
+    endorser_connection_id: Optional[str] = None,
 ):
     """Send notification for a revocation registry init event."""
     meta_data = {

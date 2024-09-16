@@ -1,6 +1,6 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from marshmallow import EXCLUDE, fields
 
@@ -25,9 +25,9 @@ class AnoncredsLinkSecret(BaseModel):
 
     def __init__(
         self,
-        nonce: str = None,
-        cred_def_id: str = None,
-        key_correctness_proof: str = None,
+        nonce: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        key_correctness_proof: Optional[str] = None,
         **kwargs,
     ):
         """Initialize values for AnoncredsLinkSecret."""
@@ -83,7 +83,7 @@ class DidcommSignedAttachment(BaseModel):
         self,
         algs_supported: Sequence[str] = None,
         did_methods_supported: Sequence[str] = None,
-        nonce: str = None,
+        nonce: Optional[str] = None,
         **kwargs,
     ):
         """Initialize values for DidcommSignedAttachment."""
@@ -162,8 +162,8 @@ class VCDICredAbstract(BaseModel):
     def __init__(
         self,
         data_model_versions_supported: Sequence[str] = None,
-        binding_required: str = None,
-        binding_method: str = None,
+        binding_required: Optional[str] = None,
+        binding_method: Optional[str] = None,
         credential: Union[dict, VerifiableCredential] = None,
         **kwargs,
     ):

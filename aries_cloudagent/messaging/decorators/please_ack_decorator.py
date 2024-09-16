@@ -1,6 +1,6 @@
 """The please-ack decorator to request acknowledgement."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -18,7 +18,7 @@ class PleaseAckDecorator(BaseModel):
 
     def __init__(
         self,
-        message_id: str = None,
+        message_id: Optional[str] = None,
         on: Sequence[str] = None,
     ):
         """Initialize a PleaseAckDecorator instance.

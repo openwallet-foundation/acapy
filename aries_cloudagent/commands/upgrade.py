@@ -56,7 +56,7 @@ class UpgradeError(BaseError):
 class VersionUpgradeConfig:
     """Handle ACA-Py version upgrade config."""
 
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: Optional[str] = None):
         """Initialize config for use during upgrade process."""
         self.function_map_config = UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING
         self.upgrade_configs = {}

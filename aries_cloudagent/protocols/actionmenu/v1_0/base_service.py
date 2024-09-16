@@ -1,6 +1,7 @@
 """Base action menu service classes."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from ....config.injection_context import InjectionContext
 from ....connections.models.conn_record import ConnRecord
@@ -30,8 +31,8 @@ class BaseMenuService(ABC):
     async def get_active_menu(
         self,
         profile: Profile,
-        connection: ConnRecord = None,
-        thread_id: str = None,
+        connection: Optional[ConnRecord] = None,
+        thread_id: Optional[str] = None,
     ) -> Menu:
         """Render the current menu.
 
@@ -47,8 +48,8 @@ class BaseMenuService(ABC):
         profile: Profile,
         action_name: str,
         action_params: dict,
-        connection: ConnRecord = None,
-        thread_id: str = None,
+        connection: Optional[ConnRecord] = None,
+        thread_id: Optional[str] = None,
     ) -> AgentMessage:
         """Perform an action defined by the active menu.
 
