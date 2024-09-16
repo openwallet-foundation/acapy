@@ -86,7 +86,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         endpoint: str,
         endpoint_type: Optional[EndpointType] = None,
         all_exist_endpoints: Optional[dict] = None,
-        routing_keys: List[str] = None,
+        routing_keys: Optional[List[str]] = None,
     ) -> str:
         """Create attr_json string.
 
@@ -120,7 +120,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         endpoint_type: EndpointType = EndpointType.ENDPOINT,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
-        routing_keys: List[str] = None,
+        routing_keys: Optional[List[str]] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 

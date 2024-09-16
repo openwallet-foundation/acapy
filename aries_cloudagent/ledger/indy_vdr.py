@@ -712,7 +712,7 @@ class IndyVdrLedger(BaseLedger):
         endpoint_type: Optional[EndpointType] = None,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
-        routing_keys: List[str] = None,
+        routing_keys: Optional[List[str]] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 

@@ -295,7 +295,7 @@ class BaseWallet(ABC):
         endpoint_type: Optional[EndpointType] = None,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
-        routing_keys: List[str] = None,
+        routing_keys: Optional[List[str]] = None,
     ):
         """Update the endpoint for a DID in the wallet, send to ledger if posted.
 

@@ -802,7 +802,7 @@ async def promote_wallet_public_did(
     write_ledger: bool = False,
     profile: Optional[Profile] = None,
     connection_id: Optional[str] = None,
-    routing_keys: List[str] = None,
+    routing_keys: Optional[List[str]] = None,
     mediator_endpoint: Optional[str] = None,
 ) -> Tuple[DIDInfo, Optional[dict]]:
     """Promote supplied DID to the wallet public DID."""
