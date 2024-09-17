@@ -9,6 +9,7 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
 from aries_cloudagent.tests import mock
+from aries_cloudagent.wallet.util import pad
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
@@ -883,7 +884,8 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
             base64_message = invi_rec.invitation_url.split("=", maxsplit=1)[1]
             base64_bytes = base64_message.encode("ascii")
-            message_bytes = base64.b64decode(base64_bytes)
+            message_bytes = base64.b64decode(base64_bytes + b"==")
+            base64.urlsafe_b64decode(pad(base64_message))
             data = message_bytes.decode("ascii")
             assert data
             invite_json = json.loads(data)
