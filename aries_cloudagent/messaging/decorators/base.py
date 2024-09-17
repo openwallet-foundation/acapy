@@ -1,7 +1,7 @@
 """Classes for managing a collection of decorators."""
 
 from collections import OrderedDict
-from typing import Mapping, Sequence, Type
+from typing import Mapping, Optional, Sequence, Type
 
 from marshmallow import Schema
 from marshmallow.fields import Field
@@ -19,7 +19,7 @@ class DecoratorError(BaseError):
 class BaseDecoratorSet(OrderedDict):
     """Collection of decorators."""
 
-    def __init__(self, models: dict = None):
+    def __init__(self, models: Optional[dict] = None):
         """Initialize a decorator set."""
         self._fields = OrderedDict()
         self._models: Mapping[str, Type[BaseModel]] = models.copy() if models else {}
@@ -134,7 +134,7 @@ class BaseDecoratorSet(OrderedDict):
                 remain[key] = value
         return remain
 
-    def to_dict(self, prefix: str = None) -> OrderedDict:
+    def to_dict(self, prefix: Optional[str] = None) -> OrderedDict:
         """Convert to a dictionary (serialize).
 
         Raises:

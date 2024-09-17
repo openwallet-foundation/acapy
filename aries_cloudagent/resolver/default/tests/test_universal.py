@@ -1,7 +1,7 @@
 """Test universal resolver with http bindings."""
 
 import re
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import pytest
 
@@ -52,7 +52,7 @@ class MockResponse:
 class MockClientSession:
     """Mock client session."""
 
-    def __init__(self, response: MockResponse = None):
+    def __init__(self, response: Optional[MockResponse] = None):
         self.response = response
 
     def __call__(self, headers):

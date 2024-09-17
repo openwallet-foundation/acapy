@@ -1,5 +1,7 @@
 """Verifiable Credential issuance methods."""
 
+from typing import Optional
+
 from ..ld_proofs import (
     CredentialIssuancePurpose,
     DocumentLoaderMethod,
@@ -16,7 +18,7 @@ async def issue(
     credential: dict,
     suite: LinkedDataProof,
     document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
+    purpose: Optional[ProofPurpose] = None,
 ) -> dict:
     """Issue a verifiable credential.
 

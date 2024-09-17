@@ -1,6 +1,6 @@
 """BBS+ crypto."""
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from ..core.error import BaseError
 from ..utils.dependencies import (
@@ -82,7 +82,7 @@ def verify_signed_messages_bls12381g2(
         raise BbsException("Unable to verify BBS+ signature") from error
 
 
-def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
+def create_bls12381g2_keypair(seed: Optional[bytes] = None) -> Tuple[bytes, bytes]:
     """Create a public and private bls12381g2 keypair from a seed value.
 
     Args:

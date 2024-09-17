@@ -109,11 +109,11 @@ class Conductor:
         """
         self.admin_server = None
         self.context_builder = context_builder
-        self.dispatcher: Dispatcher = None
-        self.inbound_transport_manager: InboundTransportManager = None
-        self.outbound_transport_manager: OutboundTransportManager = None
-        self.root_profile: Profile = None
-        self.setup_public_did: DIDInfo = None
+        self.dispatcher: Optional[Dispatcher] = None
+        self.inbound_transport_manager: Optional[InboundTransportManager] = None
+        self.outbound_transport_manager: Optional[OutboundTransportManager] = None
+        self.root_profile: Optional[Profile] = None
+        self.setup_public_did: Optional[DIDInfo] = None
 
     force_agent_anoncreds = False
 
@@ -653,7 +653,7 @@ class Conductor:
         self,
         profile: Profile,
         outbound: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
         """Route an outbound message.
 
@@ -672,7 +672,7 @@ class Conductor:
         self,
         profile: Profile,
         outbound: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
         """Route an outbound message.
 
@@ -768,8 +768,8 @@ class Conductor:
         topic: str,
         payload: dict,
         endpoint: str,
-        max_attempts: int = None,
-        metadata: dict = None,
+        max_attempts: Optional[int] = None,
+        metadata: Optional[dict] = None,
     ):
         """Route a webhook through the outbound transport manager.
 

@@ -1,6 +1,6 @@
 """Linked data proof signing and verification methods."""
 
-from typing import List
+from typing import List, Optional
 
 from .document_loader import DocumentLoaderMethod
 from .proof_set import ProofSet
@@ -85,7 +85,7 @@ async def derive(
     reveal_document: dict,
     suite: LinkedDataProof,
     document_loader: DocumentLoaderMethod,
-    nonce: bytes = None,
+    nonce: Optional[bytes] = None,
 ) -> dict:
     """Derive proof(s) for document with reveal document.
 

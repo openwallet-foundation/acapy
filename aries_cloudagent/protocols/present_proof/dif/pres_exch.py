@@ -31,13 +31,13 @@ class ClaimFormat(BaseModel):
     def __init__(
         self,
         *,
-        jwt: Mapping = None,
-        jwt_vc: Mapping = None,
-        jwt_vp: Mapping = None,
-        ldp: Mapping = None,
-        ldp_vc: Mapping = None,
-        ldp_vp: Mapping = None,
-        di_vc: Mapping = None,
+        jwt: Optional[Mapping] = None,
+        jwt_vc: Optional[Mapping] = None,
+        jwt_vp: Optional[Mapping] = None,
+        ldp: Optional[Mapping] = None,
+        ldp_vc: Optional[Mapping] = None,
+        ldp_vp: Optional[Mapping] = None,
+        di_vc: Optional[Mapping] = None,
     ):
         """Initialize format."""
         self.jwt = jwt
@@ -78,15 +78,15 @@ class SubmissionRequirements(BaseModel):
     def __init__(
         self,
         *,
-        _name: str = None,
-        purpose: str = None,
-        rule: str = None,
-        count: int = None,
-        minimum: int = None,
-        maximum: int = None,
-        _from: str = None,
+        _name: Optional[str] = None,
+        purpose: Optional[str] = None,
+        rule: Optional[str] = None,
+        count: Optional[int] = None,
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+        _from: Optional[str] = None,
         # Self_reference
-        from_nested: Sequence = None,
+        from_nested: Optional[Sequence] = None,
     ):
         """Initialize SubmissionRequirement."""
         self._name = _name
@@ -162,8 +162,8 @@ class SchemaInputDescriptor(BaseModel):
     def __init__(
         self,
         *,
-        uri: str = None,
-        required: bool = None,
+        uri: Optional[str] = None,
+        required: Optional[bool] = None,
     ):
         """Initialize SchemaInputDescriptor."""
         self.uri = uri
@@ -250,7 +250,7 @@ class DIFHolder(BaseModel):
         self,
         *,
         field_ids: Sequence[str] = None,
-        directive: str = None,
+        directive: Optional[str] = None,
     ):
         """Initialize Holder."""
         self.field_ids = field_ids
@@ -294,16 +294,16 @@ class Filter(BaseModel):
         self,
         *,
         _not: bool = False,
-        _type: str = None,
-        fmt: str = None,
-        pattern: str = None,
-        minimum: str = None,
-        maximum: str = None,
-        min_length: int = None,
-        max_length: int = None,
-        exclusive_min: str = None,
-        exclusive_max: str = None,
-        const: str = None,
+        _type: Optional[str] = None,
+        fmt: Optional[str] = None,
+        pattern: Optional[str] = None,
+        minimum: Optional[str] = None,
+        maximum: Optional[str] = None,
+        min_length: Optional[int] = None,
+        max_length: Optional[int] = None,
+        exclusive_min: Optional[str] = None,
+        exclusive_max: Optional[str] = None,
+        const: Optional[str] = None,
         enums: Sequence[str] = None,
     ):
         """Initialize Filter."""
@@ -402,11 +402,11 @@ class DIFField(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
+        id: Optional[str] = None,
         paths: Sequence[str] = None,
-        purpose: str = None,
-        predicate: str = None,
-        _filter: Filter = None,
+        purpose: Optional[str] = None,
+        predicate: Optional[str] = None,
+        _filter: Optional[Filter] = None,
     ):
         """Initialize Field."""
         self.paths = paths
@@ -451,13 +451,13 @@ class Constraints(BaseModel):
     def __init__(
         self,
         *,
-        subject_issuer: str = None,
-        limit_disclosure: bool = None,
+        subject_issuer: Optional[str] = None,
+        limit_disclosure: Optional[bool] = None,
         holders: Sequence[DIFHolder] = None,
         _fields: Sequence[DIFField] = None,
-        status_active: str = None,
-        status_suspended: str = None,
-        status_revoked: str = None,
+        status_active: Optional[str] = None,
+        status_suspended: Optional[str] = None,
+        status_revoked: Optional[str] = None,
     ):
         """Initialize Constraints for Input Descriptor."""
         self.subject_issuer = subject_issuer
@@ -550,13 +550,13 @@ class InputDescriptors(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
+        id: Optional[str] = None,
         groups: Sequence[str] = None,
-        name: str = None,
-        purpose: str = None,
-        metadata: dict = None,
-        constraint: Constraints = None,
-        schemas: SchemasInputDescriptorFilter = None,
+        name: Optional[str] = None,
+        purpose: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        constraint: Optional[Constraints] = None,
+        schemas: Optional[SchemasInputDescriptorFilter] = None,
     ):
         """Initialize InputDescriptors."""
         self.id = id
@@ -627,11 +627,11 @@ class Requirement(BaseModel):
     def __init__(
         self,
         *,
-        count: int = None,
-        maximum: int = None,
-        minimum: int = None,
+        count: Optional[int] = None,
+        maximum: Optional[int] = None,
+        minimum: Optional[int] = None,
         input_descriptors: Sequence[InputDescriptors] = None,
-        nested_req: Sequence = None,
+        nested_req: Optional[Sequence] = None,
     ):
         """Initialize Requirement."""
         self.count = count
@@ -681,10 +681,10 @@ class PresentationDefinition(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
-        name: str = None,
-        purpose: str = None,
-        fmt: ClaimFormat = None,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        purpose: Optional[str] = None,
+        fmt: Optional[ClaimFormat] = None,
         submission_requirements: Sequence[SubmissionRequirements] = None,
         input_descriptors: Sequence[InputDescriptors] = None,
         **kwargs,
@@ -752,9 +752,9 @@ class InputDescriptorMapping(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
-        fmt: str = None,
-        path: str = None,
+        id: Optional[str] = None,
+        fmt: Optional[str] = None,
+        path: Optional[str] = None,
     ):
         """Initialize InputDescriptorMapping."""
         self.id = id
@@ -792,8 +792,8 @@ class PresentationSubmission(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
-        definition_id: str = None,
+        id: Optional[str] = None,
+        definition_id: Optional[str] = None,
         descriptor_maps: Sequence[InputDescriptorMapping] = None,
     ):
         """Initialize InputDescriptorMapping."""
@@ -868,8 +868,8 @@ class DIFOptions(BaseModel):
     def __init__(
         self,
         *,
-        challenge: str = None,
-        domain: str = None,
+        challenge: Optional[str] = None,
+        domain: Optional[str] = None,
     ):
         """Initialize DIFOptions."""
         self.challenge = challenge

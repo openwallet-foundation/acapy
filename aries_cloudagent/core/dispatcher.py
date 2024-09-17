@@ -9,7 +9,7 @@ import logging
 import os
 import warnings
 import weakref
-from typing import Callable, Coroutine, Union
+from typing import Callable, Coroutine, Optional, Union
 
 from aiohttp.web import HTTPException
 
@@ -49,9 +49,9 @@ class Dispatcher:
 
     def __init__(self, profile: Profile):
         """Initialize an instance of Dispatcher."""
-        self.collector: Collector = None
+        self.collector: Optional[Collector] = None
         self.profile = profile
-        self.task_queue: TaskQueue = None
+        self.task_queue: Optional[TaskQueue] = None
         self.logger: logging.Logger = logging.getLogger(__name__)
 
     async def setup(self):
@@ -63,13 +63,19 @@ class Dispatcher:
         )
 
     def put_task(
-        self, coro: Coroutine, complete: Callable = None, ident: str = None
+        self,
+        coro: Coroutine,
+        complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
     ) -> PendingTask:
         """Run a task in the task queue, potentially blocking other handlers."""
         return self.task_queue.put(coro, complete, ident)
 
     def run_task(
-        self, coro: Coroutine, complete: Callable = None, ident: str = None
+        self,
+        coro: Coroutine,
+        complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
     ) -> asyncio.Task:
         """Run a task in the task queue, potentially blocking other handlers."""
         return self.task_queue.run(coro, complete, ident)
@@ -95,7 +101,7 @@ class Dispatcher:
         profile: Profile,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
-        complete: Callable = None,
+        complete: Optional[Callable] = None,
     ) -> PendingTask:
         """Add a message to the processing queue for handling.
 

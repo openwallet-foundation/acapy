@@ -1,5 +1,7 @@
 """Represents a cancel transaction message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -24,8 +26,8 @@ class CancelTransaction(AgentMessage):
     def __init__(
         self,
         *,
-        state: str = None,
-        thread_id: str = None,
+        state: Optional[str] = None,
+        thread_id: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a cancel transaction object.

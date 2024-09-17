@@ -7,7 +7,7 @@ from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
@@ -91,20 +91,20 @@ class IssuerRevRegRecord(BaseRecord):
     def __init__(
         self,
         *,
-        record_id: str = None,
-        state: str = None,
-        cred_def_id: str = None,
-        error_msg: str = None,
-        issuer_did: str = None,
-        max_cred_num: int = None,
-        revoc_def_type: str = None,
-        revoc_reg_id: str = None,
+        record_id: Optional[str] = None,
+        state: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        error_msg: Optional[str] = None,
+        issuer_did: Optional[str] = None,
+        max_cred_num: Optional[int] = None,
+        revoc_def_type: Optional[str] = None,
+        revoc_reg_id: Optional[str] = None,
         revoc_reg_def: Union[IndyRevRegDef, Mapping] = None,
         revoc_reg_entry: Union[IndyRevRegEntry, Mapping] = None,
-        tag: str = None,
-        tails_hash: str = None,
-        tails_local_path: str = None,
-        tails_public_uri: str = None,
+        tag: Optional[str] = None,
+        tails_hash: Optional[str] = None,
+        tails_local_path: Optional[str] = None,
+        tails_public_uri: Optional[str] = None,
         pending_pub: Sequence[str] = None,
         **kwargs,
     ):
@@ -250,7 +250,7 @@ class IssuerRevRegRecord(BaseRecord):
         self,
         profile: Profile,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Send the revocation registry definition to the ledger."""
         if not (self.revoc_reg_def and self.issuer_did):
@@ -284,7 +284,7 @@ class IssuerRevRegRecord(BaseRecord):
         self,
         profile: Profile,
         write_ledger: bool = True,
-        endorser_did: str = None,
+        endorser_did: Optional[str] = None,
     ) -> dict:
         """Send a registry entry to the ledger."""
         if not (
@@ -521,8 +521,8 @@ class IssuerRevRegRecord(BaseRecord):
         cls,
         session: ProfileSession,
         cred_def_id: str,
-        state: str = None,
-        negative_state: str = None,
+        state: Optional[str] = None,
+        negative_state: Optional[str] = None,
         limit=None,
     ) -> Sequence["IssuerRevRegRecord"]:
         """Retrieve issuer revocation registry records by credential definition ID.
@@ -580,7 +580,7 @@ class IssuerRevRegRecord(BaseRecord):
             session, tag_filter, for_update=for_update
         )
 
-    async def set_state(self, session: ProfileSession, state: str = None):
+    async def set_state(self, session: ProfileSession, state: Optional[str] = None):
         """Change the registry state (default full)."""
         self.state = state or IssuerRevRegRecord.STATE_FULL
         await self.save(

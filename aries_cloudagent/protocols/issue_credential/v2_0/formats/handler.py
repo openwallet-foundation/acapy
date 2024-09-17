@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractclassmethod, abstractmethod
-from typing import Mapping, Tuple
+from typing import Mapping, Optional, Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
@@ -90,7 +90,7 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create format specific credential request attachment data."""
 
@@ -120,6 +120,6 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store format specific credential from issue credential message."""

@@ -1,7 +1,7 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
 import logging
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, INCLUDE
 from pyld import jsonld
@@ -201,7 +201,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         holder_did = request_data.get("holder_did") if request_data else None
@@ -365,7 +365,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store linked data proof credential."""
         # Get attachment data

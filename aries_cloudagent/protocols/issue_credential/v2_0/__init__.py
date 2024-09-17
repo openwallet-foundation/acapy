@@ -1,4 +1,4 @@
-from typing import Coroutine, Union
+from typing import Coroutine, Optional, Union
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -9,7 +9,7 @@ from .models.cred_ex_record import V20CredExRecord
 def problem_report_for_record(
     record: Union[ConnRecord, V20CredExRecord],
     desc_en: str,
-    thread_id: str = None,
+    thread_id: Optional[str] = None,
 ) -> V20CredProblemReport:
     """Create problem report for record.
 

@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Type, Union
 
 from marshmallow import EXCLUDE, fields
 from uuid_utils import uuid4
@@ -132,8 +132,8 @@ class V20CredFormat(BaseModel):
     def __init__(
         self,
         *,
-        attach_id: str = None,
-        format_: str = None,
+        attach_id: Optional[str] = None,
+        format_: Optional[str] = None,
     ):
         """Initialize issue-credential protocol message attachment format."""
         self.attach_id = attach_id or uuid4()

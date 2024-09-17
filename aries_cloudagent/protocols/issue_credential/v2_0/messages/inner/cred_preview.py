@@ -1,6 +1,6 @@
 """Credential preview inner object."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -18,7 +18,9 @@ class V20CredAttrSpec(BaseModel):
 
         schema_class = "V20CredAttrSpecSchema"
 
-    def __init__(self, *, name: str, value: str, mime_type: str = None, **kwargs):
+    def __init__(
+        self, *, name: str, value: str, mime_type: Optional[str] = None, **kwargs
+    ):
         """Initialize attribute preview object.
 
         Args:
@@ -108,7 +110,7 @@ class V20CredPreview(BaseModel):
     def __init__(
         self,
         *,
-        _type: str = None,
+        _type: Optional[str] = None,
         attributes: Sequence[V20CredAttrSpec] = None,
         **kwargs,
     ):

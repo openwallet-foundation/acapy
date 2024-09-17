@@ -1,6 +1,6 @@
 """Utilities to deal with indy."""
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import (
     EXCLUDE,
@@ -198,12 +198,12 @@ class IndyProofRequest(BaseModel):
 
     def __init__(
         self,
-        nonce: str = None,
-        name: str = None,
-        version: str = None,
-        requested_attributes: Mapping = None,
-        requested_predicates: Mapping = None,
-        non_revoked: Mapping = None,
+        nonce: Optional[str] = None,
+        name: Optional[str] = None,
+        version: Optional[str] = None,
+        requested_attributes: Optional[Mapping] = None,
+        requested_predicates: Optional[Mapping] = None,
+        non_revoked: Optional[Mapping] = None,
         **kwargs,
     ):
         """Initialize indy cred abstract object.

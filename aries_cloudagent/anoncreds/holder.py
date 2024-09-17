@@ -178,9 +178,9 @@ class AnonCredsHolder:
         credential_definition: dict,
         credential_data: dict,
         credential_request_metadata: dict,
-        credential_attr_mime_types: dict = None,
-        credential_id: str = None,
-        rev_reg_def: dict = None,
+        credential_attr_mime_types: Optional[dict] = None,
+        credential_id: Optional[str] = None,
+        rev_reg_def: Optional[dict] = None,
     ) -> str:
         """Store a credential in the wallet.
 
@@ -226,9 +226,9 @@ class AnonCredsHolder:
         credential_definition: dict,
         cred_recvd: Credential,
         credential_request_metadata: dict,
-        credential_attr_mime_types: dict = None,
-        credential_id: str = None,
-        rev_reg_def: dict = None,
+        credential_attr_mime_types: Optional[dict] = None,
+        credential_id: Optional[str] = None,
+        rev_reg_def: Optional[dict] = None,
     ) -> str:
         credential_data = cred_recvd.to_dict()
         schema_id = cred_recvd.schema_id
@@ -288,9 +288,9 @@ class AnonCredsHolder:
         credential_definition: dict,
         credential_data: dict,
         credential_request_metadata: dict,
-        credential_attr_mime_types: dict = None,
-        credential_id: str = None,
-        rev_reg_def: dict = None,
+        credential_attr_mime_types: Optional[dict] = None,
+        credential_id: Optional[str] = None,
+        rev_reg_def: Optional[dict] = None,
     ) -> str:
         """Store a credential in the wallet.
 
@@ -515,7 +515,10 @@ class AnonCredsHolder:
             raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, credential_id: str, timestamp_from: int = None, timestamp_to: int = None
+        self,
+        credential_id: str,
+        timestamp_from: Optional[int] = None,
+        timestamp_to: Optional[int] = None,
     ) -> bool:
         """Check ledger for revocation status of credential by credential id.
 
@@ -565,7 +568,7 @@ class AnonCredsHolder:
             ) from err  # noqa: E501
 
     async def get_mime_type(
-        self, credential_id: str, attr: str = None
+        self, credential_id: str, attr: Optional[str] = None
     ) -> Union[dict, str]:
         """Get MIME type per attribute (or for all attributes).
 
@@ -595,7 +598,7 @@ class AnonCredsHolder:
         requested_credentials: dict,
         schemas: Dict[str, AnonCredsSchema],
         credential_definitions: Dict[str, CredDef],
-        rev_states: dict = None,
+        rev_states: Optional[dict] = None,
     ) -> str:
         """Get credentials stored in the wallet.
 
@@ -686,7 +689,7 @@ class AnonCredsHolder:
         credentials_w3c_metadata: list,
         schemas: Dict[str, AnonCredsSchema],
         credential_definitions: Dict[str, CredDef],
-        rev_states: dict = None,
+        rev_states: Optional[dict] = None,
     ) -> dict:
         """Get credentials stored in the wallet.
 

@@ -1,5 +1,7 @@
 """Represents a Transaction Job to send message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -24,7 +26,7 @@ class TransactionJobToSend(AgentMessage):
     def __init__(
         self,
         *,
-        job: str = None,
+        job: Optional[str] = None,
         **kwargs,
     ):
         """Initialize transaction job to send.

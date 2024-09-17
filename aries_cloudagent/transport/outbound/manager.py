@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Callable, Type
+from typing import Callable, Optional, Type
 from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
@@ -31,7 +31,7 @@ class OutboundTransportManager:
 
     MAX_RETRY_COUNT = 4
 
-    def __init__(self, profile: Profile, handle_not_delivered: Callable = None):
+    def __init__(self, profile: Profile, handle_not_delivered: Optional[Callable] = None):
         """Initialize a `OutboundTransportManager` instance.
 
         Args:
@@ -96,7 +96,9 @@ class OutboundTransportManager:
         return self.register_class(imported_class)
 
     def register_class(
-        self, transport_class: Type[BaseOutboundTransport], transport_id: str = None
+        self,
+        transport_class: Type[BaseOutboundTransport],
+        transport_id: Optional[str] = None,
     ) -> str:
         """Register a new outbound transport class.
 
@@ -276,8 +278,8 @@ class OutboundTransportManager:
         topic: str,
         payload: dict,
         endpoint: str,
-        max_attempts: int = None,
-        metadata: dict = None,
+        max_attempts: Optional[int] = None,
+        metadata: Optional[dict] = None,
     ):
         """Add a webhook to the queue.
 
@@ -431,7 +433,7 @@ class OutboundTransportManager:
         return queued.task
 
     async def perform_encode(
-        self, queued: QueuedOutboundMessage, wire_format: BaseWireFormat = None
+        self, queued: QueuedOutboundMessage, wire_format: Optional[BaseWireFormat] = None
     ):
         """Perform message encoding."""
         wire_format = wire_format or self.root_profile.inject(BaseWireFormat)

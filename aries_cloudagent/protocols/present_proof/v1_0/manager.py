@@ -47,8 +47,8 @@ class PresentationManager:
         self,
         connection_id: str,
         presentation_proposal_message: PresentationProposal,
-        auto_present: bool = None,
-        auto_remove: bool = None,
+        auto_present: Optional[bool] = None,
+        auto_remove: Optional[bool] = None,
     ):
         """Create a presentation exchange record for input presentation proposal.
 
@@ -113,10 +113,10 @@ class PresentationManager:
     async def create_bound_request(
         self,
         presentation_exchange_record: V10PresentationExchange,
-        name: str = None,
-        version: str = None,
-        nonce: str = None,
-        comment: str = None,
+        name: Optional[str] = None,
+        version: Optional[str] = None,
+        nonce: Optional[str] = None,
+        comment: Optional[str] = None,
     ):
         """Create a presentation request bound to a proposal.
 
@@ -170,8 +170,8 @@ class PresentationManager:
         self,
         connection_id: str,
         presentation_request_message: PresentationRequest,
-        auto_verify: bool = None,
-        auto_remove: bool = None,
+        auto_verify: Optional[bool] = None,
+        auto_remove: Optional[bool] = None,
     ):
         """Create a presentation exchange record for input presentation request.
 
@@ -233,7 +233,7 @@ class PresentationManager:
         self,
         presentation_exchange_record: V10PresentationExchange,
         requested_credentials: dict,
-        comment: str = None,
+        comment: Optional[str] = None,
     ):
         """Create a presentation.
 

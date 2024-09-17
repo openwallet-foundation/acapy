@@ -28,10 +28,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check changed files
+        id: check-changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files_yaml: |
+            src: 
+              - aries_cloudagent/**/*
+              - poetry.lock
+      - name: Check if src files changed
+        id: check-if-src-changed
+        run: |
+          if [ "${{ steps.check-changed-files.outputs.src_any_changed }}" != "true" ] && [ '${{ github.event_name }}' == 'pull_request' ]; then
+            echo "No src files changed..."
+            echo run_tests=false >> $GITHUB_OUTPUT
+          fi
       - name: Check if PR is a release
+        if: steps.check-if-src-changed.outputs.run_tests != 'false'
         uses: ./.github/actions/is-release
         id: check_if_release
       - name: Request GitHub API for PR data
+        if: steps.check-if-src-changed.outputs.run_tests != 'false'
         uses: octokit/request-action@v2.x
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -39,6 +56,7 @@ jobs:
         with:
           route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ github.event.number }}
       - name: Prepare Interop Tests
+        if: steps.check-if-src-changed.outputs.run_tests != 'false'
         run: |
           # Get AATH 
           git clone https://github.com/hyperledger/aries-agent-test-harness.git
@@ -54,12 +72,12 @@ jobs:
           cd aries-agent-test-harness
           ./manage build -a acapy-main
       - name: Run PR Interop Tests
-        if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request')
+        if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd aries-agent-test-harness
           NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound
       - name: Run Release or Nightly Interop Tests
-        if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd aries-agent-test-harness
           NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @AcceptanceTest -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound

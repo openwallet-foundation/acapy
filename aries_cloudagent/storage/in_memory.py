@@ -1,6 +1,6 @@
 """Basic in-memory storage implementation (non-wallet)."""
 
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from ..core.in_memory import InMemoryProfile
 from .base import (
@@ -43,7 +43,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         self.profile.records[record.id] = record
 
     async def get_record(
-        self, record_type: str, record_id: str, options: Mapping = None
+        self, record_type: str, record_id: str, options: Optional[Mapping] = None
     ) -> StorageRecord:
         """Fetch a record from the store by type and ID.
 
@@ -100,7 +100,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
     async def find_paginated_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
+        tag_query: Optional[Mapping] = None,
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
     ) -> Sequence[StorageRecord]:
@@ -130,8 +130,8 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
     async def find_all_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
-        options: Mapping = None,
+        tag_query: Optional[Mapping] = None,
+        options: Optional[Mapping] = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
         results = []
@@ -143,7 +143,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
     async def delete_all_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
+        tag_query: Optional[Mapping] = None,
     ):
         """Remove all records matching a particular type filter and tag query."""
         ids = []
@@ -156,9 +156,9 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
     def search_records(
         self,
         type_filter: str,
-        tag_query: Mapping = None,
-        page_size: int = None,
-        options: Mapping = None,
+        tag_query: Optional[Mapping] = None,
+        page_size: Optional[int] = None,
+        options: Optional[Mapping] = None,
     ) -> "InMemoryStorageSearch":
         """Search stored records.
 
@@ -262,8 +262,8 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
         profile: InMemoryProfile,
         type_filter: str,
         tag_query: Mapping,
-        page_size: int = None,
-        options: Mapping = None,
+        page_size: Optional[int] = None,
+        options: Optional[Mapping] = None,
     ):
         """Initialize a `InMemoryStorageSearch` instance.
 
@@ -282,7 +282,7 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
         self.type_filter = type_filter
         self._done = False
 
-    async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
+    async def fetch(self, max_count: Optional[int] = None) -> Sequence[StorageRecord]:
         """Fetch the next list of results from the store.
 
         Args:

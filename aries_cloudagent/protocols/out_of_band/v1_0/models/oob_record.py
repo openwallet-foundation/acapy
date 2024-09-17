@@ -158,7 +158,7 @@ class OobRecord(BaseExchangeRecord):
             )
 
     async def metadata_get(
-        self, session: ProfileSession, key: str, default: Any = None
+        self, session: ProfileSession, key: str, default: Optional[Any] = None
     ) -> Any:
         """Retrieve arbitrary metadata associated with this connection.
 

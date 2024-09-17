@@ -55,10 +55,10 @@ class AgentMessage(BaseModel, BaseMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         _type: Optional[Text] = None,
         _version: Optional[Text] = None,
-        _decorators: BaseDecoratorSet = None,
+        _decorators: Optional[BaseDecoratorSet] = None,
     ):
         """Initialize base agent message object.
 
@@ -225,7 +225,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return sig
 
     async def verify_signed_field(  # TODO migrate to signed-attachment per RFC 17
-        self, field_name: str, wallet: BaseWallet, signer_verkey: str = None
+        self, field_name: str, wallet: BaseWallet, signer_verkey: Optional[str] = None
     ) -> str:
         """Verify a specific field signature.
 

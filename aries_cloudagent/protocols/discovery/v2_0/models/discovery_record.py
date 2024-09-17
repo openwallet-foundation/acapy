@@ -1,7 +1,7 @@
 """."""
 
 import logging
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 from marshmallow import fields
 
@@ -32,9 +32,9 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        discovery_exchange_id: str = None,
-        connection_id: str = None,
-        thread_id: str = None,
+        discovery_exchange_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
         queries_msg: Union[Sequence, Queries] = None,
         disclosures: Union[Mapping, Disclosures] = None,
         **kwargs,

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -77,7 +77,9 @@ class RoutingManager:
                 await asyncio.sleep(RECIP_ROUTE_PAUSE)
 
     async def get_routes(
-        self, client_connection_id: str = None, tag_filter: dict = None
+        self,
+        client_connection_id: Optional[str] = None,
+        tag_filter: Optional[dict] = None,
     ) -> Sequence[RouteRecord]:
         """Fetch all routes associated with the current connection.
 
@@ -119,9 +121,9 @@ class RoutingManager:
 
     async def create_route_record(
         self,
-        client_connection_id: str = None,
-        recipient_key: str = None,
-        internal_wallet_id: str = None,
+        client_connection_id: Optional[str] = None,
+        recipient_key: Optional[str] = None,
+        internal_wallet_id: Optional[str] = None,
     ) -> RouteRecord:
         """Create and store a new RouteRecord.
 

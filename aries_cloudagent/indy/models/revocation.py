@@ -1,6 +1,6 @@
 """Revocation artifacts."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields, validate
 
@@ -27,7 +27,7 @@ class IndyRevRegDefValuePublicKeysAccumKey(BaseModel):
 
         schema_class = "IndyRevRegDefValuePublicKeysAccumKeySchema"
 
-    def __init__(self, z: str = None):
+    def __init__(self, z: Optional[str] = None):
         """Initialize."""
 
         self.z = z
@@ -58,7 +58,7 @@ class IndyRevRegDefValuePublicKeys(BaseModel):
 
         schema_class = "IndyRevRegDefValuePublicKeysSchema"
 
-    def __init__(self, accum_key: IndyRevRegDefValuePublicKeysAccumKey = None):
+    def __init__(self, accum_key: Optional[IndyRevRegDefValuePublicKeysAccumKey] = None):
         """Initialize."""
 
         self.accum_key = accum_key
@@ -88,11 +88,11 @@ class IndyRevRegDefValue(BaseModel):
 
     def __init__(
         self,
-        issuance_type: str = None,
-        max_cred_num: int = None,
-        public_keys: IndyRevRegDefValuePublicKeys = None,
-        tails_hash: str = None,
-        tails_location: str = None,
+        issuance_type: Optional[str] = None,
+        max_cred_num: Optional[int] = None,
+        public_keys: Optional[IndyRevRegDefValuePublicKeys] = None,
+        tails_hash: Optional[str] = None,
+        tails_location: Optional[str] = None,
     ):
         """Initialize."""
         self.issuance_type = issuance_type
@@ -153,12 +153,12 @@ class IndyRevRegDef(BaseModel):
 
     def __init__(
         self,
-        ver: str = None,
-        id_: str = None,
-        revoc_def_type: str = None,
-        tag: str = None,
-        cred_def_id: str = None,
-        value: IndyRevRegDefValue = None,
+        ver: Optional[str] = None,
+        id_: Optional[str] = None,
+        revoc_def_type: Optional[str] = None,
+        tag: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        value: Optional[IndyRevRegDefValue] = None,
     ):
         """Initialize."""
 
@@ -227,8 +227,8 @@ class IndyRevRegEntryValue(BaseModel):
 
     def __init__(
         self,
-        prev_accum: str = None,
-        accum: str = None,
+        prev_accum: Optional[str] = None,
+        accum: Optional[str] = None,
         revoked: Sequence[int] = None,
     ):
         """Initialize."""
@@ -275,7 +275,9 @@ class IndyRevRegEntry(BaseModel):
 
         schema_class = "IndyRevRegEntrySchema"
 
-    def __init__(self, ver: str = None, value: IndyRevRegEntryValue = None):
+    def __init__(
+        self, ver: Optional[str] = None, value: Optional[IndyRevRegEntryValue] = None
+    ):
         """Initialize."""
 
         self.ver = ver

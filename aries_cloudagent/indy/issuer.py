@@ -1,7 +1,7 @@
 """Base Indy Issuer class."""
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from ..core.error import BaseError
 
@@ -57,7 +57,11 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         """
 
     def make_credential_definition_id(
-        self, origin_did: str, schema: dict, signature_type: str = None, tag: str = None
+        self,
+        origin_did: str,
+        schema: dict,
+        signature_type: Optional[str] = None,
+        tag: Optional[str] = None,
     ) -> str:
         """Derive the ID for a credential definition."""
         signature_type = signature_type or DEFAULT_SIGNATURE_TYPE
@@ -79,8 +83,8 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         self,
         origin_did: str,
         schema: dict,
-        signature_type: str = None,
-        tag: str = None,
+        signature_type: Optional[str] = None,
+        tag: Optional[str] = None,
         support_revocation: bool = False,
     ) -> Tuple[str, str]:
         """Create a new credential definition and store it in the wallet.
@@ -118,8 +122,8 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        revoc_reg_id: str = None,
-        tails_file_path: str = None,
+        revoc_reg_id: Optional[str] = None,
+        tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
         """Create a credential.
 

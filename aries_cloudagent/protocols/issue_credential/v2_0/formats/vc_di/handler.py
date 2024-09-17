@@ -6,7 +6,7 @@ indy compatible, attachment is a valid verifiable credential
 import datetime
 import json
 import logging
-from typing import Mapping, Tuple
+from typing import Mapping, Optional, Tuple
 
 from anoncreds import W3cCredential
 from marshmallow import RAISE
@@ -297,7 +297,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         """Receive vcdi credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create vcdi credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
@@ -540,7 +540,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         """
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store vcdi credential."""
         cred = cred_ex_record.cred_issue.attachment(VCDICredFormatHandler.format)

@@ -1178,7 +1178,7 @@ class DIDXManager(BaseConnectionManager):
         self,
         wallet: BaseWallet,
         attached: AttachDecorator,
-        invi_key: str = None,
+        invi_key: Optional[str] = None,
     ) -> dict:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
@@ -1193,7 +1193,7 @@ class DIDXManager(BaseConnectionManager):
         self,
         wallet: BaseWallet,
         attached: AttachDecorator,
-        invi_key: str = None,
+        invi_key: Optional[str] = None,
     ) -> str:
         """Verify a signed DID rotate attachment and return did."""
         signed_diddoc_bytes = attached.data.signed

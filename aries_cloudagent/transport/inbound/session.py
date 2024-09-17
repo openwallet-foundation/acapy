@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Callable, Sequence, Union
+from typing import Callable, Optional, Sequence, Union
 
 from ...admin.server import AdminResponder
 from ...core.profile import Profile
@@ -42,12 +42,12 @@ class InboundSession:
         wire_format: BaseWireFormat,
         accept_undelivered: bool = False,
         can_respond: bool = False,
-        client_info: dict = None,
-        close_handler: Callable = None,
-        reply_mode: str = None,
+        client_info: Optional[dict] = None,
+        close_handler: Optional[Callable] = None,
+        reply_mode: Optional[str] = None,
         reply_thread_ids: Sequence[str] = None,
         reply_verkeys: Sequence[str] = None,
-        transport_type: str = None,
+        transport_type: Optional[str] = None,
     ):
         """Initialize the inbound session."""
         self.profile = profile
@@ -58,7 +58,7 @@ class InboundSession:
         self.accept_undelivered = accept_undelivered
         self.client_info = client_info
         self.close_handler = close_handler
-        self.response_buffer: OutboundMessage = None
+        self.response_buffer: Optional[OutboundMessage] = None
         self.response_event = asyncio.Event()
         self.transport_type = transport_type
 

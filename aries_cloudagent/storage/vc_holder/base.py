@@ -1,7 +1,7 @@
 """Abstract interfaces for VC holder implementations."""
 
 from abc import ABC, abstractmethod
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from .vc_record import VCRecord
 
@@ -61,11 +61,11 @@ class VCHolder(ABC):
         contexts: Sequence[str] = None,
         types: Sequence[str] = None,
         schema_ids: Sequence[str] = None,
-        issuer_id: str = None,
+        issuer_id: Optional[str] = None,
         subject_ids: Sequence[str] = None,
         proof_types: Sequence[str] = None,
-        given_id: str = None,
-        tag_query: Mapping = None,
+        given_id: Optional[str] = None,
+        tag_query: Optional[Mapping] = None,
     ) -> "VCRecordSearch":
         """Start a new VC record search.
 
@@ -95,7 +95,7 @@ class VCRecordSearch(ABC):
     """A VC record search in progress."""
 
     @abstractmethod
-    async def fetch(self, max_count: int = None) -> Sequence[VCRecord]:
+    async def fetch(self, max_count: Optional[int] = None) -> Sequence[VCRecord]:
         """Fetch the next list of VC records from the store.
 
         Args:
@@ -122,7 +122,7 @@ class VCRecordSearch(ABC):
 class IterVCRecordSearch:
     """A generic record search async iterator."""
 
-    def __init__(self, search: VCRecordSearch, page_size: int = None):
+    def __init__(self, search: VCRecordSearch, page_size: Optional[int] = None):
         """Instantiate a new `IterVCRecordSearch` instance."""
         self._buffer = None
         self._page_size = page_size

@@ -1,5 +1,7 @@
 """A presentation proposal content message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
@@ -24,10 +26,10 @@ class PresentationProposal(AgentMessage):
 
     def __init__(
         self,
-        _id: str = None,
+        _id: Optional[str] = None,
         *,
-        comment: str = None,
-        presentation_proposal: IndyPresPreview = None,
+        comment: Optional[str] = None,
+        presentation_proposal: Optional[IndyPresPreview] = None,
         **kwargs,
     ):
         """Initialize presentation proposal object.

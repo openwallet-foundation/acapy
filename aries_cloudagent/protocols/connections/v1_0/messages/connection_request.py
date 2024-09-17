@@ -1,5 +1,7 @@
 """Represents a connection request message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -24,9 +26,9 @@ class ConnectionRequest(AgentMessage):
     def __init__(
         self,
         *,
-        connection: ConnectionDetail = None,
-        label: str = None,
-        image_url: str = None,
+        connection: Optional[ConnectionDetail] = None,
+        label: Optional[str] = None,
+        image_url: Optional[str] = None,
         **kwargs,
     ):
         """Initialize connection request object.

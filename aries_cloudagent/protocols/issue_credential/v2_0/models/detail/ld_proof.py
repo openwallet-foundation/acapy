@@ -1,6 +1,6 @@
 """Linked data proof specific credential exchange information with non-secrets storage."""
 
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -25,10 +25,10 @@ class V20CredExRecordLDProof(BaseRecord):
 
     def __init__(
         self,
-        cred_ex_ld_proof_id: str = None,
+        cred_ex_ld_proof_id: Optional[str] = None,
         *,
-        cred_ex_id: str = None,
-        cred_id_stored: str = None,
+        cred_ex_id: Optional[str] = None,
+        cred_id_stored: Optional[str] = None,
         **kwargs,
     ):
         """Initialize LD Proof credential exchange record details."""

@@ -1,5 +1,7 @@
 """Represents a transaction acknowledgement message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.valid import UUID4_EXAMPLE
@@ -25,8 +27,8 @@ class TransactionAcknowledgement(V10Ack):
     def __init__(
         self,
         *,
-        thread_id: str = None,
-        ledger_response: dict = None,
+        thread_id: Optional[str] = None,
+        ledger_response: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize a transaction acknowledgement object.

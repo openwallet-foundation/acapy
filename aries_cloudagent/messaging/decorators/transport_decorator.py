@@ -3,6 +3,8 @@
 This decorator allows changes to agent response behaviour and queue status updates.
 """
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields, validate
 
 from ..models.base import BaseModel, BaseModelSchema
@@ -20,9 +22,9 @@ class TransportDecorator(BaseModel):
     def __init__(
         self,
         *,
-        return_route: str = None,
-        return_route_thread: str = None,
-        queued_message_count: int = None,
+        return_route: Optional[str] = None,
+        return_route_thread: Optional[str] = None,
+        queued_message_count: Optional[int] = None,
     ):
         """Initialize a TransportDecorator instance.
 

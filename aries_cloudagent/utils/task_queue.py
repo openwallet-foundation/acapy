@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import time
-from typing import Callable, Coroutine, Tuple
+from typing import Callable, Coroutine, Optional, Tuple
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,8 +41,8 @@ class CompletedTask:
         self,
         task: asyncio.Task,
         exc_info: Tuple,
-        ident: str = None,
-        timing: dict = None,
+        ident: Optional[str] = None,
+        timing: Optional[dict] = None,
     ):
         """Initialize the completed task."""
         self.exc_info = exc_info
@@ -61,10 +61,10 @@ class PendingTask:
     def __init__(
         self,
         coro: Coroutine,
-        complete_hook: Callable = None,
-        ident: str = None,
+        complete_hook: Optional[Callable] = None,
+        ident: Optional[str] = None,
         task_future: asyncio.Future = None,
-        queued_time: float = None,
+        queued_time: Optional[float] = None,
     ):
         """Initialize the pending task.
 
@@ -81,7 +81,7 @@ class PendingTask:
         self.complete_hook = complete_hook
         self.coro = coro
         self.queued_time: float = queued_time
-        self.unqueued_time: float = None
+        self.unqueued_time: Optional[float] = None
         self.ident = ident or coro_ident(coro)
         self.task_future = task_future or asyncio.get_event_loop().create_future()
 
@@ -124,7 +124,10 @@ class TaskQueue:
     """A class for managing a set of asyncio tasks."""
 
     def __init__(
-        self, max_active: int = 0, timed: bool = False, trace_fn: Callable = None
+        self,
+        max_active: int = 0,
+        timed: bool = False,
+        trace_fn: Optional[Callable] = None,
     ):
         """Initialize the task queue.
 
@@ -253,9 +256,9 @@ class TaskQueue:
     def add_active(
         self,
         task: asyncio.Task,
-        task_complete: Callable = None,
-        ident: str = None,
-        timing: dict = None,
+        task_complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
+        timing: Optional[dict] = None,
     ) -> asyncio.Task:
         """Register an active async task with an optional completion callback.
 
@@ -275,9 +278,9 @@ class TaskQueue:
     def run(
         self,
         coro: Coroutine,
-        task_complete: Callable = None,
-        ident: str = None,
-        timing: dict = None,
+        task_complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
+        timing: Optional[dict] = None,
     ) -> asyncio.Task:
         """Start executing a coroutine as an async task, bypassing the pending queue.
 
@@ -304,7 +307,10 @@ class TaskQueue:
         return self.add_active(task, task_complete, ident, timing)
 
     def put(
-        self, coro: Coroutine, task_complete: Callable = None, ident: str = None
+        self,
+        coro: Coroutine,
+        task_complete: Optional[Callable] = None,
+        ident: Optional[str] = None,
     ) -> PendingTask:
         """Add a new task to the queue, delaying execution if busy.
 
@@ -330,7 +336,7 @@ class TaskQueue:
         task: asyncio.Task,
         task_complete: Callable,
         ident: str,
-        timing: dict = None,
+        timing: Optional[dict] = None,
     ):
         """Clean up after a task has completed and run callbacks."""
         exc_info = task_exc_info(task)
@@ -372,7 +378,7 @@ class TaskQueue:
             if not task.done():
                 task.cancel()
 
-    async def complete(self, timeout: float = None, cleanup: bool = True):
+    async def complete(self, timeout: Optional[float] = None, cleanup: bool = True):
         """Cancel any pending tasks and wait for, or cancel active tasks."""
         self._cancelled = True
         self.cancel_pending()

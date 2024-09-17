@@ -1,6 +1,6 @@
 """Outbound message representation."""
 
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from ...connections.models.connection_target import ConnectionTarget
 
@@ -11,15 +11,15 @@ class OutboundMessage:
     def __init__(
         self,
         *,
-        connection_id: str = None,
+        connection_id: Optional[str] = None,
         enc_payload: Union[str, bytes] = None,
-        endpoint: str = None,
+        endpoint: Optional[str] = None,
         payload: Union[str, bytes],
-        reply_session_id: str = None,
-        reply_thread_id: str = None,
-        reply_to_verkey: str = None,
-        reply_from_verkey: str = None,
-        target: ConnectionTarget = None,
+        reply_session_id: Optional[str] = None,
+        reply_thread_id: Optional[str] = None,
+        reply_to_verkey: Optional[str] = None,
+        reply_from_verkey: Optional[str] = None,
+        target: Optional[ConnectionTarget] = None,
         target_list: Sequence[ConnectionTarget] = None,
         to_session_only: bool = False,
     ):

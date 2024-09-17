@@ -1,6 +1,6 @@
 """Represents a generic problem report message."""
 
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from marshmallow import EXCLUDE, ValidationError, fields, validate, validates_schema
 
@@ -26,13 +26,13 @@ class ProblemReport(AgentMessage):
         *,
         description: Mapping[str, str] = None,
         problem_items: Sequence[Mapping[str, str]] = None,
-        who_retries: str = None,
+        who_retries: Optional[str] = None,
         fix_hint: Mapping[str, str] = None,
-        impact: str = None,
-        where: str = None,
-        noticed_time: str = None,
-        tracking_uri: str = None,
-        escalation_uri: str = None,
+        impact: Optional[str] = None,
+        where: Optional[str] = None,
+        noticed_time: Optional[str] = None,
+        tracking_uri: Optional[str] = None,
+        escalation_uri: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a ProblemReport message instance.

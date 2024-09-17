@@ -1,7 +1,7 @@
 """Presentation exchange record."""
 
 import logging
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Optional, Union
 
 from marshmallow import Schema, fields, validate
 
@@ -50,22 +50,22 @@ class V20PresExRecord(BaseExchangeRecord):
     def __init__(
         self,
         *,
-        pres_ex_id: str = None,
-        connection_id: str = None,
-        thread_id: str = None,
-        initiator: str = None,
-        role: str = None,
-        state: str = None,
+        pres_ex_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        initiator: Optional[str] = None,
+        role: Optional[str] = None,
+        state: Optional[str] = None,
         pres_proposal: Union[V20PresProposal, Mapping] = None,  # aries message
         pres_request: Union[V20PresRequest, Mapping] = None,  # aries message
         pres: Union[V20Pres, Mapping] = None,  # aries message
-        verified: str = None,
-        verified_msgs: list = None,
+        verified: Optional[str] = None,
+        verified_msgs: Optional[list] = None,
         auto_present: bool = False,
         auto_verify: bool = False,
-        error_msg: str = None,
+        error_msg: Optional[str] = None,
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
-        by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
+        by_format: Optional[Mapping] = None,  # backward compat: BaseRecord.FromStorage()
         auto_remove: bool = False,
         **kwargs,
     ):
@@ -149,8 +149,8 @@ class V20PresExRecord(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
-        reason: str = None,
+        state: Optional[str] = None,
+        reason: Optional[str] = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
     ):
@@ -182,7 +182,7 @@ class V20PresExRecord(BaseExchangeRecord):
             LOGGER.exception(err)
 
     # Override
-    async def emit_event(self, session: ProfileSession, payload: Any = None):
+    async def emit_event(self, session: ProfileSession, payload: Optional[Any] = None):
         """Emit an event.
 
         Args:

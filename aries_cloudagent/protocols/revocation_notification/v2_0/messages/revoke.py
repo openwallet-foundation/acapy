@@ -1,5 +1,7 @@
 """Revoke message."""
 
+from typing import Optional
+
 from marshmallow import fields, validate
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -28,8 +30,8 @@ class Revoke(AgentMessage):
         *,
         revocation_format: str,
         credential_id: str,
-        please_ack: PleaseAckDecorator = None,
-        comment: str = None,
+        please_ack: Optional[PleaseAckDecorator] = None,
+        comment: Optional[str] = None,
         **kwargs,
     ):
         """Initialize revoke message."""

@@ -1,5 +1,7 @@
 """Represents a transaction request message."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -24,12 +26,12 @@ class TransactionRequest(AgentMessage):
     def __init__(
         self,
         *,
-        transaction_id: str = None,
-        signature_request: dict = None,
-        timing: dict = None,
-        transaction_type: str = None,
-        messages_attach: dict = None,
-        endorser_write_txn: bool = None,
+        transaction_id: Optional[str] = None,
+        signature_request: Optional[dict] = None,
+        timing: Optional[dict] = None,
+        transaction_type: Optional[str] = None,
+        messages_attach: Optional[dict] = None,
+        endorser_write_txn: Optional[bool] = None,
         **kwargs,
     ):
         """Initialize the transaction request object.

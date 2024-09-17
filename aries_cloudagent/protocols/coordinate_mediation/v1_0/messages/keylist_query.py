@@ -1,5 +1,7 @@
 """keylist-query message used to request list of keys handled by mediator."""
 
+from typing import Optional
+
 from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -25,8 +27,8 @@ class KeylistQuery(AgentMessage):
     def __init__(
         self,
         *,
-        filter: dict = None,
-        paginate: KeylistQueryPaginate = None,
+        filter: Optional[dict] = None,
+        paginate: Optional[KeylistQueryPaginate] = None,
         **kwargs,
     ):
         """Initialize keylist query object.

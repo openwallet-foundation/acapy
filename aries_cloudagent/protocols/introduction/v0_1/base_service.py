@@ -1,6 +1,7 @@
 """Introduction service base classes."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
@@ -34,7 +35,7 @@ class BaseIntroductionService(ABC):
         target_connection_id: str,
         outbound_handler,
         session: ProfileSession,
-        message: str = None,
+        message: Optional[str] = None,
     ):
         """Start the introduction process between two connections.
 

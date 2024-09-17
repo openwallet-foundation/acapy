@@ -1,7 +1,7 @@
 """Verifiable Credential and Presentation verification methods."""
 
 import asyncio
-from typing import List
+from typing import List, Optional
 
 from pyld.jsonld import JsonLdProcessor
 
@@ -24,7 +24,7 @@ async def _verify_credential(
     credential: dict,
     suites: List[LinkedDataProof],
     document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
+    purpose: Optional[ProofPurpose] = None,
 ) -> DocumentVerificationResult:
     """Verify credential structure, proof purpose and signature."""
 
@@ -53,7 +53,7 @@ async def verify_credential(
     credential: dict,
     suites: List[LinkedDataProof],
     document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
+    purpose: Optional[ProofPurpose] = None,
 ) -> DocumentVerificationResult:
     """Verify credential structure, proof purpose and signature.
 
@@ -85,9 +85,9 @@ async def _verify_presentation(
     presentation: dict,
     suites: List[LinkedDataProof],
     document_loader: DocumentLoaderMethod,
-    challenge: str = None,
-    domain: str = None,
-    purpose: ProofPurpose = None,
+    challenge: Optional[str] = None,
+    domain: Optional[str] = None,
+    purpose: Optional[ProofPurpose] = None,
 ):
     """Verify presentation structure, credentials, proof purpose and signature."""
 
@@ -143,9 +143,9 @@ async def verify_presentation(
     presentation: dict,
     suites: List[LinkedDataProof],
     document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
-    challenge: str = None,
-    domain: str = None,
+    purpose: Optional[ProofPurpose] = None,
+    challenge: Optional[str] = None,
+    domain: Optional[str] = None,
 ) -> PresentationVerificationResult:
     """Verify presentation structure, credentials, proof purpose and signature.
 

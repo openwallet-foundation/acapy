@@ -2,7 +2,7 @@
 
 import re
 from os import urandom
-from typing import List
+from typing import List, Optional
 
 from pyld import jsonld
 
@@ -66,7 +66,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         document: dict,
         reveal_document: dict,
         document_loader: DocumentLoaderMethod,
-        nonce: bytes = None,
+        nonce: Optional[bytes] = None,
     ):
         """Derive proof for document, return dict with derived document and proof."""
         assert_ursa_bbs_signatures_installed()

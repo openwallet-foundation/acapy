@@ -3,6 +3,7 @@
 import json
 import struct
 import time
+from typing import Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -32,10 +33,10 @@ class SignatureDecorator(BaseModel):
     def __init__(
         self,
         *,
-        signature_type: str = None,
-        signature: str = None,
-        sig_data: str = None,
-        signer: str = None,
+        signature_type: Optional[str] = None,
+        signature: Optional[str] = None,
+        sig_data: Optional[str] = None,
+        signer: Optional[str] = None,
     ):
         """Initialize a FieldSignature instance.
 

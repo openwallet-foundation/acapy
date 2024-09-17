@@ -10,7 +10,7 @@ When Aca-Py is run with this wallet type it will run with an Askar format wallet
 
 There is a new package under `aries_cloudagent/anoncreds` with code that supports the new library.
 
-There are new endpoints (under `/anoncreds`) for creating a Schema and Credential Definition.  However the new anoncreds code is integrated into the existing Credential and Presentation endpoints (V2.0 endpoints only).
+There are new endpoints (under `/anoncreds`) for managing schemas, cred defs and revocation objects.  However the new anoncreds code is integrated into the existing Credential and Presentation endpoints (V2.0 endpoints only).
 
 Within the protocols, there are new `handler` libraries to support the new `anoncreds` format (these are in parallel to the existing `indy` libraries).
 
@@ -61,7 +61,7 @@ There are no anoncreds-specific integration tests, for the new anoncreds functio
 
 Everything should just work!!!
 
-Theoretically ATH should work with anoncreds as well, by setting the wallet type (see [https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters](https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters)).
+Theoretically AATH should work with anoncreds as well, by setting the wallet type (see [https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters](https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters)).
 
 ## Revocation (new in anoncreds)
 
@@ -78,16 +78,8 @@ The Tails File changes are minimal -- nothing about the file itself changed.  Wh
 
 ## Outstanding work
 
-- revocation notifications (not sure if they're included in `anoncreds-rs` updates, haven't tested them ...)
-- revocation support - complete the revocation implementation (support for unhappy path scenarios)
-- testing - various scenarios like mediation, multitenancy etc.
-
-- unit tests (in the new anoncreds package) (see [https://github.com/hyperledger/aries-cloudagent-python/pull/2596/commits/229ffbba209aff0ea7def5bad6556d93057f3c2a](https://github.com/hyperledger/aries-cloudagent-python/pull/2596/commits/229ffbba209aff0ea7def5bad6556d93057f3c2a))
+- more testing - various scenarios like mediation, multitenancy etc.
 - unit tests (review and possibly update unit tests for the credential and presentation integration)
-- endorsement (not implemented with new anoncreds code)
-- wallet upgrade (askar to askar-anoncreds)
-- update V1.0 versions of the Credential and Presentation endpoints to use anoncreds
-- any other anoncreds issues - [https://github.com/hyperledger/aries-cloudagent-python/issues?q=is%3Aopen+is%3Aissue+label%3AAnonCreds](https://github.com/hyperledger/aries-cloudagent-python/issues?q=is%3Aopen+is%3Aissue+label%3AAnonCreds)
 
 ## Retiring old Indy and Askar (credx) Code
 

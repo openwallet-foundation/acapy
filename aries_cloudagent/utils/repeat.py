@@ -1,6 +1,7 @@
 """Utils for repeating tasks."""
 
 import asyncio
+from typing import Optional
 
 import async_timeout
 
@@ -44,7 +45,7 @@ class RepeatAttempt:
         """Calculate the interval before the next attempt."""
         return self.seq.next_interval(self.index)
 
-    def timeout(self, interval: float = None):
+    def timeout(self, interval: Optional[float] = None):
         """Create a context manager for timing out an attempt."""
         return async_timeout.timeout(self.next_interval if interval is None else interval)
 

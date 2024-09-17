@@ -5,7 +5,7 @@ import json
 from functools import reduce
 from itertools import chain
 from os import environ
-from typing import Type
+from typing import Optional, Type
 
 import deepmerge
 import yaml
@@ -55,14 +55,14 @@ class group:
         return group_cls
 
     @classmethod
-    def get_registered(cls, category: str = None):
+    def get_registered(cls, category: Optional[str] = None):
         """Fetch the set of registered classes in a category."""
         return (
             grp for (cats, grp) in cls._registered if category is None or category in cats
         )
 
 
-def create_argument_parser(*, prog: str = None):
+def create_argument_parser(*, prog: Optional[str] = None):
     """Create am instance of an arg parser, force yaml format for external config."""
     return ArgumentParser(config_file_parser_class=YAMLConfigFileParser, prog=prog)
 

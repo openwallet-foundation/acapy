@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
+from typing import Optional
 
 from aiohttp import BaseConnector, ClientError, ClientResponse, ClientSession, FormData
 from aiohttp.web import HTTPConflict
@@ -24,14 +25,14 @@ class PutError(BaseError):
 async def fetch_stream(
     url: str,
     *,
-    headers: dict = None,
+    headers: Optional[dict] = None,
     retry: bool = True,
     max_attempts: int = 5,
     interval: float = 1.0,
     backoff: float = 0.25,
     request_timeout: float = 10.0,
-    connector: BaseConnector = None,
-    session: ClientSession = None,
+    connector: Optional[BaseConnector] = None,
+    session: Optional[ClientSession] = None,
 ):
     """Fetch from an HTTP server with automatic retries and timeouts.
 
@@ -72,14 +73,14 @@ async def fetch_stream(
 async def fetch(
     url: str,
     *,
-    headers: dict = None,
+    headers: Optional[dict] = None,
     retry: bool = True,
     max_attempts: int = 5,
     interval: float = 1.0,
     backoff: float = 0.25,
     request_timeout: float = 10.0,
-    connector: BaseConnector = None,
-    session: ClientSession = None,
+    connector: Optional[BaseConnector] = None,
+    session: Optional[ClientSession] = None,
     json: bool = False,
 ):
     """Fetch from an HTTP server with automatic retries and timeouts.
@@ -128,8 +129,8 @@ async def put_file(
     interval: float = 1.0,
     backoff: float = 0.25,
     request_timeout: float = 10.0,
-    connector: BaseConnector = None,
-    session: ClientSession = None,
+    connector: Optional[BaseConnector] = None,
+    session: Optional[ClientSession] = None,
     json: bool = False,
 ):
     """Put to HTTP server with automatic retries and timeouts.

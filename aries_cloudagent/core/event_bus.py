@@ -28,7 +28,7 @@ LOGGER = logging.getLogger(__name__)
 class Event:
     """A simple event object."""
 
-    def __init__(self, topic: str, payload: Any = None):
+    def __init__(self, topic: str, payload: Optional[Any] = None):
         """Create a new event."""
         self._topic = topic
         self._payload = payload

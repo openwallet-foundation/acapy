@@ -1,7 +1,7 @@
 """Model for representing a stored verifiable credential."""
 
 import logging
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 from uuid_utils import uuid4
@@ -30,9 +30,11 @@ class VCRecord(BaseModel):
         schema_ids: Sequence[str],  # one or more credential schema IDs may be present
         proof_types: Sequence[str],  # one or more proof types may be present
         cred_value: Mapping,  # the credential value as a JSON-serializable mapping
-        given_id: str = None,  # value of the credential 'id' property, if any
-        cred_tags: Mapping = None,  # tags for retrieval (derived from attribute values)
-        record_id: str = None,  # specify the storage record ID
+        given_id: Optional[str] = None,  # value of the credential 'id' property, if any
+        cred_tags: Optional[
+            Mapping
+        ] = None,  # tags for retrieval (derived from attribute values)
+        record_id: Optional[str] = None,  # specify the storage record ID
     ):
         """Initialize some defaults on record."""
         super().__init__()

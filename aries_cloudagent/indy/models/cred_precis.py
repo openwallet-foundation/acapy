@@ -1,6 +1,6 @@
 """Admin routes for presentations."""
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -30,12 +30,12 @@ class IndyCredInfo(BaseModel):
 
     def __init__(
         self,
-        referent: str = None,
-        attrs: Mapping = None,
-        schema_id: str = None,
-        cred_def_id: str = None,
-        rev_reg_id: str = None,
-        cred_rev_id: str = None,
+        referent: Optional[str] = None,
+        attrs: Optional[Mapping] = None,
+        schema_id: Optional[str] = None,
+        cred_def_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        cred_rev_id: Optional[str] = None,
     ):
         """Initialize indy cred info."""
         self.referent = referent

@@ -1,7 +1,7 @@
 """Basic message."""
 
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from marshmallow import EXCLUDE, fields
 
@@ -30,8 +30,8 @@ class BasicMessage(AgentMessage):
         self,
         *,
         sent_time: Union[str, datetime] = None,
-        content: str = None,
-        localization: str = None,
+        content: Optional[str] = None,
+        localization: Optional[str] = None,
         **kwargs,
     ):
         """Initialize basic message object.

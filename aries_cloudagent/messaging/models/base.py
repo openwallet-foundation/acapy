@@ -288,7 +288,7 @@ class BaseModel(ABC):
             raise BaseModelError(f"{cls.__name__} JSON parsing failed") from e
         return cls.deserialize(parsed, unknown=unknown)
 
-    def to_json(self, unknown: str = None) -> str:
+    def to_json(self, unknown: Optional[str] = None) -> str:
         """Create a JSON representation of the model instance.
 
         Returns:
