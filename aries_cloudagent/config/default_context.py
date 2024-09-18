@@ -140,6 +140,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.settings")
         plugin_registry.register_plugin("aries_cloudagent.vc")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
+        plugin_registry.register_plugin("aries_cloudagent.wallet.keys")
 
         anoncreds_plugins = [
             "aries_cloudagent.anoncreds",
