@@ -76,4 +76,4 @@ class TestWalletKeyPair(IsolatedAsyncioTestCase):
 
         with self.assertRaises(LinkedDataProofException) as context:
             key_pair.from_verification_method({})
-        assert "no publicKeyBase58" in str(context.exception)
+        assert "Unrecognized" in str(context.exception)
