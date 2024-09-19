@@ -21,7 +21,7 @@ class CreateKeyRequestSchema(OpenAPISchema):
     seed = fields.Str(
         required=False,
         metadata={
-            "description": "Optional seed to generate the key pair",
+            "description": "Optional seed to generate the key pair. Must enable insecure wallet mode.",
             "example": "00000000000000000000000000000000",
         },
     )
@@ -101,8 +101,8 @@ async def fetch_key(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    multikey = request.match_info["multikey"]
     try:
-        multikey = request.match_info["multikey"]
         key_info = await MultikeyManager(context.profile).fetch(
             multikey=multikey,
         )
@@ -130,13 +130,15 @@ async def create_key(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    body = await request.json()
+    
+    seed = body.get("seed") or None
+    if seed and not context.settings.get("wallet.allow_insecure_seed"):
+        raise web.HTTPBadRequest(reason="Seed support is not enabled.")
+    
+    kid = body.get("verification_method") or None
+    
     try:
-        seed = request["data"]["seed"] if "seed" in request["data"] else None
-        kid = (
-            request["data"]["verification_method"]
-            if "verification_method" in request["data"]
-            else None
-        )
         multikey = await MultikeyManager(context.profile).create(
             seed=seed,
             kid=kid,
@@ -164,15 +166,18 @@ async def update_key(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    body = await request.json()
+    
+    multikey = body.get("multikey")
+    kid = body.get("verification_method")
+    
     try:
-        multikey = request["data"]["multikey"]
-        kid = request["data"]["verification_method"]
-        await MultikeyManager(context.profile).update(
+        multikey = await MultikeyManager(context.profile).update(
             multikey=multikey,
             kid=kid,
         )
         return web.json_response(
-            {},
+            {"multikey": multikey},
             status=200,
         )
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
