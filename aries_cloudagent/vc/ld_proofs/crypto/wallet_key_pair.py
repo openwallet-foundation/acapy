@@ -1,6 +1,7 @@
 """Key pair based on base wallet interface."""
 
 from typing import List, Optional, Union
+from base58 import b58encode
 
 from ....core.profile import Profile
 from ....wallet.base import BaseWallet
@@ -8,6 +9,7 @@ from ....wallet.key_type import KeyType
 from ....wallet.util import b58_to_bytes
 from ..error import LinkedDataProofException
 from .key_pair import KeyPair
+from ....utils.multiformats import multibase, multicodec
 
 
 class WalletKeyPair(KeyPair):
@@ -57,15 +59,23 @@ class WalletKeyPair(KeyPair):
 
     def from_verification_method(self, verification_method: dict) -> "WalletKeyPair":
         """Create new WalletKeyPair from public key in verification method."""
-        if "publicKeyBase58" not in verification_method:
+        if "publicKeyBase58" in verification_method:
+            key_material = verification_method["publicKeyBase58"]
+        elif "sec:publicKeyMultibase" in verification_method:
+            # verification_method is framed
+            _, raw_key = multicodec.unwrap(
+                multibase.decode(verification_method["sec:publicKeyMultibase"]["@value"])
+            )
+            key_material = b58encode(raw_key).decode()
+        else:
             raise LinkedDataProofException(
-                "Unable to set public key from verification method: no publicKeyBase58"
+                f"Unrecognized verification method type: {verification_method}"
             )
 
         return WalletKeyPair(
             profile=self.profile,
             key_type=self.key_type,
-            public_key_base58=verification_method["publicKeyBase58"],
+            public_key_base58=key_material,
         )
 
     @property
