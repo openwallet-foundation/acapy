@@ -7,9 +7,14 @@ from .key_type import KeyType
 
 INVITATION_REUSE_KEY = "invitation_reuse"
 
-KeyInfo = NamedTuple(
-    "KeyInfo", [("verkey", str), ("metadata", dict), ("key_type", KeyType)]
-)
+
+class KeyInfo(NamedTuple):
+    verkey: str
+    metadata: dict
+    key_type: KeyType
+    kid: str = None
+
+
 DIDInfo = NamedTuple(
     "DIDInfo",
     [

@@ -115,7 +115,7 @@ class AskarWallet(BaseWallet):
                 ) from None
             raise WalletError("Error creating signing key") from err
 
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
         """Assign a KID to a key.
@@ -143,7 +143,7 @@ class AskarWallet(BaseWallet):
             raise WalletError(f"Unknown key type {key.algorithm.value}")
 
         await self._session.handle.update_key(name=verkey, tags={"kid": kid})
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
         """Fetch a key by looking up its kid.
@@ -194,7 +194,7 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
         # FIXME implement key types
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=key.kid)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """Replace the metadata associated with a signing keypair.

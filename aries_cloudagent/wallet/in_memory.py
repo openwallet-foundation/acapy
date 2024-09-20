@@ -95,6 +95,7 @@ class InMemoryWallet(BaseWallet):
             verkey=verkey_enc,
             metadata=self.profile.keys[verkey_enc]["metadata"].copy(),
             key_type=key_type,
+            kid=kid,
         )
 
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
@@ -120,6 +121,7 @@ class InMemoryWallet(BaseWallet):
             verkey=key["verkey"],
             metadata=key["metadata"].copy(),
             key_type=key["key_type"],
+            kid=kid,
         )
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
@@ -138,6 +140,7 @@ class InMemoryWallet(BaseWallet):
                     verkey=key["verkey"],
                     metadata=key["metadata"].copy(),
                     key_type=key["key_type"],
+                    kid=key["kid"],
                 )
 
         raise WalletNotFoundError(f"Key not found with kid {kid}")
@@ -162,6 +165,7 @@ class InMemoryWallet(BaseWallet):
             verkey=key["verkey"],
             metadata=key["metadata"].copy(),
             key_type=key["key_type"],
+            kid=key["kid"],
         )
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):

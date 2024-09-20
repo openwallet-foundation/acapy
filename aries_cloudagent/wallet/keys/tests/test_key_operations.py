@@ -18,19 +18,11 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         assert multikey == self.multikey
 
     async def test_key_binding(self):
-        multikey = await self.manager.create(
-            seed=self.seed, kid=self.kid
-        )
+        multikey = await self.manager.create(seed=self.seed, kid=self.kid)
         assert multikey == self.multikey
-        multikey = await self.manager.from_kid(
-            kid=self.kid
-        )
+        multikey = await self.manager.from_kid(kid=self.kid)
         assert multikey == self.multikey
-        multikey = await self.manager.update(
-            multikey=multikey, kid=self.new_kid
-        )
+        multikey = await self.manager.update(multikey=multikey, kid=self.new_kid)
         assert multikey == self.multikey
-        multikey = await self.manager.from_kid(
-            kid=self.new_kid
-        )
+        multikey = await self.manager.from_kid(kid=self.new_kid)
         assert multikey == self.multikey
