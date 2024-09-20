@@ -15,10 +15,10 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
     async def test_key_creation(self):
         key_info = await self.manager.create(seed=self.seed)
         assert key_info["multikey"] == self.multikey
-        assert key_info["kid"] == None
+        assert key_info["kid"] is None
         key_info = await self.manager.from_multikey(multikey=self.multikey)
         assert key_info["multikey"] == self.multikey
-        assert key_info["kid"] == None
+        assert key_info["kid"] is None
         key_info = await self.manager.update(multikey=self.multikey, kid=self.kid)
         assert key_info["multikey"] == self.multikey
         assert key_info["kid"] == self.kid

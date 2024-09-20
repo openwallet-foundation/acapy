@@ -24,16 +24,19 @@ class MultikeyManager:
         self.profile = profile
 
     def _multikey_to_verkey(self, multikey, alg="ed25519"):
+        """Transform multikey to verkey."""
         prefix_lenght = ALG_MAPPINGS[alg]["prefix_lenght"]
         public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_lenght:])
         return bytes_to_b58(public_bytes)
 
     def _verkey_to_multikey(self, verkey, alg="ed25519"):
+        """Transform verkey to multikey."""
         prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
         prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
         return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
 
     async def kid_exists(self, kid):
+        """Check if kid exists."""
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
         try:
@@ -88,7 +91,7 @@ class MultikeyManager:
             wallet = session.inject(BaseWallet)
             try:
                 verkey = self._multikey_to_verkey(multikey)
-            except:
+            except Exception:
                 raise MultikeyManagerError(f"Invalid multikey value {multikey}.")
             key_info = await wallet.assign_kid_to_key(verkey=verkey, kid=kid)
             return {

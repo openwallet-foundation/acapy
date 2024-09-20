@@ -9,6 +9,7 @@ INVITATION_REUSE_KEY = "invitation_reuse"
 
 
 class KeyInfo(NamedTuple):
+    """Class returning key information."""
     verkey: str
     metadata: dict
     key_type: KeyType

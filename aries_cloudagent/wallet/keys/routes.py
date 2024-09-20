@@ -21,7 +21,8 @@ class CreateKeyRequestSchema(OpenAPISchema):
     seed = fields.Str(
         required=False,
         metadata={
-            "description": "Optional seed to generate the key pair. Must enable insecure wallet mode.",
+            "description": "Optional seed to generate the key pair. \
+                Must enable insecure wallet mode.",
             "example": "00000000000000000000000000000000",
         },
     )
