@@ -175,7 +175,7 @@ class InvitationMessage(AgentMessage):
 
         """
         c_json = self.to_json()
-        oob = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        oob = bytes_to_b64(c_json.encode("ascii"), urlsafe=True, pad=False)
         endpoint = None
         if not base_url:
             for service_item in self.services:
