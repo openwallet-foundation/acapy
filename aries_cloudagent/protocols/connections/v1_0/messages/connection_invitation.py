@@ -82,7 +82,7 @@ class ConnectionInvitation(AgentMessage):
 
         """
         c_json = self.to_json()
-        c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True, pad=False)
         result = urljoin(base_url or self.endpoint or "", "?c_i={}".format(c_i))
         return result
 
