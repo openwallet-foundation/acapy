@@ -10,7 +10,7 @@ from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from .manager import MultikeyManager, MultikeyManagerError
-from ...wallet.error import WalletError, WalletDuplicateError, WalletNotFoundError
+from ...wallet.error import WalletDuplicateError, WalletNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 

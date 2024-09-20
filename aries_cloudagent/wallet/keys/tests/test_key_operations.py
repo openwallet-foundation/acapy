@@ -1,6 +1,8 @@
+"""Test MultikeypManager."""
+
 from unittest import IsolatedAsyncioTestCase
-from ..manager import MultikeyManager
-from ....core.in_memory import InMemoryProfile
+from aries_cloudagent.wallet.keys.manager import MultikeyManager
+from aries_cloudagent.core.in_memory import InMemoryProfile
 
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
@@ -9,20 +11,17 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
     seed = "00000000000000000000000000000000"
     multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
     kid = "did:web:example.com#key-01"
-    new_kid = "did:web:example.com#key-02"
 
     async def test_key_creation(self):
-        multikey = await self.manager.create(seed=self.seed)
-        assert multikey == self.multikey
-        multikey = await self.manager.from_multikey(multikey=multikey)
-        assert multikey == self.multikey
-
-    async def test_key_binding(self):
-        multikey = await self.manager.create(seed=self.seed, kid=self.kid)
-        assert multikey == self.multikey
-        multikey = await self.manager.from_kid(kid=self.kid)
-        assert multikey == self.multikey
-        multikey = await self.manager.update(multikey=multikey, kid=self.new_kid)
-        assert multikey == self.multikey
-        multikey = await self.manager.from_kid(kid=self.new_kid)
-        assert multikey == self.multikey
+        key_info = await self.manager.create(seed=self.seed)
+        assert key_info["multikey"] == self.multikey
+        assert key_info["kid"] == None
+        key_info = await self.manager.from_multikey(multikey=self.multikey)
+        assert key_info["multikey"] == self.multikey
+        assert key_info["kid"] == None
+        key_info = await self.manager.update(multikey=self.multikey, kid=self.kid)
+        assert key_info["multikey"] == self.multikey
+        assert key_info["kid"] == self.kid
+        key_info = await self.manager.from_kid(kid=self.kid)
+        assert key_info["multikey"] == self.multikey
+        assert key_info["kid"] == self.kid
