@@ -30,7 +30,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         assert key_info["multikey"] == self.multikey
         assert key_info["kid"] == self.kid
 
-        assert self.manager.kid_exists(self.kid)
+        assert await self.manager.kid_exists(self.kid)
 
     async def test_key_representations(self):
         assert self.manager._multikey_to_verkey(self.multikey) == self.verkey
