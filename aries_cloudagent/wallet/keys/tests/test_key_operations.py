@@ -17,22 +17,20 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         key_info = await self.manager.create(seed=self.seed)
         assert key_info["multikey"] == self.multikey
         assert key_info["kid"] is None
-        
+
         key_info = await self.manager.from_multikey(multikey=self.multikey)
         assert key_info["multikey"] == self.multikey
         assert key_info["kid"] is None
-        
+
         key_info = await self.manager.update(multikey=self.multikey, kid=self.kid)
         assert key_info["multikey"] == self.multikey
         assert key_info["kid"] == self.kid
-        
+
         key_info = await self.manager.from_kid(kid=self.kid)
         assert key_info["multikey"] == self.multikey
         assert key_info["kid"] == self.kid
-        
+
         assert self.manager.kid_exists(self.kid)
-        
-        
 
     async def test_key_representations(self):
         assert self.manager._multikey_to_verkey(self.multikey) == self.verkey
