@@ -9,7 +9,7 @@ from marshmallow import fields
 from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
-from .manager import MultikeyManager, MultikeyManagerError
+from .manager import MultikeyManager, MultikeyManagerError, DEFAULT_ALG
 from ...wallet.error import WalletDuplicateError, WalletNotFoundError
 from ..base import BaseWallet
 
@@ -23,7 +23,7 @@ class CreateKeyRequestSchema(OpenAPISchema):
         required=False,
         metadata={
             "description": "Which key algorithm to use.",
-            "example": "ed25519",
+            "example": DEFAULT_ALG,
         },
     )
 
@@ -163,7 +163,7 @@ async def create_key(request: web.BaseRequest):
 
     seed = body.get("seed") or None
     kid = body.get("kid") or None
-    alg = body.get("alg") or "ed25519"
+    alg = body.get("alg") or DEFAULT_ALG
 
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise MultikeyManagerError("Seed support is not enabled.")
@@ -175,31 +175,6 @@ async def create_key(request: web.BaseRequest):
         )
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
         return web.json_response({"message": str(err)}, status=400)
-
-    async with context.session() as session:
-        wallet: BaseWallet | None = session.inject_or(BaseWallet)
-
-        if kid:
-            if await wallet.get_key_by_kid(kid=kid):
-                raise web.HTTPBadRequest(reason=f"kid {kid} already used in wallet.")
-
-        key_type = ALG_MAPPINGS[alg]["key_type"]
-        key_info = await wallet.create_key(key_type=key_type, seed=seed, kid=kid)
-
-        return web.json_response(
-            {
-                "kid": key_info.kid,
-                "multikey": verkey_to_multikey(key_info.verkey),
-            },
-            status=200,
-        )
-
-    # try:
-    #     key_info = await MultikeyManager(context).create(
-    #         seed=seed,
-    #         kid=kid,
-    #     )
-    #     return web.json_response(key_info, status=201)
 
 
 @docs(tags=["wallet"], summary="Update a key pair's kid")
