@@ -10,7 +10,7 @@ from ..did_method import KEY
 from ...admin.request_context import AdminRequestContext
 
 ALG_MAPPINGS = {
-    "ed25519": {"key_type": ED25519, "prefix_hex": "ed01", "prefix_lenght": 2}
+    "ed25519": {"key_type": ED25519, "prefix_hex": "ed01", "prefix_length": 2}
 }
 
 class MultikeyManagerError(Exception):
@@ -26,8 +26,8 @@ class MultikeyManager:
 
     def _multikey_to_verkey(self, multikey, alg="ed25519"):
         """Transform multikey to verkey."""
-        prefix_lenght = ALG_MAPPINGS[alg]["prefix_lenght"]
-        public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_lenght:])
+        prefix_length = ALG_MAPPINGS[alg]["prefix_length"]
+        public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_length:])
         return bytes_to_b58(public_bytes)
 
     def _verkey_to_multikey(self, verkey, alg="ed25519"):
