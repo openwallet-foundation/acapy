@@ -11,12 +11,21 @@ from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from .manager import MultikeyManager, MultikeyManagerError
 from ...wallet.error import WalletDuplicateError, WalletNotFoundError
+from ..base import BaseWallet
 
 LOGGER = logging.getLogger(__name__)
 
 
 class CreateKeyRequestSchema(OpenAPISchema):
     """Request schema for creating a new key."""
+
+    alg = fields.Str(
+        required=False,
+        metadata={
+            "description": "Which key algorithm to use.",
+            "example": "ed25519",
+        },
+    )
 
     seed = fields.Str(
         required=False,
@@ -27,11 +36,11 @@ class CreateKeyRequestSchema(OpenAPISchema):
         },
     )
 
-    verification_method = fields.Str(
-        data_key="verificationMethod",
+    kid = fields.Str(
         required=False,
         metadata={
-            "description": "Optional kid to bind to the keypair",
+            "description": "Optional kid to bind to the keypair, \
+                such as a verificationMethod.",
             "example": "did:web:example.com#key-01",
         },
     )
@@ -66,11 +75,11 @@ class UpdateKeyRequestSchema(OpenAPISchema):
         },
     )
 
-    verification_method = fields.Str(
-        data_key="verificationMethod",
+    kid = fields.Str(
         required=True,
         metadata={
-            "description": "New kid to bind to the key pair",
+            "description": "New kid to bind to the key pair, \
+                such as a verificationMethod.",
             "example": "did:web:example.com#key-02",
         },
     )
@@ -89,7 +98,7 @@ class UpdateKeyResponseSchema(OpenAPISchema):
     kid = fields.Str(
         metadata={
             "description": "The associated kid",
-            "example": "did:web:example.com#key-01",
+            "example": "did:web:example.com#key-02",
         },
     )
 
@@ -124,11 +133,13 @@ async def fetch_key(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     multikey = request.match_info["multikey"]
+    
     try:
-        key_info = await MultikeyManager(context.profile).from_multikey(
-            multikey=multikey,
+        return web.json_response(
+            await MultikeyManager(context).from_multikey(multikey=multikey),
+            status=200,
         )
-        return web.json_response(key_info, status=200)
+
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
         return web.json_response({"message": str(err)}, status=400)
 
@@ -151,19 +162,42 @@ async def create_key(request: web.BaseRequest):
     body = await request.json()
 
     seed = body.get("seed") or None
-    if seed and not context.settings.get("wallet.allow_insecure_seed"):
-        raise web.HTTPBadRequest(reason="Seed support is not enabled.")
-
-    kid = body.get("verificationMethod") or None
-
+    kid = body.get("kid") or None
+    alg = body.get("alg") or "ed25519"
     try:
-        key_info = await MultikeyManager(context.profile).create(
-            seed=seed,
-            kid=kid,
+        return web.json_response(
+            await MultikeyManager(context).create(seed=seed, kid=kid, alg=alg),
+            status=201,
         )
-        return web.json_response(key_info, status=201)
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
         return web.json_response({"message": str(err)}, status=400)
+
+    async with context.session() as session:
+        wallet: BaseWallet | None = session.inject_or(BaseWallet)
+        
+        if kid:
+            if await wallet.get_key_by_kid(kid=kid):
+                raise web.HTTPBadRequest(
+                    reason=f"kid {kid} already used in wallet."
+                )
+                    
+        key_type = ALG_MAPPINGS[alg]["key_type"]
+        key_info = await wallet.create_key(key_type=key_type, seed=seed, kid=kid)
+        
+        return web.json_response(
+            {
+                "kid": key_info.kid,
+                "multikey": verkey_to_multikey(key_info.verkey),
+            },
+            status=200,
+        )
+
+    # try:
+    #     key_info = await MultikeyManager(context).create(
+    #         seed=seed,
+    #         kid=kid,
+    #     )
+    #     return web.json_response(key_info, status=201)
 
 
 @docs(tags=["wallet"], summary="Update a key pair's kid")
@@ -184,14 +218,16 @@ async def update_key(request: web.BaseRequest):
     body = await request.json()
 
     multikey = body.get("multikey")
-    kid = body.get("verificationMethod")
+    kid = body.get("kid")
 
     try:
-        key_info = await MultikeyManager(context.profile).update(
-            multikey=multikey,
-            kid=kid,
+        return web.json_response(
+            await MultikeyManager(context).update(
+                multikey=multikey,
+                kid=kid,
+            ), 
+            status=200
         )
-        return web.json_response(key_info, status=200)
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
         return web.json_response({"message": str(err)}, status=400)
 

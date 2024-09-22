@@ -114,7 +114,6 @@ class AskarWallet(BaseWallet):
                     "Verification key already present in wallet"
                 ) from None
             raise WalletError("Error creating signing key") from err
-
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
@@ -194,7 +193,8 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
         # FIXME implement key types
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=key.kid)
+        kid = key.tags["kid"] if "kid" in key.tags else None
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """Replace the metadata associated with a signing keypair.
