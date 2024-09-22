@@ -9,10 +9,11 @@ from ...wallet.error import WalletNotFoundError
 from ..did_method import KEY
 from ...admin.request_context import AdminRequestContext
 
-DEFAULT_ALG = 'ed25519'
+DEFAULT_ALG = "ed25519"
 ALG_MAPPINGS = {
     "ed25519": {"key_type": ED25519, "prefix_hex": "ed01", "prefix_length": 2}
 }
+
 
 class MultikeyManagerError(Exception):
     """Generic MultikeyManager Error."""
@@ -79,9 +80,7 @@ class MultikeyManager:
             wallet: BaseWallet | None = session.inject_or(BaseWallet)
 
             if kid and await self.kid_exists(wallet=wallet, kid=kid):
-                raise MultikeyManagerError(
-                    f"kid '{kid}' already exists in wallet."
-                )
+                raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
 
             key_type = ALG_MAPPINGS[alg]["key_type"]
             key_info = await wallet.create_key(key_type=key_type, seed=seed, kid=kid)
@@ -100,12 +99,9 @@ class MultikeyManager:
             wallet: BaseWallet | None = session.inject_or(BaseWallet)
 
             if kid and await self.kid_exists(wallet=wallet, kid=kid):
-                raise MultikeyManagerError(
-                    f"kid '{kid}' already exists in wallet."
-                )
+                raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
             key_info = await wallet.assign_kid_to_key(
-                verkey=self._multikey_to_verkey(multikey), 
-                kid=kid
+                verkey=self._multikey_to_verkey(multikey), kid=kid
             )
             return {
                 "kid": key_info.kid,

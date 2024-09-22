@@ -133,7 +133,7 @@ async def fetch_key(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     multikey = request.match_info["multikey"]
-    
+
     try:
         return web.json_response(
             await MultikeyManager(context).from_multikey(multikey=multikey),
@@ -164,7 +164,7 @@ async def create_key(request: web.BaseRequest):
     seed = body.get("seed") or None
     kid = body.get("kid") or None
     alg = body.get("alg") or "ed25519"
-        
+
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise MultikeyManagerError("Seed support is not enabled.")
 
@@ -178,16 +178,14 @@ async def create_key(request: web.BaseRequest):
 
     async with context.session() as session:
         wallet: BaseWallet | None = session.inject_or(BaseWallet)
-        
+
         if kid:
             if await wallet.get_key_by_kid(kid=kid):
-                raise web.HTTPBadRequest(
-                    reason=f"kid {kid} already used in wallet."
-                )
-                    
+                raise web.HTTPBadRequest(reason=f"kid {kid} already used in wallet.")
+
         key_type = ALG_MAPPINGS[alg]["key_type"]
         key_info = await wallet.create_key(key_type=key_type, seed=seed, kid=kid)
-        
+
         return web.json_response(
             {
                 "kid": key_info.kid,
@@ -229,8 +227,8 @@ async def update_key(request: web.BaseRequest):
             await MultikeyManager(context).update(
                 multikey=multikey,
                 kid=kid,
-            ), 
-            status=200
+            ),
+            status=200,
         )
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
         return web.json_response({"message": str(err)}, status=400)
