@@ -9,6 +9,7 @@ from ...wallet.error import WalletNotFoundError
 from ..did_method import KEY
 from ...admin.request_context import AdminRequestContext
 
+DEFAULT_ALG = 'ed25519'
 ALG_MAPPINGS = {
     "ed25519": {"key_type": ED25519, "prefix_hex": "ed01", "prefix_length": 2}
 }
@@ -24,13 +25,13 @@ class MultikeyManager:
         """Initialize the MultikeyManager."""
         self.context = context
 
-    def _multikey_to_verkey(self, multikey, alg="ed25519"):
+    def _multikey_to_verkey(self, multikey, alg=DEFAULT_ALG):
         """Transform multikey to verkey."""
         prefix_length = ALG_MAPPINGS[alg]["prefix_length"]
         public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_length:])
         return bytes_to_b58(public_bytes)
 
-    def _verkey_to_multikey(self, verkey, alg="ed25519"):
+    def _verkey_to_multikey(self, verkey, alg=DEFAULT_ALG):
         """Transform verkey to multikey."""
         prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
         prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
@@ -66,7 +67,7 @@ class MultikeyManager:
                 "multikey": self._verkey_to_multikey(key_info.verkey),
             }
 
-    async def create(self, seed=None, kid=None, alg="ed25519"):
+    async def create(self, seed=None, kid=None, alg=DEFAULT_ALG):
         """Create a new key pair."""
 
         if alg not in ALG_MAPPINGS:
