@@ -83,14 +83,14 @@ class MultikeyManager:
             key_type = ALG_MAPPINGS[alg]["key_type"]
             key_info = await wallet.create_key(key_type=key_type, seed=seed, kid=kid)
             # did_info = await wallet.create_local_did(
-                # method=KEY, 
-                # key_type=key_type, 
-                # seed=seed
+            # method=KEY,
+            # key_type=key_type,
+            # seed=seed
             # )
             # if kid:
             #     key_info = await wallet.assign_kid_to_key(
-                # verkey=did_info.verkey, 
-                # kid=kid
+            # verkey=did_info.verkey,
+            # kid=kid
             # )
             return {
                 "kid": key_info.kid,
