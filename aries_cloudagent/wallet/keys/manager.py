@@ -13,35 +13,6 @@ ALG_MAPPINGS = {
     "ed25519": {"key_type": ED25519, "prefix_hex": "ed01", "prefix_lenght": 2}
 }
 
-def multikey_to_verkey(multikey, alg="ed25519"):
-    """Transform multikey to verkey."""
-    try:
-        prefix_lenght = ALG_MAPPINGS[alg]["prefix_lenght"]
-        public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_lenght:])
-        return bytes_to_b58(public_bytes)
-    except:
-        raise MultikeyManagerError(f"Invalid multikey value {multikey} for algorithm {alg}.")
-
-
-def verkey_to_multikey(verkey, alg="ed25519"):
-    """Transform verkey to multikey."""
-    try:
-        prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
-        prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
-        return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
-    except:
-        raise MultikeyManagerError(f"Invalid verkey value {verkey} for algorithm {alg}.")
-
-
-async def kid_exists(wallet, kid):
-    """Check if kid exists."""
-    try:
-        if await wallet.get_key_by_kid(kid=kid):
-            return True
-    except WalletNotFoundError:
-        return False
-
-
 class MultikeyManagerError(Exception):
     """Generic MultikeyManager Error."""
 
@@ -97,9 +68,6 @@ class MultikeyManager:
 
     async def create(self, seed=None, kid=None, alg="ed25519"):
         """Create a new key pair."""
-        
-        if seed and not self.context.settings.get("wallet.allow_insecure_seed"):
-            raise MultikeyManagerError("Seed support is not enabled.")
 
         if alg not in ALG_MAPPINGS:
             raise MultikeyManagerError(

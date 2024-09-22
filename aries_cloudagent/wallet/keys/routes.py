@@ -164,6 +164,10 @@ async def create_key(request: web.BaseRequest):
     seed = body.get("seed") or None
     kid = body.get("kid") or None
     alg = body.get("alg") or "ed25519"
+        
+    if seed and not context.settings.get("wallet.allow_insecure_seed"):
+        raise MultikeyManagerError("Seed support is not enabled.")
+
     try:
         return web.json_response(
             await MultikeyManager(context).create(seed=seed, kid=kid, alg=alg),
