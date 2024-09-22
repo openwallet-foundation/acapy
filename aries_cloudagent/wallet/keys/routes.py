@@ -11,7 +11,6 @@ from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from .manager import MultikeyManager, MultikeyManagerError, DEFAULT_ALG
 from ...wallet.error import WalletDuplicateError, WalletNotFoundError
-from ..base import BaseWallet
 
 LOGGER = logging.getLogger(__name__)
 

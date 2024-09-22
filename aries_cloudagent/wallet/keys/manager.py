@@ -1,12 +1,10 @@
 """Multikey class."""
 
-from ...core.profile import Profile
 from ..base import BaseWallet
 from ..key_type import ED25519
 from ..util import b58_to_bytes, bytes_to_b58
 from ...utils.multiformats import multibase
 from ...wallet.error import WalletNotFoundError
-from ..did_method import KEY
 from ...admin.request_context import AdminRequestContext
 
 DEFAULT_ALG = "ed25519"
@@ -73,7 +71,7 @@ class MultikeyManager:
 
         if alg not in ALG_MAPPINGS:
             raise MultikeyManagerError(
-                f"Unknown key algorithm, use one of {[mapping for mapping in ALG_MAPPINGS]}."
+                f"Unknown key algorithm, use one of {list(ALG_MAPPINGS.keys())}."
             )
 
         async with self.context.session() as session:
@@ -84,9 +82,16 @@ class MultikeyManager:
 
             key_type = ALG_MAPPINGS[alg]["key_type"]
             key_info = await wallet.create_key(key_type=key_type, seed=seed, kid=kid)
-            # did_info = await wallet.create_local_did(method=KEY, key_type=key_type, seed=seed)
+            # did_info = await wallet.create_local_did(
+                # method=KEY, 
+                # key_type=key_type, 
+                # seed=seed
+            # )
             # if kid:
-            #     key_info = await wallet.assign_kid_to_key(verkey=did_info.verkey, kid=kid)
+            #     key_info = await wallet.assign_kid_to_key(
+                # verkey=did_info.verkey, 
+                # kid=kid
+            # )
             return {
                 "kid": key_info.kid,
                 "multikey": self._verkey_to_multikey(key_info.verkey),
