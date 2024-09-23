@@ -169,7 +169,7 @@ class AskarWallet(BaseWallet):
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
 
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key.kid)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
         """Fetch info for a signing keypair.

@@ -135,7 +135,7 @@ async def fetch_key(request: web.BaseRequest):
 
     try:
         return web.json_response(
-            await MultikeyManager(context).from_multikey(multikey=multikey),
+            await MultikeyManager(context.profile).from_multikey(multikey=multikey),
             status=200,
         )
 
@@ -169,7 +169,7 @@ async def create_key(request: web.BaseRequest):
 
     try:
         return web.json_response(
-            await MultikeyManager(context).create(seed=seed, kid=kid, alg=alg),
+            await MultikeyManager(context.profile).create(seed=seed, kid=kid, alg=alg),
             status=201,
         )
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
@@ -198,7 +198,7 @@ async def update_key(request: web.BaseRequest):
 
     try:
         return web.json_response(
-            await MultikeyManager(context).update(
+            await MultikeyManager(context.profile).update(
                 multikey=multikey,
                 kid=kid,
             ),
