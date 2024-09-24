@@ -14,22 +14,34 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
     kid = "did:web:example.com#key-01"
 
     async def test_key_creation(self):
-        key_info = await self.manager.create(seed=self.seed)
-        assert key_info["multikey"] == self.multikey
-        assert key_info["kid"] is None
+        async with self.profile.session() as session:
+            key_info = await MultikeyManager(session=session).create(seed=self.seed)
+            assert key_info["multikey"] == self.multikey
+            assert key_info["kid"] is None
 
-        key_info = await self.manager.from_multikey(multikey=self.multikey)
-        assert key_info["multikey"] == self.multikey
-        assert key_info["kid"] is None
+            key_info = await MultikeyManager(session=session).from_multikey(
+                multikey=self.multikey
+            )
+            assert key_info["multikey"] == self.multikey
+            assert key_info["kid"] is None
 
-        key_info = await self.manager.update(multikey=self.multikey, kid=self.kid)
-        assert key_info["multikey"] == self.multikey
-        assert key_info["kid"] == self.kid
+            key_info = await MultikeyManager(session=session).update(
+                multikey=self.multikey, kid=self.kid
+            )
+            assert key_info["multikey"] == self.multikey
+            assert key_info["kid"] == self.kid
 
-        key_info = await self.manager.from_kid(kid=self.kid)
-        assert key_info["multikey"] == self.multikey
-        assert key_info["kid"] == self.kid
+            key_info = await MultikeyManager(session=session).from_kid(kid=self.kid)
+            assert key_info["multikey"] == self.multikey
+            assert key_info["kid"] == self.kid
 
     async def test_key_representations(self):
-        assert self.manager._multikey_to_verkey(self.multikey) == self.verkey
-        assert self.manager._verkey_to_multikey(self.verkey) == self.multikey
+        async with self.profile.session() as session:
+            assert (
+                MultikeyManager(session=session)._multikey_to_verkey(self.multikey)
+                == self.verkey
+            )
+            assert (
+                MultikeyManager(session=session)._verkey_to_multikey(self.verkey)
+                == self.multikey
+            )

@@ -134,8 +134,10 @@ async def fetch_key(request: web.BaseRequest):
     multikey = request.match_info["multikey"]
 
     try:
+        async with context.session() as session:
+            key_info = await MultikeyManager(session).from_multikey(multikey=multikey)
         return web.json_response(
-            await MultikeyManager(context.profile).from_multikey(multikey=multikey),
+            key_info,
             status=200,
         )
 
@@ -168,8 +170,10 @@ async def create_key(request: web.BaseRequest):
         raise MultikeyManagerError("Seed support is not enabled.")
 
     try:
+        async with context.session() as session:
+            key_info = await MultikeyManager(session).create(seed=seed, kid=kid, alg=alg)
         return web.json_response(
-            await MultikeyManager(context.profile).create(seed=seed, kid=kid, alg=alg),
+            key_info,
             status=201,
         )
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
@@ -197,11 +201,13 @@ async def update_key(request: web.BaseRequest):
     kid = body.get("kid")
 
     try:
-        return web.json_response(
-            await MultikeyManager(context.profile).update(
+        async with context.session() as session:
+            key_info = await MultikeyManager(session).update(
                 multikey=multikey,
                 kid=kid,
-            ),
+            )
+        return web.json_response(
+            key_info,
             status=200,
         )
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
