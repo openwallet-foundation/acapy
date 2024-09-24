@@ -47,7 +47,7 @@ class MultikeyManager:
 
     async def from_kid(self, kid: str):
         """Fetch a single key."""
-        wallet: BaseWallet | None = self.session.inject_or(BaseWallet)
+        wallet: BaseWallet | None = self.session.inject(BaseWallet)
         key_info = await wallet.get_key_by_kid(kid=kid)
         return {
             "kid": key_info.kid,
@@ -56,7 +56,7 @@ class MultikeyManager:
 
     async def from_multikey(self, multikey: str):
         """Fetch a single key."""
-        wallet: BaseWallet | None = self.session.inject_or(BaseWallet)
+        wallet: BaseWallet | None = self.session.inject(BaseWallet)
         key_info = await wallet.get_signing_key(verkey=self._multikey_to_verkey(multikey))
         return {
             "kid": key_info.kid,
@@ -71,7 +71,7 @@ class MultikeyManager:
                 f"Unknown key algorithm, use one of {list(ALG_MAPPINGS.keys())}."
             )
 
-        wallet: BaseWallet | None = self.session.inject_or(BaseWallet)
+        wallet: BaseWallet | None = self.session.inject(BaseWallet)
 
         if kid and await self.kid_exists(wallet=wallet, kid=kid):
             raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
@@ -86,7 +86,7 @@ class MultikeyManager:
     async def update(self, multikey: str, kid: str):
         """Assign a new kid to a key pair."""
 
-        wallet: BaseWallet | None = self.session.inject_or(BaseWallet)
+        wallet: BaseWallet | None = self.session.inject(BaseWallet)
 
         if kid and await self.kid_exists(wallet=wallet, kid=kid):
             raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
