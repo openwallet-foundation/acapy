@@ -132,9 +132,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Currently providing admin routes only
         plugin_registry.register_plugin("acapy_agent.holder")
-
         plugin_registry.register_plugin("acapy_agent.ledger")
-
         plugin_registry.register_plugin("acapy_agent.messaging.jsonld")
         plugin_registry.register_plugin("acapy_agent.resolver")
         plugin_registry.register_plugin("acapy_agent.settings")
@@ -142,6 +140,9 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("acapy_agent.vc.data_integrity")
         plugin_registry.register_plugin("acapy_agent.wallet")
         plugin_registry.register_plugin("acapy_agent.wallet.keys")
+
+        # Did management plugins
+        plugin_registry.register_plugin("acapy_agent.did.indy")
 
         anoncreds_plugins = [
             "acapy_agent.anoncreds",
