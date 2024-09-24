@@ -7,7 +7,6 @@ from aries_cloudagent.core.in_memory import InMemoryProfile
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
     profile = InMemoryProfile.test_profile()
-    manager = MultikeyManager(profile=profile)
     seed = "00000000000000000000000000000000"
     multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
     verkey = "2ru5PcgeQzxF7QZYwQgDkG2K13PRqyigVw99zMYg8eML"
