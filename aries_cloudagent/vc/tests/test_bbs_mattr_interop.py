@@ -47,6 +47,7 @@ class TestBbsMattrInterop(IsolatedAsyncioTestCase):
             "verkey": public_key_base58,
             "metadata": {},
             "key_type": BLS12381G2,
+            "kid": None,
         }
 
         self.signature_issuer_suite = BbsBlsSignature2020(
