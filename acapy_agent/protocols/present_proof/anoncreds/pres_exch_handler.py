@@ -3,20 +3,20 @@
 import json
 import logging
 import time
-from typing import Dict, Optional, Protocol, Tuple, Union
+from typing import Dict, Optional, Protocol, Tuple
 
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.credential_definition import CredDef
 from ....anoncreds.models.revocation import RevRegDef
 from ....anoncreds.models.schema import AnonCredsSchema
-from ....anoncreds.models.utils import extract_non_revocation_intervals_from_proof_request
+from ....anoncreds.models.utils import (
+    extract_non_revocation_intervals_from_proof_request,
+)
 from ....anoncreds.registry import AnonCredsRegistry
 from ....anoncreds.revocation import AnonCredsRevocation
 from ....askar.profile_anon import AskarAnoncredsProfile
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ..v1_0.models.presentation_exchange import V10PresentationExchange
-from ..v2_0.models.pres_exchange import V20PresExRecord
 
 LOGGER = logging.getLogger(__name__)
 
