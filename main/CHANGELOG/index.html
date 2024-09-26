@@ -523,6 +523,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#101rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.0.1rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.0.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#september-25-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      September 25, 2024
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#101rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.0.1rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#100" class="md-nav__link">
     <span class="md-ellipsis">
       1.0.0
@@ -2560,6 +2593,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#101rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.0.1rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.0.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#september-25-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      September 25, 2024
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#101rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.0.1rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#100" class="md-nav__link">
     <span class="md-ellipsis">
       1.0.0
@@ -2842,6 +2908,103 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="101rc0">1.0.1rc0<a class="headerlink" href="#101rc0" title="Permanent link">&para;</a></h2>
+<h3 id="september-25-2024">September 25, 2024<a class="headerlink" href="#september-25-2024" title="Permanent link">&para;</a></h3>
+<p>Release 1.0.1 <em>might</em> be the last release of ACA-Py from the Hyperledger
+organization before the repository moves to the <a href="https://openwallet.foundation/">OpenWallet Foundation</a> (OWF). As
+noted in the repository <a href="../">README.md</a>, the ACA-Py project will soon be
+moving soon to the OWF's GitHub organization as the <a href="https://github.com/openwallet-foundation/project-proposals/pull/42">new "acapy"
+project</a>.</p>
+<p>For details on what this means for ACA-Py users, including steps for updating deployments, please follow the updates in <a href="https://github.com/hyperledger/aries-cloudagent-python/issues/3250">GitHub Issue #3250</a>. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!</p>
+<p>The release contains mostly internal clean ups, technical debt elimination, and
+a revision to the integration testing approach, incorporating the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness</a> tests in the ACA-Py continuous integration testing process.</p>
+<p>There are several important <strong><a href="#deprecation-notices">deprecation notices</a></strong>
+in this release in preparation for the next ACA-Py release. Please review these notifications carefully!</p>
+<p>In an attempt to shorten the categorized list of PRs in the release, rather than
+listing all of the <code>dependabot</code> PRs in the release, we've included a link to a
+list of those PRs.</p>
+<h4 id="deprecation-notices">Deprecation Notices<a class="headerlink" href="#deprecation-notices" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>ACA-Py will soon be moved from the Hyperledger GitHub organization to that of the <a href="https://openwallet.foundation/">OpenWallet Foundation</a>. As such, there will be changes in the names and locations of the artifacts produced -- the <a href="https://pypi.org">PyPi</a> project and the container images in the <a href="https://ghcr.io">GitHub Container Registry</a>. We will retain the ability to publish LTS releases of ACA-Py for the current LTS versions (0.11, 0.12) in the current locations. For details, guidance, timing, and progress on the move, please monitor the description of <a href="https://github.com/hyperledger/aries-cloudagent-python/issues/3250">GitHub Issue #3250</a> that will be maintained throughout the process.</p>
+</li>
+<li>
+<p>In the next ACA-Py release, we will be dropping from the core ACA-Py
+  repository the AIP 1.0 <a href="https://hyperledger.github.io/aries-rfcs/latest/features/0160-connection-protocol/">RFC 0160 Connections</a>, [RFC 0037 Issue Credentials
+  v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the
+  protocols will be moved to the [ACA-Py Plugins] repo. All deployers that use
+  those protocols <strong>SHOULD</strong> update to the <a href="https://hyperledger.github.io/aries-rfcs/latest/aip2/0003-protocols/">AIP 2.0</a> versions of those protocols
+  (<a href="https://hyperledger.github.io/aries-rfcs/latest/aip2/0434-outofband/">RFC
+  0434 Out of Band</a>+<a href="https://hyperledger.github.io/aries-rfcs/latest/aip2/0023-did-exchange/">RFC 0023 DID Exchange</a>, <a href="https://hyperledger.github.io/aries-rfcs/latest/aip2/0453-issue-credential-v2/">RFC 0453 Issue Credential v2.0</a>
+  and <a href="https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/">RFC 0454 Present Proof v2.0</a>, respectively). Once the protocols are
+  removed from ACA-Py, anyone still using those protocols must adjust their
+  configuration to load those protocols from the respective plugins.</p>
+</li>
+</ul>
+<h3 id="101rc0-breaking-changes">1.0.1rc0 Breaking Changes<a class="headerlink" href="#101rc0-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>There are no breaking changes in ACA-Py Release 1.0.1.</p>
+<h4 id="101rc0-categorized-list-of-pull-requests">1.0.1rc0 Categorized List of Pull Requests<a class="headerlink" href="#101rc0-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>Wallet and Key Handling Updates</p>
+<ul>
+<li>Feature multikey management <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3246">#3246</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>chore: delete unused keypair storage manager <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3245">#3245</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+</ul>
+</li>
+<li>
+<p>Credential Exchange Updates</p>
+<ul>
+<li>feat: verify creds signed with Ed25519VerificationKey2020 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3244">#3244</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>Add anoncreds profile basic scenario test <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3232">#3232</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>fix: anoncreds revocation notification when revoking <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3226">#3226</a> <a href="https://github.com/thiagoromanos">thiagoromanos</a></li>
+</ul>
+</li>
+<li>
+<p>OpenAPI Updates</p>
+<ul>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f3a8.svg" title=":art:" /> fix type hints for optional method parameters <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3234">#3234</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
+<li>
+<p>Documentation and GHA Test Updates</p>
+<ul>
+<li>Fix scenario tests <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3231">#3231</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Only run integration tests on correct file changes <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3230">#3230</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Update docs for outstanding anoncreds work <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3229">#3229</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Only change interop testing fork on pull requests <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3218">#3218</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Remove the RC from the versions table <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3213">#3213</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Document the documentation site generation process <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3212">#3212</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Remove 1.0.0rc6 documentation from gh-pages <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3211">#3211</a> <a href="https://github.com/swcurran">swcurran</a>  - Adjust nightly and release workflows <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3210">#3210</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Change interop tests to critical on PRs <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3209">#3209</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Change integration testing <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3194">#3194</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li>
+<p>Dependencies and Internal Fixes/Updates:</p>
+<ul>
+<li>Removing padding from url invitations <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3238">#3238</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Ensure that DAP_PORT is always an int <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3241">#3241</a> <a href="https://github.com/Gavinok">Gavinok</a></li>
+<li>Fix logic to send verbose webhooks <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3193">#3193</a> <a href="https://github.com/ianco">ianco</a></li>
+<li>fixes <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3186" title="GitHub Issue: squidfunk/mkdocs-material #3186">#3186</a>: handler_timed_file_handler <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3187">#3187</a> <a href="https://github.com/rngadam">rngadam</a></li>
+<li>issue <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3182" title="GitHub Issue: squidfunk/mkdocs-material #3182">#3182</a>: replace deprecated ptvsd debugger by debugpy <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3183">#3183</a> <a href="https://github.com/rngadam">rngadam</a></li>
+<li>👷Publish <code>aries-cloudagent-bbs</code>  Docker image <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3175">#3175</a> <a href="https://github.com/rblaine95">rblaine95</a></li>
+<li>[ POST v1.0.0 ] Adjust message queue error handling <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3170">#3170</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li>
+<p>Release management pull requests:</p>
+<ul>
+<li>1.0.1rc0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3254">#3254</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li>
+<p>Dependabot PRs</p>
+<ul>
+<li><a href="https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-09-25+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="100">1.0.0<a class="headerlink" href="#100" title="Permanent link">&para;</a></h2>
 <h3 id="august-16-2024">August 16, 2024<a class="headerlink" href="#august-16-2024" title="Permanent link">&para;</a></h3>
 <p>Release 1.0.0 is finally here! While Aries Cloud Agent Python has been used in production for several years, the maintainers have decided it is finally time to put a "1.0" tag on the project. The 1.0.0 release itself includes well over 100 PRs merged since <a href="#0121">Release 0.12.1</a>. The vast majority of that work was in hardening the product in preparation for this 1.0.0 release. While there are a number of new features and a new Long Term Support (LTS) policy, the majority of the focus has been on eliminating technical debt and improving the underlying implementation. The full list of PRs in this release can be <a href="#100-categorized-list-of-pull-requests">found below</a>. here are the highlights of the release:</p>
