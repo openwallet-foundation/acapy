@@ -193,7 +193,10 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
         # FIXME implement key types
-        kid = key.tags["kid"] if "kid" in key.tags else None
+        try:
+            kid = key.tags["kid"] if "kid" in key.tags else None
+        except Exception:
+            kid = None
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
