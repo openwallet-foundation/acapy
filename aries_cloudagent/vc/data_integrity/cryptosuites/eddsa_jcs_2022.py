@@ -48,7 +48,9 @@ class EddsaJcs2022:
         transformed_data = self.transformation(unsecured_data_document, options)
         hash_data = self.hashing(transformed_data, proof_config)
         proof_bytes = await self.proof_serialization(hash_data, options)
+        
         proof["proofValue"] = multibase.encode(proof_bytes, "base58btc")
+        
         return proof
 
     def proof_configuration(self, options: dict):
