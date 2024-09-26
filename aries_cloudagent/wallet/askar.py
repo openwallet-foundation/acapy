@@ -189,8 +189,11 @@ class AskarWallet(BaseWallet):
         if not key:
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
-
-        kid = key.tags.get("kid")
+        
+        try:
+            kid = key.tags.get("kid")
+        except:
+            kid = None
 
         # FIXME implement key types
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
@@ -261,7 +264,7 @@ class AskarWallet(BaseWallet):
 
             try:
                 await self._session.handle.insert_key(
-                    verkey, keypair, metadata=json.dumps(metadata), tags={"kid": None}
+                    verkey, keypair, metadata=json.dumps(metadata)
                 )
             except AskarError as err:
                 if err.code == AskarErrorCode.DUPLICATE:
