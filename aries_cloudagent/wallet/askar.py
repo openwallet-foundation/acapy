@@ -193,11 +193,7 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
 
-        # Provisioned keys don't get tags by default
-        try:
-            kid = key.tags["kid"] if "kid" in key.tags else None
-        except Exception:
-            kid = None
+        kid = key.tags.get("kid")
 
         # FIXME implement key types
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
