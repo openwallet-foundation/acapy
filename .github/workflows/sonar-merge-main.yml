@@ -8,6 +8,7 @@ jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
+    if: github.repository == 'hyperledger/aries-cloudagent-python'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,5 +31,6 @@ jobs:
         with: 
             args: >
                 -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
-                -Dsonar.coverage.exclusions=**/tests/*,**/demo/*,**/docs/*,**/docker/*,**/scripts/*
+                -Dsonar.coverage.exclusions=**/tests/**,**/demo/**,**/docs/**,**/docker/**,**/scripts/**,**/scenarios/**
+                -Dsonar.cpd.exclusions=**/tests/**,**/demo/**,**/docs/**,**/docker/**,**/scripts/**,**/scenarios/**
                 -Dsonar.sources=./

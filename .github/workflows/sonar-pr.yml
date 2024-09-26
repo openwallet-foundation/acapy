@@ -9,7 +9,7 @@ on:
 jobs:
   SonarCloud:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success' && github.repository == 'hyperledger/aries-cloudagent-python'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,6 +68,7 @@ jobs:
             -Dsonar.pullrequest.key=${{ fromJson(steps.get_pr_data.outputs.data).number }} 
             -Dsonar.pullrequest.branch=${{ fromJson(steps.get_pr_data.outputs.data).head.ref }} 
             -Dsonar.pullrequest.base=${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
-            -Dsonar.coverage.exclusions=**/tests/*,**/demo/*,**/docs/*,**/docker/*,**/scripts/*
+            -Dsonar.coverage.exclusions=**/tests/**,**/demo/**,**/docs/**,**/docker/**,**/scripts/**,**/scenarios/**
+            -Dsonar.cpd.exclusions=**/tests/**,**/demo/**,**/docs/**,**/docker/**,**/scripts/**,**/scenarios/**
             -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
             -Dsonar.sources=./
