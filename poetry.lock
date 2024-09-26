@@ -320,6 +320,17 @@ files = [
 ]
 
 [[package]]
+name = "canonicaljson"
+version = "2.0.0"
+description = "Canonical JSON"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "canonicaljson-2.0.0-py3-none-any.whl", hash = "sha256:c38a315de3b5a0532f1ec1f9153cd3d716abfc565a558d00a4835428a34fca5b"},
+    {file = "canonicaljson-2.0.0.tar.gz", hash = "sha256:e2fdaef1d7fadc5d9cb59bd3d0d41b064ddda697809ac4325dced721d12f113f"},
+]
+
+[[package]]
 name = "certifi"
 version = "2024.7.4"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -2898,4 +2909,4 @@ didcommv2 = ["didcomm-messaging"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "847f31447743aa5c76f2260811aac67009ff2279e10eea6bd9d1112e4c6e3345"
+content-hash = "718038f768b422663b33f3da4a5be4fe17875dedd5318bb08e9e093e186a14cc"

@@ -60,6 +60,7 @@ ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 
 # didcommv2
 didcomm-messaging = {version = "^0.1.1a0", optional = true }
+canonicaljson = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.8.0"
