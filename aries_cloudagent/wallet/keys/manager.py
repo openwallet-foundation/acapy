@@ -9,7 +9,12 @@ from ...wallet.error import WalletNotFoundError
 
 DEFAULT_ALG = "ed25519"
 ALG_MAPPINGS = {
-    "ed25519": {"key_type": ED25519, "multikey_prefix": "z6Mk", "prefix_hex": "ed01", "prefix_length": 2}
+    "ed25519": {
+        "key_type": ED25519,
+        "multikey_prefix": "z6Mk",
+        "prefix_hex": "ed01",
+        "prefix_length": 2,
+    }
 }
 
 
@@ -40,17 +45,14 @@ class MultikeyManager:
         prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
 
         return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
-    
+
     def key_type_from_multikey(self, multikey: str):
         """Derive key_type class from multikey prefix."""
         for mapping in ALG_MAPPINGS:
-            if multikey.startswith(ALG_MAPPINGS[mapping]['multikey_prefix']):
-                return ALG_MAPPINGS[mapping]['key_type']
-            
-        raise MultikeyManagerError(
-            f"Unsupported key algorithm for multikey {multikey}."
-        )
-            
+            if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+                return ALG_MAPPINGS[mapping]["key_type"]
+
+        raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
 
     async def kid_exists(self, kid: str):
         """Check if kid exists."""

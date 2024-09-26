@@ -17,7 +17,6 @@ from ...wallet.error import WalletDuplicateError, WalletNotFoundError, WalletErr
 LOGGER = logging.getLogger(__name__)
 
 
-
 class AddProofSchema(OpenAPISchema):
     """Request schema to add a DI proof to a document."""
 
@@ -88,17 +87,18 @@ async def add_di_proof(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    
+
     document = body.get("document")
     options = body.get("options")
-    
+
     try:
         async with context.session() as session:
-            secured_document = await DataIntegrityManager(session).\
-                add_proof(document, options)
+            secured_document = await DataIntegrityManager(session).add_proof(
+                document, options
+            )
 
         return web.json_response({"securedDocument": secured_document}, status=201)
-    
+
     except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -116,16 +116,19 @@ async def verify_di_secured_document(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    
+
     secured_document = body.get("securedDocument")
 
     try:
         async with context.session() as session:
-            verification_response = await DataIntegrityManager(session).\
-                verify_proof(secured_document)
-                
-        return web.json_response({"verificationResults": verification_response}, status=200)
-    
+            verification_response = await DataIntegrityManager(session).verify_proof(
+                secured_document
+            )
+
+        return web.json_response(
+            {"verificationResults": verification_response}, status=200
+        )
+
     except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 

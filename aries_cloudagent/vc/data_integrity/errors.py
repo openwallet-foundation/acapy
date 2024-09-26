@@ -1,4 +1,3 @@
-
 # https://www.w3.org/TR/vc-data-integrity/#processing-errors
 PROBLEM_DETAILS = {
     "PROOF_GENERATION_ERROR": {
@@ -10,9 +9,7 @@ PROBLEM_DETAILS = {
     "PROOF_TRANSFORMATION_ERROR": {
         "type": "https://w3id.org/security#PROOF_TRANSFORMATION_ERROR"
     },
-    "INVALID_DOMAIN_ERROR": {
-        "type": "https://w3id.org/security#INVALID_DOMAIN_ERROR"
-    },
+    "INVALID_DOMAIN_ERROR": {"type": "https://w3id.org/security#INVALID_DOMAIN_ERROR"},
     "INVALID_CHALLENGE_ERROR": {
         "type": "https://w3id.org/security#INVALID_CHALLENGE_ERROR"
     },
