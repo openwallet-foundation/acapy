@@ -97,7 +97,7 @@ class AskarWallet(BaseWallet):
         if kid:
             tags = {"kid": kid}
         else:
-            tags = None
+            tags = {}
 
         try:
             keypair = _create_keypair(key_type, seed)
