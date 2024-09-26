@@ -94,10 +94,7 @@ class AskarWallet(BaseWallet):
         if metadata is None:
             metadata = {}
 
-        if kid:
-            tags = {"kid": kid}
-        else:
-            tags = {}
+        tags = {"kid": kid}
 
         try:
             keypair = _create_keypair(key_type, seed)
@@ -196,13 +193,6 @@ class AskarWallet(BaseWallet):
         kid = key.tags.get("kid")
 
         # FIXME implement key types
-<<<<<<< HEAD
-        try:
-            kid = key.tags["kid"] if "kid" in key.tags else None
-        except Exception:
-            kid = None
-=======
->>>>>>> main
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
