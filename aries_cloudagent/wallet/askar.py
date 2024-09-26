@@ -198,8 +198,8 @@ class AskarWallet(BaseWallet):
             kid = key.tags["kid"] if "kid" in key.tags else None
         except Exception:
             kid = None
-            
-        # FIXME implement key types 
+
+        # FIXME implement key types
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
