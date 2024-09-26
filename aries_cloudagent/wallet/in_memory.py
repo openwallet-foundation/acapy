@@ -165,7 +165,7 @@ class InMemoryWallet(BaseWallet):
             verkey=key["verkey"],
             metadata=key["metadata"].copy(),
             key_type=key["key_type"],
-            kid=key["kid"] if "kid" in key else None,
+            kid=key["kid"],
         )
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
