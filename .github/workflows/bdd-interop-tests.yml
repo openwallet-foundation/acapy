@@ -36,6 +36,7 @@ jobs:
             src: 
               - aries_cloudagent/**/*
               - poetry.lock
+              - pyproject.toml
       - name: Check if src files changed
         id: check-if-src-changed
         run: |
