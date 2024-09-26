@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   aries_cloudagent.wallet.keys
    aries_cloudagent.wallet.models
 
 Submodules
@@ -117,14 +118,6 @@ aries\_cloudagent.wallet.jwt module
 -----------------------------------
 
 .. automodule:: aries_cloudagent.wallet.jwt
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-aries\_cloudagent.wallet.key\_pair module
------------------------------------------
-
-.. automodule:: aries_cloudagent.wallet.key_pair
    :members:
    :undoc-members:
    :show-inheritance:

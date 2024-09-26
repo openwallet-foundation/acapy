@@ -6,7 +6,7 @@ a major, minor or patch release, per [semver](https://semver.org/) rules.
 
 Once ready to do a release, create a local branch that includes the following updates:
 
-1. Create a PR branch from an updated `main` branch.
+1. Create a local PR branch from an updated `main` branch, e.g. "1.0.1rc0".
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
@@ -22,32 +22,60 @@ Once ready to do a release, create a local branch that includes the following up
    transitioning from one release candidate to the next, or to an official
    release, just update the title and date of the change log section.
 
-4. Collect the details of the merged PRs included in this release -- a list of PR
-   title, number, link to PR, author's github ID, and a link to the author's
-   github account. Gathering that data can be painful. Here are is the current
-   easiest way to do this -- using [OpenAI ChatGPT]:
+4. Collect the details of the merged PRs included in this release -- a list of
+   PR title, number, link to PR, author's github ID, and a link to the author's
+   github account. Do not include `dependabot` PRs. For those, we put a live
+   link for the date range of the release (guidance below).
+   
+   To generate the list, run the script `genChangeLog.sh` command (requires you
+   have [gh] and [jq] installed), with the date of the day before the last
+   release. The day before is picked to make sure you get all of the changes.
+   The script generates the list of all PRs, minus the dependabot ones, merged since
+   the last release in the required markdown format for the ChangeLog. At the end
+   of the list is some markdown for putting a link into the ChangeLog to see the
+   dependabot PRs merged in the release.
 
-> Prepare the following ChatGPT request. Don't hit enter yet--you have to add the data.
->
-> `Generate from this the github pull request number, the github id of the author and the title of the pull request in a tab-delimited list`
->
-> Get a list of the merged PRs since the last release by displaying the PR list in
-> the GitHub UI, highlighting/copying the PRs and pasting them below the ChatGPT
-> request, one page after another. Hit `<Enter>`, let the AI magic work, and you
-> should have a list of the PRs in a nice table with a `Copy` link that you should click.
-> 
-> Once you have that, open this [Google Sheet] and highlight the `A1` cell and
-> paste in the ChatGPT data. A formula in column `E` will have the properly
-> formatted changelog entries. Double check the list with the GitHub UI to make
-> sure that ChatGPT isn't messing with you and you have the needed data.
+   **Note**: The output of the script is _roughly_ what you need for the
+   ChangeLog, but use your discretion in getting the list right, and making
+   sure the dates for the dependabot PRs is correct. For example, when doing a
+   follow up to an RC release, the date range in the dependabot link should
+   be the day before the last non-RC release, which won't be generated correctly
+   in this release.
 
-[OpenAI ChatGPT]: https://chat.openai.com
-[Google Sheet]: https://docs.google.com/spreadsheets/d/1gIjPirZ42g5eM-JBtVt8xN5Jm0PQuEv91a8woRAuDEg/edit?usp=sharing
+   [gh]: https://github.com/cli/cli
+   [jq]: https://jqlang.github.io/jq/download/
+
+From the root of the repository folder, run:
+
+```bash
+./scripts/genChangeLog.sh <date>
+```
+
+Leave off the date argument to get usage information.
+
+The output should look like this -- and what you see in [CHANGELOG.md](CHANGELOG.md):
+
+```text
+
+  - chore(deps): Bump mkdocs-material from 9.5.34 to 9.5.36 [\#3249](https://github.com/hyperledger/aries-cloudagent-python/pull/3249) [app/dependabot](https://github.com/app/dependabot)
+  - chore(deps-dev): Bump ruff from 0.6.5 to 0.6.7 [\#3248](https://github.com/hyperledger/aries-cloudagent-python/pull/3248) [app/dependabot](https://github.com/app/dependabot)
+  - Feature multikey management [\#3246](https://github.com/hyperledger/aries-cloudagent-python/pull/3246) [PatStLouis](https://github.com/PatStLouis)
+
+```
 
 Once you have the list of PRs:
 
-- Organize the list into suitable categories, update (if necessary) the PR description and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
+- Organize the list into suitable categories in the [CHANGELOG.md](CHANGELOG.md) file, update (if necessary) the PR title and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
 - Add a narrative about the release above the PR that highlights what has gone into the release.
+- To cover the `dependabot` PRs without listing them all, add to the end of the
+  categorized list of PRs the lat two lines of the script output. Make sure the dates are right! The text will look like this:
+
+```text
+- Dependabot PRs
+  - [List of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-16..2024-09-16+author%3Aapp%2Fdependabot+)
+```
+
+Include a PR for this soon-to-be PR. You can guess at the number of the PR by using this command `gh issue list -s all -L 2; gh pr ls -s all -L 2` to see the highest PR and issues, but you still might have to correct the number after you create the PR if someone sneaks one in before you submit your PR.
 
 5. Check to see if there are any other PRs that should be included in the release.
 
@@ -77,6 +105,8 @@ Once you have the list of PRs:
 
    Command: `cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..`
 
+   Folders may not be cleaned up by the script, so the following can be run, likely with `sudo` -- `rm -rf open-api/.build`. The folder is `.gitignore`d, so there is not a danger they will be pushed, even if they are not deleted.
+
 9.  Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.
    If there are still further changes to be merged, mark the PR as "Draft",
@@ -84,14 +114,14 @@ Once you have the list of PRs:
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-10. Immediately after it is merged, create a new GitHub tag representing the
+10.   Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
    version in [pyproject.toml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/pyproject.toml). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
 
-11.  New images for the release are automatically published by the GitHubAction
+11.    New images for the release are automatically published by the GitHubAction
    Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
    when a release is tagged, so no manual action is needed. The images are
    published in the [Hyperledger Package Repository under
@@ -108,8 +138,8 @@ Once you have the list of PRs:
 [publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
 
-1.  When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format `docs-v<version>`, for example, `docs-v1.0.0`.
+12.  When a new release is tagged, create a new branch at the same commit with
+    the branch name in the format `docs-v<version>`, for example, `docs-v1.0.1rc0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
     publishing it at [https://aca-py.org]. The GitHub Action also executes when

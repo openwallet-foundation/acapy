@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.0.0"
+    "version" : "v1.0.1rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -7342,6 +7342,88 @@
         "x-codegen-request-body-name" : "body"
       }
     },
+    "/wallet/keys" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateKeyRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreateKeyResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Create a key pair",
+        "tags" : [ "wallet" ],
+        "x-codegen-request-body-name" : "body"
+      },
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateKeyRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UpdateKeyResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Update a key pair's kid",
+        "tags" : [ "wallet" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/wallet/keys/{multikey}" : {
+      "get" : {
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "multikey",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FetchKeyResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Fetch key info.",
+        "tags" : [ "wallet" ]
+      }
+    },
     "/wallet/sd-jwt/sign" : {
       "post" : {
         "requestBody" : {
@@ -8185,6 +8267,41 @@
           "service_endpoint" : {
             "description" : "Connection endpoint",
             "example" : "http://192.168.56.102:8020",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CreateKeyRequest" : {
+        "properties" : {
+          "alg" : {
+            "description" : "Which key algorithm to use.",
+            "example" : "ed25519",
+            "type" : "string"
+          },
+          "kid" : {
+            "description" : "Optional kid to bind to the keypair,                 such as a verificationMethod.",
+            "example" : "did:web:example.com#key-01",
+            "type" : "string"
+          },
+          "seed" : {
+            "description" : "Optional seed to generate the key pair.                 Must enable insecure wallet mode.",
+            "example" : "00000000000000000000000000000000",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CreateKeyResponse" : {
+        "properties" : {
+          "kid" : {
+            "description" : "The associated kid",
+            "example" : "did:web:example.com#key-01",
+            "type" : "string"
+          },
+          "multikey" : {
+            "description" : "The Public Key Multibase format (multikey)",
+            "example" : "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
             "type" : "string"
           }
         },
@@ -9466,6 +9583,21 @@
         "properties" : {
           "results" : {
             "$ref" : "#/components/schemas/VerifiableCredential"
+          }
+        },
+        "type" : "object"
+      },
+      "FetchKeyResponse" : {
+        "properties" : {
+          "kid" : {
+            "description" : "The associated kid",
+            "example" : "did:web:example.com#key-01",
+            "type" : "string"
+          },
+          "multikey" : {
+            "description" : "The Public Key Multibase format (multikey)",
+            "example" : "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -13776,6 +13908,37 @@
             } ],
             "description" : "Schema transaction to endorse",
             "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "UpdateKeyRequest" : {
+        "properties" : {
+          "kid" : {
+            "description" : "New kid to bind to the key pair,                 such as a verificationMethod.",
+            "example" : "did:web:example.com#key-02",
+            "type" : "string"
+          },
+          "multikey" : {
+            "description" : "Multikey of the key pair to update",
+            "example" : "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
+            "type" : "string"
+          }
+        },
+        "required" : [ "kid", "multikey" ],
+        "type" : "object"
+      },
+      "UpdateKeyResponse" : {
+        "properties" : {
+          "kid" : {
+            "description" : "The associated kid",
+            "example" : "did:web:example.com#key-02",
+            "type" : "string"
+          },
+          "multikey" : {
+            "description" : "The Public Key Multibase format (multikey)",
+            "example" : "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
+            "type" : "string"
           }
         },
         "type" : "object"

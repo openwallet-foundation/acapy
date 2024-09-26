@@ -1,5 +1,104 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.0.1rc0
+
+### September 25, 2024
+
+Release 1.0.1 _might_ be the last release of ACA-Py from the Hyperledger
+organization before the repository moves to the [OpenWallet Foundation] (OWF). As
+noted in the repository [README.md](README.md), the ACA-Py project will soon be
+moving soon to the OWF's GitHub organization as the [new "acapy"
+project](https://github.com/openwallet-foundation/project-proposals/pull/42).
+
+[OpenWallet Foundation]: https://openwallet.foundation/
+
+For details on what this means for ACA-Py users, including steps for updating deployments, please follow the updates in [GitHub Issue #3250]. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!
+
+[GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
+
+The release contains mostly internal clean ups, technical debt elimination, and
+a revision to the integration testing approach, incorporating the [Aries Agent Test Harness] tests in the ACA-Py continuous integration testing process.
+
+[Aries Agent Test Harness]: https://github.com/hyperledger/aries-agent-test-harness
+
+There are several important **[deprecation notices](#deprecation-notices)**
+in this release in preparation for the next ACA-Py release. Please review these notifications carefully!
+
+In an attempt to shorten the categorized list of PRs in the release, rather than
+listing all of the `dependabot` PRs in the release, we've included a link to a
+list of those PRs.
+
+#### Deprecation Notices
+
+- ACA-Py will soon be moved from the Hyperledger GitHub organization to that of the [OpenWallet Foundation]. As such, there will be changes in the names and locations of the artifacts produced -- the [PyPi] project and the container images in the [GitHub Container Registry]. We will retain the ability to publish LTS releases of ACA-Py for the current LTS versions (0.11, 0.12) in the current locations. For details, guidance, timing, and progress on the move, please monitor the description of [GitHub Issue #3250] that will be maintained throughout the process.
+
+[PyPi]: https://pypi.org
+[GitHub Container Registry]: https://ghcr.io
+
+- In the next ACA-Py release, we will be dropping from the core ACA-Py
+  repository the AIP 1.0 [RFC 0160 Connections], [RFC 0037 Issue Credentials
+  v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the
+  protocols will be moved to the [ACA-Py Plugins] repo. All deployers that use
+  those protocols **SHOULD** update to the [AIP 2.0] versions of those protocols
+  ([RFC
+  0434 Out of Band]+[RFC 0023 DID Exchange], [RFC 0453 Issue Credential v2.0]
+  and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are
+  removed from ACA-Py, anyone still using those protocols must adjust their
+  configuration to load those protocols from the respective plugins.
+
+[RFC 0160 Connections]: https://hyperledger.github.io/aries-rfcs/latest/features/0160-connection-protocol/
+[RFC 0037 Issue Credentials]: https://hyperledger.github.io/aries-rfcs/latest/features/0036-issue-credential/
+[RFC 0037 Present Proof]: https://hyperledger.github.io/aries-rfcs/latest/features/0037-present-proof/
+[AIP 2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0003-protocols/
+[RFC 0434 Out of Band]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0434-outofband/
+[RFC 0023 DID Exchange]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0023-did-exchange/
+[RFC 0453 Issue Credential v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0453-issue-credential-v2/
+[RFC 0454 Present Proof v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
+
+### 1.0.1rc0 Breaking Changes
+
+There are no breaking changes in ACA-Py Release 1.0.1.
+
+#### 1.0.1rc0 Categorized List of Pull Requests
+
+- Wallet and Key Handling Updates
+  - Feature multikey management [\#3246](https://github.com/hyperledger/aries-cloudagent-python/pull/3246) [PatStLouis](https://github.com/PatStLouis)
+  - chore: delete unused keypair storage manager [\#3245](https://github.com/hyperledger/aries-cloudagent-python/pull/3245) [dbluhm](https://github.com/dbluhm)
+
+- Credential Exchange Updates
+  - feat: verify creds signed with Ed25519VerificationKey2020 [\#3244](https://github.com/hyperledger/aries-cloudagent-python/pull/3244) [dbluhm](https://github.com/dbluhm)
+  - Add anoncreds profile basic scenario test [\#3232](https://github.com/hyperledger/aries-cloudagent-python/pull/3232) [jamshale](https://github.com/jamshale)
+  - fix: anoncreds revocation notification when revoking [\#3226](https://github.com/hyperledger/aries-cloudagent-python/pull/3226) [thiagoromanos](https://github.com/thiagoromanos)
+
+- OpenAPI Updates
+  - :art: fix type hints for optional method parameters [\#3234](https://github.com/hyperledger/aries-cloudagent-python/pull/3234) [ff137](https://github.com/ff137)
+
+- Documentation and GHA Test Updates
+  - Fix scenario tests [\#3231](https://github.com/hyperledger/aries-cloudagent-python/pull/3231) [jamshale](https://github.com/jamshale)
+  - Only run integration tests on correct file changes [\#3230](https://github.com/hyperledger/aries-cloudagent-python/pull/3230) [jamshale](https://github.com/jamshale)
+  - Update docs for outstanding anoncreds work [\#3229](https://github.com/hyperledger/aries-cloudagent-python/pull/3229) [jamshale](https://github.com/jamshale)
+  - Only change interop testing fork on pull requests [\#3218](https://github.com/hyperledger/aries-cloudagent-python/pull/3218) [jamshale](https://github.com/jamshale)
+  - Remove the RC from the versions table [\#3213](https://github.com/hyperledger/aries-cloudagent-python/pull/3213) [swcurran](https://github.com/swcurran)
+  - Document the documentation site generation process [\#3212](https://github.com/hyperledger/aries-cloudagent-python/pull/3212) [swcurran](https://github.com/swcurran)
+  - Remove 1.0.0rc6 documentation from gh-pages [\#3211](https://github.com/hyperledger/aries-cloudagent-python/pull/3211) [swcurran](https://github.com/swcurran)  - Adjust nightly and release workflows [\#3210](https://github.com/hyperledger/aries-cloudagent-python/pull/3210) [jamshale](https://github.com/jamshale)
+  - Change interop tests to critical on PRs [\#3209](https://github.com/hyperledger/aries-cloudagent-python/pull/3209) [jamshale](https://github.com/jamshale)
+  - Change integration testing [\#3194](https://github.com/hyperledger/aries-cloudagent-python/pull/3194) [jamshale](https://github.com/jamshale)
+
+- Dependencies and Internal Fixes/Updates:
+  - Removing padding from url invitations [\#3238](https://github.com/hyperledger/aries-cloudagent-python/pull/3238) [jamshale](https://github.com/jamshale)
+  - Ensure that DAP_PORT is always an int [\#3241](https://github.com/hyperledger/aries-cloudagent-python/pull/3241) [Gavinok](https://github.com/Gavinok)
+  - Fix logic to send verbose webhooks [\#3193](https://github.com/hyperledger/aries-cloudagent-python/pull/3193) [ianco](https://github.com/ianco)
+  - fixes #3186: handler_timed_file_handler [\#3187](https://github.com/hyperledger/aries-cloudagent-python/pull/3187) [rngadam](https://github.com/rngadam)
+  - issue #3182: replace deprecated ptvsd debugger by debugpy [\#3183](https://github.com/hyperledger/aries-cloudagent-python/pull/3183) [rngadam](https://github.com/rngadam)
+  - 👷Publish `aries-cloudagent-bbs`  Docker image [\#3175](https://github.com/hyperledger/aries-cloudagent-python/pull/3175) [rblaine95](https://github.com/rblaine95)
+  - [ POST v1.0.0 ] Adjust message queue error handling [\#3170](https://github.com/hyperledger/aries-cloudagent-python/pull/3170) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.0.1rc0 [\#3254](https://github.com/hyperledger/aries-cloudagent-python/pull/3254) [swcurran](https://github.com/swcurran)
+
+- Dependabot PRs
+  - [Link to list of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-09-25+author%3Aapp%2Fdependabot+)
+
 ## 1.0.0
 
 ### August 16, 2024

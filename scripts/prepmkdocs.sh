@@ -21,6 +21,8 @@ if [[ "$1" == "clean" ]]; then
 else
     # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
     for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
+    # Redo README to delete the lines about https://aca-py.org
+    sed -e "s#docs/#./#g" -e "/Full access to an organized set/,+2d" README.md >docs/README.md
     # Copy the architecture drawing
     cp aca-py_architecture.png docs
     # Fix references in DevReadMe.md to moved files
