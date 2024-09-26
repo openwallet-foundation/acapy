@@ -1,5 +1,15 @@
 # Hyperledger Aries Cloud Agent - Python  <!-- omit in toc -->
 
+🚨 **ACA-Py is transitioning to the [OpenWallet Foundation] (OWF)!** 🚨
+
+[OpenWallet Foundation]: https://openwallet.foundation/
+
+We’re excited to announce that the ACA-Py project will soon be moving to the OWF's GitHub organization under the [new "acapy" project](https://github.com/openwallet-foundation/project-proposals/pull/42). This is an important transition for the community, and we’ll ensure it's smooth and well-documented.
+
+For details on what this means for ACA-Py users, including steps for updating deployments, please follow the updates in [GitHub Issue #3250]. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!
+
+[GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
+
 <p float="left">
   <a href="https://pypi.org/project/aries-cloudagent/"><img src="https://img.shields.io/pypi/v/aries_cloudagent" width="100" height="20" />
   <img src="https://sonarcloud.io/images/project_badges/sonarcloud-white.svg" width="120" height="20" />
@@ -12,7 +22,7 @@
 > An easy to use Aries agent for building SSI services using any language that supports sending/receiving HTTP requests.
 
 Full access to an organized set of all of the ACA-Py documents is available at [https://aca-py.org](https://aca-py.org).
-Check it out! It's much easier to navigate than this GitHub repo for reading the documentation.
+Check it out! It's much easier to navigate than the ACA-Py GitHub repo for reading the documentation.
 
 :new: ACA-Py Plugins have their own store! Visit [https://plugins.aca-py.org](https://plugins.aca-py.org) to find ready-to-use functionality to add to your ACA-Py deployment, and to learn how to build your own plugins.
 
