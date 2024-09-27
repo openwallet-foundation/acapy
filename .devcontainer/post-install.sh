@@ -8,8 +8,8 @@ WORKSPACE_DIR=$(pwd)
 python -m pip install --upgrade pip
 pip3 install -r demo/requirements.txt -r demo/requirements.behave.txt
 
-# install a version of aries-cloudagent so the pytests can pick up a version
-pip3 install aries-cloudagent
+# install a version of acapy-agent so the pytests can pick up a version
+pip3 install acapy-agent
 
 # hack/workaround to allow `pytest .` and `poetry run pytest` work.
 # need to not run ruff...

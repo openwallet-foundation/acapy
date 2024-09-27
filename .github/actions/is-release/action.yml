@@ -29,11 +29,11 @@ runs:
 
         changes=$(git diff "${{ github.sha }}" "$last_merge" pyproject.toml)
 
-        # Extract the version of aries-cloudagent from the diff of pyproject.toml
+        # Extract the version of acapy-agent from the diff of pyproject.toml
         version=$(echo "$changes" | grep -A1 'name = "acapy_agent"' | head -n 2 | tail -n 1 | awk '{print $3}' | tr -d '"')
 
         echo "$version"
         if [ "$version" ]; then
-          echo "This is a release because the aries-cloudagent version in pyproject.toml has changes"
+          echo "This is a release because the acapy-agent version in pyproject.toml has changes"
           echo is_release=true >> $GITHUB_OUTPUT
         fi

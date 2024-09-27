@@ -83,7 +83,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
+            ghcr.io/${{ steps.info.outputs.repo-owner }}/acapy-agent
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 
@@ -108,7 +108,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-bbs
+            ghcr.io/${{ steps.info.outputs.repo-owner }}/acapy-agent-bbs
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 
@@ -123,7 +123,7 @@ jobs:
           target: main
           build-args: |
             python_version=${{ matrix.python-version }}
-            acapy_name=aries-cloudagent-bbs
+            acapy_name=acapy-agent-bbs
             acapy_version=${{ inputs.tag || github.event.release.tag_name }}
             acapy_reqs=[askar,bbs,didcommv2]
           cache-from: type=local,src=/tmp/.buildx-cache

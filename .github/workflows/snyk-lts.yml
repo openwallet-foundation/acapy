@@ -13,12 +13,12 @@ on:
 jobs:
   snyk:
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'hyperledger' }}
+    if: ${{ github.repository_owner == 'openwallet-foundation' }}
     steps:
     - uses: actions/checkout@v4
 
     - name: Build a Docker image
-      run: docker build  -t aries-cloudagent -f docker/Dockerfile .
+      run: docker build  -t acapy-agent -f docker/Dockerfile .
 
     - name: Run Snyk to check Docker image for vulnerabilities
       # Snyk can be used to break the build when it detects vulnerabilities.
@@ -31,7 +31,7 @@ jobs:
         # or you can signup for free at https://snyk.io/login
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
-        image: aries-cloudagent
+        image: acapy-agent
         args: --file=docker/Dockerfile
         # Adding a snyk monitor command which continuously monitors the image for vulnerabilities 
         # See https://support.snyk.io/hc/en-us/articles/360000920818-What-are-the-differences-among-snyk-test-monitor-and-protect for more details 
