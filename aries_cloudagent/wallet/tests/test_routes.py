@@ -29,11 +29,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.wallet = mock.create_autospec(BaseWallet)
         self.session_inject = {BaseWallet: self.wallet}
+        self.route_mgr = mock.MagicMock()
+        self.route_mgr.mediation_record_if_id = mock.CoroutineMock(return_value=None)
+        self.route_mgr.routing_info = mock.CoroutineMock(return_value=(None, None))
         self.profile = InMemoryProfile.test_profile(
-            settings={"admin.admin_api_key": "secret-key"}
+            settings={"admin.admin_api_key": "secret-key"},
+            bind={KeyTypes: KeyTypes(), RouteManager: self.route_mgr},
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
-        self.context.injector.bind_instance(KeyTypes, KeyTypes())
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
