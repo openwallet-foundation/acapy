@@ -43,6 +43,8 @@ from ..messaging.valid import (
     NON_SD_LIST_VALIDATE,
     SD_JWT_EXAMPLE,
     SD_JWT_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
     IndyDID,
     StrOrDictField,
     Uri,
@@ -170,6 +172,14 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
                 " only public or posted DIDs"
             ),
             "example": ENDPOINT_TYPE_EXAMPLE,
+        },
+    )
+    mediation_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Medation ID to use for endpoint information.",
+            "example": UUID4_EXAMPLE,
         },
     )
 
@@ -896,7 +906,7 @@ async def promote_wallet_public_did(
     async with (
         context.session() if is_ctx_admin_request else profile.session()
     ) as session:
-        wallet = session.inject_or(BaseWallet)
+        wallet = session.inject(BaseWallet)
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
 
@@ -951,6 +961,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     did = body["did"]
     endpoint = body.get("endpoint")
     endpoint_type = EndpointType.get(body.get("endpoint_type", EndpointType.ENDPOINT.w3c))
+    mediation_id = body.get("mediation_id")
 
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
@@ -959,6 +970,17 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     endorser_did = None
     connection_id = request.query.get("conn_id")
     attrib_def = None
+
+    profile = context.profile
+    route_manager = profile.inject(RouteManager)
+    mediation_record = await route_manager.mediation_record_if_id(
+        profile=profile, mediation_id=mediation_id, or_default=True
+    )
+    routing_keys, mediator_endpoint = await route_manager.routing_info(
+        profile,
+        mediation_record,
+    )
+    LOGGER.debug("Mediation info: %s, %s", routing_keys, mediator_endpoint)
 
     # check if we need to endorse
     if is_author_role(context.profile):
@@ -1005,6 +1027,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
+            endpoint = mediator_endpoint or endpoint
             ledger = context.profile.inject_or(BaseLedger)
             attrib_def = await wallet.set_did_endpoint(
                 did,
@@ -1013,6 +1036,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
                 endpoint_type,
                 write_ledger=write_ledger,
                 endorser_did=endorser_did,
+                routing_keys=routing_keys,
             )
         except WalletNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err

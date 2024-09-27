@@ -35,6 +35,7 @@ jobs:
             src: 
               - aries_cloudagent/**/*
               - poetry.lock 
+              - pyproject.toml
       - name: Check if scenarios or src files changed
         id: check-if-scenarios-or-src-changed
         run: |
