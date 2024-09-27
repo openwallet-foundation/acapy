@@ -142,24 +142,6 @@ class EddsaJcs2022:
         """Json canonicalization."""
         return canonicaljson.encode_canonical_json(data)
 
-    async def _resolve_multikey(self, kid: str):
-        """Derive a multikey from the verification method."""
-        resolver = self.session.inject(DIDResolver)
-        verification_method = await resolver.dereference(
-            profile=self.session.profile, did_url=kid
-        )
-
-        if verification_method.type == "Ed25519VerificationKey2018":
-            multikey = verkey_to_multikey(verification_method.public_key_base58)
-
-        else:
-            assert (
-                verification_method.type == "Multikey"
-            ), "Expecting Multikey verification method type"
-            multikey = verification_method.public_key_multibase
-
-        return multikey
-
     async def verify_proof(self, secured_document: dict):
         """Verify proof algorithm.
 
