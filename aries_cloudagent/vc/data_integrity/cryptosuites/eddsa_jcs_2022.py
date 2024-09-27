@@ -17,7 +17,8 @@ class CryptosuiteError(Exception):
 
 class EddsaJcs2022:
     """EddsaJcs2022 cryptosuite.
-    https://www.w3.org/TR/vc-di-eddsa/#eddsa-jcs-2022
+
+    https://www.w3.org/TR/vc-di-eddsa/#eddsa-jcs-2022.
     """
 
     def __init__(self, *, session: ProfileSession):
@@ -33,8 +34,9 @@ class EddsaJcs2022:
         self.key_manager = MultikeyManager(session)
 
     async def create_proof(self, unsecured_data_document: dict, options: dict):
-        """Create proof algorithm
-        https://www.w3.org/TR/vc-di-eddsa/#create-proof-eddsa-jcs-2022
+        """Create proof algorithm.
+
+        https://www.w3.org/TR/vc-di-eddsa/#create-proof-eddsa-jcs-2022.
         """
         proof = options.copy()
 
@@ -48,14 +50,15 @@ class EddsaJcs2022:
         transformed_data = self.transformation(unsecured_data_document, options)
         hash_data = self.hashing(transformed_data, proof_config)
         proof_bytes = await self.proof_serialization(hash_data, options)
-        
+
         proof["proofValue"] = multibase.encode(proof_bytes, "base58btc")
-        
+
         return proof
 
     def proof_configuration(self, options: dict):
         """Proof configuration algorithm.
-        https://www.w3.org/TR/vc-di-eddsa/#proof-configuration-eddsa-jcs-2022
+
+        https://www.w3.org/TR/vc-di-eddsa/#proof-configuration-eddsa-jcs-2022.
         """
         proof_config = options.copy()
 
@@ -70,19 +73,20 @@ class EddsaJcs2022:
             # TODO assert proper [XMLSCHEMA11-2] dateTimeStamp string
             assert proof_config[
                 "created"
-            ], "Expected proof.created to be a valid [XMLSCHEMA11-2] dateTimeStamp string."
+            ], "Expected proof.created to be a [XMLSCHEMA11-2] dateTimeStamp string."
 
         if "expires" in proof_config:
             # TODO assert proper [XMLSCHEMA11-2] dateTimeStamp string
             assert proof_config[
                 "expires"
-            ], "Expected proof.expires to be a valid [XMLSCHEMA11-2] dateTimeStamp string."
+            ], "Expected proof.expires to be a [XMLSCHEMA11-2] dateTimeStamp string."
 
         return self._canonicalize(proof_config)
 
     def transformation(self, unsecured_document: dict, options: dict):
         """Transformation algorithm.
-        https://www.w3.org/TR/vc-di-eddsa/#transformation-eddsa-jcs-2022
+
+        https://www.w3.org/TR/vc-di-eddsa/#transformation-eddsa-jcs-2022.
         """
         assert (
             options["type"] == "DataIntegrityProof"
@@ -95,7 +99,8 @@ class EddsaJcs2022:
 
     def hashing(self, transformed_document, canonical_proof_config):
         """Hashing algorithm.
-        https://www.w3.org/TR/vc-di-eddsa/#hashing-eddsa-jcs-2022
+
+        https://www.w3.org/TR/vc-di-eddsa/#hashing-eddsa-jcs-2022.
         """
         return (
             sha256(canonical_proof_config).digest()
@@ -104,7 +109,8 @@ class EddsaJcs2022:
 
     async def proof_serialization(self, hash_data: bytes, options: dict):
         """Proof Serialization Algorithm.
-        https://www.w3.org/TR/vc-di-eddsa/#proof-serialization-eddsa-jcs-2022
+
+        https://www.w3.org/TR/vc-di-eddsa/#proof-serialization-eddsa-jcs-2022.
         """
         # If the verification method is a did:key: URI,
         # we derive the signing key from a multikey value
@@ -122,7 +128,7 @@ class EddsaJcs2022:
         )
 
     def _canonicalize(self, data: dict):
-        """Json canonicalization"""
+        """Json canonicalization."""
         return canonicaljson.encode_canonical_json(data)
 
     async def _get_multikey(self, kid: str):
@@ -146,10 +152,12 @@ class EddsaJcs2022:
 
     async def verify_proof(self, secured_document: dict):
         """Verify proof algorithm.
-        https://www.w3.org/TR/vc-di-eddsa/#verify-proof-eddsa-jcs-2022
+
+        https://www.w3.org/TR/vc-di-eddsa/#verify-proof-eddsa-jcs-2022.
         """
         unsecured_document = secured_document.copy()
-        proof_options = unsecured_document.pop("proof")
+        proof = unsecured_document.pop("proof")
+        proof_options = proof.copy()
         proof_bytes = multibase.decode(proof_options.pop("proofValue"))
 
         try:
@@ -166,25 +174,23 @@ class EddsaJcs2022:
             transformed_data = self.transformation(unsecured_document, proof_options)
             proof_config = self.proof_configuration(proof_options)
             hash_data = self.hashing(transformed_data, proof_config)
-
-            if await self.proof_verification(hash_data, proof_bytes, proof_options):
-                return {"verified": True, "problemDetails": []}
-            problem_detail = PROBLEM_DETAILS["PROOF_VERIFICATION_ERROR"] | {
-                "message": "Invalid signature."
-            }
+            if not await self.proof_verification(hash_data, proof_bytes, proof_options):
+                raise CryptosuiteError("Invalid signature.")
 
         except (AssertionError, CryptosuiteError) as err:
             problem_detail = PROBLEM_DETAILS["PROOF_VERIFICATION_ERROR"] | {
                 "message": str(err)
             }
+            return {"verified": False, "proof": proof, "problemDetails": [problem_detail]}
 
-        return {"verified": False, "problemDetails": [problem_detail]}
+        return {"verified": True, "proof": proof, "problemDetails": []}
 
     async def proof_verification(
         self, hash_data: bytes, proof_bytes: bytes, options: dict
     ):
         """Proof verification algorithm.
-        https://www.w3.org/TR/vc-di-eddsa/#proof-verification-eddsa-jcs-2022
+
+        https://www.w3.org/TR/vc-di-eddsa/#proof-verification-eddsa-jcs-2022.
         """
         multikey = await self._get_multikey(options["verificationMethod"])
         return await self.wallet.verify_message(
@@ -193,35 +199,3 @@ class EddsaJcs2022:
             from_verkey=self.key_manager._multikey_to_verkey(multikey),
             key_type=self.key_manager.key_type_from_multikey(multikey),
         )
-
-    # async def verify_proof(self, secured_data_document):
-    #     """Verify proof algorithm.
-    #     https://www.w3.org/TR/vc-di-eddsa/#verify-proof-eddsa-jcs-2022
-    #     """
-    #     problem_details = []
-    #     try:
-    #         assert proof["proofValue"] and proof["proofValue"].startswith('z'),\
-    #             'proofValue missing or invalid multibase format.'
-
-    #         proof_options = proof.copy()
-    #         self._assert_proof_options(proof_options)
-
-    #         proof_value = proof_options.pop("proofValue")
-
-    #         hash_data = self._transform(
-    #             self._canonicalize(unsecured_document),
-    #             self._canonicalize(proof_options)
-    #         )
-    #         multikey = await self._get_verification_key(
-    #             proof["verificationMethod"]
-    #         )
-    #         verified = await self.wallet.verify_message(
-    #             message=hash_data,
-    #             signature=multibase.decode(proof_value),
-    #             from_verkey=self.key_manager._multikey_to_verkey(multikey),
-    #             key_type=self.key_manager.key_type_from_multikey(multikey)
-    #         )
-    #         return verified
-    #     except Exception as err:
-    #         problem_details.append(PROBLEM_DETAILS['PROOF_VERIFICATION_ERROR'])
-    #         return False, problem_details

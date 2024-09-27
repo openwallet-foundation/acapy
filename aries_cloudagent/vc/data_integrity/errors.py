@@ -1,3 +1,5 @@
+"""Problem Details objects for error handling."""
+
 # https://www.w3.org/TR/vc-data-integrity/#processing-errors
 PROBLEM_DETAILS = {
     "PROOF_GENERATION_ERROR": {

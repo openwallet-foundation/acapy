@@ -12,7 +12,7 @@ from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from .manager import DataIntegrityManager, DataIntegrityManagerError
 from .models import AddProofOptionsSchema
-from ...wallet.error import WalletDuplicateError, WalletNotFoundError, WalletError
+from ...wallet.error import WalletNotFoundError, WalletError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -125,8 +125,12 @@ async def verify_di_secured_document(request: web.BaseRequest):
                 secured_document
             )
 
+        if verification_response["verified"]:
+            return web.json_response(
+                {"verificationResults": verification_response}, status=200
+            )
         return web.json_response(
-            {"verificationResults": verification_response}, status=200
+            {"verificationResults": verification_response}, status=400
         )
 
     except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:

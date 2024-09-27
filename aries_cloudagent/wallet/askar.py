@@ -94,7 +94,7 @@ class AskarWallet(BaseWallet):
         if metadata is None:
             metadata = {}
 
-        tags = {"kid": kid}
+        tags = {"kid": kid} if kid else None
 
         try:
             keypair = _create_keypair(key_type, seed)
@@ -189,10 +189,10 @@ class AskarWallet(BaseWallet):
         if not key:
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
-        
+
         try:
             kid = key.tags.get("kid")
-        except:
+        except Exception:
             kid = None
 
         # FIXME implement key types
@@ -252,8 +252,17 @@ class AskarWallet(BaseWallet):
 
         if not metadata:
             metadata = {}
-        
+
         try:
+            try:
+                await self.create_key(key_type, seed, metadata)
+            except AskarError as err:
+                if err.code == AskarErrorCode.DUPLICATE:
+                    # update metadata?
+                    pass
+                else:
+                    raise WalletError("Error inserting key") from err
+
             keypair = _create_keypair(key_type, seed)
             verkey_bytes = keypair.get_public_bytes()
             verkey = bytes_to_b58(verkey_bytes)
@@ -261,17 +270,6 @@ class AskarWallet(BaseWallet):
             did = did_validation.validate_or_derive_did(
                 method, key_type, verkey_bytes, did
             )
-
-            try:
-                await self._session.handle.insert_key(
-                    verkey, keypair, metadata=json.dumps(metadata)
-                )
-            except AskarError as err:
-                if err.code == AskarErrorCode.DUPLICATE:
-                    # update metadata?
-                    pass
-                else:
-                    raise WalletError("Error inserting key") from err
 
             item = await self._session.handle.fetch(CATEGORY_DID, did, for_update=True)
             if item:
