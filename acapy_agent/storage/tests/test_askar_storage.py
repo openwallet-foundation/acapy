@@ -360,7 +360,7 @@ class TestAskarStorageSearchSession(IsolatedAsyncioTestCase):
     async def test_askar_storage_search_session(self):
         profile = "profileId"
 
-        with mock.patch("aries_cloudagent.storage.askar.AskarProfile") as AskarProfile:
+        with mock.patch("acapy_agent.storage.askar.AskarProfile") as AskarProfile:
             askar_profile = AskarProfile(None, True)
             askar_profile_scan = mock.MagicMock()
             askar_profile.store.scan.return_value = askar_profile_scan

@@ -26,7 +26,7 @@ class TestTransactionAcknowledgement(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "transaction_acknowledgement.TransactionAcknowledgementSchema.load"
     )
     def test_deserialize(self, mock_transaction_acknowledgement_schema_load):
@@ -44,7 +44,7 @@ class TestTransactionAcknowledgement(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "transaction_acknowledgement.TransactionAcknowledgementSchema.dump"
     )
     def test_serialize(self, mock_transaction_acknowledgement_schema_dump):

@@ -2098,7 +2098,7 @@ class UpgradeGroup(ArgumentGroup):
             env_var="ACAPY_UPGRADE_CONFIG_PATH",
             help=(
                 "YAML file path that specifies config to handle upgrade changes."
-                "Default: ./aries_cloudagent/commands/default_version_upgrade_config.yml"
+                "Default: ./acapy_agent/commands/default_version_upgrade_config.yml"
             ),
         )
 

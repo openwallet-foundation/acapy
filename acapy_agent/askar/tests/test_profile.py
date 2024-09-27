@@ -93,7 +93,7 @@ async def test_remove_profile_not_removed_if_wallet_type_not_askar_profile(open_
 async def test_profile_manager_transaction():
     profile = "profileId"
 
-    with mock.patch("aries_cloudagent.askar.profile.AskarProfile") as AskarProfile:
+    with mock.patch("acapy_agent.askar.profile.AskarProfile") as AskarProfile:
         askar_profile = AskarProfile(None, True, profile_id=profile)
         askar_profile.profile_id = profile
         askar_profile_transaction = mock.MagicMock()
@@ -109,7 +109,7 @@ async def test_profile_manager_transaction():
 async def test_profile_manager_store():
     profile = "profileId"
 
-    with mock.patch("aries_cloudagent.askar.profile.AskarProfile") as AskarProfile:
+    with mock.patch("acapy_agent.askar.profile.AskarProfile") as AskarProfile:
         askar_profile = AskarProfile(None, False, profile_id=profile)
         askar_profile.profile_id = profile
         askar_profile_session = mock.MagicMock()

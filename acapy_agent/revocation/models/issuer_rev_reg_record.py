@@ -323,7 +323,7 @@ class IssuerRevRegRecord(BaseRecord):
             except LedgerTransactionError as err:
                 if "InvalidClientRequest" in err.roll_up:
                     # ... if the ledger write fails (with "InvalidClientRequest")
-                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                    # e.g. acapy_agent.ledger.error.LedgerTransactionError:
                     #   Ledger rejected transaction request: client request invalid:
                     #   InvalidClientRequest(...)
                     # In this scenario we try to post a correction
@@ -338,7 +338,7 @@ class IssuerRevRegRecord(BaseRecord):
                     LOGGER.warning("Ledger update/fix applied")
                 elif "InvalidClientTaaAcceptanceError" in err.roll_up:
                     # if no write access (with "InvalidClientTaaAcceptanceError")
-                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                    # e.g. acapy_agent.ledger.error.LedgerTransactionError:
                     #   Ledger rejected transaction request: client request invalid:
                     #   InvalidClientTaaAcceptanceError(...)
                     LOGGER.error("Ledger update failed due to TAA issue")

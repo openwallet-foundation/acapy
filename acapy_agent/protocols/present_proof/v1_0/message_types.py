@@ -14,7 +14,7 @@ PRESENTATION = "present-proof/1.0/presentation"
 PRESENTATION_ACK = "present-proof/1.0/ack"
 PRESENTATION_PROBLEM_REPORT = "present-proof/1.0/problem-report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.present_proof.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

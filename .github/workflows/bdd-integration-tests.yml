@@ -35,7 +35,7 @@ jobs:
         with:
           files_yaml: |
             src: 
-              - aries_cloudagent/**/*
+              - acapy_agent/**/*
               - poetry.lock
               - pyproject.toml
             demo: "demo/**/*"

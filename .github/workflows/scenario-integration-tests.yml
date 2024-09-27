@@ -34,7 +34,7 @@ jobs:
           files_yaml: |
             scenarios: "scenarios/**/*"
             src: 
-              - aries_cloudagent/**/*
+              - acapy_agent/**/*
               - poetry.lock 
               - pyproject.toml
       - name: Check if scenarios or src files changed

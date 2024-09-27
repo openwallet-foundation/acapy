@@ -20,7 +20,7 @@ class TestPingResponse(TestCase):
         assert self.test_ping._type == DIDCommPrefix.qualify_current(PING_RESPONSE)
 
     @mock.patch(
-        "aries_cloudagent.protocols.trustping.v1_0."
+        "acapy_agent.protocols.trustping.v1_0."
         "messages.ping_response.PingResponseSchema.load"
     )
     def test_deserialize(self, mock_ping_schema_load):
@@ -35,7 +35,7 @@ class TestPingResponse(TestCase):
         assert msg is mock_ping_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.trustping.v1_0."
+        "acapy_agent.protocols.trustping.v1_0."
         "messages.ping_response.PingResponseSchema.dump"
     )
     def test_serialize(self, mock_ping_schema_load):

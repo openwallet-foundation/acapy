@@ -97,7 +97,7 @@ class AskarProfile(Profile):
             injector.bind_provider(
                 DMPResolver,
                 ClassProvider(
-                    "aries_cloudagent.didcomm_v2.adapters.ResolverAdapter",
+                    "acapy_agent.didcomm_v2.adapters.ResolverAdapter",
                     ref(self),
                     ClassProvider.Inject(DIDResolver),
                 ),
@@ -105,26 +105,24 @@ class AskarProfile(Profile):
 
         injector.bind_provider(
             BaseStorageSearch,
-            ClassProvider("aries_cloudagent.storage.askar.AskarStorageSearch", ref(self)),
+            ClassProvider("acapy_agent.storage.askar.AskarStorageSearch", ref(self)),
         )
 
         injector.bind_provider(
             IndyHolder,
             ClassProvider(
-                "aries_cloudagent.indy.credx.holder.IndyCredxHolder",
+                "acapy_agent.indy.credx.holder.IndyCredxHolder",
                 ref(self),
             ),
         )
         injector.bind_provider(
             IndyIssuer,
-            ClassProvider(
-                "aries_cloudagent.indy.credx.issuer.IndyCredxIssuer", ref(self)
-            ),
+            ClassProvider("acapy_agent.indy.credx.issuer.IndyCredxIssuer", ref(self)),
         )
         injector.soft_bind_provider(
             VCHolder,
             ClassProvider(
-                "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",
+                "acapy_agent.storage.vc_holder.askar.AskarVCHolder",
                 ref(self),
             ),
         )
@@ -173,7 +171,7 @@ class AskarProfile(Profile):
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(
-                    "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                    "acapy_agent.indy.credx.verifier.IndyCredxVerifier",
                     ref(self),
                 ),
             )
@@ -252,11 +250,11 @@ class AskarProfileSession(ProfileSession):
         injector = self._context.injector
         injector.bind_provider(
             BaseWallet,
-            ClassProvider("aries_cloudagent.wallet.askar.AskarWallet", ref(self)),
+            ClassProvider("acapy_agent.wallet.askar.AskarWallet", ref(self)),
         )
         injector.bind_provider(
             BaseStorage,
-            ClassProvider("aries_cloudagent.storage.askar.AskarStorage", ref(self)),
+            ClassProvider("acapy_agent.storage.askar.AskarStorage", ref(self)),
         )
 
         if self.profile.settings.get("experiment.didcomm_v2"):
@@ -272,7 +270,7 @@ class AskarProfileSession(ProfileSession):
             injector.bind_provider(
                 SecretsManager,
                 ClassProvider(
-                    "aries_cloudagent.didcomm_v2.adapters.SecretsAdapter", ref(self)
+                    "acapy_agent.didcomm_v2.adapters.SecretsAdapter", ref(self)
                 ),
             )
 

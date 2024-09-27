@@ -2159,7 +2159,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             "get_ledger_for_identifier",
             mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
         ), mock.patch(
-            "aries_cloudagent.vc.vc_ld.verify.verify_presentation",
+            "acapy_agent.vc.vc_ld.verify.verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=False)
             ),

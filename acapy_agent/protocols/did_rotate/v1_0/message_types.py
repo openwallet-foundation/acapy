@@ -10,7 +10,7 @@ ACK = "did-rotate/1.0/ack"
 HANGUP = "did-rotate/1.0/hangup"
 PROBLEM_REPORT = "did-rotate/1.0/problem-report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.did_rotate.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.did_rotate.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

@@ -19,7 +19,7 @@ MESSAGE_REUSE_ACCEPT = f"out-of-band/{DEFAULT_VERSION}/handshake-reuse-accepted"
 PROBLEM_REPORT = f"out-of-band/{DEFAULT_VERSION}/problem_report"
 
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.out_of_band.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.out_of_band.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

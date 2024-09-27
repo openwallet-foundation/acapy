@@ -1061,7 +1061,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     @mock.patch.object(
         RevocationRegistryDefinition, "load", return_value=rev_reg_def.value
     )
-    @mock.patch("aries_cloudagent.anoncreds.revocation.CredentialRevocationConfig")
+    @mock.patch("acapy_agent.anoncreds.revocation.CredentialRevocationConfig")
     @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=mock.MagicMock())
     async def test_create_credential_private_with_rev_reg_and_tails(
@@ -1335,7 +1335,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert result == [1, 2]
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch("aries_cloudagent.anoncreds.revocation.isinstance")
+    @mock.patch("acapy_agent.anoncreds.revocation.isinstance")
     async def test_clear_pending_revocations(self, mock_is_instance, mock_handle):
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[

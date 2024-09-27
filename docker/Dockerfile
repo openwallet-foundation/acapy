@@ -76,15 +76,15 @@ RUN usermod -a -G 0 $user
 # Create standard directories to allow volume mounting and set permissions
 # Note: PIP_NO_CACHE_DIR environment variable should be cleared to allow caching
 RUN mkdir -p \
-    $HOME/.aries_cloudagent \
+    $HOME/.acapy_agent \
     $HOME/.cache/pip/http \
     $HOME/.indy_client \
     $HOME/ledger/sandbox/data \
     $HOME/log
 
-# The root group needs access the directories under $HOME/.indy_client and $HOME/.aries_cloudagent for the container to function in OpenShift.
-RUN chown -R $user:root $HOME/.indy_client $HOME/.aries_cloudagent && \
-    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache $HOME/.indy_client
+# The root group needs access the directories under $HOME/.indy_client and $HOME/.acapy_agent for the container to function in OpenShift.
+RUN chown -R $user:root $HOME/.indy_client $HOME/.acapy_agent && \
+    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.acapy_agent $HOME/.cache $HOME/.indy_client
 
 # Create /home/indy and symlink .indy_client folder for backwards compatibility with artifacts created on older indy-based images.
 RUN mkdir -p /home/indy
@@ -93,11 +93,11 @@ RUN ln -s /home/aries/.indy_client /home/indy/.indy_client
 # Install ACA-py from the wheel as $user,
 # and ensure the permissions on the python 'site-packages' and $HOME/.local folders are set correctly.
 USER $user
-COPY --from=build /src/dist/aries_cloudagent*.whl .
-RUN aries_cloudagent_package=$(find ./ -name "aries_cloudagent*.whl" | head -n 1) && \
-    echo "Installing ${aries_cloudagent_package} ..." && \
-    pip install --no-cache-dir --find-links=. ${aries_cloudagent_package}${acapy_reqs} && \
-    rm aries_cloudagent*.whl && \
+COPY --from=build /src/dist/acapy_agent*.whl .
+RUN acapy_agent_package=$(find ./ -name "acapy_agent*.whl" | head -n 1) && \
+    echo "Installing ${acapy_agent_package} ..." && \
+    pip install --no-cache-dir --find-links=. ${acapy_agent_package}${acapy_reqs} && \
+    rm acapy_agent*.whl && \
     chmod +rx $(python -m site --user-site) $HOME/.local
 
 # Clean-up unneccessary build dependencies and reduce final image size

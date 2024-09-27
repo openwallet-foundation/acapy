@@ -29,9 +29,9 @@ from ..config.settings import Settings
 from ..version import __version__
 from .banner import Banner
 
-DEFAULT_LOGGING_CONFIG_PATH_INI = "aries_cloudagent.config:default_logging_config.ini"
+DEFAULT_LOGGING_CONFIG_PATH_INI = "acapy_agent.config:default_logging_config.ini"
 DEFAULT_MULTITENANT_LOGGING_CONFIG_PATH_INI = (
-    "aries_cloudagent.config:default_multitenant_logging_config.ini"
+    "acapy_agent.config:default_multitenant_logging_config.ini"
 )
 LOG_FORMAT_FILE_ALIAS_PATTERN = (
     "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
@@ -232,7 +232,7 @@ class LoggingConfigurator:
         if (not any_file_handlers_set) and log_file:
             file_path = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)).replace(
-                    "aries_cloudagent/config", ""
+                    "acapy_agent/config", ""
                 ),
                 log_file,
             )

@@ -33,7 +33,7 @@ class V20PresFormat(BaseModel):
         INDY = FormatSpec(
             "hlindy/",
             DeferLoad(
-                "aries_cloudagent.protocols.present_proof.v2_0"
+                "acapy_agent.protocols.present_proof.v2_0"
                 ".formats.indy.handler.IndyPresExchangeHandler"
             ),
         )
@@ -45,7 +45,7 @@ class V20PresFormat(BaseModel):
             INDY = FormatSpec(
                 "hlindy/",
                 DeferLoad(
-                    "aries_cloudagent.protocols.present_proof.v2_0"
+                    "acapy_agent.protocols.present_proof.v2_0"
                     ".formats.anoncreds.handler.AnonCredsPresExchangeHandler"
                 ),
             )
@@ -53,7 +53,7 @@ class V20PresFormat(BaseModel):
         DIF = FormatSpec(
             "dif/",
             DeferLoad(
-                "aries_cloudagent.protocols.present_proof.v2_0"
+                "acapy_agent.protocols.present_proof.v2_0"
                 ".formats.dif.handler.DIFPresFormatHandler"
             ),
         )

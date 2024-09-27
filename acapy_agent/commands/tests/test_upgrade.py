@@ -67,7 +67,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
             await test_module.upgrade(
                 settings={
-                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                    "upgrade.config_path": "./acapy_agent/commands/default_version_upgrade_config.yml",
                     "upgrade.from_version": "v0.7.2",
                 }
             )
@@ -183,7 +183,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ]
                         },
                         "update_existing_records": True,
@@ -219,7 +219,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ]
                         },
                         "update_existing_records": True,
@@ -252,7 +252,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         ):
             await test_module.upgrade(
                 settings={
-                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                    "upgrade.config_path": "./acapy_agent/commands/default_version_upgrade_config.yml",
                 }
             )
 
@@ -278,7 +278,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     settings={
-                        "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                        "upgrade.config_path": "./acapy_agent/commands/default_version_upgrade_config.yml",
                     }
                 )
             assert "Error during upgrade: No upgrade from version or tags found" in str(
@@ -307,7 +307,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ]
                         },
                         "update_existing_records": True,
@@ -342,7 +342,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.Invalid"
+                                "acapy_agent.connections.models.conn_record.Invalid"
                             ],
                         }
                     },
@@ -387,7 +387,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             test_module.execute(
                 [
                     "--upgrade-config",
-                    "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+                    "./acapy_agent/config/tests/test-acapy-upgrade-config.yaml",
                     "--from-version",
                     "v0.7.0",
                     "--force-upgrade",
@@ -412,7 +412,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_exch_record_path": [
-                                "aries_cloudagent.connections.models.connection_target.ConnectionTarget"
+                                "acapy_agent.connections.models.connection_target.ConnectionTarget"
                             ],
                         }
                     }
@@ -445,7 +445,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ],
                         },
                         "update_existing_records": True,
@@ -526,13 +526,13 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         test_config_dict = {
             "v0.8.1": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
             },
             "v0.7.2": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
             },
@@ -555,13 +555,13 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         test_config_dict = {
             "v0.8.1": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
             },
             "v0.7.2": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
                 "explicit_upgrade": "warning",
@@ -591,13 +591,13 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         test_config_dict = {
             "v0.8.1": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
             },
             "v0.7.2": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
                 "explicit_upgrade": "critical",
@@ -615,13 +615,13 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         test_config_dict = {
             "v0.8.1": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
             },
             "v0.7.2": {
                 "resave_records": [
-                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                    "acapy_agent.connections.models.conn_record.ConnRecord"
                 ],
                 "update_existing_records": False,
                 "explicit_upgrade": "warning",
@@ -658,7 +658,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ],
                         },
                         "update_existing_records": True,
@@ -685,7 +685,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ],
                         },
                         "update_existing_records": True,
@@ -715,7 +715,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "v0.7.2": {
                         "resave_records": {
                             "base_record_path": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                "acapy_agent.connections.models.conn_record.ConnRecord"
                             ],
                         },
                         "update_existing_records": True,

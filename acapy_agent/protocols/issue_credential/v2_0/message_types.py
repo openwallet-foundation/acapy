@@ -16,7 +16,7 @@ CRED_20_ISSUE = "issue-credential/2.0/issue-credential"
 CRED_20_ACK = "issue-credential/2.0/ack"
 CRED_20_PROBLEM_REPORT = "issue-credential/2.0/problem-report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v2_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.issue_credential.v2_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

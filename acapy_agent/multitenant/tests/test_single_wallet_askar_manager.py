@@ -42,9 +42,9 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.wallet_config"
+            "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
         ) as wallet_config, mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.AskarProfile",
+            "acapy_agent.multitenant.single_wallet_askar_manager.AskarProfile",
         ) as AskarProfile:
             sub_wallet_profile_context = InjectionContext()
             sub_wallet_profile = AskarProfile(None, None)
@@ -113,9 +113,9 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.wallet_config"
+            "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
         ) as wallet_config, mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.AskarAnoncredsProfile",
+            "acapy_agent.multitenant.single_wallet_askar_manager.AskarAnoncredsProfile",
         ) as AskarAnoncredsProfile:
             sub_wallet_profile_context = InjectionContext()
             sub_wallet_profile = AskarAnoncredsProfile(None, None)
@@ -139,7 +139,7 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         create_profile_stub.set_result("")
 
         with mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.AskarProfile"
+            "acapy_agent.multitenant.single_wallet_askar_manager.AskarProfile"
         ) as AskarProfile:
             sub_wallet_profile = AskarProfile(None, None)
             sub_wallet_profile.context.copy.return_value = InjectionContext()
@@ -162,10 +162,10 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.wallet_config"
+            "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
         ) as wallet_config:
             with mock.patch(
-                "aries_cloudagent.multitenant.single_wallet_askar_manager.AskarProfile"
+                "acapy_agent.multitenant.single_wallet_askar_manager.AskarProfile"
             ) as AskarProfile:
                 sub_wallet_profile = AskarProfile(None, None)
                 sub_wallet_profile.context.copy.return_value = InjectionContext()
@@ -196,7 +196,7 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         create_profile_stub = asyncio.Future()
         create_profile_stub.set_result("")
         with mock.patch(
-            "aries_cloudagent.multitenant.single_wallet_askar_manager.AskarProfile"
+            "acapy_agent.multitenant.single_wallet_askar_manager.AskarProfile"
         ) as AskarProfile:
             sub_wallet_profile = AskarProfile(None, None)
             sub_wallet_profile.context.copy.return_value = InjectionContext()

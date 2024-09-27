@@ -21,7 +21,7 @@ from .message import InboundMessage
 from .session import InboundSession
 
 LOGGER = logging.getLogger(__name__)
-MODULE_BASE_PATH = "aries_cloudagent.transport.inbound"
+MODULE_BASE_PATH = "acapy_agent.transport.inbound"
 
 
 class InboundTransportManager:

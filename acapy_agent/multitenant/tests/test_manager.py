@@ -22,7 +22,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
         wallet_record = WalletRecord(wallet_id="test")
         self.manager._profiles.put("test", InMemoryProfile.test_profile())
 
-        with mock.patch("aries_cloudagent.config.wallet.wallet_config") as wallet_config:
+        with mock.patch("acapy_agent.config.wallet.wallet_config") as wallet_config:
             profile = await self.manager.get_wallet_profile(
                 self.profile.context, wallet_record
             )
@@ -36,7 +36,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             {"admin.webhook_urls": ["http://localhost:8020"]}
         )
 
-        with mock.patch("aries_cloudagent.config.wallet.wallet_config") as wallet_config:
+        with mock.patch("acapy_agent.config.wallet.wallet_config") as wallet_config:
             profile = await self.manager.get_wallet_profile(
                 self.profile.context, wallet_record
             )
@@ -76,7 +76,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             )
 
             with mock.patch(
-                "aries_cloudagent.multitenant.manager.wallet_config"
+                "acapy_agent.multitenant.manager.wallet_config"
             ) as wallet_config:
                 wallet_config.side_effect = side_effect
                 profile = await self.manager.get_wallet_profile(
@@ -95,9 +95,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             settings={},
         )
 
-        with mock.patch(
-            "aries_cloudagent.multitenant.manager.wallet_config"
-        ) as wallet_config:
+        with mock.patch("acapy_agent.multitenant.manager.wallet_config") as wallet_config:
 
             def side_effect(context, provision):
                 return (InMemoryProfile(context=context), None)
@@ -148,9 +146,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch(
-            "aries_cloudagent.multitenant.manager.wallet_config"
-        ) as wallet_config:
+        with mock.patch("acapy_agent.multitenant.manager.wallet_config") as wallet_config:
 
             def side_effect(context, provision):
                 return (InMemoryProfile(context=context), None)

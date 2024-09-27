@@ -48,7 +48,7 @@ class TestRefusedTransactionResponse(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "refused_transaction_response.RefusedTransactionResponseSchema.load"
     )
     def test_deserialize(self, mock_refused_transaction_response_schema_load):
@@ -66,7 +66,7 @@ class TestRefusedTransactionResponse(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "refused_transaction_response.RefusedTransactionResponseSchema.dump"
     )
     def test_serialize(self, mock_refused_transaction_response_schema_dump):

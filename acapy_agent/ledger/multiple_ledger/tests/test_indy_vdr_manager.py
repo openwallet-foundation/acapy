@@ -163,10 +163,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
         ledger_inst = await self.manager.get_ledger_inst_by_id("test_invalid")
         assert not ledger_inst
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_self_cert_a(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -187,10 +187,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_inst.pool.name == "test_prod_1"
             assert is_self_certified
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_self_cert_b(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -222,10 +222,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_inst.pool.name == "test_non_prod_1"
             assert is_self_certified
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_not_self_cert(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -260,10 +260,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_inst.pool.name == "test_prod_1"
             assert not is_self_certified
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_state_proof_not_valid(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -279,10 +279,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
                 "test_prod_1", "Av63wJYM7xYR4AiygYq4c3"
             )
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_no_data(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -298,10 +298,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
                 "test_prod_1", "Av63wJYM7xYR4AiygYq4c3"
             )
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_timeout(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -311,10 +311,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             "test_prod_1", "Av63wJYM7xYR4AiygYq4c3"
         )
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_ledger_error(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -324,10 +324,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             "test_prod_1", "Av63wJYM7xYR4AiygYq4c3"
         )
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_lookup_did_in_configured_ledgers_self_cert_prod(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -346,10 +346,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_id == "test_prod_1"
             assert ledger_inst.pool.name == "test_prod_1"
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_not_self_cert_not_self_cert_prod(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -373,10 +373,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_id == "test_prod_1"
             assert ledger_inst.pool.name == "test_prod_1"
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_lookup_did_in_configured_ledgers_self_cert_non_prod(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -406,10 +406,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_id == "test_non_prod_1"
             assert ledger_inst.pool.name == "test_non_prod_1"
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_get_ledger_by_did_not_self_cert_non_prod(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -444,10 +444,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             assert ledger_id == "test_non_prod_1"
             assert ledger_inst.pool.name == "test_non_prod_1"
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_lookup_did_in_configured_ledgers_x(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
@@ -466,10 +466,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
                 )
                 assert "not found in any of the ledgers total: (production: " in cm
 
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
     @mock.patch("indy_vdr.ledger.build_get_nym_request")
-    @mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger._submit")
+    @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedger._submit")
     async def test_lookup_did_in_configured_ledgers_prod_not_cached(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):

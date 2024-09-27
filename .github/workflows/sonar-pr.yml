@@ -9,7 +9,7 @@ on:
 jobs:
   SonarCloud:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && github.repository == 'hyperledger/aries-cloudagent-python'
+    if: github.event.workflow_run.conclusion == 'success' && github.repository == 'openwallet-foundation/acapy'
     steps:
       - uses: actions/checkout@v4
         with:

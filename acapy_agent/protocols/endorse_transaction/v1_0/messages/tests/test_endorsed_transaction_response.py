@@ -52,7 +52,7 @@ class TestEndorsedTransactionResponse(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "endorsed_transaction_response.EndorsedTransactionResponseSchema.load"
     )
     def test_deserialize(self, mock_endorsed_transaction_response_schema_load):
@@ -70,7 +70,7 @@ class TestEndorsedTransactionResponse(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "endorsed_transaction_response.EndorsedTransactionResponseSchema.dump"
     )
     def test_serialize(self, mock_endorsed_transaction_response_schema_dump):

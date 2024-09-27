@@ -10,7 +10,7 @@ SPEC_URI = (
 # Message types
 NOTIF_10_ACK = "notification/1.0/ack"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.notification.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.notification.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

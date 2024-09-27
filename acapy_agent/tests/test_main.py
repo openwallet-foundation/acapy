@@ -16,14 +16,14 @@ class TestMain(TestCase):
             mock_run.assert_called_once_with(args)
 
     def test_run(self):
-        with mock.patch("aries_cloudagent.commands.run_command") as mock_run_command:
+        with mock.patch("acapy_agent.commands.run_command") as mock_run_command:
             args = ["aca-py", "--version"]
             test_module.run(args)
 
             mock_run_command.assert_called_once_with(None, args[1:])
 
     def test_run_command(self):
-        with mock.patch("aries_cloudagent.commands.run_command") as mock_run_command:
+        with mock.patch("acapy_agent.commands.run_command") as mock_run_command:
             args = ["aca-py", "dummy-command", "--dummy-arg"]
             test_module.run(args)
 

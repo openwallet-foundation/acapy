@@ -21,7 +21,7 @@ KEYLIST_QUERY = f"{BASE}/keylist-query"
 KEYLIST = f"{BASE}/keylist"
 PROBLEM_REPORT = f"{BASE}/problem-report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.coordinate_mediation.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.coordinate_mediation.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

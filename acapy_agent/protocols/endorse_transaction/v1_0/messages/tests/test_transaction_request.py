@@ -71,7 +71,7 @@ class TestTransactionRequest(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "transaction_request.TransactionRequestSchema.load"
     )
     def test_deserialize(self, mock_transaction_request_schema_load):
@@ -86,7 +86,7 @@ class TestTransactionRequest(TestCase, TestConfig):
         assert transaction_request is mock_transaction_request_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "transaction_request.TransactionRequestSchema.dump"
     )
     def test_serialize(self, mock_transaction_request_schema_dump):

@@ -89,14 +89,14 @@ class DefaultContextBuilder(ContextBuilder):
             context.injector.bind_provider(
                 BaseTailsServer,
                 ClassProvider(
-                    "aries_cloudagent.tails.anoncreds_tails_server.AnonCredsTailsServer",
+                    "acapy_agent.tails.anoncreds_tails_server.AnonCredsTailsServer",
                 ),
             )
         else:
             context.injector.bind_provider(
                 BaseTailsServer,
                 ClassProvider(
-                    "aries_cloudagent.tails.indy_tails_server.IndyTailsServer",
+                    "acapy_agent.tails.indy_tails_server.IndyTailsServer",
                 ),
             )
 
@@ -105,7 +105,7 @@ class DefaultContextBuilder(ContextBuilder):
             BaseWireFormat,
             CachedProvider(
                 # StatsProvider(
-                ClassProvider("aries_cloudagent.transport.pack_format.PackWireFormat"),
+                ClassProvider("acapy_agent.transport.pack_format.PackWireFormat"),
                 #    (
                 #        "encode_message", "parse_message"
                 #    ),
@@ -128,33 +128,33 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Register standard protocol plugins
         if not self.settings.get("transport.disabled"):
-            plugin_registry.register_package("aries_cloudagent.protocols")
+            plugin_registry.register_package("acapy_agent.protocols")
 
         # Currently providing admin routes only
-        plugin_registry.register_plugin("aries_cloudagent.holder")
+        plugin_registry.register_plugin("acapy_agent.holder")
 
-        plugin_registry.register_plugin("aries_cloudagent.ledger")
+        plugin_registry.register_plugin("acapy_agent.ledger")
 
-        plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
-        plugin_registry.register_plugin("aries_cloudagent.resolver")
-        plugin_registry.register_plugin("aries_cloudagent.settings")
-        plugin_registry.register_plugin("aries_cloudagent.vc")
-        plugin_registry.register_plugin("aries_cloudagent.vc.data_integrity")
-        plugin_registry.register_plugin("aries_cloudagent.wallet")
-        plugin_registry.register_plugin("aries_cloudagent.wallet.keys")
+        plugin_registry.register_plugin("acapy_agent.messaging.jsonld")
+        plugin_registry.register_plugin("acapy_agent.resolver")
+        plugin_registry.register_plugin("acapy_agent.settings")
+        plugin_registry.register_plugin("acapy_agent.vc")
+        plugin_registry.register_plugin("acapy_agent.vc.data_integrity")
+        plugin_registry.register_plugin("acapy_agent.wallet")
+        plugin_registry.register_plugin("acapy_agent.wallet.keys")
 
         anoncreds_plugins = [
-            "aries_cloudagent.anoncreds",
-            "aries_cloudagent.anoncreds.default.did_indy",
-            "aries_cloudagent.anoncreds.default.did_web",
-            "aries_cloudagent.anoncreds.default.legacy_indy",
-            "aries_cloudagent.revocation_anoncreds",
+            "acapy_agent.anoncreds",
+            "acapy_agent.anoncreds.default.did_indy",
+            "acapy_agent.anoncreds.default.did_web",
+            "acapy_agent.anoncreds.default.legacy_indy",
+            "acapy_agent.revocation_anoncreds",
         ]
 
         askar_plugins = [
-            "aries_cloudagent.messaging.credential_definitions",
-            "aries_cloudagent.messaging.schemas",
-            "aries_cloudagent.revocation",
+            "acapy_agent.messaging.credential_definitions",
+            "acapy_agent.messaging.schemas",
+            "acapy_agent.revocation",
         ]
 
         def register_askar_plugins():
@@ -171,7 +171,7 @@ class DefaultContextBuilder(ContextBuilder):
             register_askar_plugins()
 
         if context.settings.get("multitenant.admin_enabled"):
-            plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
+            plugin_registry.register_plugin("acapy_agent.multitenant.admin")
             register_askar_plugins()
             register_anoncreds_plugins()
 

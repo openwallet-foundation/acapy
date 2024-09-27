@@ -915,7 +915,7 @@ class DemoAgent:
 
     def get_process_args(self):
         return list(
-            flatten(([PYTHON, "-m", "aries_cloudagent", "start"], self.get_agent_args()))
+            flatten(([PYTHON, "-m", "acapy_agent", "start"], self.get_agent_args()))
         )
 
     async def start_process(self, python_path: str = None, wait: bool = True):

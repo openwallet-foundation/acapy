@@ -23,7 +23,7 @@ from .base import (
 from .message import OutboundMessage
 
 LOGGER = logging.getLogger(__name__)
-MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
+MODULE_BASE_PATH = "acapy_agent.transport.outbound"
 
 
 class OutboundTransportManager:

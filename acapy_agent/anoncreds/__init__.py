@@ -15,7 +15,7 @@ async def setup(context: InjectionContext):
         return
 
     indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.default.did_indy.registry.DIDIndyRegistry",
+        "acapy_agent.anoncreds.default.did_indy.registry.DIDIndyRegistry",
         # supported_identifiers=[],
         # method_name="did:indy",
     ).provide(context.settings, context.injector)
@@ -23,7 +23,7 @@ async def setup(context: InjectionContext):
     registry.register(indy_registry)
 
     web_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.default.did_web.registry.DIDWebRegistry",
+        "acapy_agent.anoncreds.default.did_web.registry.DIDWebRegistry",
         # supported_identifiers=[],
         # method_name="did:web",
     ).provide(context.settings, context.injector)
@@ -31,7 +31,7 @@ async def setup(context: InjectionContext):
     registry.register(web_registry)
 
     legacy_indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.default.legacy_indy.registry.LegacyIndyRegistry",
+        "acapy_agent.anoncreds.default.legacy_indy.registry.LegacyIndyRegistry",
         # supported_identifiers=[],
         # method_name="",
     ).provide(context.settings, context.injector)

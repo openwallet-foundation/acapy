@@ -15,7 +15,7 @@ PRES_20 = "present-proof/2.0/presentation"
 PRES_20_ACK = "present-proof/2.0/ack"
 PRES_20_PROBLEM_REPORT = "present-proof/2.0/problem-report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v2_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.present_proof.v2_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

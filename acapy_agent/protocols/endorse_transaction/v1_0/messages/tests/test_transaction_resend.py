@@ -28,7 +28,7 @@ class TestCancelTransaction(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "transaction_resend.TransactionResendSchema.load"
     )
     def test_deserialize(self, mock_transaction_resend_schema_load):
@@ -43,7 +43,7 @@ class TestCancelTransaction(TestCase, TestConfig):
         assert transaction_resend is mock_transaction_resend_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "transaction_resend.TransactionResendSchema.dump"
     )
     def test_serialize(self, mock_transaction_resend_schema_dump):

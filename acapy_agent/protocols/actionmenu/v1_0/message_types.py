@@ -7,7 +7,7 @@ MENU = "action-menu/1.0/menu"
 MENU_REQUEST = "action-menu/1.0/menu-request"
 PERFORM = "action-menu/1.0/perform"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.actionmenu.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.actionmenu.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

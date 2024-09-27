@@ -20,15 +20,15 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
     MANAGER_TYPES = {
         "askar-profile": (
             DeferLoad(
-                "aries_cloudagent.ledger.multiple_ledger."
+                "acapy_agent.ledger.multiple_ledger."
                 "indy_vdr_manager.MultiIndyVDRLedgerManager"
             )
         ),
     }
     LEDGER_TYPES = {
         "askar-profile": {
-            "pool": DeferLoad("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool"),
-            "ledger": DeferLoad("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger"),
+            "pool": DeferLoad("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool"),
+            "ledger": DeferLoad("acapy_agent.ledger.indy_vdr.IndyVdrLedger"),
         },
     }
 

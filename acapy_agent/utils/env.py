@@ -10,7 +10,7 @@ def storage_path(*subpaths, create: bool = False) -> Path:
     if custom:
         path = Path(custom)
     else:
-        path = Path.home().joinpath(".aries_cloudagent")
+        path = Path.home().joinpath(".acapy_agent")
     if subpaths:
         path = path.joinpath(*subpaths)
     if create:

@@ -20,7 +20,7 @@ DIDX_RESPONSE = f"{ARIES_PROTOCOL}/response"
 DIDX_COMPLETE = f"{ARIES_PROTOCOL}/complete"
 PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.didexchange.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

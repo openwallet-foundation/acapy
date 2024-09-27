@@ -340,9 +340,9 @@ class ProfileManagerProvider(BaseProvider):
     """The standard profile manager provider which keys off the selected wallet type."""
 
     MANAGER_TYPES = {
-        "askar": "aries_cloudagent.askar.profile.AskarProfileManager",
-        "askar-anoncreds": "aries_cloudagent.askar.profile_anon.AskarAnonProfileManager",
-        "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
+        "askar": "acapy_agent.askar.profile.AskarProfileManager",
+        "askar-anoncreds": "acapy_agent.askar.profile_anon.AskarAnonProfileManager",
+        "in_memory": "acapy_agent.core.in_memory.InMemoryProfileManager",
     }
 
     def __init__(self):

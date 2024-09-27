@@ -81,7 +81,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             ),
         ):
             test_module.LoggingConfigurator.configure(
-                log_config_path="aries_cloudagent/config/default_multitenant_logging_config.yml",
+                log_config_path="acapy_agent/config/default_multitenant_logging_config.yml",
                 log_file="test.log",
                 multitenant=True,
             )

@@ -18,11 +18,11 @@ class MultitenantManagerProvider(BaseProvider):
     """
 
     single_wallet_askar_manager_path = (
-        "aries_cloudagent.multitenant."
+        "acapy_agent.multitenant."
         "single_wallet_askar_manager.SingleWalletAskarMultitenantManager"
     )
     MANAGER_TYPES = {
-        "basic": "aries_cloudagent.multitenant.manager.MultitenantManager",
+        "basic": "acapy_agent.multitenant.manager.MultitenantManager",
         "single-wallet-askar": single_wallet_askar_manager_path,
     }
 

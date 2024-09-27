@@ -41,7 +41,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
             assert matches == ()
 
     def test_registration_with_minor_version(self):
-        MSG_PATH = "aries_cloudagent.protocols.introduction.v0_1.messages"
+        MSG_PATH = "acapy_agent.protocols.introduction.v0_1.messages"
         test_typesets = {
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
@@ -75,7 +75,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
         )
 
     def test_register_msg_types_for_multiple_minor_versions(self):
-        MSG_PATH = "aries_cloudagent.protocols.out_of_band.v1_0.messages"
+        MSG_PATH = "acapy_agent.protocols.out_of_band.v1_0.messages"
         test_typesets = {
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",

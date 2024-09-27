@@ -11,7 +11,7 @@ SPEC_URI = (
 DISCLOSURES = "discover-features/2.0/disclosures"
 QUERIES = "discover-features/2.0/queries"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.discovery.v2_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.discovery.v2_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

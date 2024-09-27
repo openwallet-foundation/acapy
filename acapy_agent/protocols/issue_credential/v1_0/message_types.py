@@ -15,7 +15,7 @@ CREDENTIAL_ISSUE = "issue-credential/1.0/issue-credential"
 CREDENTIAL_ACK = "issue-credential/1.0/ack"
 CREDENTIAL_PROBLEM_REPORT = "issue-credential/1.0/problem-report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.issue_credential.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

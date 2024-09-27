@@ -61,7 +61,7 @@ class TestMessagesAttach(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "messages_attach.MessagesAttachSchema.load"
     )
     def test_deserialize(self, mock_messages_attach_schema_load):
@@ -76,7 +76,7 @@ class TestMessagesAttach(TestCase, TestConfig):
         assert messages_attach is mock_messages_attach_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.endorse_transaction.v1_0.messages."
+        "acapy_agent.protocols.endorse_transaction.v1_0.messages."
         "messages_attach.MessagesAttachSchema.dump"
     )
     def test_serialize(self, mock_messages_attach_schema_dump):

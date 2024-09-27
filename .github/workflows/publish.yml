@@ -33,7 +33,7 @@ on:
         type: string
 
 env:
-  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/hyperledger/aries-cloudagent-python/issues/2124
+  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/openwallet-foundation/acapy/issues/2124
   # PLATFORMS: ${{ inputs.platforms || 'linux/amd64,linux/arm64,linux/386' }}
   PLATFORMS: ${{ inputs.platforms || 'linux/amd64,linux/arm64' }}
 
@@ -129,7 +129,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           # Because of BBS, only linux/amd64 is supported for the extended image
-          # https://github.com/hyperledger/aries-cloudagent-python/issues/2124#issuecomment-2293569659
+          # https://github.com/openwallet-foundation/acapy/issues/2124#issuecomment-2293569659
           platforms: linux/amd64
 
       # Temp fix

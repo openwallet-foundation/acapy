@@ -49,7 +49,7 @@ class TestProvider(IsolatedAsyncioTestCase):
         second_settings = first_settings.extend({"wallet.key": "another.wallet.key"})
 
         cached_provider = CachedProvider(
-            ClassProvider("aries_cloudagent.config.settings.Settings"), ("wallet.name",)
+            ClassProvider("acapy_agent.config.settings.Settings"), ("wallet.name",)
         )
         context = InjectionContext()
 
@@ -66,7 +66,7 @@ class TestProvider(IsolatedAsyncioTestCase):
         second_settings = first_settings.extend({"wallet.name": "another.wallet.name"})
 
         cached_provider = CachedProvider(
-            ClassProvider("aries_cloudagent.config.settings.Settings"), ("wallet.name",)
+            ClassProvider("acapy_agent.config.settings.Settings"), ("wallet.name",)
         )
         context = InjectionContext()
 

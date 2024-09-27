@@ -252,7 +252,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         )
 
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        "acapy_agent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
         mock.CoroutineMock(
             return_value=mock.MagicMock(
                 get_registry=mock.MagicMock(
@@ -270,11 +270,11 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         assert isinstance(result, tuple)
 
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        "acapy_agent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
         mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
     )
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation.init_issuer_registry",
+        "acapy_agent.revocation.indy.IndyRevocation.init_issuer_registry",
         mock.CoroutineMock(return_value=None),
     )
     @mock.patch.object(
@@ -291,11 +291,11 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         assert self.revoc.init_issuer_registry.call_args.kwargs["max_cred_num"] == 3
 
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        "acapy_agent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
         mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
     )
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation.init_issuer_registry",
+        "acapy_agent.revocation.indy.IndyRevocation.init_issuer_registry",
         mock.CoroutineMock(return_value=None),
     )
     @mock.patch.object(IssuerRevRegRecord, "query_by_cred_def_id", side_effect=[[], []])
@@ -304,11 +304,11 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
             await self.revoc.get_or_create_active_registry("cred_def_id")
 
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        "acapy_agent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
         mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
     )
     @mock.patch(
-        "aries_cloudagent.revocation.indy.IndyRevocation._set_registry_status",
+        "acapy_agent.revocation.indy.IndyRevocation._set_registry_status",
         mock.CoroutineMock(return_value=None),
     )
     @mock.patch.object(

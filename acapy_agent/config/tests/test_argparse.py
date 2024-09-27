@@ -65,12 +65,12 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--genesis-transactions-list",
-                "./aries_cloudagent/config/tests/test-ledger-args-no-write.yaml",
+                "./acapy_agent/config/tests/test-ledger-args-no-write.yaml",
             ]
         )
         assert (
             result.genesis_transactions_list
-            == "./aries_cloudagent/config/tests/test-ledger-args-no-write.yaml"
+            == "./acapy_agent/config/tests/test-ledger-args-no-write.yaml"
         )
         with self.assertRaises(argparse.ArgsParseError):
             settings = group.get_settings(result)
@@ -78,12 +78,12 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--genesis-transactions-list",
-                "./aries_cloudagent/config/tests/test-ledger-args-no-genesis.yaml",
+                "./acapy_agent/config/tests/test-ledger-args-no-genesis.yaml",
             ]
         )
         assert (
             result.genesis_transactions_list
-            == "./aries_cloudagent/config/tests/test-ledger-args-no-genesis.yaml"
+            == "./acapy_agent/config/tests/test-ledger-args-no-genesis.yaml"
         )
         with self.assertRaises(argparse.ArgsParseError):
             settings = group.get_settings(result)
@@ -91,12 +91,12 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--genesis-transactions-list",
-                "./aries_cloudagent/config/tests/test-ledger-args.yaml",
+                "./acapy_agent/config/tests/test-ledger-args.yaml",
             ]
         )
         assert (
             result.genesis_transactions_list
-            == "./aries_cloudagent/config/tests/test-ledger-args.yaml"
+            == "./acapy_agent/config/tests/test-ledger-args.yaml"
         )
         settings = group.get_settings(result)
 
@@ -133,7 +133,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--upgrade-config-path",
-                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
+                "./acapy_agent/config/tests/test-acapy-upgrade-config.yml",
                 "--from-version",
                 "v0.7.2",
                 "--force-upgrade",
@@ -142,7 +142,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert (
             result.upgrade_config_path
-            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+            == "./acapy_agent/config/tests/test-acapy-upgrade-config.yml"
         )
         assert result.force_upgrade is True
 
@@ -150,7 +150,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert (
             settings.get("upgrade.config_path")
-            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+            == "./acapy_agent/config/tests/test-acapy-upgrade-config.yml"
         )
 
         result = parser.parse_args(
@@ -174,7 +174,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--upgrade-config-path",
-                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
+                "./acapy_agent/config/tests/test-acapy-upgrade-config.yml",
                 "--from-version",
                 "v0.7.2",
                 "--upgrade-all-subwallets",
@@ -184,7 +184,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert (
             result.upgrade_config_path
-            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+            == "./acapy_agent/config/tests/test-acapy-upgrade-config.yml"
         )
         assert result.force_upgrade is True
         assert result.upgrade_all_subwallets is True
@@ -193,7 +193,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert (
             settings.get("upgrade.config_path")
-            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+            == "./acapy_agent/config/tests/test-acapy-upgrade-config.yml"
         )
         assert settings.get("upgrade.force_upgrade") is True
         assert settings.get("upgrade.upgrade_all_subwallets") is True
@@ -254,7 +254,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--arg-file",
-                "./aries_cloudagent/config/tests/test-general-args.yaml",
+                "./acapy_agent/config/tests/test-general-args.yaml",
             ]
         )
 
@@ -278,13 +278,12 @@ class TestArgParse(IsolatedAsyncioTestCase):
                 "--endpoint",
                 "localhost",
                 "--plugin-config",
-                "./aries_cloudagent/config/tests/test_plugins_config.yaml",
+                "./acapy_agent/config/tests/test_plugins_config.yaml",
             ]
         )
 
         assert (
-            result.plugin_config
-            == "./aries_cloudagent/config/tests/test_plugins_config.yaml"
+            result.plugin_config == "./acapy_agent/config/tests/test_plugins_config.yaml"
         )
 
         settings = group.get_settings(result)
@@ -309,7 +308,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             [
                 "--arg-file",
-                "./aries_cloudagent/config/tests/test-transport-args.yaml",
+                "./acapy_agent/config/tests/test-transport-args.yaml",
             ]
         )
         # no asserts, just testing that the parser doesn't fail
@@ -567,14 +566,14 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(
             args=(
                 "--auto-disclose-features --disclose-features-list"
-                " ./aries_cloudagent/config/tests/test_disclose_features_list.yaml"
+                " ./acapy_agent/config/tests/test_disclose_features_list.yaml"
             )
         )
 
         assert result.auto_disclose_features
         assert (
             result.disclose_features_list
-            == "./aries_cloudagent/config/tests/test_disclose_features_list.yaml"
+            == "./acapy_agent/config/tests/test_disclose_features_list.yaml"
         )
 
         settings = group.get_settings(result)

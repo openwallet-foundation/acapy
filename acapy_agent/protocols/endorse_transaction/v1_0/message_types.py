@@ -12,7 +12,7 @@ TRANSACTION_RESEND = "transactions/1.0/resend"
 TRANSACTION_JOB_TO_SEND = "transactions/1.0/transaction_my_job"
 TRANSACTION_ACKNOWLEDGEMENT = "transactions/1.0/ack"
 ATTACHED_MESSAGE = "transactions/1.0/message"
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.endorse_transaction.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.endorse_transaction.v1_0"
 
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(

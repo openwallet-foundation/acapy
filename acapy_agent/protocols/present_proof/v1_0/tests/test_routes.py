@@ -69,7 +69,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -100,7 +100,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -120,7 +120,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -155,7 +155,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -187,7 +187,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -220,7 +220,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -241,7 +241,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -263,7 +263,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -289,7 +289,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -311,13 +311,13 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview:
             # Since we are mocking import
@@ -340,7 +340,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
             # Since we are mocking import
@@ -358,14 +358,14 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "messages.presentation_proposal.PresentationProposal"
             ),
             autospec=True,
@@ -383,13 +383,13 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview:
             # Since we are mocking import
@@ -414,24 +414,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
         ) as mock_presentation_exchange, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce:
             # Since we are mocking import
@@ -465,24 +465,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
         ) as mock_presentation_exchange, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce:
             # Since we are mocking import
@@ -511,25 +511,25 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -565,7 +565,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={"connection_id": "dummy"})
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
             # Since we are mocking import
@@ -583,7 +583,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
             # Since we are mocking import
@@ -607,24 +607,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -673,23 +673,23 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0."
+            "acapy_agent.protocols.present_proof.v1_0."
             "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
@@ -730,24 +730,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -774,24 +774,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -835,7 +835,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -857,24 +857,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -939,16 +939,16 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1005,24 +1005,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1049,24 +1049,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1095,7 +1095,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1123,24 +1123,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1176,25 +1176,25 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce",
+            "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce, mock.patch(
-            "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
+            "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview, mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
-            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1247,7 +1247,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1280,14 +1280,14 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
         with mock.patch(
-            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1333,12 +1333,12 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
         ) as mock_pres_ex, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_pres_mgr_cls, mock.patch.object(
             test_module, "problem_report_for_record", mock.MagicMock()
@@ -1365,11 +1365,11 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_pres_mgr_cls, mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1391,12 +1391,12 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
         ) as mock_pres_ex, mock.patch(
-            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_pres_mgr_cls, mock.patch.object(
             test_module, "problem_report_for_record", mock.MagicMock()
@@ -1417,7 +1417,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1443,7 +1443,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
@@ -1464,7 +1464,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch(
             (
-                "aries_cloudagent.protocols.present_proof.v1_0."
+                "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,

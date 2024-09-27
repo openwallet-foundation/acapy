@@ -13,7 +13,7 @@ BASE = f"{PROTOCOL}/{VERSION}"
 # Message types
 REVOKE = f"{BASE}/revoke"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.revocation_notification.v2_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.revocation_notification.v2_0"
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {REVOKE: f"{PROTOCOL_PACKAGE}.messages.revoke.Revoke"}
 )

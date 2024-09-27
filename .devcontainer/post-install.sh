@@ -19,7 +19,7 @@ cat > .pytest.ini <<EOF
 # remove this file for normal operations outside of the devcontainer.
 # basically we cannot have ruff (--ruff) in the pytest configuration as it breaks the Testing View.
 [pytest]
-testpaths = "aries_cloudagent"
+testpaths = "acapy_agent"
 addopts = --quiet
 markers = [
     "anoncreds: Tests specifically relating to AnonCreds support",

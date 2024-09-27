@@ -15,7 +15,7 @@ from ..transport.inbound.receipt import MessageReceipt
 from ..utils.classloader import DeferLoad
 from .agent_message import AgentMessage
 
-IN_MEM = DeferLoad("aries_cloudagent.core.in_memory.InMemoryProfile")
+IN_MEM = DeferLoad("acapy_agent.core.in_memory.InMemoryProfile")
 
 
 class RequestContext:

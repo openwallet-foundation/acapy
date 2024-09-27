@@ -11,7 +11,7 @@ from ..config.settings import Settings
 from ..core.profile import Profile, ProfileSession
 from ..utils.classloader import DeferLoad
 
-IN_MEM = DeferLoad("aries_cloudagent.core.in_memory.InMemoryProfile")
+IN_MEM = DeferLoad("acapy_agent.core.in_memory.InMemoryProfile")
 
 
 class AdminRequestContext:

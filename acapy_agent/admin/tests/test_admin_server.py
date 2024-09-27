@@ -199,12 +199,10 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
         with self.assertLogs(level="ERROR") as logs:
             builder = DefaultContextBuilder(
-                settings={"external_plugins": ["aries_cloudagent.nosuchmodule"]}
+                settings={"external_plugins": ["acapy_agent.nosuchmodule"]}
             )
             await builder.load_plugins(context)
-        assert "Module doesn't exist: aries_cloudagent.nosuchmodule" in "\n".join(
-            logs.output
-        )
+        assert "Module doesn't exist: acapy_agent.nosuchmodule" in "\n".join(logs.output)
 
     async def test_visit_insecure_mode(self):
         settings = {"admin.admin_insecure_mode": True, "task_queue": True}

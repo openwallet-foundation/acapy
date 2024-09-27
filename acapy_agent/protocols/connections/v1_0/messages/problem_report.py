@@ -10,7 +10,7 @@ from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT
 
 HANDLER_CLASS = (
-    "aries_cloudagent.protocols.connections.v1_0.handlers."
+    "acapy_agent.protocols.connections.v1_0.handlers."
     "problem_report_handler.ConnectionProblemReportHandler"
 )
 

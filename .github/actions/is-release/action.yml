@@ -15,7 +15,7 @@ runs:
       continue-on-error: true
       run: |
         # Get the diff between the current commit and the last merge commit on the upstream/main branch
-        git remote add upstream https://github.com/hyperledger/aries-cloudagent-python.git
+        git remote add upstream https://github.com/openwallet-foundation/acapy.git
         git fetch upstream
         
         last_merge=$(git rev-list --no-merges -n 1 upstream/main)
@@ -30,7 +30,7 @@ runs:
         changes=$(git diff "${{ github.sha }}" "$last_merge" pyproject.toml)
 
         # Extract the version of aries-cloudagent from the diff of pyproject.toml
-        version=$(echo "$changes" | grep -A1 'name = "aries_cloudagent"' | head -n 2 | tail -n 1 | awk '{print $3}' | tr -d '"')
+        version=$(echo "$changes" | grep -A1 'name = "acapy_agent"' | head -n 2 | tail -n 1 | awk '{print $3}' | tr -d '"')
 
         echo "$version"
         if [ "$version" ]; then

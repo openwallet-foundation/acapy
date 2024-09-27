@@ -80,7 +80,7 @@ class TestDIDXRequest(IsolatedAsyncioTestCase, TestConfig):
         assert self.request._type == DIDCommPrefix.qualify_current(DIDX_REQUEST)
 
     @mock.patch(
-        "aries_cloudagent.protocols.didexchange.v1_0.messages."
+        "acapy_agent.protocols.didexchange.v1_0.messages."
         "request.DIDXRequestSchema.load"
     )
     def test_deserialize(self, mock_request_schema_load):
@@ -95,7 +95,7 @@ class TestDIDXRequest(IsolatedAsyncioTestCase, TestConfig):
         assert request is mock_request_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.didexchange.v1_0.messages."
+        "acapy_agent.protocols.didexchange.v1_0.messages."
         "request.DIDXRequestSchema.dump"
     )
     def test_serialize(self, mock_request_schema_dump):

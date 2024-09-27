@@ -1091,7 +1091,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         ),
     )
     @mock.patch(
-        "aries_cloudagent.anoncreds.default.legacy_indy.registry.generate_ledger_rrrecovery_txn",
+        "acapy_agent.anoncreds.default.legacy_indy.registry.generate_ledger_rrrecovery_txn",
         mock.CoroutineMock(return_value=MockTxn()),
     )
     async def test_fix_ledger_entry(self, *_):

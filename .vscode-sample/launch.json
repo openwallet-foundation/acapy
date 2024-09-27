@@ -8,7 +8,7 @@
             "name": "Run/Debug Faber",
             "type": "python",
             "request": "launch",
-            "module": "aries_cloudagent",
+            "module": "acapy_agent",
             "justMyCode": true,
             "args": [
                 "start",
@@ -19,7 +19,7 @@
             "name": "Run/Debug Alice",
             "type": "python",
             "request": "launch",
-            "module": "aries_cloudagent",
+            "module": "acapy_agent",
             "justMyCode": true,
             "args": [
                 "start",
@@ -30,7 +30,7 @@
             "name": "Run/Debug Endorser",
             "type": "python",
             "request": "launch",
-            "module": "aries_cloudagent",
+            "module": "acapy_agent",
             "justMyCode": true,
             "args": [
                 "start",
@@ -41,7 +41,7 @@
             "name": "Run/Debug Author",
             "type": "python",
             "request": "launch",
-            "module": "aries_cloudagent",
+            "module": "acapy_agent",
             "justMyCode": true,
             "args": [
                 "start",
@@ -52,7 +52,7 @@
             "name": "Run/Debug Multitenant Admin",
             "type": "python",
             "request": "launch",
-            "module": "aries_cloudagent",
+            "module": "acapy_agent",
             "justMyCode": true,
             "args": [
                 "start",
@@ -60,25 +60,25 @@
             ]
         },
         {
-            "name": "ruff (lint) - aries_cloudagent",
+            "name": "ruff (lint) - acapy_agent",
             "type": "python",
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
             "sudo": true,
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "cwd": "${workspaceFolder}/acapy_agent",
             "args": ["check", "."]
         },
         {
-            "name": "ruff fix (lint) - aries_cloudagent",
+            "name": "ruff fix (lint) - acapy_agent",
             "type": "python",
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
             "sudo": true,
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "cwd": "${workspaceFolder}/acapy_agent",
             "args": ["check", ".", "--fix"]
         },
         {
@@ -89,7 +89,7 @@
             "console": "integratedTerminal",
             "sudo": true,
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "cwd": "${workspaceFolder}/acapy_agent",
             "args": ["check", ".", "${file}"]
         },
         {
@@ -100,18 +100,18 @@
             "console": "integratedTerminal",
             "sudo": true,
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "cwd": "${workspaceFolder}/acapy_agent",
             "args": ["check", ".", "${file}", "--fix"]
         },
         {
-            "name": "ruff (format) - aries_cloudagent",
+            "name": "ruff (format) - acapy_agent",
             "type": "python",
             "request": "launch",
             "module": "ruff",
             "console": "integratedTerminal",
             "sudo": true,
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "cwd": "${workspaceFolder}/acapy_agent",
             "args": ["format", "."]
         },
         {
@@ -122,7 +122,7 @@
             "console": "integratedTerminal",
             "sudo": true,
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "cwd": "${workspaceFolder}/acapy_agent",
             "args": ["format", "${file}"]
         }
     ]

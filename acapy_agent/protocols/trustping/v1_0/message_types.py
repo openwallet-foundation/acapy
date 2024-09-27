@@ -11,7 +11,7 @@ SPEC_URI = (
 PING = "trust_ping/1.0/ping"
 PING_RESPONSE = "trust_ping/1.0/ping_response"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.trustping.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.trustping.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

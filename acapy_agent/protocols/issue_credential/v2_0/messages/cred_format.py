@@ -35,7 +35,7 @@ class V20CredFormat(BaseModel):
             "hlindy/",
             V20CredExRecordIndy,
             DeferLoad(
-                "aries_cloudagent.protocols.issue_credential.v2_0"
+                "acapy_agent.protocols.issue_credential.v2_0"
                 ".formats.indy.handler.IndyCredFormatHandler"
             ),
         )
@@ -51,7 +51,7 @@ class V20CredFormat(BaseModel):
                 "hlindy/",
                 V20CredExRecordIndy,
                 DeferLoad(
-                    "aries_cloudagent.protocols.issue_credential.v2_0"
+                    "acapy_agent.protocols.issue_credential.v2_0"
                     ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
                 ),
             )
@@ -60,7 +60,7 @@ class V20CredFormat(BaseModel):
             "aries/",
             V20CredExRecordLDProof,
             DeferLoad(
-                "aries_cloudagent.protocols.issue_credential.v2_0"
+                "acapy_agent.protocols.issue_credential.v2_0"
                 ".formats.ld_proof.handler.LDProofCredFormatHandler"
             ),
         )
@@ -69,7 +69,7 @@ class V20CredFormat(BaseModel):
             "didcomm/",
             V20CredExRecordIndy,
             DeferLoad(
-                "aries_cloudagent.protocols.issue_credential.v2_0"
+                "acapy_agent.protocols.issue_credential.v2_0"
                 ".formats.vc_di.handler.VCDICredFormatHandler"
             ),
         )

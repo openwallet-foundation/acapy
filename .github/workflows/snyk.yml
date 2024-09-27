@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - aries_cloudagent/**
+      - acapy_agent/**
       - docker/**
 
 jobs:

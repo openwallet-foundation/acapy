@@ -14,7 +14,7 @@ CONNECTION_REQUEST = f"{ARIES_PROTOCOL}/request"
 CONNECTION_RESPONSE = f"{ARIES_PROTOCOL}/response"
 PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections.v1_0"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.connections.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

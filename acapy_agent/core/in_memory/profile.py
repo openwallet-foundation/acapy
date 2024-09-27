@@ -14,8 +14,8 @@ from ...utils.classloader import DeferLoad
 from ...wallet.base import BaseWallet
 from ..profile import Profile, ProfileManager, ProfileSession
 
-STORAGE_CLASS = DeferLoad("aries_cloudagent.storage.in_memory.InMemoryStorage")
-WALLET_CLASS = DeferLoad("aries_cloudagent.wallet.in_memory.InMemoryWallet")
+STORAGE_CLASS = DeferLoad("acapy_agent.storage.in_memory.InMemoryStorage")
+WALLET_CLASS = DeferLoad("acapy_agent.wallet.in_memory.InMemoryWallet")
 
 
 class InMemoryProfile(Profile):
@@ -57,7 +57,7 @@ class InMemoryProfile(Profile):
         injector.bind_provider(
             VCHolder,
             ClassProvider(
-                "aries_cloudagent.storage.vc_holder.in_memory.InMemoryVCHolder",
+                "acapy_agent.storage.vc_holder.in_memory.InMemoryVCHolder",
                 ref(self),
             ),
         )

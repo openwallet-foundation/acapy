@@ -82,7 +82,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         ),
     )
     @mock.patch(
-        "aries_cloudagent.anoncreds.default.legacy_indy.recover._check_tails_hash_for_inconsistency"
+        "acapy_agent.anoncreds.default.legacy_indy.recover._check_tails_hash_for_inconsistency"
     )
     async def test_fetch_txns(self, *_):
         result = await fetch_txns(
@@ -93,7 +93,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         assert isinstance(result, tuple)
 
     @mock.patch(
-        "aries_cloudagent.anoncreds.default.legacy_indy.recover.fetch_txns",
+        "acapy_agent.anoncreds.default.legacy_indy.recover.fetch_txns",
         mock.CoroutineMock(
             return_value=(
                 {
@@ -134,7 +134,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
 
         # Logs waring when ledger has revoked indexes not in wallet
         with mock.patch(
-            "aries_cloudagent.anoncreds.default.legacy_indy.recover.LOGGER"
+            "acapy_agent.anoncreds.default.legacy_indy.recover.LOGGER"
         ) as mock_logger:
             result = await generate_ledger_rrrecovery_txn(
                 GENESIS,

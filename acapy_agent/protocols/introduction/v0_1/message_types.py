@@ -6,7 +6,7 @@ INVITATION_REQUEST = "introduction-service/0.1/invitation-request"
 INVITATION = "introduction-service/0.1/invitation"
 FORWARD_INVITATION = "introduction-service/0.1/forward-invitation"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.introduction.v0_1"
+PROTOCOL_PACKAGE = "acapy_agent.protocols.introduction.v0_1"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {

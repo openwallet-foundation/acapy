@@ -35,7 +35,7 @@ class TestConnectionInvitation(TestCase):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.connections.v1_0.messages."
+        "acapy_agent.protocols.connections.v1_0.messages."
         "connection_invitation.ConnectionInvitationSchema.load"
     )
     def test_deserialize(self, mock_connection_invitation_schema_load):
@@ -49,7 +49,7 @@ class TestConnectionInvitation(TestCase):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.connections.v1_0.messages."
+        "acapy_agent.protocols.connections.v1_0.messages."
         "connection_invitation.ConnectionInvitationSchema.dump"
     )
     def test_serialize(self, mock_connection_invitation_schema_dump):

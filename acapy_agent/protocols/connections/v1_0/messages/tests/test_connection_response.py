@@ -58,7 +58,7 @@ class TestConnectionResponse(TestCase, TestConfig):
         )
 
     @mock.patch(
-        "aries_cloudagent.protocols.connections.v1_0.messages."
+        "acapy_agent.protocols.connections.v1_0.messages."
         "connection_response.ConnectionResponseSchema.load"
     )
     def test_deserialize(self, mock_connection_response_schema_load):
@@ -73,7 +73,7 @@ class TestConnectionResponse(TestCase, TestConfig):
         assert connection_response is mock_connection_response_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.connections.v1_0.messages."
+        "acapy_agent.protocols.connections.v1_0.messages."
         "connection_response.ConnectionResponseSchema.dump"
     )
     def test_serialize(self, mock_connection_response_schema_dump):
