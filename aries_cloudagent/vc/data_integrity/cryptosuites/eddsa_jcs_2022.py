@@ -7,12 +7,10 @@ from ....wallet.base import BaseWallet
 from ....wallet.keys.manager import (
     MultikeyManager,
     multikey_to_verkey,
-    verkey_to_multikey,
     key_type_from_multikey,
 )
 from ....utils.multiformats import multibase
 from ....core.profile import ProfileSession
-from ....resolver.did_resolver import DIDResolver
 from ..models.options import DataIntegrityProofOptions
 from ..models.proof import DataIntegrityProof
 from ..models.verification_response import ProblemDetails, DataIntegrityVerificationResult
