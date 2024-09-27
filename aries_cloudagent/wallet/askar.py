@@ -258,6 +258,10 @@ class AskarWallet(BaseWallet):
             verkey_bytes = keypair.get_public_bytes()
             verkey = bytes_to_b58(verkey_bytes)
 
+            did = did_validation.validate_or_derive_did(
+                method, key_type, verkey_bytes, did
+            )
+
             try:
                 await self._session.handle.insert_key(
                     verkey, keypair, metadata=json.dumps(metadata)
@@ -268,10 +272,6 @@ class AskarWallet(BaseWallet):
                     pass
                 else:
                     raise WalletError("Error inserting key") from err
-
-            did = did_validation.validate_or_derive_did(
-                method, key_type, verkey_bytes, did
-            )
 
             item = await self._session.handle.fetch(CATEGORY_DID, did, for_update=True)
             if item:
