@@ -254,16 +254,13 @@ class AskarWallet(BaseWallet):
             metadata = {}
 
         try:
-
             keypair = _create_keypair(key_type, seed)
             verkey_bytes = keypair.get_public_bytes()
             verkey = bytes_to_b58(verkey_bytes)
 
             try:
                 await self._session.handle.insert_key(
-                    verkey,
-                    keypair,
-                    metadata=json.dumps(metadata)
+                    verkey, keypair, metadata=json.dumps(metadata)
                 )
             except AskarError as err:
                 if err.code == AskarErrorCode.DUPLICATE:
