@@ -6,20 +6,19 @@ from marshmallow import INCLUDE, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_ISO8601_DATETIME_VALIDATE,
+    RFC3339_DATETIME_EXAMPLE,
     UUID4_EXAMPLE,
     Uri,
 )
 
 
-class DIProof(BaseModel):
+class DataIntegrityProof(BaseModel):
     """Data Integrity Proof model."""
 
     class Meta:
         """DataIntegrityProof metadata."""
 
-        schema_class = "DIProofSchema"
+        schema_class = "DataIntegrityProofSchema"
 
     def __init__(
         self,
@@ -37,7 +36,7 @@ class DIProof(BaseModel):
         nonce: Optional[str] = None,
         **kwargs,
     ) -> None:
-        """Initialize the DIProof instance."""
+        """Initialize the DataIntegrityProof instance."""
 
         self.id = id
         self.type = type
@@ -54,7 +53,7 @@ class DIProof(BaseModel):
         self.extra = kwargs
 
 
-class DIProofSchema(BaseModelSchema):
+class DataIntegrityProofSchema(BaseModelSchema):
     """Data Integrity Proof schema.
 
     Based on https://www.w3.org/TR/vc-data-integrity/#proofs
@@ -65,7 +64,7 @@ class DIProofSchema(BaseModelSchema):
         """Accept parameter overload."""
 
         unknown = INCLUDE
-        model_class = DIProof
+        model_class = DataIntegrityProof
 
     id = fields.Str(
         required=False,
@@ -127,26 +126,24 @@ class DIProofSchema(BaseModelSchema):
 
     created = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "The date and time the proof was created is OPTIONAL and, if included, \
                     MUST be specified as an [XMLSCHEMA11-2] dateTimeStamp string"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": RFC3339_DATETIME_EXAMPLE,
         },
     )
 
     expires = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "The expires property is OPTIONAL and, if present, specifies when the \
                     proof expires. If present, it MUST be an [XMLSCHEMA11-2] \
                         dateTimeStamp string"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": RFC3339_DATETIME_EXAMPLE,
         },
     )
 

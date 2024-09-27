@@ -1,4 +1,15 @@
-from .proof import DIProof, DIProofSchema
-from .options import AddProofOptionsSchema
+from .proof import DataIntegrityProof, DataIntegrityProofSchema
+from .options import DataIntegrityProofOptions, DataIntegrityProofOptionsSchema
+from .verification_response import (
+    DataIntegrityVerificationResponseSchema,
+    DataIntegrityVerificationResponse,
+)
 
-__all__ = ["DIProof", "DIProofSchema", "DIProofOptions", "AddProofOptionsSchema"]
+__all__ = [
+    "DataIntegrityProof",
+    "DataIntegrityProofSchema",
+    "DataIntegrityProofOptions",
+    "DataIntegrityProofOptionsSchema",
+    "DataIntegrityVerificationResponse",
+    "DataIntegrityVerificationResponseSchema",
+]

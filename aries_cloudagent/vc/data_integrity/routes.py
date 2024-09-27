@@ -11,7 +11,7 @@ from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from .manager import DataIntegrityManager, DataIntegrityManagerError
-from .models import AddProofOptionsSchema
+from .models import DataIntegrityProofOptionsSchema, DataIntegrityProofOptions
 from ...wallet.error import WalletNotFoundError, WalletError
 
 LOGGER = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class AddProofSchema(OpenAPISchema):
 
     document = fields.Dict(required=True, metadata={"example": {"hello": "world"}})
     options = fields.Nested(
-        AddProofOptionsSchema,
+        DataIntegrityProofOptionsSchema,
         metadata={
             "example": {
                 "type": "DataIntegrityProof",
@@ -92,6 +92,7 @@ async def add_di_proof(request: web.BaseRequest):
     options = body.get("options")
 
     try:
+        options = DataIntegrityProofOptions.deserialize(options)
         async with context.session() as session:
             secured_document = await DataIntegrityManager(session).add_proof(
                 document, options
@@ -124,14 +125,14 @@ async def verify_di_secured_document(request: web.BaseRequest):
             verification_response = await DataIntegrityManager(session).verify_proof(
                 secured_document
             )
-
-        if verification_response["verified"]:
-            return web.json_response(
-                {"verificationResults": verification_response}, status=200
-            )
-        return web.json_response(
-            {"verificationResults": verification_response}, status=400
-        )
+        response = {
+            "verified": verification_response.verified,
+            "verifiedDocument": verification_response.verified_document,
+            "results": [result.serialize() for result in verification_response.results],
+        }
+        if verification_response.verified:
+            return web.json_response({"verificationResults": response}, status=200)
+        return web.json_response({"verificationResults": response}, status=400)
 
     except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

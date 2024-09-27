@@ -6,25 +6,24 @@ from marshmallow import INCLUDE, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_ISO8601_DATETIME_VALIDATE,
+    RFC3339_DATETIME_EXAMPLE,
     UUID4_EXAMPLE,
     Uri,
 )
 
 
-class AddProofOptions(BaseModel):
+class DataIntegrityProofOptions(BaseModel):
     """Data Integrity Proof Options model."""
 
     class Meta:
         """DataIntegrityProofOptions metadata."""
 
-        schema_class = "DIProofOptionsSchema"
+        schema_class = "DataIntegrityProofOptionsSchema"
 
     def __init__(
         self,
         id: Optional[str] = None,
-        type: Optional[str] = "DataIntegrityProof",
+        type: Optional[str] = None,
         proof_purpose: Optional[str] = None,
         verification_method: Optional[str] = None,
         cryptosuite: Optional[str] = None,
@@ -33,10 +32,11 @@ class AddProofOptions(BaseModel):
         domain: Optional[str] = None,
         challenge: Optional[str] = None,
         previous_proof: Optional[str] = None,
+        proof_value: Optional[str] = None,
         nonce: Optional[str] = None,
         **kwargs,
     ) -> None:
-        """Initialize the AddProofOptions instance."""
+        """Initialize the DataIntegrityProofOptions instance."""
 
         self.id = id
         self.type = type
@@ -48,12 +48,13 @@ class AddProofOptions(BaseModel):
         self.domain = domain
         self.challenge = challenge
         self.previous_proof = previous_proof
+        self.proof_value = proof_value
         self.nonce = nonce
         self.extra = kwargs
 
 
-class AddProofOptionsSchema(BaseModelSchema):
-    """Data Integrity Proof schema.
+class DataIntegrityProofOptionsSchema(BaseModelSchema):
+    """Data Integrity Proof Options schema.
 
     Based on https://www.w3.org/TR/vc-data-integrity/#proofs
 
@@ -63,7 +64,7 @@ class AddProofOptionsSchema(BaseModelSchema):
         """Accept parameter overload."""
 
         unknown = INCLUDE
-        model_class = AddProofOptions
+        model_class = DataIntegrityProofOptions
 
     id = fields.Str(
         required=False,
@@ -125,27 +126,25 @@ class AddProofOptionsSchema(BaseModelSchema):
 
     created = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "The date and time the proof was created is OPTIONAL and, if \
                     included, MUST be specified as an [XMLSCHEMA11-2] \
                         dateTimeStamp string"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": RFC3339_DATETIME_EXAMPLE,
         },
     )
 
     expires = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "The expires property is OPTIONAL and, if present, specifies when \
                     the proof expires. If present, it MUST be an [XMLSCHEMA11-2] \
                         dateTimeStamp string"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": RFC3339_DATETIME_EXAMPLE,
         },
     )
 
@@ -178,6 +177,18 @@ class AddProofOptionsSchema(BaseModelSchema):
             "description": "Each value identifies another data integrity proof that \
                 MUST verify before the current proof is processed.",
             "example": ("urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5"),
+        },
+    )
+
+    proof_value = fields.Str(
+        required=False,
+        data_key="proofValue",
+        metadata={
+            "description": "The value of the proof signature.",
+            "example": (
+                "zsy1AahqbzJQ63n9RtekmwzqZeVj494VppdAVJBnMYrTwft6cLJJGeTSSxCCJ6HKnR"
+                "twE7jjDh6sB2z2AAiZY9BBnCD8wUVgwqH3qchGRCuC2RugA4eQ9fUrR4Yuycac3caiaaay"
+            ),
         },
     )
 
