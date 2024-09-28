@@ -1,7 +1,7 @@
 """Test MultikeypManager."""
 
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.wallet.keys.manager import MultikeyManager
+from aries_cloudagent.wallet.keys.manager import MultikeyManager, multikey_to_verkey, verkey_to_multikey
 from aries_cloudagent.core.in_memory import InMemoryProfile
 
 
@@ -34,13 +34,6 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             assert key_info["multikey"] == self.multikey
             assert key_info["kid"] == self.kid
 
-    async def test_key_representations(self):
-        async with self.profile.session() as session:
-            assert (
-                MultikeyManager(session=session)._multikey_to_verkey(self.multikey)
-                == self.verkey
-            )
-            assert (
-                MultikeyManager(session=session)._verkey_to_multikey(self.verkey)
-                == self.multikey
-            )
+    async def test_key_transformations(self):
+        assert multikey_to_verkey(self.multikey) == self.verkey
+        assert verkey_to_multikey(self.verkey) == self.multikey
