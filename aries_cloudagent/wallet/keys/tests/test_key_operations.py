@@ -1,7 +1,11 @@
 """Test MultikeypManager."""
 
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.wallet.keys.manager import MultikeyManager, multikey_to_verkey, verkey_to_multikey
+from aries_cloudagent.wallet.keys.manager import (
+    MultikeyManager,
+    multikey_to_verkey,
+    verkey_to_multikey,
+)
 from aries_cloudagent.core.in_memory import InMemoryProfile
 
 
