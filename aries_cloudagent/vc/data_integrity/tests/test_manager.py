@@ -5,25 +5,33 @@ from aries_cloudagent.wallet.keys.manager import MultikeyManager
 from aries_cloudagent.core.in_memory import InMemoryProfile
 from aries_cloudagent.vc.data_integrity.manager import DataIntegrityManager
 from aries_cloudagent.vc.data_integrity.models.options import DataIntegrityProofOptions
+from aries_cloudagent.resolver.default.key import KeyDIDResolver
+from aries_cloudagent.resolver.default.web import WebDIDResolver
+from aries_cloudagent.resolver.did_resolver import DIDResolver
 
 
 class TestDiManager(IsolatedAsyncioTestCase):
-    profile = InMemoryProfile.test_profile()
-    seed = "00000000000000000000000000000000"
-    multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
-    verification_method = f"did:key:{multikey}#{multikey}"
-    cryptosuite = "eddsa-jcs-2022"
-    unsecured_document = {"hello": "world"}
-    options = DataIntegrityProofOptions.deserialize(
-        {
-            "type": "DataIntegrityProof",
-            "cryptosuite": cryptosuite,
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": f"did:key:{multikey}#{multikey}",
-        }
-    )
+    """Tests for DI manager."""
 
     async def asyncSetUp(self):
+        self.seed = "00000000000000000000000000000000"
+        self.multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
+        self.verification_method = f"did:key:{self.multikey}#{self.multikey}"
+        self.cryptosuite = "eddsa-jcs-2022"
+        self.unsecured_document = {"hello": "world"}
+        self.options = DataIntegrityProofOptions.deserialize(
+            {
+                "type": "DataIntegrityProof",
+                "cryptosuite": self.cryptosuite,
+                "proofPurpose": "assertionMethod",
+                "verificationMethod": self.verification_method,
+            }
+        )
+
+        self.resolver = DIDResolver()
+        self.resolver.register_resolver(KeyDIDResolver())
+        self.resolver.register_resolver(WebDIDResolver())
+        self.profile = InMemoryProfile.test_profile({}, bind={DIDResolver: self.resolver})
         try:
             async with self.profile.session() as session:
                 await MultikeyManager(session=session).create(seed=self.seed)
@@ -65,38 +73,37 @@ class TestDiManager(IsolatedAsyncioTestCase):
     async def test_add_proof_chain(self):
         pass
 
-    # TODO, resolve error aries_cloudagent.config.base.InjectionError: No instance provided for class: DIDResolver
-    # async def test_verify_proof(self):
-    #     async with self.profile.session() as session:
-    #         di_manager = DataIntegrityManager(session=session)
-    #         secured_document = await di_manager.add_proof(
-    #             self.unsecured_document, self.options
-    #         )
-    #         verification = await di_manager.verify_proof(secured_document)
-    #         assert verification["verified"]
-    #         bad_proof = secured_document["proof"][0].copy()
-    #         bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
-    #         secured_document["proof"][0] = bad_proof
-    #         verification = await di_manager.verify_proof(secured_document)
-    #         assert not verification["verified"]
+    async def test_verify_proof(self):
+        async with self.profile.session() as session:
+            di_manager = DataIntegrityManager(session=session)
+            secured_document = await di_manager.add_proof(
+                self.unsecured_document, self.options
+            )
+            verification = await di_manager.verify_proof(secured_document)
+            assert verification.verified
+            bad_proof = secured_document["proof"][0].copy()
+            bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
+            secured_document["proof"][0] = bad_proof
+            verification = await di_manager.verify_proof(secured_document)
+            assert not verification.verified
 
-    # TODO, resolve error aries_cloudagent.config.base.InjectionError: No instance provided for class: DIDResolver
-    # async def test_verify_proof_set(self):
-    #     async with self.profile.session() as session:
-    #         di_manager = DataIntegrityManager(session=session)
-    #         secured_document = await di_manager.add_proof(
-    #             self.unsecured_document, self.options
-    #         )
-    #         secured_document_with_proof_set = await di_manager.add_proof(
-    #             secured_document, self.options
-    #         )
-    #         verification = await di_manager.verify_proof(secured_document_with_proof_set)
-    #         assert verification.verified
-    #         bad_proof = secured_document_with_proof_set["proof"][0].copy()
-    #         bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
-    #         secured_document_with_proof_set["proof"][0] = bad_proof
-    #         verification = await di_manager.verify_proof(secured_document_with_proof_set)
-    #         assert not verification.verified
+    async def test_verify_proof_set(self):
+        async with self.profile.session() as session:
+            di_manager = DataIntegrityManager(session=session)
+            secured_document = await di_manager.add_proof(
+                self.unsecured_document, self.options
+            )
+            secured_document_with_proof_set = await di_manager.add_proof(
+                secured_document, self.options
+            )
+            verification = await di_manager.verify_proof(secured_document_with_proof_set)
+            assert verification.verified
+            bad_proof = secured_document_with_proof_set["proof"][0].copy()
+            bad_proof["proofValue"] = bad_proof["proofValue"][:-1]
+            secured_document_with_proof_set["proof"][0] = bad_proof
+            verification = await di_manager.verify_proof(secured_document_with_proof_set)
+            assert not verification.verified
 
     async def test_verify_proof_chain(self):
+        # TODO, add tests once proof chain support is added
         pass
