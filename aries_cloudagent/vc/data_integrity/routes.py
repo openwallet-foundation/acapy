@@ -101,7 +101,7 @@ async def add_di_proof(request: web.BaseRequest):
         return web.json_response({"securedDocument": secured_document}, status=201)
 
     except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
 
 @docs(tags=["vc"], summary="Verify a document secured with a data integrity proof.")
@@ -125,17 +125,21 @@ async def verify_di_secured_document(request: web.BaseRequest):
             verification_response = await DataIntegrityManager(session).verify_proof(
                 secured_document
             )
-        response = {
-            "verified": verification_response.verified,
-            "verifiedDocument": verification_response.verified_document,
-            "results": [result.serialize() for result in verification_response.results],
-        }
+        # response = {
+        #     "verified": verification_response.verified,
+        #     "verifiedDocument": verification_response.verified_document,
+        #     "results": [result.serialize() for result in verification_response.results],
+        # }
         if verification_response.verified:
-            return web.json_response({"verificationResults": response}, status=200)
-        return web.json_response({"verificationResults": response}, status=400)
+            return web.json_response(
+                {"verificationResults": verification_response.serialize()}, status=200
+            )
+        return web.json_response(
+            {"verificationResults": verification_response.serialize()}, status=400
+        )
 
     except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
 
 async def register(app: web.Application):

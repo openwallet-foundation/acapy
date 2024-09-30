@@ -11,13 +11,14 @@ from ....wallet.keys.manager import (
 )
 from ....utils.multiformats import multibase
 from ....core.profile import ProfileSession
+from ....core.error import BaseError
 from ..models.options import DataIntegrityProofOptions
 from ..models.proof import DataIntegrityProof
 from ..models.verification_response import ProblemDetails, DataIntegrityVerificationResult
 from ..errors import PROBLEM_DETAILS
 
 
-class CryptosuiteError(Exception):
+class CryptosuiteError(BaseError):
     """Generic Cryptosuite Error."""
 
 

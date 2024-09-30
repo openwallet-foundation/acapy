@@ -103,8 +103,8 @@ class DataIntegrityVerificationResultSchema(BaseModelSchema):
         metadata={},
     )
 
-    problem_details = fields.Nested(
-        ProblemDetailsSchema(),
+    problem_details = fields.List(
+        fields.Nested(ProblemDetailsSchema()),
         data_key="problemDetails",
         required=True,
         metadata={},
@@ -155,7 +155,7 @@ class DataIntegrityVerificationResponseSchema(BaseModelSchema):
     )
 
     results = fields.List(
-        fields.Dict(required=False),
+        fields.Nested(DataIntegrityVerificationResultSchema()),
         required=False,
         metadata={},
     )
