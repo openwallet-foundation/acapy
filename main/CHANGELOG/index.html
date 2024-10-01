@@ -523,28 +523,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#101rc0" class="md-nav__link">
+  <a href="#101rc1" class="md-nav__link">
     <span class="md-ellipsis">
-      1.0.1rc0
+      1.0.1rc1
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.0.1rc0">
+    <nav class="md-nav" aria-label="1.0.1rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#september-25-2024" class="md-nav__link">
+  <a href="#october-1-2024" class="md-nav__link">
     <span class="md-ellipsis">
-      September 25, 2024
+      October 1, 2024
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#101rc0-breaking-changes" class="md-nav__link">
+  <a href="#101rc1-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      1.0.1rc0 Breaking Changes
+      1.0.1rc1 Breaking Changes
     </span>
   </a>
   
@@ -2593,28 +2593,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#101rc0" class="md-nav__link">
+  <a href="#101rc1" class="md-nav__link">
     <span class="md-ellipsis">
-      1.0.1rc0
+      1.0.1rc1
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.0.1rc0">
+    <nav class="md-nav" aria-label="1.0.1rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#september-25-2024" class="md-nav__link">
+  <a href="#october-1-2024" class="md-nav__link">
     <span class="md-ellipsis">
-      September 25, 2024
+      October 1, 2024
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#101rc0-breaking-changes" class="md-nav__link">
+  <a href="#101rc1-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      1.0.1rc0 Breaking Changes
+      1.0.1rc1 Breaking Changes
     </span>
   </a>
   
@@ -2908,8 +2908,8 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="101rc0">1.0.1rc0<a class="headerlink" href="#101rc0" title="Permanent link">&para;</a></h2>
-<h3 id="september-25-2024">September 25, 2024<a class="headerlink" href="#september-25-2024" title="Permanent link">&para;</a></h3>
+<h2 id="101rc1">1.0.1rc1<a class="headerlink" href="#101rc1" title="Permanent link">&para;</a></h2>
+<h3 id="october-1-2024">October 1, 2024<a class="headerlink" href="#october-1-2024" title="Permanent link">&para;</a></h3>
 <p>Release 1.0.1 <em>might</em> be the last release of ACA-Py from the Hyperledger
 organization before the repository moves to the <a href="https://openwallet.foundation/">OpenWallet Foundation</a> (OWF). As
 noted in the repository <a href="../">README.md</a>, the ACA-Py project will soon be
@@ -2917,7 +2917,9 @@ moving soon to the OWF's GitHub organization as the <a href="https://github.com/
 project</a>.</p>
 <p>For details on what this means for ACA-Py users, including steps for updating deployments, please follow the updates in <a href="https://github.com/hyperledger/aries-cloudagent-python/issues/3250">GitHub Issue #3250</a>. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!</p>
 <p>The release contains mostly internal clean ups, technical debt elimination, and
-a revision to the integration testing approach, incorporating the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness</a> tests in the ACA-Py continuous integration testing process.</p>
+a revision to the integration testing approach, incorporating the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness</a> tests in the ACA-Py continuous integration testing process. There are substantial enhancements in the
+management of keys and their use with <a href="https://www.w3.org/TR/vc-data-integrity/">VC-DI</a> proofs, and web-based DID methods like
+<code>did:web</code>. See the <code>Wallet and Key Handling</code> updates in the categorized PR list below.</p>
 <p>There are several important <strong><a href="#deprecation-notices">deprecation notices</a></strong>
 in this release in preparation for the next ACA-Py release. Please review these notifications carefully!</p>
 <p>In an attempt to shorten the categorized list of PRs in the release, rather than
@@ -2941,13 +2943,15 @@ list of those PRs.</p>
   configuration to load those protocols from the respective plugins.</p>
 </li>
 </ul>
-<h3 id="101rc0-breaking-changes">1.0.1rc0 Breaking Changes<a class="headerlink" href="#101rc0-breaking-changes" title="Permanent link">&para;</a></h3>
+<h3 id="101rc1-breaking-changes">1.0.1rc1 Breaking Changes<a class="headerlink" href="#101rc1-breaking-changes" title="Permanent link">&para;</a></h3>
 <p>There are no breaking changes in ACA-Py Release 1.0.1.</p>
-<h4 id="101rc0-categorized-list-of-pull-requests">1.0.1rc0 Categorized List of Pull Requests<a class="headerlink" href="#101rc0-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<h4 id="101rc1-categorized-list-of-pull-requests">1.0.1rc1 Categorized List of Pull Requests<a class="headerlink" href="#101rc1-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
 <ul>
 <li>
 <p>Wallet and Key Handling Updates</p>
 <ul>
+<li>Data integrity routes <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3261">#3261</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>[BUG] Handle get key operation when no tag has been set <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3256">#3256</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>Feature multikey management <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3246">#3246</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>chore: delete unused keypair storage manager <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3245">#3245</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
 </ul>
@@ -2983,6 +2987,8 @@ list of those PRs.</p>
 <li>
 <p>Dependencies and Internal Fixes/Updates:</p>
 <ul>
+<li>Adjust sonarcloud and integration test workflows <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3259">#3259</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>fix: enable refreshing did endpoint using mediator info <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3260">#3260</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
 <li>Removing padding from url invitations <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3238">#3238</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Ensure that DAP_PORT is always an int <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3241">#3241</a> <a href="https://github.com/Gavinok">Gavinok</a></li>
 <li>Fix logic to send verbose webhooks <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3193">#3193</a> <a href="https://github.com/ianco">ianco</a></li>
@@ -2995,13 +3001,14 @@ list of those PRs.</p>
 <li>
 <p>Release management pull requests:</p>
 <ul>
+<li>1.0.1rc1 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3268">#3268</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.0.1rc0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3254">#3254</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
 <li>
 <p>Dependabot PRs</p>
 <ul>
-<li><a href="https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-09-25+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-10-01+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 </ul>
