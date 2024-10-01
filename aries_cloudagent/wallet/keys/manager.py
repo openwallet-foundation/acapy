@@ -6,11 +6,44 @@ from ..key_type import ED25519
 from ..util import b58_to_bytes, bytes_to_b58
 from ...utils.multiformats import multibase
 from ...wallet.error import WalletNotFoundError
+from ...resolver.did_resolver import DIDResolver
 
 DEFAULT_ALG = "ed25519"
 ALG_MAPPINGS = {
-    "ed25519": {"key_type": ED25519, "prefix_hex": "ed01", "prefix_length": 2}
+    "ed25519": {
+        "key_type": ED25519,
+        "multikey_prefix": "z6Mk",
+        "prefix_hex": "ed01",
+        "prefix_length": 2,
+    }
 }
+
+
+def multikey_to_verkey(multikey: str, alg: str = DEFAULT_ALG):
+    """Transform multikey to verkey."""
+
+    prefix_length = ALG_MAPPINGS[alg]["prefix_length"]
+    public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_length:])
+
+    return bytes_to_b58(public_bytes)
+
+
+def verkey_to_multikey(verkey: str, alg: str = DEFAULT_ALG):
+    """Transform verkey to multikey."""
+
+    prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
+    prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
+
+    return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
+
+
+def key_type_from_multikey(multikey: str):
+    """Derive key_type class from multikey prefix."""
+    for mapping in ALG_MAPPINGS:
+        if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+            return ALG_MAPPINGS[mapping]["key_type"]
+
+    raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
 
 
 class MultikeyManagerError(Exception):
@@ -23,23 +56,37 @@ class MultikeyManager:
     def __init__(self, session: ProfileSession):
         """Initialize the MultikeyManager."""
 
+        self.session: ProfileSession = session
         self.wallet: BaseWallet = session.inject(BaseWallet)
 
-    def _multikey_to_verkey(self, multikey: str, alg: str = DEFAULT_ALG):
-        """Transform multikey to verkey."""
+    async def resolve_multikey_from_verification_method(self, kid: str):
+        """Derive a multikey from the verification method."""
+        resolver = self.session.inject(DIDResolver)
+        verification_method = await resolver.dereference(
+            profile=self.session.profile, did_url=kid
+        )
 
-        prefix_length = ALG_MAPPINGS[alg]["prefix_length"]
-        public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_length:])
+        if verification_method.type == "Multikey":
+            multikey = verification_method.public_key_multibase
 
-        return bytes_to_b58(public_bytes)
+        elif verification_method.type == "Ed25519VerificationKey2018":
+            multikey = verkey_to_multikey(verification_method.public_key_base58)
 
-    def _verkey_to_multikey(self, verkey: str, alg: str = DEFAULT_ALG):
-        """Transform verkey to multikey."""
+        elif verification_method.type == "Ed25519VerificationKey2020":
+            multikey = verkey_to_multikey(verification_method.public_key_multibase)
 
-        prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
-        prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
+        else:
+            raise MultikeyManagerError("Unknown verification method type.")
 
-        return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
+        return multikey
+
+    def key_type_from_multikey(self, multikey: str):
+        """Derive key_type class from multikey prefix."""
+        for mapping in ALG_MAPPINGS:
+            if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+                return ALG_MAPPINGS[mapping]["key_type"]
+
+        raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
 
     async def kid_exists(self, kid: str):
         """Check if kid exists."""
@@ -60,19 +107,17 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": self._verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey),
         }
 
     async def from_multikey(self, multikey: str):
         """Fetch a single key."""
 
-        key_info = await self.wallet.get_signing_key(
-            verkey=self._multikey_to_verkey(multikey)
-        )
+        key_info = await self.wallet.get_signing_key(verkey=multikey_to_verkey(multikey))
 
         return {
             "kid": key_info.kid,
-            "multikey": self._verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey),
         }
 
     async def create(self, seed: str = None, kid: str = None, alg: str = DEFAULT_ALG):
@@ -91,7 +136,7 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": self._verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey),
         }
 
     async def update(self, multikey: str, kid: str):
@@ -101,10 +146,10 @@ class MultikeyManager:
             raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
 
         key_info = await self.wallet.assign_kid_to_key(
-            verkey=self._multikey_to_verkey(multikey), kid=kid
+            verkey=multikey_to_verkey(multikey), kid=kid
         )
 
         return {
             "kid": key_info.kid,
-            "multikey": self._verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey),
         }

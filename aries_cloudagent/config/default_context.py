@@ -139,6 +139,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.settings")
         plugin_registry.register_plugin("aries_cloudagent.vc")
+        plugin_registry.register_plugin("aries_cloudagent.vc.data_integrity")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
         plugin_registry.register_plugin("aries_cloudagent.wallet.keys")
 
