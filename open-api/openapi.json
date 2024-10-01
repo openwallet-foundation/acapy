@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.0.1rc0"
+    "version" : "v1.0.1rc1"
   },
   "servers" : [ {
     "url" : "/"
@@ -7017,6 +7017,64 @@
         "tags" : [ "vc-api" ]
       }
     },
+    "/vc/di/add-proof" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddProof"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AddProofResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Add a DataIntegrityProof to a document.",
+        "tags" : [ "vc" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/vc/di/verify" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerifyDiRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VerifyDiResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Verify a document secured with a data integrity proof.",
+        "tags" : [ "vc" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
     "/vc/presentations/prove" : {
       "post" : {
         "requestBody" : {
@@ -7559,6 +7617,44 @@
         "type" : "object"
       },
       "ActionMenuModulesResult" : {
+        "type" : "object"
+      },
+      "AddProof" : {
+        "properties" : {
+          "document" : {
+            "example" : {
+              "hello" : "world"
+            },
+            "properties" : { },
+            "type" : "object"
+          },
+          "options" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/DataIntegrityProofOptions"
+            } ],
+            "example" : {
+              "cryptosuite" : "eddsa-jcs-2022",
+              "proofPurpose" : "assertionMethod",
+              "type" : "DataIntegrityProof",
+              "verificationMethod" : "did:web:example.com#key-01"
+            },
+            "type" : "object"
+          }
+        },
+        "required" : [ "document" ],
+        "type" : "object"
+      },
+      "AddProofResponse" : {
+        "properties" : {
+          "secured_document" : {
+            "example" : {
+              "hello" : "world"
+            },
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "required" : [ "secured_document" ],
         "type" : "object"
       },
       "AdminConfig" : {
@@ -9224,6 +9320,12 @@
             "enum" : [ "Endpoint", "Profile", "LinkedDomains" ],
             "example" : "Endpoint",
             "type" : "string"
+          },
+          "mediation_id" : {
+            "description" : "Medation ID to use for endpoint information.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+            "type" : "string"
           }
         },
         "required" : [ "did" ],
@@ -9445,6 +9547,74 @@
           }
         },
         "required" : [ "presentation_definition" ],
+        "type" : "object"
+      },
+      "DataIntegrityProofOptions" : {
+        "additionalProperties" : true,
+        "properties" : {
+          "challenge" : {
+            "description" : "The value is used once for a particular domain and window of time.                     This value is used to mitigate replay attacks.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "created" : {
+            "description" : "The date and time the proof was created is OPTIONAL and, if                     included, MUST be specified as an [XMLSCHEMA11-2]                         dateTimeStamp string",
+            "example" : "2010-01-01T19:23:24Z",
+            "type" : "string"
+          },
+          "cryptosuite" : {
+            "description" : "An identifier for the cryptographic suite that can be used to                     verify the proof.",
+            "example" : "eddsa-jcs-2022",
+            "type" : "string"
+          },
+          "domain" : {
+            "description" : "It conveys one or more security domains in which the proof is                     meant to be used.",
+            "example" : "example.com",
+            "type" : "string"
+          },
+          "expires" : {
+            "description" : "The expires property is OPTIONAL and, if present, specifies when                     the proof expires. If present, it MUST be an [XMLSCHEMA11-2]                         dateTimeStamp string",
+            "example" : "2010-01-01T19:23:24Z",
+            "type" : "string"
+          },
+          "id" : {
+            "description" : "An optional identifier for the proof, which MUST be a URL [URL],                     such as a UUID as a URN",
+            "example" : "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
+            "type" : "string"
+          },
+          "nonce" : {
+            "description" : "One use of this field is to increase privacy by decreasing                 linkability that is the result of deterministically                     generated signatures.",
+            "example" : "CF69iO3nfvqRsRBNElE8b4wO39SyJHPM7Gg1nExltW5vSfQA1lvDCR/zXX1To0/4NLo==",
+            "type" : "string"
+          },
+          "previousProof" : {
+            "description" : "Each value identifies another data integrity proof that                 MUST verify before the current proof is processed.",
+            "example" : "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
+            "type" : "string"
+          },
+          "proofPurpose" : {
+            "description" : "The proof purpose acts as a safeguard to prevent the                 proof from being misused by being applied to a purpose other than                     the one that was intended.",
+            "example" : "assertionMethod",
+            "type" : "string"
+          },
+          "proofValue" : {
+            "description" : "The value of the proof signature.",
+            "example" : "zsy1AahqbzJQ63n9RtekmwzqZeVj494VppdAVJBnMYrTwft6cLJJGeTSSxCCJ6HKnRtwE7jjDh6sB2z2AAiZY9BBnCD8wUVgwqH3qchGRCuC2RugA4eQ9fUrR4Yuycac3caiaaay",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "The specific type of proof MUST be specified as a string that maps                     to a URL [URL].",
+            "example" : "DataIntegrityProof",
+            "type" : "string"
+          },
+          "verificationMethod" : {
+            "description" : "A verification method is the means and information                 needed to verify the proof. ",
+            "example" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
+            "type" : "string"
+          }
+        },
+        "required" : [ "cryptosuite", "proofPurpose", "type", "verificationMethod" ],
         "type" : "object"
       },
       "Date" : {
@@ -16431,6 +16601,36 @@
         "properties" : {
           "results" : {
             "$ref" : "#/components/schemas/PresentationVerificationResult"
+          }
+        },
+        "type" : "object"
+      },
+      "VerifyDiRequest" : {
+        "properties" : {
+          "securedDocument" : {
+            "example" : {
+              "hello" : "world",
+              "proof" : [ {
+                "cryptosuite" : "eddsa-jcs-2022",
+                "proofPurpose" : "assertionMethod",
+                "type" : "DataIntegrityProof",
+                "verificationMethod" : "did:key:                            z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8#                                z6MksxraKwH8GR7NKeQ4HVZAeRKvD76kfd6G7jm8MscbDmy8",
+                "proofValue" : "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhu                            fjPjbeRmysHvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E"
+              } ]
+            },
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "required" : [ "securedDocument" ],
+        "type" : "object"
+      },
+      "VerifyDiResponse" : {
+        "properties" : {
+          "verified" : {
+            "description" : "Verified",
+            "example" : true,
+            "type" : "boolean"
           }
         },
         "type" : "object"

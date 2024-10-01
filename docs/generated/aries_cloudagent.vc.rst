@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   aries_cloudagent.vc.data_integrity
    aries_cloudagent.vc.ld_proofs
    aries_cloudagent.vc.vc_di
    aries_cloudagent.vc.vc_ld

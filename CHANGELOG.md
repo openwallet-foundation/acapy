@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.0.1rc0
+## 1.0.1rc1
 
-### September 25, 2024
+### October 1, 2024
 
 Release 1.0.1 _might_ be the last release of ACA-Py from the Hyperledger
 organization before the repository moves to the [OpenWallet Foundation] (OWF). As
@@ -17,9 +17,12 @@ For details on what this means for ACA-Py users, including steps for updating de
 [GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
 
 The release contains mostly internal clean ups, technical debt elimination, and
-a revision to the integration testing approach, incorporating the [Aries Agent Test Harness] tests in the ACA-Py continuous integration testing process.
+a revision to the integration testing approach, incorporating the [Aries Agent Test Harness] tests in the ACA-Py continuous integration testing process. There are substantial enhancements in the
+management of keys and their use with [VC-DI] proofs, and web-based DID methods like
+`did:web`. See the `Wallet and Key Handling` updates in the categorized PR list below.
 
 [Aries Agent Test Harness]: https://github.com/hyperledger/aries-agent-test-harness
+[VC-DI]: https://www.w3.org/TR/vc-data-integrity/
 
 There are several important **[deprecation notices](#deprecation-notices)**
 in this release in preparation for the next ACA-Py release. Please review these notifications carefully!
@@ -55,13 +58,15 @@ list of those PRs.
 [RFC 0453 Issue Credential v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0453-issue-credential-v2/
 [RFC 0454 Present Proof v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
 
-### 1.0.1rc0 Breaking Changes
+### 1.0.1rc1 Breaking Changes
 
 There are no breaking changes in ACA-Py Release 1.0.1.
 
-#### 1.0.1rc0 Categorized List of Pull Requests
+#### 1.0.1rc1 Categorized List of Pull Requests
 
 - Wallet and Key Handling Updates
+  - Data integrity routes [\#3261](https://github.com/hyperledger/aries-cloudagent-python/pull/3261) [PatStLouis](https://github.com/PatStLouis)
+  - [BUG] Handle get key operation when no tag has been set [\#3256](https://github.com/hyperledger/aries-cloudagent-python/pull/3256) [PatStLouis](https://github.com/PatStLouis)
   - Feature multikey management [\#3246](https://github.com/hyperledger/aries-cloudagent-python/pull/3246) [PatStLouis](https://github.com/PatStLouis)
   - chore: delete unused keypair storage manager [\#3245](https://github.com/hyperledger/aries-cloudagent-python/pull/3245) [dbluhm](https://github.com/dbluhm)
 
@@ -85,6 +90,8 @@ There are no breaking changes in ACA-Py Release 1.0.1.
   - Change integration testing [\#3194](https://github.com/hyperledger/aries-cloudagent-python/pull/3194) [jamshale](https://github.com/jamshale)
 
 - Dependencies and Internal Fixes/Updates:
+  - Adjust sonarcloud and integration test workflows [\#3259](https://github.com/hyperledger/aries-cloudagent-python/pull/3259) [jamshale](https://github.com/jamshale)
+  - fix: enable refreshing did endpoint using mediator info [\#3260](https://github.com/hyperledger/aries-cloudagent-python/pull/3260) [dbluhm](https://github.com/dbluhm)
   - Removing padding from url invitations [\#3238](https://github.com/hyperledger/aries-cloudagent-python/pull/3238) [jamshale](https://github.com/jamshale)
   - Ensure that DAP_PORT is always an int [\#3241](https://github.com/hyperledger/aries-cloudagent-python/pull/3241) [Gavinok](https://github.com/Gavinok)
   - Fix logic to send verbose webhooks [\#3193](https://github.com/hyperledger/aries-cloudagent-python/pull/3193) [ianco](https://github.com/ianco)
@@ -94,10 +101,11 @@ There are no breaking changes in ACA-Py Release 1.0.1.
   - [ POST v1.0.0 ] Adjust message queue error handling [\#3170](https://github.com/hyperledger/aries-cloudagent-python/pull/3170) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 1.0.1rc1 [\#3268](https://github.com/hyperledger/aries-cloudagent-python/pull/3268) [swcurran](https://github.com/swcurran)
   - 1.0.1rc0 [\#3254](https://github.com/hyperledger/aries-cloudagent-python/pull/3254) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-09-25+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-10-01+author%3Aapp%2Fdependabot+)
 
 ## 1.0.0
 
