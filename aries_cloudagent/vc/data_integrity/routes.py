@@ -12,7 +12,7 @@ from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from .manager import DataIntegrityManager, DataIntegrityManagerError
 from .models import DataIntegrityProofOptionsSchema, DataIntegrityProofOptions
-from ...wallet.error import WalletNotFoundError, WalletError
+from ...wallet.error import WalletError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ async def add_di_proof(request: web.BaseRequest):
 
         return web.json_response({"securedDocument": secured_document}, status=201)
 
-    except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
+    except (WalletError, DataIntegrityManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
 
@@ -138,7 +138,7 @@ async def verify_di_secured_document(request: web.BaseRequest):
             {"verificationResults": verification_response.serialize()}, status=400
         )
 
-    except (WalletNotFoundError, WalletError, DataIntegrityManagerError) as err:
+    except (WalletError, DataIntegrityManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
 
