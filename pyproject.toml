@@ -79,7 +79,7 @@ pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 pytest-cov = "^5.0.0"
 pytest-ruff = "^0.4.1"
-debugpy = "^1.8.5"
+debugpy = "^1.8.6"
 
 [tool.poetry.extras]
 askar = [
