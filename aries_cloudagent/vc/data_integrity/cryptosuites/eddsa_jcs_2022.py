@@ -16,6 +16,7 @@ from ..models.options import DataIntegrityProofOptions
 from ..models.proof import DataIntegrityProof
 from ..models.verification_response import ProblemDetails, DataIntegrityVerificationResult
 from ..errors import PROBLEM_DETAILS
+from datetime import datetime
 
 
 class CryptosuiteError(BaseError):
@@ -78,16 +79,10 @@ class EddsaJcs2022:
         ), 'Expected proof.cryptosuite to be "eddsa-jcs-2022'
 
         if proof_config.created:
-            # TODO assert proper [XMLSCHEMA11-2] dateTimeStamp string
-            assert (
-                proof_config.created
-            ), "Expected proof.created to be a [XMLSCHEMA11-2] dateTimeStamp string."
+            assert datetime.fromisoformat(proof_config.created)
 
         if proof_config.expires:
-            # TODO assert proper [XMLSCHEMA11-2] dateTimeStamp string
-            assert (
-                proof_config.expires
-            ), "Expected proof.expires to be a [XMLSCHEMA11-2] dateTimeStamp string."
+            assert datetime.fromisoformat(proof_config.expires)
 
         return self._canonicalize(proof_config.serialize())
 
@@ -199,7 +194,6 @@ class EddsaJcs2022:
         multikey = await MultikeyManager(
             self.session
         ).resolve_multikey_from_verification_method(options.verification_method)
-        # multikey = await self._resolve_multikey(options.verification_method)
         verkey = multikey_to_verkey(multikey)
         key_type = key_type_from_multikey(multikey)
         return await self.wallet.verify_message(
