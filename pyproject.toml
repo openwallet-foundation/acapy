@@ -60,11 +60,12 @@ ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 
 # didcommv2
 didcomm-messaging = {version = "^0.1.1a0", optional = true }
+canonicaljson = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.8.0"
 # Sync with version in .pre-commit-config.yaml
-ruff = "0.6.7"
+ruff = "0.6.8"
 
 sphinx="^5.3.0"
 sphinx-rtd-theme=">=0.4.3"
@@ -78,7 +79,7 @@ pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 pytest-cov = "^5.0.0"
 pytest-ruff = "^0.4.1"
-debugpy = "^1.8.5"
+debugpy = "^1.8.6"
 
 [tool.poetry.extras]
 askar = [
