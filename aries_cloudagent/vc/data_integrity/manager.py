@@ -80,7 +80,7 @@ class DataIntegrityManager:
                 input_document["proof"] = proof
                 verification_result = await suite.verify_proof(input_document)
 
-            except (AssertionError, DataIntegrityManagerError, DIDNotFound) as err:
+            except (DataIntegrityManagerError, DIDNotFound) as err:
                 problem_detail = ProblemDetails.deserialize(
                     PROBLEM_DETAILS["PROOF_VERIFICATION_ERROR"]
                 )

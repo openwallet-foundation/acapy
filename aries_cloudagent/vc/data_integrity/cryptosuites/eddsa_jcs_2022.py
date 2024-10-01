@@ -167,7 +167,7 @@ class EddsaJcs2022:
             if not verified:
                 raise CryptosuiteError("Invalid signature.")
 
-        except (AssertionError, CryptosuiteError) as err:
+        except CryptosuiteError as err:
             problem_detail = ProblemDetails.deserialize(
                 PROBLEM_DETAILS["PROOF_VERIFICATION_ERROR"]
             )
