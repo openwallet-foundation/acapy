@@ -37,7 +37,7 @@ By default the test suite runs using a default (SQLite) wallet, to run the tests
 using postgres run the following:
 
 ```bash
-# run the above commands, up to cd aries-cloudagent-python/demo
+# run the above commands, up to cd acapy/demo
 docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres:10
 ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 ```

@@ -1,4 +1,4 @@
-# Aries Cloud Agent Python (ACA-Py) Demos <!-- omit in toc -->
+# ACA-Py Demos <!-- omit in toc -->
 
 There are several demos available for ACA-Py mostly (but not only) aimed at developers learning how to deploy an instance of the agent and an ACA-Py controller to implement an application.
 
@@ -66,13 +66,13 @@ Open three `bash` shells. For Windows users, `git-bash` is highly recommended. b
 
 In the first terminal window, start `von-network` by following the [Building and Starting](https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md#building-and-starting) instructions.
 
-In the second terminal, change directory into `demo` directory of your clone of the Aries Cloud Agent Python repository. Start the `faber` agent by issuing the following command:
+In the second terminal, change directory into `demo` directory of your clone of the ACA-Py repository. Start the `faber` agent by issuing the following command:
 
 ``` bash
   ./run_demo faber
 ```
 
-In the third terminal, change directory into `demo` directory of your clone of the Aries Cloud Agent Python repository. Start the `alice` agent by issuing the following command:
+In the third terminal, change directory into `demo` directory of your clone of the ACA-Py repository. Start the `alice` agent by issuing the following command:
 
 ``` bash
   ./run_demo alice

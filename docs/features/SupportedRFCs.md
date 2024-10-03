@@ -94,7 +94,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Invitations using peer dids supporting connection reuse     | :white_check_mark:        |         |
 | Implicit pickup of messages in role of mediator | :white_check_mark:        |         |
 | [Revocable AnonCreds Credentials](https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation) | :white_check_mark:        |         |
-| Multi-Tenancy      | :white_check_mark:        | [Documentation](https://github.com/hyperledger/aries-cloudagent-python/blob/main/Multitenancy.md) |
+| Multi-Tenancy      | :white_check_mark:        | [Documentation](https://github.com/openwallet-foundation/acapy/blob/main/Multitenancy.md) |
 | Multi-Tenant Management | :white_check_mark: | The [Traction] open source project from BC Gov is a layer on top of ACA-Py that enables the easy management of ACA-Py tenants, with an Administrative UI ("The Innkeeper") and a Tenant UI for using ACA-Py in a web UI (setting up, issuing, holding and verifying credentials) |
 | Connection-less (non OOB protocol / AIP 1.0)               | :white_check_mark:        | Only for issue credential and present proof          |
 | Connection-less (OOB protocol / AIP 2.0)               | :white_check_mark:        | Only for present proof          |

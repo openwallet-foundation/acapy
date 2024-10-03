@@ -226,7 +226,7 @@ environments. Contributions back to the project are always welcome!
 
 ### What’s Next: The ACA-Py OpenAPI
 
-Are you going to build an app that uses Traction or an instance of the [Aries Cloud Agent Python](https://aca-py.org/) (ACA-Py)? If so, your next step is to try out the ACA-Py OpenAPI (aka Swagger)—by hand at first, and then from your application. This is a VERY high level overview, assuming a developer is following this, and knows a bunch about Aries protocols, using HTTP APIs, and using OpenAPI interfaces.
+Are you going to build an app that uses Traction or an instance of [ACA-Py](https://aca-py.org/)? If so, your next step is to try out the ACA-Py OpenAPI (aka Swagger)—by hand at first, and then from your application. This is a VERY high level overview, assuming a developer is following this, and knows a bunch about Aries protocols, using HTTP APIs, and using OpenAPI interfaces.
 
 To access and use your Tenant's OpenAPI (aka Swagger) interface:
 
@@ -252,7 +252,7 @@ invoking the right sequence of OpenAPI calls.
 
 ### What's Next: Experiment With an Issuer Web App
 
-If you are challenged to use Traction or [Aries Cloud Agent Python] to become an
+If you are challenged to use Traction or [ACA-Py] to become an
 issuer, you will likely be building API calls into your Line of Business web
 application. To get an idea of what that will entail, we're delighted to direct
 you to a very simple Web App that one of your predecessors on this same journey

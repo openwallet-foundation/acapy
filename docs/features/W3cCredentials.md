@@ -1,10 +1,10 @@
-## Verifiable Credential Data Integrity (VC-DI) Credentials in Aries Cloud Agent Python (ACA-Py)
+## Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py
 
 This document outlines a new functionality within Aries Agent that facilitates the issuance of credentials and presentations in compliance with the W3C standard.
 
 ### Table of Contents
 
-- [Verifiable Credential Data Integrity (VC-DI) Credentials in Aries Cloud Agent Python (ACA-Py)](#verifiable-credential-data-integrity-vc-di-credentials-in-aries-cloud-agent-python-aca-py)
+- [Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py](#verifiable-credential-data-integrity-vc-di-credentials-in-aca-py)
   - [Table of Contents](#table-of-contents)
   - [General Concept](#general-concept)
   - [Prerequisites](#prerequisites)
@@ -139,7 +139,7 @@ Ensure the credential data conforms to the VC-DI context.
 2. **Select Credential type**
 The ability to choose the credential type (indy, vc_di) to be issued. The credential type is used to determine the schema for the credential data.
 
-The format to change credential can be seen in the ["Demo Instruction"](../demo/README.md)
+The format to change credential can be seen in the [Demo Instruction](../demo/README.md)
 
 3. **Send the Credential:**
 Use the `/issue-credential-2.0/send` endpoint to issue the credential.
@@ -633,9 +633,9 @@ To verify presented proof, follow these steps:
 
 #### References and Resources
 
-- [Aries Cloud Agent Python Documentation](https://aca-py.org)
+- [ACA-Py Documentation](https://aca-py.org)
 - [Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/)
 - [Verifiable Presentations Data Model](https://www.w3.org/TR/vc-data-model/#presentations)
 - [DIF Presentation Format](https://identity.foundation/presentation-exchange/)
 - [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/)
-- ["Aries Cloud Agent Python (ACA-Py) Demos"](https://github.com/sarthakvijayvergiya/aries-cloudagent-python/blob/whatscookin/feat/vc-di-proof/docs/demo/README.md)
+- [ACA-Py Demos](https://github.com/sarthakvijayvergiya/aries-cloudagent-python/blob/whatscookin/feat/vc-di-proof/docs/demo/README.md)

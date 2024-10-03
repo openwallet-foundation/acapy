@@ -1,4 +1,4 @@
-# Aries Cloud Agent Python (ACA-Py) Demos <!-- omit in toc -->
+# ACA-Py Demos <!-- omit in toc -->
 
 The documentation for the ACA-Py demos is published on the [aca-py.org](https://aca-py.org) documentation site in the `Demos` tab. Jump over there to learn more about using ACA-Py and going through the many demos available.
 
