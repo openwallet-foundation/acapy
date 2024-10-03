@@ -124,7 +124,7 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
 11.    New images for the release are automatically published by the GitHubAction
    Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
    when a release is tagged, so no manual action is needed. The images are
-   published in the [Hyperledger Package Repository under
+   published in the [OpenWallet Foundation Package Repository under
    acapy](https://github.com/openwallet-foundation/packages?repo_name=acapy)
    and a link to the packages added to the repositories main page (under
    "Packages").
@@ -133,7 +133,7 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
    found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 
    In addition, the published documentation site [https://aca-py.org] should be automatically updated to include the new release via the [publish-docs] GitHub Action.
-   Additional information about that process and some related maintainance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.
+   Additional information about that process and some related maintenance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.
 
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-indy.yml

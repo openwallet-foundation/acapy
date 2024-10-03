@@ -21,7 +21,6 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Revocation](#revocation)
   - [DID Exchange](#did-exchange)
   - [Endorser](#endorser)
-  - [Run Indy-SDK Backend](#run-indy-sdk-backend)
   - [Mediation](#mediation)
   - [Multi-ledger](#multi-ledger)
   - [Multi-tenancy](#multi-tenancy)
@@ -279,14 +278,6 @@ With DID Exchange, you can also enable use of the inviter's public DID for invit
 
 This is described in [Endorser.md](Endorser.md)
 
-### Run Indy-SDK Backend
-
-This runs using the older (and not recommended) indy-sdk libraries instead of [Aries Askar](https://github.com/hyperledger/aries-ask):
-
-```bash
-./run_demo faber --wallet-type indy
-```
-
 ### Mediation
 
 To enable mediation, run the `alice` or `faber` demo with the `--mediation` option:
@@ -444,7 +435,7 @@ The controllers for this demo can be found in the [alice.py](https://github.com/
 
 ## OpenAPI (Swagger) Demo
 
-Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [Aries OpenAPI demo](AriesOpenAPIDemo.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connecting, issuing a credential, and presenting a proof sequence.
+Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [ACA-Py OpenAPI demo](OpenAPIDemo.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connecting, issuing a credential, and presenting a proof sequence.
 
 ## Performance Demo
 

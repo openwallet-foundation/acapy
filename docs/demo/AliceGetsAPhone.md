@@ -44,8 +44,8 @@ Of course for this, you need to have a mobile agent. To find, install and setup 
 Open a new bash shell and in a project directory run the following:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy.git
+cd acapy/demo
 ```
 
 We'll come back to this in a minute, when we start the `faber` agent!
@@ -94,8 +94,8 @@ To run the necessary terminal sessions in your browser, go to the Docker playgro
 Open a new bash shell and in a project directory run the following:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy.git
+cd acapy/demo
 ```
 
 We'll come back to this in a minute, when we start the `faber` agent!

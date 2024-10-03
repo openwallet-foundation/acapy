@@ -9,11 +9,7 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
 - [General Concept](#general-concept)
   - [Base and Sub Wallets](#base-and-sub-wallets)
   - [Usage](#usage)
-- [Multi-tenant Admin API](#multi-tenant-admin-api)
-- [Managed vs Unmanaged Mode](#managed-vs-unmanaged-mode)
-  - [Managed Mode](#managed-mode)
-  - [Unmanaged Mode](#unmanaged-mode)
-  - [Mode Usage](#mode-usage)
+      - [Single Wallet vs Multiple Wallets](#single-wallet-vs-multiple-wallets)
 - [Message Routing](#message-routing)
   - [Relaying](#relaying)
   - [Mediation](#mediation)
@@ -108,7 +104,7 @@ The mode used can be specified when creating a wallet using the `key_management_
 
 ## Message Routing
 
-In multi-tenant mode, when ACA-Py receives a message from another agent, it will need to determine which tenant to route the message to. Hyperledger Aries defines two types of routing methods, mediation and relaying.
+In multi-tenant mode, when ACA-Py receives a message from another agent, it will need to determine which tenant to route the message to. ACA-Py defines two types of routing methods, mediation and relaying.
 
 See the [Mediators and Relays](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0046-mediators-and-relays/README.md) RFC for an in-depth description of the difference between the two concepts.
 
@@ -385,7 +381,7 @@ curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
 
 ### Per tenant settings
 
-To allow the configuring of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
+To allow the configuring of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/openwallet-foundation/acapy/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
 
 | Labels |   | Setting  |
 |---|---|---|

@@ -1,4 +1,4 @@
-# Developer's Read Me for Hyperledger Aries Cloud Agent - Python <!-- omit in toc -->
+# Developer's Read Me for ACA-Py <!-- omit in toc -->
 
 See the [README](../../README.md) for details about this repository and information about how the Aries Cloud Agent - Python fits into the Aries project and relates to Indy.
 
@@ -59,7 +59,7 @@ variable:
 
 For a comprehensive list of all arguments, argument groups, CLI args, and their environment variable equivalents, please
 see
-the [argparse.py](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/config/argparse.py)
+the [argparse.py](https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/config/argparse.py)
 file.
 
 
@@ -126,7 +126,7 @@ aca-py start    --inbound-transport http 0.0.0.0 8000 \
                 --outbound-transport http
 ```
 
-ACA-Py ships with both inbound and outbound transport drivers for `http` and `ws` (websockets). Additional transport drivers can be added as pluggable implementations. See the existing implementations in the [transports module](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/transport) for getting started on adding a new transport.
+ACA-Py ships with both inbound and outbound transport drivers for `http` and `ws` (websockets). Additional transport drivers can be added as pluggable implementations. See the existing implementations in the [transports module](https://github.com/openwallet-foundation/acapy/tree/main/aries_cloudagent/transport) for getting started on adding a new transport.
 
 Most configuration parameters are provided to the agent at startup. Refer to the `Running` sections above for details on listing the available command line parameters.
 
@@ -258,7 +258,7 @@ Please also refer to the [contributing guidelines](../../CONTRIBUTING.md) and [c
 
 ## Publishing Releases
 
-The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/main/PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
+The [publishing](../../PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
 
 ## Dynamic Injection of Services
 

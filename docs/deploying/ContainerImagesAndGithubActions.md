@@ -8,7 +8,7 @@ critical to the adoption of not only ACA-Py but also decentralized trust/SSI
 more generally.
 
 Recognizing how critical these images are to the success of ACA-Py and
-consistent with Hyperledger's commitment to open collaboration, container images
+consistent with the OpenWallet Foundation's commitment to open collaboration, container images
 are now built and published directly from the Aries Cloud Agent - Python project
 repository and made available through the [Github Packages Container
 Registry](https://ghcr.io).
@@ -91,7 +91,7 @@ variants and between the BC Gov ACA-Py images.
   when manually triggered; builds and pushes the Standard ACA-Py variant to the
   Github Container Registry.
 - BDD Integration Tests (`.github/workflows/BDDTests.yml`) - Run on pull
-  requests (to the hyperledger fork only); runs BDD integration tests.
+  requests (to the openwallet-foundation fork only); runs BDD integration tests.
 - Format (`.github/workflows/format.yml`) - Run on pull requests;
   checks formatting of files modified by the PR.
 - CodeQL (`.github/workflows/codeql.yml`) - Run on pull requests; performs

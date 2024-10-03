@@ -1,6 +1,6 @@
 # JSON-LD Credentials in ACA-Py <!-- omit in toc -->
 
-By design Hyperledger Aries is credential format agnostic. This means you can use it for any credential format, as long as an RFC is defined for the specific credential format. ACA-Py currently supports two types of credentials, Indy and JSON-LD credentials. This document describes how to use the latter by making use of [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) using [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs).
+By design ACA-Py is credential format agnostic. This means you can use it for any credential format, as long as an RFC is defined for the specific credential format. ACA-Py currently supports two types of credentials, AnonCreds and JSON-LD credentials. This document describes how to use the latter by making use of [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) using [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs).
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -212,7 +212,7 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
 
 ## Present Proof
 
-> ⚠️ TODO: [https://github.com/openwallet-foundation/acapy/pull/1125](https://github.com/hyperledger/aries-cloudagent-python/pull/1125)
+> ⚠️ TODO: [https://github.com/openwallet-foundation/acapy/pull/1125](https://github.com/openwallet-foundation/acapy/pull/1125)
 
 ## VC-API
 
@@ -228,7 +228,7 @@ These endpoints include:
 - `POST /vc/presentations/prove` -> proves a presentation
 - `POST /vc/presentations/verify` -> verifies a presentation
 
-To learn more about using these endpoints, please refer to the available [postman collection](../demo/AriesPostmanDemo.md#experimenting-with-the-vc-api-endpoints).
+To learn more about using these endpoints, please refer to the available [postman collection](../demo/PostmanDemo.md#experimenting-with-the-vc-api-endpoints).
 
 ## External Suite Provider
 

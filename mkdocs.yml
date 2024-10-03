@@ -103,14 +103,14 @@ nav:
     - Code Generation with the Open API: features/UsingOpenAPI.md
     - ACA-Py as a DIDComm Mediator: features/Mediation.md
 - Demos:
-    - Hyperledger Aries / AnonCreds Workshop: demo/Aries-Workshop.md
+    - ACA-Py / AnonCreds Workshop: demo/ACA-Py-Workshop.md
     - The Alice-Faber Demo: demo/README.md
-    - Open API Tutorial: demo/AriesOpenAPIDemo.md
+    - Open API Tutorial: demo/OpenAPIDemo.md
     - Alice Gets a Phone: demo/AliceGetsAPhone.md
     - Hyperledger Indy Endorser In Action: demo/Endorser.md
     - Using W3C JSON-LD Credentials: demo/AliceWantsAJsonCredential.md
     - DIY -- ACME Controller Workshop: demo/AcmeDemoWorkshop.md
-    - ACA-Py Using Postman Demo: demo/AriesPostmanDemo.md
+    - ACA-Py Using Postman Demo: demo/PostmanDemo.md
     - Reusing a Connection Between Agents: demo/ReusingAConnection.md
 - Getting Started:
     - Becoming an ACA-Py Developer: gettingStarted/README.md
@@ -152,7 +152,7 @@ nav:
 - Contributing:
     - How to Contribute: CONTRIBUTING.md
     - Maintainers: MAINTAINERS.md
-    - Hyperledger Code of Conduct: CODE_OF_CONDUCT.md
+    - Code of Conduct: CODE_OF_CONDUCT.md
     - Security Vulnerability Reporting: SECURITY.md
     - Publishing an ACA-Py Release: PUBLISHING.md
     - Managing the ACA-Py Documentation Site: Managing-ACA-Py-Doc-Site.md

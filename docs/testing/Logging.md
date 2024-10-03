@@ -92,7 +92,7 @@ args=('acapy.log', 'd', 7, 1,)
 format=%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s
 ```
 
-For `DictConfig` (`dict` logging config file), find an example in [default_per_tenant_logging_config.yml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/config/default_per_tenant_logging_config.yml) with same attributes as `default_per_tenant_logging_config.ini` file.
+For `DictConfig` (`dict` logging config file), find an example in [default_per_tenant_logging_config.yml](https://github.com/openwallet-foundation/acapy/tree/main/aries_cloudagent/config/default_per_tenant_logging_config.yml) with same attributes as `default_per_tenant_logging_config.ini` file.
 
 ```yaml
 version: 1

@@ -69,8 +69,8 @@ To run the necessary terminal sessions in your browser, go to the Docker playgro
 In a browser, go to the [Play with Docker](https://labs.play-with-docker.com/) home page, Login (if necessary) and click "Start." On the next screen, click (in the left menu) "+Add a new instance."  That will start up a terminal in your browser. Run the following commands to start the Faber agent.
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy
+cd acapy/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --no-auto --bg
 
 ```
@@ -97,8 +97,8 @@ Once the Faber agent has started up (with the invite displayed), click the link 
 Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy
+cd acapy/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice --events --no-auto --bg
 
 ```
@@ -135,8 +135,8 @@ To begin running the demo in Docker, open up two terminal windows, one each for 
 In the first terminal window, clone the ACA-Py repo, change into the demo folder and start the Faber agent:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy
+cd acapy/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --no-auto --bg
 
 ```
