@@ -99,13 +99,13 @@ with the Indy SDK. Switch to Aries Askar to eliminate that warning.
 If you have an existing deployment, in changing the `--wallet-type`
 configuration setting, your database must be migrated from the Indy SDK format
 to Aries Askar format. In order to facilitate the migration, an Indy SDK to
-Askar migration script has been published in the [aries-acapy-tools] repository.
+Askar migration script has been published in the [acapy-tools] repository.
 There is lots of information in that repository about the migration tool and how
 to use it. The following is a summary of the steps you will have to perform. Of
 course, all deployments are a little (or a lot!) different, and your exact steps
 will be dependent on where and how you have deployed ACA-Py.
 
-[aries-acapy-tools]: https://github.com/hyperledger/aries-acapy-tools
+[acapy-tools]: https://github.com/openwallet-foundation/acapy-tools
 
 Note that in these steps you will have to take your ACA-Py instance offline, so
 scheduling the maintenance must be a part of your migration plan. You will also
@@ -117,7 +117,7 @@ through these steps before upgrading your production deployment. As well, it is
 good if you can make a copy of your production database and test the migration
 on the real (copy) database before the actual upgrade.
 
-* Prepare a way to run the Askar Upgrade script from the [aries-acapy-tools]
+* Prepare a way to run the Askar Upgrade script from the [acapy-tools]
   repository. For example, you might want to prepare a container that you can
   run in the same environment that you run ACA-Py (e.g., within Kubernetes or
   OpenShift).
@@ -155,8 +155,8 @@ about 7 minutes. The entire app downtime was less than 20 minutes.
 ## Questions?
 
 If you have questions, comments, or suggestions about the upgrade process,
-please use the Aries Cloud Agent Python channel on [Hyperledger Discord], or
+please use the ACA-Py channel on [OpenWallet Foundation Discord], or
 submit a [GitHub issue to the ACA-Py repository].
 
-[Hyperledger Discord]: https://discord.gg/hyperledger
-[GitHub issue to the ACA-Py repository]: https://github.com/hyperledger/aries-cloudagent-python/issues
+[OpenWallet Foundation Discord]: https://discord.gg/openwallet-foundation
+[GitHub issue to the ACA-Py repository]: https://github.com/openwallet-foundation/acapy/issues

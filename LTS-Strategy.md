@@ -1,6 +1,6 @@
-# LTS Strategy
+# ACA-Py LTS Strategy
 
-This document defines the Long-term support (LTS) release strategy for Hyperledger Aries Cloud Agent Python (ACA-Py). This document is inspired from the [Hyperledger Fabric Release Strategy](https://github.com/hyperledger/fabric-rfcs/blob/main/text/0005-lts-release-strategy.md). 
+This document defines the Long-term support (LTS) release strategy for ACA-Py. This document is inspired from the [Hyperledger Fabric Release Strategy](https://github.com/hyperledger/fabric-rfcs/blob/main/text/0005-lts-release-strategy.md). 
 
 Long-term support definition from wikipedia.org:
 
@@ -10,14 +10,14 @@ Long-term support definition from wikipedia.org:
 
 ## Motivation
 
-Many of those using ACA-Py rely upon the [Docker images](https://github.com/hyperledger/aries-cloudagent-python/pkgs/container/aries-cloudagent-python) which are published nightly and the [releases](https://github.com/hyperledger/aries-cloudagent-python/releases). These images contain the project dependencies/libraries which need constant security vulnerability monitoring and patching.
+Many of those using ACA-Py rely upon the [Docker images](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent) which are published nightly and the [releases](https://github.com/openwallet-foundation/acapy/releases). These images contain the project dependencies/libraries which need constant security vulnerability monitoring and patching.
 
-This is one of the factors which motivated setting up the LTS releases which requires the docker images to be scanned regularly and patching them for vulnerabilies. 
+This is one of the factors which motivated setting up the LTS releases which requires the docker images to be scanned regularly and patching them for vulnerabilities.
 
 In addition to this, administrators can expect the following of a LTS release:
 
 - Stable and well-tested code
-- A list of supported RFCs and features for each LTS version from this [document](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/features/SupportedRFCs.md).
+- A list of supported RFCs and features for each LTS version from this [document](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md).
 - Minimal set of feature additions and other changes that can easily be applied, reducing the risk of functional regressions and bugs
 
 Similarly, there are benefits to ACA-Py maintainers, code contributors, and the wider community:
@@ -43,7 +43,7 @@ If a major release is not delivered for an extended period of time, the maintain
 
 ### LTS 3rd Digit Patch Releases
 
-For LTS releases, 3rd digit patch releases will be provided for bug and security fixes approximately every three months based on the fixes (or lack thereof) to be applied. In order to ensure the stability of the LTS release and reduce the risk of functional regressions and bugs, significant new features and other changes occuring on the `main` branch, and released in later minor or major versions will not be included in LTS patch releases.
+For LTS releases, 3rd digit patch releases will be provided for bug and security fixes approximately every three months based on the fixes (or lack thereof) to be applied. In order to ensure the stability of the LTS release and reduce the risk of functional regressions and bugs, significant new features and other changes occurring on the `main` branch, and released in later minor or major versions will not be included in LTS patch releases.
 
 ### LTS Release Duration
 
@@ -51,18 +51,17 @@ When a *new* LTS release is designated, an "end-of-life" date will be set as bei
 
 ### LTS to LTS Compatibility
 
-Features related to ACA-Py capabilities are documented in the [Supported RFCs and features](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/features/SupportedRFCs.md), in the ACA-Py [ChangeLog](https://github.com/hyperledger/aries-cloudagent-python/blob/main/CHANGELOG.md), and in documents updated and added as part of each ACA-Py Release. LTS to LTS compatibility can be determined from reviewing those sources.
+Features related to ACA-Py capabilities are documented in the [Supported RFCs and features](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md), in the ACA-Py [ChangeLog](https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md), and in documents updated and added as part of each ACA-Py Release. LTS to LTS compatibility can be determined from reviewing those sources.
 
 ### Upgrade Testing
 
-The ACA-Py project expects to test and provide guidance on all major/minor upgrades (e.g. 0.11 to 0.12). Other upgrade paths will not be tested and are not guaranteed to work. Consult the [ChangeLog](https://github.com/hyperledger/aries-cloudagent-python/blob/main/CHANGELOG.md) and its pointers to release-to-release upgrade information for guidance.
+The ACA-Py project expects to test and provide guidance on all major/minor upgrades (e.g. 0.11 to 0.12). Other upgrade paths will not be tested and are not guaranteed to work. Consult the [ChangeLog](https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md) and its pointers to release-to-release upgrade information for guidance.
 
 ## Prior art and alternatives
-[prior-art]: #prior-art
 
 While many open source projects provide LTS releases, there is no industry standard for LTS release approach. Projects use many different variants of LTS approaches to best suit their project's particular needs.
 
-This release strategy was based on the following opensource projects:
+This release strategy was based on the following open source projects:
 
 - [Hyperledger Fabric](https://github.com/hyperledger/fabric-rfcs/blob/main/text/0005-lts-release-strategy.md)
 - [NodeJS](https://nodejs.org/en/about/previous-releases)

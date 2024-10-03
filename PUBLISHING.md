@@ -57,9 +57,9 @@ The output should look like this -- and what you see in [CHANGELOG.md](CHANGELOG
 
 ```text
 
-  - chore(deps): Bump mkdocs-material from 9.5.34 to 9.5.36 [\#3249](https://github.com/hyperledger/aries-cloudagent-python/pull/3249) [app/dependabot](https://github.com/app/dependabot)
-  - chore(deps-dev): Bump ruff from 0.6.5 to 0.6.7 [\#3248](https://github.com/hyperledger/aries-cloudagent-python/pull/3248) [app/dependabot](https://github.com/app/dependabot)
-  - Feature multikey management [\#3246](https://github.com/hyperledger/aries-cloudagent-python/pull/3246) [PatStLouis](https://github.com/PatStLouis)
+  - Only change interop testing fork on pull requests [\#3218](https://github.com/openwallet-foundation/acapy/pull/3218) [jamshale](https://github.com/jamshale)
+  - Remove the RC from the versions table [\#3213](https://github.com/openwallet-foundation/acapy/pull/3213) [swcurran](https://github.com/swcurran)
+  - Feature multikey management [\#3246](https://github.com/openwallet-foundation/acapy/pull/3246) [PatStLouis](https://github.com/PatStLouis)
 
 ```
 
@@ -72,7 +72,7 @@ Once you have the list of PRs:
 
 ```text
 - Dependabot PRs
-  - [List of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-16..2024-09-16+author%3Aapp%2Fdependabot+)
+  - [List of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-16..2024-09-16+author%3Aapp%2Fdependabot+)
 ```
 
 Include a PR for this soon-to-be PR. You can guess at the number of the PR by using this command `gh issue list -s all -L 2; gh pr ls -s all -L 2` to see the highest PR and issues, but you still might have to correct the number after you create the PR if someone sneaks one in before you submit your PR.
@@ -116,7 +116,7 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
 
 10.   Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
-   version in [pyproject.toml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/pyproject.toml). Use
+   version in [pyproject.toml](https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
@@ -125,7 +125,7 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
    Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
    when a release is tagged, so no manual action is needed. The images are
    published in the [Hyperledger Package Repository under
-   aries-cloudagent-python](https://github.com/orgs/hyperledger/packages?repo_name=aries-cloudagent-python)
+   acapy](https://github.com/openwallet-foundation/packages?repo_name=acapy)
    and a link to the packages added to the repositories main page (under
    "Packages").
 
@@ -135,10 +135,10 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
    In addition, the published documentation site [https://aca-py.org] should be automatically updated to include the new release via the [publish-docs] GitHub Action.
    Additional information about that process and some related maintainance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.
 
-[publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
-[publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
+[publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
+[publish-indy.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-indy.yml
 
-12.  When a new release is tagged, create a new branch at the same commit with
+1.   When a new release is tagged, create a new branch at the same commit with
     the branch name in the format `docs-v<version>`, for example, `docs-v1.0.1rc1`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
@@ -148,7 +148,7 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
     publishing process and some related maintenance activities that are needed
     from time to time can be found in the [Managing the ACA-Py Documentation Site] document.
 
-[publish-docs]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-docs.yml
+[publish-docs]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml
 [Managing the ACA-Py Documentation Site]: Managing-ACA-Py-Doc-Site.md
 [https://aca-py.org]: https://aca-py.org
 

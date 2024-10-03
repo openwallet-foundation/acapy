@@ -9,7 +9,7 @@ By no means is ACA-Py limited to these tools; they are merely examples.
 
 ## Caveats
 
-The primary use case for this `devcontainer` is for developing, debugging and unit testing (pytest) the [aries_cloudagent](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent) source code.
+The primary use case for this `devcontainer` is for developing, debugging and unit testing (pytest) the [aries_cloudagent](https://github.com/openwallet-foundation/acapy/tree/main/acapy_agent) source code.
 
 There are limitations running this devcontainer, such as all networking is within this container. This container has [docker-in-docker](https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/docker-in-docker.md) which allows running demos, building docker images, running `docker compose` all within this container.
 
@@ -44,7 +44,7 @@ To open ACA-Py in a devcontainer, we open the *root* of this repository. We can 
 
 #### devcontainer.json
 
-When the [.devcontainer/devcontainer.json](https://github.com/hyperledger/aries-cloudagent-python/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.12 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
+When the [.devcontainer/devcontainer.json](https://github.com/openwallet-foundation/acapy/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.12 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
 
 ### Poetry
 
@@ -59,7 +59,7 @@ ruff check .
 poetry --version
 ```
 
-The first command should show you that `aries_cloudagent` module is loaded (ACA-Py). The others are examples of code quality checks that ACA-Py does on commits (if you have [`precommit`](https://pre-commit.com) installed) and Pull Requests.
+The first command should show you that `acapy_agent` module is loaded (ACA-Py). The others are examples of code quality checks that ACA-Py does on commits (if you have [`precommit`](https://pre-commit.com) installed) and Pull Requests.
 
 When running `ruff check .` in the terminal, you may see `error: Failed to initialize cache at /.ruff_cache: Permission denied (os error 13)` - that's ok. If there are actual ruff errors, you should see something like:
 
@@ -73,7 +73,7 @@ Found 1 error.
 
 We have added Ruff extensions. Although we have added launch settings for both `ruff`, you can also use the extension commands from the command palette.
 
-- `ruff (format) - aries_cloudagent`
+- `ruff (format) - acapy_agent`
 
 More importantly, these extensions are now added to document save, so files will be formatted and checked. We advise that after each time you rebuild the container that you also perform: `Developer: Reload Window` to ensure the extensions are loaded correctly.
 

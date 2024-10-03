@@ -23,11 +23,11 @@ gh pr list -S "merged:>${1}"  -L 1000 --state merged --json number,title,author 
    sed -e "s/\\\t/ /g" \
       -e "s/\"//g" \
       -e "s/WwW /\[\\\#/" \
-      -e "s# XxX #\\](https://github.com/hyperledger/aries-cloudagent-python/pull/#" \
+      -e "s# XxX #\\](https://github.com/openwallet-foundation/acapy/pull/#" \
       -e "s/ YyY /) \\[/" \
       -e "s# ZzZ #\\](https://github.com/#" \
       -e "s/$/)/" \
       -e "/app.dependabot/d"
 now=$(date +%Y-%m-%d)
 echo "- Dependabot PRs"
-echo "  - [Link to list of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A${1}..${now}+author%3Aapp%2Fdependabot+)"
+echo "  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A${1}..${now}+author%3Aapp%2Fdependabot+)"

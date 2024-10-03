@@ -14,10 +14,10 @@ verifiable credential experience in 30 minutes or less.
 
 Now that you have a wallet, how about being an issuer, and experience what is needed on that side of an exchange?
 To do that, try the [Traction AnonCreds Workshop]. Get your own (temporary -- it will be gone in a few weeks!)
-Aries Cloud Agent Python-based issuer/verifier agent. Connect to the wallet on your mobile phone, issue a credential
+ACA-Py-based issuer/verifier agent. Connect to the wallet on your mobile phone, issue a credential
 and then present it back. Lots to learn, without ever leaving your browser!
 
-[Traction AnonCreds Workshop]: https://github.com/bcgov/traction/blob/main/docs/traction-anoncreds-workshop.md
+[Traction AnonCreds Workshop]: ../demo/Aries-Workshop.md
 
 ## More demos, please
 

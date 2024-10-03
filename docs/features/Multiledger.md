@@ -22,7 +22,7 @@ More background information including problem statement, design (algorithm) and 
 
 Multi-ledger is disabled by default. You can enable support for multiple ledgers using the `--genesis-transactions-list` startup parameter. This parameter accepts a string which is the path to the `YAML` configuration file. For example:
 
-`--genesis-transactions-list ./aries_cloudagent/config/multi_ledger_config.yml`
+`--genesis-transactions-list ./acapy_agent/config/multi_ledger_config.yml`
 
 If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-file, --genesis-transactions` should not be specified.
 
@@ -176,7 +176,7 @@ Once you re-start ACA-Py, you can check the `GET /ledger/taa` endpoint to verify
 
 There should be no impact/change in functionality to any ACA-Py protocols.
 
-`IndySdkLedger` was refactored by replacing `wallet: IndySdkWallet` instance variable with `profile: Profile` and accordingly `.aries_cloudagent/indy/credex/verifier`, `.aries_cloudagent/indy/models/pres_preview`, `.aries_cloudagent/indy/sdk/profile.py`, `.aries_cloudagent/indy/sdk/verifier`, `./aries_cloudagent/indy/verifier` were also updated.
+`IndySdkLedger` was refactored by replacing `wallet: IndySdkWallet` instance variable with `profile: Profile` and accordingly `.acapy_agent/indy/credex/verifier`, `.acapy_agent/indy/models/pres_preview`, `.acapy_agent/indy/sdk/profile.py`, `.acapy_agent/indy/sdk/verifier`, `./acapy_agent/indy/verifier` were also updated.
 
 Added `build_and_return_get_nym_request` and `submit_get_nym_request` helper functions to `IndySdkLedger` and `IndyVdrLedger`.
 
@@ -184,31 +184,31 @@ Best practice/feedback emerging from `Askar session deadlock` issue and `endorse
 
 These changes are made here:
 
-- `./aries_cloudagent/ledger/routes.py`
-- `./aries_cloudagent/messaging/credential_definitions/routes.py`
-- `./aries_cloudagent/messaging/schemas/routes.py`
-- `./aries_cloudagent/protocols/actionmenu/v1_0/routes.py`
-- `./aries_cloudagent/protocols/actionmenu/v1_0/util.py`
-- `./aries_cloudagent/protocols/basicmessage/v1_0/routes.py`
-- `./aries_cloudagent/protocols/coordinate_mediation/v1_0/handlers/keylist_handler.py`
-- `./aries_cloudagent/protocols/coordinate_mediation/v1_0/routes.py`
-- `./aries_cloudagent/protocols/endorse_transaction/v1_0/routes.py`
-- `./aries_cloudagent/protocols/introduction/v0_1/handlers/invitation_handler.py`
-- `./aries_cloudagent/protocols/introduction/v0_1/routes.py`
-- `./aries_cloudagent/protocols/issue_credential/v1_0/handlers/credential_issue_handler.py`
-- `./aries_cloudagent/protocols/issue_credential/v1_0/handlers/credential_offer_handler.py`
-- `./aries_cloudagent/protocols/issue_credential/v1_0/handlers/credential_proposal_handler.py`
-- `./aries_cloudagent/protocols/issue_credential/v1_0/handlers/credential_request_handler.py`
-- `./aries_cloudagent/protocols/issue_credential/v1_0/routes.py`
-- `./aries_cloudagent/protocols/issue_credential/v2_0/routes.py`
-- `./aries_cloudagent/protocols/present_proof/v1_0/handlers/presentation_handler.py`
-- `./aries_cloudagent/protocols/present_proof/v1_0/handlers/presentation_proposal_handler.py`
-- `./aries_cloudagent/protocols/present_proof/v1_0/handlers/presentation_request_handler.py`
-- `./aries_cloudagent/protocols/present_proof/v1_0/routes.py`
-- `./aries_cloudagent/protocols/trustping/v1_0/routes.py`
-- `./aries_cloudagent/resolver/routes.py`
-- `./aries_cloudagent/revocation/routes.py`
+- `./acapy_agent/ledger/routes.py`
+- `./acapy_agent/messaging/credential_definitions/routes.py`
+- `./acapy_agent/messaging/schemas/routes.py`
+- `./acapy_agent/protocols/actionmenu/v1_0/routes.py`
+- `./acapy_agent/protocols/actionmenu/v1_0/util.py`
+- `./acapy_agent/protocols/basicmessage/v1_0/routes.py`
+- `./acapy_agent/protocols/coordinate_mediation/v1_0/handlers/keylist_handler.py`
+- `./acapy_agent/protocols/coordinate_mediation/v1_0/routes.py`
+- `./acapy_agent/protocols/endorse_transaction/v1_0/routes.py`
+- `./acapy_agent/protocols/introduction/v0_1/handlers/invitation_handler.py`
+- `./acapy_agent/protocols/introduction/v0_1/routes.py`
+- `./acapy_agent/protocols/issue_credential/v1_0/handlers/credential_issue_handler.py`
+- `./acapy_agent/protocols/issue_credential/v1_0/handlers/credential_offer_handler.py`
+- `./acapy_agent/protocols/issue_credential/v1_0/handlers/credential_proposal_handler.py`
+- `./acapy_agent/protocols/issue_credential/v1_0/handlers/credential_request_handler.py`
+- `./acapy_agent/protocols/issue_credential/v1_0/routes.py`
+- `./acapy_agent/protocols/issue_credential/v2_0/routes.py`
+- `./acapy_agent/protocols/present_proof/v1_0/handlers/presentation_handler.py`
+- `./acapy_agent/protocols/present_proof/v1_0/handlers/presentation_proposal_handler.py`
+- `./acapy_agent/protocols/present_proof/v1_0/handlers/presentation_request_handler.py`
+- `./acapy_agent/protocols/present_proof/v1_0/routes.py`
+- `./acapy_agent/protocols/trustping/v1_0/routes.py`
+- `./acapy_agent/resolver/routes.py`
+- `./acapy_agent/revocation/routes.py`
 
 ## Known Issues
 
-- When in multi-ledger mode and switching ledgers (e.g.: the agent is registered on Ledger A and has published its DID there, and now wants to "move" to Ledger B) there is an [issue](https://github.com/hyperledger/aries-cloudagent-python/issues/2473) that will cause the registration to the new ledger to fail.
+- When in multi-ledger mode and switching ledgers (e.g.: the agent is registered on Ledger A and has published its DID there, and now wants to "move" to Ledger B) there is an [issue](https://github.com/openwallet-foundation/acapy/issues/2473) that will cause the registration to the new ledger to fail.

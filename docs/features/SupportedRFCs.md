@@ -1,4 +1,4 @@
-# Aries AIP and RFCs Supported in Aries Cloud Agent Python
+# Aries AIP and RFCs Supported in ACA-Py
 
 This document provides a summary of the adherence of ACA-Py to the [Aries Interop
 Profiles](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile),
@@ -6,7 +6,7 @@ and an overview of the ACA-Py feature set. This document is
 manually updated and as such, may not be up to date with the most recent release of
 ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page are
 welcome! If you have any questions, please contact us on the #aries channel on
-[Hyperledger Discord](https://discord.gg/hyperledger) or through an issue in this repo.
+[OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
 **Last Update**: 2024-10-01, Release 1.0.1rc1
 
@@ -17,7 +17,7 @@ welcome! If you have any questions, please contact us on the #aries channel on
 
 See the [Aries Agent Test Harness](https://github.com/hyperledger/aries-agent-test-harness) and the
 [Aries Interoperability Status](https://aries-interop.info) for daily interoperability test run results between
-ACA-Py and other Aries Frameworks and Agents.
+ACA-Py and other decentralized trust Frameworks and Agents.
 
 | AIP Version | Supported | Notes |
 |  - | :-------: | -------- |

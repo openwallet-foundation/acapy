@@ -1,6 +1,7 @@
-# Aries Routing - an example
+# DIOComm Routing - an example
 
-In this example, we'll walk through an example of complex routing in Aries, outlining some of the possibilities that can be implemented.
+In this example, we'll walk through an example of complex DIDComm routing, outlining some of the possibilities that can be implemented. Do realize that
+the vast majority of the work is already done for you if you are just using ACA-Py. You have to define the setup your agents will use, and ACA-Py will take care of all the messy details described below.
 
 We'll start with the Alice and Bob example from the [Cross Domain Messaging](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0094-cross-domain-messaging) Aries RFC.
 

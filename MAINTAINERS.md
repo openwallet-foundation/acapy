@@ -3,7 +3,7 @@
 ## Maintainer Scopes, GitHub Roles and GitHub Teams
 
 The Maintainers of this repo, defined as GitHub users with escalated privileges
-in the repo, are managed in the Hyperledger "governance" repo's [access-control.yaml](https://github.com/hyperledger/governance/blob/main/access-control.yaml) file. Consult that to see:
+in the repo, are managed in the Hyperledger "governance" repo's [access-control.yaml](https://github.com/openwallet-foundation/governance/blob/main/config.yaml) file. Consult that to see:
 
 - What teams have escalated privileges to this repository.
 - What GitHub roles those teams have in the repository.

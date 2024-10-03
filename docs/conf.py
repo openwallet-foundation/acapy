@@ -62,17 +62,17 @@ autodoc_mock_imports = [
     "uuid_utils",
 ]
 
-#    "aries_cloudagent.tests.test_conductor",
-#    "aries_cloudagent.tests.test_init",
-#    "aries_cloudagent.messaging.connections.tests",
-#    "aries_cloudagent.messaging.connections.messages.tests",
-#    "aries_cloudagent.messaging.introduction.messages.tests"
+#    "acapy_agent.tests.test_conductor",
+#    "acapy_agent.tests.test_init",
+#    "acapy_agent.messaging.connections.tests",
+#    "acapy_agent.messaging.connections.messages.tests",
+#    "acapy_agent.messaging.introduction.messages.tests"
 
 
 # -- Project information -----------------------------------------------------
 
-project = "Aries Cloud Agent - Python"
-copyright = "2023, Province of British Columbia"
+project = "ACA-Py"
+copyright = "2024, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -128,7 +128,7 @@ exclude_patterns = [
     "GettingStartedAriesDev/*",
     "assets/*",
     "Poetry.md",
-    "aries_cloudagent/*",
+    "acapy_agent/*",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -166,7 +166,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "AriesCloudAgentPythondoc"
+htmlhelp_basename = "acapydoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -192,8 +192,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "AriesCloudAgentPython.tex",
-        "Aries Cloud Agent Python Documentation",
+        "ACA-Py.tex",
+        "ACA-Py Documentation",
         "See Contributors list on GitHub",
         "manual",
     )
@@ -207,8 +207,8 @@ latex_documents = [
 man_pages = [
     (
         master_doc,
-        "ariescloudagentpython",
-        "Aries Cloud Agent Python Documentation",
+        "aca-py",
+        "ACA-Py Documentation",
         [author],
         1,
     )
@@ -223,11 +223,11 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "AriesCloudAgentPython",
-        "Aries CloudAgent Python Documentation",
+        "ACA-Py",
+        "ACA-Py Documentation",
         author,
-        "AriesCloudAgentPython",
-        "A Hyperledger Aries cloud agent implemented in Python and\
+        "ACA-Py",
+        "A Decentralized Trust Agent implemented in Python and\
         suitable for use in (almost) any non-mobile environment.",
         "Miscellaneous",
     )

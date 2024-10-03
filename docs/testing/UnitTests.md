@@ -2,8 +2,7 @@
 
 The following covers the Unit Testing framework in ACA-Py, how to run the tests, and how to add unit tests.
 
-This [video](https://youtu.be/yJ6LpAiVNFM) is a presentation of the material covered in this document by
-developer @shaangill025.
+This [video](https://youtu.be/yJ6LpAiVNFM) is a presentation of the material covered in this document.
 
 ## Running unit tests in ACA-Py
 
@@ -20,7 +19,7 @@ Note: The `bbs` library may not install on ARM (i.e. aarch64 or  arm64) architec
 
 ## Pytest
 
-Example: aries_cloudagent/core/tests/test_event_bus.py
+Example: acapy_agent/core/tests/test_event_bus.py
 
 ```python
 @pytest.fixture
@@ -129,7 +128,7 @@ async def notify(self, profile: "Profile", event: Event):
 
 ## asynctest
 
-From: aries_cloudagent/protocols/didexchange/v1_0/tests/test.manager.py
+From: acapy_agent/protocols/didexchange/v1_0/tests/test.manager.py
 
 ```python
 class TestDidExchangeManager(AsyncTestCase, TestConfig):

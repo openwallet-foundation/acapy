@@ -10,13 +10,14 @@ By design Hyperledger Aries is credential format agnostic. This means you can us
   - [JSON-LD Context](#json-ld-context)
     - [Writing JSON-LD Contexts](#writing-json-ld-contexts)
   - [Signature Suite](#signature-suite)
-  - [Did Method](#did-method)
+  - [DID Method](#did-method)
     - [`did:sov`](#didsov)
     - [`did:key`](#didkey)
 - [Issuing Credentials](#issuing-credentials)
 - [Retrieving Issued Credentials](#retrieving-issued-credentials)
 - [Present Proof](#present-proof)
 - [VC-API](#vc-api)
+- [External Suite Provider](#external-suite-provider)
 
 ## General Concept
 
@@ -211,7 +212,7 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
 
 ## Present Proof
 
-> ⚠️ TODO: [https://github.com/hyperledger/aries-cloudagent-python/pull/1125](https://github.com/hyperledger/aries-cloudagent-python/pull/1125)
+> ⚠️ TODO: [https://github.com/openwallet-foundation/acapy/pull/1125](https://github.com/hyperledger/aries-cloudagent-python/pull/1125)
 
 ## VC-API
 
@@ -231,7 +232,7 @@ To learn more about using these endpoints, please refer to the available [postma
 
 ## External Suite Provider
 
-It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/hyperledger/aries-cloudagent-python/blob/d3ee92b1b86aff076b52f31eaecea59c18005079/aries_cloudagent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
+It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/openwallet-foundation/acapy/blob/d3ee92b1b86aff076b52f31eaecea59c18005079/aries_cloudagent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
 
 This interface enables taking advantage of ACA-Py's JSON-LD processing to construct and format the credential while exposing a simple interface to a plugin to make it responsible for signatures. This can also be combined with plugged in DID Methods, `VerificationKeyStrategy`, and other pluggable components.
 

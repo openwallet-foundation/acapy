@@ -9,8 +9,8 @@ The JSON-LD support is documented [here](../features/JsonLdCredentials.md) - thi
 Clone this repository to a directory on your local:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy.git
+cd acapy/demo
 ```
 
 Open up a second shell (so you have 2 shells open in the `demo` directory) and in one shell:

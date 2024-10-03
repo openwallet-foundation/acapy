@@ -8,7 +8,7 @@ A new wallet type has been added to Aca-Py to support the new anoncreds-rs libra
 
 When Aca-Py is run with this wallet type it will run with an Askar format wallet (and askar libraries) but will use `anoncreds-rs` instead of `credx`.
 
-There is a new package under `aries_cloudagent/anoncreds` with code that supports the new library.
+There is a new package under `acapy_agent/anoncreds` with code that supports the new library.
 
 There are new endpoints (under `/anoncreds`) for managing schemas, cred defs and revocation objects.  However the new anoncreds code is integrated into the existing Credential and Presentation endpoints (V2.0 endpoints only).
 
@@ -17,17 +17,17 @@ Within the protocols, there are new `handler` libraries to support the new `anon
 The existing `indy` code are in:
 
 ```bash
-aries_cloudagent/protocols/issue_credential/v2_0/formats/indy/handler.py
-aries_cloudagent/protocols/indy/anoncreds/pres_exch_handler.py
-aries_cloudagent/protocols/present_proof/v2_0/formats/indy/handler.py
+acapy_agent/protocols/issue_credential/v2_0/formats/indy/handler.py
+acapy_agent/protocols/indy/anoncreds/pres_exch_handler.py
+acapy_agent/protocols/present_proof/v2_0/formats/indy/handler.py
 ```
 
 The new `anoncreds` code is in:
 
 ```bash
-aries_cloudagent/protocols/issue_credential/v2_0/formats/anoncreds/handler.py
-aries_cloudagent/protocols/present_proof/anoncreds/pres_exch_handler.py
-aries_cloudagent/protocols/present_proof/v2_0/formats/anoncreds/handler.py
+acapy_agent/protocols/issue_credential/v2_0/formats/anoncreds/handler.py
+acapy_agent/protocols/present_proof/anoncreds/pres_exch_handler.py
+acapy_agent/protocols/present_proof/v2_0/formats/anoncreds/handler.py
 ```
 
 The Indy handler checks to see if the wallet type is `askar-anoncreds` and if so delegates the calls to the anoncreds handler, for example:
@@ -74,7 +74,7 @@ The changes are significant.  Notably:
 The Tails File changes are minimal -- nothing about the file itself changed.  What changed:
 
 - the tails-file-server can be published to WITHOUT knowing the ID of the RevRegEntry, since that is not known when the tails file is generated/published.  See: [https://github.com/bcgov/indy-tails-server/pull/53](https://github.com/bcgov/indy-tails-server/pull/53) -- basically, by publishing based on the hash.
-- The tails-file is not needed by the issuer after generation. It used to be needed for issuing and revoking credentials. Those are now done without the tails file. See: [https://github.com/hyperledger/aries-cloudagent-python/pull/2302/files](https://github.com/hyperledger/aries-cloudagent-python/pull/2302/files). That code is already in Main, so you should have it.
+- The tails-file is not needed by the issuer after generation. It used to be needed for issuing and revoking credentials. Those are now done without the tails file. See: [https://github.com/openwallet-foundation/acapy/pull/2302/files](https://github.com/openwallet-foundation/acapy/pull/2302/files). That code is already in Main, so you should have it.
 
 ## Outstanding work
 
@@ -86,8 +86,8 @@ The Tails File changes are minimal -- nothing about the file itself changed.  Wh
 The main changes for the Credential and Presentation support are in the following two files:
 
 ```bash
-aries_cloudagent/protocols/issue_credential/v2_0/messages/cred_format.py
-aries_cloudagent/protocols/present_proof/v2_0/messages/pres_format.py
+acapy_agent/protocols/issue_credential/v2_0/messages/cred_format.py
+acapy_agent/protocols/present_proof/v2_0/messages/pres_format.py
 ```
 
 The `INDY` handler just need to be re-pointed to the new anoncreds handler, and then all the old Indy code can be retired.
@@ -99,7 +99,7 @@ The new code is already in place (in comments).  For example for the Credential 
         INDY = FormatSpec(
             "hlindy/",
             DeferLoad(
-                "aries_cloudagent.protocols.present_proof.v2_0"
+                "acapy_agent.protocols.present_proof.v2_0"
                 ".formats.anoncreds.handler.AnonCredsPresExchangeHandler"
             ),
         )

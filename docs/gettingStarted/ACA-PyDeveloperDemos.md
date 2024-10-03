@@ -1,6 +1,6 @@
-# Developer Demos and Samples of Aries Agent
+# Developer Demos and Samples of ACA-Py Agent
 
-Here are some demos that developers can use to get up to speed on Aries. You don't have to be a developer to use these. If you can use docker and JSON, then that's enough to give these a try.
+Here are some demos that developers can use to get up to speed on ACA-Py. You don't have to be a developer to use these. If you can use docker and JSON, then that's enough to give these a try.
 
 ## Open API demo
 
@@ -24,7 +24,7 @@ verifiable credential experience in 30 minutes or less.
 
 ## Indicio Developer Demo
 
-Minimal Aca-Py demo that can be used by developers to isolat and test features:
+Minimal Aca-Py demo that can be used by developers to isolate and test features:
 
 - Minimal Setup (everything runs in containers)
 - Quickly reproduce an issue or demonstrate a feature by writing one simple script or pytest tests.

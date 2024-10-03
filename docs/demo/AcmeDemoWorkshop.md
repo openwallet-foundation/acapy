@@ -15,8 +15,8 @@ To run the Acme controller template, first run Alice and Faber so that Alice can
 Open 2 bash shells, and in each run:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy.git
+cd acapy/demo
 ```
 
 In one shell run Faber:

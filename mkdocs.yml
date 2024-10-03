@@ -1,6 +1,6 @@
-site_name: Hyperledger Aries ACA-Py Docs
-repo_name: hyperledger/aries-cloudagent-python
-repo_url: https://github.com/hyperledger/aries-cloudagent-python
+site_name: ACA-Py Docs
+repo_name: openwallet-foundation/acapy
+repo_url: https://github.com/openwallet-foundation/acapy
 theme:
   name: material
   custom_dir: overrides
@@ -110,25 +110,25 @@ nav:
     - Hyperledger Indy Endorser In Action: demo/Endorser.md
     - Using W3C JSON-LD Credentials: demo/AliceWantsAJsonCredential.md
     - DIY -- ACME Controller Workshop: demo/AcmeDemoWorkshop.md
-    - Aries Using Postman Demo: demo/AriesPostmanDemo.md
+    - ACA-Py Using Postman Demo: demo/AriesPostmanDemo.md
     - Reusing a Connection Between Agents: demo/ReusingAConnection.md
 - Getting Started:
-    - Becoming an Indy/Aries Developer: gettingStarted/README.md
+    - Becoming an ACA-Py Developer: gettingStarted/README.md
     - Hyperledger Indy Basics: gettingStarted/IndyBasics.md
-    - Hyperledger Aries Basics: gettingStarted/AriesBasics.md
+    - ACA-Py Basics: gettingStarted/ACA-PyBasics.md
     - Decentralized Identity Demos: gettingStarted/DecentralizedIdentityDemos.md
-    - Aries - The Big Picture: gettingStarted/AriesBigPicture.md
-    - Aries Architecture: gettingStarted/AriesAgentArchitecture.md
-    - Aries Messaging: gettingStarted/AriesMessaging.md
-    - Aries Developer Demos: gettingStarted/AriesDeveloperDemos.md
+    - ACA-Py - The Big Picture: gettingStarted/ACA-PyBigPicture.md
+    - ACA-Py Architecture: gettingStarted/ACA-PyAgentArchitecture.md
+    - ACA-Py Messaging: gettingStarted/DIDCommMessaging.md
+    - ACA-Py Developer Demos: gettingStarted/ACA-PyDeveloperDemos.md
     - Agent Connections: gettingStarted/AgentConnections.md
     - Issuing AnonCreds Credentials: gettingStarted/IssuingAnonCredsCredentials.md
     - Presenting AnonCreds Proofs: gettingStarted/PresentingAnonCredsProofs.md
-    - Making Your Own ACA-Py Agent: gettingStarted/YourOwnAriesAgent.md
-    - Aries Developer Options: gettingStarted/IndyAriesDevOptions.md
+    - Making Your Own ACA-Py Agent: gettingStarted/YourOwnACA-PyAgent.md
+    - ACA-Py Developer Options: gettingStarted/IndyACA-PyDevOptions.md
     - DIDComm Messaging: gettingStarted/DIDcommMsgs.md
     - DIDComm Message Routing: gettingStarted/RoutingEncryption.md
-    - DIDComm Message Routing Example: gettingStarted/AriesRoutingExample.md
+    - DIDComm Message Routing Example: gettingStarted/DIDCommRoutingExample.md
     - TODO Connecting to an Indy Network: gettingStarted/ConnectIndyNetwork.md
     - AnonCreds Credential Revocation: gettingStarted/CredentialRevocation.md
 - Deploying:

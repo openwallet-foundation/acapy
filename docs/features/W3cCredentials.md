@@ -4,24 +4,27 @@ This document outlines a new functionality within Aries Agent that facilitates t
 
 ### Table of Contents
 
-- [General Concept](#general-concept)
-- [Prerequisites](#prerequisites)
-  - [Verifiable Credentials Data Model](#verifiable-credentials-data-model)
-  - [Verifiable Presentations Data Model](#verifiable-presentations-data-model)
-  - [DIF Presentation Format](#dif-presentation-format)
-- [Preparing to Issue a Credential](#preparing-to-issue-a-credential)
-  - [VC-DI Context](#vc-di-context)
-  - [Signature Suite](#signature-suite)
-  - [DID Method](#did-method)
-- [Issue a Credential](#issue-a-credential)
-- [Verify a Credential](#verify-a-credential)
-- [Present Proof](#present-proof)
-  - [Requesting Proof](#requesting-proof)
-  - [Presenting Proof](#presenting-proof)
-  - [Verifying Proof](#verifying-proof)
-- [Appendix](#appendix)
-  - [Glossary of Terms](#glossary-of-terms)
-  - [References and Resources](#references-and-resources)
+- [Verifiable Credential Data Integrity (VC-DI) Credentials in Aries Cloud Agent Python (ACA-Py)](#verifiable-credential-data-integrity-vc-di-credentials-in-aries-cloud-agent-python-aca-py)
+  - [Table of Contents](#table-of-contents)
+  - [General Concept](#general-concept)
+  - [Prerequisites](#prerequisites)
+    - [Verifiable Credentials Data Model](#verifiable-credentials-data-model)
+    - [Verifiable Presentations Data Model](#verifiable-presentations-data-model)
+    - [DIF Presentation Format](#dif-presentation-format)
+  - [Preparing to Issue a Credential](#preparing-to-issue-a-credential)
+    - [VC-DI Context](#vc-di-context)
+    - [Signature Suite](#signature-suite)
+    - [DID Method](#did-method)
+      - [`did:key`](#didkey)
+  - [Issue a Credential](#issue-a-credential)
+  - [Verify a Credential](#verify-a-credential)
+  - [Present Proof](#present-proof)
+    - [Requesting Proof](#requesting-proof)
+    - [Presenting Proof](#presenting-proof)
+    - [Verifying Proof](#verifying-proof)
+  - [Appendix](#appendix)
+    - [Glossary of Terms](#glossary-of-terms)
+    - [References and Resources](#references-and-resources)
 
 ### General Concept
 
@@ -630,7 +633,7 @@ To verify presented proof, follow these steps:
 
 #### References and Resources
 
-- [Aries Cloud Agent Python Documentation](https://github.com/hyperledger/aries-cloudagent-python)
+- [Aries Cloud Agent Python Documentation](https://aca-py.org)
 - [Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/)
 - [Verifiable Presentations Data Model](https://www.w3.org/TR/vc-data-model/#presentations)
 - [DIF Presentation Format](https://identity.foundation/presentation-exchange/)
