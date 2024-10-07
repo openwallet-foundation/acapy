@@ -68,7 +68,7 @@ Once you have the list of PRs:
 - Organize the list into suitable categories in the [CHANGELOG.md](CHANGELOG.md) file, update (if necessary) the PR title and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
 - Add a narrative about the release above the PR that highlights what has gone into the release.
 - To cover the `dependabot` PRs without listing them all, add to the end of the
-  categorized list of PRs the lat two lines of the script output. Make sure the dates are right! The text will look like this:
+  categorized list of PRs the last two lines of the script output. Make sure the dates are right! The text will look like this:
 
 ```text
 - Dependabot PRs
