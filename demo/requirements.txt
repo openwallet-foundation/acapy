@@ -2,4 +2,4 @@ asyncpg~=0.29.0
 prompt_toolkit~=2.0.10
 web.py~=0.62
 pygments~=2.18
-qrcode[pil]~=7.4
+qrcode[pil]~=8.0
