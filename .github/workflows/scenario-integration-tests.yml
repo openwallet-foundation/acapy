@@ -20,7 +20,8 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    # Run on hyperledger and non-draft PRs or on non-PR events
+    if: (github.repository == 'hyperledger/aries-cloudagent-python') && ((github.event_name == 'pull_request' && github.event.pull_request.draft == false) || (github.event_name != 'pull_request'))
     steps:
       - name: checkout-acapy
         uses: actions/checkout@v4
