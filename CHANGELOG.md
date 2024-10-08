@@ -4,7 +4,7 @@
 
 ### October 8, 2024
 
-Release 1.0.1 will be the last release of ACA-Py from the Hyperledger organization before the repository moves to the [OpenWallet Foundation] (OWF).Soon after this release, the ACA-Py project and this repository will soon be moving soon to the OWF's GitHub organization as the [new "acapy" project](https://github.com/openwallet-foundation/project-proposals/blob/main/projects/aca-py.md).
+Release 1.0.1 will be the last release of ACA-Py from the Hyperledger organization before the repository moves to the [OpenWallet Foundation] (OWF). Soon after this release, the ACA-Py project and this repository will move to the OWF's GitHub organization as the [new "acapy" project](https://github.com/openwallet-foundation/project-proposals/blob/main/projects/aca-py.md).
 
 [OpenWallet Foundation]: https://openwallet.foundation/
 
