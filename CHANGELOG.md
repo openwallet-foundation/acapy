@@ -1,14 +1,10 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.0.1rc1
+## 1.0.1
 
-### October 1, 2024
+### October 8, 2024
 
-Release 1.0.1 _might_ be the last release of ACA-Py from the Hyperledger
-organization before the repository moves to the [OpenWallet Foundation] (OWF). As
-noted in the repository [README.md](README.md), the ACA-Py project will soon be
-moving soon to the OWF's GitHub organization as the [new "acapy"
-project](https://github.com/openwallet-foundation/project-proposals/pull/42).
+Release 1.0.1 will be the last release of ACA-Py from the Hyperledger organization before the repository moves to the [OpenWallet Foundation] (OWF). Soon after this release, the ACA-Py project and this repository will move to the OWF's GitHub organization as the [new "acapy" project](https://github.com/openwallet-foundation/project-proposals/blob/main/projects/aca-py.md).
 
 [OpenWallet Foundation]: https://openwallet.foundation/
 
@@ -16,20 +12,14 @@ For details on what this means for ACA-Py users, including steps for updating de
 
 [GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
 
-The release contains mostly internal clean ups, technical debt elimination, and
-a revision to the integration testing approach, incorporating the [Aries Agent Test Harness] tests in the ACA-Py continuous integration testing process. There are substantial enhancements in the
-management of keys and their use with [VC-DI] proofs, and web-based DID methods like
-`did:web`. See the `Wallet and Key Handling` updates in the categorized PR list below.
+The 1.0.1 release contains mostly internal clean ups, technical debt elimination, and a revision to the integration testing approach, incorporating the [Aries Agent Test Harness] tests in the ACA-Py continuous integration testing process. There are substantial enhancements in the management of keys and their use with [VC-DI] proofs, and web-based DID methods like `did:web`. See the `Wallet and Key Handling` updates in the categorized PR list below.
 
 [Aries Agent Test Harness]: https://github.com/hyperledger/aries-agent-test-harness
 [VC-DI]: https://www.w3.org/TR/vc-data-integrity/
 
-There are several important **[deprecation notices](#deprecation-notices)**
-in this release in preparation for the next ACA-Py release. Please review these notifications carefully!
+There are several important **[deprecation notices](#deprecation-notices)** in this release in preparation for the next ACA-Py release. Please review these notifications carefully!
 
-In an attempt to shorten the categorized list of PRs in the release, rather than
-listing all of the `dependabot` PRs in the release, we've included a link to a
-list of those PRs.
+In an attempt to shorten the categorized list of PRs in the release, rather than listing all of the `dependabot` PRs in the release, we've included a link to a list of those PRs.
 
 #### Deprecation Notices
 
@@ -38,16 +28,7 @@ list of those PRs.
 [PyPi]: https://pypi.org
 [GitHub Container Registry]: https://ghcr.io
 
-- In the next ACA-Py release, we will be dropping from the core ACA-Py
-  repository the AIP 1.0 [RFC 0160 Connections], [RFC 0037 Issue Credentials
-  v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the
-  protocols will be moved to the [ACA-Py Plugins] repo. All deployers that use
-  those protocols **SHOULD** update to the [AIP 2.0] versions of those protocols
-  ([RFC
-  0434 Out of Band]+[RFC 0023 DID Exchange], [RFC 0453 Issue Credential v2.0]
-  and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are
-  removed from ACA-Py, anyone still using those protocols must adjust their
-  configuration to load those protocols from the respective plugins.
+- In the next ACA-Py release, we will be dropping from the core ACA-Py repository the AIP 1.0 [RFC 0160 Connections], [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All deployers that use those protocols **SHOULD** update to the [AIP 2.0] versions of those protocols ([RFC 0434 Out of Band]+[RFC 0023 DID Exchange], [RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
 
 [RFC 0160 Connections]: https://hyperledger.github.io/aries-rfcs/latest/features/0160-connection-protocol/
 [RFC 0037 Issue Credentials]: https://hyperledger.github.io/aries-rfcs/latest/features/0036-issue-credential/
@@ -58,11 +39,11 @@ list of those PRs.
 [RFC 0453 Issue Credential v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0453-issue-credential-v2/
 [RFC 0454 Present Proof v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
 
-### 1.0.1rc1 Breaking Changes
+### 1.0.1 Breaking Changes
 
 There are no breaking changes in ACA-Py Release 1.0.1.
 
-#### 1.0.1rc1 Categorized List of Pull Requests
+#### 1.0.1 Categorized List of Pull Requests
 
 - Wallet and Key Handling Updates
   - Data integrity routes [\#3261](https://github.com/hyperledger/aries-cloudagent-python/pull/3261) [PatStLouis](https://github.com/PatStLouis)
@@ -79,6 +60,8 @@ There are no breaking changes in ACA-Py Release 1.0.1.
   - :art: fix type hints for optional method parameters [\#3234](https://github.com/hyperledger/aries-cloudagent-python/pull/3234) [ff137](https://github.com/ff137)
 
 - Documentation and GHA Test Updates
+  - Prevent integration tests on forks [\#3276](https://github.com/hyperledger/aries-cloudagent-python/pull/3276) [jamshale](https://github.com/jamshale)
+  - :memo Fix typos in PUBLISHING.md [\#3274](https://github.com/hyperledger/aries-cloudagent-python/pull/3274) [claudiotorrens](https://github.com/claudiotorrens)
   - Fix scenario tests [\#3231](https://github.com/hyperledger/aries-cloudagent-python/pull/3231) [jamshale](https://github.com/jamshale)
   - Only run integration tests on correct file changes [\#3230](https://github.com/hyperledger/aries-cloudagent-python/pull/3230) [jamshale](https://github.com/jamshale)
   - Update docs for outstanding anoncreds work [\#3229](https://github.com/hyperledger/aries-cloudagent-python/pull/3229) [jamshale](https://github.com/jamshale)
@@ -101,11 +84,12 @@ There are no breaking changes in ACA-Py Release 1.0.1.
   - [ POST v1.0.0 ] Adjust message queue error handling [\#3170](https://github.com/hyperledger/aries-cloudagent-python/pull/3170) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 1.0.1 [\#3278](https://github.com/hyperledger/aries-cloudagent-python/pull/3278) [swcurran](https://github.com/swcurran)
   - 1.0.1rc1 [\#3268](https://github.com/hyperledger/aries-cloudagent-python/pull/3268) [swcurran](https://github.com/swcurran)
   - 1.0.1rc0 [\#3254](https://github.com/hyperledger/aries-cloudagent-python/pull/3254) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-10-01+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-15..2024-10-08+author%3Aapp%2Fdependabot+)
 
 ## 1.0.0
 
