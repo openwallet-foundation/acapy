@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../PresentingAnonCredsProofs/">
+        <link rel="prev" href="../AcmeDemoWorkshop/">
       
       
-        <link rel="next" href="../IndyAriesDevOptions/">
+        <link rel="next" href="../ReusingAConnection/">
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Making Your Own ACA-Py Agent - Hyperledger Aries ACA-Py Docs</title>
+        <title>ACA-Py Using Postman Demo - ACA-Py Docs</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#creating-your-own-aries-agent" class="md-skip">
+        <a href="#aries-postman-demo" class="md-skip">
           Skip to content
         </a>
       
@@ -92,7 +92,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-header__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+    <a href="../.." title="ACA-Py Docs" class="md-header__button md-logo" aria-label="ACA-Py Docs" data-md-component="logo">
       
   <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
 
@@ -105,13 +105,13 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Hyperledger Aries ACA-Py Docs
+            ACA-Py Docs
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Making Your Own ACA-Py Agent
+              ACA-Py Using Postman Demo
             
           </span>
         </div>
@@ -188,13 +188,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/openwallet-foundation/acapy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
   </div>
   <div class="md-source__repository">
-    hyperledger/aries-cloudagent-python
+    openwallet-foundation/acapy
   </div>
 </a>
       </div>
@@ -246,11 +246,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../demo/Aries-Workshop/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../ACA-Py-Workshop/" class="md-tabs__link">
           
   
   Demos
@@ -264,13 +266,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../gettingStarted/" class="md-tabs__link">
           
   
   Getting Started
@@ -363,22 +363,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-nav__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+    <a href="../.." title="ACA-Py Docs" class="md-nav__button md-logo" aria-label="ACA-Py Docs" data-md-component="logo">
       
   <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
 
     </a>
-    Hyperledger Aries ACA-Py Docs
+    ACA-Py Docs
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/openwallet-foundation/acapy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
   </div>
   <div class="md-source__repository">
-    hyperledger/aries-cloudagent-python
+    openwallet-foundation/acapy
   </div>
 </a>
     </div>
@@ -945,25 +945,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -974,7 +977,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Demos
@@ -988,11 +991,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/Aries-Workshop/" class="md-nav__link">
+      <a href="../ACA-Py-Workshop/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Hyperledger Aries / AnonCreds Workshop
+    ACA-Py / AnonCreds Workshop
   </span>
   
 
@@ -1009,7 +1012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1030,7 +1033,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/AriesOpenAPIDemo/" class="md-nav__link">
+      <a href="../OpenAPIDemo/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1051,7 +1054,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/AliceGetsAPhone/" class="md-nav__link">
+      <a href="../AliceGetsAPhone/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1072,7 +1075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/Endorser/" class="md-nav__link">
+      <a href="../Endorser/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1093,7 +1096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/AliceWantsAJsonCredential/" class="md-nav__link">
+      <a href="../AliceWantsAJsonCredential/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1114,334 +1117,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../demo/AcmeDemoWorkshop/" class="md-nav__link">
+      <a href="../AcmeDemoWorkshop/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     DIY -- ACME Controller Workshop
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../demo/AriesPostmanDemo/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Aries Using Postman Demo
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../demo/ReusingAConnection/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Reusing a Connection Between Agents
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-      
-        
-        
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
-            
-  
-  <span class="md-ellipsis">
-    Getting Started
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            Getting Started
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Becoming an Indy/Aries Developer
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../IndyBasics/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Hyperledger Indy Basics
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../AriesBasics/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Hyperledger Aries Basics
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../DecentralizedIdentityDemos/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Decentralized Identity Demos
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../AriesBigPicture/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Aries - The Big Picture
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../AriesAgentArchitecture/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Aries Architecture
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../AriesMessaging/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Aries Messaging
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../AriesDeveloperDemos/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Aries Developer Demos
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../AgentConnections/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Agent Connections
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../IssuingAnonCredsCredentials/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Issuing AnonCreds Credentials
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../PresentingAnonCredsProofs/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Presenting AnonCreds Proofs
   </span>
   
 
@@ -1467,15 +1147,183 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    ACA-Py Using Postman Demo
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Making Your Own ACA-Py Agent
+    ACA-Py Using Postman Demo
   </span>
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Started
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-postman" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing Postman
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a workspace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#importing-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing the environment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#importing-the-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing the collections
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postman-basics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Postman basics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experimenting-with-the-vc-api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experimenting with the vc-api endpoints
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Experimenting with the vc-api endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-new-dids" class="md-nav__link">
+    <span class="md-ellipsis">
+      Register new dids
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#issue-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue credentials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#store-and-retrieve-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Store and retrieve credentials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify credentials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prove-a-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prove a presentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-a-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify a presentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1489,11 +1337,79 @@
   
   
     <li class="md-nav__item">
-      <a href="../IndyAriesDevOptions/" class="md-nav__link">
+      <a href="../ReusingAConnection/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Aries Developer Options
+    Reusing a Connection Between Agents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Becoming an ACA-Py Developer
   </span>
   
 
@@ -1510,7 +1426,259 @@
   
   
     <li class="md-nav__item">
-      <a href="../DIDcommMsgs/" class="md-nav__link">
+      <a href="../../gettingStarted/IndyBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DecentralizedIdentityDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decentralized Identity Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyBigPicture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py - The Big Picture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyAgentArchitecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDCommMessaging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyDeveloperDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Developer Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AgentConnections/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent Connections
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IssuingAnonCredsCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Issuing AnonCreds Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/PresentingAnonCredsProofs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Presenting AnonCreds Proofs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/YourOwnACA-PyAgent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Making Your Own ACA-Py Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyACA-PyDevOptions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Developer Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDcommMsgs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1531,7 +1699,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../RoutingEncryption/" class="md-nav__link">
+      <a href="../../gettingStarted/RoutingEncryption/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1552,7 +1720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../AriesRoutingExample/" class="md-nav__link">
+      <a href="../../gettingStarted/DIDCommRoutingExample/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1573,7 +1741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ConnectIndyNetwork/" class="md-nav__link">
+      <a href="../../gettingStarted/ConnectIndyNetwork/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1594,7 +1762,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CredentialRevocation/" class="md-nav__link">
+      <a href="../../gettingStarted/CredentialRevocation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2138,7 +2306,7 @@
         
   
   <span class="md-ellipsis">
-    Hyperledger Code of Conduct
+    Code of Conduct
   </span>
   
 
@@ -2259,6 +2427,152 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Started
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-postman" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing Postman
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a workspace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#importing-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing the environment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#importing-the-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing the collections
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postman-basics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Postman basics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experimenting-with-the-vc-api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experimenting with the vc-api endpoints
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Experimenting with the vc-api endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-new-dids" class="md-nav__link">
+    <span class="md-ellipsis">
+      Register new dids
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#issue-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue credentials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#store-and-retrieve-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Store and retrieve credentials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify credentials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prove-a-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prove a presentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-a-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify a presentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2275,10 +2589,80 @@
   
 
 
-<h1 id="creating-your-own-aries-agent">Creating Your Own Aries Agent<a class="headerlink" href="#creating-your-own-aries-agent" title="Permanent link">&para;</a></h1>
-<p>Use the "next steps" in the <a href="https://github.com/bcgov/traction/blob/main/docs/traction-anoncreds-workshop.md">Traction AnonCreds Workshop</a> and create your own
-controller. The <a href="https://github.com/hyperledger/aries-acapy-controllers">Aries ACA-Py Controllers</a> repository has some samples to get
-you started.</p>
+<h1 id="aries-postman-demo">Aries Postman Demo <!-- omit in toc --><a class="headerlink" href="#aries-postman-demo" title="Permanent link">&para;</a></h1>
+<p>In these demos we will use Postman as our controller client.</p>
+<h2 id="contents">Contents <!-- omit in toc --><a class="headerlink" href="#contents" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#installing-postman">Installing Postman</a></li>
+<li><a href="#creating-a-workspace">Creating a workspace</a></li>
+<li><a href="#importing-the-environment">Importing the environment</a></li>
+<li><a href="#importing-the-collections">Importing the collections</a></li>
+<li><a href="#postman-basics">Postman basics</a></li>
+<li><a href="#experimenting-with-the-vc-api-endpoints">Experimenting with the vc-api endpoints</a></li>
+<li><a href="#register-new-dids">Register new dids</a></li>
+<li><a href="#issue-credentials">Issue credentials</a></li>
+<li><a href="#store-and-retrieve-credentials">Store and retrieve credentials</a></li>
+<li><a href="#verify-credentials">Verify credentials</a></li>
+<li><a href="#prove-a-presentation">Prove a presentation</a></li>
+<li><a href="#verify-a-presentation">Verify a presentation</a></li>
+</ul>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p>Welcome to the Postman demo. This is an addition to the available OpenAPI demo, providing a set of collections to test and demonstrate various aca-py functionalities.</p>
+<h3 id="installing-postman">Installing Postman<a class="headerlink" href="#installing-postman" title="Permanent link">&para;</a></h3>
+<p>Download, install and launch <a href="https://www.postman.com/downloads/">postman</a>.</p>
+<h3 id="creating-a-workspace">Creating a workspace<a class="headerlink" href="#creating-a-workspace" title="Permanent link">&para;</a></h3>
+<p>Create a new postman workspace labeled "acapy-demo".</p>
+<h3 id="importing-the-environment">Importing the environment<a class="headerlink" href="#importing-the-environment" title="Permanent link">&para;</a></h3>
+<p>In the environment tab from the left, click the import button. You can paste this <a href="https://raw.githubusercontent.com/openwallet-foundation/acapy/main/demo/postman/environment.json">link</a> which is the <a href="https://github.com/openwallet-foundation/acapy/blob/main/demo/postman/environment.json">environment file</a> in the ACA-Py repository.</p>
+<p>Make sure you have the environment set as your active environment.</p>
+<h3 id="importing-the-collections">Importing the collections<a class="headerlink" href="#importing-the-collections" title="Permanent link">&para;</a></h3>
+<p>In the collections tab from the left, click the import button.</p>
+<p>The following collections are available:</p>
+<ul>
+<li><a href="https://raw.githubusercontent.com/openwallet-foundation/acapy/main/demo/postman/collections/vc-api.json">vc-api</a></li>
+</ul>
+<h3 id="postman-basics">Postman basics<a class="headerlink" href="#postman-basics" title="Permanent link">&para;</a></h3>
+<p>Once you are setup, you will be ready to run postman requests. The order of the request is important, since some values are saved dynamically as environment variables for subsequent calls.</p>
+<p>You have your environment where you define variables to be accessed by your collections.</p>
+<p>Each collection consists of a series of requests which can be configured independently.</p>
+<h2 id="experimenting-with-the-vc-api-endpoints">Experimenting with the vc-api endpoints<a class="headerlink" href="#experimenting-with-the-vc-api-endpoints" title="Permanent link">&para;</a></h2>
+<p>Make sure you have a demo agent available. You can use the following command to deploy one:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--bg
+</code></pre></div>
+<p>When running for the first time, please allow some time for the images to build.</p>
+<h3 id="register-new-dids">Register new dids<a class="headerlink" href="#register-new-dids" title="Permanent link">&para;</a></h3>
+<p>The first 2 requests for this collection will create 2 did:keys. We will use those in subsequent calls to issue <code>Ed25519Signature2020</code> and <code>BbsBlsSignature2020</code> credentials.
+Run the 2 did creation requests. These requests will use the <code>/wallet/did/create</code> endpoint.</p>
+<h3 id="issue-credentials">Issue credentials<a class="headerlink" href="#issue-credentials" title="Permanent link">&para;</a></h3>
+<p>For issuing, you must input a <a href="https://www.w3.org/TR/vc-data-model/">w3c compliant json-ld credential</a> and <a href="https://w3c-ccg.github.io/vc-api/#issue-credential">issuance options</a> in your request body. The issuer field must be a registered did from the agent's wallet. The suite will be derived from the did method.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">&quot;credential&quot;</span><span class="p">:</span><span class="w">   </span><span class="p">{</span><span class="w"> </span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nt">&quot;@context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">            </span><span class="s2">&quot;https://www.w3.org/2018/credentials/v1&quot;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">],</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="s2">&quot;VerifiableCredential&quot;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="p">],</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:example:123&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="nt">&quot;issuanceDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2022-05-01T00:00:00Z&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="nt">&quot;credentialSubject&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:example:123&quot;</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="nt">&quot;options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="p">}</span>
+</code></pre></div>
+<p>Some examples have been pre-configured in the collection. Run the requests and inspect the results. Experiment with different credentials.</p>
+<h3 id="store-and-retrieve-credentials">Store and retrieve credentials<a class="headerlink" href="#store-and-retrieve-credentials" title="Permanent link">&para;</a></h3>
+<p>Your last issued credential will be stored as an environment variable for subsequent calls, such as storing, verifying and including in a presentation.</p>
+<p>Try running the store credential request, then retrieve the credential with the list and fetch requests. Try going back and forth between the issuance endpoints and the storage endpoints to store multiple different credentials.</p>
+<h3 id="verify-credentials">Verify credentials<a class="headerlink" href="#verify-credentials" title="Permanent link">&para;</a></h3>
+<p>You can verify your last issued credential with this endpoint or any issued credential you provide to it.</p>
+<h3 id="prove-a-presentation">Prove a presentation<a class="headerlink" href="#prove-a-presentation" title="Permanent link">&para;</a></h3>
+<p>Proving a presentation is an action where a holder will prove ownership of a credential by signing or demonstrating authority over the document.</p>
+<h3 id="verify-a-presentation">Verify a presentation<a class="headerlink" href="#verify-a-presentation" title="Permanent link">&para;</a></h3>
+<p>The final request is to verify a presentation.</p>
 
 
 
@@ -2314,7 +2698,7 @@ you started.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../PresentingAnonCredsProofs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Presenting AnonCreds Proofs">
+          <a href="../AcmeDemoWorkshop/" class="md-footer__link md-footer__link--prev" aria-label="Previous: DIY -- ACME Controller Workshop">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2324,20 +2708,20 @@ you started.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Presenting AnonCreds Proofs
+                DIY -- ACME Controller Workshop
               </div>
             </div>
           </a>
         
         
           
-          <a href="../IndyAriesDevOptions/" class="md-footer__link md-footer__link--next" aria-label="Next: Aries Developer Options">
+          <a href="../ReusingAConnection/" class="md-footer__link md-footer__link--next" aria-label="Next: Reusing a Connection Between Agents">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Aries Developer Options
+                Reusing a Connection Between Agents
               </div>
             </div>
             <div class="md-footer__button md-icon">
