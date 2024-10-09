@@ -17,7 +17,7 @@ ADD README.md pyproject.toml poetry.lock ./
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --no-root --no-directory --all-extras; else poetry install --no-root --no-directory -E "askar didcommv2"; fi
 
-ADD aries_cloudagent ./aries_cloudagent
+ADD acapy_agent ./acapy_agent
 ADD scripts ./scripts
 
 RUN pip3 install --no-cache-dir -e .

@@ -9,7 +9,7 @@ on:
 jobs:
   SonarCloud:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && github.repository == 'hyperledger/aries-cloudagent-python'
+    if: github.event.workflow_run.conclusion == 'success' && github.repository == 'openwallet-foundation/acapy'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,7 +56,7 @@ jobs:
           mkdir test-reports
           mv coverage.xml test-reports
           # Need to change source in coverage report because it was generated from another context
-          sed -i 's/\/home\/runner\/work\/aries-cloudagent-python\/aries-cloudagent-python\//\/github\/workspace\//g' test-reports/coverage.xml
+          sed -i 's/\/home\/runner\/work\/acapy\/acapy\//\/github\/workspace\//g' test-reports/coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:

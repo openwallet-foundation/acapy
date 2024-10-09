@@ -9,7 +9,7 @@ permissions:
 jobs:
   selftest:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    if: (github.event_name == 'pull_request' && github.repository == 'openwallet-foundation/acapy') || (github.event_name != 'pull_request')
     steps:
       - uses: actions/checkout@v4
       - name: install

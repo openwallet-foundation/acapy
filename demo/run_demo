@@ -310,7 +310,7 @@ $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
     -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
     ${DOCKER_VOL} \
     $(if [ "$DOCKER_RESOLUTION" = "run" ]; then
-      echo "-v $(pwd)/../aries_cloudagent:/home/aries/aries_cloudagent \
+      echo "-v $(pwd)/../acapy_agent:/home/aries/acapy_agent \
       -v $(pwd)/../scripts:/home/aries/scripts \
       -v $(pwd)/../demo:/home/aries/demo"
     fi) \

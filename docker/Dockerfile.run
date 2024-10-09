@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y curl && apt-get clean
 
 RUN pip install --no-cache-dir poetry
 
-RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
+RUN mkdir -p acapy_agent && touch acapy_agent/__init__.py
 ADD pyproject.toml poetry.lock README.md ./
 RUN mkdir -p log && chmod -R ug+rw log
 

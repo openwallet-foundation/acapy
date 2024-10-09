@@ -12,7 +12,7 @@ WORKDIR /usr/src/app
 RUN pip install --no-cache-dir poetry
 
 ADD ./README.md pyproject.toml ./poetry.lock ./
-RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
+RUN mkdir acapy_agent && touch acapy_agent/__init__.py
 
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --no-directory --all-extras --with=dev; else poetry install --no-directory -E "askar didcommv2" --with=dev; fi

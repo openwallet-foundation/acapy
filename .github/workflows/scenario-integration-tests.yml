@@ -20,8 +20,8 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Run on hyperledger and non-draft PRs or on non-PR events
-    if: (github.repository == 'hyperledger/aries-cloudagent-python') && ((github.event_name == 'pull_request' && github.event.pull_request.draft == false) || (github.event_name != 'pull_request'))
+    # Run on openwallet-foundation and non-draft PRs or on non-PR events
+    if: (github.repository == 'openwallet-foundation/acapy') && ((github.event_name == 'pull_request' && github.event.pull_request.draft == false) || (github.event_name != 'pull_request'))
     steps:
       - name: checkout-acapy
         uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
           files_yaml: |
             scenarios: "scenarios/**/*"
             src: 
-              - aries_cloudagent/**/*
+              - acapy_agent/**/*
               - poetry.lock 
               - pyproject.toml
       - name: Check if scenarios or src files changed
