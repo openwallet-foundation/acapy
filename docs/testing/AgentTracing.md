@@ -1,6 +1,6 @@
 # Using Tracing in ACA-PY
 
-The aca-py agent supports message tracing, according to the [Tracing RFC](https://github.com/hyperledger/aries-rfcs/tree/master/features/0034-message-tracing).
+ACA-Py supports message tracing, according to the [Tracing RFC](https://github.com/hyperledger/aries-rfcs/tree/master/features/0034-message-tracing).
 
 Tracing can be enabled globally, for all messages/events, or it can be enabled on an exchange-by-exchange basis.
 
@@ -85,7 +85,7 @@ When `Exchange Tracing` is `ON`, all exchanges will include tracing.
 
 ## Logging Trace Events to an ELK Stack
 
-You can use the `ELK` stack in the [ELK Stack sub-directory](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/elk-stack) as a target for trace events, just start the ELK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
+You can use the `ELK` stack in the [ELK Stack sub-directory](https://github.com/openwallet-foundation/acapy/blob/main/demo/elk-stack) as a target for trace events, just start the ELK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
 
 ```bash
 DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 ./run_demo faber --trace-http

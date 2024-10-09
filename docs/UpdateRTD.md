@@ -1,4 +1,4 @@
-# Managing Aries Cloud Agent Python `Read The Docs` Documentation
+# Managing ACA-Py `Read The Docs` Documentation
 
 This document describes how to maintain the `Read The Docs` documentation that
 is generated from the ACA-Py code base. As the structure of the ACA-Py code
@@ -16,7 +16,7 @@ and verify the installation on your system.
 
 To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
 
-`rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')`
+`rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../acapy_agent/ $(find ../acapy_agent/ -name '*tests*')`
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
 
@@ -49,10 +49,10 @@ to adhere to the rules around processing docstrings, and especially around JSON 
 ### Checking for missing modules
 
 The file `index.rst` in the ACA-Py `docs` folder drive the RTD generation. It picks up all the modules
-in the source code, starting from the root `../aries_cloudagent` folder. However, some modules
+in the source code, starting from the root `../acapy_agent` folder. However, some modules
 are not picked up automatically from the root and have to be manually added to `index.rst`. To do that:
 
-- Get a list of all generated modules by running: `ls generated | grep "aries_cloudagent.[a-z]*.rst"`
+- Get a list of all generated modules by running: `ls generated | grep "acapy_agent.[a-z]*.rst"`
 - Compare that list with the modules listed in the "Subpackages" section of the left side menu in your browser, including any listed below the "Submodules".
 
 If any are missing, you likely need to add them to the `index.rst` file in the `toctree` section of the file.

@@ -1,4 +1,4 @@
-# A Hyperledger Aries/AnonCreds Workshop Using Traction Sandbox
+# ACA-Py and AnonCreds Workshop Using Traction Sandbox
 
 ## Introduction
 
@@ -9,15 +9,15 @@ walk through the steps exactly as laid out, it only takes about 20 minutes to
 complete the whole process. Of course, we hope you get curious, experiment, and
 learn a lot more about the information provided in the labs.
 
-To run the labs, you’ll need a Hyperledger Aries agent to be able to issue and
+To run the labs, you’ll need an ACA-Py agent to be able to issue and
 verify verifiable credentials. For that, we're providing your with your very own
 tenant in a BC Gov "**sandbox**" deployment of an open source tool called
-[Traction], a managed, production-ready, multi-tenant Aries agent built on
-[Hyperledger Aries Cloud Agent Python] (ACA-Py). *Sandbox* in this context means
+[Traction], a managed, production-ready, multi-tenant decentralized trust agent built on
+[ACA-Py]. *Sandbox* in this context means
 that you can do whatever you want with your tenant agent, but we make no
 promises about the stability of the environment (but it’s pretty robust, so
 chances are, things will work...), **and on the 1st and 15th of each month,
-we’ll reset the entire sandbox and all your work will be gone — poof!** Keep
+we’ll reset the entire sandbox and all your work will be gone — poof! **Keep
 that in mind, as you use the Traction sandbox. We recommend you keep a notebook
 at your side, tracking the important learnings you want to remember. As you
 create code that uses your sandbox agent make sure you create simple-to-update
@@ -36,7 +36,7 @@ Once you are done the labs, there are [suggestions](#whats-next) for next steps
 for developers, such as experimenting with the Traction/ACA-Py
 
 [Traction]: https://digital.gov.bc.ca/digital-trust/technical-resources/traction/
-[Hyperledger Aries Cloud Agent Python]: https://aca-py.org
+[ACA-Py]: https://aca-py.org
 [Traction Sandbox]: https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/
 [BCovrin Test Ledger]: http://test.bcovrin.vonx.io/
 [Traction Sandbox Workshop FAQ and Questions]: https://github.com/bcgov/traction/issues/927
@@ -226,7 +226,7 @@ environments. Contributions back to the project are always welcome!
 
 ### What’s Next: The ACA-Py OpenAPI
 
-Are you going to build an app that uses Traction or an instance of the [Aries Cloud Agent Python](https://aca-py.org/) (ACA-Py)? If so, your next step is to try out the ACA-Py OpenAPI (aka Swagger)—by hand at first, and then from your application. This is a VERY high level overview, assuming a developer is following this, and knows a bunch about Aries protocols, using HTTP APIs, and using OpenAPI interfaces.
+Are you going to build an app that uses Traction or an instance of [ACA-Py](https://aca-py.org/)? If so, your next step is to try out the ACA-Py OpenAPI (aka Swagger)—by hand at first, and then from your application. This is a VERY high level overview, assuming a developer is following this, and knows a bunch about Aries protocols, using HTTP APIs, and using OpenAPI interfaces.
 
 To access and use your Tenant's OpenAPI (aka Swagger) interface:
 
@@ -252,7 +252,7 @@ invoking the right sequence of OpenAPI calls.
 
 ### What's Next: Experiment With an Issuer Web App
 
-If you are challenged to use Traction or [Aries Cloud Agent Python] to become an
+If you are challenged to use Traction or [ACA-Py] to become an
 issuer, you will likely be building API calls into your Line of Business web
 application. To get an idea of what that will entail, we're delighted to direct
 you to a very simple Web App that one of your predecessors on this same journey
@@ -262,4 +262,4 @@ yourself, with your Sandbox tenant. Once you review the code, you should have an
 excellent idea of how you can add these same capabilities to your line of
 business application.
 
-[Traction Issuance Demo]: https://github.com/hyperledger/aries-acapy-controllers/tree/main/TractionIssuanceDemo
+[Traction Issuance Demo]: https://github.com/openwallet-foundation/acapy-controllers/tree/main/TractionIssuanceDemo

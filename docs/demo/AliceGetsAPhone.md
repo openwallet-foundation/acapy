@@ -44,8 +44,8 @@ Of course for this, you need to have a mobile agent. To find, install and setup 
 Open a new bash shell and in a project directory run the following:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy.git
+cd acapy/demo
 ```
 
 We'll come back to this in a minute, when we start the `faber` agent!
@@ -94,8 +94,8 @@ To run the necessary terminal sessions in your browser, go to the Docker playgro
 Open a new bash shell and in a project directory run the following:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy.git
+cd acapy/demo
 ```
 
 We'll come back to this in a minute, when we start the `faber` agent!
@@ -139,7 +139,7 @@ Note that with _Play with Docker_ it can be challenging to capture the informati
 #### Running locally in a bash shell?
 
 If you are running in a _local bash shell_, navigate to the `demo` directory in
-your fork/clone of the Aries Cloud Agent Python repository and run:
+your fork/clone of the ACA-Py repository and run:
 
 ```bash
 TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
@@ -152,7 +152,7 @@ The `TAILS_NETWORK` parameter lets the demo script know how to connect to the ta
 #### Running in Play with Docker?
 
 If you are running in _Play with Docker_, navigate to the `demo` folder in the
-clone of Aries Cloud Agent Python and run the following:
+clone of ACA-Py and run the following:
 
 ```bash
 PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events

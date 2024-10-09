@@ -6,7 +6,7 @@ The wallet supports 2 different databases to store data, SQLite and PostgreSQL.
 
 ## SQLite
 
-If the wallet is configured the default way in eg. [demo-args.yaml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/demo-args.yaml), without explicit wallet-storage, a sqlite database file is used.
+If the wallet is configured the default way in eg. [demo-args.yaml](https://github.com/openwallet-foundation/acapy/tree/main/demo/demo-args.yaml), without explicit wallet-storage, a sqlite database file is used.
 
 ```yaml
 # demo-args.yaml

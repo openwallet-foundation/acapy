@@ -32,7 +32,7 @@ Create a new postman workspace labeled "acapy-demo".
 
 ### Importing the environment
 
-In the environment tab from the left, click the import button. You can paste this [link](https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/demo/postman/environment.json) which is the [environment file](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/postman/environment.json) in the ACA-Py repository.
+In the environment tab from the left, click the import button. You can paste this [link](https://raw.githubusercontent.com/openwallet-foundation/acapy/main/demo/postman/environment.json) which is the [environment file](https://github.com/openwallet-foundation/acapy/blob/main/demo/postman/environment.json) in the ACA-Py repository.
 
 Make sure you have the environment set as your active environment.
 
@@ -42,7 +42,7 @@ In the collections tab from the left, click the import button.
 
 The following collections are available:
 
-- [vc-api](https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/demo/postman/collections/vc-api.json)
+- [vc-api](https://raw.githubusercontent.com/openwallet-foundation/acapy/main/demo/postman/collections/vc-api.json)
 
 ### Postman basics
 

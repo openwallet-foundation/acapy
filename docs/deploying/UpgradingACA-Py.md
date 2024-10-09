@@ -47,8 +47,8 @@ while offline, a new Upgrade feature will be added that will prevent the "auto
 upgrade" process from executing. See [Issue 2201] and [Pull Request 2204] for
 the status of that feature.
 
-[Issue 2201]: https://github.com/hyperledger/aries-cloudagent-python/issues/2201
-[Pull Request 2204]: https://github.com/hyperledger/aries-cloudagent-python/pull/2204
+[Issue 2201]: https://github.com/openwallet-foundation/acapy/issues/2201
+[Pull Request 2204]: https://github.com/openwallet-foundation/acapy/pull/2204
 
 Those deploying ACA-Py upgrades for production installations (forced offline or
 not) should check in each [CHANGELOG.md] release entry about what upgrades (if
@@ -129,6 +129,6 @@ storage](#no-version-in-secure-storage)" handling, it is unlikely this
 capability will ever be needed. We expect to deprecate and remove these
 options in future (post-0.8.1) ACA-Py versions.
 
-[CHANGELOG.md]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/CHANGELOG.md
-[version.py]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/version.py
-[Upgrade Definition YML file]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/commands/default_version_upgrade_config.yml
+[CHANGELOG.md]: https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md
+[version.py]: https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py
+[Upgrade Definition YML file]: https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/commands/default_version_upgrade_config.yml

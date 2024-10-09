@@ -1,6 +1,6 @@
 # The ACA-Py `docs` Folder
 
-The Aries Cloud Agent Python docs folder contains the source content for the
+The ACA-Py `docs` folder contains the source content for the
 ACA-Py documentation site [aca-py.org] and for the ACA-Py source code internals
 documentation project at ReadTheDocs, published at [https://aries-cloud-agent-python.readthedocs.io].
 

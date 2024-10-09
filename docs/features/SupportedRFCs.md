@@ -1,4 +1,4 @@
-# Aries AIP and RFCs Supported in Aries Cloud Agent Python
+# Aries AIP and RFCs Supported in ACA-Py
 
 This document provides a summary of the adherence of ACA-Py to the [Aries Interop
 Profiles](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile),
@@ -6,7 +6,7 @@ and an overview of the ACA-Py feature set. This document is
 manually updated and as such, may not be up to date with the most recent release of
 ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page are
 welcome! If you have any questions, please contact us on the #aries channel on
-[Hyperledger Discord](https://discord.gg/hyperledger) or through an issue in this repo.
+[OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
 **Last Update**: 2024-10-08, Release 1.0.1
 
@@ -17,7 +17,7 @@ welcome! If you have any questions, please contact us on the #aries channel on
 
 See the [Aries Agent Test Harness](https://github.com/hyperledger/aries-agent-test-harness) and the
 [Aries Interoperability Status](https://aries-interop.info) for daily interoperability test run results between
-ACA-Py and other Aries Frameworks and Agents.
+ACA-Py and other decentralized trust Frameworks and Agents.
 
 | AIP Version | Supported | Notes |
 |  - | :-------: | -------- |
@@ -32,7 +32,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | ---------- | :----------------: | -------------------------------------------------------------------------------------------------------------------------- |
 | Server     | :white_check_mark: |                                                                                                                            |
 | Kubernetes | :white_check_mark: | BC Gov has extensive experience running ACA-Py on Red Hat's OpenShift Kubernetes Distribution.                             |
-| Docker     | :white_check_mark: | Official docker images are published to the GitHub  container repository at `ghcr.io/hyperledger/aries-cloudagent-python`. |
+| Docker     | :white_check_mark: | Official docker images are published to the GitHub  container repository at [https://ghcr.io/openwallet-foundation/acapy](https://ghcr.io/openwallet-foundation/acapy). |
 | Desktop    |     :warning:      | Could be run as a local service on the computer                                                                            |
 | iOS        |        :x:         |                                                                                                                            |
 | Android    |        :x:         |                                                                                                                            |
@@ -94,7 +94,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Invitations using peer dids supporting connection reuse     | :white_check_mark:        |         |
 | Implicit pickup of messages in role of mediator | :white_check_mark:        |         |
 | [Revocable AnonCreds Credentials](https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation) | :white_check_mark:        |         |
-| Multi-Tenancy      | :white_check_mark:        | [Documentation](https://github.com/hyperledger/aries-cloudagent-python/blob/main/Multitenancy.md) |
+| Multi-Tenancy      | :white_check_mark:        | [Documentation](https://github.com/openwallet-foundation/acapy/blob/main/Multitenancy.md) |
 | Multi-Tenant Management | :white_check_mark: | The [Traction] open source project from BC Gov is a layer on top of ACA-Py that enables the easy management of ACA-Py tenants, with an Administrative UI ("The Innkeeper") and a Tenant UI for using ACA-Py in a web UI (setting up, issuing, holding and verifying credentials) |
 | Connection-less (non OOB protocol / AIP 1.0)               | :white_check_mark:        | Only for issue credential and present proof          |
 | Connection-less (OOB protocol / AIP 2.0)               | :white_check_mark:        | Only for present proof          |

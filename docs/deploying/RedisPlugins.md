@@ -1,11 +1,11 @@
 # ACA-Py Redis Plugins
 
-## [aries-acapy-plugin-redis-events](https://github.com/hyperledger/aries-acapy-plugins/blob/main/redis_events/README.md) `redis_queue`
+## [acapy-plugin-redis-events](https://github.com/openwallet-foundation/acapy-plugins/blob/main/redis_events/README.md) `redis_queue`
 
-<!-- Adopted from aries-acapy-cache-redis/README.md -->
+<!-- Adopted from acapy-cache-redis/README.md -->
 It provides a mechanism to persists both inbound and outbound messages using redis, deliver messages and webhooks, and dispatch events.
 
-More details can be found [here](https://github.com/hyperledger/aries-acapy-plugins/blob/main/redis_events/README.md).
+More details can be found [here](https://github.com/openwallet-foundation/acapy-plugins/blob/main/redis_events/README.md).
 
 ### Redis Queue configuration `yaml`
 
@@ -67,20 +67,20 @@ redis_queue:
 #### Redis Plugin With Docker
 
 Running the plugin with docker is simple. An
-example [docker-compose.yml](https://github.com/hyperledger/aries-acapy-plugins/blob/main/redis_events/docker/docker-compose.yml) file is available which launches both ACA-Py with redis and an accompanying Redis cluster.
+example [docker-compose.yml](https://github.com/openwallet-foundation/acapy-plugins/blob/main/redis_events/docker/docker-compose.yml) file is available which launches both ACA-Py with redis and an accompanying Redis cluster.
 
 ```sh
 docker-compose up --build -d
 ```
 
-More details can be found [here](https://github.com/hyperledger/aries-acapy-plugins/blob/main/redis_events/README.md).
+More details can be found [here](https://github.com/openwallet-foundation/acapy-plugins/blob/main/redis_events/README.md).
 
 #### Without Docker
 
 Installation
 
 ```bash
-pip install git+https://github.com/bcgov/aries-acapy-plugin-redis-events.git
+pip install git+https://github.com/openwallet-foundation/acapy-plugins.git
 ```
 
 Startup ACA-Py with `redis_queue` plugin loaded
@@ -204,7 +204,7 @@ Regardless of the options above, you will need to startup `deliverer` and `relay
 
 Both relay and mediator [demos](https://github.com/bcgov/aries-acapy-plugin-redis-events/tree/master/demo) are also available.
 
-## [aries-acapy-cache-redis](https://github.com/Indicio-tech/aries-acapy-cache-redis/blob/main/README.md) `redis_cache`
+## [acapy-cache-redis](https://github.com/Indicio-tech/aries-acapy-cache-redis/blob/main/README.md) `redis_cache`
 
 <!-- Adopted from aries-acapy-cache-redis/README.md -->
 ACA-Py uses a modular cache layer to story key-value pairs of data. The purpose

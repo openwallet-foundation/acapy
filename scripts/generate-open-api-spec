@@ -100,7 +100,7 @@ function buildACAPyDockerImage() {
 }
 
 # Start an ACA-py docker image
-# A simplified version of aries-cloudagent-python/scripts/run_docker
+# A simplified version of acapy/scripts/run_docker
 # needed to run without tty or interactive.
 # $1: The ACA-py docker image to use (i.e either from a repo or local)
 # $2: The port mapping from docker to local host in format "docker1:local1 docker2:local2"

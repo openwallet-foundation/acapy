@@ -102,7 +102,7 @@ sequenceDiagram
 
 An example of the implementation can be found via the anoncreds upgrade components.
 
-- `aries_cloudagent/wallet/routes.py` in the `upgrade_anoncreds` controller 
+- `acapy_agent/wallet/routes.py` in the `upgrade_anoncreds` controller 
 - the upgrade code in `wallet/anoncreds_upgrade.py`
 - the middleware in `admin/server.py` in the `upgrade_middleware` function
 - the singleton sets in `wallet/singletons.py`

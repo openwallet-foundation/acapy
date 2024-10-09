@@ -1,21 +1,21 @@
 # Container Images and Github Actions
 
-Aries Cloud Agent - Python is most frequently deployed using containers. From
+ACA-Py is most frequently deployed using containers. From
 the first release of ACA-Py up through 0.7.4, much of the community has built
-their Aries stack using the container images graciously provided by BC Gov and
+their deployments using the container images graciously provided by BC Gov and
 hosted through their `bcgovimages` docker hub account. These images have been
-critical to the adoption of not only ACA-Py but also Hyperledger Aries and SSI
+critical to the adoption of not only ACA-Py but also decentralized trust/SSI
 more generally.
 
 Recognizing how critical these images are to the success of ACA-Py and
-consistent with Hyperledger's commitment to open collaboration, container images
+consistent with the OpenWallet Foundation's commitment to open collaboration, container images
 are now built and published directly from the Aries Cloud Agent - Python project
 repository and made available through the [Github Packages Container
 Registry](https://ghcr.io).
 
 ## Image
 
-This project builds and publishes the `ghcr.io/hyperledger/aries-cloudagent-python` image.
+This project builds and publishes the `ghcr.io/openwallet-foundation/acapy` image.
 Multiple variants are available; see [Tags](#tags).
 
 ### Tags
@@ -27,7 +27,7 @@ of environments and workflows. The following variants exist:
 - "Standard" - The default configuration of ACA-Py, including:
   - Aries Askar for secure storage
   - Indy VDR for Indy ledger communication
-  - Indy Shared Libraries for AnonCreds
+  - AnonCreds Rust for AnonCreds
 
 In the past, two image variants were published. These two variants are largely
 distinguished by providers for Indy Network and AnonCreds support. The Standard
@@ -91,7 +91,7 @@ variants and between the BC Gov ACA-Py images.
   when manually triggered; builds and pushes the Standard ACA-Py variant to the
   Github Container Registry.
 - BDD Integration Tests (`.github/workflows/BDDTests.yml`) - Run on pull
-  requests (to the hyperledger fork only); runs BDD integration tests.
+  requests (to the openwallet-foundation fork only); runs BDD integration tests.
 - Format (`.github/workflows/format.yml`) - Run on pull requests;
   checks formatting of files modified by the PR.
 - CodeQL (`.github/workflows/codeql.yml`) - Run on pull requests; performs

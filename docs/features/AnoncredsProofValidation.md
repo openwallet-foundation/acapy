@@ -1,8 +1,8 @@
-# Anoncreds Proof Validation in ACA-Py
+# AnonCreds Proof Validation in ACA-Py
 
-ACA-Py performs pre-validation when verifying Anoncreds presentations (proofs). Some scenarios are rejected (such as those indicative of tampering), while some attributes are removed before running the anoncreds validation (e.g., removing superfluous non-revocation timestamps). Any ACA-Py validations or presentation modifications are indicated by the "verify_msgs" attribute in the final presentation exchange object.
+ACA-Py performs pre-validation when verifying AnonCreds presentations (proofs). Some scenarios are rejected (such as those indicative of tampering), while some attributes are removed before running the AnonCreds validation (e.g., removing superfluous non-revocation timestamps). Any ACA-Py validations or presentation modifications are indicated by the "verify_msgs" attribute in the final presentation exchange object.
 
-The list of possible verification messages can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/indy/verifier.py#L24), and consists of:
+The list of possible verification messages can be found [here](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/indy/verifier.py#L24), and consists of:
 
 ```python
 class PresVerifyMsg(str, Enum):
@@ -61,7 +61,7 @@ The following pre-verification checks are performed, which will cause the proof 
 VALUE_ERROR::<description of the failed validation>
 ```
 
-These validations are all performed within the [Indy verifier class](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/indy/verifier.py) - to see the detailed validation, look for any occurrences of `raise ValueError(...)` in the code.
+These validations are all performed within the [Indy verifier class](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/indy/verifier.py) - to see the detailed validation, look for any occurrences of `raise ValueError(...)` in the code.
 
 A summary of the possible errors includes:
 

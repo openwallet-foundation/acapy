@@ -1,4 +1,4 @@
-# Aries Cloud Agent Python (ACA-Py) Demos <!-- omit in toc -->
+# ACA-Py Demos <!-- omit in toc -->
 
 There are several demos available for ACA-Py mostly (but not only) aimed at developers learning how to deploy an instance of the agent and an ACA-Py controller to implement an application.
 
@@ -21,7 +21,6 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Revocation](#revocation)
   - [DID Exchange](#did-exchange)
   - [Endorser](#endorser)
-  - [Run Indy-SDK Backend](#run-indy-sdk-backend)
   - [Mediation](#mediation)
   - [Multi-ledger](#multi-ledger)
   - [Multi-tenancy](#multi-tenancy)
@@ -41,16 +40,16 @@ The Alice/Faber demo is the (in)famous first verifiable credentials demo. Alice,
 In your browser, go to the docker playground service [Play with Docker](https://labs.play-with-docker.com/). On the title screen, click "Start". On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands to start the Faber agent:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy
+cd acapy/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber
 ```
 
 Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
 
 ```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python
-cd aries-cloudagent-python/demo
+git clone https://github.com/openwallet-foundation/acapy
+cd acapy/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice
 ```
 
@@ -67,13 +66,13 @@ Open three `bash` shells. For Windows users, `git-bash` is highly recommended. b
 
 In the first terminal window, start `von-network` by following the [Building and Starting](https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md#building-and-starting) instructions.
 
-In the second terminal, change directory into `demo` directory of your clone of the Aries Cloud Agent Python repository. Start the `faber` agent by issuing the following command:
+In the second terminal, change directory into `demo` directory of your clone of the ACA-Py repository. Start the `faber` agent by issuing the following command:
 
 ``` bash
   ./run_demo faber
 ```
 
-In the third terminal, change directory into `demo` directory of your clone of the Aries Cloud Agent Python repository. Start the `alice` agent by issuing the following command:
+In the third terminal, change directory into `demo` directory of your clone of the ACA-Py repository. Start the `alice` agent by issuing the following command:
 
 ``` bash
   ./run_demo alice
@@ -279,14 +278,6 @@ With DID Exchange, you can also enable use of the inviter's public DID for invit
 
 This is described in [Endorser.md](Endorser.md)
 
-### Run Indy-SDK Backend
-
-This runs using the older (and not recommended) indy-sdk libraries instead of [Aries Askar](https://github.com/hyperledger/aries-ask):
-
-```bash
-./run_demo faber --wallet-type indy
-```
-
 ### Mediation
 
 To enable mediation, run the `alice` or `faber` demo with the `--mediation` option:
@@ -386,15 +377,15 @@ You can inspect the additional multi-tenancy admin API's (i.e. the "agency API" 
 Note that with multi-tenancy enabled:
 
 - The "base" wallet will have access to this new "agency API" - the agent's admin key, if enabled, must be provided in a header
-- "Base wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
-- The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py#L378))
-- "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
+- "Base wallet" API calls are handled [here](https://github.com/openwallet-foundation/acapy/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
+- The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/support/agent.py#L378))
+- "Sub-wallet" API calls are handled [here](https://github.com/openwallet-foundation/acapy/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
 
-Documentation on ACA-Py's multi-tenancy support can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md).
+Documentation on ACA-Py's multi-tenancy support can be found [here](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/Multitenancy.md).
 
 ### Multi-tenancy *with Mediation*!!!
 
-There are two options for configuring mediation with multi-tenancy, documented [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md#mediation).
+There are two options for configuring mediation with multi-tenancy, documented [here](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/Multitenancy.md#mediation).
 
 This demo implements option #2 - each sub-wallet is configured with a separate connection to the mediator.
 
@@ -440,15 +431,15 @@ Run Command:
 
 These Alice and Faber scripts (in the `demo/runners` folder) implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent. Note that this architecture, running the agent as a sub-process, is a variation on the documented architecture of running the controller and agent as separate processes/containers.
 
-The controllers for this demo can be found in the [alice.py](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/alice.py) and [faber.py](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/faber.py) files. Alice and Faber are instances of the agent class found in [agent.py](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/support/agent.py).
+The controllers for this demo can be found in the [alice.py](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/alice.py) and [faber.py](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/faber.py) files. Alice and Faber are instances of the agent class found in [agent.py](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/support/agent.py).
 
 ## OpenAPI (Swagger) Demo
 
-Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [Aries OpenAPI demo](AriesOpenAPIDemo.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connecting, issuing a credential, and presenting a proof sequence.
+Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [ACA-Py OpenAPI demo](OpenAPIDemo.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connecting, issuing a credential, and presenting a proof sequence.
 
 ## Performance Demo
 
-Another example in the `demo/runners` folder is [performance.py](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/performance.py), that is used to test out the performance of interacting agents. The script starts up agents for Alice and Faber, initializes them, and then runs through an interaction some number of times. In this case, Faber issues a credential to Alice 300 times.
+Another example in the `demo/runners` folder is [performance.py](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/performance.py), that is used to test out the performance of interacting agents. The script starts up agents for Alice and Faber, initializes them, and then runs through an interaction some number of times. In this case, Faber issues a credential to Alice 300 times.
 
 To run the demo, make sure that you shut down any running Alice/Faber agents. Then, follow the same steps to start the Alice/Faber demo, but:
 
@@ -489,7 +480,7 @@ Now that you have a solid foundation in using ACA-Py, time for a coding challeng
 * ACME requesting a proof of her College degree
 * ACME issuing Alice a credential after she is hired.
 
-The framework for the code is in the [acme.py](https://github.com/hyperledger/aries-cloudagent-python/tree/main/demo/runners/acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
+The framework for the code is in the [acme.py](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
 
 * Use the instructions above to start the Alice/Faber demo (above).
 * Start another terminal session and run the same commands as for "Alice", but replace "alice" with "acme".

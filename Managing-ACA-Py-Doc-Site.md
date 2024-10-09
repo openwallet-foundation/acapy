@@ -11,7 +11,7 @@ after creation. From time to time, some "extra" maintenance on the versions are
 needed and this document describes those activities.
 
 [MkDocs Material]: https://squidfunk.github.io/mkdocs-material/
-[publish-docs]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-docs.yml
+[publish-docs]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml
 
 ## Generation Process
 
@@ -35,8 +35,8 @@ When the GitHub Action fires, it runs a container that carries out the following
   to look at. The process uses the [mkdocs.yml] configuration file in generating
   the site.
 
-[scripts/prepmkdocs.sh]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/scripts/prepmkdocs.sh
-[mkdocs.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/mkdocs.yml
+[scripts/prepmkdocs.sh]: https://github.com/openwallet-foundation/acapy/blob/main/scripts/prepmkdocs.sh
+[mkdocs.yml]: https://github.com/openwallet-foundation/acapy/blob/main/mkdocs.yml
 
 ## Preparing for a Release
 

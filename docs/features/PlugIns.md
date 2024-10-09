@@ -160,14 +160,14 @@ The following links may be helpful or provide additional context for the current
 
 Configuration params:
 
-- https://github.com/hyperledger/aries-cloudagent-python/issues/1121
+- https://github.com/openwallet-foundation/acapy/issues/1121
 - https://hackmd.io/ROUzENdpQ12cz3UB9qk1nA
-- https://github.com/hyperledger/aries-cloudagent-python/pull/1226
+- https://github.com/openwallet-foundation/acapy/pull/1226
 
 Loading plug-ins:
 
-- https://github.com/hyperledger/aries-cloudagent-python/pull/1086
+- https://github.com/openwallet-foundation/acapy/pull/1086
 
 Versioning for plug-ins:
 
-- https://github.com/hyperledger/aries-cloudagent-python/pull/443
+- https://github.com/openwallet-foundation/acapy/pull/443

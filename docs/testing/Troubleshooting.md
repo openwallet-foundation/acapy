@@ -1,4 +1,4 @@
-# Troubleshooting Aries Cloud Agent Python <!-- omit in toc -->
+# Troubleshooting ACA-Py <!-- omit in toc -->
 
 This document contains some troubleshooting information that contributors to the
 community think may be helpful. Most of the content here assumes the reader has
@@ -47,11 +47,11 @@ We have discovered that in the ACA-Py AnonCreds implementation, it is possible
 to get into a state where the publishing of updates to a Revocation Registry
 (RevReg) is impossible. This can happen where ACA-Py starts to publish an update
 to the RevReg, but the write transaction to the Hyperledger Indy ledger fails
-for some reason. When a credential revocation is published, aca-py (via indy-sdk
+for some reason. When a credential revocation is published, ACA-Py (via indy-sdk
 or askar/credx) updates the revocation state in the wallet as well as on the
 ledger.  The revocation state is dependant on whatever the previous revocation
 state is/was, so if the ledger and wallet are mis-matched the publish will fail.
-(Andrew/s PR # 1804 (merged) should mitigate but probably won't completely
+([PR #1804](https://github.com/openwallet-foundation/acapy/issues/1804) (merged) mitigates but probably doesn't completely
 eliminate this from happening).
 
 For example, in case we've seen, the write RevRegEntry transaction failed at the
@@ -93,11 +93,11 @@ will be retained for use if needed.
 
 We originally ran into this due to the TAA acceptance getting lost when
 switching to multi-ledger (as described
-[here](https://github.com/hyperledger/aries-cloudagent-python/blob/main/Multiledger.md#a-special-warning-for-taa-acceptance).
+[here](../features/Multiledger.md#a-special-warning-for-taa-acceptance).
 Note that this is one reason how this "out of sync" scenario can occur, but
 there may be others.
 
-We add an integration test that demonstrates/tests this issue [here](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/features/taa-txn-author-acceptance.feature#L67).
+We add an integration test that demonstrates/tests this issue [here](https://github.com/openwallet-foundation/acapy/blob/main/demo/features/taa-txn-author-acceptance.feature#L67).
 
 To run the scenario either manually or using the integration tests, you can do the following:
 
