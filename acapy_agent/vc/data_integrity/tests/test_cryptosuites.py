@@ -1,13 +1,14 @@
 """Test Data Integrity Cryptosuites."""
 
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.wallet.keys.manager import MultikeyManager
-from aries_cloudagent.vc.data_integrity.cryptosuites import EddsaJcs2022
-from aries_cloudagent.core.in_memory import InMemoryProfile
-from aries_cloudagent.vc.data_integrity.models.options import DataIntegrityProofOptions
-from aries_cloudagent.resolver.default.key import KeyDIDResolver
-from aries_cloudagent.resolver.default.web import WebDIDResolver
-from aries_cloudagent.resolver.did_resolver import DIDResolver
+
+from acapy_agent.core.in_memory import InMemoryProfile
+from acapy_agent.resolver.default.key import KeyDIDResolver
+from acapy_agent.resolver.default.web import WebDIDResolver
+from acapy_agent.resolver.did_resolver import DIDResolver
+from acapy_agent.vc.data_integrity.cryptosuites import EddsaJcs2022
+from acapy_agent.vc.data_integrity.models.options import DataIntegrityProofOptions
+from acapy_agent.wallet.keys.manager import MultikeyManager
 
 
 class TestEddsaJcs2022(IsolatedAsyncioTestCase):
