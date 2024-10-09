@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Optional
+from typing import Literal, Optional
 
 from pydid import DIDDocument
 
@@ -12,6 +12,20 @@ from ..did.did_key import DIDKey
 from ..resolver.did_resolver import DIDResolver
 
 LOGGER = logging.getLogger(__name__)
+
+
+ProofPurposeStr = Literal[
+    "assertionMethod",
+    "authentication",
+    "capabilityDelegation",
+    "capabilityInvocation",
+]
+PROOF_PURPOSES = (
+    "authentication",
+    "assertionMethod",
+    "capabilityInvocation",
+    "capabilityDelegation",
+)
 
 
 class VerificationKeyStrategyError(BaseError):
@@ -28,7 +42,7 @@ class BaseVerificationKeyStrategy(ABC):
         profile: Profile,
         *,
         proof_type: Optional[str] = None,
-        proof_purpose: Optional[str] = None,
+        proof_purpose: Optional[ProofPurposeStr] = None,
     ) -> Optional[str]:
         """Given a DID, returns the verification key ID in use.
 
@@ -62,7 +76,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         profile: Profile,
         *,
         proof_type: Optional[str] = None,
-        proof_purpose: Optional[str] = None,
+        proof_purpose: Optional[ProofPurposeStr] = None,
     ) -> Optional[str]:
         """Given a did:key or did:sov, returns the verification key ID in use.
 
@@ -77,12 +91,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         proof_type = proof_type or "Ed25519Signature2018"
         proof_purpose = proof_purpose or "assertionMethod"
 
-        if proof_purpose not in (
-            "authentication",
-            "assertionMethod",
-            "capabilityInvocation",
-            "capabilityDelegation",
-        ):
+        if proof_purpose not in PROOF_PURPOSES:
             raise ValueError("Invalid proof purpose")
 
         if did.startswith("did:key:"):
