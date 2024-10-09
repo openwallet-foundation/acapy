@@ -67,7 +67,7 @@ jobs:
           if [ ${{ github.event_name }} == 'pull_request' ]; then
             echo ${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}
             echo ${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
-            sed -i 's|@git+https://github.com/openwallet-foundation/acapy@main|@git+${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}@${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}|g' ./aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
+            sed -i 's|aries-cloudagent\[indy, bbs, askar\]@git+https://github.com/hyperledger/aries-cloudagent-python@main|acapy-agent[indy, bbs, askar]@git+${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}@${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}|g' ./aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
           fi
           cat aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
 
