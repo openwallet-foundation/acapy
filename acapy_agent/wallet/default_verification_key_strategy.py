@@ -1,13 +1,19 @@
 """Utilities for specifying which verification method is in use for a given DID."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+import logging
+from typing import Optional
 
+from acapy_agent.core.error import BaseError
 from acapy_agent.core.profile import Profile
 from acapy_agent.did.did_key import DIDKey
-from acapy_agent.wallet.key_type import KeyType
-
 from acapy_agent.resolver.did_resolver import DIDResolver
+
+LOGGER = logging.getLogger(__name__)
+
+
+class VerificationKeyStrategyError(BaseError):
+    """Raised on issues with verfication method derivation."""
 
 
 class BaseVerificationKeyStrategy(ABC):
@@ -17,9 +23,9 @@ class BaseVerificationKeyStrategy(ABC):
     async def get_verification_method_id_for_did(
         self,
         did: str,
-        profile: Optional[Profile],
+        profile: Profile,
+        *,
         proof_type: Optional[str] = None,
-        allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
         """Given a DID, returns the verification key ID in use.
@@ -40,6 +46,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
 
     Supports did:key: and did:sov only.
     """
+
     def __init__(self):
         """Initialize the key types mapping."""
         self.key_types_mapping = {
@@ -50,9 +57,9 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     async def get_verification_method_id_for_did(
         self,
         did: str,
-        profile: Optional[Profile],
+        profile: Profile,
+        *,
         proof_type: Optional[str] = None,
-        allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
         """Given a did:key or did:sov, returns the verification key ID in use.
@@ -65,22 +72,45 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :returns Optional[str]: the current verkey ID
         """
+        proof_type = proof_type or "Ed25519Signature2018"
+        proof_purpose = proof_purpose or "assertionMethod"
+
+        if proof_purpose not in (
+            "authentication",
+            "assertionMethod",
+            "capabilityInvocation",
+            "capabilityDelegation",
+        ):
+            raise ValueError("Invalid proof purpose")
+
         if did.startswith("did:key:"):
             return DIDKey.from_did(did).key_id
         elif did.startswith("did:sov:"):
             # key-1 is what uniresolver uses for key id
             return did + "#key-1"
-        elif did.startswith("did:web:"):
-            did_resolver = profile.inject(DIDResolver)
-            did_document = await did_resolver.resolve(profile=profile, did=did)
-            if proof_type:
-                verification_method_types = self.key_types_mapping[proof_type]
-                verification_method_list = did_document.get("verificationMethod", None)
-                for method in verification_method_list:
-                    if method.get("type") in verification_method_types:
-                        return method.get("id")
-            else:
-                # taking the first verification method from did document
-                verification_method_id = verification_method_list[0].get("id")
-                return verification_method_id
-        return None
+
+        resolver = profile.inject(DIDResolver)
+        did_document = await resolver.resolve(profile=profile, did=did)
+        method_types = self.key_types_mapping[proof_type]
+
+        methods = did_document.get(proof_purpose, [])
+        methods = [vm for vm in methods if vm.get("type") in method_types]
+        if not methods:
+            raise VerificationKeyStrategyError(
+                f"No matching verification method found for did {did} with proof "
+                f"type {proof_type} and purpose {proof_purpose}"
+            )
+
+        if len(methods) > 1:
+            LOGGER.info(
+                (
+                    "More than 1 verification method matched for did %s with proof "
+                    "type %s and purpose %s; returning the first: %s"
+                ),
+                did,
+                proof_type,
+                proof_purpose,
+                methods[0].id,
+            )
+
+        return methods[0].id

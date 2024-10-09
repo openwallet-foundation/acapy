@@ -118,20 +118,13 @@ class DIFPresExchHandler:
     ):
         """Get signature suite for signing presentation."""
         did_info = await self._did_info_for_did(issuer_id)
-        verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
-        verification_method = (
-            await verkey_id_strategy.get_verification_method_id_for_did(
-                issuer_id,
-                self.profile,
-                proof_type=self.proof_type,
-                proof_purpose="assertionMethod",
-            )
+        vm_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
+        verification_method = await vm_id_strategy.get_verification_method_id_for_did(
+            issuer_id,
+            self.profile,
+            proof_type=self.proof_type,
+            proof_purpose="assertionMethod",
         )
-
-        if verification_method is None:
-            raise DIFPresExchError(
-                f"Unable to get retrieve verification method for did {issuer_id}"
-            )
 
         # Get signature class based on proof type
         SignatureClass = self.PROOF_TYPE_SIGNATURE_SUITE_MAPPING[self.proof_type]

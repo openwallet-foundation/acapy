@@ -344,14 +344,12 @@ class VcLdpManager:
         verification_method = (
             options.verification_method
             or await verkey_id_strategy.get_verification_method_id_for_did(
-                issuer_id, self.profile, proof_type, proof_purpose="assertionMethod"
+                issuer_id,
+                self.profile,
+                proof_type=proof_type,
+                proof_purpose="assertionMethod",
             )
         )
-
-        if verification_method is None:
-            raise VcLdpManagerError(
-                f"Unable to get retrieve verification method for did {issuer_id}"
-            )
 
         suite = await self._get_suite(
             proof_type=proof_type,
