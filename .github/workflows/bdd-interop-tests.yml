@@ -61,26 +61,26 @@ jobs:
         if: steps.check-if-src-changed.outputs.run_tests != 'false'
         run: |
           # Get AATH 
-          git clone https://github.com/hyperledger/aries-agent-test-harness.git
+          git clone https://github.com/openwallet-foundation/owl-agent-test-harness.git
 
           # Change fork and branch for pull requests
           if [ ${{ github.event_name }} == 'pull_request' ]; then
             echo ${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}
             echo ${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
-            sed -i 's|@git+https://github.com/openwallet-foundation/acapy@main|@git+${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}@${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}|g' ./aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
+            sed -i 's|@git+https://github.com/openwallet-foundation/acapy@main|@git+${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}@${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}|g' ./owl-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
           fi
-          cat aries-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
+          cat owl-agent-test-harness/aries-backchannels/acapy/requirements-main.txt
 
-          cd aries-agent-test-harness
+          cd owl-agent-test-harness
           ./manage build -a acapy-main
       - name: Run PR Interop Tests
         if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
-          cd aries-agent-test-harness
+          cd owl-agent-test-harness
           NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound
       - name: Run Release or Nightly Interop Tests
         if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
-          cd aries-agent-test-harness
+          cd owl-agent-test-harness
           NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @AcceptanceTest -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound
 
