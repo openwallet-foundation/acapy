@@ -168,7 +168,7 @@ Use the ngrok url for the tails server that you noted earlier.
 
 #### Waiting for the Faber agent to start ...
 
-The `Preparing agent image...` step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md) "Play with Docker" section, except:
+The `Preparing agent image...` step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the [Aries OpenAPI Demo](./OpenAPIDemo.md) "Play with Docker" section, except:
 
 - We are using the BCovrin Test network because that is a network that the mobile agents can be configured to use.
 - We are running in "auto" mode, so we will make no manual acknowledgements.

@@ -126,7 +126,7 @@ Use the ["install and go" page for developers](./docs/features/DevReadMe.md) if 
 
 If you would like to develop on ACA-Py locally note that we use Poetry for dependency management and packaging. If you are unfamiliar with poetry please see our [cheat sheet](./docs/deploying/Poetry.md)
 
-[Traction Workshop]: ./docs/demo/Aries-Workshop.md
+[Traction Workshop]: ./docs/demo/ACA-Py-Workshop.md
 
 ## About the ACA-Py Admin API
 
