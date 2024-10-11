@@ -1,5 +1,56 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.1.0rc0
+
+### October 11, 2024
+
+Release 1.0.2 is the first release of ACA-Py from the [OpenWallet Foundation] (OWF). The only reason for the release is to test out all of the release publishing actions now that we have moved the repo to its new home ([https://github.com/openwallet-foundation/acapy](https://github.com/openwallet-foundation/acapy)). Almost all of the changes in the release are related to the move.
+
+[OpenWallet Foundation]: https://openwallet.foundation/
+
+The move triggered some big changes for those with existing ACA-Py deployments resulting from the change in the GitHub organization (from Hyperledger to OWF) and source code name (from `aries_cloudagent` to `acapy_agent`). See the [Release 1.1.0 breaking changes](#110rc0-breaking-changes) for the details.
+
+For up to date details on what the repo move means for ACA-Py users, including steps for updating deployments, please follow the updates in [GitHub Issue #3250]. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!
+
+[GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
+
+### 1.1.0rc0 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.0.1](#101) release about AIP 1.0 protocols still apply. The protocols remain in the 1.1.0 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
+
+### 1.1.0rc0 Breaking Changes
+
+The only (but significant) breaking changes in 1.1.0 are related to the GitHub organization and project name changes. Specific impacts are:
+
+- the renaming of the source code folder from `aries_cloudagent` to `acapy_agent`,
+- the publication of the [PyPi] project under the new `acapy_agent` name, and
+- the use of the OWF organizational GitHub Container Registry ([GHCR]) and `acapy_agent` as the name for release container image artifacts.
+  - The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: [docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly](docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly).
+
+[PyPi]: https://pypi.org
+[GHCR]: https://ghcr.io
+
+Anyone deploying ACA-Py should use this release to update their existing deployments. Since there are no other changes to ACA-Py, any issues found should relate back to those changes.
+
+- Deployments referencing the [PyPi] project (including those in custom plugins) **MUST** update their deployments to use the new name.
+- Deployments sourcing the ACA-Py published container image artifacts to [GHCR] must update their deployments to use the new URLs.
+
+Please note that if and when the current LTS releases (0.11 and 0.12) have new releases, they will continue to use the `aries_cloudagent` source folder, the existing locations for the [PyPi] and [GHCR] container image artifacts.
+
+#### 1.1.0rc0 Categorized List of Pull Requests
+
+- Updates related to the move and rename of the repository from the Hyperledger to [OpenWallet Foundation] GitHub organization
+  - Update interop fork location after AATH update [\#3282](https://github.com/openwallet-foundation/acapy/pull/3282) [jamshale](https://github.com/jamshale)
+  - Fix interop test fork location replacement [\#3280](https://github.com/openwallet-foundation/acapy/pull/3280) [jamshale](https://github.com/jamshale)
+  - Update MDs and release publishing files to reflect the repo move to OWF [\#3270](https://github.com/openwallet-foundation/acapy/pull/3270) [swcurran](https://github.com/swcurran)
+  - General repo updates post OWF move. [\#3267](https://github.com/openwallet-foundation/acapy/pull/3267) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.1.0rc0 [\#3284](https://github.com/openwallet-foundation/acapy/pull/3284) [swcurran](https://github.com/swcurran)
+
+- Dependabot PRs
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-08..2024-10-11+author%3Aapp%2Fdependabot+)
+
 ## 1.0.1
 
 ### October 8, 2024
@@ -17,11 +68,11 @@ The 1.0.1 release contains mostly internal clean ups, technical debt elimination
 [Aries Agent Test Harness]: https://github.com/hyperledger/aries-agent-test-harness
 [VC-DI]: https://www.w3.org/TR/vc-data-integrity/
 
-There are several important **[deprecation notices](#deprecation-notices)** in this release in preparation for the next ACA-Py release. Please review these notifications carefully!
+There are several important **[deprecation notices](#101-deprecation-notices)** in this release in preparation for the next ACA-Py release. Please review these notifications carefully!
 
 In an attempt to shorten the categorized list of PRs in the release, rather than listing all of the `dependabot` PRs in the release, we've included a link to a list of those PRs.
 
-#### Deprecation Notices
+#### 1.0.1 Deprecation Notices
 
 - ACA-Py will soon be moved from the Hyperledger GitHub organization to that of the [OpenWallet Foundation]. As such, there will be changes in the names and locations of the artifacts produced -- the [PyPi] project and the container images in the [GitHub Container Registry]. We will retain the ability to publish LTS releases of ACA-Py for the current LTS versions (0.11, 0.12) in the current locations. For details, guidance, timing, and progress on the move, please monitor the description of [GitHub Issue #3250] that will be maintained throughout the process.
 
@@ -190,7 +241,7 @@ With the focus of the pull requests for this release on stabilizing the implemen
   - Fix typo credetial, uste [\#3146](https://github.com/hyperledger/aries-cloudagent-python/pull/3146) [rngadam](https://github.com/rngadam)
   - Fix links to AliceGetsAPhone.md from abs to rel and blob refs [\#3128](https://github.com/hyperledger/aries-cloudagent-python/pull/3128) [rngadam](https://github.com/rngadam)
   - DOC: Verifiable Credential Data Integrity (VC-DI) Credentials in Aries Cloud Agent Python (ACA-Py) #2947 [\#3110](https://github.com/hyperledger/aries-cloudagent-python/pull/3110) [kenechukwu-orjiene](https://github.com/kenechukwu-orjiene)
-  - demo/Aries-Workshop.md tweak for Traction Sandbox update [\#3136](https://github.com/hyperledger/aries-cloudagent-python/pull/3136) [loneil](https://github.com/loneil)
+  - demo/ACA-Py-Workshop.md tweak for Traction Sandbox update [\#3136](https://github.com/hyperledger/aries-cloudagent-python/pull/3136) [loneil](https://github.com/loneil)
   - Adds documentation site docs for releases 0.11.0 [\#3133](https://github.com/hyperledger/aries-cloudagent-python/pull/3133) [swcurran](https://github.com/swcurran)
   - Add descriptive error for issuance without RevRegRecord [\#3109](https://github.com/hyperledger/aries-cloudagent-python/pull/3109) [jamshale](https://github.com/jamshale)
   - Switch from black to ruff [\#3080](https://github.com/hyperledger/aries-cloudagent-python/pull/3080) [jamshale](https://github.com/jamshale)

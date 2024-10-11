@@ -6,7 +6,7 @@ a major, minor or patch release, per [semver](https://semver.org/) rules.
 
 Once ready to do a release, create a local branch that includes the following updates:
 
-1. Create a local PR branch from an updated `main` branch, e.g. "1.0.1".
+1. Create a local PR branch from an updated `main` branch, e.g. "1.1.0rc0".
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
@@ -68,14 +68,15 @@ Once you have the list of PRs:
 - Organize the list into suitable categories in the [CHANGELOG.md](CHANGELOG.md) file, update (if necessary) the PR title and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
 - Add a narrative about the release above the PR that highlights what has gone into the release.
 - To cover the `dependabot` PRs without listing them all, add to the end of the
-  categorized list of PRs the last two lines of the script output. Make sure the dates are right! The text will look like this:
+  categorized list of PRs the two `dependabot` lines of the script output (after the list of PRs). The text will look like this:
 
 ```text
 - Dependabot PRs
   - [List of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-16..2024-09-16+author%3Aapp%2Fdependabot+)
 ```
 
-Include a PR for this soon-to-be PR. You can guess at the number of the PR by using this command `gh issue list -s all -L 2; gh pr ls -s all -L 2` to see the highest PR and issues, but you still might have to correct the number after you create the PR if someone sneaks one in before you submit your PR.
+- Check the dates in the `dependabot` URL to make sure the full period between the previous non-RC release to the date of the non-RC release you are preparing.
+- Include a PR in the list for this soon-to-be PR, initially with the "next to be issued" number for PRs/Issues. At the end output of the script is the highest numbered PR and issue. Your PR will be one higher than the highest of those two numbers. Note that you still might have to correct the number after you create the PR if someone sneaks an issue or PR in before you submit your PR.
 
 5. Check to see if there are any other PRs that should be included in the release.
 
@@ -101,9 +102,9 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
    to better follow the semver rules.
 
 8. Regenerate openapi.json and swagger.json by running
-   `scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
+   `scripts/generate-open-api-spec` from within the `acapy_agent` folder.
 
-   Command: `cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..`
+   Command: `cd acapy_agent;../scripts/generate-open-api-spec;cd ..`
 
    Folders may not be cleaned up by the script, so the following can be run, likely with `sudo` -- `rm -rf open-api/.build`. The folder is `.gitignore`d, so there is not a danger they will be pushed, even if they are not deleted.
 
@@ -139,7 +140,7 @@ Include a PR for this soon-to-be PR. You can guess at the number of the PR by us
 [publish-indy.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-indy.yml
 
 1.   When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format `docs-v<version>`, for example, `docs-v1.0.1rc1`.
+    the branch name in the format `docs-v<version>`, for example, `docs-v1.1.0rc0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
     publishing it at [https://aca-py.org]. The GitHub Action also executes when
