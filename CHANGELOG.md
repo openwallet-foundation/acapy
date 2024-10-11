@@ -4,7 +4,7 @@
 
 ### October 11, 2024
 
-Release 1.0.2 is the first release of ACA-Py from the [OpenWallet Foundation] (OWF). The only reason for the release is to test out all of the release publishing actions now that we have moved the repo to its new home ([https://github.com/openwallet-foundation/acapy](https://github.com/openwallet-foundation/acapy)). Almost all of the changes in the release are related to the move.
+Release 1.1.0 is the first release of ACA-Py from the [OpenWallet Foundation] (OWF). The only reason for the release is to test out all of the release publishing actions now that we have moved the repo to its new home ([https://github.com/openwallet-foundation/acapy](https://github.com/openwallet-foundation/acapy)). Almost all of the changes in the release are related to the move.
 
 [OpenWallet Foundation]: https://openwallet.foundation/
 
