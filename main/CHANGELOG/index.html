@@ -523,6 +523,48 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#110rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1.0rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.1.0rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#october-11-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      October 11, 2024
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#110rc0-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1.0rc0 Deprecation Notices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#110rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1.0rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#101" class="md-nav__link">
     <span class="md-ellipsis">
       1.0.1
@@ -2593,6 +2635,48 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#110rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1.0rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.1.0rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#october-11-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      October 11, 2024
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#110rc0-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1.0rc0 Deprecation Notices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#110rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1.0rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#101" class="md-nav__link">
     <span class="md-ellipsis">
       1.0.1
@@ -2908,14 +2992,61 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="110rc0">1.1.0rc0<a class="headerlink" href="#110rc0" title="Permanent link">&para;</a></h2>
+<h3 id="october-11-2024">October 11, 2024<a class="headerlink" href="#october-11-2024" title="Permanent link">&para;</a></h3>
+<p>Release 1.1.0 is the first release of ACA-Py from the <a href="https://openwallet.foundation/">OpenWallet Foundation</a> (OWF). The only reason for the release is to test out all of the release publishing actions now that we have moved the repo to its new home (<a href="https://github.com/openwallet-foundation/acapy">https://github.com/openwallet-foundation/acapy</a>). Almost all of the changes in the release are related to the move.</p>
+<p>The move triggered some big changes for those with existing ACA-Py deployments resulting from the change in the GitHub organization (from Hyperledger to OWF) and source code name (from <code>aries_cloudagent</code> to <code>acapy_agent</code>). See the <a href="#110rc0-breaking-changes">Release 1.1.0 breaking changes</a> for the details.</p>
+<p>For up to date details on what the repo move means for ACA-Py users, including steps for updating deployments, please follow the updates in <a href="https://github.com/hyperledger/aries-cloudagent-python/issues/3250">GitHub Issue #3250</a>. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!</p>
+<h3 id="110rc0-deprecation-notices">1.1.0rc0 Deprecation Notices<a class="headerlink" href="#110rc0-deprecation-notices" title="Permanent link">&para;</a></h3>
+<p>The same <strong><a href="#101-deprecation-notices">deprecation notices</a></strong> from the <a href="#101">1.0.1</a> release about AIP 1.0 protocols still apply. The protocols remain in the 1.1.0 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!</p>
+<h3 id="110rc0-breaking-changes">1.1.0rc0 Breaking Changes<a class="headerlink" href="#110rc0-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>The only (but significant) breaking changes in 1.1.0 are related to the GitHub organization and project name changes. Specific impacts are:</p>
+<ul>
+<li>the renaming of the source code folder from <code>aries_cloudagent</code> to <code>acapy_agent</code>,</li>
+<li>the publication of the <a href="https://pypi.org">PyPi</a> project under the new <code>acapy_agent</code> name, and</li>
+<li>the use of the OWF organizational GitHub Container Registry (<a href="https://ghcr.io">GHCR</a>) and <code>acapy_agent</code> as the name for release container image artifacts.<ul>
+<li>The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: <a href="docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly">docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly</a>.</li>
+</ul>
+</li>
+</ul>
+<p>Anyone deploying ACA-Py should use this release to update their existing deployments. Since there are no other changes to ACA-Py, any issues found should relate back to those changes.</p>
+<ul>
+<li>Deployments referencing the <a href="https://pypi.org">PyPi</a> project (including those in custom plugins) <strong>MUST</strong> update their deployments to use the new name.</li>
+<li>Deployments sourcing the ACA-Py published container image artifacts to <a href="https://ghcr.io">GHCR</a> must update their deployments to use the new URLs.</li>
+</ul>
+<p>Please note that if and when the current LTS releases (0.11 and 0.12) have new releases, they will continue to use the <code>aries_cloudagent</code> source folder, the existing locations for the <a href="https://pypi.org">PyPi</a> and <a href="https://ghcr.io">GHCR</a> container image artifacts.</p>
+<h4 id="110rc0-categorized-list-of-pull-requests">1.1.0rc0 Categorized List of Pull Requests<a class="headerlink" href="#110rc0-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>Updates related to the move and rename of the repository from the Hyperledger to <a href="https://openwallet.foundation/">OpenWallet Foundation</a> GitHub organization</p>
+<ul>
+<li>Update interop fork location after AATH update <a href="https://github.com/openwallet-foundation/acapy/pull/3282">#3282</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Fix interop test fork location replacement <a href="https://github.com/openwallet-foundation/acapy/pull/3280">#3280</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Update MDs and release publishing files to reflect the repo move to OWF <a href="https://github.com/openwallet-foundation/acapy/pull/3270">#3270</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>General repo updates post OWF move. <a href="https://github.com/openwallet-foundation/acapy/pull/3267">#3267</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li>
+<p>Release management pull requests:</p>
+<ul>
+<li>1.1.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3284">#3284</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li>
+<p>Dependabot PRs</p>
+<ul>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-08..2024-10-11+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="101">1.0.1<a class="headerlink" href="#101" title="Permanent link">&para;</a></h2>
 <h3 id="october-8-2024">October 8, 2024<a class="headerlink" href="#october-8-2024" title="Permanent link">&para;</a></h3>
 <p>Release 1.0.1 will be the last release of ACA-Py from the Hyperledger organization before the repository moves to the <a href="https://openwallet.foundation/">OpenWallet Foundation</a> (OWF). Soon after this release, the ACA-Py project and this repository will move to the OWF's GitHub organization as the <a href="https://github.com/openwallet-foundation/project-proposals/blob/main/projects/aca-py.md">new "acapy" project</a>.</p>
 <p>For details on what this means for ACA-Py users, including steps for updating deployments, please follow the updates in <a href="https://github.com/hyperledger/aries-cloudagent-python/issues/3250">GitHub Issue #3250</a>. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!</p>
 <p>The 1.0.1 release contains mostly internal clean ups, technical debt elimination, and a revision to the integration testing approach, incorporating the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness</a> tests in the ACA-Py continuous integration testing process. There are substantial enhancements in the management of keys and their use with <a href="https://www.w3.org/TR/vc-data-integrity/">VC-DI</a> proofs, and web-based DID methods like <code>did:web</code>. See the <code>Wallet and Key Handling</code> updates in the categorized PR list below.</p>
-<p>There are several important <strong><a href="#deprecation-notices">deprecation notices</a></strong> in this release in preparation for the next ACA-Py release. Please review these notifications carefully!</p>
+<p>There are several important <strong><a href="#101-deprecation-notices">deprecation notices</a></strong> in this release in preparation for the next ACA-Py release. Please review these notifications carefully!</p>
 <p>In an attempt to shorten the categorized list of PRs in the release, rather than listing all of the <code>dependabot</code> PRs in the release, we've included a link to a list of those PRs.</p>
-<h4 id="deprecation-notices">Deprecation Notices<a class="headerlink" href="#deprecation-notices" title="Permanent link">&para;</a></h4>
+<h4 id="101-deprecation-notices">1.0.1 Deprecation Notices<a class="headerlink" href="#101-deprecation-notices" title="Permanent link">&para;</a></h4>
 <ul>
 <li>
 <p>ACA-Py will soon be moved from the Hyperledger GitHub organization to that of the <a href="https://openwallet.foundation/">OpenWallet Foundation</a>. As such, there will be changes in the names and locations of the artifacts produced -- the <a href="https://pypi.org">PyPi</a> project and the container images in the <a href="https://ghcr.io">GitHub Container Registry</a>. We will retain the ability to publish LTS releases of ACA-Py for the current LTS versions (0.11, 0.12) in the current locations. For details, guidance, timing, and progress on the move, please monitor the description of <a href="https://github.com/hyperledger/aries-cloudagent-python/issues/3250">GitHub Issue #3250</a> that will be maintained throughout the process.</p>
@@ -3117,7 +3248,7 @@
 <li>Fix typo credetial, uste <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3146">#3146</a> <a href="https://github.com/rngadam">rngadam</a></li>
 <li>Fix links to AliceGetsAPhone.md from abs to rel and blob refs <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3128">#3128</a> <a href="https://github.com/rngadam">rngadam</a></li>
 <li>DOC: Verifiable Credential Data Integrity (VC-DI) Credentials in Aries Cloud Agent Python (ACA-Py) <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/2947" title="GitHub Issue: squidfunk/mkdocs-material #2947">#2947</a> <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3110">#3110</a> <a href="https://github.com/kenechukwu-orjiene">kenechukwu-orjiene</a></li>
-<li>demo/Aries-Workshop.md tweak for Traction Sandbox update <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3136">#3136</a> <a href="https://github.com/loneil">loneil</a></li>
+<li>demo/ACA-Py-Workshop.md tweak for Traction Sandbox update <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3136">#3136</a> <a href="https://github.com/loneil">loneil</a></li>
 <li>Adds documentation site docs for releases 0.11.0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3133">#3133</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>Add descriptive error for issuance without RevRegRecord <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3109">#3109</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Switch from black to ruff <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/3080">#3080</a> <a href="https://github.com/jamshale">jamshale</a></li>
