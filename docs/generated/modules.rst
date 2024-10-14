@@ -1,7 +1,7 @@
-aries_cloudagent
-================
+acapy_agent
+===========
 
 .. toctree::
    :maxdepth: 4
 
-   aries_cloudagent
+   acapy_agent
