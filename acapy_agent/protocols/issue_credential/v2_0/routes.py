@@ -1216,7 +1216,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             outbound_handler,
         )
     except LinkedDataProofException as err:
-        raise web.HTTPBadRequest(reason=err) from err
+        raise web.HTTPBadRequest(reason=str(err)) from err
 
     await outbound_handler(cred_offer_message, connection_id=connection_id)
 
