@@ -11,7 +11,7 @@ For details on what this means for ACA-Py users, including steps for updating de
 [GitHub Issue #3250]: https://github.com/openwallet-foundation/acapy/issues/3250
 
 <p float="left">
-  <a href="https://pypi.org/project/acapy-agentt/"><img src="https://img.shields.io/pypi/v/acapy-agent" width="100" height="20" />
+  <a href="https://pypi.org/project/acapy-agent/"><img src="https://img.shields.io/pypi/v/acapy-agent" width="100" height="20" />
   <img src="https://sonarcloud.io/images/project_badges/sonarcloud-white.svg" width="120" height="20" />
   <img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=coverage" width="120"  height="20" />
   &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=security_rating" width="100"  height="20" />
@@ -76,7 +76,7 @@ Startup options allow the use of an ACA-Py as a DIDComm [mediator](https://githu
 
 ### Indy Transaction Endorsing
 
-ACA-Py supports a Transaction Endorsement protocol, for agents that don't have write access to an Indy ledger.  Endorser support is documented [here](./features/Endorser.md).
+ACA-Py supports a Transaction Endorsement protocol, for agents that don't have write access to an Indy ledger.  Endorser support is documented [here](./docs/features/Endorser.md).
 
 ### Scaled Deployments
 
@@ -90,20 +90,20 @@ A set of endpoints conforming to the vc-api specification are included to manage
 
 The business logic you use with ACA-Py is limited only by your imagination. Possible applications include:
 
-* An interface to a legacy system to issue verifiable credentials
-* An authentication service based on the presentation of verifiable credential proofs
-* An enterprise wallet to hold and present verifiable credentials about that enterprise
-* A user interface for a person to use a wallet not stored on a mobile device
-* An application embedded in an IoT device, capable of issuing verifiable credentials about collected data
-* A persistent connection to other agents that enables secure messaging and notifications
-* Custom code to implement a new service.
+- An interface to a legacy system to issue verifiable credentials
+- An authentication service based on the presentation of verifiable credential proofs
+- An enterprise wallet to hold and present verifiable credentials about that enterprise
+- A user interface for a person to use a wallet not stored on a mobile device
+- An application embedded in an IoT device, capable of issuing verifiable credentials about collected data
+- A persistent connection to other agents that enables secure messaging and notifications
+- Custom code to implement a new service.
 
 ## Getting Started
 
 For those new to SSI, Wallets, and ACA-Py, there are a couple of Linux Foundation edX courses that provide a good starting point.
 
-* [Identity in Hyperledger: Indy, Aries and Ursa](https://www.edx.org/course/identity-in-hyperledger-aries-indy-and-ursa)
-* [Becoming a Hyperledger Aries Developer](https://www.edx.org/course/becoming-a-hyperledger-aries-developer)
+- [Identity in Hyperledger: Indy, Aries and Ursa](https://www.edx.org/course/identity-in-hyperledger-aries-indy-and-ursa)
+- [Becoming a Hyperledger Aries Developer](https://www.edx.org/course/becoming-a-hyperledger-aries-developer)
 
 The latter is the most useful for developers wanting to get a solid basis in using ACA-Py and other Aries Frameworks.
 
@@ -140,7 +140,7 @@ Technical note: the administrative API exposed by the agent for the controller t
 
 There are a number of resources for getting help with ACA-Py and troubleshooting
 any problems you might run into. The
-[Troubleshooting](./testing/Troubleshooting.md) document contains some
+[Troubleshooting](./docs/testing/Troubleshooting.md) document contains some
 guidance about issues that have been experienced in the past. Feel free to
 submit PRs to supplement the troubleshooting document! Searching the [ACA-Py
 GitHub issues](https://github.com/openwallet-foundation/acapy/issues)
