@@ -1,6 +1,6 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.1.0rc1
+## 1.1.0
 
 ### October 15, 2024
 
@@ -14,11 +14,11 @@ For up to date details on what the repo move means for ACA-Py users, including s
 
 [GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
 
-### 1.1.0rc1 Deprecation Notices
+### 1.1.0 Deprecation Notices
 
 The same **[deprecation notices](#101-deprecation-notices)** from the [1.0.1](#101) release about AIP 1.0 protocols still apply. The protocols remain in the 1.1.0 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
 
-### 1.1.0rc1 Breaking Changes
+### 1.1.0 Breaking Changes
 
 The only (but significant) breaking changes in 1.1.0 are related to the GitHub organization and project name changes. Specific impacts are:
 
@@ -37,7 +37,7 @@ Anyone deploying ACA-Py should use this release to update their existing deploym
 
 Please note that if and when the current LTS releases (0.11 and 0.12) have new releases, they will continue to use the `aries_cloudagent` source folder, the existing locations for the [PyPi] and [GHCR] container image artifacts.
 
-#### 1.1.0rc1 Categorized List of Pull Requests
+#### 1.1.0 Categorized List of Pull Requests
 
 - Updates related to the move and rename of the repository from the Hyperledger to [OpenWallet Foundation] GitHub organization
   - Change pypi upload workflow to use pypa/gh-action-pypi-publish [\#3291](https://github.com/openwallet-foundation/acapy/pull/3291) [jamshale](https://github.com/jamshale)
@@ -47,6 +47,7 @@ Please note that if and when the current LTS releases (0.11 and 0.12) have new r
   - General repo updates post OWF move. [\#3267](https://github.com/openwallet-foundation/acapy/pull/3267) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 1.1.0 [\#3294](https://github.com/openwallet-foundation/acapy/pull/3292) [swcurran](https://github.com/swcurran)
   - 1.1.0rc1 [\#3292](https://github.com/openwallet-foundation/acapy/pull/3292) [swcurran](https://github.com/swcurran)
   - 1.1.0rc0 [\#3284](https://github.com/openwallet-foundation/acapy/pull/3284) [swcurran](https://github.com/swcurran)
 
