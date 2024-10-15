@@ -76,7 +76,7 @@ Startup options allow the use of an ACA-Py as a DIDComm [mediator](https://githu
 
 ### Indy Transaction Endorsing
 
-ACA-Py supports a Transaction Endorsement protocol, for agents that don't have write access to an Indy ledger.  Endorser support is documented [here](./features/Endorser.md).
+ACA-Py supports a Transaction Endorsement protocol, for agents that don't have write access to an Indy ledger.  Endorser support is documented [here](./docs/features/Endorser.md).
 
 ### Scaled Deployments
 
