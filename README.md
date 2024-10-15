@@ -140,7 +140,7 @@ Technical note: the administrative API exposed by the agent for the controller t
 
 There are a number of resources for getting help with ACA-Py and troubleshooting
 any problems you might run into. The
-[Troubleshooting](./testing/Troubleshooting.md) document contains some
+[Troubleshooting](./docs/testing/Troubleshooting.md) document contains some
 guidance about issues that have been experienced in the past. Feel free to
 submit PRs to supplement the troubleshooting document! Searching the [ACA-Py
 GitHub issues](https://github.com/openwallet-foundation/acapy/issues)
