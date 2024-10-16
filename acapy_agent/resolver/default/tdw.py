@@ -6,8 +6,7 @@ Resolution is performed by the did_tdw library.
 from re import Pattern
 from typing import Optional, Sequence, Text
 
-from did_history.resolver import ResolutionResult
-from did_tdw.resolver import resolve_did
+from did_tdw.resolver import ResolutionResult, resolve_did
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile

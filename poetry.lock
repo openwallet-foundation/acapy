@@ -900,13 +900,13 @@ base58 = ">=2.1.1"
 
 [[package]]
 name = "did-tdw"
-version = "0.1.0"
+version = "0.2.1"
 description = "This repository includes Python libraries for working with `did:tdw` (Trust DID Web) DID documents and the underlying log format."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "did_tdw-0.1.0-py3-none-any.whl", hash = "sha256:0be1ec735f6d0e5e5a03afad3269a1a7f5ef88480890f1aa174fddd737ade1d6"},
-    {file = "did_tdw-0.1.0.tar.gz", hash = "sha256:91b0c84fd52d352caf1ef33d944c63a41910c88b46dd260483645b8d37137e58"},
+    {file = "did_tdw-0.2.1-py3-none-any.whl", hash = "sha256:80c727d0bef37e2211d3caddb97ba3c4aa508c67d4ef502da5f326d9bf4c3ffb"},
+    {file = "did_tdw-0.2.1.tar.gz", hash = "sha256:a61ed9f49369ea4c365e5e380431feae8cb3988375de37f73be2abe15d0bfde6"},
 ]
 
 [package.dependencies]
@@ -915,7 +915,6 @@ aiohttp = ">=3.10.5,<4.0.0"
 aries-askar = ">=0.3.2,<0.4.0"
 base58 = ">=2.1.0,<2.2.0"
 jsoncanon = ">=0.2.3,<0.3.0"
-jsonpatch = ">=1.33,<2.0"
 multiformats = ">=0.3.1,<0.4.0"
 
 [[package]]
@@ -1318,20 +1317,6 @@ files = [
 ]
 
 [[package]]
-name = "jsonpatch"
-version = "1.33"
-description = "Apply JSON-Patches (RFC 6902)"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
-files = [
-    {file = "jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade"},
-    {file = "jsonpatch-1.33.tar.gz", hash = "sha256:9fcd4009c41e6d12348b4a0ff2563ba56a2923a7dfee731d004e212e1ee5030c"},
-]
-
-[package.dependencies]
-jsonpointer = ">=1.9"
-
-[[package]]
 name = "jsonpath-ng"
 version = "1.7.0"
 description = "A final implementation of JSONPath for Python that aims to be standard compliant, including arithmetic and binary comparison operators and providing clear AST for metaprogramming."
@@ -1343,17 +1328,6 @@ files = [
 
 [package.dependencies]
 ply = "*"
-
-[[package]]
-name = "jsonpointer"
-version = "3.0.0"
-description = "Identify specific nodes in a JSON document (RFC 6901)"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "jsonpointer-3.0.0-py2.py3-none-any.whl", hash = "sha256:13e088adc14fca8b6aa8177c044e12701e6ad4b28ff10e65f2267a90109c9942"},
-    {file = "jsonpointer-3.0.0.tar.gz", hash = "sha256:2b2d729f2091522d61c3b31f82e11870f60b68f43fbc705cb76bf4b832af59ef"},
-]
 
 [[package]]
 name = "jwcrypto"
@@ -3155,4 +3129,4 @@ didcommv2 = ["didcomm-messaging"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "30dbc30df9f6e00b307916f0fb01939b9ab1b562153f5544fc3fcbb14d4e846a"
+content-hash = "e513668f48c47311bdcdb6dc44247009e3de7e2603bd19cbe216c76470f10251"
