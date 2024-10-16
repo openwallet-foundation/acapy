@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import NamedTuple, Optional, Pattern, Sequence, Text, Union
 
-from pydid import DID
+from pydid import DID, DIDUrl, InvalidDIDError
 
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
@@ -145,7 +145,9 @@ class BaseDIDResolver(ABC):
         if isinstance(did, DID):
             did = str(did)
         else:
-            DID.validate(did)
+            if not DID.is_valid(did) and not DIDUrl.is_valid(did):
+                raise InvalidDIDError(f"Invalid DID or DID URL: {did}")
+
         if not await self.supports(profile, did):
             raise DIDMethodNotSupported(
                 f"{self.__class__.__name__} does not support DID method for: {did}"
