@@ -61,8 +61,6 @@ async def jwt_sign(
         verification_method = await verkey_strat.get_verification_method_id_for_did(
             did, profile
         )
-        if not verification_method:
-            raise ValueError("Could not determine verification method from DID")
     else:
         # We look up keys by did for now
         did = DIDUrl.parse(verification_method).did
