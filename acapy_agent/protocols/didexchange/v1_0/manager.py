@@ -7,7 +7,10 @@ from typing import List, Optional, Sequence, Tuple, Union
 from did_peer_4 import LONG_PATTERN, long_to_short
 
 from ....admin.server import AdminResponder
-from ....connections.base_manager import BaseConnectionManager
+from ....connections.base_manager import (
+    BaseConnectionManager,
+    BaseConnectionManagerError,
+)
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
@@ -371,7 +374,13 @@ class DIDXManager(BaseConnectionManager):
 
         did_url = None
         if conn_rec.their_public_did is not None:
-            services = await self.resolve_didcomm_services(conn_rec.their_public_did)
+            try:
+                services = await self.resolve_didcomm_services(conn_rec.their_public_did)
+            except BaseConnectionManagerError as e:
+                raise DIDXManagerError(
+                    "Failed to resolve DIDComm services from "
+                    f"{conn_rec.their_public_did}: {e}"
+                ) from e
             if services:
                 did_url = services[0].id
 
