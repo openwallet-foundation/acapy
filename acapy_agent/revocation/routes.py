@@ -1011,9 +1011,15 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    apply_ledger_update_json = request.query.get("apply_ledger_update", "false")
-    LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
+    LOGGER.debug(
+        f"/revocation/registry/{rev_reg_id}/fix-revocation-entry-state request = {apply_ledger_update}"  # noqa: E501
+    )
+
+    def _log_ledger_info(available_write_ledgers, write_ledger, pool):
+        LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
+        LOGGER.debug(f"write_ledger = {write_ledger}")
+        LOGGER.debug(f"write_ledger pool = {pool}")
 
     rev_reg_record = None
     genesis_transactions = None
@@ -1030,12 +1036,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
             write_ledger = context.injector.inject(BaseLedger)
             available_write_ledgers = await ledger_manager.get_write_ledgers()
-            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
-            LOGGER.debug(f"write_ledger = {write_ledger}")
             pool = write_ledger.pool
-            LOGGER.debug(f"write_ledger pool = {pool}")
-
             genesis_transactions = pool.genesis_txns
+            _log_ledger_info(available_write_ledgers, write_ledger, pool)
 
         if not genesis_transactions:
             raise web.HTTPInternalServerError(
@@ -1045,10 +1048,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         if apply_ledger_update:
             ledger = session.inject_or(BaseLedger)
             if not ledger:
-                reason = "No ledger available"
-                if not session.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise web.HTTPInternalServerError(reason=reason)
+                raise web.HTTPInternalServerError(
+                    reason="No ledger available when requesting ledger update"
+                )
 
     rev_manager = RevocationManager(profile)
     try:
