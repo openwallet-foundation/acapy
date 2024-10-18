@@ -14,7 +14,11 @@ from marshmallow import fields, validate
 from uuid_utils import uuid4
 
 from ...core.profile import Profile, ProfileSession
-from ...indy.credx.issuer import CATEGORY_CRED_DEF, CATEGORY_REV_REG_DEF_PRIVATE
+from ...indy.credx.issuer import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_REV_REG,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
     IndyRevRegDef,
@@ -443,6 +447,22 @@ class IssuerRevRegRecord(BaseRecord):
                         )
 
                 applied_txn = ledger_response["result"]
+
+                # Update the wallets rev reg entry with the new accumulator value
+                async with profile.session() as session:
+                    rev_reg = await session.handle.fetch(
+                        CATEGORY_REV_REG, self.revoc_reg_id, for_update=True
+                    )
+                    new_value_json = rev_reg.value_json
+                    new_value_json["value"]["accum"] = applied_txn["txn"]["data"][
+                        "value"
+                    ]["accum"]
+                    await session.handle.replace(
+                        CATEGORY_REV_REG,
+                        rev_reg.name,
+                        json.dumps(new_value_json),
+                        rev_reg.tags,
+                    )
 
         return (rev_reg_delta, recovery_txn, applied_txn)
 
