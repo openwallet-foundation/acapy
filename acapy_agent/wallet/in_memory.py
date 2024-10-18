@@ -440,7 +440,7 @@ class InMemoryWallet(BaseWallet):
 
         raise WalletError("Private key not found for verkey: {}".format(verkey))
 
-    async def get_public_did(self) -> DIDInfo:
+    async def get_public_did(self) -> DIDInfo | None:
         """Retrieve the public DID.
 
         Returns:

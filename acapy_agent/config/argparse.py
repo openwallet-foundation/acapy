@@ -1555,9 +1555,10 @@ class WalletGroup(ArgumentGroup):
             env_var="ACAPY_WALLET_SEED",
             help=(
                 "Specifies the seed to use for the creation of a public "
-                "DID for the agent to use with a Hyperledger Indy ledger, or a local "
-                "('--wallet-local-did') DID. If public, the DID must already exist "
-                "on the ledger."
+                "DID (sov or indy) for the agent to use with a Hyperledger Indy ledger, "
+                "or a local ('--wallet-local-did') DID. If public, the DID must already "
+                "exist on the ledger. If using did:indy method you must already have a "
+                "public DID on the ledger."
             ),
         )
         parser.add_argument(
