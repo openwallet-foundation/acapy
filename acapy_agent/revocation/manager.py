@@ -210,7 +210,7 @@ class RevocationManager:
             )
 
         if notify:
-            self._prepare_revocation_notification(
+            await self._prepare_revocation_notification(
                 RevocationNotificationInfo(
                     rev_reg_id=rev_reg_id,
                     cred_rev_id=cred_rev_id,
