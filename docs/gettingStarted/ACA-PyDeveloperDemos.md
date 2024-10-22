@@ -6,7 +6,7 @@ Here are some demos that developers can use to get up to speed on ACA-Py. You do
 
 This demo uses agents (and an Indy ledger), but doesn't implement a controller at all. Instead it uses the OpenAPI (aka Swagger) user interface to let you be the controller to connect agents, issue a credential and then proof that credential.
 
-[Collaborating Agents OpenAPI Demo](../demo/AriesOpenAPIDemo.md)
+[Collaborating Agents OpenAPI Demo](../demo/OpenAPIDemo.md)
 
 ## Python Controller demo
 

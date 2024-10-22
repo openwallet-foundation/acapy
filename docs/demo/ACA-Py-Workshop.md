@@ -243,7 +243,7 @@ The ACA-Py/Traction API is pretty large, but it is reasonably well organized, an
 
 We’re still working on a good demo for the OpenAPI from Traction, but [this one
 from
-ACA-Py](https://aca-py.org/main/demo/AriesOpenAPIDemo/#using-the-openapiswagger-user-interface)
+ACA-Py](https://aca-py.org/main/demo/OpenAPIDemo/#using-the-openapiswagger-user-interface)
 is a good outline of the process. It doesn't use your Traction Tenant, but you
 should get the idea about the sequence of calls to make to accomplish Aries-type
 activities. For example, see if you can carry out the steps to do the [Lab
