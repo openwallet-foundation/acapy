@@ -16,7 +16,10 @@ from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
+from ...messaging.models.paginated_query import (
+    PaginatedQuerySchema,
+    get_paginated_query_params,
+)
 from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
@@ -382,7 +385,7 @@ async def wallets_list(request: web.BaseRequest):
     if wallet_name:
         query["wallet_name"] = wallet_name
 
-    limit, offset = get_limit_offset(request)
+    limit, offset, order_by, descending = get_paginated_query_params(request)
 
     try:
         async with profile.session() as session:
@@ -391,9 +394,10 @@ async def wallets_list(request: web.BaseRequest):
                 tag_filter=query,
                 limit=limit,
                 offset=offset,
+                order_by=order_by,
+                descending=descending,
             )
         results = [format_wallet_record(record) for record in records]
-        results.sort(key=lambda w: w["created_at"])
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

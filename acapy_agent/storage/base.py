@@ -99,6 +99,8 @@ class BaseStorage(ABC):
         tag_query: Optional[Mapping] = None,
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
+        order_by: Optional[str] = None,
+        descending: bool = False,
     ) -> Sequence[StorageRecord]:
         """Retrieve a page of records matching a particular type filter and tag query.
 
@@ -107,6 +109,11 @@ class BaseStorage(ABC):
             tag_query: An optional dictionary of tag filter clauses
             limit: The maximum number of records to retrieve
             offset: The offset to start retrieving records from
+            order_by: An optional field by which to order the records.
+            descending: Whether to order the records in descending order.
+
+        Returns:
+            A sequence of StorageRecord matching the filter and query parameters.
         """
 
     @abstractmethod
@@ -114,6 +121,8 @@ class BaseStorage(ABC):
         self,
         type_filter: str,
         tag_query: Optional[Mapping] = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
         options: Optional[Mapping] = None,
     ) -> Sequence[StorageRecord]:
         """Retrieve all records matching a particular type filter and tag query.
@@ -121,6 +130,8 @@ class BaseStorage(ABC):
         Args:
             type_filter: The type of records to filter by.
             tag_query: An optional dictionary of tag filter clauses.
+            order_by: An optional field by which to order the records.
+            descending: Whether to order the records in descending order.
             options: Additional options for the query.
         """
 
