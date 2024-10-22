@@ -6,6 +6,7 @@ from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...messages.credential_request import CredentialRequest
 from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from ...models.credential_exchange import V10CredentialExchange
@@ -16,15 +17,15 @@ CD_ID = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
 
 class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
-        request_context = RequestContext.test_context()
+        profile = await create_test_profile()
+        request_context = RequestContext.test_context(profile)
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -51,15 +52,15 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_auto_issue(self):
-        request_context = RequestContext.test_context()
+        profile = await create_test_profile()
+        request_context = RequestContext.test_context(profile)
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -106,15 +107,15 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         assert target == {}
 
     async def test_called_auto_issue_x(self):
-        request_context = RequestContext.test_context()
+        profile = await create_test_profile()
+        request_context = RequestContext.test_context(profile)
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -155,15 +156,15 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
                 mock_log_exc.assert_called_once()
 
     async def test_called_auto_issue_no_preview(self):
-        request_context = RequestContext.test_context()
+        profile = await create_test_profile()
+        request_context = RequestContext.test_context(profile)
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -199,7 +200,8 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_not_ready(self):
-        request_context = RequestContext.test_context()
+        profile = await create_test_profile()
+        request_context = RequestContext.test_context(profile)
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -221,15 +223,18 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_no_connection_no_oob(self):
-        request_context = RequestContext.test_context()
+        profile = await create_test_profile()
+        request_context = RequestContext.test_context(profile)
         request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = None
+        request_context.connection_ready = False
 
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                # No oob record found
-                return_value=None
-            )
+        oob_record = mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=None
         )
+
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(

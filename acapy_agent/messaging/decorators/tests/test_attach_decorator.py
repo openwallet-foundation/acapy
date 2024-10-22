@@ -6,10 +6,9 @@ from unittest import TestCase
 import pytest
 from uuid_utils import uuid4
 
-from acapy_agent.wallet.base import BaseWallet
-
-from ....core.in_memory import InMemoryProfile
 from ....messaging.models.base import BaseModelError
+from ....utils.testing import create_test_profile
+from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.key_type import ED25519
 from ....wallet.util import b64_to_bytes, bytes_to_b64
@@ -79,7 +78,8 @@ def seed():
 
 @pytest.fixture()
 async def wallet():
-    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(DIDMethods, DIDMethods())
     async with profile.session() as session:
         wallet = session.inject(BaseWallet)
         yield wallet

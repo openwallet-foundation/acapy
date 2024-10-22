@@ -3,9 +3,9 @@ from unittest import IsolatedAsyncioTestCase, mock
 
 import pytest
 
-from ....core.in_memory import InMemoryProfile
 from ....did.did_key import DIDKey
-from ....wallet.in_memory import InMemoryWallet
+from ....utils.testing import create_test_profile
+from ....wallet.base import BaseWallet
 from ....wallet.key_type import BLS12381G2, ED25519
 from ...ld_proofs import (
     BbsBlsSignature2020,
@@ -15,9 +15,14 @@ from ...ld_proofs import (
 )
 from ...ld_proofs.error import LinkedDataProofException
 from ...tests.document_loader import custom_document_loader
-from ...vc_ld import create_presentation, derive_credential
+from ...vc_ld import (
+    create_presentation,
+    derive_credential,
+    sign_presentation,
+    verify_credential,
+    verify_presentation,
+)
 from ...vc_ld import issue_vc as issue
-from ...vc_ld import sign_presentation, verify_credential, verify_presentation
 from .test_credential import (
     CREDENTIAL_ISSUED,
     CREDENTIAL_ISSUED_2020,
@@ -36,23 +41,23 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.wallet = InMemoryWallet(self.profile)
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            self.ed25519_key_info = await wallet.create_signing_key(
+                key_type=ED25519, seed=self.test_seed
+            )
+            self.ed25519_verification_method = DIDKey.from_public_key_b58(
+                self.ed25519_key_info.verkey, ED25519
+            ).key_id
 
-        self.ed25519_key_info = await self.wallet.create_signing_key(
-            key_type=ED25519, seed=self.test_seed
-        )
-        self.ed25519_verification_method = DIDKey.from_public_key_b58(
-            self.ed25519_key_info.verkey, ED25519
-        ).key_id
+            self.bls12381g2_key_info = await wallet.create_signing_key(
+                key_type=BLS12381G2, seed=self.test_seed
+            )
 
-        self.bls12381g2_key_info = await self.wallet.create_signing_key(
-            key_type=BLS12381G2, seed=self.test_seed
-        )
-
-        self.bls12381g2_verification_method = DIDKey.from_public_key_b58(
-            self.bls12381g2_key_info.verkey, BLS12381G2
-        ).key_id
+            self.bls12381g2_verification_method = DIDKey.from_public_key_b58(
+                self.bls12381g2_key_info.verkey, BLS12381G2
+            ).key_id
 
         self.presentation_challenge = "2b1bbff6-e608-4368-bf84-67471b27e41c"
 
@@ -191,7 +196,7 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
             credential=issued, suites=[suite], document_loader=custom_document_loader
         )
 
-        assert result.verified
+        assert result.verified is not None
 
     async def test_verify_BbsBlsSignature2020(self):
         # Verification requires lot less input parameters

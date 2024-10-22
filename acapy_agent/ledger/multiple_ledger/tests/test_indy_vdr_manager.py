@@ -6,13 +6,12 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
-from ....core.in_memory import InMemoryProfile
 from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...error import LedgerError
 from ...indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ...merkel_validation.tests.test_data import GET_NYM_REPLY
@@ -56,7 +55,8 @@ GET_NYM_INDY_VDR_REPLY = {
 @pytest.mark.indy_vdr
 class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile(bind={BaseCache: InMemoryCache()})
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(BaseCache, InMemoryCache())
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
@@ -137,21 +137,21 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             writable_ledgers=writable_ledgers,
             endorser_map=endorser_info_map,
         )
-        profile = InMemoryProfile.test_profile()
-        assert not profile.inject_or(BaseLedger)
+        self.profile = await create_test_profile()
+        assert not self.profile.inject_or(BaseLedger)
         assert "test_prod_2" in manager.writable_ledgers
         new_write_ledger_id = await manager.set_profile_write_ledger(
-            profile=profile, ledger_id="test_prod_2"
+            profile=self.profile, ledger_id="test_prod_2"
         )
         assert new_write_ledger_id == "test_prod_2"
-        new_write_ledger = profile.inject_or(BaseLedger)
+        new_write_ledger = self.profile.inject_or(BaseLedger)
         assert new_write_ledger.pool_name == "test_prod_2"
 
     async def test_set_profile_write_ledger_x(self):
-        profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         with self.assertRaises(MultipleLedgerManagerError) as cm:
-            new_write_ledger_id = await self.manager.set_profile_write_ledger(
-                profile=profile, ledger_id="test_non_prod_1"
+            await self.manager.set_profile_write_ledger(
+                profile=self.profile, ledger_id="test_non_prod_1"
             )
         assert "is not write configurable" in str(cm.exception.message)
 

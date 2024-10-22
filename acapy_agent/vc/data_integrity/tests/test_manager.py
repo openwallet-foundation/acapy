@@ -2,10 +2,10 @@
 
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.core.in_memory import InMemoryProfile
 from acapy_agent.resolver.default.key import KeyDIDResolver
 from acapy_agent.resolver.default.web import WebDIDResolver
 from acapy_agent.resolver.did_resolver import DIDResolver
+from acapy_agent.utils.testing import create_test_profile
 from acapy_agent.vc.data_integrity.manager import DataIntegrityManager
 from acapy_agent.vc.data_integrity.models.options import DataIntegrityProofOptions
 from acapy_agent.wallet.keys.manager import MultikeyManager
@@ -32,7 +32,8 @@ class TestDiManager(IsolatedAsyncioTestCase):
         self.resolver = DIDResolver()
         self.resolver.register_resolver(KeyDIDResolver())
         self.resolver.register_resolver(WebDIDResolver())
-        self.profile = InMemoryProfile.test_profile({}, bind={DIDResolver: self.resolver})
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(DIDResolver, self.resolver)
         try:
             async with self.profile.session() as session:
                 await MultikeyManager(session=session).create(seed=self.seed)

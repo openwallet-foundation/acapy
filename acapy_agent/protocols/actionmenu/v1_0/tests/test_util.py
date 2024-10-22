@@ -2,6 +2,7 @@ from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
 from .....core.event_bus import EventBus, MockEventBus
+from .....utils.testing import create_test_profile
 from .. import util as test_module
 from ..models.menu_form import MenuForm
 from ..models.menu_form_param import MenuFormParam
@@ -10,7 +11,7 @@ from ..models.menu_option import MenuOption
 
 class TestActionMenuUtil(IsolatedAsyncioTestCase):
     async def test_save_retrieve_delete_connection_menu(self):
-        context = AdminRequestContext.test_context()
+        context = AdminRequestContext.test_context({}, await create_test_profile())
 
         mock_event_bus = MockEventBus()
         context.profile.context.injector.bind_instance(EventBus, mock_event_bus)

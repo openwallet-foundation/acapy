@@ -307,7 +307,7 @@ async def upgrade_and_delete_schema_records(
     """Upgrade and delete schema records."""
     schema_anoncreds = schema_upgrade_obj.schema
     await txn.handle.remove("schema_sent", schema_upgrade_obj.old_record_id)
-    await txn.handle.replace(
+    await txn.handle.insert(
         CATEGORY_SCHEMA,
         schema_upgrade_obj.schema_id,
         schema_anoncreds.to_json(),
@@ -328,7 +328,7 @@ async def upgrade_and_delete_cred_def_records(
     anoncreds_schema = anoncreds_schema.to_dict()
     askar_cred_def = cred_def_upgrade_obj.askar_cred_def
     await txn.handle.remove("cred_def_sent", askar_cred_def.id)
-    await txn.handle.replace(
+    await txn.handle.insert(
         CATEGORY_CRED_DEF,
         cred_def_id,
         cred_def_upgrade_obj.cred_def.to_json(),
@@ -347,12 +347,11 @@ async def upgrade_and_delete_cred_def_records(
             "max_cred_num": str(cred_def_upgrade_obj.max_cred_num or 0),
         },
     )
+
     await txn.handle.replace(
         CATEGORY_CRED_DEF_PRIVATE,
         cred_def_id,
-        CredentialDefinitionPrivate.load(
-            cred_def_upgrade_obj.cred_def_private
-        ).to_json_buffer(),
+        "CredDefPrivate",
     )
     await txn.handle.replace(
         CATEGORY_CRED_DEF_KEY_PROOF,

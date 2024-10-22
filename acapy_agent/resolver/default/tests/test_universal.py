@@ -5,10 +5,9 @@ from typing import Dict, Optional, Union
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ....config.settings import Settings
-from ....core.in_memory import InMemoryProfile
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...base import DIDNotFound, ResolverError
 from .. import universal as test_module
 from ..universal import UniversalResolver
@@ -23,9 +22,10 @@ async def resolver():
 
 
 @pytest.fixture
-def profile():
+async def profile():
     """Profile fixture."""
-    yield InMemoryProfile.test_profile()
+    profile = await create_test_profile()
+    yield profile
 
 
 class MockResponse:

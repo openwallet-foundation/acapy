@@ -82,7 +82,7 @@ from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
 from .error import StartupError
 from .oob_processor import OobMessageProcessor
-from .util import SHUTDOWN_EVENT_TOPIC, STARTUP_EVENT_TOPIC
+from .util import SHUTDOWN_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
 # Refer ACA-Py issue #2197
@@ -538,7 +538,7 @@ class Conductor:
             )
 
         # notify protcols of startup status
-        await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
+        # await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""

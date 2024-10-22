@@ -7,13 +7,14 @@ from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import problem_report_handler as test_module
 from ...messages.problem_report import CMProblemReport, ProblemReportReason
 
 
 @pytest.fixture()
 async def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

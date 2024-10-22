@@ -1,9 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL
 from ...messages.cred_format import V20CredFormat
 from ...messages.cred_proposal import V20CredProposal
@@ -117,19 +116,20 @@ class TestV20CredExRecord(IsolatedAsyncioTestCase):
             assert isinstance(deser.cred_proposal, V20CredProposal)
 
     async def test_save_error_state(self):
-        session = InMemoryProfile.test_session()
+        self.profile = await create_test_profile()
         record = V20CredExRecord(state=None)
         assert record._last_state is None
-        await record.save_error_state(session)  # cover short circuit
+        async with self.profile.session() as session:
+            await record.save_error_state(session)  # cover short circuit
 
-        record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
-        await record.save(session)
+            record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
+            await record.save(session)
 
-        with mock.patch.object(
-            record, "save", mock.CoroutineMock()
-        ) as mock_save, mock.patch.object(
-            test_module.LOGGER, "exception", mock.MagicMock()
-        ) as mock_log_exc:
-            mock_save.side_effect = test_module.StorageError()
-            await record.save_error_state(session, reason="test")
-            mock_log_exc.assert_called_once()
+            with mock.patch.object(
+                record, "save", mock.CoroutineMock()
+            ) as mock_save, mock.patch.object(
+                test_module.LOGGER, "exception", mock.MagicMock()
+            ) as mock_log_exc:
+                mock_save.side_effect = test_module.StorageError()
+                await record.save_error_state(session, reason="test")
+                mock_log_exc.assert_called_once()

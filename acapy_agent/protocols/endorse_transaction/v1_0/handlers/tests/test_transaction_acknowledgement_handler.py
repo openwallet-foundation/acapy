@@ -6,13 +6,14 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import transaction_acknowledgement_handler as test_module
 from ...messages.transaction_acknowledgement import TransactionAcknowledgement
 
 
 class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
 
         with mock.patch.object(
@@ -36,7 +37,7 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_not_ready(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -56,7 +57,7 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
             assert not responder.messages
 
     async def test_called_x(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
 
         with mock.patch.object(

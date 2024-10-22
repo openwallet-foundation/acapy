@@ -9,6 +9,7 @@ from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import reuse_accept_handler as test_module
 from ...manager import OutOfBandManagerError
 from ...messages.reuse_accept import HandshakeReuseAccept
@@ -16,7 +17,7 @@ from ...messages.reuse_accept import HandshakeReuseAccept
 
 @pytest.fixture()
 async def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

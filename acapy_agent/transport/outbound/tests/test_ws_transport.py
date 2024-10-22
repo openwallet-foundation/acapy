@@ -4,13 +4,13 @@ import json
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import AioHTTPTestCase
 
-from ....core.in_memory import InMemoryProfile
+from ....utils.testing import create_test_profile
 from ..ws import WsTransport
 
 
 class TestWsTransport(AioHTTPTestCase):
     async def setUpAsync(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.message_results = []
         await super().setUpAsync()
 

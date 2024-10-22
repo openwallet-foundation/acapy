@@ -4,14 +4,14 @@ from typing import AsyncIterable, Iterable
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from .....core.event_bus import EventBus, MockEventBus
-from .....core.in_memory import InMemoryProfile
+from .....core.event_bus import EventBus
 from .....core.profile import Profile, ProfileSession
 from .....did.did_key import DIDKey
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .....wallet.did_method import DIDMethods
+from .....wallet.key_type import KeyTypes
 from ....routing.v1_0.models.route_record import RouteRecord
 from .. import manager as test_module
 from ..manager import (
@@ -39,12 +39,12 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def profile() -> Iterable[Profile]:
+async def profile():
     """Fixture for profile used in tests."""
-    # pylint: disable=W0621
-    yield InMemoryProfile.test_profile(
-        bind={EventBus: MockEventBus(), DIDMethods: DIDMethods()}
-    )
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+    profile.context.injector.bind_instance(KeyTypes, KeyTypes())
+    yield profile
 
 
 @pytest.fixture

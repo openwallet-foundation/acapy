@@ -2,15 +2,16 @@ from unittest import IsolatedAsyncioTestCase
 
 from acapy_agent.tests import mock
 
-from ...core.in_memory import InMemoryProfile
+from ...askar.profile import AskarProfile
 from ...messaging.responder import BaseResponder
+from ...utils.testing import create_test_profile
 from ...wallet.models.wallet_record import WalletRecord
 from ..manager import MultitenantManager
 
 
 class TestMultitenantManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.context = self.profile.context
 
         self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
@@ -20,7 +21,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
 
     async def test_get_wallet_profile_returns_from_cache(self):
         wallet_record = WalletRecord(wallet_id="test")
-        self.manager._profiles.put("test", InMemoryProfile.test_profile())
+        self.manager._profiles.put("test", (await create_test_profile()))
 
         with mock.patch("acapy_agent.config.wallet.wallet_config") as wallet_config:
             profile = await self.manager.get_wallet_profile(
@@ -31,7 +32,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
 
     async def test_get_wallet_profile_not_in_cache(self):
         wallet_record = WalletRecord(wallet_id="test", settings={})
-        self.manager._profiles.put("test", InMemoryProfile.test_profile())
+        self.manager._profiles.put("test", (await create_test_profile()))
         self.profile.context.update_settings(
             {"admin.webhook_urls": ["http://localhost:8020"]}
         )
@@ -66,8 +67,8 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             },
         ]
 
-        def side_effect(context, provision):
-            return (InMemoryProfile(context=context), None)
+        async def side_effect(context, provision):
+            return (await create_test_profile(settings=None, context=context), None)
 
         for idx, wallet_record_settings in enumerate(all_wallet_record_settings):
             wallet_record = WalletRecord(
@@ -97,8 +98,8 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
 
         with mock.patch("acapy_agent.multitenant.manager.wallet_config") as wallet_config:
 
-            def side_effect(context, provision):
-                return (InMemoryProfile(context=context), None)
+            async def side_effect(context, provision):
+                return (await create_test_profile(settings=None, context=context), None)
 
             wallet_config.side_effect = side_effect
 
@@ -148,8 +149,8 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
 
         with mock.patch("acapy_agent.multitenant.manager.wallet_config") as wallet_config:
 
-            def side_effect(context, provision):
-                return (InMemoryProfile(context=context), None)
+            async def side_effect(context, provision):
+                return (await create_test_profile(settings=None, context=context), None)
 
             wallet_config.side_effect = side_effect
 
@@ -174,7 +175,7 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             WalletRecord, "save"
         ) as wallet_record_save:
             wallet_id = "test-wallet-id"
-            wallet_profile = InMemoryProfile.test_profile()
+            wallet_profile = await create_test_profile()
             self.manager._profiles.put("test-wallet-id", wallet_profile)
             retrieve_by_id.return_value = WalletRecord(
                 wallet_id=wallet_id,
@@ -201,12 +202,10 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             assert wallet_profile.settings.get("wallet.dispatch_type") == "default"
 
     async def test_remove_wallet_profile(self):
-        test_profile = InMemoryProfile.test_profile(
-            settings={"wallet.id": "test"},
-        )
-        self.manager._profiles.put("test", test_profile)
+        test_profile = await create_test_profile()
+        self.manager._profiles.put(test_profile.name, test_profile)
 
-        with mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+        with mock.patch.object(AskarProfile, "remove") as profile_remove:
             await self.manager.remove_wallet_profile(test_profile)
-            assert not self.manager._profiles.has("test")
+            assert not self.manager._profiles.has(test_profile.name)
             profile_remove.assert_called_once_with()

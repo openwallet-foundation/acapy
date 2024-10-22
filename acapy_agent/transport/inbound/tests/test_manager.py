@@ -2,7 +2,7 @@ from unittest import IsolatedAsyncioTestCase
 
 from acapy_agent.tests import mock
 
-from ....core.in_memory import InMemoryProfile
+from ....utils.testing import create_test_profile
 from ...outbound.message import OutboundMessage
 from ...wire_format import BaseWireFormat
 from ..base import InboundTransportConfiguration, InboundTransportRegistrationError
@@ -10,8 +10,8 @@ from ..manager import InboundTransportManager
 
 
 class TestInboundTransportManager(IsolatedAsyncioTestCase):
-    def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile()
 
     def test_register_path(self):
         mgr = InboundTransportManager(self.profile, None)
@@ -72,7 +72,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         transport.stop.assert_awaited_once_with()
 
     async def test_create_session(self):
-        test_wire_format = mock.MagicMock()
+        test_wire_format = mock.MagicMock(BaseWireFormat, autospec=True)
         self.profile.context.injector.bind_instance(BaseWireFormat, test_wire_format)
 
         test_inbound_handler = mock.CoroutineMock()

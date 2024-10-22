@@ -1,7 +1,6 @@
 from unittest import IsolatedAsyncioTestCase
 
 from .....connections.base_manager import BaseConnectionManager
-from .....core.in_memory.profile import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from .....protocols.did_rotate.v1_0.manager import (
@@ -16,6 +15,7 @@ from .....protocols.did_rotate.v1_0.models.rotate_record import RotateRecord
 from .....protocols.didcomm_prefix import DIDCommPrefix
 from .....resolver.did_resolver import DIDResolver
 from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import message_types as test_message_types
 from ..tests import MockConnRecord, test_conn_id
 
@@ -35,13 +35,11 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
             return_value=None
         )
 
-        self.profile = InMemoryProfile.test_profile(
-            bind={
-                BaseResponder: self.responder,
-                RouteManager: self.route_manager,
-                DIDResolver: DIDResolver(),
-            }
-        )
+        self.profile = await create_test_profile()
+
+        self.profile.context.injector.bind_instance(BaseResponder, self.responder)
+        self.profile.context.injector.bind_instance(RouteManager, self.route_manager)
+        self.profile.context.injector.bind_instance(DIDResolver, DIDResolver())
 
         self.manager = DIDRotateManager(self.profile)
         assert self.manager.profile

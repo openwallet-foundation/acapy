@@ -7,6 +7,7 @@ from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from .....didcomm_prefix import DIDCommPrefix
 from ...handlers.disclosures_handler import DisclosuresHandler
 from ...messages.disclosures import Disclosures
@@ -18,8 +19,8 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context():
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.connection_ready = True
     ctx.connection_record = mock.MagicMock(connection_id="test123")
     yield ctx

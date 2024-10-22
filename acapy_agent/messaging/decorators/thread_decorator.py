@@ -49,7 +49,11 @@ class ThreadDecorator(BaseModel):
         self._thid = thid
         self._pthid = pthid
         self._sender_order = sender_order or None
-        self._received_orders = received_orders and dict(received_orders) or None
+        try:
+            self._received_orders = received_orders and dict(received_orders) or None
+            print("test")
+        except Exception as err:
+            raise ValueError(f"Invalid received_orders: {err}")
 
     @property
     def thid(self):

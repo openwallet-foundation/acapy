@@ -4,12 +4,11 @@
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ...admin.request_context import AdminRequestContext
-from ...core.in_memory import InMemoryProfile
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import routes as test_module
 
 
@@ -22,14 +21,25 @@ def mock_response():
     test_module.web.json_response = temp_value
 
 
-@pytest.mark.asyncio
-async def test_get_profile_settings(mock_response):
-    profile = InMemoryProfile.test_profile(
+@pytest.fixture
+async def profile():
+    profile = await create_test_profile()
+    yield profile
+
+
+@pytest.fixture
+async def admin_profile():
+    profile = await create_test_profile(
         settings={
             "admin.admin_api_key": "secret-key",
         }
     )
-    profile.settings.update(
+    yield profile
+
+
+@pytest.mark.asyncio
+async def test_get_profile_settings(mock_response, admin_profile, profile):
+    admin_profile.settings.update(
         {
             "admin.admin_client_max_request_size": 1,
             "debug.auto_respond_credential_offer": True,
@@ -42,7 +52,7 @@ async def test_get_profile_settings(mock_response):
     )
     request_dict = {
         "context": AdminRequestContext(
-            profile=profile,
+            profile=admin_profile,
         ),
     }
     request = mock.MagicMock(
@@ -60,7 +70,6 @@ async def test_get_profile_settings(mock_response):
         "debug.auto_accept_requests": True,
     }
     # Multitenant
-    profile = InMemoryProfile.test_profile()
     multi_tenant_manager = MultitenantManager(profile)
     profile.context.injector.bind_instance(
         BaseMultitenantManager,
@@ -105,12 +114,12 @@ async def test_get_profile_settings(mock_response):
         "debug.auto_verify_presentation": True,
         "debug.auto_accept_invites": True,
         "debug.auto_accept_requests": True,
+        "wallet.type": "askar",
     }
 
 
 @pytest.mark.asyncio
-async def test_update_profile_settings(mock_response):
-    profile = InMemoryProfile.test_profile()
+async def test_update_profile_settings(mock_response, profile):
     profile.settings.update(
         {
             "public_invites": True,
@@ -147,9 +156,9 @@ async def test_update_profile_settings(mock_response):
         "debug.auto_accept_invites": False,
         "debug.auto_accept_requests": False,
         "auto_ping_connection": False,
+        "wallet.type": "askar",
     }
     # Multitenant
-    profile = InMemoryProfile.test_profile()
     multi_tenant_manager = MultitenantManager(profile)
     profile.context.injector.bind_instance(
         BaseMultitenantManager,
@@ -222,4 +231,5 @@ async def test_update_profile_settings(mock_response):
         "debug.auto_respond_credential_offer": True,
         "debug.auto_respond_credential_request": True,
         "debug.auto_verify_presentation": True,
+        "wallet.type": "askar",
     }

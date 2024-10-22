@@ -1,29 +1,18 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.askar.profile import AskarProfile, AskarProfileSession
-from acapy_agent.config.injection_context import InjectionContext
-from acapy_agent.core.event_bus import EventBus
-from acapy_agent.core.in_memory.profile import InMemoryProfile
-from acapy_agent.core.profile import Profile
-from acapy_agent.core.protocol_registry import ProtocolRegistry
-from acapy_agent.protocols.coordinate_mediation.v1_0.route_manager import (
+from ...askar.profile import AskarProfile, AskarProfileSession
+from ...config.injection_context import InjectionContext
+from ...core.event_bus import EventBus
+from ...core.protocol_registry import ProtocolRegistry
+from ...protocols.coordinate_mediation.v1_0.route_manager import (
     RouteManager,
 )
-from acapy_agent.resolver.base import BaseDIDResolver
-from acapy_agent.resolver.did_resolver import DIDResolver
-from acapy_agent.tests.mock import AsyncMock, MagicMock
-from acapy_agent.utils.stats import Collector
-
+from ...resolver.base import BaseDIDResolver
+from ...resolver.did_resolver import DIDResolver
+from ...tests.mock import AsyncMock, MagicMock
+from ...utils.stats import Collector
+from ...utils.testing import create_test_profile
 from ..adapters import ResolverAdapter, SecretsAdapter, SecretsAdapterError
-
-
-def make_profile() -> Profile:
-    profile = InMemoryProfile.test_profile(settings={"experiment.didcommv2": True})
-    profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-    profile.context.injector.bind_instance(Collector, Collector())
-    profile.context.injector.bind_instance(EventBus, EventBus())
-    profile.context.injector.bind_instance(RouteManager, MagicMock())
-    return profile
 
 
 class TestDIDResolver(BaseDIDResolver):
@@ -48,12 +37,17 @@ class TestDIDResolver(BaseDIDResolver):
 
 
 class TestAdapters(IsolatedAsyncioTestCase):
-    test_did = "did:test:0"
-    invalid_did = "this shouldn't work"
-    profile = make_profile()
-    resolver = DIDResolver()
-    resolver.register_resolver(TestDIDResolver())
-    res_adapter = ResolverAdapter(profile=profile, resolver=resolver)
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile(settings={"experiment.didcommv2": True})
+        self.profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        self.profile.context.injector.bind_instance(Collector, Collector())
+        self.profile.context.injector.bind_instance(EventBus, EventBus())
+        self.profile.context.injector.bind_instance(RouteManager, MagicMock())
+        self.test_did = "did:test:0"
+        self.invalid_did = "this shouldn't work"
+        resolver = DIDResolver()
+        resolver.register_resolver(TestDIDResolver())
+        self.res_adapter = ResolverAdapter(profile=self.profile, resolver=resolver)
 
     async def test_resolver_adapter_resolve_did(self):
         doc = await self.res_adapter.resolve(self.test_did)

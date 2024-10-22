@@ -4,16 +4,16 @@ import json
 
 import pytest
 
-from ......core.in_memory import InMemoryProfile
 from ......core.profile import ProfileSession
 from ......storage.base import BaseStorage
 from ......storage.record import StorageRecord
+from ......utils.testing import create_test_profile
 from ..mediation_record import MediationRecord
 
 
 @pytest.fixture()
 async def session():
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     async with profile.session() as session:
         yield session
 

@@ -3,15 +3,15 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers.ping_handler import PingHandler
 from ...messages.ping import Ping
 from ...messages.ping_response import PingResponse
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
-    yield ctx
+async def request_context():
+    yield RequestContext.test_context(await create_test_profile())
 
 
 class TestPingHandler:

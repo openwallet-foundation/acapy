@@ -142,7 +142,7 @@ If you are running in a _local bash shell_, navigate to the `demo` directory in
 your fork/clone of the ACA-Py repository and run:
 
 ```bash
-TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
+TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
 (Note that we have to start faber with `--aip 10` for compatibility with mobile clients.)
