@@ -82,3 +82,22 @@ class TestEndorsementSetupUtil(IsolatedAsyncioTestCase):
             mock_logger.call_args_list[0][0][0]
             == "Connected to endorser from previous connection."
         )
+
+    @mock.patch.object(
+        ConnRecord,
+        "retrieve_by_alias",
+        side_effect=Exception("No connection"),
+    )
+    @mock.patch.object(endorsement_setup.LOGGER, "info", return_value=mock.MagicMock())
+    async def test_does_not_have_previous_connection_with_did_but_no_invitation(
+        self, mock_logger, *_
+    ):
+        await endorsement_setup.attempt_auto_author_with_endorser_setup(self.profile)
+
+        # No invitation
+        self.profile.settings.set_value("endorser.author", True)
+        self.profile.settings.set_value("endorser.endorser_alias", "test-alias")
+        self.profile.settings.set_value(
+            "endorser.endorser_public_did", "WuE7ndRJgAGbJYnwDXV7Pz"
+        )
+        await endorsement_setup.attempt_auto_author_with_endorser_setup(self.profile)
