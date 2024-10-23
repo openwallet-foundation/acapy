@@ -441,7 +441,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(SOV, ED25519)
+        await wallet.create_public_did(SOV, ED25519)
         schema_id = "55GkHamhTU1ZbTbV2ab9DE:2:schema_name:9.1"
         cred_def_id = "55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag"
         cred_def = {
