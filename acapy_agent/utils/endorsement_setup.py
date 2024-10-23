@@ -20,15 +20,14 @@ from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 LOGGER = logging.getLogger(__name__)
 
 
+class EndorsementSetupError(Exception):
+    """Endorsement setup error."""
+
+
 async def attempt_auto_author_with_endorser_setup(profile: Profile):
     """Automatically setup the author's endorser connection if possible."""
 
     if not is_author_role(profile):
-        return
-
-    endorser_invitation = profile.settings.get_value("endorser.endorser_invitation")
-    if not endorser_invitation:
-        LOGGER.info("No endorser invitation, can't connect automatically.")
         return
 
     endorser_alias = profile.settings.get_value("endorser.endorser_alias")
@@ -44,6 +43,11 @@ async def attempt_auto_author_with_endorser_setup(profile: Profile):
     endorser_did = profile.settings.get_value("endorser.endorser_public_did")
     if not endorser_did:
         LOGGER.info("No endorser DID, can connect, but can't setup connection metadata.")
+        return
+
+    endorser_invitation = profile.settings.get_value("endorser.endorser_invitation")
+    if not endorser_invitation:
+        LOGGER.info("No endorser invitation, can't create connection automatically.")
         return
 
     try:
@@ -71,7 +75,7 @@ async def attempt_auto_author_with_endorser_setup(profile: Profile):
                     alias=endorser_alias,
                 )
             else:
-                raise Exception(
+                raise EndorsementSetupError(
                     "Failed to establish endorser connection, invalid "
                     "invitation format."
                 )
