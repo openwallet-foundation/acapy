@@ -79,11 +79,11 @@ class DIDRotateManager:
 
         hangup = Hangup()
 
-        async with self.profile.session() as session:
-            await conn.delete_record(session)
-
         responder = self.profile.inject(BaseResponder)
         await responder.send(hangup, connection_id=conn.connection_id)
+
+        async with self.profile.session() as session:
+            await conn.delete_record(session)
 
         return hangup
 
