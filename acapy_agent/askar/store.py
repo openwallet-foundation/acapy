@@ -70,7 +70,7 @@ class AskarStoreConfig:
                 uri += ":memory:"
                 return uri
             path = storage_path("wallet", self.name, create=create).as_posix()
-            uri += urllib.parse.quote(f"{path}")
+            uri += urllib.parse.quote(f"{path}/sqlite.db")
         elif self.storage_type == "postgres":
             if not self.storage_config:
                 raise ProfileError("No 'storage_config' provided for postgres store")
