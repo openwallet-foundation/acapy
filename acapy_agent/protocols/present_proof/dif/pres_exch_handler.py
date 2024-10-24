@@ -40,7 +40,10 @@ from ....vc.ld_proofs.constants import (
 from ....vc.vc_di.prove import create_signed_anoncreds_presentation
 from ....vc.vc_ld.prove import create_presentation, derive_credential, sign_presentation
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
+from ....wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+    ProofPurposeStr,
+)
 from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519
 from .pres_exch import (
@@ -115,18 +118,18 @@ class DIFPresExchHandler:
         self,
         *,
         issuer_id: str,
+        proof_purpose: Optional[ProofPurposeStr] = None,
     ):
         """Get signature suite for signing presentation."""
+        proof_purpose = proof_purpose or "assertionMethod"
         did_info = await self._did_info_for_did(issuer_id)
-        verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
-        verification_method = await verkey_id_strategy.get_verification_method_id_for_did(
-            issuer_id, self.profile, proof_purpose="assertionMethod"
+        vm_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
+        verification_method = await vm_id_strategy.get_verification_method_id_for_did(
+            issuer_id,
+            self.profile,
+            proof_type=self.proof_type,
+            proof_purpose=proof_purpose,
         )
-
-        if verification_method is None:
-            raise DIFPresExchError(
-                f"Unable to get retrieve verification method for did {issuer_id}"
-            )
 
         # Get signature class based on proof type
         SignatureClass = self.PROOF_TYPE_SIGNATURE_SUITE_MAPPING[self.proof_type]
@@ -1302,8 +1305,9 @@ class DIFPresExchHandler:
                 )
             else:
                 vp = self.__add_dif_fields_to_vp(vp, submission_property)
+                assert issuer_id
                 issue_suite = await self._get_issue_suite(
-                    issuer_id=issuer_id,
+                    issuer_id=issuer_id, proof_purpose="authentication"
                 )
                 signed_vp = await sign_presentation(
                     presentation=vp,
