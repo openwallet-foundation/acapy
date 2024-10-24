@@ -2,7 +2,8 @@ import asyncio
 from time import time
 from unittest import IsolatedAsyncioTestCase
 
-from anoncreds import KeyCorrectnessProof
+from anoncreds import CredentialDefinitionPrivate, KeyCorrectnessProof
+from aries_askar import AskarError
 
 from ...anoncreds.issuer import CATEGORY_CRED_DEF_PRIVATE
 from ...askar.profile import AskarProfileSession
@@ -35,6 +36,13 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
             BaseCache, mock.MagicMock(BaseCache, autospec=True)
         )
 
+    @mock.patch.object(
+        CredentialDefinitionPrivate,
+        "load",
+        mock.MagicMock(
+            return_value=mock.MagicMock(to_json_buffer=mock.MagicMock(return_value=b"{}"))
+        ),
+    )
     @mock.patch.object(
         KeyCorrectnessProof,
         "load",
@@ -127,7 +135,11 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 )
             )
 
+        # Need to update private key with a real private key
+        with self.assertRaises(AskarError) as err:
             await anoncreds_upgrade.convert_records_to_anoncreds(self.profile)
+
+        assert "Error updating existing entry" in str(err.exception)
 
     async def test_retry_converting_records(self):
         with mock.patch.object(
