@@ -4,13 +4,14 @@ from .....core.event_bus import EventBus, MockEventBus
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 from .....transport.inbound.receipt import MessageReceipt
+from .....utils.testing import create_test_profile
 from ..handler import ProblemReportHandler
 from ..message import ProblemReport
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    yield RequestContext.test_context()
+async def request_context():
+    yield RequestContext.test_context(await create_test_profile())
 
 
 class TestPingHandler:

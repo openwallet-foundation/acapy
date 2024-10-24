@@ -7,30 +7,19 @@ import pytest
 from anoncreds import W3cCredential
 from marshmallow import ValidationError
 
-from acapy_agent.anoncreds.models.anoncreds_cred_def import (
+from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from .......anoncreds.issuer import AnonCredsIssuer
+from .......anoncreds.models.anoncreds_cred_def import (
     CredDef,
     GetCredDefResult,
 )
-from acapy_agent.anoncreds.models.anoncreds_revocation import (
+from .......anoncreds.models.anoncreds_revocation import (
     GetRevRegDefResult,
     RevRegDef,
 )
-from acapy_agent.anoncreds.registry import AnonCredsRegistry
-from acapy_agent.askar.profile_anon import AskarAnoncredsProfile
-from acapy_agent.protocols.issue_credential.v2_0.messages.cred_issue import (
-    V20CredIssue,
-)
-from acapy_agent.protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
-)
-from acapy_agent.tests import mock
-from acapy_agent.wallet.did_info import DIDInfo
-
-from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from .......anoncreds.issuer import AnonCredsIssuer
+from .......anoncreds.registry import AnonCredsRegistry
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
-from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
@@ -41,6 +30,9 @@ from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......protocols.issue_credential.v2_0.formats.handler import V20CredFormatError
 from .......protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
+from .......protocols.issue_credential.v2_0.messages.cred_issue import (
+    V20CredIssue,
+)
 from .......protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
 from .......protocols.issue_credential.v2_0.messages.cred_proposal import (
     V20CredProposal,
@@ -50,10 +42,19 @@ from .......protocols.issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
 )
+from .......protocols.issue_credential.v2_0.models.cred_ex_record import (
+    V20CredExRecord,
+)
 from .......protocols.issue_credential.v2_0.models.detail.indy import (
     V20CredExRecordIndy,
 )
+from .......storage.base import BaseStorage
 from .......storage.record import StorageRecord
+from .......tests import mock
+from .......utils.testing import create_test_profile
+from .......wallet.askar import AskarWallet
+from .......wallet.base import BaseWallet
+from .......wallet.did_info import DIDInfo
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -235,43 +236,40 @@ VCDI_CRED = {
 
 class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
-        self.session.wallet.get_public_did = mock.CoroutineMock(
-            return_value=DIDInfo(TEST_DID, None, None, None, True)
-        )
+        self.profile = await create_test_profile()
         # Ledger
-        Ledger = mock.MagicMock()
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
         self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
-        self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
             return_value=SCHEMA_ID
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-        self.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
+        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
+        self.profile.context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, mock_executor
         )
         # Context
         self.cache = InMemoryCache()
-        self.context.injector.bind_instance(BaseCache, self.cache)
+        self.profile.context.injector.bind_instance(BaseCache, self.cache)
 
         # Issuer
         self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
-        self.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         # Holder
         self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.context.injector.bind_instance(AnonCredsHolder, self.holder)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
+
+        mock_wallet = mock.MagicMock(BaseWallet, autospec=True)
+        mock_wallet.get_public_did = mock.CoroutineMock(
+            return_value=DIDInfo(TEST_DID, None, None, None, True)
+        )
+        self.profile.context.injector.bind_instance(BaseWallet, mock_wallet)
 
         self.handler = VCDICredFormatHandler(self.profile)
 
@@ -323,8 +321,9 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                 cred_rev_id="1",
             ),
         ]
-        await details_vcdi[0].save(self.session)
-        await details_vcdi[1].save(self.session)  # exercise logger warning on get()
+        async with self.profile.session() as session:
+            await details_vcdi[0].save(session)
+            await details_vcdi[1].save(session)  # exercise logger warning on get()
 
         with mock.patch.object(VCDI_LOGGER, "warning", mock.MagicMock()) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_vcdi
@@ -384,7 +383,12 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # Not much to assert. Receive proposal doesn't do anything
         await self.handler.receive_proposal(cred_ex_record, cred_proposal_message)
 
-    async def test_create_offer(self):
+    @mock.patch.object(
+        AskarWallet,
+        "get_public_did",
+        return_value=DIDInfo(TEST_DID, None, None, None, True),
+    )
+    async def test_create_offer(self, _):
         schema_id_parts = SCHEMA_ID.split(":")
 
         cred_preview = V20CredPreview(
@@ -423,11 +427,11 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                 "epoch": str(int(time())),
             },
         )
-        await self.session.storage.add_record(cred_def_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            await storage.add_record(cred_def_record)
 
-        with mock.patch.object(
-            test_module, "AnonCredsIssuer", return_value=self.issuer
-        ) as mock_issuer:
+        with mock.patch.object(test_module, "AnonCredsIssuer", return_value=self.issuer):
             self.issuer.create_credential_offer = mock.CoroutineMock(
                 return_value=json.dumps(
                     VCDI_OFFER["binding_method"]["anoncreds_link_secret"]
@@ -474,13 +478,15 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             resolution_metadata={},
             credential_definition_metadata={},
         )
-        mock_creds_registry = mock.MagicMock()
+        mock_creds_registry = mock.MagicMock(AnonCredsRegistry, autospec=True)
         mock_creds_registry.get_credential_definition = mock.AsyncMock(
             return_value=mock_credential_definition_result
         )
 
         # Inject the MagicMock into the context
-        self.context.injector.bind_instance(AnonCredsRegistry, mock_creds_registry)
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry, mock_creds_registry
+        )
 
         holder_did = "did"
 
@@ -506,8 +512,11 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             return_value=(json.dumps(VCDI_CRED_REQ), json.dumps(cred_req_meta))
         )
 
-        self.profile = mock.MagicMock(AskarAnoncredsProfile)
-        self.context.injector.bind_instance(AskarAnoncredsProfile, self.profile)
+        self.profile = await create_test_profile(
+            {
+                "wallet.type": "askar-anoncreds",
+            }
+        )
         with mock.patch.object(
             AnonCredsHolder, "create_credential_request", mock.CoroutineMock()
         ) as mock_create:
@@ -534,9 +543,9 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             cred_ex_record._id = "dummy-id2"
             await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
 
-            self.context.injector.clear_binding(BaseCache)
+            self.profile.context.injector.clear_binding(BaseCache)
             cred_ex_record._id = "dummy-id3"
-            self.context.injector.bind_instance(
+            self.profile.context.injector.bind_instance(
                 BaseMultitenantManager,
                 mock.MagicMock(MultitenantManager, autospec=True),
             )
@@ -658,7 +667,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            # TODO here
             offers_attach=[AttachDecorator.data_base64(VCDI_OFFER, ident="0")],
         )
         cred_request = V20CredRequest(
@@ -795,7 +803,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             resolution_metadata={},
             credential_definition_metadata={},
         )
-        mock_creds_registry = mock.AsyncMock()
+        mock_creds_registry = mock.MagicMock(AnonCredsRegistry, autospec=True)
         mock_creds_registry.get_credential_definition = mock.AsyncMock(
             return_value=mock_credential_definition_result
         )
@@ -817,14 +825,19 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             )
         )
         # Inject the MagicMock into the context
-        self.context.injector.bind_instance(AnonCredsRegistry, mock_creds_registry)
-        self.profile = mock.AsyncMock(AskarAnoncredsProfile)
-        self.context.injector.bind_instance(AskarAnoncredsProfile, self.profile)
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry, mock_creds_registry
+        )
+        self.profile = await create_test_profile(
+            {
+                "wallet.type": "askar-anoncreds",
+            }
+        )
         with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_or_fetch_local_tails_path",
             mock.CoroutineMock(),
-        ) as mock_get_or_fetch_local_tails_path:
+        ):
             with self.assertRaises(V20CredFormatError) as context:
                 await self.handler.store_credential(cred_ex_record, cred_id)
             assert (

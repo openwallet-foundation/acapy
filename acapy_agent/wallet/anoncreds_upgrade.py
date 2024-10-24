@@ -347,6 +347,7 @@ async def upgrade_and_delete_cred_def_records(
             "max_cred_num": str(cred_def_upgrade_obj.max_cred_num or 0),
         },
     )
+
     await txn.handle.replace(
         CATEGORY_CRED_DEF_PRIVATE,
         cred_def_id,

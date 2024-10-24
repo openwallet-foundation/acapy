@@ -56,23 +56,6 @@ class TestProfileSession(IsolatedAsyncioTestCase):
 
 
 class TestProfileManagerProvider(IsolatedAsyncioTestCase):
-    async def test_basic_wallet_type(self):
-        context = InjectionContext()
-        provider = ProfileManagerProvider()
-        context.settings["wallet.type"] = "basic"
-
-        self.assertEqual(
-            provider.provide(context.settings, context.injector).__class__.__name__,
-            "InMemoryProfileManager",
-        )
-
-        context.settings["wallet.type"] = "in_memory"
-
-        self.assertEqual(
-            provider.provide(context.settings, context.injector).__class__.__name__,
-            "InMemoryProfileManager",
-        )
-
     async def test_invalid_wallet_type(self):
         context = InjectionContext()
         provider = ProfileManagerProvider()

@@ -9,11 +9,11 @@ from acapy_agent.revocation.models.issuer_cred_rev_record import (
 from acapy_agent.tests import mock
 
 from ...anoncreds.issuer import AnonCredsIssuer
-from ...core.in_memory import InMemoryProfile
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...utils.testing import create_test_profile
 from .. import manager as test_module
 from ..manager import RevocationManager, RevocationManagerError
 
@@ -30,7 +30,7 @@ TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
 
 class TestRevocationManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.manager = RevocationManager(self.profile)
 
     @pytest.mark.skip(reason="Anoncreds-break")

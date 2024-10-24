@@ -3,6 +3,7 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...messages.rotate import Rotate
 from .. import rotate_handler as test_module
 
@@ -12,9 +13,8 @@ test_valid_rotate_request = {
 
 
 @pytest.fixture()
-def request_context():
-    ctx = RequestContext.test_context()
-    yield ctx
+async def request_context():
+    yield RequestContext.test_context(await create_test_profile())
 
 
 class TestRotateHandler:

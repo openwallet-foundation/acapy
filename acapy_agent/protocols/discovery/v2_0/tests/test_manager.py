@@ -6,9 +6,9 @@ import pytest
 
 from acapy_agent.tests import mock
 
-from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
+from .....utils.testing import create_test_profile
 from ....didcomm_prefix import DIDCommPrefix
 from ..manager import V20DiscoveryMgr, V20DiscoveryMgrError
 from ..messages.disclosures import Disclosures
@@ -26,10 +26,7 @@ class TestV20DiscoveryManager(IsolatedAsyncioTestCase):
         self._caplog = caplog
 
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
+        self.profile = await create_test_profile()
         self.disclosures = Disclosures(
             disclosures=[
                 {

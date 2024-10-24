@@ -2,9 +2,6 @@
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
@@ -14,6 +11,8 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 from ....messaging.valid import IndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...base import DIDNotFound, ResolverError
 from ..indy import IndyDIDResolver, _routing_keys_as_did_key_urls
 
@@ -42,15 +41,14 @@ def ledger():
 
 
 @pytest.fixture
-def profile(ledger):
+async def profile(ledger):
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
-    profile.context.injector.bind_instance(
-        IndyLedgerRequestsExecutor,
-        mock.MagicMock(
-            get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, ledger))
-        ),
+    profile = await create_test_profile()
+    mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+    mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+        return_value=(None, ledger)
     )
+    profile.context.injector.bind_instance(IndyLedgerRequestsExecutor, mock_executor)
     yield profile
 
 
@@ -92,12 +90,11 @@ class TestIndyResolver:
     @pytest.mark.asyncio
     async def test_resolve_x_no_ledger(self, profile: Profile, resolver: IndyDIDResolver):
         """Test resolve method with no ledger."""
-        profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, None))
-            ),
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, None)
         )
+        profile.context.injector.bind_instance(IndyLedgerRequestsExecutor, mock_executor)
         with pytest.raises(ResolverError):
             await resolver.resolve(profile, TEST_DID0)
 

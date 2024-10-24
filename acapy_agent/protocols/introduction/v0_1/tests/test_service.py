@@ -1,10 +1,10 @@
 from unittest import IsolatedAsyncioTestCase
 
 from .....connections.models.conn_record import ConnRecord
-from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
+from .....utils.testing import create_test_profile
 from .....wallet.key_type import ED25519
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
@@ -22,8 +22,8 @@ TEST_ENDPOINT = "http://localhost"
 
 
 class TestIntroductionService(IsolatedAsyncioTestCase):
-    def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile()
         self.context = RequestContext(self.profile)
         self.oob_invi_msg = OOBInvitationMessage(
             label=TEST_LABEL,

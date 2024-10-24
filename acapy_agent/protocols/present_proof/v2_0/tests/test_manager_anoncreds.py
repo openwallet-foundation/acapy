@@ -9,7 +9,6 @@ from acapy_agent.tests import mock
 
 from .....anoncreds.holder import AnonCredsHolder
 from .....anoncreds.verifier import AnonCredsVerifier
-from .....core.in_memory import InMemoryProfile
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
@@ -25,6 +24,7 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
+from .....utils.testing import create_test_profile
 from .....vc.ld_proofs import DocumentLoader
 from .....vc.tests.document_loader import custom_document_loader
 from .....vc.vc_ld.validation_result import PresentationVerificationResult
@@ -380,12 +380,11 @@ INDY_PROOF_NAMES = {
 
 class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.profile.settings.set_value("wallet.type", "askar-anoncreds")
         injector = self.profile.context.injector
 
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": {"...": "..."}}}
@@ -434,8 +433,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             ),
         )
 
-        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -473,8 +471,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         )
         injector.bind_instance(AnonCredsHolder, self.holder)
 
-        Verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
-        self.verifier = Verifier()
+        self.verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
         self.verifier.verify_presentation = mock.CoroutineMock(return_value=("true", []))
         injector.bind_instance(AnonCredsVerifier, self.verifier)
 
@@ -1379,18 +1376,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1452,18 +1445,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1532,18 +1521,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1608,18 +1593,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 

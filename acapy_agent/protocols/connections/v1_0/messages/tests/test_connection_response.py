@@ -1,7 +1,8 @@
 from unittest import IsolatedAsyncioTestCase, TestCase, mock
 
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ......core.in_memory import InMemoryProfile
+from ......utils.testing import create_test_profile
+from ......wallet.base import BaseWallet
 from ......wallet.key_type import ED25519
 from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import CONNECTION_RESPONSE
@@ -95,10 +96,11 @@ class TestConnectionResponseSchema(IsolatedAsyncioTestCase, TestConfig):
         connection_response = ConnectionResponse(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())
         )
-        session = InMemoryProfile.test_session()
-        wallet = session.wallet
-        key_info = await wallet.create_signing_key(ED25519)
-        await connection_response.sign_field("connection", key_info.verkey, wallet)
-        data = connection_response.serialize()
-        model_instance = ConnectionResponse.deserialize(data)
-        assert type(model_instance) is type(connection_response)
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key_info = await wallet.create_signing_key(ED25519)
+            await connection_response.sign_field("connection", key_info.verkey, wallet)
+            data = connection_response.serialize()
+            model_instance = ConnectionResponse.deserialize(data)
+            assert type(model_instance) is type(connection_response)

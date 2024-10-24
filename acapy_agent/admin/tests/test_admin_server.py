@@ -7,20 +7,20 @@ import pytest
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 
-from acapy_agent.tests import mock
-from acapy_agent.wallet import singletons
-
+from ...askar.profile import AskarProfile
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
 from ...core.goal_code_registry import GoalCodeRegistry
-from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 from ...storage.type import RECORD_TYPE_ACAPY_UPGRADING
+from ...tests import mock
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
+from ...utils.testing import create_test_profile
+from ...wallet import singletons
 from ...wallet.anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
 from .. import server as test_module
 from ..request_context import AdminRequestContext
@@ -42,11 +42,6 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         self.client_session = ClientSession(
             cookie_jar=DummyCookieJar(), connector=self.connector
         )
-
-    async def asyncTearDown(self):
-        if self.client_session:
-            await self.client_session.close()
-            self.client_session = None
 
     async def test_debug_middleware(self):
         with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
@@ -108,7 +103,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(KeyError):
                 await test_module.ready_middleware(request, handler)
 
-    def get_admin_server(
+    async def get_admin_server(
         self, settings: Optional[dict] = None, context: Optional[InjectionContext] = None
     ) -> AdminServer:
         if not context:
@@ -122,18 +117,16 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         plugin_registry = mock.MagicMock(test_module.PluginRegistry, autospec=True)
         plugin_registry.post_process_routes = mock.MagicMock()
         context.injector.bind_instance(test_module.PluginRegistry, plugin_registry)
+        context.injector.bind_instance(test_module.Collector, Collector())
 
-        collector = Collector()
-        context.injector.bind_instance(test_module.Collector, collector)
-
-        profile = InMemoryProfile.test_profile(settings=settings)
+        self.profile = await create_test_profile(settings=settings)
 
         self.port = unused_port()
         return AdminServer(
             "0.0.0.0",
             self.port,
             context,
-            profile,
+            self.profile,
             self.outbound_message_router,
             self.webhook_router,
             conductor_stop=mock.CoroutineMock(),
@@ -151,25 +144,25 @@ class TestAdminServer(IsolatedAsyncioTestCase):
 
     async def test_start_stop(self):
         with self.assertRaises(AssertionError):
-            await self.get_admin_server().start()
+            await (await self.get_admin_server()).start()
 
         settings = {"admin.admin_insecure_mode": False}
         with self.assertRaises(AssertionError):
-            await self.get_admin_server(settings).start()
+            await (await self.get_admin_server(settings)).start()
 
         settings = {
             "admin.admin_insecure_mode": True,
             "admin.admin_api_key": "test-api-key",
         }
         with self.assertRaises(AssertionError):
-            await self.get_admin_server(settings).start()
+            await (await self.get_admin_server(settings)).start()
 
         settings = {
             "admin.admin_insecure_mode": False,
             "admin.admin_client_max_request_size": 4,
             "admin.admin_api_key": "test-api-key",
         }
-        server = self.get_admin_server(settings)
+        server = await self.get_admin_server(settings)
         await server.start()
         assert server.app._client_max_size == 4 * 1024 * 1024
         with mock.patch.object(server, "websocket_queues", mock.MagicMock()) as mock_wsq:
@@ -181,7 +174,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         with mock.patch.object(web.TCPSite, "start", mock.CoroutineMock()) as mock_start:
             mock_start.side_effect = OSError("Failure to launch")
             with self.assertRaises(AdminSetupError):
-                await self.get_admin_server(settings).start()
+                await (await self.get_admin_server(settings)).start()
 
     async def test_import_routes(self):
         # this test just imports all default admin routes
@@ -190,8 +183,8 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
         await DefaultContextBuilder().load_plugins(context)
-        server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
-        app = await server.make_application()
+        server = await self.get_admin_server({"admin.admin_insecure_mode": True}, context)
+        await server.make_application()
 
     async def test_register_external_plugin_x(self):
         context = InjectionContext()
@@ -206,7 +199,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
 
     async def test_visit_insecure_mode(self):
         settings = {"admin.admin_insecure_mode": True, "task_queue": True}
-        server = self.get_admin_server(settings)
+        server = await self.get_admin_server(settings)
         await server.start()
 
         async with self.client_session.post(
@@ -240,7 +233,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             "admin.admin_insecure_mode": False,
             "admin.admin_api_key": "test-api-key",
         }
-        server = self.get_admin_server(settings)
+        server = await self.get_admin_server(settings)
         await server.start()
 
         async with self.client_session.get(
@@ -297,7 +290,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             "wallet.seed": "00000000000000000000000000000000",
             "wallet.storage.creds": "secret",
         }
-        server = self.get_admin_server(settings)
+        server = await self.get_admin_server(settings)
         await server.start()
 
         async with self.client_session.get(
@@ -326,7 +319,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         settings = {
             "admin.admin_insecure_mode": True,
         }
-        server = self.get_admin_server(settings)
+        server = await self.get_admin_server(settings)
         await server.start()
 
         async with self.client_session.get(
@@ -349,7 +342,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         settings = {
             "admin.admin_insecure_mode": True,
         }
-        server = self.get_admin_server(settings)
+        server = await self.get_admin_server(settings)
         await server.start()
 
         async with self.client_session.get(
@@ -379,7 +372,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         await server.stop()
 
     async def test_upgrade_middleware(self):
-        profile = InMemoryProfile.test_profile()
+        profile = await create_test_profile()
         self.context = AdminRequestContext.test_context({}, profile)
         self.request_dict = {
             "context": self.context,
@@ -408,15 +401,15 @@ class TestAdminServer(IsolatedAsyncioTestCase):
                 await test_module.upgrade_middleware(request, handler)
 
             # Upgrade in progress with cache
-            singletons.UpgradeInProgressSingleton().set_wallet("test-profile")
+            singletons.UpgradeInProgressSingleton().set_wallet(profile.name)
             with self.assertRaises(test_module.web.HTTPServiceUnavailable):
                 await test_module.upgrade_middleware(request, handler)
 
-            singletons.UpgradeInProgressSingleton().remove_wallet("test-profile")
+            singletons.UpgradeInProgressSingleton().remove_wallet(profile.name)
             await storage.delete_record(upgrading_record)
 
             # Upgrade in progress with cache
-            singletons.IsAnoncredsSingleton().set_wallet("test-profile")
+            singletons.IsAnoncredsSingleton().set_wallet(profile.name)
             await test_module.upgrade_middleware(request, handler)
 
 
@@ -434,7 +427,8 @@ async def server():
     [("acapy::record::topic", "topic"), ("acapy::record::topic::state", "topic")],
 )
 async def test_on_record_event(server, event_topic, webhook_topic):
-    profile = InMemoryProfile.test_profile()
+    profile = mock.MagicMock(AskarProfile, autospec=True)
+    server = await server
     with mock.patch.object(
         server, "send_webhook", mock.CoroutineMock()
     ) as mock_send_webhook:
@@ -444,11 +438,11 @@ async def test_on_record_event(server, event_topic, webhook_topic):
 
 @pytest.mark.asyncio
 async def test_admin_responder_profile_expired_x():
-    def _smaller_scope():
-        profile = InMemoryProfile.test_profile()
+    async def _smaller_scope():
+        profile = await create_test_profile()
         return test_module.AdminResponder(profile, None)
 
-    responder = _smaller_scope()
+    responder = await _smaller_scope()
     gc.collect()  # help ensure collection of profile
 
     with pytest.raises(RuntimeError):

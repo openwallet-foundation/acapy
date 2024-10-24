@@ -9,9 +9,6 @@ from ..config.injection_context import InjectionContext
 from ..config.injector import InjectionError, Injector, InjectType
 from ..config.settings import Settings
 from ..core.profile import Profile, ProfileSession
-from ..utils.classloader import DeferLoad
-
-IN_MEM = DeferLoad("acapy_agent.core.in_memory.InMemoryProfile")
 
 
 class AdminRequestContext:
@@ -112,10 +109,10 @@ class AdminRequestContext:
 
     @classmethod
     def test_context(
-        cls, session_inject: Optional[dict] = None, profile: Optional[Profile] = None
+        cls, session_inject: dict, profile: Profile
     ) -> "AdminRequestContext":
         """Quickly set up a new admin request context for tests."""
-        ctx = AdminRequestContext(profile or IN_MEM.resolved.test_profile())
+        ctx = AdminRequestContext(profile)
         setattr(ctx, "session_inject", {} if session_inject is None else session_inject)
         setattr(ctx, "session", ctx._test_session)
         return ctx

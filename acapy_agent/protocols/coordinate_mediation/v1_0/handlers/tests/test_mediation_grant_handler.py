@@ -10,6 +10,7 @@ from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......multitenant.base import BaseMultitenantManager
+from ......utils.testing import create_test_profile
 from ...manager import MediationManager
 from ...messages.mediate_grant import MediationGrant
 from ...models.mediation_record import MediationRecord
@@ -24,7 +25,7 @@ TEST_ENDPOINT = "https://example.com"
 
 @pytest.fixture()
 async def context():
-    context = RequestContext.test_context()
+    context = RequestContext.test_context(await create_test_profile())
     context.message = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_VERKEY])
     context.connection_ready = True
     context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
@@ -102,12 +103,12 @@ class TestMediationGrantHandler:
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
         )
 
-        multitenant_mgr = mock.CoroutineMock()
-        profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
+        multitenant_mgr = mock.MagicMock(BaseMultitenantManager, autospec=True)
 
         default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
         multitenant_mgr.get_default_mediator = mock.CoroutineMock()
         multitenant_mgr.get_default_mediator.return_value = default_base_mediator
+        profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
 
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)

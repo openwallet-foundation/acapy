@@ -5,7 +5,6 @@ from unittest import IsolatedAsyncioTestCase
 
 from acapy_agent.tests import mock
 
-from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
@@ -23,8 +22,8 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
+from .....utils.testing import create_test_profile
 from .....vc.ld_proofs import DocumentLoader
-from .....vc.tests.document_loader import custom_document_loader
 from .....vc.vc_ld.manager import VcLdpManager
 from .....vc.vc_ld.validation_result import PresentationVerificationResult
 from ...indy import pres_exch_handler as test_indy_util_module
@@ -379,11 +378,10 @@ INDY_PROOF_NAMES = {
 
 class TestV20PresManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         injector = self.profile.context.injector
 
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": {"...": "..."}}}
@@ -423,17 +421,13 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             )
         )
         injector.bind_instance(BaseLedger, self.ledger)
-        injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
         )
+        injector.bind_instance(IndyLedgerRequestsExecutor, mock_executor)
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(IndyHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -471,8 +465,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         injector.bind_instance(IndyHolder, self.holder)
 
-        Verifier = mock.MagicMock(IndyVerifier, autospec=True)
-        self.verifier = Verifier()
+        self.verifier = mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier.verify_presentation = mock.CoroutineMock(return_value=("true", []))
         injector.bind_instance(IndyVerifier, self.verifier)
 
@@ -980,8 +973,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
     async def test_create_pres_no_revocation(self):
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": None}}
@@ -1003,8 +995,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(IndyHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -1088,8 +1079,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(IndyHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -1161,8 +1151,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(IndyHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -1372,18 +1361,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1445,18 +1430,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1525,18 +1506,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1601,18 +1578,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             V20PresExRecord, "save", autospec=True
         ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        ) as retrieve_ex:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -2138,7 +2111,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
 
         self.profile.context.injector.bind_instance(
-            DocumentLoader, custom_document_loader
+            DocumentLoader, mock.MagicMock(DocumentLoader, autospec=True)
         )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,

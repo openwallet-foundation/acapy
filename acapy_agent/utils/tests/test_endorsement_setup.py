@@ -1,9 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ...connections.models.conn_record import ConnRecord
-from ...core.in_memory.profile import InMemoryProfile
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import endorsement_setup
 from ..endorsement_setup import attempt_auto_author_with_endorser_setup
 
@@ -15,8 +14,8 @@ class MockConnRecord:
 
 
 class TestEndorsementSetupUtil(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile()
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile()
 
     @mock.patch.object(endorsement_setup.LOGGER, "info", return_value=mock.MagicMock())
     async def test_not_enough_configs_for_connection(self, mock_logger):

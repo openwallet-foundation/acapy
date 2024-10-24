@@ -1,18 +1,15 @@
 import importlib
 import json
 from os.path import join
-from typing import Any, Mapping, Optional, Type
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ....config.injection_context import InjectionContext
-from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
-from ....core.profile import Profile, ProfileSession
+from ....askar.profile import AskarProfileSession
 from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...error import RevocationError
 from .. import issuer_rev_reg_record as test_module
 from ..issuer_rev_reg_record import IssuerRevRegRecord
@@ -52,19 +49,17 @@ REV_REG_ENTRY = {
 
 class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
         self.context = self.profile.context
 
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.send_revoc_reg_def = mock.CoroutineMock()
         self.ledger.send_revoc_reg_entry = mock.CoroutineMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        TailsServer = mock.MagicMock(BaseTailsServer, autospec=True)
-        self.tails_server = TailsServer()
+        self.tails_server = mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server.upload_tails_file = mock.CoroutineMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
@@ -119,157 +114,92 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             }
         }
 
-        class TestProfile(InMemoryProfile):
-            def session(
-                self, context: Optional[InjectionContext] = None
-            ) -> "ProfileSession":
-                return TestProfileSession(self, context=context)
-
-            @classmethod
-            def test_profile(
-                cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
-            ) -> "TestProfile":
-                profile = TestProfile(
-                    context=InjectionContext(enforce_typing=False, settings=settings),
-                    name=InMemoryProfile.TEST_PROFILE_NAME,
-                )
-                if bind:
-                    for k, v in bind.items():
-                        if v:
-                            profile.context.injector.bind_instance(k, v)
-                        else:
-                            profile.context.injector.clear_binding(k)
-                return profile
-
-            @classmethod
-            def test_session(
-                cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
-            ) -> "TestProfileSession":
-                session = TestProfileSession(cls.test_profile(), settings=settings)
-                session._active = True
-                session._init_context()
-                if bind:
-                    for k, v in bind.items():
-                        if v:
-                            session.context.injector.bind_instance(k, v)
-                        else:
-                            session.context.injector.clear_binding(k)
-                return session
-
-        class TestProfileSession(InMemoryProfileSession):
-            def __init__(
-                self,
-                profile: Profile,
-                *,
-                context: Optional[InjectionContext] = None,
-                settings: Mapping[str, Any] = None,
-            ):
-                super().__init__(profile=profile, context=context, settings=settings)
-                self.handle_counter = 0
-
-            @property
-            def handle(self):
-                if self.handle_counter == 0:
-                    self.handle_counter = self.handle_counter + 1
-                    return mock.MagicMock(
-                        fetch=mock.CoroutineMock(
-                            return_value=mock.MagicMock(
-                                value_json=json.dumps(mock_cred_def)
-                            )
-                        )
-                    )
-                else:
-                    return mock.MagicMock(
-                        fetch=mock.CoroutineMock(
-                            return_value=mock.MagicMock(
-                                value_json=json.dumps(mock_reg_rev_def_private),
-                            ),
-                        )
-                    )
-
         credx_module = importlib.import_module("indy_credx")
-        rev_reg_delta_json = json.dumps(
-            {
-                "ver": "1.0",
-                "value": {
-                    "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
-                },
-            }
-        )
-        rev_reg_delta = credx_module.RevocationRegistryDelta.load(rev_reg_delta_json)
-
-        if hasattr(rev_reg_delta.to_json, "return_value"):
-            # if indy_credx is not installed, then we're dealing with a mocked method
-            # therefore, set the return_value to avoid MagicMock being passed to json.loads
-            rev_reg_delta.to_json.return_value = rev_reg_delta_json
-
-        TEST_GENESIS_TXN = "test_genesis_txn"
-        rec = IssuerRevRegRecord(
-            issuer_did=TEST_DID,
-            revoc_reg_id=REV_REG_ID,
-            revoc_reg_def=REV_REG_DEF,
-            revoc_def_type="CL_ACCUM",
-            revoc_reg_entry=REV_REG_ENTRY,
-            cred_def_id=CRED_DEF_ID,
-            tails_public_uri=TAILS_URI,
-        )
-        _test_rev_reg_delta = {
-            "ver": "1.0",
-            "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
-        }
-        self.ledger.get_revoc_reg_delta = mock.CoroutineMock(
-            return_value=(
-                _test_rev_reg_delta,
-                1234567890,
-            )
-        )
-        self.ledger.send_revoc_reg_entry = mock.CoroutineMock(
-            return_value={
-                "result": {"...": "..."},
-            },
-        )
-        _test_session = TestProfile.test_session(
-            settings={"tails_server_base_url": "http://1.2.3.4:8088"},
-        )
-        _test_profile = _test_session.profile
-        _test_profile.context.injector.bind_instance(BaseLedger, self.ledger)
-        with mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "query_by_ids",
-            mock.CoroutineMock(
-                return_value=[
-                    test_module.IssuerCredRevRecord(
-                        record_id=test_module.UUID4_EXAMPLE,
-                        state=test_module.IssuerCredRevRecord.STATE_REVOKED,
-                        cred_ex_id=test_module.UUID4_EXAMPLE,
-                        rev_reg_id=REV_REG_ID,
-                        cred_rev_id="1",
-                    )
+        with mock.patch.object(AskarProfileSession, "handle") as mock_handle:
+            mock_handle.fetch = mock.CoroutineMock(
+                side_effect=[
+                    mock.MagicMock(value_json=json.dumps(mock_cred_def)),
+                    mock.MagicMock(value_json=json.dumps(mock_reg_rev_def_private)),
                 ]
-            ),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_revoc_reg_id",
-            mock.CoroutineMock(return_value=rec),
-        ), mock.patch.object(
-            test_module,
-            "generate_ledger_rrrecovery_txn",
-            mock.CoroutineMock(return_value=rev_reg_delta),
-        ):
-            assert (
-                _test_rev_reg_delta,
+            )
+            rev_reg_delta_json = json.dumps(
                 {
                     "ver": "1.0",
                     "value": {
                         "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
                     },
-                },
-                {"...": "..."},
-            ) == await rec.fix_ledger_entry(
-                profile=_test_profile,
-                apply_ledger_update=True,
-                genesis_transactions=json.dumps(TEST_GENESIS_TXN),
+                }
             )
+            rev_reg_delta = credx_module.RevocationRegistryDelta.load(rev_reg_delta_json)
+
+            if hasattr(rev_reg_delta.to_json, "return_value"):
+                # if indy_credx is not installed, then we're dealing with a mocked method
+                # therefore, set the return_value to avoid MagicMock being passed to json.loads
+                rev_reg_delta.to_json.return_value = rev_reg_delta_json
+
+            TEST_GENESIS_TXN = "test_genesis_txn"
+            rec = IssuerRevRegRecord(
+                issuer_did=TEST_DID,
+                revoc_reg_id=REV_REG_ID,
+                revoc_reg_def=REV_REG_DEF,
+                revoc_def_type="CL_ACCUM",
+                revoc_reg_entry=REV_REG_ENTRY,
+                cred_def_id=CRED_DEF_ID,
+                tails_public_uri=TAILS_URI,
+            )
+            _test_rev_reg_delta = {
+                "ver": "1.0",
+                "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
+            }
+            self.ledger.get_revoc_reg_delta = mock.CoroutineMock(
+                return_value=(
+                    _test_rev_reg_delta,
+                    1234567890,
+                )
+            )
+            self.ledger.send_revoc_reg_entry = mock.CoroutineMock(
+                return_value={
+                    "result": {"...": "..."},
+                },
+            )
+            self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
+            with mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "query_by_ids",
+                mock.CoroutineMock(
+                    return_value=[
+                        test_module.IssuerCredRevRecord(
+                            record_id=test_module.UUID4_EXAMPLE,
+                            state=test_module.IssuerCredRevRecord.STATE_REVOKED,
+                            cred_ex_id=test_module.UUID4_EXAMPLE,
+                            rev_reg_id=REV_REG_ID,
+                            cred_rev_id="1",
+                        )
+                    ]
+                ),
+            ), mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_revoc_reg_id",
+                mock.CoroutineMock(return_value=rec),
+            ), mock.patch.object(
+                test_module,
+                "generate_ledger_rrrecovery_txn",
+                mock.CoroutineMock(return_value=rev_reg_delta),
+            ):
+                assert (
+                    _test_rev_reg_delta,
+                    {
+                        "ver": "1.0",
+                        "value": {
+                            "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
+                        },
+                    },
+                    {"...": "..."},
+                ) == await rec.fix_ledger_entry(
+                    profile=self.profile,
+                    apply_ledger_update=True,
+                    genesis_transactions=json.dumps(TEST_GENESIS_TXN),
+                )
 
     async def test_generate_registry_etc(self):
         rec = IssuerRevRegRecord(
@@ -294,7 +224,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             json.dumps(REV_REG_ENTRY),
         )
 
-        with mock.patch.object(test_module, "move", mock.MagicMock()) as mock_move:
+        with mock.patch.object(test_module, "move", mock.MagicMock()):
             await rec.generate_registry(self.profile)
 
         assert rec.revoc_reg_id == REV_REG_ID
@@ -362,14 +292,14 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             tails_public_uri=TAILS_URI,
         )
 
-        with self.assertRaises(RevocationError) as x_state:
+        with self.assertRaises(RevocationError):
             await rec_full.generate_registry(self.profile)
 
-        with self.assertRaises(RevocationError) as x_state:
+        with self.assertRaises(RevocationError):
             await rec_full.send_def(self.profile)
 
         rec_full.state = IssuerRevRegRecord.STATE_INIT
-        with self.assertRaises(RevocationError) as x_state:
+        with self.assertRaises(RevocationError):
             await rec_full.send_entry(self.profile)
 
     async def test_pending(self):

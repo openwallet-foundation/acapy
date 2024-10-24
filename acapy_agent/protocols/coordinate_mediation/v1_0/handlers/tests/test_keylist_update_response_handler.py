@@ -11,6 +11,7 @@ from ......core.event_bus import EventBus, MockEventBus
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ...manager import MediationManager
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.inner.keylist_updated import KeylistUpdated
@@ -30,7 +31,7 @@ class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
         self.updated = [
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,

@@ -11,6 +11,7 @@ from ......messaging.responder import MockResponder
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_request import ConnectionRequest
@@ -20,7 +21,7 @@ from ...models.connection_detail import ConnectionDetail
 
 @pytest.fixture()
 async def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

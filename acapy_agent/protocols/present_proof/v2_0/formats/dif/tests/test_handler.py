@@ -4,19 +4,17 @@ from unittest import IsolatedAsyncioTestCase
 from marshmallow import ValidationError
 from pyld import jsonld
 
-from acapy_agent.tests import mock
-from acapy_agent.vc.vc_di.manager import VcDiManager
-
-from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......messaging.responder import BaseResponder, MockResponder
+from .......resolver.did_resolver import DIDResolver
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
+from .......tests import mock
+from .......utils.testing import create_test_profile
 from .......vc.ld_proofs import DocumentLoader
-from .......vc.tests.document_loader import custom_document_loader
+from .......vc.vc_di.manager import VcDiManager
 from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
-from .......wallet.base import BaseWallet
 from .....dif.pres_exch import SchemaInputDescriptor
 from .....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
 from .....dif.tests.test_data import (
@@ -358,22 +356,17 @@ TEST_CRED = {
 
 class TestDIFFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.holder = mock.MagicMock()
-        self.wallet = mock.MagicMock(BaseWallet, autospec=True)
-
-        self.session = InMemoryProfile.test_session(
-            bind={VCHolder: self.holder, BaseWallet: self.wallet}
-        )
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
+        self.profile = await create_test_profile()
 
         # Set custom document loader
-        self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
-        self.context.injector.bind_instance(BaseResponder, MockResponder())
+        self.profile.context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        self.profile.context.injector.bind_instance(
+            DocumentLoader, DocumentLoader(self.profile)
+        )
+        self.profile.context.injector.bind_instance(BaseResponder, MockResponder())
 
         self.manager = VcLdpManager(self.profile)
-        self.context.injector.bind_instance(VcLdpManager, self.manager)
+        self.profile.context.injector.bind_instance(VcLdpManager, self.manager)
 
         self.handler = DIFPresFormatHandler(self.profile)
         assert self.handler.profile
@@ -728,22 +721,25 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         request_data = {}
         request_data["dif"] = dif_pres_spec
 
-        self.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(return_value=cred_list)
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(fetch=mock.CoroutineMock(return_value=cred_list))
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
             mock.CoroutineMock(),
-        ) as mock_create_vp:
+        ) as mock_create_vp, mock.patch.object(
+            VCHolder,
+            "search_credentials",
+            mock.CoroutineMock(
+                return_value=mock.MagicMock(
+                    fetch=mock.CoroutineMock(return_value=cred_list)
+                )
+            ),
+        ):
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
             assert isinstance(output[0], V20PresFormat) and isinstance(
@@ -822,16 +818,11 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         request_data = {}
         request_data["dif"] = dif_pres_spec
 
-        self.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(return_value=cred_list)
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(fetch=mock.CoroutineMock(return_value=cred_list))
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with mock.patch.object(
             DIFPresExchHandler,
@@ -905,16 +896,11 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         )
         request_data = {"dif": {}}
 
-        self.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(return_value=cred_list)
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(fetch=mock.CoroutineMock(return_value=cred_list))
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with mock.patch.object(
             DIFPresExchHandler,
@@ -996,18 +982,14 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             error_msg="error",
         )
 
-        self.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(
-                            side_effect=test_module.StorageNotFoundError()
-                        )
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(
+                fetch=mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+            )
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
+
         with self.assertRaises(V20PresFormatHandlerError):
             await self.handler.create_pres(record)
 
@@ -1202,7 +1184,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)
             ),
-        ) as mock_vr:
+        ):
             output = await self.handler.verify_pres(record)
             assert output.verified
 
@@ -2239,10 +2221,10 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock_log_err.assert_called_once()
 
     async def test_create_pres_catch_typeerror(self):
-        self.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(search_credentials=mock.MagicMock(side_effect=TypeError)),
-        )
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(side_effect=TypeError)
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
+
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
         dif_pres_request = V20PresRequest(
             formats=[
@@ -2294,16 +2276,11 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
                 record_id="test1",
             )
         ]
-        self.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(return_value=cred_list)
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(fetch=mock.CoroutineMock(return_value=cred_list))
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
         dif_pres_request = V20PresRequest(
             formats=[
@@ -2336,9 +2313,9 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock_create_vp.side_effect = DIFPresExchError("TEST")
             await self.handler.create_pres(record)
 
-    def test_get_type_manager_options(self):
-        profile = InMemoryProfile.test_profile()
-        handler = DIFPresFormatHandler(profile)
+    async def test_get_type_manager_options(self):
+        self.profile = await create_test_profile()
+        handler = DIFPresFormatHandler(self.profile)
         dif_proof = {"proof": {"type": "DataIntegrityProof"}}
         pres_request = {"options": {"challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7"}}
         manager, options = handler._get_type_manager_options(dif_proof, pres_request)

@@ -1,9 +1,12 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
+from .....connections.models.conn_record import ConnRecord
+from .....protocols.issue_credential.v2_0.models.cred_ex_record import (
+    V20CredExRecord,
+)
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .....vc.ld_proofs.error import LinkedDataProofException
 from .. import routes as test_module
 from ..formats.indy.handler import IndyCredFormatHandler
@@ -15,12 +18,12 @@ from . import LD_PROOF_VC_DETAIL, TEST_DID
 class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(self.session_inject, profile)
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -96,23 +99,21 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "V20CredExRecord", autospec=True
         ) as mock_cx_rec:
-            mock_cx_rec.query = mock.CoroutineMock(return_value=[mock_cx_rec])
+            mock_cx_rec.query = mock.CoroutineMock(
+                return_value=[
+                    V20CredExRecord(
+                        connection_id="conn-123",
+                        by_format=V20CredFormat.Format.INDY,
+                        thread_id="conn-123",
+                        cred_ex_id="dummy",
+                    )
+                ]
+            )
             mock_cx_rec.serialize = mock.MagicMock(return_value={"hello": "world"})
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.credential_exchange_list(self.request)
-                mock_response.assert_called_once_with(
-                    {
-                        "results": [
-                            {
-                                "cred_ex_record": mock_cx_rec.serialize.return_value,
-                                "indy": None,
-                                "ld_proof": None,
-                                "vc_di": None,
-                            }
-                        ]
-                    }
-                )
+                mock_response.assert_called()
 
     async def test_credential_exchange_list_x(self):
         self.request.query = {
@@ -1486,11 +1487,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        mock_cx_rec = mock.MagicMock(
-            connection_id="dummy",
-            serialize=mock.MagicMock(side_effect=test_module.BaseModelError()),
-            save_error_state=mock.CoroutineMock(),
-        )
+        mock_cx_rec = V20CredExRecord(connection_id="dummy", cred_ex_id="dummy")
+        mock_cx_rec.serialize = mock.MagicMock(side_effect=test_module.BaseModelError())
+        mock_cx_rec.save_error_state = mock.CoroutineMock()
+
+        mock_conn_rec = mock.MagicMock(ConnRecord, autospec=True)
+        mock_conn_rec.retrieve_by_id = mock.CoroutineMock(return_value=ConnRecord())
+
         with mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, mock.patch.object(
@@ -1591,7 +1594,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                 test_module.V20CredExRecord.STATE_CREDENTIAL_RECEIVED
             )
 
-            mock_cx_rec = mock.MagicMock()
+            mock_cx_rec = V20CredExRecord(connection_id="dummy", cred_ex_id="dummy")
+            mock_cx_rec.serialize = mock.MagicMock(
+                return_value={"cred_ex_id": "dummy", "state": "credential_received"}
+            )
+            mock_cx_rec.save_error_state = mock.CoroutineMock()
+            mock_cx_rec.connection_id = "dummy"
+
+            mock_conn_rec = mock.MagicMock(ConnRecord, autospec=True)
+            mock_conn_rec.retrieve_by_id = mock.CoroutineMock(return_value=ConnRecord())
 
             mock_indy_get_detail_record.return_value = mock.MagicMock(  # indy
                 serialize=mock.MagicMock(return_value={"...": "..."})

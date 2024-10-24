@@ -13,9 +13,10 @@ from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
 from .....tests import mock
+from .....utils.testing import create_test_profile
 from .....wallet.base import BaseWallet
 from .....wallet.did_method import SOV, DIDMethods
-from .....wallet.key_type import ED25519
+from .....wallet.key_type import ED25519, KeyTypes
 from ....issue_credential.v1_0.tests import REV_REG_ID
 from ..manager import TransactionManager, TransactionManagerError
 from ..models.transaction_record import TransactionRecord
@@ -111,10 +112,11 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         )
         self.ledger.register_nym = mock.CoroutineMock(return_value=(True, {}))
 
-        self.context = AdminRequestContext.test_context()
+        self.context = AdminRequestContext.test_context({}, await create_test_profile())
         self.profile = self.context.profile
         injector = self.profile.context.injector
         injector.bind_instance(BaseLedger, self.ledger)
+        injector.bind_instance(KeyTypes, KeyTypes())
         injector.bind_instance(DIDMethods, DIDMethods())
 
         async with self.profile.session() as session:

@@ -2,26 +2,25 @@ import json
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
-from acapy_agent.tests import mock
-
 from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
-from .....core.in_memory import InMemoryProfile
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import routes as test_module
 
 
 class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(self.session_inject, profile)
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -47,7 +46,6 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         STATE_COMPLETED = ConnRecord.State.COMPLETED
         STATE_INVITATION = ConnRecord.State.INVITATION
         STATE_ABANDONED = ConnRecord.State.ABANDONED
-        ROLE_REQUESTER = ConnRecord.Role.REQUESTER
         with mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec:
             mock_conn_rec.query = mock.CoroutineMock()
             mock_conn_rec.Role = ConnRecord.Role

@@ -7,6 +7,7 @@ from ...config.error import ArgsParseError
 from ...protocols.coordinate_mediation.mediation_invite_store import (
     MediationInviteRecord,
 )
+from ...utils.testing import create_test_profile
 from .. import provision as test_module
 
 
@@ -54,8 +55,15 @@ class TestProvision(IsolatedAsyncioTestCase):
     async def test_provision_should_store_provided_mediation_invite(self):
         # given
         mediation_invite = "test-invite"
+        test_profile = await create_test_profile()
 
-        with mock.patch.object(test_module.MediationInviteStore, "store") as invite_store:
+        with mock.patch.object(
+            test_module.MediationInviteStore, "store"
+        ) as invite_store, mock.patch.object(
+            test_module,
+            "wallet_config",
+            mock.CoroutineMock(return_value=(test_profile, mock.MagicMock())),
+        ):
             # when
             await test_module.provision({"mediation.invite": mediation_invite})
 

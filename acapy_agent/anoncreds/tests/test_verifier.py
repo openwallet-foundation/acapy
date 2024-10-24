@@ -21,9 +21,8 @@ from acapy_agent.anoncreds.models.anoncreds_schema import (
     AnonCredsSchema,
     GetSchemaResult,
 )
-from acapy_agent.askar.profile_anon import AskarAnoncredsProfile
-from acapy_agent.core.in_memory.profile import InMemoryProfile
 from acapy_agent.tests import mock
+from acapy_agent.utils.testing import create_test_profile
 
 from .. import verifier as test_module
 from .mock_objects import (
@@ -38,9 +37,8 @@ from .mock_objects import (
 @pytest.mark.anoncreds
 class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet.type": "askar-anoncreds"},
-            profile_class=AskarAnoncredsProfile,
         )
         self.verifier = test_module.AnonCredsVerifier(self.profile)
 

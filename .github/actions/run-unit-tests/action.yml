@@ -30,7 +30,7 @@ runs:
     - name: Tests
       shell: bash
       run: |
-        poetry run pytest --cov=acapy_agent --cov-report term-missing --cov-report xml --ignore-glob=/tests/* --ignore-glob=demo/* --ignore-glob=docker/* --ignore-glob=docs/* --ignore-glob=scripts/* --ignore-glob=scenarios/* 2>&1 | tee pytest.log
+        poetry run pytest -n auto --cov=acapy_agent --cov-report term-missing --cov-report xml --ignore-glob=/tests/* --ignore-glob=demo/* --ignore-glob=docker/* --ignore-glob=docs/* --ignore-glob=scripts/* --ignore-glob=scenarios/* 2>&1 | tee pytest.log
         PYTEST_EXIT_CODE=${PIPESTATUS[0]}
         if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
           echo "Failure: Detected unawaited coroutine warning in pytest output."
