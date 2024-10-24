@@ -11,7 +11,7 @@ from itertools import chain
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
 import pydid
-from pydid import DID, DIDError, DIDUrl, Resource, VerificationMethod
+from pydid import DID, DIDError, DIDUrl, InvalidDIDError, Resource, VerificationMethod
 from pydid.doc.doc import BaseDIDDocument, IDNotFoundError
 
 from ..core.profile import Profile
@@ -56,7 +56,9 @@ class DIDResolver:
         if isinstance(did, DID):
             did = str(did)
         else:
-            DID.validate(did)
+            if not DID.is_valid(did) and not DIDUrl.is_valid(did):
+                raise InvalidDIDError(f"Invalid DID or DID URL: {did}")
+
         for resolver in await self._match_did_to_resolver(profile, did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
