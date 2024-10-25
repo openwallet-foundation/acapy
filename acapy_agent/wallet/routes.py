@@ -178,7 +178,7 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
         required=False,
         validate=UUID4_VALIDATE,
         metadata={
-            "description": "Medation ID to use for endpoint information.",
+            "description": "Mediation ID to use for endpoint information.",
             "example": UUID4_EXAMPLE,
         },
     )
