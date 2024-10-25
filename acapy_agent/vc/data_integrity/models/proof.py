@@ -94,8 +94,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         metadata={
             "description": (
                 "The proof purpose acts as a safeguard to prevent the proof "
-                "from being misused by being applied to a purpose other than the one that "
-                "was intended."
+                "from being misused by being applied to a purpose other than the one "
+                "that was intended."
             ),
             "example": "assertionMethod",
         },
