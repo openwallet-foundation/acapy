@@ -66,8 +66,8 @@ class PeerDID4Resolver(BaseDIDResolver):
                     record = await storage.get_record(self.RECORD_TYPE, did)
                 except StorageNotFoundError:
                     raise DIDNotFound(
-                        f"short did:peer:4 does not correspond to a \
-                          known long did:peer:4 {did}"
+                        "short did:peer:4 does not correspond to a known long did:peer:4"
+                        f"{did}"
                     )
             document = resolve_short(record.value)
         else:
