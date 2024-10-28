@@ -70,8 +70,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": (
-                "An optional identifier for the proof, which MUST be a URL [URL], \
-                    such as a UUID as a URN"
+                "An optional identifier for the proof, which MUST be a URL [URL], "
+                "such as a UUID as a URN"
             ),
             "example": "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
         },
@@ -81,8 +81,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=True,
         metadata={
             "description": (
-                "The specific type of proof MUST be specified as a string that maps \
-                    to a URL [URL]."
+                "The specific type of proof MUST be specified as a string that maps "
+                "to a URL [URL]."
             ),
             "example": "DataIntegrityProof",
         },
@@ -92,9 +92,11 @@ class DataIntegrityProofSchema(BaseModelSchema):
         data_key="proofPurpose",
         required=True,
         metadata={
-            "description": "The proof purpose acts as a safeguard to prevent the proof \
-                from being misused by being applied to a purpose other than the one that \
-                    was intended.",
+            "description": (
+                "The proof purpose acts as a safeguard to prevent the proof "
+                "from being misused by being applied to a purpose other than the one "
+                "that was intended."
+            ),
             "example": "assertionMethod",
         },
     )
@@ -104,8 +106,10 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=True,
         validate=Uri(),
         metadata={
-            "description": "A verification method is the means and information needed \
-                to verify the proof. ",
+            "description": (
+                "A verification method is the means and information needed "
+                "to verify the proof."
+            ),
             "example": (
                 "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg34"
                 "2Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -117,8 +121,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=True,
         metadata={
             "description": (
-                "An identifier for the cryptographic suite that can be used to verify \
-                    the proof."
+                "An identifier for the cryptographic suite that can be used to verify "
+                "the proof."
             ),
             "example": "eddsa-jcs-2022",
         },
@@ -128,8 +132,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": (
-                "The date and time the proof was created is OPTIONAL and, if included, \
-                    MUST be specified as an [XMLSCHEMA11-2] dateTimeStamp string"
+                "The date and time the proof was created is OPTIONAL and, if included, "
+                "MUST be specified as an [XMLSCHEMA11-2] dateTimeStamp string"
             ),
             "example": RFC3339_DATETIME_EXAMPLE,
         },
@@ -139,9 +143,9 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": (
-                "The expires property is OPTIONAL and, if present, specifies when the \
-                    proof expires. If present, it MUST be an [XMLSCHEMA11-2] \
-                        dateTimeStamp string"
+                "The expires property is OPTIONAL and, if present, specifies when the "
+                "proof expires. If present, it MUST be an [XMLSCHEMA11-2] "
+                "dateTimeStamp string"
             ),
             "example": RFC3339_DATETIME_EXAMPLE,
         },
@@ -151,8 +155,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": (
-                "It conveys one or more security domains in which the proof is \
-                    meant to be used."
+                "It conveys one or more security domains in which the proof is "
+                "meant to be used."
             ),
             "example": "example.com",
         },
@@ -162,8 +166,8 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": (
-                "The value is used once for a particular domain and window of time. \
-                    This value is used to mitigate replay attacks."
+                "The value is used once for a particular domain and window of time. "
+                "This value is used to mitigate replay attacks."
             ),
             "example": UUID4_EXAMPLE,
         },
@@ -173,9 +177,10 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         data_key="proofValue",
         metadata={
-            "description": "A string value that expresses base-encoded binary data \
-                necessary to verify the digital proof using the verificationMethod \
-                    specified.",
+            "description": (
+                "A string value that expresses base-encoded binary data necessary "
+                "to verify the digital proof using the verificationMethod specified."
+            ),
             "example": (
                 "zsy1AahqbzJQ63n9RtekmwzqZeVj494VppdAVJBnMYrTwft6cLJJGeTSSxCCJ6HKnR"
                 "twE7jjDh6sB2z2AAiZY9BBnCD8wUVgwqH3qchGRCuC2RugA4eQ9fUrR4Yuycac3caiaaay"
@@ -187,8 +192,10 @@ class DataIntegrityProofSchema(BaseModelSchema):
         required=False,
         data_key="previousProof",
         metadata={
-            "description": "Each value identifies another data integrity proof that \
-                MUST verify before the current proof is processed.",
+            "description": (
+                "Each value identifies another data integrity proof that "
+                "MUST verify before the current proof is processed."
+            ),
             "example": ("urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5"),
         },
     )
@@ -196,9 +203,10 @@ class DataIntegrityProofSchema(BaseModelSchema):
     nonce = fields.Str(
         required=False,
         metadata={
-            "description": "One use of this field is to increase privacy by decreasing \
-                linkability that is the result of deterministically generated \
-                    signatures.",
+            "description": (
+                "One use of this field is to increase privacy by decreasing linkability "
+                "that is the result of deterministically generated signatures."
+            ),
             "example": (
                 "CF69iO3nfvqRsRBNElE8b4wO39SyJHPM7Gg1nExltW5vSfQA1lvDCR/zXX1To0/4NLo=="
             ),

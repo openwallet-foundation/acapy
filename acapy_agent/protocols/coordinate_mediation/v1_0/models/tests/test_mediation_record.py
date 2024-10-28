@@ -44,8 +44,8 @@ async def test_backwards_compat_terms(session: ProfileSession):
 
 @pytest.mark.asyncio
 async def test_mediation_record_eq():
-    record_0 = MediationRecord(mediation_id="test_medation_id_0", endpoint="zero")
-    record_1 = MediationRecord(mediation_id="test_medation_id_1", endpoint="one")
+    record_0 = MediationRecord(mediation_id="test_mediation_id_0", endpoint="zero")
+    record_1 = MediationRecord(mediation_id="test_mediation_id_1", endpoint="one")
     assert record_0 != record_1
 
     with pytest.raises(ValueError):
