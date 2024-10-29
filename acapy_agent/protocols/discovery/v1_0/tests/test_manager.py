@@ -2,11 +2,10 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from ....didcomm_prefix import DIDCommPrefix
 from ..manager import V10DiscoveryMgr
 from ..messages.disclose import Disclose
@@ -24,10 +23,8 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
         self._caplog = caplog
 
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
+        self.profile = await create_test_profile()
         self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
         self.manager = V10DiscoveryMgr(self.profile)
         self.disclose = Disclose(
             protocols=[
@@ -163,7 +160,7 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
             V10DiscoveryExchangeRecord,
             "save",
             mock.CoroutineMock(),
-        ) as save_ex, mock.patch.object(
+        ), mock.patch.object(
             V10DiscoveryMgr, "check_if_disclosure_received", mock.CoroutineMock()
         ) as mock_disclosure_received, mock.patch.object(
             self.responder, "send", mock.CoroutineMock()

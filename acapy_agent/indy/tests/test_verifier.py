@@ -2,14 +2,13 @@ from copy import deepcopy
 from time import time
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ...core.in_memory import InMemoryProfile
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import verifier as test_module
 from ..verifier import IndyVerifier
 
@@ -303,7 +302,7 @@ class MockVerifier(IndyVerifier):
 
 
 class TestIndySdkVerifier(IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.ledger = mock.MagicMock(
             get_credential_definition=mock.CoroutineMock(
                 return_value={
@@ -330,11 +329,11 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
 
     async def test_check_timestamps(self):
         # multitenant
-        mock_profile = InMemoryProfile.test_profile()
-        context = mock_profile.context
+        self.profile = await create_test_profile()
+        context = self.profile.context
         context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            IndyLedgerRequestsExecutor(mock_profile),
+            IndyLedgerRequestsExecutor(self.profile),
         )
         context.injector.bind_instance(
             BaseMultitenantManager,
@@ -345,24 +344,24 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
             await self.verifier.check_timestamps(
-                mock_profile,
+                self.profile,
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 REV_REG_DEFS,
             )
 
         # all clear, with timestamps
-        mock_profile = InMemoryProfile.test_profile()
-        context = mock_profile.context
+        self.profile = await create_test_profile()
+        context = self.profile.context
         context.injector.bind_instance(
-            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.profile)
         )
         with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
             await self.verifier.check_timestamps(
-                mock_profile,
+                self.profile,
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 REV_REG_DEFS,
@@ -385,7 +384,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             )
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     INDY_PROOF_REQ_NAME,
                     INDY_PROOF_NAME,
                     REV_REG_DEFS,
@@ -403,7 +402,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
             proof_req_x.pop("non_revoked")
             await self.verifier.check_timestamps(
-                mock_profile,
+                self.profile,
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -415,7 +414,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_x["identifiers"][0]["timestamp"] = int(time()) + 3600
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,
@@ -426,7 +425,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_x["identifiers"][0]["timestamp"] = 1234567890
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,
@@ -445,7 +444,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             mock_get_ledger.return_value = (None, self.ledger)
             pre_logger_calls = mock_logger.info.call_count
             await self.verifier.check_timestamps(
-                mock_profile,
+                self.profile,
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -462,7 +461,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             mock_get_ledger.return_value = (None, self.ledger)
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,
@@ -474,7 +473,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_x["requested_proof"]["revealed_attrs"] = {}
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,
@@ -483,7 +482,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
 
             # all clear, attribute group ('names')
             await self.verifier.check_timestamps(
-                mock_profile,
+                self.profile,
                 INDY_PROOF_REQ_PRED_NAMES,
                 INDY_PROOF_PRED_NAMES,
                 REV_REG_DEFS,
@@ -494,7 +493,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_x["requested_proof"].pop("revealed_attr_groups")
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     INDY_PROOF_REQ_PRED_NAMES,
                     proof_x,
                     REV_REG_DEFS,
@@ -509,7 +508,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,
@@ -523,7 +522,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,
@@ -536,7 +535,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             proof_x["requested_proof"]["predicates"] = {}
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
+                    self.profile,
                     proof_req_x,
                     proof_x,
                     REV_REG_DEFS,

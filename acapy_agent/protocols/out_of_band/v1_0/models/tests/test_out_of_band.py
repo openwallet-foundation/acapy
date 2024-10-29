@@ -1,14 +1,14 @@
 import pytest
 
-from ......core.in_memory import InMemoryProfile
 from ......core.profile import ProfileSession
+from ......utils.testing import create_test_profile
 from ...messages.invitation import InvitationMessage
 from ..oob_record import OobRecord
 
 
 @pytest.fixture()
 async def session():
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     async with profile.session() as session:
         yield session
 

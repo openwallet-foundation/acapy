@@ -2,13 +2,13 @@ from unittest import IsolatedAsyncioTestCase
 
 from aiohttp.web import HTTPForbidden
 
-from acapy_agent.tests import mock
-from acapy_agent.wallet import singletons
-
 from ...admin.request_context import AdminRequestContext
-from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ...storage.base import BaseStorage
+from ...tests import mock
+from ...utils.testing import create_test_profile
+from ...wallet import singletons
 from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.key_type import ED25519, KeyTypes
 from .. import routes as test_module
@@ -26,16 +26,18 @@ WEB = DIDMethod(
 
 
 class TestWalletRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.wallet = mock.create_autospec(BaseWallet)
         self.session_inject = {BaseWallet: self.wallet}
-        self.route_mgr = mock.MagicMock()
+        self.profile = await create_test_profile(
+            settings={"admin.admin_api_key": "secret-key"},
+        )
+
+        self.route_mgr = mock.MagicMock(RouteManager, autospec=True)
         self.route_mgr.mediation_record_if_id = mock.CoroutineMock(return_value=None)
         self.route_mgr.routing_info = mock.CoroutineMock(return_value=(None, None))
-        self.profile = InMemoryProfile.test_profile(
-            settings={"admin.admin_api_key": "secret-key"},
-            bind={KeyTypes: KeyTypes(), RouteManager: self.route_mgr},
-        )
+        self.profile.context.injector.bind_instance(RouteManager, self.route_mgr)
+        self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
@@ -458,21 +460,16 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did(self):
         self.request.query = {"did": self.test_did}
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.get_key_for_did = mock.CoroutineMock()
         ledger.update_endpoint_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.route_verkey = mock.CoroutineMock()
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -509,13 +506,10 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_no_ledger(self):
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
         self.request.query = {"did": self.test_did_sov}
@@ -526,19 +520,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_not_public(self):
         self.request.query = {"did": self.test_did_sov}
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.get_key_for_did = mock.CoroutineMock(return_value=None)
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -548,19 +537,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_not_found(self):
         self.request.query = {"did": self.test_did_sov}
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.get_key_for_did = mock.CoroutineMock(return_value=None)
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -571,20 +555,15 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_x(self):
         self.request.query = {"did": self.test_did_sov}
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
         ledger.get_key_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -605,20 +584,15 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_no_wallet_did(self):
         self.request.query = {"did": self.test_did_sov}
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
         ledger.get_key_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -639,21 +613,16 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_update_endpoint(self):
         self.request.query = {"did": self.test_did_sov}
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
         ledger.get_key_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.route_verkey = mock.CoroutineMock()
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -694,20 +663,15 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         default_endpoint = "https://default_endpoint.com"
         self.context.update_settings({"default_endpoint": default_endpoint})
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
         ledger.get_key_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.route_verkey = mock.CoroutineMock()
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
         mock_route_manager.routing_info = mock.CoroutineMock(return_value=(None, None))
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
-        )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
         with mock.patch.object(
@@ -752,14 +716,11 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_with_non_sov_did(self):
         self.request.query = {"did": self.test_did_web}
 
-        mock_route_manager = mock.MagicMock()
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
         mock_route_manager.route_verkey = mock.CoroutineMock()
         mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
         mock_route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        mock_route_manager.__aenter__ = mock.CoroutineMock(
-            return_value=mock_route_manager
         )
         self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
 
@@ -801,10 +762,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.get_local_did.return_value = DIDInfo(
@@ -863,10 +822,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.set_did_endpoint.side_effect = test_module.WalletError()
@@ -882,10 +839,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        Ledger = mock.MagicMock()
-        ledger = Ledger()
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
         ledger.update_endpoint_for_did = mock.CoroutineMock()
-        ledger.__aenter__ = mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.set_did_endpoint.side_effect = test_module.WalletNotFoundError()
@@ -1021,12 +976,13 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         self.request.query = {"wallet_name": "test_wallet"}
         self.profile.settings["wallet.type"] = "askar"
-        result = await test_module.upgrade_anoncreds(self.request)
-        print(result)
-        _, upgrade_record = next(iter(self.profile.records.items()))
+        await test_module.upgrade_anoncreds(self.request)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            upgrade_record = await storage.find_record("acapy_upgrading", {})
         assert upgrade_record.type == "acapy_upgrading"
         assert upgrade_record.value == UPGRADING_RECORD_IN_PROGRESS
-        assert "test-profile" in singletons.UpgradeInProgressSingleton().wallets
+        assert singletons.UpgradeInProgressSingleton().wallets
 
     async def test_register(self):
         mock_app = mock.MagicMock()

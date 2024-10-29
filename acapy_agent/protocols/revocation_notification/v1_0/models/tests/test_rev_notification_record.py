@@ -2,15 +2,16 @@
 
 import pytest
 
-from ......core.in_memory import InMemoryProfile
 from ......storage.error import StorageDuplicateError, StorageNotFoundError
+from ......utils.testing import create_test_profile
 from ...messages.revoke import Revoke
 from ..rev_notification_record import RevNotificationRecord
 
 
 @pytest.fixture
-def profile():
-    yield InMemoryProfile.test_profile()
+async def profile():
+    profile = await create_test_profile()
+    yield profile
 
 
 @pytest.fixture

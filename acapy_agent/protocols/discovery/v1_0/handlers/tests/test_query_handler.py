@@ -1,10 +1,10 @@
 import pytest
 
-from acapy_agent.tests import mock
-
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...handlers.query_handler import QueryHandler
 from ...messages.disclose import Disclose
 from ...messages.query import Query
@@ -14,8 +14,8 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context():
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     registry = ProtocolRegistry()
     registry.register_message_types({TEST_MESSAGE_TYPE: object()})
     profile = ctx.profile
@@ -71,7 +71,7 @@ class TestQueryHandler:
         responder = MockResponder()
         with mock.patch.object(
             ProtocolRegistry, "protocols_matching_query", mock.MagicMock()
-        ) as mock_query_match, mock.patch.object(
+        ), mock.patch.object(
             ProtocolRegistry, "prepare_disclosed", mock.CoroutineMock()
         ) as mock_prepare_disclosed:
             mock_prepare_disclosed.return_value = [

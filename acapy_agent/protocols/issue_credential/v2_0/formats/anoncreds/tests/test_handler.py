@@ -6,14 +6,11 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 from marshmallow import ValidationError
 
-from acapy_agent.tests import mock
-
 from .......anoncreds.holder import AnonCredsHolder
 from .......anoncreds.issuer import AnonCredsIssuer
 from .......anoncreds.revocation import AnonCredsRevocationRegistryFullError
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
-from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
@@ -23,6 +20,8 @@ from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......storage.record import StorageRecord
+from .......tests import mock
+from .......utils.testing import create_test_profile
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -194,14 +193,11 @@ INDY_CRED = {
 
 class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
+        self.profile = await create_test_profile()
         self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
         # Ledger
-        Ledger = mock.MagicMock()
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
         self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
@@ -209,8 +205,8 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
             return_value=SCHEMA_ID
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
                 get_ledger_for_identifier=mock.CoroutineMock(
@@ -220,15 +216,15 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
         # Context
         self.cache = InMemoryCache()
-        self.context.injector.bind_instance(BaseCache, self.cache)
+        self.profile.context.injector.bind_instance(BaseCache, self.cache)
 
         # Issuer
         self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
-        self.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         # Holder
         self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.context.injector.bind_instance(AnonCredsHolder, self.holder)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         self.handler = AnonCredsCredFormatHandler(self.profile)
         assert self.handler.profile
@@ -278,8 +274,9 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 cred_rev_id="1",
             ),
         ]
-        await details_indy[0].save(self.session)
-        await details_indy[1].save(self.session)  # exercise logger warning on get()
+        async with self.profile.session() as session:
+            await details_indy[0].save(session)
+            await details_indy[1].save(session)  # exercise logger warning on get()
 
         with mock.patch.object(INDY_LOGGER, "warning", mock.MagicMock()) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
@@ -399,7 +396,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         assert attachment.data.base64
 
         self.issuer.create_credential_offer.reset_mock()
-        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
+        await self.handler.create_offer(cred_proposal)
         self.issuer.create_credential_offer.assert_not_called()
 
     @pytest.mark.skip(reason="Anoncreds-break")
@@ -988,8 +985,6 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             "jurisdictionId": "value",
             "incorporationDate": "value",
         }
-        cred_rev_id = "1"
-
         cred_preview = V20CredPreview(
             attributes=[
                 V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()

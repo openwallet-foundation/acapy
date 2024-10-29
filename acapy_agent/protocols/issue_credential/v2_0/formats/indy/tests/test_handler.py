@@ -5,11 +5,8 @@ from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import ValidationError
 
-from acapy_agent.tests import mock
-
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
-from .......core.in_memory import InMemoryProfile
 from .......indy.holder import IndyHolder
 from .......indy.issuer import IndyIssuer
 from .......ledger.base import BaseLedger
@@ -20,7 +17,10 @@ from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TY
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
+from .......storage.base import BaseStorage
 from .......storage.record import StorageRecord
+from .......tests import mock
+from .......utils.testing import create_test_profile
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -192,41 +192,35 @@ INDY_CRED = {
 
 class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
+        self.profile = await create_test_profile()
 
         # Ledger
-        Ledger = mock.MagicMock()
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
         self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
-        self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
             return_value=SCHEMA_ID
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-        self.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
+        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
+        self.profile.context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, mock_executor
         )
         # Context
         self.cache = InMemoryCache()
-        self.context.injector.bind_instance(BaseCache, self.cache)
+        self.profile.context.injector.bind_instance(BaseCache, self.cache)
 
         # Issuer
         self.issuer = mock.MagicMock(IndyIssuer, autospec=True)
-        self.context.injector.bind_instance(IndyIssuer, self.issuer)
+        self.profile.context.injector.bind_instance(IndyIssuer, self.issuer)
 
         # Holder
         self.holder = mock.MagicMock(IndyHolder, autospec=True)
-        self.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
         self.handler = IndyCredFormatHandler(self.profile)
         assert self.handler.profile
@@ -276,8 +270,9 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
                 cred_rev_id="1",
             ),
         ]
-        await details_indy[0].save(self.session)
-        await details_indy[1].save(self.session)  # exercise logger warning on get()
+        async with self.profile.session() as session:
+            await details_indy[0].save(session)
+            await details_indy[1].save(session)  # exercise logger warning on get()
 
         with mock.patch.object(INDY_LOGGER, "warning", mock.MagicMock()) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
@@ -376,7 +371,9 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
                 "epoch": str(int(time())),
             },
         )
-        await self.session.storage.add_record(cred_def_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            await storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
@@ -396,7 +393,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         assert attachment.data.base64
 
         self.issuer.create_credential_offer.reset_mock()
-        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
+        await self.handler.create_offer(cred_proposal)
         self.issuer.create_credential_offer.assert_not_called()
 
     async def test_create_offer_no_cache(self):
@@ -440,9 +437,11 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         # Remove cache from injection context
-        self.context.injector.clear_binding(BaseCache)
+        self.profile.context.injector.clear_binding(BaseCache)
 
-        await self.session.storage.add_record(cred_def_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            await storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
@@ -486,7 +485,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
                 AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
             ],
         )
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
@@ -504,7 +503,9 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
                 "epoch": str(int(time())),
             },
         )
-        await self.session.storage.add_record(cred_def_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            await storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
@@ -595,9 +596,9 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
 
         # cover case with no cache in injection context
-        self.context.injector.clear_binding(BaseCache)
+        self.profile.context.injector.clear_binding(BaseCache)
         cred_ex_record._id = "dummy-id3"
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
@@ -795,7 +796,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value=CRED_DEF_NR
         )
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
@@ -976,8 +977,6 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
             "jurisdictionId": "value",
             "incorporationDate": "value",
         }
-        cred_rev_id = "1"
-
         cred_preview = V20CredPreview(
             attributes=[
                 V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
@@ -1129,7 +1128,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
             with self.assertRaises(V20CredFormatError) as context:
                 await self.handler.store_credential(stored_cx_rec, cred_id=cred_id)
             assert "No credential exchange " in str(context.exception)
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )

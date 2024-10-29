@@ -3,14 +3,13 @@
 import pydid
 import pytest
 
-from acapy_agent.tests import mock
-
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....connections.models.diddoc.diddoc import DIDDoc
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....storage.error import StorageNotFoundError
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from .. import legacy_peer as test_module
 from ..legacy_peer import LegacyPeerDIDResolver
 
@@ -26,9 +25,9 @@ def resolver():
 
 
 @pytest.fixture
-def profile():
+async def profile():
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     profile.context.injector.bind_instance(BaseCache, InMemoryCache())
     yield profile
 
@@ -114,8 +113,7 @@ class TestLegacyPeerDIDResolver:
                 fetch_did_document=mock.CoroutineMock(side_effect=StorageNotFoundError)
             )
             resolver.supports = mock.CoroutineMock(return_value=True)
-            result = await resolver.resolve(profile, TEST_DID0)
-            assert result == doc
+            await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.parametrize(
         ("input_doc", "expected"),

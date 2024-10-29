@@ -1,11 +1,12 @@
 import asyncio
 from unittest import IsolatedAsyncioTestCase
+from uuid import uuid4
 
-from acapy_agent.tests import mock
-
+from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext
-from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from ...wallet.models.wallet_record import WalletRecord
 from ..single_wallet_askar_manager import SingleWalletAskarMultitenantManager
 
@@ -14,7 +15,7 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
     DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
 
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.context = self.profile.context
 
         self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
@@ -26,12 +27,13 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         self,
     ):
         askar_profile_mock_name = "AskarProfile"
+        wallet_name = "unit_testing/" + str(uuid4())
         wallet_record = WalletRecord(
             wallet_id="test",
             settings={
                 "wallet.recreate": True,
                 "wallet.seed": "test_seed",
-                "wallet.name": "test_name",
+                "wallet.name": wallet_name,
                 "wallet.type": "test_type",
                 "wallet.rekey": "test_rekey",
                 "mediation.open": True,
@@ -75,7 +77,7 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
             )
             assert sub_wallet_profile_context.settings.get("wallet.seed") == "test_seed"
             assert sub_wallet_profile_context.settings.get("wallet.rekey") == "test_rekey"
-            assert sub_wallet_profile_context.settings.get("wallet.name") == "test_name"
+            assert sub_wallet_profile_context.settings.get("wallet.name") == wallet_name
             assert sub_wallet_profile_context.settings.get("wallet.type") == "test_type"
             assert sub_wallet_profile_context.settings.get("mediation.open") is True
             assert (
@@ -91,7 +93,7 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
                 sub_wallet_profile_context.settings.get("wallet.id")
                 == wallet_record.wallet_id
             )
-            assert sub_wallet_profile_context.settings.get("wallet.name") == "test_name"
+            assert sub_wallet_profile_context.settings.get("wallet.name") == wallet_name
             assert (
                 sub_wallet_profile_context.settings.get("wallet.askar_profile")
                 == wallet_record.wallet_id
@@ -101,12 +103,13 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
         self,
     ):
         askar_profile_mock_name = "AskarProfile"
+        wallet_name = "unit_testing/" + str(uuid4())
         wallet_record = WalletRecord(
             wallet_id="test",
             settings={
                 "wallet.recreate": True,
                 "wallet.seed": "test_seed",
-                "wallet.name": "test_name",
+                "wallet.name": wallet_name,
                 "wallet.type": "askar-anoncreds",
                 "wallet.rekey": "test_rekey",
             },
@@ -184,9 +187,9 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
                 )
 
     async def test_remove_wallet_profile(self):
-        test_profile = InMemoryProfile.test_profile({"wallet.id": "test"})
+        test_profile = await create_test_profile({"wallet.id": "test"})
 
-        with mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+        with mock.patch.object(AskarProfile, "remove") as profile_remove:
             await self.manager.remove_wallet_profile(test_profile)
             profile_remove.assert_called_once_with()
 

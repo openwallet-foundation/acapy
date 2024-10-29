@@ -1,38 +1,80 @@
 import json
 from base64 import urlsafe_b64decode
+from unittest import IsolatedAsyncioTestCase
 
-import pytest
-
-from ...wallet.did_method import KEY
-from ...wallet.jwt import jwt_sign
-from ...wallet.key_type import ED25519
+from ...resolver.did_resolver import DIDResolver
+from ...resolver.tests.test_did_resolver import MockResolver
+from ...utils.testing import create_test_profile
+from ...wallet.did_method import KEY, DIDMethods
+from ...wallet.key_type import ED25519, KeyTypes
+from ..base import BaseWallet
+from ..default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+    DefaultVerificationKeyStrategy,
+)
+from ..jwt import jwt_sign
 from ..sd_jwt import SDJWTVerifyResult, sd_jwt_sign, sd_jwt_verify
 
 
-@pytest.fixture
-def create_address_payload():
-    return {
-        "address": {
-            "street_address": "123 Main St",
-            "locality": "Anytown",
-            "region": "Anystate",
-            "country": "US",
-        },
-        "iss": "https://example.com/issuer",
-        "iat": 1683000000,
-        "exp": 1883000000,
-    }
-
-
-class TestSDJWT:
+class TestSDJWT(IsolatedAsyncioTestCase):
     """Tests for JWT sign and verify using dids."""
+
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile()
+        self.resolver = DIDResolver()
+        self.resolver.register_resolver(
+            MockResolver(
+                ["key"],
+                resolved={
+                    "@context": "https://www.w3.org/ns/did/v1",
+                    "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "verificationMethod": [
+                        {
+                            "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                            "publicKeyBase58": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+                        }
+                    ],
+                    "authentication": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                    ],
+                    "assertionMethod": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                    ],
+                    "capabilityDelegation": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                    ],
+                    "capabilityInvocation": [
+                        "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                    ],
+                    "keyAgreement": [
+                        {
+                            "id": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6LSbkodSr6SU2trs8VUgnrnWtSm7BAPG245ggrBmSrxbv1R",
+                            "type": "X25519KeyAgreementKey2019",
+                            "controller": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                            "publicKeyBase58": "5dTvYHaNaB7mk7iA9LqCJEHG2dGZQsvoi8WGzDRtYEf",
+                        }
+                    ],
+                },
+                native=True,
+            )
+        )
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        self.profile.context.injector.bind_instance(
+            BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+        )
+        self.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
 
     seed = "testseed000000000000000000000001"
     headers = {}
 
-    @pytest.mark.asyncio
-    async def test_sign_with_did_key_and_verify(self, profile, in_memory_wallet):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
+    async def test_sign_with_did_key_and_verify(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+
         verification_method = None
         payload = {
             "sub": "user_42",
@@ -60,7 +102,7 @@ class TestSDJWT:
             "birthdate",
         ]
         signed = await sd_jwt_sign(
-            profile,
+            self.profile,
             self.headers,
             payload,
             non_sd_list,
@@ -83,7 +125,7 @@ class TestSDJWT:
             if decoded[1] in revealed:
                 signed_sd_jwt = signed_sd_jwt + "~" + disclosure
 
-        verified = await sd_jwt_verify(profile, f"{signed_sd_jwt}~")
+        verified = await sd_jwt_verify(self.profile, f"{signed_sd_jwt}~")
         assert verified.valid
         # Validate that the non-selectively disclosable claims are visible in the payload
         assert verified.payload["given_name"] == payload["given_name"]
@@ -97,11 +139,11 @@ class TestSDJWT:
         assert verified.payload["iat"] == payload["iat"]
         assert verified.payload["exp"] == payload["exp"]
 
-    @pytest.mark.asyncio
-    async def test_flat_structure(
-        self, profile, in_memory_wallet, create_address_payload
-    ):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
+    async def test_flat_structure(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+
         verification_method = None
         non_sd_list = [
             "address.street_address",
@@ -110,16 +152,26 @@ class TestSDJWT:
             "address.country",
         ]
         signed = await sd_jwt_sign(
-            profile,
+            self.profile,
             self.headers,
-            create_address_payload,
+            {
+                "address": {
+                    "street_address": "123 Main St",
+                    "locality": "Anytown",
+                    "region": "Anystate",
+                    "country": "US",
+                },
+                "iss": "https://example.com/issuer",
+                "iat": 1683000000,
+                "exp": 1883000000,
+            },
             non_sd_list,
             did_info.did,
             verification_method,
         )
         assert signed
 
-        verified = await sd_jwt_verify(profile, signed)
+        verified = await sd_jwt_verify(self.profile, signed)
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
         assert verified.payload["_sd"]
@@ -132,25 +184,34 @@ class TestSDJWT:
             "country": "US",
         }
 
-    @pytest.mark.asyncio
-    async def test_nested_structure(
-        self, profile, in_memory_wallet, create_address_payload
-    ):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
+    async def test_nested_structure(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
         verification_method = None
         non_sd_list = ["address"]
 
         signed = await sd_jwt_sign(
-            profile,
+            self.profile,
             self.headers,
-            create_address_payload,
+            {
+                "address": {
+                    "street_address": "123 Main St",
+                    "locality": "Anytown",
+                    "region": "Anystate",
+                    "country": "US",
+                },
+                "iss": "https://example.com/issuer",
+                "iat": 1683000000,
+                "exp": 1883000000,
+            },
             non_sd_list,
             did_info.did,
             verification_method,
         )
         assert signed
 
-        verified = await sd_jwt_verify(profile, signed)
+        verified = await sd_jwt_verify(self.profile, signed)
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
         assert len(verified.payload["address"]["_sd"]) >= 4
@@ -158,25 +219,34 @@ class TestSDJWT:
         sd_claims = ["street_address", "region", "locality", "country"]
         assert sorted(sd_claims) == sorted([claim[1] for claim in verified.disclosures])
 
-    @pytest.mark.asyncio
-    async def test_recursive_nested_structure(
-        self, profile, in_memory_wallet, create_address_payload
-    ):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
+    async def test_recursive_nested_structure(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
         verification_method = None
         non_sd_list = []
 
         signed = await sd_jwt_sign(
-            profile,
+            self.profile,
             self.headers,
-            create_address_payload,
+            {
+                "address": {
+                    "street_address": "123 Main St",
+                    "locality": "Anytown",
+                    "region": "Anystate",
+                    "country": "US",
+                },
+                "iss": "https://example.com/issuer",
+                "iat": 1683000000,
+                "exp": 1883000000,
+            },
             non_sd_list,
             did_info.did,
             verification_method,
         )
         assert signed
 
-        verified = await sd_jwt_verify(profile, signed)
+        verified = await sd_jwt_verify(self.profile, signed)
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
         assert "address" not in verified.payload
@@ -190,15 +260,16 @@ class TestSDJWT:
             else:
                 assert disclosure[1] in sd_claims
 
-    @pytest.mark.asyncio
-    async def test_list_splice(self, profile, in_memory_wallet):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
+    async def test_list_splice(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
         payload = {"nationalities": ["US", "DE", "SA"]}
         verification_method = None
         non_sd_list = ["nationalities", "nationalities[1:3]"]
 
         signed = await sd_jwt_sign(
-            profile,
+            self.profile,
             self.headers,
             payload,
             non_sd_list,
@@ -207,7 +278,7 @@ class TestSDJWT:
         )
         assert signed
 
-        verified = await sd_jwt_verify(profile, signed)
+        verified = await sd_jwt_verify(self.profile, signed)
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
         for nationality in verified.payload["nationalities"]:
@@ -219,9 +290,10 @@ class TestSDJWT:
         assert verified.payload["_sd_alg"]
         assert verified.disclosures[0][1] == "US"
 
-    @pytest.mark.asyncio
-    async def test_sd_jwt_key_binding(self, profile, in_memory_wallet):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
+    async def test_sd_jwt_key_binding(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
         verification_method = None
 
         payload = {
@@ -240,7 +312,7 @@ class TestSDJWT:
             },
         }
         signed = await sd_jwt_sign(
-            profile,
+            self.profile,
             self.headers,
             payload,
             did=did_info.did,
@@ -256,7 +328,7 @@ class TestSDJWT:
             "iat": 1688160483,
         }
         signed_kb = await jwt_sign(
-            profile,
+            self.profile,
             headers_kb,
             payload_kb,
             did_info.did,
@@ -265,7 +337,7 @@ class TestSDJWT:
         assert signed_kb
 
         assert await sd_jwt_verify(
-            profile,
+            self.profile,
             f"{signed}{signed_kb}",
             expected_aud=payload_kb["aud"],
             expected_nonce=payload_kb["nonce"],
@@ -385,53 +457,42 @@ class TestSDJWT:
         ),
     ]
 
-    @pytest.mark.parametrize(
-        "error, payload, headers_kb, expected_aud, expected_nonce", test_input
-    )
-    @pytest.mark.asyncio
-    async def test_sd_jwt_key_binding_errors(
-        self,
-        payload,
-        error,
-        expected_nonce,
-        headers_kb,
-        expected_aud,
-        profile,
-        in_memory_wallet,
-    ):
-        did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
-        verification_method = None
+    async def test_sd_jwt_key_binding_errors(self):
+        for error, payload, headers_kb, expected_aud, expected_nonce in self.test_input:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+            verification_method = None
 
-        signed = await sd_jwt_sign(
-            profile,
-            self.headers,
-            payload,
-            did=did_info.did,
-            verification_method=verification_method,
-        )
-        assert signed
+            signed = await sd_jwt_sign(
+                self.profile,
+                self.headers,
+                payload,
+                did=did_info.did,
+                verification_method=verification_method,
+            )
+            assert signed
 
-        # Key binding
-        payload_kb = {
-            "nonce": "1234567890",
-            "aud": "https://example.com/verifier",
-            "iat": 1688160483,
-        }
-        signed_kb = await jwt_sign(
-            profile,
-            headers_kb,
-            payload_kb,
-            did_info.did,
-            verification_method,
-        )
-        assert signed_kb
+            # Key binding
+            payload_kb = {
+                "nonce": "1234567890",
+                "aud": "https://example.com/verifier",
+                "iat": 1688160483,
+            }
+            signed_kb = await jwt_sign(
+                self.profile,
+                headers_kb,
+                payload_kb,
+                did_info.did,
+                verification_method,
+            )
+            assert signed_kb
 
-        with pytest.raises(
+        with self.assertRaises(
             ValueError,
-            match=error,
         ):
             await sd_jwt_verify(
-                profile,
+                self.profile,
                 f"{signed}{signed_kb}",
                 expected_aud=expected_aud,
                 expected_nonce=expected_nonce,

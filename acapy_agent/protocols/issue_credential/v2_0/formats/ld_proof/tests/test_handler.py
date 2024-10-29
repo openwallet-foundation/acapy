@@ -4,19 +4,18 @@ from unittest.mock import patch
 
 from marshmallow import ValidationError
 
-from acapy_agent.tests import mock
-
-from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
+from .......resolver.did_resolver import DIDResolver
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
+from .......tests import mock
+from .......utils.testing import create_test_profile
 from .......vc.ld_proofs import DocumentLoader, DocumentVerificationResult
 from .......vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
 from .......vc.ld_proofs.error import LinkedDataProofException
-from .......vc.tests.document_loader import custom_document_loader
 from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.models.credential import VerifiableCredential
 from .......vc.vc_ld.models.options import LDProofVCOptions
@@ -120,23 +119,28 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         self.holder = mock.MagicMock()
         self.wallet = mock.MagicMock(BaseWallet, autospec=True)
 
-        self.session = InMemoryProfile.test_session(
-            bind={VCHolder: self.holder, BaseWallet: self.wallet}
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(
+            BaseWallet, mock.MagicMock(BaseWallet, autospec=True)
         )
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
-
+        self.profile.context.injector.bind_instance(
+            VCHolder, mock.MagicMock(VCHolder, autospec=True)
+        )
         # Set custom document loader
-        self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
+        # mock_document_loader = mock.MagicMock(DocumentLoader, autospec=True)
+        # mock_document_loader.custom_document_loader = custom_document_loader
+        self.profile.context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        self.profile.context.injector.bind_instance(
+            DocumentLoader, DocumentLoader(self.profile)
+        )
 
         # Set default verkey ID strategy
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
 
         self.manager = VcLdpManager(self.profile)
-        self.context.injector.bind_instance(VcLdpManager, self.manager)
+        self.profile.context.injector.bind_instance(VcLdpManager, self.manager)
         self.handler = LDProofCredFormatHandler(self.profile)
 
         self.cred_proposal = V20CredProposal(
@@ -194,8 +198,9 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                 cred_ex_id=cred_ex_id,
             ),
         ]
-        await details_ld_proof[0].save(self.session)
-        await details_ld_proof[1].save(self.session)  # exercise logger warning on get()
+        async with self.profile.session() as session:
+            await details_ld_proof[0].save(session)
+            await details_ld_proof[1].save(session)  # exercise logger warning on get()
 
         with mock.patch.object(
             LD_PROOF_LOGGER, "warning", mock.MagicMock()
@@ -591,7 +596,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                 cred_ex_record
             )
 
-            detail = LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
+            LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
 
             mock_issue.assert_called_once_with(
                 VerifiableCredential.deserialize(LD_PROOF_VC_DETAIL["credential"]),
@@ -837,10 +842,12 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             VcLdpManager,
             "verify_credential",
             mock.CoroutineMock(return_value=DocumentVerificationResult(verified=True)),
-        ) as mock_verify_credential:
+        ):
             await self.handler.store_credential(cred_ex_record, cred_id)
 
-            self.holder.store_credential.assert_called_once_with(
+            self.profile.context.injector.get_provider(
+                VCHolder
+            )._instance.store_credential.assert_called_once_with(
                 VCRecord(
                     contexts=LD_PROOF_VC["@context"],
                     expanded_types=[
@@ -882,13 +889,13 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             self.manager,
             "_get_suite",
             mock.CoroutineMock(),
-        ) as mock_get_suite, mock.patch.object(
+        ), mock.patch.object(
             self.manager,
             "verify_credential",
             mock.CoroutineMock(return_value=DocumentVerificationResult(verified=False)),
-        ) as mock_verify_credential, mock.patch.object(
+        ), mock.patch.object(
             self.manager,
             "_get_proof_purpose",
-        ) as mock_get_proof_purpose, self.assertRaises(V20CredFormatError) as context:
+        ), self.assertRaises(V20CredFormatError) as context:
             await self.handler.store_credential(cred_ex_record, cred_id)
         assert "Received invalid credential: " in str(context.exception)

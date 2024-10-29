@@ -1,16 +1,16 @@
 """Test Reuse Message Handler."""
 
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import pytest
-
-from acapy_agent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import reuse_handler as test_module
 from ...manager import OutOfBandManagerError
 from ...messages.reuse import HandshakeReuse
@@ -18,8 +18,8 @@ from ...messages.reuse_accept import HandshakeReuseAccept
 
 
 @pytest.fixture()
-def request_context() -> Generator[RequestContext, None, None]:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

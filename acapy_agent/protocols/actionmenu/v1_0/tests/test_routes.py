@@ -1,22 +1,21 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import routes as test_module
 
 
 class TestActionMenuRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.session_inject = {}
-        profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(self.session_inject, profile)
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -37,7 +36,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         test_module.save_connection_menu = mock.CoroutineMock()
 
         with mock.patch.object(test_module.web, "json_response") as mock_response:
-            res = await test_module.actionmenu_close(self.request)
+            await test_module.actionmenu_close(self.request)
             mock_response.assert_called_once_with({})
 
     async def test_actionmenu_close_x(self):
@@ -67,7 +66,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         test_module.retrieve_connection_menu = mock.CoroutineMock(return_value=None)
 
         with mock.patch.object(test_module.web, "json_response") as mock_response:
-            res = await test_module.actionmenu_fetch(self.request)
+            await test_module.actionmenu_fetch(self.request)
             mock_response.assert_called_once_with({"result": None})
 
     async def test_actionmenu_perform(self):
@@ -83,7 +82,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         ) as mock_response:
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
 
-            res = await test_module.actionmenu_perform(self.request)
+            await test_module.actionmenu_perform(self.request)
             mock_response.assert_called_once_with({})
             self.request["outbound_message_router"].assert_called_once_with(
                 mock_perform.return_value,
@@ -96,9 +95,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(
             test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Perform", autospec=True
-        ) as mock_perform:
+        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
             # Emulate storage not found (bad connection id)
             mock_conn_record.retrieve_by_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -113,9 +110,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(
             test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Perform", autospec=True
-        ) as mock_perform:
+        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
             # Emulate connection not ready
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_conn_record.retrieve_by_id.return_value.is_ready = False
@@ -136,7 +131,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         ) as mock_response:
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
 
-            res = await test_module.actionmenu_request(self.request)
+            await test_module.actionmenu_request(self.request)
             mock_response.assert_called_once_with({})
             self.request["outbound_message_router"].assert_called_once_with(
                 menu_request.return_value,
@@ -149,9 +144,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(
             test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Perform", autospec=True
-        ) as mock_perform:
+        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
             # Emulate storage not found (bad connection id)
             mock_conn_record.retrieve_by_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -166,9 +159,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(
             test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Perform", autospec=True
-        ) as mock_perform:
+        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
             # Emulate connection not ready
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_conn_record.retrieve_by_id.return_value.is_ready = False
@@ -190,7 +181,7 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_menu.deserialize = mock.MagicMock()
 
-            res = await test_module.actionmenu_send(self.request)
+            await test_module.actionmenu_send(self.request)
             mock_response.assert_called_once_with({})
             self.request["outbound_message_router"].assert_called_once_with(
                 mock_menu.deserialize.return_value,

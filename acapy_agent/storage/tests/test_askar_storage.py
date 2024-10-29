@@ -4,16 +4,15 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ...askar.profile import AskarProfileManager
 from ...config.injection_context import InjectionContext
+from ...tests import mock
+from ...wallet.askar import AskarWallet
 from .. import askar as test_module
 from ..askar import AskarStorage
 from ..base import BaseStorage
 from ..error import StorageError, StorageSearchError
 from ..record import StorageRecord
-from . import test_in_memory_storage
 
 
 @pytest.fixture()
@@ -41,7 +40,7 @@ async def store():
 
 
 @pytest.mark.askar
-class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
+class TestAskarStorage:
     """Tests for Askar storage."""
 
     @pytest.mark.skip
@@ -356,7 +355,6 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
 
 
 class TestAskarStorageSearchSession(IsolatedAsyncioTestCase):
-    @pytest.mark.asyncio(scope="module")
     async def test_askar_storage_search_session(self):
         profile = "profileId"
 

@@ -1,13 +1,11 @@
 import asyncio
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ...connections.models.conn_record import ConnRecord
-from ...core.in_memory import InMemoryProfile
-from ...storage.base import BaseStorage, BaseStorageSearch
-from ...storage.in_memory import InMemoryStorage
+from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from ...version import __version__
 from ...wallet.models.wallet_record import WalletRecord
 from .. import upgrade as test_module
@@ -16,17 +14,15 @@ from ..upgrade import UpgradeError
 
 class TestUpgrade(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
-        self.profile.context.injector.bind_instance(
-            BaseStorageSearch, InMemoryStorage(self.profile)
-        )
-        self.storage = self.session.inject(BaseStorage)
-        record = StorageRecord(
-            "acapy_version",
-            "v0.7.2",
-        )
-        await self.storage.add_record(record)
+        self.profile = await create_test_profile()
+
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            record = StorageRecord(
+                "acapy_version",
+                "v0.7.2",
+            )
+            await storage.add_record(record)
         recs = [
             WalletRecord(
                 key_management_mode=[
@@ -162,10 +158,12 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_callable(self):
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        await self.storage.delete_record(version_storage_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            await storage.delete_record(version_storage_record)
         with mock.patch.object(
             test_module,
             "wallet_config",
@@ -198,10 +196,12 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_callable_named_tag(self):
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        await self.storage.delete_record(version_storage_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            await storage.delete_record(version_storage_record)
         with mock.patch.object(
             test_module,
             "wallet_config",
@@ -236,10 +236,12 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_x_same_version(self):
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        await self.storage.update_record(version_storage_record, f"v{__version__}", {})
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            await storage.update_record(version_storage_record, f"v{__version__}", {})
         with mock.patch.object(
             test_module,
             "wallet_config",
@@ -257,10 +259,12 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_missing_from_version(self):
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        await self.storage.delete_record(version_storage_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            await storage.delete_record(version_storage_record)
         with mock.patch.object(
             test_module,
             "wallet_config",
@@ -286,10 +290,12 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_x_callable_not_set(self):
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        await self.storage.delete_record(version_storage_record)
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            await storage.delete_record(version_storage_record)
         with mock.patch.object(
             test_module,
             "wallet_config",
@@ -471,18 +477,20 @@ class TestUpgrade(IsolatedAsyncioTestCase):
 
     async def test_add_version_record(self):
         await test_module.add_version_record(self.profile, "v0.7.4")
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        assert version_storage_record.value == "v0.7.4"
-        await self.storage.delete_record(version_storage_record)
-        with self.assertRaises(test_module.StorageNotFoundError):
-            await self.storage.find_record(type_filter="acapy_version", tag_query={})
-        await test_module.add_version_record(self.profile, "v0.7.5")
-        version_storage_record = await self.storage.find_record(
-            type_filter="acapy_version", tag_query={}
-        )
-        assert version_storage_record.value == "v0.7.5"
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            assert version_storage_record.value == "v0.7.4"
+            await storage.delete_record(version_storage_record)
+            with self.assertRaises(test_module.StorageNotFoundError):
+                await storage.find_record(type_filter="acapy_version", tag_query={})
+            await test_module.add_version_record(self.profile, "v0.7.5")
+            version_storage_record = await storage.find_record(
+                type_filter="acapy_version", tag_query={}
+            )
+            assert version_storage_record.value == "v0.7.5"
 
     async def test_upgrade_x_invalid_config(self):
         with mock.patch.object(
@@ -503,9 +511,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         assert "upgrade requires either profile or settings" in str(ctx.exception)
 
     def test_main(self):
-        with mock.patch.object(
-            test_module, "__name__", "__main__"
-        ) as mock_name, mock.patch.object(
+        with mock.patch.object(test_module, "__name__", "__main__"), mock.patch.object(
             test_module, "execute", mock.MagicMock()
         ) as mock_execute:
             test_module.main()

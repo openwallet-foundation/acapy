@@ -2,8 +2,8 @@
 
 import pytest
 
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
+from ....utils.testing import create_test_profile
 from ..peer2 import PeerDID2Resolver
 
 TEST_DID0 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
@@ -16,9 +16,9 @@ def resolver():
 
 
 @pytest.fixture
-def profile():
+async def profile():
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     yield profile
 
 

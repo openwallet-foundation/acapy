@@ -1,17 +1,17 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...messages.cred_problem_report import ProblemReportReason, V20CredProblemReport
 from .. import cred_problem_report_handler as test_module
 
 
 class TestCredProblemReportHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -37,7 +37,7 @@ class TestCredProblemReportHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_x(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -65,7 +65,7 @@ class TestCredProblemReportHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_not_ready(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_ready = False
@@ -87,7 +87,7 @@ class TestCredProblemReportHandler(IsolatedAsyncioTestCase):
         )
 
     async def test_called_no_connection(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = None
 

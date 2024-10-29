@@ -2,7 +2,8 @@
 
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.core.in_memory import InMemoryProfile
+from acapy_agent.utils.testing import create_test_profile
+from acapy_agent.wallet.key_type import KeyTypes
 from acapy_agent.wallet.keys.manager import (
     MultikeyManager,
     multikey_to_verkey,
@@ -11,11 +12,14 @@ from acapy_agent.wallet.keys.manager import (
 
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
-    profile = InMemoryProfile.test_profile()
     seed = "00000000000000000000000000000000"
     multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
     verkey = "2ru5PcgeQzxF7QZYwQgDkG2K13PRqyigVw99zMYg8eML"
     kid = "did:web:example.com#key-01"
+
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
 
     async def test_key_creation(self):
         async with self.profile.session() as session:

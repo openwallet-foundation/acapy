@@ -3,13 +3,14 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...messages.hangup import Hangup
 from .. import hangup_handler as test_module
 
 
 @pytest.fixture()
-def request_context():
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     yield ctx
 
 

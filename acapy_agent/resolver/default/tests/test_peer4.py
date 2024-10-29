@@ -2,10 +2,9 @@
 
 import pytest
 
-from acapy_agent.core.event_bus import EventBus
-
-from ....core.in_memory import InMemoryProfile
+from ....core.event_bus import EventBus
 from ....core.profile import Profile
+from ....utils.testing import create_test_profile
 from .. import peer4 as test_module
 from ..peer4 import PeerDID4Resolver
 
@@ -20,9 +19,9 @@ def event_bus():
 
 
 @pytest.fixture
-def profile(event_bus: EventBus):
+async def profile(event_bus: EventBus):
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     profile.context.injector.bind_instance(EventBus, event_bus)
     yield profile
 

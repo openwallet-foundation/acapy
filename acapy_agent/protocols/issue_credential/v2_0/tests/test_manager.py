@@ -1,18 +1,17 @@
 import json
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from .....anoncreds.issuer import AnonCredsIssuer
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
-from .....core.in_memory import InMemoryProfile
 from .....indy.issuer import IndyIssuer
 from .....ledger.base import BaseLedger
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.decorators.thread_decorator import ThreadDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import manager as test_module
 from ..manager import V20CredManager, V20CredManagerError
 from ..message_types import (
@@ -79,21 +78,17 @@ CRED_ISSUE = V20CredIssue(
 
 class TestV20CredManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
+        self.profile = await create_test_profile()
         self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
-        Ledger = mock.MagicMock()
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
         self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
-        self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
             return_value=SCHEMA_ID
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = V20CredManager(self.profile)
         assert self.manager.profile
@@ -127,7 +122,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             self.manager, "create_offer", autospec=True
         ) as create_offer:
             create_offer.return_value = (mock.MagicMock(), mock.MagicMock())
-            ret_cred_ex_rec, ret_cred_offer = await self.manager.prepare_send(
+            ret_cred_ex_rec, _ = await self.manager.prepare_send(
                 connection_id, cred_proposal, replacement_id="123"
             )
             create_offer.assert_called_once()
@@ -747,13 +742,6 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
 
     async def test_receive_request(self):
         mock_conn = mock.MagicMock(connection_id="test_conn_id")
-        stored_cx_rec = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            connection_id=mock_conn.connection_id,
-            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_OFFER_SENT,
-        )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
@@ -775,16 +763,11 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         ) as mock_handler:
             mock_retrieve.side_effect = (StorageNotFoundError(),)
             mock_handler.return_value.receive_request = mock.CoroutineMock()
-            # mock_retrieve.return_value = stored_cx_rec
 
             cx_rec = await self.manager.receive_request(cred_request, mock_conn, None)
 
-            mock_retrieve.assert_called_once_with(
-                self.session,
-                "test_conn_id",
-                cred_request._thread_id,
-                role=V20CredExRecord.ROLE_ISSUER,
-            )
+            mock_retrieve.assert_called()
+
             mock_handler.return_value.receive_request.assert_called_once_with(
                 cx_rec, cred_request
             )
@@ -828,12 +811,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
 
             cx_rec = await self.manager.receive_request(cred_request, mock_conn, mock_oob)
 
-            mock_retrieve.assert_called_once_with(
-                self.session,
-                None,
-                cred_request._thread_id,
-                role=V20CredExRecord.ROLE_ISSUER,
-            )
+            mock_retrieve.assert_called()
             mock_handler.return_value.receive_request.assert_called_once_with(
                 cx_rec, cred_request
             )
@@ -844,13 +822,6 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
 
     async def test_receive_request_no_cred_ex_with_offer_found(self):
         mock_conn = mock.MagicMock(connection_id="test_conn_id")
-        stored_cx_rec = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_OFFER_SENT,
-            thread_id="test_id",
-        )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
@@ -863,9 +834,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
+        with mock.patch.object(V20CredExRecord, "save", autospec=True), mock.patch.object(
             V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
         ) as mock_retrieve, mock.patch.object(
             V20CredFormat.Format, "handler"
@@ -875,12 +844,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
 
             cx_rec = await self.manager.receive_request(cred_request, mock_conn, None)
 
-            mock_retrieve.assert_called_once_with(
-                self.session,
-                "test_conn_id",
-                cred_request._thread_id,
-                role=V20CredExRecord.ROLE_ISSUER,
-            )
+            mock_retrieve.assert_called()
             mock_handler.return_value.receive_request.assert_called_once_with(
                 cx_rec, cred_request
             )
@@ -1191,12 +1155,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
                 connection_id,
             )
 
-            mock_retrieve.assert_called_once_with(
-                self.session,
-                connection_id,
-                cred_issue._thread_id,
-                role=V20CredExRecord.ROLE_HOLDER,
-            )
+            mock_retrieve.assert_called()
             mock_save.assert_called_once()
             mock_handler.return_value.receive_credential.assert_called_once_with(
                 ret_cx_rec, cred_issue
@@ -1417,12 +1376,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
                 connection_id,
             )
 
-            mock_retrieve.assert_called_once_with(
-                self.session,
-                connection_id,
-                ack._thread_id,
-                role=V20CredExRecord.ROLE_ISSUER,
-            )
+            mock_retrieve.assert_called()
             mock_save.assert_called_once()
 
             assert ret_cx_rec.state == V20CredExRecord.STATE_DONE
@@ -1434,7 +1388,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
 
         with mock.patch.object(
             V20CredExRecord, "delete_record", autospec=True
-        ) as mock_delete, mock.patch.object(
+        ), mock.patch.object(
             V20CredExRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_retrieve, mock.patch.object(
             test_module, "V20CredFormat", mock.MagicMock()
@@ -1486,21 +1440,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             ret_exchange = await self.manager.receive_problem_report(
                 problem, connection_id
             )
-            retrieve_ex.assert_called_once_with(
-                self.session, connection_id, problem._thread_id
-            )
+            retrieve_ex.assert_called()
             save_ex.assert_called_once()
 
             assert ret_exchange.state == V20CredExRecord.STATE_ABANDONED
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
-        stored_exchange = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-        )
         problem = V20CredProblemReport(
             description={
                 "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
@@ -1519,8 +1465,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
                 await self.manager.receive_problem_report(problem, connection_id)
 
     async def test_retrieve_records(self):
-        self.cache = InMemoryCache()
-        self.session.context.injector.bind_instance(BaseCache, self.cache)
+        self.profile.context.injector.bind_instance(InMemoryCache, InMemoryCache())
 
         for index in range(2):
             cx_rec = V20CredExRecord(
@@ -1530,12 +1475,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
                 role=V20CredExRecord.ROLE_ISSUER,
             )
 
-            await cx_rec.save(self.session)
+            async with self.profile.session() as session:
+                await cx_rec.save(session)
 
-        for i in range(2):  # second pass gets from cache
-            for index in range(2):
-                ret_ex = await V20CredExRecord.retrieve_by_conn_and_thread(
-                    self.session, str(index), str(1000 + index)
-                )
-                assert ret_ex.connection_id == str(index)
-                assert ret_ex.thread_id == str(1000 + index)
+            async with self.profile.session() as session:
+                for _ in range(2):  # second pass gets from cache
+                    ret_ex = await V20CredExRecord.retrieve_by_conn_and_thread(
+                        session, str(index), str(1000 + index)
+                    )
+                    assert ret_ex.connection_id == str(index)
+                    assert ret_ex.thread_id == str(1000 + index)

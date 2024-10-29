@@ -1,8 +1,4 @@
-from typing import Generator
-
 import pytest
-
-from acapy_agent.tests import mock
 
 from ......core.goal_code_registry import GoalCodeRegistry
 from ......core.protocol_registry import ProtocolRegistry
@@ -18,6 +14,8 @@ from ......protocols.issue_credential.v1_0.message_types import (
 from ......protocols.present_proof.v1_0.message_types import (
     CONTROLLERS as pres_proof_v1_controller,
 )
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...handlers.queries_handler import QueriesHandler
 from ...manager import V20DiscoveryMgr
 from ...messages.disclosures import Disclosures
@@ -28,8 +26,8 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context() -> Generator[RequestContext, None, None]:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     protocol_registry = ProtocolRegistry()
     goal_code_registry = GoalCodeRegistry()
     protocol_registry.register_message_types({TEST_MESSAGE_TYPE: object()})

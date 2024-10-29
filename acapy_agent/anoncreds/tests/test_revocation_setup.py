@@ -2,10 +2,8 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from ...askar.profile_anon import AskarAnoncredsProfile
-from ...core.in_memory.profile import InMemoryProfile
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import revocation_setup as test_module
 from ..events import (
     CredDefFinishedEvent,
@@ -20,12 +18,11 @@ from ..revocation import AnonCredsRevocation
 @pytest.mark.anoncreds
 class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet-type": "askar-anoncreds",
                 "tails_server_base_url": "http://tails-server.com",
-            },
-            profile_class=AskarAnoncredsProfile,
+            }
         )
         self.revocation_setup = test_module.DefaultRevocationSetup()
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
+from ....utils.testing import create_test_profile
 from ...base import DIDMethodNotSupported
 from ..jwk import JwkDIDResolver
 
@@ -23,9 +23,9 @@ def resolver():
 
 
 @pytest.fixture
-def profile():
+async def profile():
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     yield profile
 
 
