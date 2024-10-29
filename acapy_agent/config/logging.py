@@ -29,14 +29,6 @@ from ..config.settings import Settings
 from ..version import __version__
 from .banner import Banner
 
-DEFAULT_LOGGING_CONFIG_PATH_INI = "acapy_agent.config:default_logging_config.ini"
-DEFAULT_MULTITENANT_LOGGING_CONFIG_PATH_INI = (
-    "acapy_agent.config:default_multitenant_logging_config.ini"
-)
-LOG_FORMAT_FILE_ALIAS_PATTERN = (
-    "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
-)
-
 context_wallet_id: ContextVar[str] = ContextVar("context_wallet_id")
 
 
@@ -208,7 +200,9 @@ class LoggingConfigurator:
 
         # Set custom file handler
         if log_file:
-            logging.root.handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
+            logging.root.handlers.append(
+                logging.FileHandler(log_file, encoding="utf-8")
+            )
 
         # Set custom log level
         if log_level:
