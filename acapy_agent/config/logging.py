@@ -7,7 +7,6 @@ import os
 import re
 import sys
 import time as mod_time
-from contextvars import ContextVar
 from datetime import datetime, timedelta
 from importlib import resources
 from logging.config import (
@@ -28,26 +27,6 @@ from pythonjsonlogger import jsonlogger
 from ..config.settings import Settings
 from ..version import __version__
 from .banner import Banner
-
-context_wallet_id: ContextVar[str] = ContextVar("context_wallet_id")
-
-
-class ContextFilter(logging.Filter):
-    """Custom logging Filter to adapt logs with contextual wallet_id."""
-
-    def __init__(self):
-        """Initialize an instance of Custom logging.Filter."""
-        super(ContextFilter, self).__init__()
-
-    def filter(self, record):
-        """Filter LogRecords and add wallet id to them."""
-        try:
-            wallet_id = context_wallet_id.get()
-            record.wallet_id = wallet_id
-            return True
-        except LookupError:
-            record.wallet_id = None
-            return True
 
 
 def load_resource(path: str, encoding: Optional[str] = None):
