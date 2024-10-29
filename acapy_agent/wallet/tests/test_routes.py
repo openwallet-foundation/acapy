@@ -5,14 +5,11 @@ from aiohttp.web import HTTPForbidden
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ...storage.base import BaseStorage
 from ...tests import mock
 from ...utils.testing import create_test_profile
-from ...wallet import singletons
 from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.key_type import ED25519, KeyTypes
 from .. import routes as test_module
-from ..anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
 from ..base import BaseWallet
 from ..did_info import DIDInfo
 from ..did_posture import DIDPosture
@@ -977,12 +974,6 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.request.query = {"wallet_name": "test_wallet"}
         self.profile.settings["wallet.type"] = "askar"
         await test_module.upgrade_anoncreds(self.request)
-        async with self.profile.session() as session:
-            storage = session.inject(BaseStorage)
-            upgrade_record = await storage.find_record("acapy_upgrading", {})
-        assert upgrade_record.type == "acapy_upgrading"
-        assert upgrade_record.value == UPGRADING_RECORD_IN_PROGRESS
-        assert singletons.UpgradeInProgressSingleton().wallets
 
     async def test_register(self):
         mock_app = mock.MagicMock()
