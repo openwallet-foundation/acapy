@@ -1,4 +1,4 @@
-"""Utilities related to logging."""
+"""Timed rotating file handler for aca-py agent."""
 
 import logging
 import os
@@ -7,23 +7,23 @@ import time as mod_time
 from datetime import datetime, timedelta
 from logging.handlers import BaseRotatingHandler
 from random import randint
+
 from portalocker import LOCK_EX, lock, unlock
 
 
-######################################################################
-# Derived from
-# https://github.com/python/cpython/blob/main/Lib/logging/handlers.py
-# and https://github.com/yorks/mpfhandler/blob/master/src/mpfhandler.py
-#
-# interval and backupCount are not working as intended in mpfhandler
-# library. Also the old backup files were not being deleted on rotation.
-# This required the following custom implementation.
-######################################################################
 class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
-    """Handler for logging to a file.
+    """Handler for logging to a file with timed rotation and multi-process support.
 
-    Rotating the log file at certain timed with file lock unlock
-    mechanism to support multi-process writing to log file.
+    Derived from Python's `logging.handlers` and custom implementations to handle
+    multi-process scenarios.
+
+    This implementation is based on Python's built-in logging handlers and the mpfhandler
+    library, but includes custom modifications to properly handle interval, backupCount,
+    and deletion of old backup files during rotation in multi-process scenarios.
+
+    References:
+        - https://github.com/python/cpython/blob/main/Lib/logging/handlers.py
+        - https://github.com/yorks/mpfhandler/blob/master/src/mpfhandler.py
     """
 
     def __init__(
