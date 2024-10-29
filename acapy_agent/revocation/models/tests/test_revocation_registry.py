@@ -67,7 +67,7 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
         assert rev_reg.tails_local_path == "dummy"
         rev_reg.tails_public_uri = "dummy"
         assert rev_reg.tails_public_uri == "dummy"
-        return rev_reg.reg_def == REV_REG_DEF
+        assert rev_reg.reg_def == REV_REG_DEF
 
     async def test_tails_local_path(self):
         rr_def_public = deepcopy(REV_REG_DEF)
