@@ -87,6 +87,7 @@ class TestIndyManager(IsolatedAsyncioTestCase):
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_register_with_seed_with_all_options(self, mock_handle):
+        self.profile.settings.set_value("wallet.allow_insecure_seed", True)
         mock_handle.insert_key = mock.CoroutineMock()
         mock_handle.insert = mock.CoroutineMock()
         manager = DidIndyManager(self.profile)
