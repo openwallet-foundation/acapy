@@ -20,7 +20,12 @@ from ..storage.base import BaseStorage
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
-from .error import InvalidTokenError, MissingProfileError, WalletKeyMissingError
+from .error import (
+    InvalidTokenError,
+    MissingProfileError,
+    WalletAlreadyExistsError,
+    WalletKeyMissingError,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -151,7 +156,7 @@ class BaseMultitenantManager(ABC):
                 to not store the wallet key, or "managed" to store the wallet key
 
         Raises:
-            MultitenantManagerError: If the wallet name already exists
+            WalletAlreadyExistsError: If the wallet name already exists
 
         Returns:
             WalletRecord: The newly created wallet record
@@ -164,9 +169,7 @@ class BaseMultitenantManager(ABC):
         async with self._profile.session() as session:
             # Check if the wallet name already exists to avoid indy wallet errors
             if wallet_name and await self._wallet_name_exists(session, wallet_name):
-                raise MultitenantManagerError(
-                    f"Wallet with name {wallet_name} already exists"
-                )
+                raise WalletAlreadyExistsError(wallet_name)
 
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:

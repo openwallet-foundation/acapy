@@ -23,5 +23,14 @@ class MissingProfileError(MultitenantManagerError):
         super().__init__(message)
 
 
+class WalletAlreadyExistsError(MultitenantManagerError):
+    """Exception raised when a wallet already exists."""
+
+    def __init__(self, wallet_name: str):
+        """Initialize an instance of WalletAlreadyExistsError."""
+        message = f"Wallet with name {wallet_name} already exists"
+        super().__init__(message)
+
+
 class WalletKeyMissingError(BaseError):
     """Wallet key missing exception."""
