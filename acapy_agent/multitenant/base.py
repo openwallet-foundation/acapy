@@ -20,7 +20,7 @@ from ..storage.base import BaseStorage
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
-from .error import InvalidTokenError, MultitenantManagerError, WalletKeyMissingError
+from .error import InvalidTokenError, MissingProfileError, WalletKeyMissingError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class BaseMultitenantManager(ABC):
         """
         self._profile = profile
         if not profile:
-            raise MultitenantManagerError("Missing profile")
+            raise MissingProfileError()
 
     @property
     @abstractmethod
