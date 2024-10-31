@@ -33,15 +33,15 @@ LOGGER = logging.getLogger(__name__)
 class BaseMultitenantManager(ABC):
     """Base class for handling multitenancy."""
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Optional[Profile]):
         """Initialize base multitenant Manager.
 
         Args:
             profile: The profile for this manager
         """
-        self._profile = profile
         if not profile:
             raise MissingProfileError()
+        self._profile = profile
 
     @property
     @abstractmethod
@@ -93,6 +93,7 @@ class BaseMultitenantManager(ABC):
         Args:
             base_context: Base context to get base_webhook_urls
             wallet_record: Wallet record to get dispatch_type and webhook_urls
+
         Returns:
             webhook urls according to dispatch_type
         """
