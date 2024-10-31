@@ -253,7 +253,7 @@ class BaseMultitenantManager(ABC):
 
         wallet_key = wallet_key or wallet.wallet_key
         if wallet.requires_external_key and not wallet_key:
-            raise WalletKeyMissingError("Missing key to open wallet")
+            raise WalletKeyMissingError()
 
         profile = await self.get_wallet_profile(
             self._profile.context,

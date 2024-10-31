@@ -32,5 +32,9 @@ class WalletAlreadyExistsError(MultitenantManagerError):
         super().__init__(message)
 
 
-class WalletKeyMissingError(BaseError):
+class WalletKeyMissingError(MultitenantManagerError):
     """Wallet key missing exception."""
+
+    def __init__(self, message: str = "Missing key to open wallet"):
+        """Initialize an instance of WalletKeyMissingError."""
+        super().__init__(message)
