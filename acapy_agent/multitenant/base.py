@@ -20,7 +20,7 @@ from ..storage.base import BaseStorage
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
-from .error import MultitenantManagerError, WalletKeyMissingError
+from .error import InvalidTokenError, MultitenantManagerError, WalletKeyMissingError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -348,7 +348,8 @@ class BaseMultitenantManager(ABC):
 
         Raises:
             WalletKeyMissingError: If the wallet_key is missing for an unmanaged wallet
-            InvalidTokenError: If there is an exception while decoding the token
+            InvalidTokenError: If the decoded token is invalid
+            jwt.InvalidTokenError: If there is an exception while decoding the token
 
         Returns:
             Profile associated with the token
@@ -373,7 +374,7 @@ class BaseMultitenantManager(ABC):
             extra_settings["wallet.key"] = wallet_key
 
         if wallet.jwt_iat and wallet.jwt_iat != iat:
-            raise MultitenantManagerError("Token not valid")
+            raise InvalidTokenError()
 
         profile = await self.get_wallet_profile(context, wallet, extra_settings)
 
