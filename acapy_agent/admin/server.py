@@ -155,6 +155,9 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
                 "Unauthorized access during %s %s: %s", request.method, request.path, e
             )
             raise web.HTTPUnauthorized(reason=str(e)) from e
+        except MultitenantManagerError as e:
+            LOGGER.info("Bad request during %s %s: %s", request.method, request.path, e)
+            raise web.HTTPBadRequest(reason=str(e)) from e
         except asyncio.CancelledError:
             # redirection spawns new task and cancels old
             LOGGER.debug("Task cancelled")
