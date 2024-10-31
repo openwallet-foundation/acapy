@@ -22,8 +22,8 @@ from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import ED25519
 from ...wallet.models.wallet_record import WalletRecord
 from .. import base as test_module
-from ..base import BaseMultitenantManager, MultitenantManagerError
-from ..error import WalletKeyMissingError
+from ..base import BaseMultitenantManager
+from ..error import MultitenantManagerError, WalletKeyMissingError
 
 
 class MockMultitenantManager(BaseMultitenantManager):

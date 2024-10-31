@@ -8,7 +8,6 @@ from typing import Iterable, List, Optional, Tuple, cast
 import jwt
 
 from ..config.injection_context import InjectionContext
-from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
@@ -21,13 +20,9 @@ from ..storage.base import BaseStorage
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
-from .error import WalletKeyMissingError
+from .error import MultitenantManagerError, WalletKeyMissingError
 
 LOGGER = logging.getLogger(__name__)
-
-
-class MultitenantManagerError(BaseError):
-    """Generic multitenant error."""
 
 
 class BaseMultitenantManager(ABC):

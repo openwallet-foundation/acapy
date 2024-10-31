@@ -22,7 +22,8 @@ from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
+from ..multitenant.base import BaseMultitenantManager
+from ..multitenant.error import MultitenantManagerError
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
