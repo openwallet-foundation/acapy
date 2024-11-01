@@ -22,7 +22,8 @@ from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
+from ..multitenant.base import BaseMultitenantManager
+from ..multitenant.error import InvalidTokenError, MultitenantManagerError
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
@@ -149,6 +150,14 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             # redirect, typically / -> /api/doc
             LOGGER.info("Handler redirect to: %s", e.location)
             raise
+        except (web.HTTPUnauthorized, jwt.InvalidTokenError, InvalidTokenError) as e:
+            LOGGER.info(
+                "Unauthorized access during %s %s: %s", request.method, request.path, e
+            )
+            raise web.HTTPUnauthorized(reason=str(e)) from e
+        except (web.HTTPBadRequest, MultitenantManagerError) as e:
+            LOGGER.info("Bad request during %s %s: %s", request.method, request.path, e)
+            raise web.HTTPBadRequest(reason=str(e)) from e
         except asyncio.CancelledError:
             # redirection spawns new task and cancels old
             LOGGER.debug("Task cancelled")

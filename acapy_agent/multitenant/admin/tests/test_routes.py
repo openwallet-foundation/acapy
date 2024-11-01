@@ -11,7 +11,8 @@ from ....core.in_memory.profile import InMemoryProfile
 from ....messaging.models.base import BaseModelError
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.models.wallet_record import WalletRecord
-from ...base import BaseMultitenantManager, MultitenantManagerError
+from ...base import BaseMultitenantManager
+from ...error import MultitenantManagerError
 from .. import routes as test_module
 
 
