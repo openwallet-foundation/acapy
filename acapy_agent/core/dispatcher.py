@@ -159,6 +159,7 @@ class Dispatcher:
         # send a DCV2 Problem Report here for testing, and to punt procotol handling down
         # the road a bit
         context = RequestContext(profile)
+        context.message = message
         context.message_receipt = inbound_message.receipt
         responder = DispatcherResponder(
             context,
@@ -208,11 +209,10 @@ class Dispatcher:
         elif context.message:
             context.injector.bind_instance(BaseResponder, responder)
 
-            handler_cls = context.message.Handler
-            handler = handler_cls().handle
+            handler = context.message
             if self.collector:
                 handler = self.collector.wrap_coro(handler, [handler.__qualname__])
-            await handler(context, responder)
+            await handler(context, responder, payload=inbound_message.payload)
 
     async def make_v2_message(self, profile: Profile, parsed_msg: dict) -> BaseMessage:
         """Deserialize a message dict into the appropriate message instance.

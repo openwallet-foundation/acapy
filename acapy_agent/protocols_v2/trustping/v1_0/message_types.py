@@ -10,8 +10,17 @@ SPEC_URI = (
 # Message types
 PING = "trust_ping/1.0/ping"
 PING_RESPONSE = "trust_ping/1.0/ping_response"
+DEBUG = "https://didcomm.org/basicmessage/2.0/message"
 
 PROTOCOL_PACKAGE = "acapy_agent.protocols.trustping.v1_0"
+
+def test_func(context, responder, payload):
+    message = payload
+    print(message)
+
+HANDLERS = {
+    DEBUG: f"{PROTOCOL_PACKAGE}.message_types.test_func",
+}
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
