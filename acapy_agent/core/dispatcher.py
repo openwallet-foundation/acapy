@@ -245,7 +245,7 @@ class Dispatcher:
             #message_cls = registry.resolve_message_class(message_type)
             #if isinstance(message_cls, DeferLoad):
             #    message_cls = message_cls.resolved
-            message_cls = V2ProtocolRegistry.protocols_matching_query(message_type)
+            message_cls = registry.protocols_matching_query(message_type)
         except ProtocolMinorVersionNotSupported as e:
             raise MessageParseError(f"Problem parsing message type. {e}")
 
