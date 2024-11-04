@@ -1,6 +1,6 @@
 """Message type identifiers for Trust Pings."""
 
-from ...didcomm_prefix import DIDCommPrefix
+#from ...didcomm_prefix import DIDCommPrefix
 
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
@@ -20,11 +20,8 @@ def test_func(context, responder, payload):
 
 HANDLERS = {
     DEBUG: f"{PROTOCOL_PACKAGE}.message_types.test_func",
-}
+}.items()
 
-MESSAGE_TYPES = DIDCommPrefix.qualify_all(
-    {
-        PING: f"{PROTOCOL_PACKAGE}.messages.ping.Ping",
-        PING_RESPONSE: f"{PROTOCOL_PACKAGE}.messages.ping_response.PingResponse",
-    }
-)
+MESSAGE_TYPES = {
+        DEBUG: f"{PROTOCOL_PACKAGE}.message_types.test_func",
+}
