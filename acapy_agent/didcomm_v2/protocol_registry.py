@@ -11,6 +11,11 @@ class V2ProtocolRegistry:
         self._type_to_message_handler: Dict[str, Coroutine] = {}
 
     @property
+    def handlers(self) -> Dict[str, Coroutine]:
+        """Accessor for a list of all message protocols."""
+        return self._type_to_message_handler
+
+    @property
     def protocols(self) -> Sequence[str]:
         """Accessor for a list of all message protocols."""
         return [str(key) for key in self._type_to_message_handler.keys()]

@@ -253,7 +253,10 @@ class Dispatcher:
             raise MessageParseError(f"Unrecognized message type {message_type}")
 
         try:
-            instance = message_cls[0] #message_cls.deserialize(parsed_msg)
+            #instance = message_cls[0] #message_cls.deserialize(parsed_msg)
+            instance = registry.handlers[message_cls[0]]
+            if isinstance(instance, DeferLoad):
+                instance = message_cls.resolved
         except BaseModelError as e:
             if "/problem-report" in message_type:
                 raise ProblemReportParseError("Error parsing problem report message")
