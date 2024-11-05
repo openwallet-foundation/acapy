@@ -179,7 +179,7 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         raise
     except (LedgerConfigError, LedgerTransactionError) as e:
         # fatal, signal server shutdown
-        LOGGER.error("Shutdown with %s", str(e))
+        LOGGER.critical("Shutdown with %s", str(e))
         request.app._state["ready"] = False
         request.app._state["alive"] = False
         raise
