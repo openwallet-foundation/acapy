@@ -9,7 +9,7 @@ By no means is ACA-Py limited to these tools; they are merely examples.
 
 ## Caveats
 
-The primary use case for this `devcontainer` is for developing, debugging and unit testing (pytest) the [aries_cloudagent](https://github.com/openwallet-foundation/acapy/tree/main/acapy_agent) source code.
+The primary use case for this `devcontainer` is for developing, debugging and unit testing (pytest) the [acapy_agent](https://github.com/openwallet-foundation/acapy/tree/main/acapy_agent) source code.
 
 There are limitations running this devcontainer, such as all networking is within this container. This container has [docker-in-docker](https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/docker-in-docker.md) which allows running demos, building docker images, running `docker compose` all within this container.
 
@@ -53,8 +53,8 @@ The Python libraries / dependencies are installed using [`poetry`](https://pytho
 In VS Code, open a Terminal, you should be able to run the following commands:
 
 ```bash
-python -m aries_cloudagent -v
-cd aries_cloudagent
+python -m acapy_agent -v
+cd acapy_agent
 ruff check .
 poetry --version
 ```
@@ -169,7 +169,7 @@ To run your ACA-Py code in debug mode, go to the `Run and Debug` view, select th
 
 This will start your source code as a running ACA-Py instance, all configuration is in the `*.yml` files. This is just a sample of a configuration. Note that we are not using a database and are joining to a local VON Network (by default, it would be `http://localhost:9000`). You could change this or another ledger such as `http://test.bcovrin.vonx.io`. These are purposefully, very simple configurations.
 
-For example, open `aries_cloudagent/admin/server.py` and set a breakpoint in `async def status_handler(self, request: web.BaseRequest):`, then call [`GET /status`](http://localhost:9061/api/doc#/server/get_status) in the Admin Console and hit your breakpoint.
+For example, open `acapy_agent/admin/server.py` and set a breakpoint in `async def status_handler(self, request: web.BaseRequest):`, then call [`GET /status`](http://localhost:9061/api/doc#/server/get_status) in the Admin Console and hit your breakpoint.
 
 ## Pytest
 

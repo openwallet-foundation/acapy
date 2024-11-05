@@ -28,7 +28,7 @@ ecdsa = "~0.19.0"
 jsonpath-ng = "1.7.0"
 Markdown = "~3.7"
 markupsafe = "2.1.5"
-marshmallow = "~3.23.0"
+marshmallow = "~3.23.1"
 nest_asyncio = "~1.6.0"
 packaging = "~23.2"
 portalocker = "~2.10.1"
@@ -65,7 +65,7 @@ canonicaljson = "^2.0.0"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.8.0"
 # Sync with version in .pre-commit-config.yaml
-ruff = "0.7.1"
+ruff = "0.7.2"
 
 sphinx = "^5.3.0"
 sphinx-rtd-theme = ">=0.4.3"
@@ -137,6 +137,7 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "module"
 
 [tool.coverage.run]
 

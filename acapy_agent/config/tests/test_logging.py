@@ -3,7 +3,7 @@ from io import StringIO
 from tempfile import NamedTemporaryFile
 from unittest import IsolatedAsyncioTestCase, mock
 
-from .. import logging as test_module
+from ..logging import configurator as test_module
 
 
 class TestLoggingConfigurator(IsolatedAsyncioTestCase):
@@ -81,7 +81,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             ),
         ):
             test_module.LoggingConfigurator.configure(
-                log_config_path="acapy_agent/config/default_multitenant_logging_config.yml",
+                log_config_path="acapy_agent/config/logging/default_multitenant_logging_config.yml",
                 log_file="test.log",
                 multitenant=True,
             )
