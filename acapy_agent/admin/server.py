@@ -13,8 +13,6 @@ from aiohttp import web
 from aiohttp_apispec import setup_aiohttp_apispec, validation_middleware
 from uuid_utils import uuid4
 
-from acapy_agent.wallet import singletons
-
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
@@ -31,9 +29,11 @@ from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils import general as general_utils
+from ..utils.extract_validation_error import extract_validation_error_message
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet import singletons
 from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -67,6 +67,8 @@ EVENT_WEBHOOK_MAPPING = {
 
 anoncreds_wallets = singletons.IsAnoncredsSingleton().wallets
 in_progress_upgrades = singletons.UpgradeInProgressSingleton()
+
+status_paths = ("/status/live", "/status/ready")
 
 
 class AdminResponder(BaseResponder):
@@ -134,44 +136,56 @@ class AdminResponder(BaseResponder):
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
 
-    if str(request.rel_url).rstrip("/") in (
-        "/status/live",
-        "/status/ready",
-    ) or request.app._state.get("ready"):
-        try:
-            return await handler(request)
-        except (LedgerConfigError, LedgerTransactionError) as e:
-            # fatal, signal server shutdown
-            LOGGER.error("Shutdown with %s", str(e))
-            request.app._state["ready"] = False
-            request.app._state["alive"] = False
-            raise
-        except web.HTTPFound as e:
-            # redirect, typically / -> /api/doc
-            LOGGER.info("Handler redirect to: %s", e.location)
-            raise
-        except (web.HTTPUnauthorized, jwt.InvalidTokenError, InvalidTokenError) as e:
-            LOGGER.info(
-                "Unauthorized access during %s %s: %s", request.method, request.path, e
-            )
-            raise web.HTTPUnauthorized(reason=str(e)) from e
-        except (web.HTTPBadRequest, MultitenantManagerError) as e:
-            LOGGER.info("Bad request during %s %s: %s", request.method, request.path, e)
-            raise web.HTTPBadRequest(reason=str(e)) from e
-        except asyncio.CancelledError:
-            # redirection spawns new task and cancels old
-            LOGGER.debug("Task cancelled")
-            raise
-        except Exception as e:
-            # some other error?
-            LOGGER.error("Handler error with exception: %s", str(e))
-            import traceback
+    is_status_check = str(request.rel_url).rstrip("/") in status_paths
+    is_app_ready = request.app._state.get("ready")
 
-            print("\n=================")
-            traceback.print_exc()
-            raise
+    if not (is_status_check or is_app_ready):
+        raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
-    raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
+    try:
+        return await handler(request)
+    except web.HTTPFound as e:
+        # redirect, typically / -> /api/doc
+        LOGGER.info("Handler redirect to: %s", e.location)
+        raise
+    except asyncio.CancelledError:
+        # redirection spawns new task and cancels old
+        LOGGER.debug("Task cancelled")
+        raise
+    except (web.HTTPUnauthorized, jwt.InvalidTokenError, InvalidTokenError) as e:
+        LOGGER.info(
+            "Unauthorized access during %s %s: %s", request.method, request.path, e
+        )
+        raise web.HTTPUnauthorized(reason=str(e)) from e
+    except (web.HTTPBadRequest, MultitenantManagerError) as e:
+        LOGGER.info("Bad request during %s %s: %s", request.method, request.path, e)
+        raise web.HTTPBadRequest(reason=str(e)) from e
+    except (web.HTTPNotFound, StorageNotFoundError) as e:
+        LOGGER.info(
+            "Not Found error occurred during %s %s: %s",
+            request.method,
+            request.path,
+            e,
+        )
+        raise web.HTTPNotFound(reason=str(e)) from e
+    except web.HTTPUnprocessableEntity as e:
+        validation_error_message = extract_validation_error_message(e)
+        LOGGER.info(
+            "Unprocessable Entity occurred during %s %s: %s",
+            request.method,
+            request.path,
+            validation_error_message,
+        )
+        raise
+    except (LedgerConfigError, LedgerTransactionError) as e:
+        # fatal, signal server shutdown
+        LOGGER.critical("Shutdown with %s", str(e))
+        request.app._state["ready"] = False
+        request.app._state["alive"] = False
+        raise
+    except Exception as e:
+        LOGGER.exception("Handler error with exception:", exc_info=e)
+        raise
 
 
 @web.middleware
