@@ -17,8 +17,8 @@ async def create_test_profile(
         settings = {
             "wallet.type": "askar",
             "auto_provision": True,
-            "wallet.key": "insecure",
-            "wallet.key_derivation_method": "kdf:argon2i:mod",
+            "wallet.key": "5BngFuBpS4wjFfVFCtPqoix3ZXG2XR8XJ7qosUzMak7R",
+            "wallet.key_derivation_method": "RAW",
         }
     _id = settings.get("wallet.id", str(uuid4()))
     settings["wallet.id"] = _id
@@ -26,8 +26,8 @@ async def create_test_profile(
     store_config = AskarStoreConfig(
         {
             "name": _id,
-            "key": "insecure",
-            "key_derivation_method": settings.get("wallet.key_derivation_method"),
+            "key": "5BngFuBpS4wjFfVFCtPqoix3ZXG2XR8XJ7qosUzMak7R",
+            "key_derivation_method": "RAW",
             "auto_recreate": True,
         }
     )
