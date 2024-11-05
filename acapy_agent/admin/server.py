@@ -144,15 +144,13 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
 
     try:
         return await handler(request)
-    except (LedgerConfigError, LedgerTransactionError) as e:
-        # fatal, signal server shutdown
-        LOGGER.error("Shutdown with %s", str(e))
-        request.app._state["ready"] = False
-        request.app._state["alive"] = False
-        raise
     except web.HTTPFound as e:
         # redirect, typically / -> /api/doc
         LOGGER.info("Handler redirect to: %s", e.location)
+        raise
+    except asyncio.CancelledError:
+        # redirection spawns new task and cancels old
+        LOGGER.debug("Task cancelled")
         raise
     except (web.HTTPUnauthorized, jwt.InvalidTokenError, InvalidTokenError) as e:
         LOGGER.info(
@@ -179,9 +177,11 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             validation_error_message,
         )
         raise
-    except asyncio.CancelledError:
-        # redirection spawns new task and cancels old
-        LOGGER.debug("Task cancelled")
+    except (LedgerConfigError, LedgerTransactionError) as e:
+        # fatal, signal server shutdown
+        LOGGER.error("Shutdown with %s", str(e))
+        request.app._state["ready"] = False
+        request.app._state["alive"] = False
         raise
     except Exception as e:
         LOGGER.exception("Handler error with exception:", exc_info=e)
