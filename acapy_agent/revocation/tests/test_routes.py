@@ -1154,6 +1154,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
         mock_ledger.pool = mock.MagicMock(genesis_txns="genesis_txns")
         self.context.injector.bind_instance(BaseLedger, mock_ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, mock_ledger)
 
         result = await test_module.update_rev_reg_revoked_state(self.request)
         assert result.status == 200
