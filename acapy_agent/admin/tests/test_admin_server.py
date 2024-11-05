@@ -149,7 +149,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
                 handler.side_effect,
             )
 
-            # Test InvalidTokenError (assuming custom exception)
+            # Test InvalidTokenError
             handler = mock.CoroutineMock(
                 side_effect=test_module.InvalidTokenError("Token error")
             )
