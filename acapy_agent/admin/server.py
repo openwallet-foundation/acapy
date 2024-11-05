@@ -179,12 +179,7 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             LOGGER.debug("Task cancelled")
             raise
         except Exception as e:
-            # some other error?
-            LOGGER.error("Handler error with exception: %s", str(e))
-            import traceback
-
-            print("\n=================")
-            traceback.print_exc()
+            LOGGER.exception("Handler error with exception:", exc_info=e)
             raise
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
