@@ -4,12 +4,13 @@ from acapy_agent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from .. import menu_handler as handler
 
 
 class TestMenuHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.connection_ready = True

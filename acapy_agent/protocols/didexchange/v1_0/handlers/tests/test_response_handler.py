@@ -2,14 +2,15 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ......connections.models import connection_target
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
+from ......wallet.base import BaseWallet
 from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
 from .....trustping.v1_0.messages.ping import Ping
@@ -54,25 +55,27 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         return doc
 
     async def asyncSetUp(self):
-        self.ctx = RequestContext.test_context()
+        self.profile = await create_test_profile()
+        self.ctx = RequestContext.test_context(self.profile)
         self.ctx.message_receipt = MessageReceipt()
 
-        self.ctx.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
-        wallet = (await self.ctx.session()).wallet
-        self.did_info = await wallet.create_local_did(
-            method=SOV,
-            key_type=ED25519,
-        )
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            self.did_info = await wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+            )
 
-        self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
-        await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
+            self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
+            await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
 
-        self.request = DIDXResponse(
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
-        )
+            self.request = DIDXResponse(
+                did=TEST_DID,
+                did_doc_attach=self.did_doc_attach,
+            )
 
-    @pytest.mark.asyncio(scope="module")
+    @pytest.mark.asyncio(scope="function")
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
         mock_didx_mgr.return_value.accept_response = mock.CoroutineMock()
@@ -86,7 +89,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         assert not responder.messages
 
-    @pytest.mark.asyncio(scope="module")
+    @pytest.mark.asyncio(scope="function")
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called_auto_ping(self, mock_didx_mgr):
         self.ctx.update_settings({"auto_ping_connection": True})
@@ -101,10 +104,10 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         messages = responder.messages
         assert len(messages) == 1
-        result, target = messages[0]
+        result, _ = messages[0]
         assert isinstance(result, Ping)
 
-    @pytest.mark.asyncio(scope="module")
+    @pytest.mark.asyncio(scope="function")
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report(self, mock_conn_target, mock_didx_mgr):
@@ -141,7 +144,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         assert target == {"target_list": [mock_conn_target]}
 
-    @pytest.mark.asyncio(scope="module")
+    @pytest.mark.asyncio(scope="function")
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
@@ -188,7 +191,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         assert target == {"target_list": [mock_conn_target]}
 
-    @pytest.mark.asyncio(scope="module")
+    @pytest.mark.asyncio(scope="function")
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(

@@ -3,28 +3,26 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.anoncreds.models.anoncreds_cred_def import (
+from ...anoncreds.models.anoncreds_cred_def import (
     CredDef,
     CredDefValue,
     CredDefValuePrimary,
     CredDefValueRevocation,
     GetCredDefResult,
 )
-from acapy_agent.anoncreds.models.anoncreds_revocation import (
+from ...anoncreds.models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
     RevRegDef,
     RevRegDefValue,
 )
-from acapy_agent.anoncreds.models.anoncreds_schema import (
+from ...anoncreds.models.anoncreds_schema import (
     AnonCredsSchema,
     GetSchemaResult,
 )
-from acapy_agent.askar.profile_anon import AskarAnoncredsProfile
-from acapy_agent.core.in_memory.profile import InMemoryProfile
-from acapy_agent.tests import mock
-
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import verifier as test_module
 from .mock_objects import (
     MOCK_CRED_DEFS,
@@ -38,9 +36,8 @@ from .mock_objects import (
 @pytest.mark.anoncreds
 class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet.type": "askar-anoncreds"},
-            profile_class=AskarAnoncredsProfile,
         )
         self.verifier = test_module.AnonCredsVerifier(self.profile)
 
@@ -61,9 +58,7 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
             },
         )
 
-        result = self.verifier.non_revoc_intervals(
-            non_revoked_req, MOCK_PRES, MOCK_CRED_DEFS
-        )
+        self.verifier.non_revoc_intervals(non_revoked_req, MOCK_PRES, MOCK_CRED_DEFS)
 
     async def test_check_timestamps_with_names(self):
         self.profile.inject = mock.Mock(

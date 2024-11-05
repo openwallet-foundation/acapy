@@ -4,14 +4,14 @@ from typing import AsyncIterable, Iterable
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from .....core.event_bus import EventBus, MockEventBus
-from .....core.in_memory import InMemoryProfile
+from .....core.event_bus import EventBus
 from .....core.profile import Profile, ProfileSession
 from .....did.did_key import DIDKey
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .....wallet.did_method import DIDMethods
+from .....wallet.key_type import KeyTypes
 from ....routing.v1_0.models.route_record import RouteRecord
 from .. import manager as test_module
 from ..manager import (
@@ -39,12 +39,12 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def profile() -> Iterable[Profile]:
+async def profile():
     """Fixture for profile used in tests."""
-    # pylint: disable=W0621
-    yield InMemoryProfile.test_profile(
-        bind={EventBus: MockEventBus(), DIDMethods: DIDMethods()}
-    )
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+    profile.context.injector.bind_instance(KeyTypes, KeyTypes())
+    yield profile
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         request = MediationRequest()
         record = await manager.receive_request(TEST_CONN_ID, request)
         assert record.connection_id == TEST_CONN_ID
-        record, deny = await manager.deny_request(record.mediation_id)
+        record, _ = await manager.deny_request(record.mediation_id)
 
     async def test_update_keylist_delete(self, session, manager, record):
         """test_update_keylist_delete."""
@@ -252,7 +252,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_set_default_mediator_by_id(self, manager: MediationManager):
         with mock.patch.object(
             test_module.MediationRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve:
+        ):
             await manager.set_default_mediator_by_id("test")
 
     async def test_clear_default_mediator(self, manager: MediationManager, session):

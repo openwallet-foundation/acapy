@@ -537,7 +537,7 @@ class Conductor:
                 "An exception was caught while checking for wallet upgrades in progress"
             )
 
-        # notify protcols of startup status
+        # notify protocols of startup status
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
 
     async def stop(self, timeout=1.0):

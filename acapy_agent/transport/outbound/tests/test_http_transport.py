@@ -4,10 +4,9 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
 
-from acapy_agent.tests import mock
-
-from ....core.in_memory import InMemoryProfile
+from ....tests import mock
 from ....utils.stats import Collector
+from ....utils.testing import create_test_profile
 from ...wire_format import JsonWireFormat
 from ..base import OutboundTransportError
 from ..http import HttpTransport
@@ -15,7 +14,7 @@ from ..http import HttpTransport
 
 class TestHttpTransport(AioHTTPTestCase):
     async def setUpAsync(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.message_results = []
         self.headers = {}
         await super().setUpAsync()

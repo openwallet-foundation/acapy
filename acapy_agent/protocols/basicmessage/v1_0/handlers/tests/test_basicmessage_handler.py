@@ -6,13 +6,14 @@ from ......core.event_bus import Event, EventBus, MockEventBus
 from ......messaging.decorators.localization_decorator import LocalizationDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ...handlers.basicmessage_handler import BasicMessageHandler
 from ...messages.basicmessage import BasicMessage
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    yield RequestContext.test_context()
+async def request_context():
+    yield RequestContext.test_context(await create_test_profile())
 
 
 class TestBasicMessageHandler:

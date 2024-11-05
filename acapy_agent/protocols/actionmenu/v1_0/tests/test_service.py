@@ -1,15 +1,15 @@
 from unittest import IsolatedAsyncioTestCase, mock
 
 from .....core.event_bus import EventBus, MockEventBus
-from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
+from .....utils.testing import create_test_profile
 from .. import driver_service as test_module
 
 
 class TestActionMenuService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.context = RequestContext(self.session.profile)
+        self.profile = await create_test_profile()
+        self.context = RequestContext(self.profile)
 
     async def test_get_active_menu(self):
         mock_event_bus = MockEventBus()

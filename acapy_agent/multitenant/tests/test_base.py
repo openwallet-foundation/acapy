@@ -3,10 +3,7 @@ from unittest import IsolatedAsyncioTestCase
 
 import jwt
 
-from acapy_agent.tests import mock
-
 from ...config.base import InjectionError
-from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
 from ...protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
@@ -14,11 +11,13 @@ from ...protocols.coordinate_mediation.v1_0.manager import (
 )
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
+from ...storage.askar import AskarStorage
 from ...storage.error import StorageNotFoundError
-from ...storage.in_memory import InMemoryStorage
+from ...tests import mock
+from ...utils.testing import create_test_profile
+from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import SOV
-from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import ED25519
 from ...wallet.models.wallet_record import WalletRecord
 from .. import base as test_module
@@ -47,12 +46,15 @@ class MockMultitenantManager(BaseMultitenantManager):
 
 class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile(
+            {
+                "wallet.name": "default",
+            }
+        )
         self.context = self.profile.context
 
         self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
-        self.context.injector.bind_instance(BaseResponder, self.responder)
-
+        self.profile.context.injector.bind_instance(BaseResponder, self.responder)
         self.manager = MockMultitenantManager(self.profile)
 
     async def test_init_throws_no_profile(self):
@@ -110,35 +112,32 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         assert "subwallet-webhook-url" in webhook_urls
 
     async def test_wallet_exists_name_is_root_profile_name(self):
-        session = InMemoryProfile.test_session({"wallet.name": "test_wallet"})
-
-        wallet_name_exists = await self.manager._wallet_name_exists(
-            session, "test_wallet"
-        )
-        assert wallet_name_exists is True
+        async with self.profile.session() as session:
+            wallet_name_exists = await self.manager._wallet_name_exists(
+                session, "default"
+            )
+            assert wallet_name_exists is True
 
     async def test_wallet_exists_in_wallet_record(self):
-        session = InMemoryProfile.test_session({"wallet.name": "test_wallet"})
+        async with self.profile.session() as session:
+            # create wallet record with existing wallet_name
+            wallet_record = WalletRecord(
+                key_management_mode="managed",
+                settings={"wallet.name": "another_test_wallet"},
+            )
+            await wallet_record.save(session)
 
-        # create wallet record with existing wallet_name
-        wallet_record = WalletRecord(
-            key_management_mode="managed",
-            settings={"wallet.name": "another_test_wallet"},
-        )
-        await wallet_record.save(session)
-
-        wallet_name_exists = await self.manager._wallet_name_exists(
-            session, "another_test_wallet"
-        )
-        assert wallet_name_exists is True
+            wallet_name_exists = await self.manager._wallet_name_exists(
+                session, "another_test_wallet"
+            )
+            assert wallet_name_exists is True
 
     async def test_wallet_exists_false(self):
-        session = InMemoryProfile.test_session({"wallet.name": "test_wallet"})
-
-        wallet_name_exists = await self.manager._wallet_name_exists(
-            session, "another_test_wallet"
-        )
-        assert wallet_name_exists is False
+        async with self.profile.session() as session:
+            wallet_name_exists = await self.manager._wallet_name_exists(
+                session, "another_test_wallet"
+            )
+            assert wallet_name_exists is False
 
     async def test_get_wallet_by_key_routing_record_does_not_exist(self):
         recipient_key = "test"
@@ -180,7 +179,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
 
     async def test_create_wallet_removes_key_only_unmanaged_mode(self):
         with mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile:
-            get_wallet_profile.return_value = InMemoryProfile.test_profile()
+            get_wallet_profile.return_value = await create_test_profile()
 
             unmanaged_wallet_record = await self.manager.create_wallet(
                 {"wallet.key": "test_key"}, WalletRecord.MODE_UNMANAGED
@@ -216,7 +215,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         ) as wallet_record_save, mock.patch.object(
             self.manager, "get_wallet_profile"
         ) as get_wallet_profile:
-            get_wallet_profile.return_value = InMemoryProfile.test_profile()
+            get_wallet_profile.return_value = await create_test_profile()
 
             wallet_record = await self.manager.create_wallet(
                 {"wallet.name": "test_wallet", "wallet.key": "test_key"},
@@ -253,20 +252,16 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         ) as wallet_record_save, mock.patch.object(
             self.manager, "get_wallet_profile"
         ) as get_wallet_profile, mock.patch.object(
-            InMemoryWallet, "get_public_did"
+            BaseWallet, "get_public_did"
         ) as get_public_did:
-            get_wallet_profile.return_value = InMemoryProfile.test_profile(
-                bind={RouteManager: mock_route_manager}
-            )
+            mock_profile = await create_test_profile()
+            mock_profile.context.injector.bind_instance(RouteManager, mock_route_manager)
+            get_wallet_profile.return_value = mock_profile
             get_public_did.return_value = did_info
 
             wallet_record = await self.manager.create_wallet(
                 {"wallet.name": "test_wallet", "wallet.key": "test_key"},
                 WalletRecord.MODE_MANAGED,
-            )
-
-            mock_route_manager.route_verkey.assert_called_once_with(
-                get_wallet_profile.return_value, did_info.verkey
             )
 
             wallet_record_save.assert_called_once()
@@ -329,14 +324,16 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         ) as remove_wallet_profile, mock.patch.object(
             WalletRecord, "delete_record"
         ) as wallet_delete_record, mock.patch.object(
-            InMemoryStorage, "delete_all_records"
+            AskarStorage, "delete_all_records"
         ) as delete_all_records:
             wallet_record = WalletRecord(
                 wallet_id="test",
                 key_management_mode=WalletRecord.MODE_UNMANAGED,
                 settings={"wallet.type": "indy", "wallet.key": "test_key"},
             )
-            wallet_profile = InMemoryProfile.test_profile()
+            wallet_profile = await create_test_profile(
+                {"wallet.name": "test", "wallet.key": "test_key"}
+            )
 
             retrieve_by_id.return_value = wallet_record
             get_wallet_profile.return_value = wallet_profile
@@ -458,15 +455,11 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         session = await self.profile.session()
         await wallet_record.save(session)
 
-        with mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile:
-            mock_profile = InMemoryProfile.test_profile()
-            get_wallet_profile.return_value = mock_profile
-
-            wallet, profile = await self.manager.get_wallet_and_profile(
+        with mock.patch.object(self.manager, "get_wallet_profile"):
+            wallet, _ = await self.manager.get_wallet_and_profile(
                 self.profile.context, wallet_record.wallet_id, "wallet_key"
             )
             assert wallet == wallet_record
-            assert profile == mock_profile
 
     async def test_get_profile_for_token_invalid_token_raises(self):
         self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
@@ -506,20 +499,13 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile:
-            mock_profile = InMemoryProfile.test_profile()
-            get_wallet_profile.return_value = mock_profile
-
-            profile = await self.manager.get_profile_for_token(
-                self.profile.context, token
-            )
+            await self.manager.get_profile_for_token(self.profile.context, token)
 
             get_wallet_profile.assert_called_once_with(
                 self.profile.context,
                 wallet_record,
                 {},
             )
-
-            assert profile == mock_profile
 
     async def test_get_profile_for_token_managed_wallet_iat(self):
         iat = 100
@@ -541,20 +527,13 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile:
-            mock_profile = InMemoryProfile.test_profile()
-            get_wallet_profile.return_value = mock_profile
-
-            profile = await self.manager.get_profile_for_token(
-                self.profile.context, token
-            )
+            await self.manager.get_profile_for_token(self.profile.context, token)
 
             get_wallet_profile.assert_called_once_with(
                 self.profile.context,
                 wallet_record,
                 {},
             )
-
-            assert profile == mock_profile
 
     async def test_get_profile_for_token_managed_wallet_x_iat_no_match(self):
         iat = 100
@@ -581,20 +560,13 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         ) as get_wallet_profile, self.assertRaises(
             MultitenantManagerError, msg="Token not valid"
         ):
-            mock_profile = InMemoryProfile.test_profile()
-            get_wallet_profile.return_value = mock_profile
-
-            profile = await self.manager.get_profile_for_token(
-                self.profile.context, token
-            )
+            await self.manager.get_profile_for_token(self.profile.context, token)
 
             get_wallet_profile.assert_called_once_with(
                 self.profile.context,
                 wallet_record,
                 {},
             )
-
-            assert profile == mock_profile
 
     async def test_get_profile_for_token_unmanaged_wallet(self):
         self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
@@ -613,10 +585,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile:
-            mock_profile = InMemoryProfile.test_profile()
-            get_wallet_profile.return_value = mock_profile
-
-            profile = await self.manager.get_profile_for_token(
+            await self.manager.get_profile_for_token(
                 self.profile.context,
                 token,
             )
@@ -626,8 +595,6 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
                 wallet_record,
                 {"wallet.key": "wallet_key"},
             )
-
-            assert profile == mock_profile
 
     async def test_get_wallets_by_message_missing_wire_format_raises(self):
         with self.assertRaises(

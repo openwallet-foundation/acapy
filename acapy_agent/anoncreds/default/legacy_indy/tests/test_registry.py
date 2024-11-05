@@ -14,15 +14,32 @@ from anoncreds import (
 from base58 import alphabet
 
 from .....anoncreds.base import AnonCredsSchemaAlreadyExists
+from .....anoncreds.default.legacy_indy import registry as test_module
+from .....anoncreds.issuer import AnonCredsIssuer
+from .....anoncreds.models.anoncreds_cred_def import (
+    CredDef,
+    CredDefResult,
+    CredDefValue,
+    CredDefValuePrimary,
+)
+from .....anoncreds.models.anoncreds_revocation import (
+    RevList,
+    RevListResult,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
+    RevRegDefValue,
+)
 from .....anoncreds.models.anoncreds_schema import (
     AnonCredsSchema,
     GetSchemaResult,
     SchemaResult,
 )
-from .....askar.profile_anon import AskarAnoncredsProfile
+from .....askar.profile_anon import (
+    AskarAnoncredsProfileSession,
+)
 from .....connections.models.conn_record import ConnRecord
 from .....core.event_bus import EventBus
-from .....core.in_memory.profile import InMemoryProfile, InMemoryProfileSession
 from .....ledger.base import BaseLedger
 from .....ledger.error import LedgerObjectAlreadyExistsError
 from .....ledger.multiple_ledger.ledger_requests_executor import (
@@ -33,24 +50,11 @@ from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecord,
 )
-from .....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
+from .....revocation_anoncreds.models.issuer_cred_rev_record import (
+    IssuerCredRevRecord,
+)
 from .....tests import mock
-from ....issuer import AnonCredsIssuer
-from ....models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    CredDefValue,
-    CredDefValuePrimary,
-)
-from ....models.anoncreds_revocation import (
-    RevList,
-    RevListResult,
-    RevRegDef,
-    RevRegDefResult,
-    RevRegDefState,
-    RevRegDefValue,
-)
-from .. import registry as test_module
+from .....utils.testing import create_test_profile
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"
@@ -141,9 +145,8 @@ class MockRevListEntry:
 @pytest.mark.anoncreds
 class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet.type": "askar-anoncreds"},
-            profile_class=AskarAnoncredsProfile,
         )
         self.registry = test_module.LegacyIndyRegistry()
 
@@ -301,7 +304,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         self.profile.settings.set_value("endorser.author", True)
         self.profile.settings.set_value("endorser.auto_request", True)
         self.profile.context.injector.bind_instance(
-            BaseResponder, mock.MagicMock(send=mock.CoroutineMock(return_value=None))
+            BaseResponder, mock.MagicMock(BaseResponder, autospec=True)
         )
 
         result = await self.registry.register_schema(
@@ -342,11 +345,13 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             value=CredDefValue(primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")),
         )
 
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_credential_definition_anoncreds = mock.CoroutineMock(
+            return_value=2
+        )
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                send_credential_definition_anoncreds=mock.CoroutineMock(return_value=2)
-            ),
+            mock_base_ledger,
         )
 
         result = await self.registry.register_credential_definition(
@@ -398,13 +403,13 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             value=CredDefValue(primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")),
         )
 
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_credential_definition_anoncreds = mock.CoroutineMock(
+            return_value=("id", {"signed_txn": "txn"})
+        )
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                send_credential_definition_anoncreds=mock.CoroutineMock(
-                    return_value=("id", {"signed_txn": "txn"})
-                )
-            ),
+            mock_base_ledger,
         )
         self.profile.settings.set_value("endorser.author", True)
 
@@ -463,13 +468,13 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             value=CredDefValue(primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")),
         )
 
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_credential_definition_anoncreds = mock.CoroutineMock(
+            return_value=("id", {"signed_txn": "txn"})
+        )
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                send_credential_definition_anoncreds=mock.CoroutineMock(
-                    return_value=("id", {"signed_txn": "txn"})
-                )
-            ),
+            mock_base_ledger,
         )
 
         result = await self.registry.register_credential_definition(
@@ -539,17 +544,18 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             value=CredDefValue(primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")),
         )
 
-        self.profile.context.injector.bind_instance(
-            BaseLedger,
-            mock.MagicMock(
-                send_credential_definition_anoncreds=mock.CoroutineMock(
-                    return_value=("id", {"signed_txn": "txn"})
-                )
-            ),
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_credential_definition_anoncreds = mock.CoroutineMock(
+            return_value=("id", {"signed_txn": "txn"})
         )
         self.profile.context.injector.bind_instance(
+            BaseLedger,
+            mock_base_ledger,
+        )
+
+        self.profile.context.injector.bind_instance(
             BaseResponder,
-            mock.MagicMock(send=mock.CoroutineMock(return_value=None)),
+            mock.MagicMock(BaseResponder, autospec=True),
         )
         self.profile.settings.set_value("endorser.auto_request", True)
 
@@ -574,9 +580,11 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         )._instance.send.called
 
     async def test_register_revocation_registry_definition_no_endorsement(self):
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_revoc_reg_def = mock.CoroutineMock(return_value=1)
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(send_revoc_reg_def=mock.CoroutineMock(return_value=1)),
+            mock_base_ledger,
         )
         result = await self.registry.register_revocation_registry_definition(
             self.profile,
@@ -622,22 +630,18 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def test_register_revocation_registry_definition_with_author_role(
         self, mock_create_request, mock_create_record, mock_endorser_connection
     ):
-        self.profile.context.injector.bind_instance(
-            BaseLedger,
-            mock.MagicMock(send_revoc_reg_def=mock.CoroutineMock(return_value=1)),
-        )
         self.profile.settings.set_value("endorser.author", True)
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_revoc_reg_def = mock.CoroutineMock(
+            return_value=("id", {"signed_txn": "txn"})
+        )
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                send_revoc_reg_def=mock.CoroutineMock(
-                    return_value=("id", {"signed_txn": "txn"})
-                )
-            ),
+            mock_base_ledger,
         )
         self.profile.context.injector.bind_instance(
             BaseResponder,
-            mock.MagicMock(send=mock.CoroutineMock(return_value=None)),
+            mock.MagicMock(BaseResponder, autospec=True),
         )
 
         self.profile.settings.set_value("endorser.auto_request", True)
@@ -688,17 +692,13 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def test_register_revocation_registry_definition_with_create_transaction_option(
         self, mock_create_record, mock_endorser_connection
     ):
-        self.profile.context.injector.bind_instance(
-            BaseLedger,
-            mock.MagicMock(send_revoc_reg_def=mock.CoroutineMock(return_value=1)),
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_revoc_reg_def = mock.CoroutineMock(
+            return_value=("id", {"signed_txn": "txn"})
         )
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                send_revoc_reg_def=mock.CoroutineMock(
-                    return_value=("id", {"signed_txn": "txn"})
-                )
-            ),
+            mock_base_ledger,
         )
 
         result = await self.registry.register_revocation_registry_definition(
@@ -744,13 +744,13 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def test_register_revocation_registry_definition_with_create_transaction_and_auto_request(
         self, mock_create_record, mock_endorser_connection
     ):
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_revoc_reg_def = mock.CoroutineMock(
+            return_value=("id", {"signed_txn": "txn"})
+        )
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(
-                send_revoc_reg_def=mock.CoroutineMock(
-                    return_value=("id", {"signed_txn": "txn"})
-                )
-            ),
+            mock_base_ledger,
         )
 
         result = await self.registry.register_revocation_registry_definition(
@@ -782,10 +782,13 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         assert mock_create_record.called
 
     async def test_txn_submit(self):
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.txn_submit = mock.CoroutineMock(return_value="transaction_id")
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(txn_submit=mock.CoroutineMock(return_value="transaction_id")),
+            mock_base_ledger,
         )
+
         async with self.profile.session() as session:
             ledger = session.inject(BaseLedger)
             result = await self.registry.txn_submit(ledger, "test_txn")
@@ -801,7 +804,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             ),
         ),
     )
-    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
     async def test_register_revocation_list_no_endorsement(
         self, mock_handle, mock_send_revoc_reg_entry
     ):
@@ -1017,7 +1020,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         self.profile.inject_or = mock.MagicMock()
         self.profile.context.injector.bind_instance(
             BaseResponder,
-            mock.MagicMock(send=mock.CoroutineMock(return_value=None)),
+            mock.MagicMock(BaseResponder, autospec=True),
         )
         self.profile.settings.set_value("endorser.auto_request", True)
 
@@ -1095,9 +1098,11 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         mock.CoroutineMock(return_value=MockTxn()),
     )
     async def test_fix_ledger_entry(self, *_):
+        mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_base_ledger.send_revoc_reg_entry = mock.CoroutineMock(return_value={})
         self.profile.context.injector.bind_instance(
             BaseLedger,
-            mock.MagicMock(send_revoc_reg_entry=mock.CoroutineMock(return_value={})),
+            mock_base_ledger,
         )
 
         self.profile.context.injector.bind_instance(
@@ -1164,7 +1169,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             update=mock.MagicMock(return_value=MockRevListEntry())
         ),
     )
-    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
     async def test_sync_wallet_rev_list_with_issuer_cred_rev_records(
         self, mock_handle, *_
     ):

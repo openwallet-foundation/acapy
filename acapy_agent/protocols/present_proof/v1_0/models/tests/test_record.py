@@ -1,14 +1,13 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ......core.in_memory import InMemoryProfile
 from ......indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
 )
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...messages.presentation_proposal import PresentationProposal
 from .. import presentation_exchange as test_module
 from ..presentation_exchange import V10PresentationExchange
@@ -121,19 +120,20 @@ class TestRecord(IsolatedAsyncioTestCase):
         assert record != bx_record
 
     async def test_save_error_state(self):
-        session = InMemoryProfile.test_session()
+        self.profile = await create_test_profile()
         record = V10PresentationExchange(state=None)
         assert record._last_state is None
-        await record.save_error_state(session)  # cover short circuit
+        async with self.profile.session() as session:
+            await record.save_error_state(session)  # cover short circuit
 
-        record.state = V10PresentationExchange.STATE_PROPOSAL_RECEIVED
-        await record.save(session)
+            record.state = V10PresentationExchange.STATE_PROPOSAL_RECEIVED
+            await record.save(session)
 
-        with mock.patch.object(
-            record, "save", mock.CoroutineMock()
-        ) as mock_save, mock.patch.object(
-            test_module.LOGGER, "exception", mock.MagicMock()
-        ) as mock_log_exc:
-            mock_save.side_effect = test_module.StorageError()
-            await record.save_error_state(session, reason="testing")
-            mock_log_exc.assert_called_once()
+            with mock.patch.object(
+                record, "save", mock.CoroutineMock()
+            ) as mock_save, mock.patch.object(
+                test_module.LOGGER, "exception", mock.MagicMock()
+            ) as mock_log_exc:
+                mock_save.side_effect = test_module.StorageError()
+                await record.save_error_state(session, reason="testing")
+                mock_log_exc.assert_called_once()

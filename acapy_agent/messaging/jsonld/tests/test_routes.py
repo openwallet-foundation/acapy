@@ -6,14 +6,12 @@ import pytest
 from aiohttp import web
 from pyld import jsonld
 
-from acapy_agent.tests import mock
-
 from ....admin.request_context import AdminRequestContext
 from ....config.base import InjectionError
-from ....core.in_memory import InMemoryProfile
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
-from ....vc.ld_proofs.document_loader import DocumentLoader
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.error import WalletError
@@ -24,7 +22,6 @@ from ..error import (
     DroppedAttributeError,
     MissingVerificationMethodError,
 )
-from .document_loader import custom_document_loader
 
 
 @pytest.fixture
@@ -85,8 +82,8 @@ def mock_verify_credential():
 
 
 @pytest.fixture
-def mock_sign_request(mock_sign_credential):
-    profile = InMemoryProfile.test_profile(
+async def mock_sign_request(mock_sign_credential):
+    profile = await create_test_profile(
         settings={
             "admin.admin_api_key": "secret-key",
         }
@@ -143,13 +140,14 @@ def request_body():
 
 
 @pytest.fixture
-def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
-    def _mock_verify_request(request_body=request_body):
-        profile = InMemoryProfile.test_profile(
-            settings={
-                "admin.admin_api_key": "secret-key",
-            }
-        )
+async def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
+    profile = await create_test_profile(
+        settings={
+            "admin.admin_api_key": "secret-key",
+        }
+    )
+
+    async def _mock_verify_request(request_body=request_body):
         context = AdminRequestContext.test_context({DIDResolver: mock_resolver}, profile)
         outbound_message_router = mock.CoroutineMock()
         request_dict = {
@@ -202,7 +200,7 @@ async def test_sign_bad_req_http_error(mock_sign_request, mock_response, error):
 
 @pytest.mark.asyncio
 async def test_verify(mock_verify_request, mock_response):
-    await test_module.verify(mock_verify_request())
+    await test_module.verify(await mock_verify_request())
     mock_response.assert_called_once_with({"valid": "fake_verify"})
 
 
@@ -219,7 +217,7 @@ async def test_verify(mock_verify_request, mock_response):
 @pytest.mark.asyncio
 async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = mock.CoroutineMock(side_effect=error())
-    await test_module.verify(mock_verify_request())
+    await test_module.verify(await mock_verify_request())
     assert "error" in mock_response.call_args[0][0]
 
 
@@ -234,7 +232,7 @@ async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
 async def test_verify_bad_req_http_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = mock.CoroutineMock(side_effect=error())
     with pytest.raises(web.HTTPForbidden):
-        await test_module.verify(mock_verify_request())
+        await test_module.verify(await mock_verify_request())
 
 
 @pytest.mark.asyncio
@@ -242,7 +240,7 @@ async def test_verify_bad_ver_meth_deref_req_error(
     mock_resolver, mock_verify_request, mock_response
 ):
     mock_resolver.dereference = mock.CoroutineMock(side_effect=ResolverError)
-    await test_module.verify(mock_verify_request())
+    await test_module.verify(await mock_verify_request())
     assert "error" in mock_response.call_args[0][0]
 
 
@@ -263,7 +261,7 @@ async def test_verify_bad_vmethod_unsupported(
 ):
     request_body["doc"]["proof"]["verificationMethod"] = vmethod
     with pytest.raises(web.HTTPBadRequest):
-        await test_module.verify(mock_verify_request(request_body))
+        await test_module.verify(await mock_verify_request(request_body))
 
 
 @pytest.mark.asyncio
@@ -282,19 +280,17 @@ def test_post_process_routes():
 
 class TestJSONLDRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
-        self.context.profile.context.injector.bind_instance(
-            DocumentLoader, custom_document_loader
-        )
-        self.context.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
-        self.did_info = await (await self.context.session()).wallet.create_local_did(
-            SOV, ED25519
-        )
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            self.did_info = await wallet.create_local_did(SOV, ED25519)
+
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -323,7 +319,7 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
                 "issuer": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
                 "issuanceDate": "2020-03-10T04:24:12.164Z",
                 "credentialSubject": {
-                    "id": ("did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
+                    "id": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
                     "degree": {
                         "type": "BachelorDegree",
                         "name": "Bachelor of Science and Arts",
@@ -453,12 +449,12 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
                         "UniversityDegreeCredential",
                     ],
                     "issuer": (
-                        "did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+                        "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                     ),
                     "issuanceDate": "2020-03-10T04:24:12.164Z",
                     "credentialSubject": {
                         "id": (
-                            "did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
+                            "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                         ),
                         "degree": {
                             "type": "BachelorDegree",

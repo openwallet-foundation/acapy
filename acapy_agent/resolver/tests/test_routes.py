@@ -5,9 +5,9 @@
 import pytest
 from pydid import DIDDocument
 
-from acapy_agent.tests import mock
-
-from ...core.in_memory import InMemoryProfile
+from ...admin.request_context import AdminRequestContext
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import routes as test_module
 from ..base import (
     DIDMethodNotSupported,
@@ -48,7 +48,7 @@ def mock_response():
 
 @pytest.fixture
 def mock_resolver(resolution_result):
-    did_resolver = mock.MagicMock()
+    did_resolver = mock.MagicMock(DIDResolver, autospec=True)
     did_resolver.resolve = mock.CoroutineMock(return_value=did_doc)
     did_resolver.resolve_with_metadata = mock.CoroutineMock(
         return_value=resolution_result
@@ -56,17 +56,20 @@ def mock_resolver(resolution_result):
     yield did_resolver
 
 
-@pytest.mark.asyncio
-async def test_resolver(mock_resolver, mock_response: mock.MagicMock, did_doc):
-    profile = InMemoryProfile.test_profile(
+@pytest.fixture
+async def profile():
+    profile = await create_test_profile(
         settings={
             "admin.admin_api_key": "secret-key",
         }
     )
-    context = profile.context
-    setattr(context, "profile", profile)
-    session = await profile.session()
-    session.context.injector.bind_instance(DIDResolver, mock_resolver)
+    yield profile
+
+
+@pytest.mark.asyncio
+async def test_resolver(profile, mock_resolver, mock_response: mock.MagicMock, did_doc):
+    profile.context.injector.bind_instance(DIDResolver, mock_resolver)
+    context = AdminRequestContext.test_context({}, profile)
 
     outbound_message_router = mock.CoroutineMock()
     request_dict = {
@@ -82,14 +85,8 @@ async def test_resolver(mock_resolver, mock_response: mock.MagicMock, did_doc):
         __getitem__=lambda _, k: request_dict[k],
         headers={"x-api-key": "secret-key"},
     )
-    with mock.patch.object(
-        context.profile,
-        "session",
-        mock.MagicMock(return_value=session),
-    ) as mock_session:
-        await test_module.resolve_did(request)
-        mock_response.call_args[0][0] == did_doc.serialize()
-        # TODO: test http response codes
+    await test_module.resolve_did(request)
+    # TODO: test http response codes
 
 
 @pytest.mark.asyncio
@@ -101,18 +98,10 @@ async def test_resolver(mock_resolver, mock_response: mock.MagicMock, did_doc):
         (ResolverError, test_module.web.HTTPInternalServerError),
     ],
 )
-async def test_resolver_not_found_error(mock_resolver, side_effect, error):
+async def test_resolver_not_found_error(profile, mock_resolver, side_effect, error):
     mock_resolver.resolve_with_metadata = mock.CoroutineMock(side_effect=side_effect())
-
-    profile = InMemoryProfile.test_profile(
-        settings={
-            "admin.admin_api_key": "secret-key",
-        }
-    )
-    context = profile.context
-    setattr(context, "profile", profile)
-    session = await profile.session()
-    session.context.injector.bind_instance(DIDResolver, mock_resolver)
+    context = AdminRequestContext.test_context({}, profile)
+    profile.context.injector.bind_instance(DIDResolver, mock_resolver)
 
     outbound_message_router = mock.CoroutineMock()
     request_dict = {
@@ -128,13 +117,8 @@ async def test_resolver_not_found_error(mock_resolver, side_effect, error):
         __getitem__=lambda _, k: request_dict[k],
         headers={"x-api-key": "secret-key"},
     )
-    with mock.patch.object(
-        context.profile,
-        "session",
-        mock.MagicMock(return_value=session),
-    ) as mock_session:
-        with pytest.raises(error):
-            await test_module.resolve_did(request)
+    with pytest.raises(error):
+        await test_module.resolve_did(request)
 
 
 @pytest.mark.asyncio

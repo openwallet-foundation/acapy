@@ -3,27 +3,25 @@ from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import ValidationError
 
-from acapy_agent.tests import mock
-
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import routes as test_module
 
 
 class TestProofRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
-        profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(profile=profile)
-        self.profile = self.context.profile
+        self.context = AdminRequestContext.test_context({}, profile=self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -142,15 +140,11 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             "referent": "myReferent1",
         }
         self.request.query = {"extra_query": {}}
-        returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_credentials_for_presentation_request_by_referent=(
-                    mock.CoroutineMock(side_effect=test_module.IndyHolderError())
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credentials_for_presentation_request_by_referent = (
+            mock.CoroutineMock(side_effect=test_module.IndyHolderError())
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
         mock_px_rec = mock.MagicMock(save_error_state=mock.CoroutineMock())
 
         with mock.patch(
@@ -176,14 +170,11 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_credentials_for_presentation_request_by_referent=mock.CoroutineMock(
-                    return_value=returned_credentials
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credentials_for_presentation_request_by_referent = (
+            mock.CoroutineMock(return_value=returned_credentials)
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with mock.patch(
             (
@@ -209,14 +200,11 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_credentials_for_presentation_request_by_referent=(
-                    mock.CoroutineMock(return_value=returned_credentials)
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credentials_for_presentation_request_by_referent = (
+            mock.CoroutineMock(return_value=returned_credentials)
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with mock.patch(
             (
@@ -313,7 +301,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         with mock.patch(
             "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
-        ) as mock_connection_record, mock.patch(
+        ), mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
@@ -363,13 +351,13 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_connection_record, mock.patch(
             "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
-        ) as mock_preview, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "messages.presentation_proposal.PresentationProposal"
             ),
             autospec=True,
-        ) as mock_proposal:
+        ):
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -385,17 +373,16 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         with mock.patch(
             "acapy_agent.connections.models.conn_record.ConnRecord",
             autospec=True,
-        ) as mock_connection_record, mock.patch(
+        ), mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
-        ) as mock_preview:
+        ):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange_record = mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = (
                 mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -419,9 +406,9 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
-        ) as mock_preview, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
@@ -433,11 +420,9 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_exchange, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce:
+        ):
             # Since we are mocking import
             importlib.reload(test_module)
-
-            mock_generate_nonce = mock.CoroutineMock()
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -470,25 +455,24 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
-        ) as mock_preview, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
-        ) as mock_presentation_exchange, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce:
+        ):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange_record = mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_request = (
                 mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -519,12 +503,12 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
-        ) as mock_preview, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
@@ -615,11 +599,11 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, mock.patch(
@@ -628,13 +612,10 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
                 "models.presentation_exchange.V10PresentationExchange"
             ),
             autospec=True,
-        ) as mock_presentation_exchange:
+        ):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_generate_nonce = mock.CoroutineMock()
-
-            mock_presentation_exchange_record = mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_request = (
                 mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -681,14 +662,14 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             "acapy_agent.protocols.present_proof.v1_0."
             "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
@@ -735,17 +716,17 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_connection_record, mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_presentation_manager, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -779,17 +760,17 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_connection_record, mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_presentation_manager, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -865,14 +846,14 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -946,7 +927,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             autospec=True,
         ) as mock_presentation_manager, mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -1010,17 +991,17 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_connection_record, mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_presentation_manager, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -1054,17 +1035,17 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_connection_record, mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_presentation_manager, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -1131,14 +1112,14 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch.object(
+        ), mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
-        ) as mock_presentation_proposal, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -1184,15 +1165,15 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_presentation_manager, mock.patch(
             "acapy_agent.indy.util.generate_pr_nonce",
             autospec=True,
-        ) as mock_generate_nonce, mock.patch(
+        ), mock.patch(
             "acapy_agent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
-        ) as mock_preview, mock.patch.object(
+        ), mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, mock.patch(
+        ), mock.patch(
             "acapy_agent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
-        ) as mock_attach_decorator, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -1340,7 +1321,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_pres_ex, mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_pres_mgr_cls, mock.patch.object(
+        ), mock.patch.object(
             test_module, "problem_report_for_record", mock.MagicMock()
         ) as mock_problem_report, mock.patch.object(
             test_module.web, "json_response"
@@ -1367,7 +1348,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         with mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_pres_mgr_cls, mock.patch(
+        ), mock.patch(
             (
                 "acapy_agent.protocols.present_proof.v1_0."
                 "models.presentation_exchange.V10PresentationExchange"
@@ -1387,7 +1368,6 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
     async def test_presentation_exchange_problem_report_x(self):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
-        magic_report = mock.MagicMock()
 
         with mock.patch(
             (
@@ -1398,11 +1378,9 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         ) as mock_pres_ex, mock.patch(
             "acapy_agent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_pres_mgr_cls, mock.patch.object(
+        ), mock.patch.object(
             test_module, "problem_report_for_record", mock.MagicMock()
-        ) as mock_problem_report, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        ), mock.patch.object(test_module.web, "json_response"):
             # Since we are mocking import
             importlib.reload(test_module)
             mock_pres_ex.retrieve_by_id = mock.CoroutineMock(

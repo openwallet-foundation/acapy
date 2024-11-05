@@ -1,17 +1,16 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-from acapy_agent.wallet.key_type import ED25519
-
-from .....core.in_memory import InMemoryProfile
-from .....wallet.in_memory import InMemoryWallet
+from .....tests import mock
+from .....utils.testing import create_test_profile
+from .....wallet.askar import AskarWallet
+from .....wallet.key_type import ED25519
 from ...error import LinkedDataProofException
 from ..wallet_key_pair import WalletKeyPair
 
 
 class TestWalletKeyPair(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
 
     async def test_sign_x_no_public_key(self):
         key_pair = WalletKeyPair(profile=self.profile, key_type=ED25519)
@@ -30,7 +29,7 @@ class TestWalletKeyPair(IsolatedAsyncioTestCase):
         signed = mock.MagicMock()
 
         with mock.patch.object(
-            InMemoryWallet,
+            AskarWallet,
             "sign_message",
             mock.CoroutineMock(return_value=signed),
         ) as sign_message:
@@ -57,7 +56,7 @@ class TestWalletKeyPair(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            InMemoryWallet,
+            AskarWallet,
             "verify_message",
             mock.CoroutineMock(return_value=True),
         ) as verify_message:

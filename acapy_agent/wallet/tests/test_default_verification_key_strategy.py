@@ -1,8 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.core.in_memory import InMemoryProfile
-from acapy_agent.did.did_key import DIDKey
-from acapy_agent.wallet.default_verification_key_strategy import (
+from ...did.did_key import DIDKey
+from ...utils.testing import create_test_profile
+from ...wallet.default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
 )
 
@@ -12,7 +12,7 @@ TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
 class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
 
     async def test_with_did_sov(self):
         strategy = DefaultVerificationKeyStrategy()

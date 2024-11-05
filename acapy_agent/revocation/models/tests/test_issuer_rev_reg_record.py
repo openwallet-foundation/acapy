@@ -3,14 +3,13 @@ import json
 from os.path import join
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ....core.in_memory import InMemoryProfile
-from ....core.in_memory.profile import InMemoryProfileSession
+from ....askar.profile import AskarProfileSession
 from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...error import RevocationError
 from .. import issuer_rev_reg_record as test_module
 from ..issuer_rev_reg_record import IssuerRevRegRecord
@@ -51,19 +50,17 @@ REV_REG_ENTRY = {
 
 class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
         self.context = self.profile.context
 
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.send_revoc_reg_def = mock.CoroutineMock()
         self.ledger.send_revoc_reg_entry = mock.CoroutineMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        TailsServer = mock.MagicMock(BaseTailsServer, autospec=True)
-        self.tails_server = TailsServer()
+        self.tails_server = mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server.upload_tails_file = mock.CoroutineMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
@@ -79,7 +76,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             await rec1.save(session, reason="another record")
             assert rec0 < rec1
 
-    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(AskarProfileSession, "handle")
     async def test_fix_ledger_entry(self, mock_handle):
         mock_cred_def = {
             "ver": "1.0",
@@ -177,10 +174,9 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                 },
             },
         )
-        _test_session = InMemoryProfile.test_session(
+        _test_profile = await create_test_profile(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
-        _test_profile = _test_session.profile
         _test_profile.context.injector.bind_instance(BaseLedger, self.ledger)
         with mock.patch.object(
             test_module.IssuerCredRevRecord,
@@ -251,7 +247,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             json.dumps(REV_REG_ENTRY),
         )
 
-        with mock.patch.object(test_module, "move", mock.MagicMock()) as mock_move:
+        with mock.patch.object(test_module, "move", mock.MagicMock()):
             await rec.generate_registry(self.profile)
 
         assert rec.revoc_reg_id == REV_REG_ID

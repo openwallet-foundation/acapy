@@ -2,16 +2,15 @@ from unittest import IsolatedAsyncioTestCase
 
 from aiohttp import web
 
-from acapy_agent.tests import mock
-
-from ...core.in_memory.profile import InMemoryProfile
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from ..decorators.auth import admin_authentication, tenant_authentication
 from ..request_context import AdminRequestContext
 
 
 class TestAdminAuthentication(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "admin_api_key",
                 "admin.admin_insecure_mode": False,
@@ -62,8 +61,8 @@ class TestAdminAuthentication(IsolatedAsyncioTestCase):
 
 
 class TestTenantAuthentication(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "admin_api_key",
                 "admin.admin_insecure_mode": False,

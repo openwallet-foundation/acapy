@@ -312,7 +312,7 @@ class AskarProfileSession(ProfileSession):
 
     def __del__(self):
         """Delete magic method."""
-        if self._handle:
+        if hasattr(self, "_handle") and self._handle:
             self._check_duration()
 
 

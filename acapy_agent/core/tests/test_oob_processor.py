@@ -2,8 +2,6 @@ import json
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
-from acapy_agent.tests import mock
-
 from ...connections.models.conn_record import ConnRecord
 from ...messaging.decorators.attach_decorator import AttachDecorator
 from ...messaging.decorators.service_decorator import ServiceDecorator
@@ -14,15 +12,16 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...storage.error import StorageNotFoundError
+from ...tests import mock
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.message import OutboundMessage
-from ..in_memory.profile import InMemoryProfile
+from ...utils.testing import create_test_profile
 from ..oob_processor import OobMessageProcessor, OobMessageProcessorError
 
 
 class TestOobProcessor(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.inbound_message_router = mock.MagicMock()
         self.oob_processor = OobMessageProcessor(
             inbound_message_router=self.inbound_message_router
@@ -40,7 +39,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             delete_record=mock.CoroutineMock(),
             save=mock.CoroutineMock(),
         )
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(self.profile)
         self.context.message = ConnectionInvitation()
 
     async def test_clean_finished_oob_record_no_multi_use_no_request_attach(self):

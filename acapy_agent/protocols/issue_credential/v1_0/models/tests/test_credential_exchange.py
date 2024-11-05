@@ -1,8 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ......core.in_memory import InMemoryProfile
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...messages.credential_proposal import CredentialProposal
 from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from .. import credential_exchange as test_module
@@ -69,19 +68,20 @@ class TestV10CredentialExchange(IsolatedAsyncioTestCase):
             assert isinstance(deser.credential_proposal_dict, CredentialProposal)
 
     async def test_save_error_state(self):
-        session = InMemoryProfile.test_session()
-        record = V10CredentialExchange(state=None)
-        assert record._last_state is None
-        await record.save_error_state(session)  # cover short circuit
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            record = V10CredentialExchange(state=None)
+            assert record._last_state is None
+            await record.save_error_state(session)  # cover short circuit
 
-        record.state = V10CredentialExchange.STATE_PROPOSAL_RECEIVED
-        await record.save(session)
+            record.state = V10CredentialExchange.STATE_PROPOSAL_RECEIVED
+            await record.save(session)
 
-        with mock.patch.object(
-            record, "save", mock.CoroutineMock()
-        ) as mock_save, mock.patch.object(
-            test_module.LOGGER, "exception", mock.MagicMock()
-        ) as mock_log_exc:
-            mock_save.side_effect = test_module.StorageError()
-            await record.save_error_state(session, reason="test")
-            mock_log_exc.assert_called_once()
+            with mock.patch.object(
+                record, "save", mock.CoroutineMock()
+            ) as mock_save, mock.patch.object(
+                test_module.LOGGER, "exception", mock.MagicMock()
+            ) as mock_log_exc:
+                mock_save.side_effect = test_module.StorageError()
+                await record.save_error_state(session, reason="test")
+                mock_log_exc.assert_called_once()

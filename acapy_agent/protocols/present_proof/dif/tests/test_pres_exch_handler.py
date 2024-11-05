@@ -1,22 +1,22 @@
+import math
 from copy import deepcopy
 from datetime import datetime
 from typing import Sequence
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from uuid_utils import uuid4
 
-from acapy_agent.tests import mock
-from acapy_agent.wallet.key_type import BLS12381G2, ED25519
-
-from .....core.in_memory import InMemoryProfile
+from .....resolver.default.key import KeyDIDResolver
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .....vc.ld_proofs import BbsBlsSignature2020
 from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .....vc.ld_proofs.document_loader import DocumentLoader
 from .....vc.ld_proofs.error import LinkedDataProofException
 from .....vc.tests.data import BBS_SIGNED_VC_MATTR
-from .....vc.tests.document_loader import custom_document_loader
 from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
@@ -24,6 +24,7 @@ from .....wallet.default_verification_key_strategy import (
 )
 from .....wallet.did_method import KEY, SOV, DIDMethods
 from .....wallet.error import WalletNotFoundError
+from .....wallet.key_type import BLS12381G2, ED25519, KeyTypes
 from .. import pres_exch_handler as test_module
 from ..pres_exch import (
     Constraints,
@@ -52,41 +53,38 @@ from .test_data import (
 )
 
 
-@pytest.fixture(scope="module")
-def profile():
-    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
-    context = profile.context
-    context.injector.bind_instance(DIDResolver, DIDResolver([]))
-    context.injector.bind_instance(DocumentLoader, custom_document_loader)
-    context.injector.bind_instance(
-        BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
-    )
-    context.settings["debug.auto_respond_presentation_request"] = True
-    return profile
-
-
-@pytest.fixture(scope="module")
-async def setup_tuple(profile):
-    async with profile.session() as session:
-        wallet = session.inject_or(BaseWallet)
-        await wallet.create_local_did(
-            method=SOV, key_type=ED25519, did="WgWxqztrNooG92RXvxSTWv"
+class TestPresExchangeHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        self.profile.context.injector.bind_instance(
+            DIDResolver, DIDResolver([KeyDIDResolver()])
         )
-        await wallet.create_local_did(
-            method=KEY,
-            key_type=BLS12381G2,
+        self.profile.context.injector.bind_instance(
+            DocumentLoader, DocumentLoader(self.profile)
         )
-        creds, pds = get_test_data()
-        return creds, pds
+        self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
+        self.profile.context.injector.bind_instance(
+            BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+        )
+        self.profile.context.settings["debug.auto_respond_presentation_request"] = True
 
+    async def setup_tuple(self, profile):
+        async with profile.session() as session:
+            wallet = session.inject_or(BaseWallet)
+            await wallet.create_local_did(
+                method=SOV, key_type=ED25519, did="WgWxqztrNooG92RXvxSTWv"
+            )
+            await wallet.create_local_did(
+                method=KEY,
+                key_type=BLS12381G2,
+            )
+            creds, pds = get_test_data()
+            return creds, pds
 
-class TestPresExchHandler:
-    @pytest.mark.asyncio
-    @pytest.mark.ursa_bbs_signatures
-    async def test_load_cred_json_a(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        # assert len(cred_list) == 6
+    async def test_load_cred_json_a(self):
+        cred_list, pd_list = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         for tmp_pd in pd_list:
             # tmp_pd is tuple of presentation_definition and expected number of VCs
             tmp_vp = await dif_pres_exch_handler.create_vp(
@@ -104,14 +102,12 @@ class TestPresExchHandler:
             else:
                 assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_load_cred_json_b(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
+    async def test_load_cred_json_b(self):
+        cred_list, pd_list = await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+            self.profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
         )
-        # assert len(cred_list) == 6
         for tmp_pd in pd_list:
             # tmp_pd is tuple of presentation_definition and expected number of VCs
             tmp_vp = await dif_pres_exch_handler.create_vp(
@@ -129,9 +125,8 @@ class TestPresExchHandler:
             else:
                 assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
-    @pytest.mark.asyncio
-    async def test_to_requirement_catch_errors(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_to_requirement_catch_errors(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_json_pd = """
             {
                 "submission_requirements": [
@@ -272,9 +267,8 @@ class TestPresExchHandler:
                 descriptors=test_pd.input_descriptors,
             )
 
-    @pytest.mark.asyncio
-    async def test_make_requirement_with_none_params(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_make_requirement_with_none_params(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_json_pd_no_sr = """
             {
                 "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -351,11 +345,10 @@ class TestPresExchHandler:
                 descriptors=test_pd.input_descriptors,
             )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_subject_is_issuer_check(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_subject_is_issuer_check(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -432,17 +425,16 @@ class TestPresExchHandler:
             }
         """
 
-        tmp_vp = await dif_pres_exch_handler.create_vp(
+        await dif_pres_exch_handler.create_vp(
             credentials=cred_list,
             pd=PresentationDefinition.deserialize(test_pd),
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_limit_disclosure_required_check(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_limit_disclosure_required_check(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -502,9 +494,8 @@ class TestPresExchHandler:
             ]
             assert cred["proof"]["type"] == "BbsBlsSignatureProof2020"
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_reveal_doc_with_frame_provided(self, profile):
+    async def test_reveal_doc_with_frame_provided(self):
         reveal_doc_frame = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -523,7 +514,9 @@ class TestPresExchHandler:
                 "@requireAll": True,
             },
         }
-        dif_pres_exch_handler = DIFPresExchHandler(profile, reveal_doc=reveal_doc_frame)
+        dif_pres_exch_handler = DIFPresExchHandler(
+            self.profile, reveal_doc=reveal_doc_frame
+        )
         test_constraint = {
             "limit_disclosure": "required",
             "fields": [
@@ -555,10 +548,9 @@ class TestPresExchHandler:
         )
         assert tmp_reveal_doc == reveal_doc_frame
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_reveal_doc_a(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_reveal_doc_a(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_constraint = {
             "limit_disclosure": "required",
             "fields": [
@@ -590,10 +582,9 @@ class TestPresExchHandler:
         )
         assert tmp_reveal_doc
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_reveal_doc_b(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_reveal_doc_b(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_credential = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -671,11 +662,10 @@ class TestPresExchHandler:
         }
         assert tmp_reveal_doc == expected_reveal_doc
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_reveal_doc_c(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_reveal_doc_c(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_constraint = {
             "limit_disclosure": "required",
             "fields": [
@@ -701,10 +691,9 @@ class TestPresExchHandler:
         )
         assert tmp_reveal_doc
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_reveal_doc_wildcard(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_reveal_doc_wildcard(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_constraint = {
             "limit_disclosure": "required",
             "fields": [
@@ -722,10 +711,10 @@ class TestPresExchHandler:
         )
         assert tmp_reveal_doc
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_number_type_check(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_number_type_check(self):
+        await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_min = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -1090,11 +1079,10 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 0
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_no_type_check(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_no_type_check(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -1147,10 +1135,9 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_edd_limit_disclosure(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_edd_limit_disclosure(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -1204,10 +1191,10 @@ class TestPresExchHandler:
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_edd_jsonld_creds(self, setup_tuple, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_edd_jsonld_creds(self):
+        await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_const_check = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -1258,11 +1245,10 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 3
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_string(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_string(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_min_length = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -1565,9 +1551,9 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_schema(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_schema(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_schema_list = SchemasInputDescriptorFilter(
             oneof_filter=True,
             uri_groups=[
@@ -1587,9 +1573,9 @@ class TestPresExchHandler:
         )
 
     @pytest.mark.ursa_bbs_signatures
-    def test_cred_schema_match_a(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_cred_schema_match_a(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_cred = deepcopy(cred_list[0])
         assert (
             dif_pres_exch_handler.credential_match_schema(
@@ -1599,10 +1585,9 @@ class TestPresExchHandler:
         )
 
     @pytest.mark.ursa_bbs_signatures
-    @pytest.mark.asyncio
-    async def test_merge_nested(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_merge_nested(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_nested_result = []
         test_dict_1 = {}
         test_dict_1["citizenship_input_1"] = [
@@ -1627,13 +1612,10 @@ class TestPresExchHandler:
         test_nested_result.append(test_dict_2)
         test_nested_result.append(test_dict_3)
 
-        tmp_result = await dif_pres_exch_handler.merge_nested_results(
-            test_nested_result, {}
-        )
+        await dif_pres_exch_handler.merge_nested_results(test_nested_result, {})
 
-    @pytest.mark.asyncio
-    async def test_merge_nested_cred_no_id(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_merge_nested_cred_no_id(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         cred_list = deepcopy(creds_with_no_id)
         cred_list[0].record_id = str(uuid4())
         cred_list[1].record_id = str(uuid4())
@@ -1656,14 +1638,12 @@ class TestPresExchHandler:
         test_nested_result.append(test_dict_2)
         test_nested_result.append(test_dict_3)
 
-        tmp_result = await dif_pres_exch_handler.merge_nested_results(
-            test_nested_result, {}
-        )
+        await dif_pres_exch_handler.merge_nested_results(test_nested_result, {})
 
     @pytest.mark.ursa_bbs_signatures
-    def test_subject_is_issuer(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_subject_is_issuer(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_cred = deepcopy(cred_list[0])
         tmp_cred.issuer_id = "4fc82e63-f897-4dad-99cc-f698dff6c425"
         tmp_cred.subject_ids.add("4fc82e63-f897-4dad-99cc-f698dff6c425")
@@ -1672,19 +1652,19 @@ class TestPresExchHandler:
         tmp_cred.issuer_id = "19b823fb-55ef-49f4-8caf-2a26b8b9286f"
         assert dif_pres_exch_handler.subject_is_issuer(tmp_cred) is False
 
-    def test_is_numeric(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_is_numeric(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         with pytest.raises(DIFPresExchError):
             dif_pres_exch_handler.is_numeric("test")
         assert dif_pres_exch_handler.is_numeric(1) == 1
-        assert dif_pres_exch_handler.is_numeric(2.20) == 2.20
-        assert dif_pres_exch_handler.is_numeric("2.20") == 2.20
+        assert math.isclose(dif_pres_exch_handler.is_numeric(2.20), 2.20)
+        assert math.isclose(dif_pres_exch_handler.is_numeric("2.20"), 2.20)
         assert dif_pres_exch_handler.is_numeric("2") == 2
         with pytest.raises(DIFPresExchError):
             dif_pres_exch_handler.is_numeric(2 + 3j)
 
-    def test_filter_no_match(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_no_match(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_filter_excl_min = Filter(exclusive_min=7)
         assert (
             dif_pres_exch_handler.exclusive_minimum_check("test", tmp_filter_excl_min)
@@ -1700,8 +1680,8 @@ class TestPresExchHandler:
         tmp_filter_max = Filter(maximum=10)
         assert dif_pres_exch_handler.maximum_check("test", tmp_filter_max) is False
 
-    def test_filter_valueerror(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_valueerror(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_filter_excl_min = Filter(exclusive_min=7, fmt="date")
         assert (
             dif_pres_exch_handler.exclusive_minimum_check("test", tmp_filter_excl_min)
@@ -1717,8 +1697,8 @@ class TestPresExchHandler:
         tmp_filter_max = Filter(maximum=10, fmt="date")
         assert dif_pres_exch_handler.maximum_check("test", tmp_filter_max) is False
 
-    def test_filter_length_check(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_length_check(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_filter_both = Filter(min_length=7, max_length=10)
         assert dif_pres_exch_handler.length_check("test12345", tmp_filter_both) is True
         tmp_filter_min = Filter(min_length=7)
@@ -1727,15 +1707,15 @@ class TestPresExchHandler:
         assert dif_pres_exch_handler.length_check("test", tmp_filter_max) is True
         assert dif_pres_exch_handler.length_check("test12", tmp_filter_min) is False
 
-    def test_filter_pattern_check(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_pattern_check(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_filter = Filter(pattern="test1|test2")
         assert dif_pres_exch_handler.pattern_check("test3", tmp_filter) is False
         tmp_filter = Filter(const="test3")
         assert dif_pres_exch_handler.pattern_check("test3", tmp_filter) is False
 
-    def test_is_len_applicable(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_is_len_applicable(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         tmp_req_a = Requirement(count=1)
         tmp_req_b = Requirement(minimum=3)
         tmp_req_c = Requirement(maximum=5)
@@ -1744,8 +1724,8 @@ class TestPresExchHandler:
         assert dif_pres_exch_handler.is_len_applicable(tmp_req_b, 2) is False
         assert dif_pres_exch_handler.is_len_applicable(tmp_req_c, 6) is False
 
-    def test_create_vcrecord(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_create_vcrecord(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_cred_dict = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -1770,10 +1750,9 @@ class TestPresExchHandler:
         test_vcrecord = dif_pres_exch_handler.create_vcrecord(test_cred_dict)
         assert isinstance(test_vcrecord, VCRecord)
 
-    @pytest.mark.asyncio
-    async def test_reveal_doc_d(self, profile):
+    async def test_reveal_doc_d(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, pres_signing_did="did:example:b34ca6cd37bbf23"
+            self.profile, pres_signing_did="did:example:b34ca6cd37bbf23"
         )
         test_constraint = {
             "limit_disclosure": "required",
@@ -1820,9 +1799,8 @@ class TestPresExchHandler:
         )
         assert tmp_reveal_doc
 
-    @pytest.mark.asyncio
-    async def test_credential_subject_as_list(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_credential_subject_as_list(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         with mock.patch.object(
             dif_pres_exch_handler, "new_credential_builder", autospec=True
         ) as mock_cred_builder:
@@ -1831,31 +1809,30 @@ class TestPresExchHandler:
                 {"credentialSubject": []}, Constraints(_fields=[])
             )
 
-    def test_invalid_number_filter(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_invalid_number_filter(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         assert not dif_pres_exch_handler.process_numeric_val(val=2, _filter=Filter())
 
-    def test_invalid_string_filter(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_invalid_string_filter(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         assert not dif_pres_exch_handler.process_string_val(val="test", _filter=Filter())
 
     @pytest.mark.ursa_bbs_signatures
-    def test_cred_schema_match_b(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        cred_list, pd_list = setup_tuple
+    async def test_cred_schema_match_b(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred_list, _ = await self.setup_tuple(self.profile)
         test_cred = deepcopy(cred_list[0])
         test_cred.schema_ids = ["https://example.org/examples/degree.json"]
         assert dif_pres_exch_handler.credential_match_schema(
             test_cred, "https://example.org/examples/degree.json"
         )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_sign_pres_no_cred_subject_id(self, profile, setup_tuple):
+    async def test_sign_pres_no_cred_subject_id(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
+            self.profile, pres_signing_did="did:sov:WgWxqztrNooG92RXvxSTWv"
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, pd_list = await self.setup_tuple(self.profile)
         tmp_pd = pd_list[3]
         tmp_creds = []
         for cred in deepcopy(cred_list):
@@ -1869,13 +1846,12 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_sign_pres_bbsbls(self, profile, setup_tuple):
+    async def test_sign_pres_bbsbls(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, pd_list = await self.setup_tuple(self.profile)
         tmp_pd = pd_list[3]
         tmp_creds = []
         for cred in deepcopy(cred_list):
@@ -1889,8 +1865,8 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    def test_create_vc_record_with_graph_struct(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    def test_create_vc_record_with_graph_struct(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_credential_dict_a = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
@@ -1964,16 +1940,14 @@ class TestPresExchHandler:
             dif_pres_exch_handler.create_vcrecord(test_credential_dict_b), VCRecord
         )
 
-    @pytest.mark.asyncio
-    async def test_get_did_info_for_did(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_get_did_info_for_did(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_did_key = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         with pytest.raises(WalletNotFoundError):
             await dif_pres_exch_handler._did_info_for_did(test_did_key)
 
-    @pytest.mark.asyncio
-    async def test_get_sign_key_credential_subject_id(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_get_sign_key_credential_subject_id(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
 
         VC_RECORDS = [
             VCRecord(
@@ -2034,9 +2008,8 @@ class TestPresExchHandler:
             assert issuer_id == "did:sov:LjgpST2rjsoxYegQDRm7EL"
             assert len(filtered_creds) == 2
 
-    @pytest.mark.asyncio
-    async def test_get_sign_key_credential_subject_id_error(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_get_sign_key_credential_subject_id_error(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
 
         VC_RECORDS = [
             VCRecord(
@@ -2098,10 +2071,9 @@ class TestPresExchHandler:
                     VC_RECORDS
                 )
 
-    @pytest.mark.asyncio
-    async def test_get_sign_key_credential_subject_id_bbsbls(self, profile):
+    async def test_get_sign_key_credential_subject_id_bbsbls(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type="BbsBlsSignature2020"
+            self.profile, proof_type="BbsBlsSignature2020"
         )
 
         VC_RECORDS = [
@@ -2164,10 +2136,9 @@ class TestPresExchHandler:
             assert len(filtered_creds) == 2
 
     @pytest.mark.ursa_bbs_signatures
-    @pytest.mark.asyncio
-    async def test_create_vp_no_issuer(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        cred_list, pd_list = setup_tuple
+    async def test_create_vp_no_issuer(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        _, pd_list = await self.setup_tuple(self.profile)
         VC_RECORDS = [
             VCRecord(
                 contexts=[
@@ -2253,13 +2224,12 @@ class TestPresExchHandler:
                     == "32f54163-7166-48f1-93d8-ff217bdb0653"
                 )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_create_vp_with_bbs_suite(self, profile, setup_tuple):
+    async def test_create_vp_with_bbs_suite(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, pd_list = await self.setup_tuple(self.profile)
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
@@ -2311,13 +2281,12 @@ class TestPresExchHandler:
                 assert vp_single["test"] == "1"
                 assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_create_vp_no_issuer_with_bbs_suite(self, profile, setup_tuple):
+    async def test_create_vp_no_issuer_with_bbs_suite(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, pd_list = await self.setup_tuple(self.profile)
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
@@ -2367,11 +2336,10 @@ class TestPresExchHandler:
                 assert vp_single["test"] == "1"
                 assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_no_filter(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_no_filter(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_no_filter = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -2418,9 +2386,9 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_with_only_string_type(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_with_only_string_type(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_filter_with_only_string_type = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -2470,8 +2438,9 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_with_only_num_type(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_with_only_num_type(self):
+        await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_filter_with_only_num_type = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -2522,11 +2491,10 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 3
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_filter_with_only_string_type_with_format(self, setup_tuple, profile):
-        cred_list, pd_list = setup_tuple
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_with_only_string_type_with_format(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_filter_with_only_string_type_with_format = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -2577,8 +2545,8 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    def test_validate_patch_catch_errors(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    def test_validate_patch_catch_errors(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         _filter = Filter(_type="string", fmt="date")
         _to_check = "test123"
         assert not dif_pres_exch_handler.validate_patch(
@@ -2589,10 +2557,9 @@ class TestPresExchHandler:
             to_check=_to_check, _filter=_filter
         )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_derive_cred_missing_credsubjectid(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_derive_cred_missing_credsubjectid(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
         {
             "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
@@ -2637,10 +2604,10 @@ class TestPresExchHandler:
             assert tmp_vc.get("credentialSubject").get("id").startswith("urn:")
             assert tmp_vc.get("credentialSubject").get("familyName") == "SMITH"
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_derive_cred_credsubjectid(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_derive_cred_credsubjectid(self):
+        await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
         {
             "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
@@ -2695,10 +2662,9 @@ class TestPresExchHandler:
             == "SMITH"
         )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_derive_nested_cred_missing_credsubjectid_a(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_derive_nested_cred_missing_credsubjectid_a(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
         {
             "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
@@ -2751,10 +2717,9 @@ class TestPresExchHandler:
             == "Bachelor of Science and Arts"
         )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_derive_nested_cred_missing_credsubjectid_b(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_derive_nested_cred_missing_credsubjectid_b(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
         {
             "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
@@ -2804,10 +2769,10 @@ class TestPresExchHandler:
             == "Contoso University"
         )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_derive_nested_cred_credsubjectid(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_derive_nested_cred_credsubjectid(self):
+        await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
         {
             "id":"32f54163-7166-48f1-93d8-ff217bdb0654",
@@ -2858,9 +2823,8 @@ class TestPresExchHandler:
             == "Bachelor of Science and Arts"
         )
 
-    @pytest.mark.asyncio
-    async def test_filter_by_field_path_match_on_proof(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_by_field_path_match_on_proof(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         field = DIFField(paths=["$.proof.proofPurpose"])
         cred = VCRecord(
             contexts=[
@@ -2887,8 +2851,8 @@ class TestPresExchHandler:
             await dif_pres_exch_handler.filter_by_field(field, cred)
 
     @pytest.mark.asyncio
-    async def test_filter_creds_record_id(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_filter_creds_record_id(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         cred_list = [
             VCRecord(
                 contexts=[
@@ -2962,10 +2926,10 @@ class TestPresExchHandler:
         assert filtered_cred_list[0].record_id in record_id_list
         assert filtered_cred_list[1].record_id in record_id_list
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_create_vp_record_ids(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_create_vp_record_ids(self):
+        await self.setup_tuple(self.profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_filter_with_only_num_type = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -3022,14 +2986,13 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 2
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_multiple_applicable_creds_with_no_id(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+    async def test_multiple_applicable_creds_with_no_id(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_creds = deepcopy(creds_with_no_id)
         test_creds[0].record_id = str(uuid4())
         test_creds[1].record_id = str(uuid4())
-        cred_list, pd_list = setup_tuple
+        _, pd_list = await self.setup_tuple(self.profile)
 
         tmp_pd = pd_list[6]
         tmp_vp = await dif_pres_exch_handler.create_vp(
@@ -3076,15 +3039,12 @@ class TestPresExchHandler:
                 == "TEST"
             )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_multiple_applicable_creds_with_no_auto_and_no_record_ids(
-        self, profile, setup_tuple
-    ):
-        cred_list, pd_list = setup_tuple
-        context = profile.context
+    async def test_multiple_applicable_creds_with_no_auto_and_no_record_ids(self):
+        cred_list, _ = await self.setup_tuple(self.profile)
+        context = self.profile.context
         context.settings = {}
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd_max_length = """
             {
                 "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
@@ -3128,19 +3088,18 @@ class TestPresExchHandler:
         """
         tmp_pd = PresentationDefinition.deserialize(test_pd_max_length)
         with pytest.raises(DIFPresExchError):
-            tmp_vp = await dif_pres_exch_handler.create_vp(
+            await dif_pres_exch_handler.create_vp(
                 credentials=cred_list,
                 pd=tmp_pd,
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_valid_a(self, profile, setup_tuple):
-        context = profile.context
+    async def test_is_holder_valid_a(self):
+        context = self.profile.context
         context.update_settings({"debug.auto_respond_presentation_request": True})
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        cred_list, pd_list = setup_tuple
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred_list, _ = await self.setup_tuple(self.profile)
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=cred_list,
             pd=is_holder_pd,
@@ -3149,11 +3108,10 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 6
         assert tmp_vp.get("proof")
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_valid_b(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        cred_list, pd_list = setup_tuple
+    async def test_is_holder_valid_b(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred_list, _ = await self.setup_tuple(self.profile)
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=cred_list,
             pd=is_holder_pd_multiple_fields_included,
@@ -3162,11 +3120,10 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 6
         assert tmp_vp.get("proof")
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_valid_c(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        cred_list, pd_list = setup_tuple
+    async def test_is_holder_valid_c(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred_list, _ = await self.setup_tuple(self.profile)
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=cred_list,
             pd=is_holder_pd_multiple_fields_excluded,
@@ -3175,13 +3132,12 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 6
         assert tmp_vp.get("proof")
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_signature_suite_mismatch(self, profile, setup_tuple):
+    async def test_is_holder_signature_suite_mismatch(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, _ = await self.setup_tuple(self.profile)
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=cred_list,
             pd=is_holder_pd,
@@ -3190,13 +3146,12 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 6
         assert not tmp_vp.get("proof")
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_subject_mismatch(self, profile, setup_tuple):
+    async def test_is_holder_subject_mismatch(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, _ = await self.setup_tuple(self.profile)
         updated_cred_list = []
         for tmp_cred in deepcopy(cred_list):
             tmp_cred.subject_ids = ["did:sov:test"]
@@ -3209,13 +3164,12 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 0
         assert not tmp_vp.get("proof")
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_missing_subject(self, profile, setup_tuple):
+    async def test_is_holder_missing_subject(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
-        cred_list, pd_list = setup_tuple
+        cred_list, _ = await self.setup_tuple(self.profile)
         tmp_cred = deepcopy(cred_list[0])
         tmp_cred.subject_ids = None
         tmp_vp = await dif_pres_exch_handler.create_vp(
@@ -3226,11 +3180,10 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 0
         assert not tmp_vp.get("proof")
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_apply_constraint_received_cred_path_update(self, profile):
+    async def test_apply_constraint_received_cred_path_update(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
@@ -3263,9 +3216,9 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_apply_constraint_received_cred_invalid(self, profile):
+    async def test_apply_constraint_received_cred_invalid(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
@@ -3319,9 +3272,9 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_apply_constraint_received_cred_valid(self, profile):
+    async def test_apply_constraint_received_cred_valid(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
 
         cred_dict = deepcopy(TEST_CRED_DICT)
@@ -3487,11 +3440,10 @@ class TestPresExchHandler:
                 constraint=constraint, cred_dict=cred_dict
             )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
-    async def test_apply_constraint_received_cred_no_sel_disc(self, profile):
+    async def test_apply_constraint_received_cred_no_sel_disc(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         constraint = {
@@ -3513,9 +3465,9 @@ class TestPresExchHandler:
                 )
 
     @pytest.mark.asyncio
-    async def test_get_updated_path(self, profile):
+    async def test_get_updated_path(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
@@ -3543,9 +3495,9 @@ class TestPresExchHandler:
         )
         assert updated_path == "$.credentialSubject.Patient[*].address.city"
 
-    def test_get_dict_keys_from_path(self, profile):
+    def test_get_dict_keys_from_path(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = {
             "id": "urn:bnid:_:c14n14",
@@ -3581,9 +3533,9 @@ class TestPresExchHandler:
         ) == ["@id"]
 
     @pytest.mark.asyncio
-    async def test_filter_by_field_keyerror(self, profile):
+    async def test_filter_by_field_keyerror(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"] = {
@@ -3604,9 +3556,9 @@ class TestPresExchHandler:
             assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 
     @pytest.mark.asyncio
-    async def test_filter_by_field_xsd_parser(self, profile):
+    async def test_filter_by_field_xsd_parser(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"] = {}
@@ -3698,9 +3650,9 @@ class TestPresExchHandler:
             field = DIFField.deserialize({"path": ["$.credentialSubject.test"]})
             assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 
-    def test_string_to_timezone_aware_datetime(self, profile):
+    def test_string_to_timezone_aware_datetime(self):
         dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
+            self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         test_datetime_str = "2021-09-28T16:09:00EUROPE/BELGRADE"
         assert isinstance(

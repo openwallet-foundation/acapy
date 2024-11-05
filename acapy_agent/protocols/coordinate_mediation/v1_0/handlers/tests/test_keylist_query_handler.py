@@ -8,6 +8,7 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from .....routing.v1_0.models.route_record import RouteRecord
 from ...messages.keylist import Keylist
 from ...messages.keylist_query import KeylistQuery
@@ -25,7 +26,7 @@ class TestKeylistQueryHandler(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
         self.session = await self.context.session()
         self.session = await self.context.session()
         self.context.message = KeylistQuery()
@@ -35,9 +36,8 @@ class TestKeylistQueryHandler(IsolatedAsyncioTestCase):
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistQueryHandler(), MockResponder()
         self.context.connection_ready = False
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(self.context, responder)
-            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_record(self):
         handler, responder = KeylistQueryHandler(), MockResponder()

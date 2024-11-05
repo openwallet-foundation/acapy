@@ -1,16 +1,14 @@
 import pytest
 
-from acapy_agent.tests import mock
-
 from .....connections.models.conn_record import ConnRecord
-from .....core.in_memory import InMemoryProfile
 from .....core.profile import Profile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
-from .....wallet.base import BaseWallet
+from .....tests import mock
+from .....utils.testing import create_test_profile
+from .....wallet.askar import AskarWallet
 from .....wallet.did_info import DIDInfo
 from .....wallet.did_method import SOV
-from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
 from ....routing.v1_0.models.route_record import RouteRecord
 from ..manager import MediationManager
@@ -45,8 +43,10 @@ def mock_responder():
 
 
 @pytest.fixture
-def profile(mock_responder: MockResponder):
-    yield InMemoryProfile.test_profile(bind={BaseResponder: mock_responder})
+async def profile(mock_responder: MockResponder):
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(BaseResponder, mock_responder)
+    yield profile
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ async def test_get_or_create_my_did_no_did(
     conn_record.my_did = None
     mock_did_info = mock.MagicMock()
     with mock.patch.object(
-        InMemoryWallet,
+        AskarWallet,
         "create_local_did",
         mock.CoroutineMock(return_value=mock_did_info),
     ) as mock_create_local_did, mock.patch.object(
@@ -98,7 +98,7 @@ async def test_get_or_create_my_did_existing_did(
     conn_record.my_did = "test-did"
     mock_did_info = mock.MagicMock(DIDInfo)
     with mock.patch.object(
-        InMemoryWallet, "get_local_did", mock.CoroutineMock(return_value=mock_did_info)
+        AskarWallet, "get_local_did", mock.CoroutineMock(return_value=mock_did_info)
     ) as mock_get_local_did:
         info = await route_manager.get_or_create_my_did(profile, conn_record)
         assert mock_did_info == info
@@ -324,7 +324,7 @@ async def test_route_connection_state_inviter_replace_key_none(
         "get_or_create_my_did",
         mock.CoroutineMock(return_value=mock_did_info),
     ), mock.patch.object(
-        InMemoryWallet,
+        AskarWallet,
         "get_public_did",
         mock.CoroutineMock(
             return_value=DIDInfo(
@@ -541,19 +541,16 @@ async def test_connection_from_recipient_key_invite(
 async def test_connection_from_recipient_key_local_did(
     profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
-    mock_provider = mock.MagicMock()
-    mock_wallet = mock.MagicMock()
-    mock_wallet.get_local_did_for_verkey = mock.CoroutineMock()
-    mock_provider.provide = mock.MagicMock(return_value=mock_wallet)
-    session = await profile.session()
-    session.context.injector.bind_provider(BaseWallet, mock_provider)
-    with mock.patch.object(
-        profile, "session", mock.MagicMock(return_value=session)
-    ), mock.patch.object(
-        ConnRecord, "retrieve_by_did", mock.CoroutineMock(return_value=conn_record)
-    ):
-        result = await route_manager.connection_from_recipient_key(profile, TEST_VERKEY)
-        assert conn_record == result
+    mock_wallet = mock.MagicMock(AskarWallet, autospec=True)
+    with mock.patch.object(AskarWallet, "get_local_did_for_verkey"):
+        profile.context.injector.bind_instance(AskarWallet, mock_wallet)
+        with mock.patch.object(
+            ConnRecord, "retrieve_by_did", mock.CoroutineMock(return_value=conn_record)
+        ):
+            result = await route_manager.connection_from_recipient_key(
+                profile, TEST_VERKEY
+            )
+            assert conn_record == result
 
 
 @pytest.mark.asyncio

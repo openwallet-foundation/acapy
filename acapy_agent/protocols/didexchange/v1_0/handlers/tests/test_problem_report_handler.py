@@ -5,15 +5,15 @@ from acapy_agent.tests import mock
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ...manager import DIDXManagerError
 from ...messages.problem_report import DIDXProblemReport
 from .. import problem_report_handler as test_module
 
 
 @pytest.fixture()
-def request_context():
-    ctx = RequestContext.test_context()
-    yield ctx
+async def request_context():
+    yield RequestContext.test_context(await create_test_profile())
 
 
 class TestDIDXProblemReportHandler:

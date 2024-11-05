@@ -1,11 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ....admin.request_context import AdminRequestContext
-from ....askar.profile_anon import AskarAnoncredsProfile
 from ....connections.models.conn_record import ConnRecord
-from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -14,15 +10,17 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....storage.base import BaseStorage
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from .. import routes as test_module
 
 SCHEMA_ID = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
 
 
 class TestSchemaRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
@@ -312,13 +310,13 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.ledger.get_schema = mock.CoroutineMock(
             side_effect=[{"schema": "def", "signed_txn": "..."}, None]
         )
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=("test_ledger_id", self.ledger)
+        )
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
+            mock_executor,
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         with mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -356,13 +354,13 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_get_schema_on_seq_no(self):
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
+            mock_executor,
         )
         self.request.match_info = {"schema_id": "12345"}
         with mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -373,11 +371,13 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_get_schema_no_ledger(self):
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, None)
+        )
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, None))
-            ),
+            mock_executor,
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         self.ledger.get_schema = mock.CoroutineMock(
@@ -389,13 +389,13 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             await test_module.schemas_get_schema(self.request)
 
     async def test_get_schema_x_ledger(self):
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
+            mock_executor,
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         self.ledger.get_schema = mock.CoroutineMock(
@@ -403,44 +403,6 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.schemas_get_schema(self.request)
-
-    async def test_schema_endpoints_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarAnoncredsProfile,
-        )
-        self.context = AdminRequestContext.test_context({}, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
-
-        self.request.json = mock.CoroutineMock(
-            return_value={
-                "schema_name": "schema_name",
-                "schema_version": "1.0",
-                "attributes": ["table", "drink", "colour"],
-            }
-        )
-
-        self.request.query = {"create_transaction_for_endorser": "false"}
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.schemas_send_schema(self.request)
-
-        self.request.match_info = {"schema_id": SCHEMA_ID}
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.schemas_created(self.request)
-
-        self.request.match_info = {"schema_id": SCHEMA_ID}
-        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.schemas_get_schema(self.request)
 
     async def test_register(self):

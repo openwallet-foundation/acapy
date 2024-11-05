@@ -6,13 +6,12 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
-from ....core.in_memory import InMemoryProfile
 from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...error import LedgerError
 from ...indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ...merkel_validation.tests.test_data import GET_NYM_REPLY
@@ -56,7 +55,8 @@ GET_NYM_INDY_VDR_REPLY = {
 @pytest.mark.indy_vdr
 class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile(bind={BaseCache: InMemoryCache()})
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(BaseCache, InMemoryCache())
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
@@ -105,12 +105,11 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             writable_ledgers=writable_ledgers,
             endorser_map=endorser_info_map,
         )
-        assert "endorser_1", "test_public_did_1" == manager.get_endorser_info_for_ledger(
-            "test_prod_1"
-        )
-        assert "endorser_2", "test_public_did_2" == manager.get_endorser_info_for_ledger(
-            "test_prod_2"
-        )
+        endorser_info_1 = manager.get_endorser_info_for_ledger("test_prod_1")
+        assert endorser_info_1 == ("endorser_1", "test_public_did_1")
+
+        endorser_info_2 = manager.get_endorser_info_for_ledger("test_prod_2")
+        assert endorser_info_2 == ("endorser_2", "test_public_did_2")
 
     async def test_get_write_ledgers(self):
         ledger_ids = await self.manager.get_write_ledgers()
@@ -137,21 +136,21 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             writable_ledgers=writable_ledgers,
             endorser_map=endorser_info_map,
         )
-        profile = InMemoryProfile.test_profile()
-        assert not profile.inject_or(BaseLedger)
+        self.profile = await create_test_profile()
+        assert not self.profile.inject_or(BaseLedger)
         assert "test_prod_2" in manager.writable_ledgers
         new_write_ledger_id = await manager.set_profile_write_ledger(
-            profile=profile, ledger_id="test_prod_2"
+            profile=self.profile, ledger_id="test_prod_2"
         )
         assert new_write_ledger_id == "test_prod_2"
-        new_write_ledger = profile.inject_or(BaseLedger)
+        new_write_ledger = self.profile.inject_or(BaseLedger)
         assert new_write_ledger.pool_name == "test_prod_2"
 
     async def test_set_profile_write_ledger_x(self):
-        profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         with self.assertRaises(MultipleLedgerManagerError) as cm:
-            new_write_ledger_id = await self.manager.set_profile_write_ledger(
-                profile=profile, ledger_id="test_non_prod_1"
+            await self.manager.set_profile_write_ledger(
+                profile=self.profile, ledger_id="test_non_prod_1"
             )
         assert "is not write configurable" in str(cm.exception.message)
 
@@ -460,11 +459,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
             mock_submit.return_value = GET_NYM_INDY_VDR_REPLY
             mock_wait.return_value = mock_submit.return_value
             mock_verify_spv_proof.return_value = False
-            with self.assertRaises(MultipleLedgerManagerError) as cm:
+            with self.assertRaises(MultipleLedgerManagerError):
                 await self.manager.lookup_did_in_configured_ledgers(
                     "Av63wJYM7xYR4AiygYq4c3", cache_did=True
                 )
-                assert "not found in any of the ledgers total: (production: " in cm
 
     @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
     @mock.patch("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool.context_close")
@@ -520,11 +518,10 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
         cache = InMemoryCache()
         await cache.set("did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "invalid_id")
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        with self.assertRaises(MultipleLedgerManagerError) as cm:
+        with self.assertRaises(MultipleLedgerManagerError):
             await self.manager.lookup_did_in_configured_ledgers(
                 "Av63wJYM7xYR4AiygYq4c3", cache_did=True
             )
-            assert "cached ledger_id invalid_id not found in either" in cm
 
     async def test_get_production_ledgers(self):
         assert len(await self.manager.get_prod_ledgers()) == 2

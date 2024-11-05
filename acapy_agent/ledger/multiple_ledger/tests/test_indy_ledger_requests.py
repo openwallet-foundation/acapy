@@ -1,8 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
-from ....core.in_memory import InMemoryProfile
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...base import BaseLedger
 from ...indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ...multiple_ledger.base_manager import (
@@ -14,7 +13,7 @@ from ..ledger_requests_executor import IndyLedgerRequestsExecutor
 
 class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.profile.settings["ledger.ledger_config_list"] = [
@@ -26,17 +25,18 @@ class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
             }
         ]
         self.ledger = IndyVdrLedger(IndyVdrLedgerPool("test_prod_1"), self.profile)
+        mock_ledger_manger = mock.MagicMock(BaseMultipleLedgerManager, autospec=True)
+        mock_ledger_manger.extract_did_from_identifier = mock.MagicMock(
+            return_value="WgWxqztrNooG92RXvxSTWv"
+        )
+        mock_ledger_manger.lookup_did_in_configured_ledgers = mock.CoroutineMock(
+            return_value=("test_prod_1", self.ledger)
+        )
+        mock_ledger_manger.get_ledger_inst_by_id = mock.CoroutineMock(
+            return_value=self.ledger
+        )
         self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            mock.MagicMock(
-                extract_did_from_identifier=mock.MagicMock(
-                    return_value="WgWxqztrNooG92RXvxSTWv"
-                ),
-                lookup_did_in_configured_ledgers=mock.CoroutineMock(
-                    return_value=("test_prod_1", self.ledger)
-                ),
-                get_ledger_inst_by_id=mock.CoroutineMock(return_value=self.ledger),
-            ),
+            BaseMultipleLedgerManager, mock_ledger_manger
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
         self.indy_ledger_requestor = IndyLedgerRequestsExecutor(self.profile)

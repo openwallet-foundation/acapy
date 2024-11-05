@@ -1,8 +1,9 @@
 from unittest import IsolatedAsyncioTestCase, mock
 
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......utils.testing import create_test_profile
+from ......wallet.base import BaseWallet
 from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
 from .....didcomm_prefix import DIDCommPrefix
@@ -46,19 +47,20 @@ class TestConfig:
 
 class TestDIDXResponse(IsolatedAsyncioTestCase, TestConfig):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
-        self.wallet = self.session.wallet
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
 
-        self.did_info = await self.wallet.create_local_did(
-            method=SOV,
-            key_type=ED25519,
-        )
+            self.did_info = await wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+            )
 
-        did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
-        await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
-        did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
-        await did_rotate_attach.data.sign(self.did_info.verkey, self.wallet)
+            did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
+            await did_doc_attach.data.sign(self.did_info.verkey, wallet)
+            did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
+            await did_rotate_attach.data.sign(self.did_info.verkey, wallet)
 
         self.response = DIDXResponse(
             did=TestConfig.test_did,
@@ -106,19 +108,20 @@ class TestDIDXResponseSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test response schema."""
 
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
-        self.wallet = self.session.wallet
+        self.profile = await create_test_profile()
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
 
-        self.did_info = await self.wallet.create_local_did(
-            method=SOV,
-            key_type=ED25519,
-        )
+            self.did_info = await wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+            )
 
-        did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
-        await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
-        did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
-        await did_rotate_attach.data.sign(self.did_info.verkey, self.wallet)
+            did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
+            await did_doc_attach.data.sign(self.did_info.verkey, wallet)
+            did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
+            await did_rotate_attach.data.sign(self.did_info.verkey, wallet)
 
         self.response = DIDXResponse(
             did=TestConfig.test_did,

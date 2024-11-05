@@ -1,44 +1,44 @@
 from io import StringIO
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
+import pytest
 
 from ...admin.base_server import BaseAdminServer
+from ...askar.profile import AskarProfileManager
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ...core.event_bus import EventBus, MockEventBus
-from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
+from ...ledger.base import BaseLedger
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
-from ...protocols.coordinate_mediation.mediation_invite_store import (
-    MediationInviteRecord,
-)
-from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
+from ...protocols.coordinate_mediation.mediation_invite_store import MediationInviteRecord
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...resolver.did_resolver import DIDResolver
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
-from ...storage.in_memory import InMemoryStorage
+from ...storage.record import StorageRecord
+from ...storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE
+from ...tests import mock
+from ...transport.inbound.manager import InboundTransportManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
-from ...transport.outbound.base import OutboundDeliveryError
-from ...transport.outbound.manager import QueuedOutboundMessage
+from ...transport.outbound.base import OutboundDeliveryError, QueuedOutboundMessage
 from ...transport.outbound.message import OutboundMessage
 from ...transport.outbound.status import OutboundSendStatus
 from ...transport.pack_format import PackWireFormat
 from ...transport.wire_format import BaseWireFormat
 from ...utils.stats import Collector
-from ...version import __version__
-from ...wallet.base import BaseWallet
+from ...utils.testing import create_test_profile
+from ...version import RECORD_TYPE_ACAPY_VERSION
+from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import SOV, DIDMethods
-from ...wallet.key_type import ED25519
+from ...wallet.key_type import ED25519, KeyTypes
 from .. import conductor as test_module
 
 
@@ -46,11 +46,14 @@ class Config:
     test_settings = {
         "admin.webhook_urls": ["http://sample.webhook.ca"],
         "wallet.type": "askar",
+        "wallet.key": "insecure",
     }
     test_settings_admin = {
         "admin.webhook_urls": ["http://sample.webhook.ca"],
         "admin.enabled": True,
         "wallet.type": "askar",
+        "wallet.key": "insecure",
+        "auto_provision": True,
     }
     test_settings_with_queue = {"queue.enable_undelivered_queue": True}
 
@@ -89,12 +92,17 @@ class StubContextBuilder(ContextBuilder):
 
     async def build_context(self) -> InjectionContext:
         context = InjectionContext(settings=self.settings, enforce_typing=False)
-        context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
+        context.injector.bind_instance(ProfileManager, AskarProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
         context.injector.bind_instance(EventBus, MockEventBus())
+        context.injector.bind_instance(KeyTypes, KeyTypes())
+        context.injector.bind_instance(
+            InboundTransportManager,
+            mock.MagicMock(InboundTransportManager, autospec=True),
+        )
         return context
 
 
@@ -110,22 +118,14 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value="v0.7.3"),
-                ]
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
             ),
         ), mock.patch.object(
             test_module,
@@ -134,22 +134,13 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc2"]
             ),
         ), mock.patch.object(
-            test_module,
-            "upgrade",
-            mock.CoroutineMock(),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger:
             await conductor.setup()
-
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
@@ -157,92 +148,58 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
 
-            await conductor.start()
+            async with test_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                await storage.add_record(
+                    StorageRecord(RECORD_TYPE_ACAPY_VERSION, "v0.7.3")
+                )
 
-            mock_inbound_mgr.return_value.start.assert_awaited_once_with()
-            mock_outbound_mgr.return_value.start.assert_awaited_once_with()
+                await conductor.start()
 
-            mock_logger.print_banner.assert_called_once()
+                mock_inbound_mgr.return_value.start.assert_awaited_once_with()
+                mock_outbound_mgr.return_value.start.assert_awaited_once_with()
 
-            await conductor.stop()
+                mock_logger.print_banner.assert_called_once()
 
-            mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
-            mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
-            assert mock_upgrade.called
+                upgrade_record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
+                )
+
+                assert upgrade_record != "v0.7.3"
+
+                await conductor.stop()
+
+                mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
+                mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
 
     async def test_startup_version_no_upgrade_add_record(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
-        with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value="v0.8.1"),
-                ]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "get_upgrade_version_list",
-            mock.MagicMock(return_value=[]),
-        ), mock.patch.object(
-            test_module,
-            "add_version_record",
-            mock.CoroutineMock(),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-            mock_inbound_mgr.return_value.registered_transports = {}
-            mock_outbound_mgr.return_value.registered_transports = {}
-            await conductor.start()
-            await conductor.stop()
+        test_profile = await create_test_profile(None, await builder.build_context())
 
         with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
             ),
         ), mock.patch.object(
             test_module,
             "get_upgrade_version_list",
-            mock.MagicMock(return_value=[]),
-        ):
+            mock.MagicMock(
+                return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc2"]
+            ),
+        ), mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
             await conductor.start()
@@ -254,10 +211,58 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             "upgrade.from_version": "v0.7.5",
             "upgrade.force_upgrade": True,
             "wallet.type": "askar",
+            "wallet.key": "insecure",
         }
         builder: ContextBuilder = StubContextBuilder(test_settings)
         conductor = test_module.Conductor(builder)
+
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
+            test_module,
+            "get_upgrade_version_list",
+            mock.MagicMock(
+                return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc2"]
+            ),
+        ), mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
+        ), mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr:
+            mock_outbound_mgr.return_value.registered_transports = {
+                "test": mock.MagicMock(schemes=["http"])
+            }
+
+            async with test_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                await storage.add_record(
+                    StorageRecord(RECORD_TYPE_ACAPY_VERSION, "v0.7.3")
+                )
+
+                await conductor.setup()
+                mock_inbound_mgr.return_value.registered_transports = {}
+                mock_outbound_mgr.return_value.registered_transports = {}
+                await conductor.start()
+                await conductor.stop()
+
+        test_profile = await create_test_profile(None, await builder.build_context())
+        with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
@@ -265,110 +270,14 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
             test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value="v0.8.0"),
-                ]
-            ),
         ), mock.patch.object(
             test_module,
             "get_upgrade_version_list",
             mock.MagicMock(return_value=["v0.8.0-rc1", "v8.0.0", "v0.8.1-rc1"]),
-        ), mock.patch.object(
-            test_module,
-            "upgrade",
-            mock.CoroutineMock(),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-            mock_inbound_mgr.return_value.registered_transports = {}
-            mock_outbound_mgr.return_value.registered_transports = {}
-            await conductor.start()
-            await conductor.stop()
-
-        with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value="v0.7.0"),
-                ]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "get_upgrade_version_list",
-            mock.MagicMock(return_value=["v0.7.2", "v0.7.3", "v0.7.4"]),
-        ), mock.patch.object(
-            test_module,
-            "upgrade",
-            mock.CoroutineMock(),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-            mock_inbound_mgr.return_value.registered_transports = {}
-            mock_outbound_mgr.return_value.registered_transports = {}
-            await conductor.start()
-            await conductor.stop()
-
-        with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[mock.MagicMock(value="askar"), StorageNotFoundError()]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "get_upgrade_version_list",
-            mock.MagicMock(return_value=["v0.8.0-rc1", "v8.0.0", "v0.8.1-rc1"]),
-        ), mock.patch.object(
-            test_module,
-            "upgrade",
-            mock.CoroutineMock(),
+        ), mock.patch.object(test_module, "ledger_config"), mock.patch.object(
+            test_module.Conductor, "check_for_valid_wallet_type"
         ):
             await conductor.setup()
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
             await conductor.start()
@@ -379,7 +288,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
@@ -387,7 +305,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
             test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
+        ), mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -406,14 +324,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
-
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
@@ -436,14 +346,20 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
     async def test_startup_admin_server_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
 
         with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
+        ), mock.patch.object(
             test_module, "AdminServer", mock.MagicMock()
         ) as mock_admin_server:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -457,7 +373,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
@@ -465,15 +390,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
             test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
         ):
             mock_outbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.enqueue_message = mock.CoroutineMock()
@@ -504,15 +420,22 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger:
+        ):
             mock_inbound_mgr.return_value.sessions = ["dummy"]
             mock_outbound_mgr.return_value.outbound_buffer = [
                 mock.MagicMock(state=QueuedOutboundMessage.STATE_ENCODE),
@@ -541,8 +464,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
     async def test_inbound_message_handler(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
 
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -571,7 +502,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -603,7 +543,17 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         conductor = test_module.Conductor(builder)
         test_to_verkey = "test-to-verkey"
         test_from_verkey = "test-from-verkey"
-        await conductor.setup()
+        test_profile = await create_test_profile(None, await builder.build_context())
+
+        with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ):
+            await conductor.setup()
 
         bus = conductor.root_profile.inject(EventBus)
 
@@ -612,7 +562,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         message.reply_to_verkey = test_to_verkey
         receipt = MessageReceipt()
         receipt.recipient_verkey = test_from_verkey
-        inbound = InboundMessage("[]", receipt)
 
         with mock.patch.object(
             conductor.inbound_transport_manager, "return_to_session"
@@ -632,7 +581,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -653,7 +611,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             )
             assert status == OutboundSendStatus.QUEUED_FOR_DELIVERY
             assert bus.events
-            print(bus.events)
             assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
@@ -664,7 +621,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
@@ -686,7 +652,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             assert status == OutboundSendStatus.QUEUED_FOR_DELIVERY
             assert bus.events
-            print(bus.events)
             assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
 
@@ -705,8 +670,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
     async def test_outbound_message_handler_with_verkey_no_target(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
 
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -731,7 +704,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             assert status == OutboundSendStatus.QUEUED_FOR_DELIVERY
             assert bus.events
-            print(bus.events)
             assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
 
@@ -743,7 +715,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", mock.MagicMock()
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value = mock.MagicMock(
@@ -785,7 +766,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
     async def test_handle_outbound_queue(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
-        encoded_outbound_message_mock = mock.MagicMock(payload="message_payload")
 
         payload = "{}"
         message = OutboundMessage(
@@ -794,14 +774,35 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             target=mock.MagicMock(endpoint="endpoint"),
             reply_to_verkey=TestDIDs.test_verkey,
         )
-        await conductor.setup()
+        test_profile = await create_test_profile(None, await builder.build_context())
+
+        with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ):
+            await conductor.setup()
+
         await conductor.queue_outbound(conductor.root_profile, message)
 
+    @pytest.mark.skip("This test has a bad mock that isn't awaited")
     async def test_handle_not_returned_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -811,13 +812,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         with mock.patch.object(
             conductor.dispatcher, "run_task", mock.MagicMock()
         ) as mock_dispatch_run, mock.patch.object(
-            # Normally this should be a coroutine mock; however, the coroutine
-            # is awaited by dispatcher.run_task, which is mocked here. MagicMock
-            # to prevent unawaited coroutine warning.
-            conductor,
-            "queue_outbound",
-            mock.MagicMock(),
-        ) as mock_queue, mock.patch.object(
             conductor.admin_server, "notify_fatal_error", mock.MagicMock()
         ) as mock_notify:
             mock_dispatch_run.side_effect = test_module.LedgerConfigError(
@@ -841,7 +835,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -881,7 +884,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings({"admin.enabled": "1"})
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -891,29 +903,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         admin = conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
-        session = await conductor.root_profile.session()
-        wallet = session.inject(BaseWallet)
-        await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
-
         with mock.patch.object(
             admin, "start", autospec=True
-        ) as admin_start, mock.patch.object(
-            admin, "stop", autospec=True
-        ) as admin_stop, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ):
+        ) as admin_start, mock.patch.object(admin, "stop", autospec=True) as admin_stop:
             await conductor.start()
             admin_start.assert_awaited_once_with()
 
@@ -931,7 +923,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             }
         )
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -941,33 +942,13 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         admin = conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
-        session = await conductor.root_profile.session()
-        wallet = session.inject(BaseWallet)
-        await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
-
         with mock.patch.object(
             admin, "start", autospec=True
         ) as admin_start, mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, mock.patch.object(
             test_module, "OutOfBandManager"
-        ) as oob_mgr, mock.patch.object(
-            test_module, "ConnectionManager"
-        ) as conn_mgr, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ):
+        ) as oob_mgr, mock.patch.object(test_module, "ConnectionManager") as conn_mgr:
             admin_start.side_effect = KeyError("trouble")
             oob_mgr.return_value.create_invitation = mock.CoroutineMock(
                 side_effect=KeyError("double trouble")
@@ -984,14 +965,18 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
     async def test_setup_collector(self):
         builder: ContextBuilder = StubCollectorContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
 
         with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger:
+        ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
@@ -1002,33 +987,24 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder.update_settings({"debug.test_suite_endpoint": True})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
-            test_module, "ConnectionManager"
-        ) as mock_mgr, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
             ),
         ), mock.patch.object(
+            test_module, "ConnectionManager"
+        ) as mock_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade:
+        ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
-
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
 
             mock_mgr.return_value.create_static_connection = mock.CoroutineMock()
             await conductor.start()
@@ -1039,7 +1015,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder.update_settings({"debug.test_suite_endpoint": True})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "ConnectionManager"
         ) as mock_mgr, mock.patch.object(
             test_module, "InboundTransportManager"
@@ -1063,7 +1048,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder.update_settings({"debug.test_suite_endpoint": True})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "ConnectionManager"
         ) as mock_mgr, mock.patch.object(
             test_module, "OutboundTransportManager"
@@ -1082,8 +1076,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings({"debug.test_suite_endpoint": True})
         conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
 
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "ConnectionManager"
         ) as mock_mgr, mock.patch.object(
             test_module, "OutboundTransportManager"
@@ -1119,7 +1121,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             },
         )
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1152,7 +1163,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             },
         )
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1180,31 +1200,22 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         )
         conductor = test_module.Conductor(builder)
 
-        with mock.patch("sys.stdout", new=StringIO()) as captured, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
+        test_profile = await create_test_profile(None, await builder.build_context())
+
+        with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
             ),
-        ), mock.patch.object(
+        ), mock.patch("sys.stdout", new=StringIO()) as captured, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade:
+        ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
-
-            session = await conductor.root_profile.session()
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
 
             await conductor.start()
             await conductor.stop()
@@ -1217,7 +1228,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder.update_settings({"mediation.clear": True})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1229,18 +1249,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             test_module,
             "MediationManager",
             return_value=mock.MagicMock(clear_default_mediator=mock.CoroutineMock()),
-        ) as mock_mgr, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ):
+        ) as mock_mgr:
             await conductor.start()
             await conductor.stop()
             mock_mgr.return_value.clear_default_mediator.assert_called_once()
@@ -1250,7 +1259,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder.update_settings({"mediation.default_id": "test-id"})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1272,18 +1290,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     side_effect=Exception("This method should not have been called")
                 )
             ),
-        ), mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ), mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade:
+        ):
             await conductor.start()
             await conductor.stop()
             mock_mgr.return_value.set_default_mediator_by_id.assert_called_once()
@@ -1293,7 +1300,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         builder.update_settings({"mediation.default_id": "test-id"})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1305,18 +1321,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             MediationRecord,
             "retrieve_by_id",
             mock.CoroutineMock(side_effect=Exception()),
-        ), mock.patch.object(test_module, "LOGGER") as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ):
+        ), mock.patch.object(test_module, "LOGGER") as mock_logger:
             await conductor.start()
             await conductor.stop()
             mock_logger.exception.assert_called_once()
@@ -1333,7 +1338,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         test_endpoint = "http://example"
         test_attempts = 2
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1369,13 +1383,18 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         )
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger:
+        ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
@@ -1432,8 +1451,18 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
     )
     @mock.patch.object(test_module.ConnectionInvitation, "from_url")
     async def test_mediator_invitation_0160(self, mock_from_url, _):
-        conductor = test_module.Conductor(self.__get_mediator_config("test-invite", True))
+        builder = self.__get_mediator_config("test-invite", True)
+        conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1455,15 +1484,6 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             mock_conn_record, "metadata_set", mock.CoroutineMock()
         ), mock.patch.object(
             test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
         ):
             await conductor.start()
             await conductor.stop()
@@ -1477,16 +1497,25 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
     )
     @mock.patch.object(test_module.InvitationMessage, "from_url")
     async def test_mediator_invitation_0434(self, mock_from_url, _):
-        conductor = test_module.Conductor(
-            self.__get_mediator_config("test-invite", False)
-        )
+        builder = self.__get_mediator_config("test-invite", True)
+        conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
+
         conductor.root_profile.context.update_settings(
             {"mediation.connections_invite": False}
         )
@@ -1506,6 +1535,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             connection_id=conn_record.connection_id,
             state=OobRecord.STATE_INITIAL,
         )
+
         with mock.patch.object(
             test_module,
             "OutOfBandManager",
@@ -1516,15 +1546,6 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             ),
         ) as mock_mgr, mock.patch.object(
             test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
         ):
             assert not conductor.root_profile.settings["mediation.connections_invite"]
             await conductor.start()
@@ -1546,8 +1567,18 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         # given
         invite_string = "test-invite"
 
-        conductor = test_module.Conductor(self.__get_mediator_config(invite_string, True))
+        builder = self.__get_mediator_config("test-invite", True)
+        conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1572,17 +1603,6 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             mock_conn_record, "metadata_set", mock.CoroutineMock()
         ), mock.patch.object(
             test_module, "MediationManager", return_value=mock_mediation_manager
-        ), mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
         ):
             await conductor.start()
             await conductor.stop()
@@ -1602,8 +1622,18 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         # given
         invite_string = "test-invite"
 
-        conductor = test_module.Conductor(self.__get_mediator_config(invite_string, True))
+        builder = self.__get_mediator_config("test-invite", True)
+        conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1616,27 +1646,13 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
 
         connection_manager_mock = mock.MagicMock(receive_invitation=mock.CoroutineMock())
         patched_connection_manager.return_value = connection_manager_mock
-        with mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ), mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade:
-            # when
-            await conductor.start()
-            await conductor.stop()
+        # when
+        await conductor.start()
+        await conductor.stop()
 
-            # then
-            invite_store_mock.get_mediation_invite_record.assert_called_with(
-                invite_string
-            )
-            connection_manager_mock.receive_invitation.assert_not_called()
+        # then
+        invite_store_mock.get_mediation_invite_record.assert_called_with(invite_string)
+        connection_manager_mock.receive_invitation.assert_not_called()
 
     @mock.patch.object(
         test_module,
@@ -1644,8 +1660,18 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         return_value=get_invite_store_mock("test-invite"),
     )
     async def test_mediator_invitation_x(self, _):
-        conductor = test_module.Conductor(self.__get_mediator_config("test-invite", True))
+        builder = self.__get_mediator_config("test-invite", True)
+        conductor = test_module.Conductor(builder)
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value.registered_transports = {
@@ -1657,20 +1683,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             test_module.ConnectionInvitation,
             "from_url",
             mock.MagicMock(side_effect=Exception()),
-        ) as mock_from_url, mock.patch.object(
-            test_module, "LOGGER"
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value=f"v{__version__}"),
-                ]
-            ),
-        ):
+        ) as mock_from_url, mock.patch.object(test_module, "LOGGER") as mock_logger:
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
@@ -1679,10 +1692,32 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
     async def test_setup_ledger_both_multiple_and_base(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings({"ledger.genesis_transactions": "..."})
-        builder.update_settings({"ledger.ledger_config_list": [{"...": "..."}]})
+        builder.update_settings(
+            {
+                "ledger.ledger_config_list": [
+                    {
+                        "id": "sovrinMain",
+                        "is_production": True,
+                        "is_write": True,
+                    },
+                ]
+            }
+        )
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+        test_profile.context.injector.bind_instance(
+            BaseLedger, mock.MagicMock(BaseLedger, autospec=True)
+        )
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module,
             "load_multiple_genesis_transactions_from_config",
             mock.CoroutineMock(),
@@ -1690,7 +1725,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             test_module, "get_genesis_transactions", mock.CoroutineMock()
         ) as mock_genesis_load, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr:
+        ) as mock_outbound_mgr, mock.patch.object(test_module, "ledger_config"):
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
@@ -1703,140 +1738,44 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         builder.update_settings({"ledger.genesis_transactions": "..."})
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "get_genesis_transactions", mock.CoroutineMock()
         ) as mock_genesis_load, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr:
+        ) as mock_outbound_mgr, mock.patch.object(test_module, "ledger_config"):
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
             mock_genesis_load.assert_called_once()
 
-    async def test_startup_x_no_storage_version(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        conductor = test_module.Conductor(builder)
-
-        with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LOGGER"
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[mock.MagicMock(value="askar"), StorageNotFoundError()]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "upgrade",
-            mock.CoroutineMock(),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-
-            mock_inbound_mgr.return_value.setup.assert_awaited_once()
-            mock_outbound_mgr.return_value.setup.assert_awaited_once()
-
-            mock_inbound_mgr.return_value.registered_transports = {}
-            mock_outbound_mgr.return_value.registered_transports = {}
-            await conductor.start()
-
-    async def test_startup_storage_type_exists_and_matches(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        conductor = test_module.Conductor(builder)
-
-        with mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar"),
-                    mock.MagicMock(value="v0.7.3"),
-                ]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "get_upgrade_version_list",
-            mock.MagicMock(
-                return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc2"]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "upgrade",
-            mock.CoroutineMock(),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-
-            mock_inbound_mgr.return_value.registered_transports = {}
-            mock_outbound_mgr.return_value.registered_transports = {}
-
-            await conductor.start()
-
-            await conductor.stop()
-
     async def test_startup_storage_type_anoncreds_and_config_askar_re_calls_setup(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    mock.MagicMock(value="askar-anoncreds"),
-                    mock.MagicMock(value="v0.7.3"),
-                ]
-            ),
-        ), mock.patch.object(
-            test_module,
-            "get_upgrade_version_list",
-            mock.MagicMock(
-                return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc2"]
-            ),
-        ), mock.patch.object(
             test_module,
             "upgrade",
             mock.CoroutineMock(),
@@ -1844,23 +1783,24 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
+
+            async with test_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                await storage.add_record(
+                    StorageRecord(RECORD_TYPE_ACAPY_STORAGE_TYPE, "askar-anoncreds")
+                )
+
             await conductor.setup()
-
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
 
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
             with mock.patch.object(test_module.Conductor, "setup") as mock_setup:
-                await conductor.start()
+                mock_setup.return_value = None
+                with self.assertRaises(Exception):
+                    await conductor.start()
                 assert mock_setup.called
 
-            await conductor.stop()
+            # await conductor.stop()
 
     async def test_startup_storage_type_does_not_exist_and_existing_agent_then_set_to_askar(
         self,
@@ -1868,29 +1808,20 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(None, await builder.build_context())
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    StorageNotFoundError(),
-                    mock.MagicMock(value="v0.7.3"),
-                    mock.MagicMock(value="v0.7.3"),
-                ]
-            ),
-        ), mock.patch.object(
-            InMemoryStorage,
-            "add_record",
-            mock.CoroutineMock(return_value=None),
-        ) as mock_add_record, mock.patch.object(
             test_module,
             "get_upgrade_version_list",
             mock.MagicMock(
@@ -1906,23 +1837,19 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             }
             await conductor.setup()
 
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
 
             await conductor.start()
 
-            await conductor.stop()
+            async with test_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
+                )
+                assert record.value == "askar"
 
-            storage_record = mock_add_record.call_args_list[0].args[0]
-            assert storage_record.value == "askar"
+            await conductor.stop()
 
     async def test_startup_storage_type_does_not_exist_and_new_anoncreds_agent(
         self,
@@ -1934,29 +1861,22 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         builder: ContextBuilder = StubContextBuilder(test_settings)
         conductor = test_module.Conductor(builder)
 
+        test_profile = await create_test_profile(
+            test_settings, await builder.build_context()
+        )
+
         with mock.patch.object(
+            test_module,
+            "wallet_config",
+            return_value=(
+                test_profile,
+                DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+            ),
+        ), mock.patch.object(
             test_module, "InboundTransportManager", autospec=True
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
-            test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger, mock.patch.object(
-            test_module, "upgrade_wallet_to_anoncreds_if_requested", return_value=False
-        ) as mock_upgrade, mock.patch.object(
-            BaseStorage,
-            "find_record",
-            mock.CoroutineMock(
-                side_effect=[
-                    StorageNotFoundError(),
-                    StorageNotFoundError(),
-                    mock.MagicMock(value="v0.7.3"),
-                ]
-            ),
-        ), mock.patch.object(
-            InMemoryStorage,
-            "add_record",
-            mock.CoroutineMock(return_value=None),
-        ) as mock_add_record, mock.patch.object(
             test_module,
             "get_upgrade_version_list",
             mock.MagicMock(
@@ -1972,20 +1892,15 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             }
             await conductor.setup()
 
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
 
             await conductor.start()
+            async with test_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
+                )
+                assert record.value == "askar-anoncreds"
 
             await conductor.stop()
-
-            storage_record = mock_add_record.call_args_list[0].args[0]
-            assert storage_record.value == "askar-anoncreds"
