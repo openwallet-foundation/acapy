@@ -31,6 +31,7 @@ from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils import general as general_utils
+from ..utils.extract_validation_error import extract_validation_error_message
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
@@ -167,11 +168,12 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             )
             raise web.HTTPNotFound(reason=str(e)) from e
         except web.HTTPUnprocessableEntity as e:
+            validation_error_message = extract_validation_error_message(e)
             LOGGER.info(
                 "Unprocessable Entity occurred during %s %s: %s",
                 request.method,
                 request.path,
-                e.reason,
+                validation_error_message,
             )
             raise
         except asyncio.CancelledError:
