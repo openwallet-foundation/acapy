@@ -4,7 +4,6 @@ from os.path import join
 from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileSession
-from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
@@ -175,10 +174,9 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                 },
             },
         )
-        _test_session = InMemoryProfile.test_session(
+        _test_profile = await create_test_profile(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
-        _test_profile = _test_session.profile
         _test_profile.context.injector.bind_instance(BaseLedger, self.ledger)
         with mock.patch.object(
             test_module.IssuerCredRevRecord,
@@ -249,7 +247,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             json.dumps(REV_REG_ENTRY),
         )
 
-        with mock.patch.object(test_module, "move", mock.MagicMock()) as mock_move:
+        with mock.patch.object(test_module, "move", mock.MagicMock()):
             await rec.generate_registry(self.profile)
 
         assert rec.revoc_reg_id == REV_REG_ID
