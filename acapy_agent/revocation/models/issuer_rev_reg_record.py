@@ -14,7 +14,11 @@ from marshmallow import fields, validate
 from uuid_utils import uuid4
 
 from ...core.profile import Profile, ProfileSession
-from ...indy.credx.issuer import CATEGORY_CRED_DEF, CATEGORY_REV_REG_DEF_PRIVATE
+from ...indy.credx.issuer import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_REV_REG,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
     IndyRevRegDef,
@@ -358,6 +362,19 @@ class IssuerRevRegRecord(BaseRecord):
 
         return rev_entry_res
 
+    def _get_revoked_discrepancies(
+        self, recs: Sequence[IssuerCredRevRecord], rev_reg_delta: dict
+    ) -> Tuple[list, int]:
+        revoked_ids = []
+        rec_count = 0
+        for rec in recs:
+            if rec.state == IssuerCredRevRecord.STATE_REVOKED:
+                revoked_ids.append(int(rec.cred_rev_id))
+                if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
+                    rec_count += 1
+
+        return revoked_ids, rec_count
+
     async def fix_ledger_entry(
         self,
         profile: Profile,
@@ -365,84 +382,88 @@ class IssuerRevRegRecord(BaseRecord):
         genesis_transactions: str,
     ) -> Tuple[dict, dict, dict]:
         """Fix the ledger entry to match wallet-recorded credentials."""
+        recovery_txn = {}
+        applied_txn = {}
+
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
         async with ledger:
             (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(self.revoc_reg_id)
 
         # get rev reg records from wallet (revocations and status)
-        recs = []
-        rec_count = 0
-        accum_count = 0
-        recovery_txn = {}
-        applied_txn = {}
         async with profile.session() as session:
             recs = await IssuerCredRevRecord.query_by_ids(
                 session, rev_reg_id=self.revoc_reg_id
             )
 
-        revoked_ids = []
-        for rec in recs:
-            if rec.state == IssuerCredRevRecord.STATE_REVOKED:
-                revoked_ids.append(int(rec.cred_rev_id))
-                if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
-                    # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
-                    rec_count += 1
+        revoked_ids, rec_count = self._get_revoked_discrepancies(recs, rev_reg_delta)
 
-        LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
-        LOGGER.debug(
-            ">>> rev_reg_record.revoc_reg_entry.value: %s",
-            self.revoc_reg_entry.value,
+        LOGGER.debug(f"Fixed entry recs count = {rec_count}")
+        LOGGER.debug(f"Rev reg entry value: {self.revoc_reg_entry.value}")
+        LOGGER.debug(f'Rev reg delta: {rev_reg_delta.get("value")}')
+
+        # No update required if no discrepancies
+        if rec_count == 0:
+            return (rev_reg_delta, {}, {})
+
+        # We have revocation discrepancies, generate the recovery txn
+        async with profile.session() as session:
+            # We need the cred_def and rev_reg_def_private to generate the recovery txn
+            issuer_rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
+                session, self.revoc_reg_id
+            )
+            cred_def_id = issuer_rev_reg_record.cred_def_id
+            cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+            rev_reg_def_private = await session.handle.fetch(
+                CATEGORY_REV_REG_DEF_PRIVATE, self.revoc_reg_id
+            )
+
+        credx_module = importlib.import_module("indy_credx")
+        cred_defn = credx_module.CredentialDefinition.load(cred_def.value_json)
+        rev_reg_defn_private = credx_module.RevocationRegistryDefinitionPrivate.load(
+            rev_reg_def_private.value_json
         )
-        LOGGER.debug('>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value"))
+        calculated_txn = await generate_ledger_rrrecovery_txn(
+            genesis_transactions,
+            self.revoc_reg_id,
+            revoked_ids,
+            cred_defn,
+            rev_reg_defn_private,
+        )
+        recovery_txn = json.loads(calculated_txn.to_json())
 
-        # if we had any revocation discrepancies, check the accumulator value
-        if rec_count > 0:
-            if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
-                self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
-            ):
-                # self.revoc_reg_entry = rev_reg_delta["value"]
-                # await self.save(session)
-                accum_count += 1
+        LOGGER.debug(f"Applying ledger update: {apply_ledger_update}")
+        if apply_ledger_update:
             async with profile.session() as session:
-                issuer_rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
-                    session, self.revoc_reg_id
+                ledger = session.inject_or(BaseLedger)
+                if not ledger:
+                    reason = "No ledger available"
+                    if not session.context.settings.get_value("wallet.type"):
+                        reason += ": missing wallet-type?"
+                    raise LedgerError(reason=reason)
+
+                async with ledger:
+                    ledger_response = await ledger.send_revoc_reg_entry(
+                        self.revoc_reg_id, "CL_ACCUM", recovery_txn
+                    )
+
+            applied_txn = ledger_response["result"]
+
+            # Update the local wallets rev reg entry with the new accumulator value
+            async with profile.session() as session:
+                rev_reg = await session.handle.fetch(
+                    CATEGORY_REV_REG, self.revoc_reg_id, for_update=True
                 )
-                cred_def_id = issuer_rev_reg_record.cred_def_id
-                _cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-                _rev_reg_def_private = await session.handle.fetch(
-                    CATEGORY_REV_REG_DEF_PRIVATE, self.revoc_reg_id
+                new_value_json = rev_reg.value_json
+                new_value_json["value"]["accum"] = applied_txn["txn"]["data"]["value"][
+                    "accum"
+                ]
+                await session.handle.replace(
+                    CATEGORY_REV_REG,
+                    rev_reg.name,
+                    json.dumps(new_value_json),
+                    rev_reg.tags,
                 )
-            credx_module = importlib.import_module("indy_credx")
-            cred_defn = credx_module.CredentialDefinition.load(_cred_def.value_json)
-            rev_reg_defn_private = credx_module.RevocationRegistryDefinitionPrivate.load(
-                _rev_reg_def_private.value_json
-            )
-            calculated_txn = await generate_ledger_rrrecovery_txn(
-                genesis_transactions,
-                self.revoc_reg_id,
-                revoked_ids,
-                cred_defn,
-                rev_reg_defn_private,
-            )
-            recovery_txn = json.loads(calculated_txn.to_json())
-
-            LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
-            if apply_ledger_update:
-                async with profile.session() as session:
-                    ledger = session.inject_or(BaseLedger)
-                    if not ledger:
-                        reason = "No ledger available"
-                        if not session.context.settings.get_value("wallet.type"):
-                            reason += ": missing wallet-type?"
-                        raise LedgerError(reason=reason)
-
-                    async with ledger:
-                        ledger_response = await ledger.send_revoc_reg_entry(
-                            self.revoc_reg_id, "CL_ACCUM", recovery_txn
-                        )
-
-                applied_txn = ledger_response["result"]
 
         return (rev_reg_delta, recovery_txn, applied_txn)
 

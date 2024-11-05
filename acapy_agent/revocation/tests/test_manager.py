@@ -93,6 +93,69 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             ["2", "1"],
         )
 
+    async def test_revoke_credential_notify(self):
+        CRED_EX_ID = "dummy-cxid"
+        CRED_REV_ID = "1"
+        mock_issuer_rev_reg_record = mock.MagicMock(
+            revoc_reg_id=REV_REG_ID,
+            tails_local_path=TAILS_LOCAL,
+            send_entry=mock.CoroutineMock(),
+            clear_pending=mock.CoroutineMock(),
+            pending_pub=["2"],
+        )
+        issuer = mock.MagicMock(IndyIssuer, autospec=True)
+        issuer.revoke_credentials = mock.CoroutineMock(
+            return_value=(
+                json.dumps(
+                    {
+                        "ver": "1.0",
+                        "value": {
+                            "prevAccum": "1 ...",
+                            "accum": "21 ...",
+                            "issued": [1],
+                        },
+                    }
+                ),
+                [],
+            )
+        )
+        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+
+        with mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "retrieve_by_cred_ex_id",
+            mock.CoroutineMock(),
+        ) as mock_retrieve, mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, mock.patch.object(
+            test_module.IssuerRevRegRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        ):
+            mock_retrieve.return_value = mock.MagicMock(
+                rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
+            )
+            mock_rev_reg = mock.MagicMock(
+                get_or_fetch_local_tails_path=mock.CoroutineMock()
+            )
+            revoc.return_value.get_issuer_rev_reg_record = mock.CoroutineMock(
+                return_value=mock_issuer_rev_reg_record
+            )
+            revoc.return_value.get_ledger_registry = mock.CoroutineMock(
+                return_value=mock_rev_reg
+            )
+
+            await self.manager.revoke_credential_by_cred_ex_id(
+                CRED_EX_ID, publish=True, notify=True
+            )
+
+        issuer.revoke_credentials.assert_awaited_once_with(
+            mock_issuer_rev_reg_record.cred_def_id,
+            mock_issuer_rev_reg_record.revoc_reg_id,
+            mock_issuer_rev_reg_record.tails_local_path,
+            ["2", "1"],
+        )
+
     async def test_revoke_credential_publish_endorser(self):
         conn_record = ConnRecord(
             their_label="Hello",

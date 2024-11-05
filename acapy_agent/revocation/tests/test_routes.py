@@ -11,10 +11,14 @@ from acapy_agent.tests import mock
 
 from ...admin.request_context import AdminRequestContext
 from ...askar.profile_anon import AskarAnoncredsProfile
+from ...ledger.base import BaseLedger
+from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManagerError
+from ...revocation.manager import RevocationManager
 from ...storage.error import StorageError
 from ...storage.in_memory import InMemoryStorage
 from .. import routes as test_module
+from ..models.issuer_rev_reg_record import IssuerRevRegRecord
 
 
 class TestRevocationRoutes(IsolatedAsyncioTestCase):
@@ -1188,6 +1192,29 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}
 
         assert "tags" in mock_app._state["swagger_dict"]
+
+    @mock.patch.object(
+        IssuerRevRegRecord, "retrieve_by_revoc_reg_id", return_value=mock.MagicMock()
+    )
+    @mock.patch.object(
+        RevocationManager, "update_rev_reg_revoked_state", return_value=(True, True, True)
+    )
+    async def test_update_rev_reg_revoked_state(self, *_):
+        self.request.query = {"apply_ledger_update": "true"}
+        self.request.match_info = {"rev_reg_id": "rev_reg_id"}
+
+        mock_ledger_manager = mock.MagicMock(BaseMultipleLedgerManager, autospec=True)
+        mock_ledger_manager.get_write_ledgers = mock.CoroutineMock("ledger")
+        self.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_ledger_manager
+        )
+
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.pool = mock.MagicMock(genesis_txns="genesis_txns")
+        self.context.injector.bind_instance(BaseLedger, mock_ledger)
+
+        result = await test_module.update_rev_reg_revoked_state(self.request)
+        assert result.status == 200
 
 
 class TestDeleteTails(IsolatedAsyncioTestCase):
