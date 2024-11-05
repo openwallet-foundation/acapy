@@ -13,8 +13,6 @@ from aiohttp import web
 from aiohttp_apispec import setup_aiohttp_apispec, validation_middleware
 from uuid_utils import uuid4
 
-from acapy_agent.wallet import singletons
-
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
@@ -35,6 +33,7 @@ from ..utils.extract_validation_error import extract_validation_error_message
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet import singletons
 from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
