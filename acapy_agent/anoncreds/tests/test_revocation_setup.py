@@ -11,7 +11,7 @@ from ..events import (
     RevRegDefFinishedEvent,
     RevRegDefFinishedPayload,
 )
-from ..models.anoncreds_revocation import RevRegDef, RevRegDefValue
+from ..models.revocation import RevRegDef, RevRegDefValue
 from ..revocation import AnonCredsRevocation
 
 

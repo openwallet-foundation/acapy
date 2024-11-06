@@ -9,11 +9,11 @@ from marshmallow import ValidationError
 
 from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from .......anoncreds.issuer import AnonCredsIssuer
-from .......anoncreds.models.anoncreds_cred_def import (
+from .......anoncreds.models.credential_definition import (
     CredDef,
     GetCredDefResult,
 )
-from .......anoncreds.models.anoncreds_revocation import (
+from .......anoncreds.models.revocation import (
     GetRevRegDefResult,
     RevRegDef,
 )

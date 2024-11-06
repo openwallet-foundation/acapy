@@ -4,7 +4,7 @@ from typing import Optional, Sequence, Union
 
 from marshmallow import EXCLUDE, fields
 
-from .......indy.models.cred_abstract import IndyKeyCorrectnessProofSchema
+from .......indy.models.cred_abstract import AnoncredsCorrectnessProofSchema
 from .......messaging.models.base import BaseModel, BaseModelSchema
 from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -65,7 +65,7 @@ class AnoncredsLinkSecretSchema(BaseModelSchema):
     )
 
     key_correctness_proof = fields.Nested(
-        IndyKeyCorrectnessProofSchema(),
+        AnoncredsCorrectnessProofSchema(),
         required=True,
         metadata={"description": "Key correctness proof"},
     )

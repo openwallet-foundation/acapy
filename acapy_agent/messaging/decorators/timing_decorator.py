@@ -11,7 +11,7 @@ from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
-from ..valid import INDY_ISO8601_DATETIME_EXAMPLE, INDY_ISO8601_DATETIME_VALIDATE
+from ..valid import ISO8601_DATETIME_EXAMPLE, ISO8601_DATETIME_VALIDATE
 
 
 class TimingDecorator(BaseModel):
@@ -62,34 +62,34 @@ class TimingDecoratorSchema(BaseModelSchema):
 
     in_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Time of message receipt",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     out_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Time of message dispatch",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     stale_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Time when message should be considered stale",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     expires_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Time when message should be considered expired",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     delay_milli = fields.Int(
@@ -102,9 +102,9 @@ class TimingDecoratorSchema(BaseModelSchema):
     )
     wait_until_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Earliest time at which to perform processing",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )

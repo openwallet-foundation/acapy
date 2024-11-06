@@ -16,8 +16,8 @@ from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
 
 from ...anoncreds.issuer import AnonCredsIssuer
-from ...anoncreds.models.anoncreds_cred_def import CredDef
-from ...anoncreds.models.anoncreds_revocation import (
+from ...anoncreds.models.credential_definition import CredDef
+from ...anoncreds.models.revocation import (
     RevList,
     RevListResult,
     RevListState,
@@ -26,7 +26,7 @@ from ...anoncreds.models.anoncreds_revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...anoncreds.models.anoncreds_schema import (
+from ...anoncreds.models.schema import (
     AnonCredsSchema,
     GetSchemaResult,
 )

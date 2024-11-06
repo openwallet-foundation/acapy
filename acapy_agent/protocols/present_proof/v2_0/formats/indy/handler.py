@@ -6,6 +6,7 @@ from typing import Mapping, Optional, Tuple
 
 from marshmallow import RAISE
 
+from ......askar.profile_anon import AskarAnoncredsProfile
 from ......core.profile import Profile
 from ......indy.holder import IndyHolder
 from ......indy.models.predicate import Predicate
@@ -154,9 +155,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_pres(pres_ex_record, request_data)
+        if isinstance(self.profile, AskarAnoncredsProfile):
+            raise V20PresFormatHandlerError(
+                "This issuer is anoncreds capable. Please use the anonreds format."
+            )
 
         requested_credentials = {}
         if not request_data:

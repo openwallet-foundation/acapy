@@ -28,14 +28,16 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ....messaging.valid import (
+    ANONCREDS_DID_EXAMPLE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
@@ -132,6 +134,36 @@ class V20CredStoreRequestSchema(OpenAPISchema):
     credential_id = fields.Str(required=False)
 
 
+class V20CredFilterAnoncredsSchema(OpenAPISchema):
+    """Anoncreds credential filtration criteria."""
+
+    cred_def_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": ANONCREDS_DID_EXAMPLE,
+        },
+    )
+    schema_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Schema identifier",
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
+        },
+    )
+    issuer_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Credential issuer DID",
+            "example": ANONCREDS_DID_EXAMPLE,
+        },
+    )
+    epoch = fields.Str(
+        required=False,
+        metadata={"description": "Credential epoch time", "example": "2021-08-24"},
+    )
+
+
 class V20CredFilterIndySchema(OpenAPISchema):
     """Indy credential filtration criteria."""
 
@@ -162,8 +194,11 @@ class V20CredFilterIndySchema(OpenAPISchema):
     )
     schema_version = fields.Str(
         required=False,
-        validate=INDY_VERSION_VALIDATE,
-        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
+        metadata={
+            "description": "Schema version",
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
+        },
     )
     issuer_did = fields.Str(
         required=False,
@@ -202,8 +237,11 @@ class V20CredFilterVCDISchema(OpenAPISchema):
     )
     schema_version = fields.Str(
         required=False,
-        validate=INDY_VERSION_VALIDATE,
-        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
+        metadata={
+            "description": "Schema version",
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
+        },
     )
     issuer_did = fields.Str(
         required=False,
@@ -215,6 +253,11 @@ class V20CredFilterVCDISchema(OpenAPISchema):
 class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
+    anoncreds = fields.Nested(
+        V20CredFilterAnoncredsSchema,
+        required=False,
+        metadata={"description": "Credential filter for anoncreds"},
+    )
     indy = fields.Nested(
         V20CredFilterIndySchema,
         required=False,

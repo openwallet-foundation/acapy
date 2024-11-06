@@ -26,8 +26,8 @@ from ....messaging.valid import (
     GENERIC_DID_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
+    RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
@@ -91,10 +91,10 @@ class CreateInvitationRequestSchema(OpenAPISchema):
 
     recipient_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Recipient public key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
             },
         ),
         required=False,
@@ -109,10 +109,10 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     )
     routing_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Routing key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
             },
         ),
         required=False,
@@ -210,10 +210,10 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     )
     my_verkey = fields.Str(
         required=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "My verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
     my_endpoint = fields.Str(
@@ -228,10 +228,10 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     )
     their_verkey = fields.Str(
         required=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Remote verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
     record = fields.Nested(ConnRecordSchema(), required=True)
@@ -245,10 +245,10 @@ class ConnectionsListQueryStringSchema(PaginatedQuerySchema):
     )
     invitation_key = fields.Str(
         required=False,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "invitation key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
     my_did = fields.Str(

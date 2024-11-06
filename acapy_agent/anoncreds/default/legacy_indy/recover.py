@@ -9,7 +9,7 @@ import base58
 import indy_vdr
 from anoncreds import RevocationRegistry, RevocationRegistryDefinition
 
-from ...models.anoncreds_revocation import RevList
+from ...models.revocation import RevList
 
 LOGGER = logging.getLogger(__name__)
 

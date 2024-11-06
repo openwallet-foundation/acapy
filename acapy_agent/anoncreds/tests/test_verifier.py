@@ -3,21 +3,21 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from ...anoncreds.models.anoncreds_cred_def import (
+from ...anoncreds.models.credential_definition import (
     CredDef,
     CredDefValue,
     CredDefValuePrimary,
     CredDefValueRevocation,
     GetCredDefResult,
 )
-from ...anoncreds.models.anoncreds_revocation import (
+from ...anoncreds.models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
     RevRegDef,
     RevRegDefValue,
 )
-from ...anoncreds.models.anoncreds_schema import (
+from ...anoncreds.models.schema import (
     AnonCredsSchema,
     GetSchemaResult,
 )

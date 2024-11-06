@@ -1,4 +1,4 @@
-"""Cred abstract artifacts to attach to RFC 453 messages."""
+"""Anoncreds Credential Offer format for v2.0 of the issue-credential protocol."""
 
 from typing import Optional, Sequence
 
@@ -6,22 +6,22 @@ from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_CRED_DEF_ID_VALIDATE,
-    INDY_SCHEMA_ID_EXAMPLE,
-    INDY_SCHEMA_ID_VALIDATE,
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_CRED_DEF_ID_VALIDATE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
+    ANONCREDS_SCHEMA_ID_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
 
 
-class IndyKeyCorrectnessProof(BaseModel):
-    """Indy key correctness proof."""
+class AnoncredsKeyCorrectnessProof(BaseModel):
+    """Anoncreds key correctness proof."""
 
     class Meta:
-        """IndyKeyCorrectnessProof metadata."""
+        """AnoncredsKeyCorrectnessProof metadata."""
 
-        schema_class = "IndyKeyCorrectnessProofSchema"
+        schema_class = "AnoncredsKeyCorrectnessProofSchema"
 
     def __init__(
         self,
@@ -30,7 +30,7 @@ class IndyKeyCorrectnessProof(BaseModel):
         xr_cap: Sequence[Sequence[str]] = None,
         **kwargs,
     ):
-        """Initialize XR cap for indy key correctness proof."""
+        """Initialize XR cap for anoncreds key correctness proof."""
         super().__init__(**kwargs)
 
         self.c = c
@@ -39,12 +39,12 @@ class IndyKeyCorrectnessProof(BaseModel):
 
 
 class AnoncredsCorrectnessProofSchema(BaseModelSchema):
-    """Indy key correctness proof schema."""
+    """Anoncreds key correctness proof schema."""
 
     class Meta:
-        """Indy key correctness proof schema metadata."""
+        """Anoncreds key correctness proof schema metadata."""
 
-        model_class = IndyKeyCorrectnessProof
+        model_class = AnoncredsKeyCorrectnessProof
         unknown = EXCLUDE
 
     c = fields.Str(
@@ -82,13 +82,13 @@ class AnoncredsCorrectnessProofSchema(BaseModelSchema):
     )
 
 
-class IndyCredAbstract(BaseModel):
-    """Indy credential abstract."""
+class AnoncredsCredentialOffer(BaseModel):
+    """Anoncreds Credential Offer."""
 
     class Meta:
-        """Indy credential abstract metadata."""
+        """AnoncredsCredentialOffer metadata."""
 
-        schema_class = "IndyCredAbstractSchema"
+        schema_class = "AnoncredsCredentialOfferSchema"
 
     def __init__(
         self,
@@ -98,16 +98,7 @@ class IndyCredAbstract(BaseModel):
         key_correctness_proof: Optional[str] = None,
         **kwargs,
     ):
-        """Initialize indy cred abstract object.
-
-        Args:
-            schema_id: schema identifier
-            cred_def_id: credential definition identifier
-            nonce: nonce
-            key_correctness_proof: key correctness proof
-            kwargs: aditional keyword arguments
-
-        """
+        """Initialize values ."""
         super().__init__(**kwargs)
         self.schema_id = schema_id
         self.cred_def_id = cred_def_id
@@ -115,31 +106,33 @@ class IndyCredAbstract(BaseModel):
         self.key_correctness_proof = key_correctness_proof
 
 
-class IndyCredAbstractSchema(BaseModelSchema):
-    """Indy credential abstract schema."""
+class AnoncredsCredentialOfferSchema(BaseModelSchema):
+    """Anoncreds Credential Offer Schema."""
 
     class Meta:
-        """Indy credential abstract schema metadata."""
+        """AnoncredsCredentialOffer schema metadata."""
 
-        model_class = IndyCredAbstract
+        model_class = AnoncredsCredentialOffer
         unknown = EXCLUDE
 
     schema_id = fields.Str(
         required=True,
-        validate=INDY_SCHEMA_ID_VALIDATE,
+        validate=ANONCREDS_SCHEMA_ID_VALIDATE,
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         },
     )
+
     cred_def_id = fields.Str(
         required=True,
-        validate=INDY_CRED_DEF_ID_VALIDATE,
+        validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
+
     nonce = fields.Str(
         required=True,
         validate=NUM_STR_WHOLE_VALIDATE,
@@ -148,6 +141,7 @@ class IndyCredAbstractSchema(BaseModelSchema):
             "example": NUM_STR_WHOLE_EXAMPLE,
         },
     )
+
     key_correctness_proof = fields.Nested(
         AnoncredsCorrectnessProofSchema(),
         required=True,
