@@ -488,7 +488,7 @@ async def main():
             alice_conn.connection_id,
             indy_conn.connection_id,
             cred_def.credential_definition_state["credential_definition_id"],
-            {"firstname": "Old", "lastname": "Builder"},
+            {"firstname": "Indy", "lastname": "Builder"},
         )
 
         # Present the the credential's attributes
