@@ -3,9 +3,11 @@ import json
 from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
+import jwt
 import pytest
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
+from marshmallow import ValidationError
 
 from ...askar.profile import AskarProfile
 from ...config.default_context import DefaultContextBuilder
@@ -13,7 +15,9 @@ from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
 from ...core.goal_code_registry import GoalCodeRegistry
 from ...core.protocol_registry import ProtocolRegistry
+from ...multitenant.error import MultitenantManagerError
 from ...storage.base import BaseStorage
+from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ...tests import mock
@@ -102,6 +106,160 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             handler = mock.CoroutineMock(side_effect=KeyError("No such thing"))
             with self.assertRaises(KeyError):
                 await test_module.ready_middleware(request, handler)
+
+    async def test_ready_middleware_http_unauthorized(self):
+        """Test handling of web.HTTPUnauthorized and related exceptions."""
+        with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
+            mock_logger.info = mock.MagicMock()
+
+            request = mock.MagicMock(
+                method="GET",
+                path="/unauthorized",
+                app=mock.MagicMock(_state={"ready": True}),
+            )
+
+            # Test web.HTTPUnauthorized
+            handler = mock.CoroutineMock(
+                side_effect=web.HTTPUnauthorized(reason="Unauthorized")
+            )
+            with self.assertRaises(web.HTTPUnauthorized):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Unauthorized access during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+            # Test jwt.InvalidTokenError
+            handler = mock.CoroutineMock(
+                side_effect=jwt.InvalidTokenError("Invalid token")
+            )
+            with self.assertRaises(web.HTTPUnauthorized):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Unauthorized access during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+            # Test InvalidTokenError
+            handler = mock.CoroutineMock(
+                side_effect=test_module.InvalidTokenError("Token error")
+            )
+            with self.assertRaises(web.HTTPUnauthorized):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Unauthorized access during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+    async def test_ready_middleware_http_bad_request(self):
+        """Test handling of web.HTTPBadRequest and MultitenantManagerError."""
+        with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
+            mock_logger.info = mock.MagicMock()
+
+            request = mock.MagicMock(
+                method="POST",
+                path="/bad-request",
+                app=mock.MagicMock(_state={"ready": True}),
+            )
+
+            # Test web.HTTPBadRequest
+            handler = mock.CoroutineMock(
+                side_effect=web.HTTPBadRequest(reason="Bad request")
+            )
+            with self.assertRaises(web.HTTPBadRequest):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Bad request during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+            # Test MultitenantManagerError
+            handler = mock.CoroutineMock(
+                side_effect=MultitenantManagerError("Multitenant error")
+            )
+            with self.assertRaises(web.HTTPBadRequest):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Bad request during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+    async def test_ready_middleware_http_not_found(self):
+        """Test handling of web.HTTPNotFound and StorageNotFoundError."""
+        with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
+            mock_logger.info = mock.MagicMock()
+
+            request = mock.MagicMock(
+                method="GET",
+                path="/not-found",
+                app=mock.MagicMock(_state={"ready": True}),
+            )
+
+            # Test web.HTTPNotFound
+            handler = mock.CoroutineMock(side_effect=web.HTTPNotFound(reason="Not found"))
+            with self.assertRaises(web.HTTPNotFound):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Not Found error occurred during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+            # Test StorageNotFoundError
+            handler = mock.CoroutineMock(
+                side_effect=StorageNotFoundError("Item not found")
+            )
+            with self.assertRaises(web.HTTPNotFound):
+                await test_module.ready_middleware(request, handler)
+            mock_logger.info.assert_called_with(
+                "Not Found error occurred during %s %s: %s",
+                request.method,
+                request.path,
+                handler.side_effect,
+            )
+
+    async def test_ready_middleware_http_unprocessable_entity(self):
+        """Test handling of web.HTTPUnprocessableEntity with nested ValidationError."""
+        with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
+            mock_logger.info = mock.MagicMock()
+            # Mock the extract_validation_error_message function
+            with mock.patch.object(
+                test_module, "extract_validation_error_message"
+            ) as mock_extract:
+                mock_extract.return_value = {"field": ["Invalid input"]}
+
+                request = mock.MagicMock(
+                    method="POST",
+                    path="/unprocessable",
+                    app=mock.MagicMock(_state={"ready": True}),
+                )
+
+                # Create a HTTPUnprocessableEntity exception with a nested ValidationError
+                validation_error = ValidationError({"field": ["Invalid input"]})
+                http_error = web.HTTPUnprocessableEntity(reason="Unprocessable Entity")
+                http_error.__cause__ = validation_error
+
+                handler = mock.CoroutineMock(side_effect=http_error)
+                with self.assertRaises(web.HTTPUnprocessableEntity):
+                    await test_module.ready_middleware(request, handler)
+                mock_extract.assert_called_once_with(http_error)
+                mock_logger.info.assert_called_with(
+                    "Unprocessable Entity occurred during %s %s: %s",
+                    request.method,
+                    request.path,
+                    mock_extract.return_value,
+                )
 
     async def get_admin_server(
         self, settings: Optional[dict] = None, context: Optional[InjectionContext] = None
