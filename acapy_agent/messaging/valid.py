@@ -366,7 +366,7 @@ class AnoncredsDID(Regexp):
     """Validate value against indy DID."""
 
     EXAMPLE = "did:(method):WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile("^(did:[a-z]:\w)?$")
+    PATTERN = re.compile("^(did:[a-z]:.+$)?$")
 
     def __init__(self):
         """Initialize the instance."""
