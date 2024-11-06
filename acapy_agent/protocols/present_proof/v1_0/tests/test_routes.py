@@ -4,8 +4,10 @@ from unittest import IsolatedAsyncioTestCase
 from marshmallow import ValidationError
 
 from .....admin.request_context import AdminRequestContext
+from .....anoncreds.models.presentation_request import (
+    AnoncredsPresentationReqAttrSpecSchema,
+)
 from .....indy.holder import IndyHolder
-from .....indy.models.proof_request import AnoncredsPresentationReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError

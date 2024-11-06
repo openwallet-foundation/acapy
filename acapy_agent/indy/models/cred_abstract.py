@@ -38,7 +38,7 @@ class IndyKeyCorrectnessProof(BaseModel):
         self.xr_cap = xr_cap
 
 
-class AnoncredsCorrectnessProofSchema(BaseModelSchema):
+class IndyKeyCorrectnessProofSchema(BaseModelSchema):
     """Indy key correctness proof schema."""
 
     class Meta:
@@ -149,7 +149,7 @@ class IndyCredAbstractSchema(BaseModelSchema):
         },
     )
     key_correctness_proof = fields.Nested(
-        AnoncredsCorrectnessProofSchema(),
+        IndyKeyCorrectnessProofSchema(),
         required=True,
         metadata={"description": "Key correctness proof"},
     )

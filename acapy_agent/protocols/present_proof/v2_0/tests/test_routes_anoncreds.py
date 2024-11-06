@@ -2263,8 +2263,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
         )
         assert pres_req_dict.get("formats")[0].attach_id == "dif"
         assert (
-            pres_req_dict.get("request_presentations_attach")[0].data.json_
-            == DIF_PROOF_REQ
+            pres_req_dict.get("request_presentations_attach")[0].content == DIF_PROOF_REQ
         )
 
     async def test_process_vcrecords_return_list(self):

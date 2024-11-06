@@ -13,9 +13,6 @@ from anoncreds import (
 )
 from base58 import alphabet
 
-from ......scenarios.examples.anoncreds_issuance_and_revocation.example import (
-    SchemaResult,
-)
 from .....anoncreds.base import AnonCredsSchemaAlreadyExists
 from .....anoncreds.default.legacy_indy import registry as test_module
 from .....anoncreds.issuer import AnonCredsIssuer
@@ -53,7 +50,7 @@ from ....models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ....models.schema import AnonCredsSchema, GetSchemaResult
+from ....models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"

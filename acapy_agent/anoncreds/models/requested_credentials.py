@@ -7,7 +7,7 @@ from ...messaging.valid import INT_EPOCH_EXAMPLE, INT_EPOCH_VALIDATE
 
 
 class AnoncredsRequestedCredsRequestedAttrSchema(OpenAPISchema):
-    """Schema for requested attributes within anoncreds requested credentials structure."""
+    """Schema for requested attributes within anoncreds requested creds structure."""
 
     cred_id = fields.Str(
         required=True,
@@ -25,7 +25,7 @@ class AnoncredsRequestedCredsRequestedAttrSchema(OpenAPISchema):
 
 
 class AnoncredsRequestedCredsRequestedPredSchema(OpenAPISchema):
-    """Schema for requested predicates within anoncreds requested credentials structure."""
+    """Schema for requested predicates within anoncreds requested creds structure."""
 
     cred_id = fields.Str(
         required=True,

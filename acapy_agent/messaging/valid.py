@@ -961,22 +961,6 @@ class IndyOrKeyDID(Regexp):
         )
 
 
-class IndyOrKeyDID(Regexp):
-    """Indy or Key DID class."""
-
-    PATTERN = "|".join(x.pattern for x in [DIDKey.PATTERN, IndyDID.PATTERN])
-    EXAMPLE = IndyDID.EXAMPLE
-
-    def __init__(
-        self,
-    ):
-        """Initialize the instance."""
-        super().__init__(
-            IndyOrKeyDID.PATTERN,
-            error="Value {input} is not in did:key or indy did format",
-        )
-
-
 # Instances for marshmallow schema specification
 INT_EPOCH_VALIDATE = IntEpoch()
 INT_EPOCH_EXAMPLE = IntEpoch.EXAMPLE

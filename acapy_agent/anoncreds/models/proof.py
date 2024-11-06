@@ -491,7 +491,7 @@ class AnoncredsProofRequestedProofRevealedAttrGroupSchema(BaseModelSchema):
         keys=fields.Str(),
         values=fields.Nested(RawEncodedSchema),
         metadata={
-            "description": "Anoncreds proof requested proof revealed attr groups group value"
+            "description": "Anoncreds proof requested proof revealed attr groups group value"  # noqa: E501
         },
     )
 
