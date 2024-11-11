@@ -43,7 +43,7 @@ class BaseVerificationKeyStrategy(ABC):
         *,
         proof_type: Optional[str] = None,
         proof_purpose: Optional[ProofPurposeStr] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Given a DID, returns the verification key ID in use.
 
         Returns None if no strategy is specified for this DID.
@@ -54,7 +54,7 @@ class BaseVerificationKeyStrategy(ABC):
         :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :returns Optional[str]: the current verkey ID
         """
-        pass
+        ...
 
 
 class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
@@ -77,7 +77,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         *,
         proof_type: Optional[str] = None,
         proof_purpose: Optional[ProofPurposeStr] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Given a did:key or did:sov, returns the verification key ID in use.
 
         Returns None if no strategy is specified for this DID.
@@ -113,7 +113,12 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
             for method in methods_or_refs
         ]
 
-        method_types = self.key_types_mapping[proof_type]
+        method_types = self.key_types_mapping.get(proof_type)
+        if not method_types:
+            raise VerificationKeyStrategyError(
+                f"proof type {proof_type} is not supported"
+            )
+
         # Filter methods by type expected for proof_type
         methods = [vm for vm in methods if vm.type in method_types]
         if not methods:
