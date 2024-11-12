@@ -508,7 +508,6 @@ async def w3c_cred_remove(request: web.BaseRequest):
     summary="Fetch W3C credentials from wallet",
 )
 @request_schema(W3CCredentialsListRequestSchema())
-@querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
 @tenant_authentication
 async def w3c_creds_list(request: web.BaseRequest):
