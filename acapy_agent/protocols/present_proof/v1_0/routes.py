@@ -36,6 +36,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....wallet.error import WalletNotFoundError
@@ -256,6 +257,23 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
             "deprecated": True,
         },
     )
+    limit = fields.Int(
+        required=False,
+        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        metadata={"description": "Number of results to return", "example": 50},
+        error_messages={
+            "validator_failed": (
+                "Value must be greater than 0 and "
+                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
+            )
+        },
+    )
+    offset = fields.Int(
+        required=False,
+        validate=lambda x: x >= 0,
+        metadata={"description": "Offset for pagination", "example": 0},
+        error_messages={"validator_failed": "Value must be 0 or greater"},
+    )
     extra_query = fields.Str(
         required=False,
         validate=INDY_EXTRA_WQL_VALIDATE,
@@ -417,8 +435,16 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    start = int(request.query.get("start", 0))
-    count = int(request.query.get("count", 10))
+    # Handle both old style start/count and new limit/offset
+    # TODO: Remove start/count and swap to PaginatedQuerySchema and get_limit_offset
+    if "limit" in request.query or "offset" in request.query:
+        # New style - use limit/offset
+        limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+        offset = int(request.query.get("offset", 0))
+    else:
+        # Old style - use start/count
+        limit = int(request.query.get("count", "10"))
+        offset = int(request.query.get("start", "0"))
 
     # url encoded json extra_query
     encoded_extra_query = request.query.get("extra_query") or "{}"
@@ -429,9 +455,9 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record._presentation_request.ser,
             presentation_referents,
-            start,
-            count,
-            extra_query,
+            offset=offset,
+            limit=limit,
+            extra_query=extra_query,
         )
     except IndyHolderError as err:
         if pres_ex_record:

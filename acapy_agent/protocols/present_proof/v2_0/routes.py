@@ -37,7 +37,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
-from ....storage.base import BaseStorage
+from ....storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE, BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
@@ -364,6 +364,23 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
             "deprecated": True,
         },
     )
+    limit = fields.Int(
+        required=False,
+        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        metadata={"description": "Number of results to return", "example": 50},
+        error_messages={
+            "validator_failed": (
+                "Value must be greater than 0 and "
+                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
+            )
+        },
+    )
+    offset = fields.Int(
+        required=False,
+        validate=lambda x: x >= 0,
+        metadata={"description": "Offset for pagination", "example": 0},
+        error_messages={"validator_failed": "Value must be 0 or greater"},
+    )
     extra_query = fields.Str(
         required=False,
         validate=INDY_EXTRA_WQL_VALIDATE,
@@ -543,8 +560,16 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    start = int(request.query.get("start", 0))
-    count = int(request.query.get("count", 10))
+    # Handle both old style start/count and new limit/offset
+    # TODO: Remove start/count and swap to PaginatedQuerySchema and get_limit_offset
+    if "limit" in request.query or "offset" in request.query:
+        # New style - use limit/offset
+        limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+        offset = int(request.query.get("offset", 0))
+    else:
+        # Old style - use start/count
+        limit = int(request.query.get("count", "10"))
+        offset = int(request.query.get("start", "0"))
 
     # url encoded json extra_query
     encoded_extra_query = request.query.get("extra_query") or "{}"
@@ -566,8 +591,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 await indy_holder.get_credentials_for_presentation_request_by_referent(
                     indy_pres_request,
                     pres_referents,
-                    offset=start,
-                    limit=count,
+                    offset=offset,
+                    limit=limit,
                     extra_query=extra_query,
                 )
             )
@@ -727,7 +752,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         search = dif_holder.search_credentials(
                             proof_types=proof_type, pd_uri_list=uri_group
                         )
-                        cred_group = await search.fetch(count)
+                        cred_group = await search.fetch(limit)
                         (
                             cred_group_vcrecord_list,
                             cred_group_vcrecord_ids_set,
@@ -741,7 +766,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         proof_types=proof_type,
                         pd_uri_list=uri_list,
                     )
-                    records = await search.fetch(count)
+                    records = await search.fetch(limit)
                 # Avoiding addition of duplicate records
                 vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
                     records, record_ids
