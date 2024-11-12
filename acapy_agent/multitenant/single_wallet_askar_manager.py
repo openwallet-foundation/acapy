@@ -74,6 +74,7 @@ class SingleWalletAskarMultitenantManager(BaseMultitenantManager):
             sub_wallet_settings = {
                 "wallet.recreate": False,
                 "wallet.seed": None,
+                "wallet.key": "",
                 "wallet.rekey": None,
                 "wallet.id": None,
                 "wallet.name": multitenant_wallet_name,
