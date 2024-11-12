@@ -2054,22 +2054,36 @@
     "/credentials" : {
       "get" : {
         "parameters" : [ {
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "default" : 10,
-            "minimum" : 1,
+            "default" : "10",
+            "pattern" : "^[1-9][0-9]*$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
             "type" : "integer"
           }
         }, {
-          "description" : "Start index",
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "default" : 0,
-            "minimum" : 0,
-            "type" : "integer"
+            "default" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
           }
         }, {
           "description" : "(JSON) WQL query",
@@ -2098,33 +2112,6 @@
     },
     "/credentials/w3c" : {
       "post" : {
-        "parameters" : [ {
-          "description" : "Maximum number to retrieve",
-          "in" : "query",
-          "name" : "count",
-          "schema" : {
-            "default" : 10,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "Start index",
-          "in" : "query",
-          "name" : "start",
-          "schema" : {
-            "default" : 0,
-            "minimum" : 0,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "(JSON) WQL query",
-          "in" : "query",
-          "name" : "wql",
-          "schema" : {
-            "pattern" : "^{.*}$",
-            "type" : "string"
-          }
-        } ],
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -4927,13 +4914,13 @@
             "type" : "string"
           }
         }, {
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "default" : 10,
-            "minimum" : 1,
-            "type" : "integer"
+            "default" : "10",
+            "pattern" : "^[1-9][0-9]*$",
+            "type" : "string"
           }
         }, {
           "description" : "(JSON) object mapping referents to extra WQL queries",
@@ -4944,6 +4931,20 @@
             "type" : "string"
           }
         }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
           "description" : "Proof request referents of interest, comma-separated",
           "in" : "query",
           "name" : "referent",
@@ -4951,13 +4952,13 @@
             "type" : "string"
           }
         }, {
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "default" : 0,
-            "minimum" : 0,
-            "type" : "integer"
+            "default" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -5347,13 +5348,13 @@
             "type" : "string"
           }
         }, {
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "in" : "query",
           "name" : "count",
           "schema" : {
-            "default" : 10,
-            "minimum" : 1,
-            "type" : "integer"
+            "default" : "10",
+            "pattern" : "^[1-9][0-9]*$",
+            "type" : "string"
           }
         }, {
           "description" : "(JSON) object mapping referents to extra WQL queries",
@@ -5364,6 +5365,20 @@
             "type" : "string"
           }
         }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
           "description" : "Proof request referents of interest, comma-separated",
           "in" : "query",
           "name" : "referent",
@@ -5371,13 +5386,13 @@
             "type" : "string"
           }
         }, {
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "in" : "query",
           "name" : "start",
           "schema" : {
-            "default" : 0,
-            "minimum" : 0,
-            "type" : "integer"
+            "default" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -8384,12 +8399,12 @@
             "type" : "string"
           },
           "kid" : {
-            "description" : "Optional kid to bind to the keypair,                 such as a verificationMethod.",
+            "description" : "Optional kid to bind to the keypair, such as a verificationMethod.",
             "example" : "did:web:example.com#key-01",
             "type" : "string"
           },
           "seed" : {
-            "description" : "Optional seed to generate the key pair.                 Must enable insecure wallet mode.",
+            "description" : "Optional seed to generate the key pair. Must enable insecure wallet mode.",
             "example" : "00000000000000000000000000000000",
             "type" : "string"
           }
@@ -8458,7 +8473,7 @@
           },
           "wallet_type" : {
             "description" : "Type of the wallet to create. Must be same as base wallet.",
-            "enum" : [ "askar", "askar-anoncreds", "in_memory" ],
+            "enum" : [ "askar", "askar-anoncreds" ],
             "example" : "askar",
             "type" : "string"
           },
@@ -9330,7 +9345,7 @@
             "type" : "string"
           },
           "mediation_id" : {
-            "description" : "Medation ID to use for endpoint information.",
+            "description" : "Mediation ID to use for endpoint information.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
             "type" : "string"
@@ -9561,47 +9576,47 @@
         "additionalProperties" : true,
         "properties" : {
           "challenge" : {
-            "description" : "The value is used once for a particular domain and window of time.                     This value is used to mitigate replay attacks.",
+            "description" : "The value is used once for a particular domain and window of time. This value is used to mitigate replay attacks.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           },
           "created" : {
-            "description" : "The date and time the proof was created is OPTIONAL and, if                     included, MUST be specified as an [XMLSCHEMA11-2]                         dateTimeStamp string",
+            "description" : "The date and time the proof was created is OPTIONAL and, if included, MUST be specified as an [XMLSCHEMA11-2] dateTimeStamp string",
             "example" : "2010-01-01T19:23:24Z",
             "type" : "string"
           },
           "cryptosuite" : {
-            "description" : "An identifier for the cryptographic suite that can be used to                     verify the proof.",
+            "description" : "An identifier for the cryptographic suite that can be used to verify the proof.",
             "example" : "eddsa-jcs-2022",
             "type" : "string"
           },
           "domain" : {
-            "description" : "It conveys one or more security domains in which the proof is                     meant to be used.",
+            "description" : "It conveys one or more security domains in which the proof is meant to be used.",
             "example" : "example.com",
             "type" : "string"
           },
           "expires" : {
-            "description" : "The expires property is OPTIONAL and, if present, specifies when                     the proof expires. If present, it MUST be an [XMLSCHEMA11-2]                         dateTimeStamp string",
+            "description" : "The expires property is OPTIONAL and, if present, specifies when the proof expires. If present, it MUST be an [XMLSCHEMA11-2] dateTimeStamp string",
             "example" : "2010-01-01T19:23:24Z",
             "type" : "string"
           },
           "id" : {
-            "description" : "An optional identifier for the proof, which MUST be a URL [URL],                     such as a UUID as a URN",
+            "description" : "An optional identifier for the proof, which MUST be a URL [URL], such as a UUID as a URN",
             "example" : "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
             "type" : "string"
           },
           "nonce" : {
-            "description" : "One use of this field is to increase privacy by decreasing                 linkability that is the result of deterministically                     generated signatures.",
+            "description" : "One use of this field is to increase privacy by decreasing linkability that is the result of deterministically generated signatures.",
             "example" : "CF69iO3nfvqRsRBNElE8b4wO39SyJHPM7Gg1nExltW5vSfQA1lvDCR/zXX1To0/4NLo==",
             "type" : "string"
           },
           "previousProof" : {
-            "description" : "Each value identifies another data integrity proof that                 MUST verify before the current proof is processed.",
+            "description" : "Each value identifies another data integrity proof that MUST verify before the current proof is processed.",
             "example" : "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
             "type" : "string"
           },
           "proofPurpose" : {
-            "description" : "The proof purpose acts as a safeguard to prevent the                 proof from being misused by being applied to a purpose other than                     the one that was intended.",
+            "description" : "The proof purpose acts as a safeguard to prevent the proof from being misused by being applied to a purpose other than the one that was intended.",
             "example" : "assertionMethod",
             "type" : "string"
           },
@@ -9611,12 +9626,12 @@
             "type" : "string"
           },
           "type" : {
-            "description" : "The specific type of proof MUST be specified as a string that maps                     to a URL [URL].",
+            "description" : "The specific type of proof MUST be specified as a string that maps to a URL [URL].",
             "example" : "DataIntegrityProof",
             "type" : "string"
           },
           "verificationMethod" : {
-            "description" : "A verification method is the means and information                 needed to verify the proof. ",
+            "description" : "A verification method is the means and information needed to verify the proof.",
             "example" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -14093,7 +14108,7 @@
       "UpdateKeyRequest" : {
         "properties" : {
           "kid" : {
-            "description" : "New kid to bind to the key pair,                 such as a verificationMethod.",
+            "description" : "New kid to bind to the key pair, such as a verificationMethod.",
             "example" : "did:web:example.com#key-02",
             "type" : "string"
           },
