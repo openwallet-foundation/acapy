@@ -132,7 +132,7 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
 
         assert not await self.holder.get_mime_type(cred_id, "name")
 
-        creds = await self.holder.get_credentials(None, None, None)
+        creds = await self.holder.get_credentials(offset=None, limit=None, wql=None)
         assert len(creds) == 1
         assert creds[0] == stored_cred
 
@@ -247,7 +247,7 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
             assert found
             stored_cred = json.loads(found)
 
-            creds = await self.holder.get_credentials(None, None, None)
+            creds = await self.holder.get_credentials(offset=None, limit=None, wql=None)
             assert len(creds) == 1
             assert creds[0] == stored_cred
 
