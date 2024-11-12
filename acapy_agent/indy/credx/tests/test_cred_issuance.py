@@ -142,9 +142,9 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
             await self.holder.get_credentials_for_presentation_request_by_referent(
                 PRES_REQ_NON_REV,
                 None,
-                0,
-                10,
-                {},
+                offset=0,
+                limit=10,
+                extra_query={},
             )
         )
         assert pres_creds == [
@@ -257,9 +257,9 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
                 await self.holder.get_credentials_for_presentation_request_by_referent(
                     PRES_REQ_REV,
                     None,
-                    0,
-                    10,
-                    {},
+                    offset=0,
+                    limit=10,
+                    extra_query={},
                 )
             )
             assert pres_creds == [
