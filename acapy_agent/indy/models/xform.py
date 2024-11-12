@@ -34,8 +34,8 @@ async def indy_proof_req_preview2indy_requested_creds(
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             presentation_request=indy_proof_req,
             referents=(referent,),
-            start=0,
-            count=100,
+            offset=0,
+            limit=100,
         )
         if not credentials:
             raise ValueError(
@@ -87,8 +87,8 @@ async def indy_proof_req_preview2indy_requested_creds(
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             presentation_request=indy_proof_req,
             referents=(referent,),
-            start=0,
-            count=100,
+            offset=0,
+            limit=100,
         )
         if not credentials:
             raise ValueError(
