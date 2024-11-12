@@ -65,7 +65,7 @@ canonicaljson = "^2.0.0"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.8.0"
 # Sync with version in .pre-commit-config.yaml
-ruff = "0.7.2"
+ruff = "0.7.3"
 
 sphinx = "^5.3.0"
 sphinx-rtd-theme = ">=0.4.3"
