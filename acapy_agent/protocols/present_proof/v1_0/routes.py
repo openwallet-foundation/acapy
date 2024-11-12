@@ -29,12 +29,12 @@ from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit
 from ....messaging.valid import (
     INDY_EXTRA_WQL_EXAMPLE,
     INDY_EXTRA_WQL_VALIDATE,
-    NATURAL_NUM_EXAMPLE,
-    NATURAL_NUM_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    WHOLE_NUM_EXAMPLE,
-    WHOLE_NUM_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
@@ -235,22 +235,25 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
             "example": "1_name_uuid,2_score_uuid",
         },
     )
-    start = fields.Int(
+    start = fields.Str(
         required=False,
-        load_default=0,
-        validate=WHOLE_NUM_VALIDATE,
+        load_default="0",
+        validate=NUM_STR_WHOLE_VALIDATE,
         metadata={
-            "description": "Start index",
-            "example": WHOLE_NUM_EXAMPLE,
+            "description": "Start index (DEPRECATED - use offset instead)",
+            "strict": True,
+            "example": NUM_STR_WHOLE_EXAMPLE,
+            "deprecated": True,
         },
     )
-    count = fields.Int(
+    count = fields.Str(
         required=False,
-        load_default=10,
-        validate=NATURAL_NUM_VALIDATE,
+        load_default="10",
+        validate=NUM_STR_NATURAL_VALIDATE,
         metadata={
-            "description": "Maximum number to retrieve",
-            "example": NATURAL_NUM_EXAMPLE,
+            "description": "Maximum number to retrieve (DEPRECATED - use limit instead)",
+            "example": NUM_STR_NATURAL_EXAMPLE,
+            "deprecated": True,
         },
     )
     extra_query = fields.Str(
