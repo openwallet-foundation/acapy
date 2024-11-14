@@ -52,7 +52,7 @@ def load_resource(path: str, encoding: Optional[str] = None):
         else:
             # Package resource
             package, resource = components
-            bstream = resources.open_binary(package, resource)
+            bstream = resources.files(package).joinpath(resource).open("rb")
             if encoding:
                 return io.TextIOWrapper(bstream, encoding=encoding)
             return bstream
