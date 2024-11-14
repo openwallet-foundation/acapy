@@ -727,7 +727,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # assert data is encoded as base64
         assert attachment.data.base64
 
-    @pytest.mark.asyncio
     async def test_match_sent_cred_def_id_error(self):
         tag_query = {"tag": "test_tag"}
 
@@ -737,7 +736,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             context.exception
         )
 
-    @pytest.mark.asyncio
     async def test_store_credential(self):
         attr_values = {
             "legalName": "value",
