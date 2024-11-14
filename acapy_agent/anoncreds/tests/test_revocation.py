@@ -1414,7 +1414,6 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert isinstance(result, tuple)
         assert mock_supports_revocation.call_count == 1
 
-    @pytest.mark.asyncio
     @mock.patch.object(AskarAnoncredsProfileSession, "handle")
     async def test_create_credential_w3c_keyerror(self, mock_handle):
         mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), MockEntry()])

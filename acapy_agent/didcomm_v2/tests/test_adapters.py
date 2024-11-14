@@ -15,7 +15,7 @@ from ...utils.testing import create_test_profile
 from ..adapters import ResolverAdapter, SecretsAdapter, SecretsAdapterError
 
 
-class TestDIDResolver(BaseDIDResolver):
+class MockDIDResolver(BaseDIDResolver):
     async def setup(self, context: InjectionContext):
         return await super().setup(context)
 
@@ -26,7 +26,7 @@ class TestDIDResolver(BaseDIDResolver):
         self,
         profile,
         did,
-        sercive_accept=None,
+        service_accept=None,
     ):
         return {"did": did, "test": "didDoc"}
 
@@ -46,7 +46,7 @@ class TestAdapters(IsolatedAsyncioTestCase):
         self.test_did = "did:test:0"
         self.invalid_did = "this shouldn't work"
         resolver = DIDResolver()
-        resolver.register_resolver(TestDIDResolver())
+        resolver.register_resolver(MockDIDResolver())
         self.res_adapter = ResolverAdapter(profile=self.profile, resolver=resolver)
 
     async def test_resolver_adapter_resolve_did(self):

@@ -11,19 +11,19 @@ import pytest
 from . import ALICE, FABER, MULTI, Agent, logger
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def faber():
     """faber agent fixture."""
     yield Agent(FABER)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def alice():
     """resolver agent fixture."""
     yield Agent(ALICE)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def multi_one():
     """resolver agent fixture."""
     agent = Agent(MULTI)
@@ -35,7 +35,7 @@ def multi_one():
     yield agent
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(loop_scope="session", autouse=True)
 def alice_faber_connection(faber, alice):
     """Established connection filter."""
     logger.info("faber create invitation to alice")
@@ -48,7 +48,7 @@ def alice_faber_connection(faber, alice):
     return result
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(loop_scope="session", autouse=True)
 def faber_alice_connection(faber, alice):
     """Established connection filter."""
     logger.info("alice create invitation to faber")
@@ -61,7 +61,7 @@ def faber_alice_connection(faber, alice):
     return result
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(loop_scope="session", autouse=True)
 def alice_multi_one_connection(multi_one, alice):
     """Established connection filter."""
     logger.info("multi_one create invitation to alice")
@@ -74,7 +74,7 @@ def alice_multi_one_connection(multi_one, alice):
     return result
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(loop_scope="session", autouse=True)
 def multi_one_alice_connection(multi_one, alice):
     """Established connection filter."""
     logger.info("alice create invitation to multi_one")

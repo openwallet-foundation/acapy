@@ -3,6 +3,7 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
+import pytest
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -27,9 +28,7 @@ from ...multitenant.manager import MultitenantManager
 from ...protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
-from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...protocols.coordinate_mediation.v1_0.route_manager import (
     CoordinateMediationV1RouteManager,
     RouteManager,
@@ -1065,6 +1064,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             await self.manager.resolve_connection_targets(did)
         assert "not supported" in str(cm.exception)
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")
     async def test_resolve_connection_targets_x_unsupported_key(self):
         did = "did:sov:" + self.test_did
         doc_builder = DIDDocumentBuilder(did)

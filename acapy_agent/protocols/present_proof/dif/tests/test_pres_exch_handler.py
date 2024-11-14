@@ -1549,7 +1549,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
         assert len(tmp_vp.get("verifiableCredential")) == 1
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_filter_schema(self):
         cred_list, _ = await self.setup_tuple(self.profile)
@@ -2384,7 +2383,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_filter_with_only_string_type(self):
         cred_list, _ = await self.setup_tuple(self.profile)
@@ -2436,7 +2434,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_filter_with_only_num_type(self):
         await self.setup_tuple(self.profile)
@@ -2850,7 +2847,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         with pytest.raises(DIFPresExchError):
             await dif_pres_exch_handler.filter_by_field(field, cred)
 
-    @pytest.mark.asyncio
     async def test_filter_creds_record_id(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         cred_list = [
@@ -3214,7 +3210,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 constraint=constraint, cred_dict=cred_dict
             )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_apply_constraint_received_cred_invalid(self):
         dif_pres_exch_handler = DIFPresExchHandler(
@@ -3270,7 +3265,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                     constraint=constraint, cred_dict=cred_dict
                 )
 
-    @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_apply_constraint_received_cred_valid(self):
         dif_pres_exch_handler = DIFPresExchHandler(
@@ -3464,7 +3458,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                     constraint=constraint, cred_dict=cred_dict
                 )
 
-    @pytest.mark.asyncio
     async def test_get_updated_path(self):
         dif_pres_exch_handler = DIFPresExchHandler(
             self.profile, proof_type=BbsBlsSignature2020.signature_type
@@ -3532,7 +3525,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             cred_dict, "credentialSubject.Patient.address"
         ) == ["@id"]
 
-    @pytest.mark.asyncio
     async def test_filter_by_field_keyerror(self):
         dif_pres_exch_handler = DIFPresExchHandler(
             self.profile, proof_type=BbsBlsSignature2020.signature_type
@@ -3555,7 +3547,6 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             )
             assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 
-    @pytest.mark.asyncio
     async def test_filter_by_field_xsd_parser(self):
         dif_pres_exch_handler = DIFPresExchHandler(
             self.profile, proof_type=BbsBlsSignature2020.signature_type

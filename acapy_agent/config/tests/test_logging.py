@@ -1,5 +1,5 @@
 import contextlib
-from io import StringIO
+from io import BufferedReader, StringIO, TextIOWrapper
 from tempfile import NamedTemporaryFile
 from unittest import IsolatedAsyncioTestCase, mock
 
@@ -110,24 +110,55 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
     def test_load_resource(self):
         # Testing local file access
         with mock.patch("builtins.open", mock.MagicMock()) as mock_open:
-            test_module.load_resource("abc", encoding="utf-8")
+            # First call succeeds
+            file_handle = mock.MagicMock(spec=TextIOWrapper)
+            mock_open.return_value = file_handle
+            result = test_module.load_resource("abc", encoding="utf-8")
+            mock_open.assert_called_once_with("abc", encoding="utf-8")
+            assert result == file_handle  # Verify the returned file handle
+
+            mock_open.reset_mock()
+            # Simulate IOError on second call
             mock_open.side_effect = IOError("insufficient privilege")
             # load_resource should absorb IOError
-            test_module.load_resource("abc", encoding="utf-8")
+            result = test_module.load_resource("abc", encoding="utf-8")
+            mock_open.assert_called_once_with("abc", encoding="utf-8")
+            assert result is None
 
         # Testing package resource access with encoding (text mode)
-        with mock.patch(
-            "importlib.resources.open_binary", mock.MagicMock()
-        ) as mock_open_binary, mock.patch(
+        with mock.patch("importlib.resources.files") as mock_files, mock.patch(
             "io.TextIOWrapper", mock.MagicMock()
         ) as mock_text_io_wrapper:
-            test_module.load_resource("abc:def", encoding="utf-8")
-            mock_open_binary.assert_called_once_with("abc", "def")
-            mock_text_io_wrapper.assert_called_once()
+            # Setup the mocks
+            mock_resource_path = mock.MagicMock()
+            mock_files.return_value.joinpath.return_value = mock_resource_path
+            mock_resource_handle = mock.MagicMock(spec=BufferedReader)
+            mock_resource_path.open.return_value = mock_resource_handle
+            mock_text_io_wrapper.return_value = mock.MagicMock(spec=TextIOWrapper)
+
+            result = test_module.load_resource("abc:def", encoding="utf-8")
+
+            # Assertions
+            mock_files.assert_called_once_with("abc")
+            mock_files.return_value.joinpath.assert_called_once_with("def")
+            mock_resource_path.open.assert_called_once_with("rb")
+            mock_text_io_wrapper.assert_called_once_with(
+                mock_resource_handle, encoding="utf-8"
+            )
+            assert result is mock_text_io_wrapper.return_value
 
         # Testing package resource access without encoding (binary mode)
-        with mock.patch(
-            "importlib.resources.open_binary", mock.MagicMock()
-        ) as mock_open_binary:
-            test_module.load_resource("abc:def", encoding=None)
-            mock_open_binary.assert_called_once_with("abc", "def")
+        with mock.patch("importlib.resources.files") as mock_files:
+            # Setup the mocks
+            mock_resource_path = mock.MagicMock()
+            mock_files.return_value.joinpath.return_value = mock_resource_path
+            mock_resource_handle = mock.MagicMock(spec=BufferedReader)
+            mock_resource_path.open.return_value = mock_resource_handle
+
+            result = test_module.load_resource("abc:def", encoding=None)
+
+            # Assertions
+            mock_files.assert_called_once_with("abc")
+            mock_files.return_value.joinpath.assert_called_once_with("def")
+            mock_resource_path.open.assert_called_once_with("rb")
+            assert result == mock_resource_handle  # Verify the returned binary stream
