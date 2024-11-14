@@ -1,5 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
+import pytest
+
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
@@ -29,6 +31,7 @@ from ..messages.connection_response import ConnectionResponse
 from ..models.connection_detail import ConnectionDetail
 
 
+@pytest.mark.filterwarnings("ignore:Aries RFC 0160.*:DeprecationWarning")
 class TestConnectionManager(IsolatedAsyncioTestCase):
     def make_did_doc(self, did, verkey):
         doc = DIDDoc(did=did)

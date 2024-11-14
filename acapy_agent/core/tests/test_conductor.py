@@ -1186,6 +1186,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             conductor.dispatch_complete(message, mock_task)
             mock_notify.assert_called_once_with()
 
+    @pytest.mark.filterwarnings("ignore:Aries RFC 0160.*:DeprecationWarning")
     async def test_print_invite_connection(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings(
