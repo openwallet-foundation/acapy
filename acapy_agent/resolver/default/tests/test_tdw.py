@@ -1,8 +1,8 @@
 import pytest
 
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....messaging.valid import DIDTdw
+from ....utils.testing import create_test_profile
 from ..tdw import TdwDIDResolver
 
 TEST_DID = "did:tdw:Qma6mc1qZw3NqxwX6SB5GPQYzP4pGN2nXD15Jwi4bcDBKu:domain.example"
@@ -15,10 +15,9 @@ def resolver():
 
 
 @pytest.fixture
-def profile():
+async def profile():
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
-    yield profile
+    yield await create_test_profile()
 
 
 @pytest.mark.asyncio

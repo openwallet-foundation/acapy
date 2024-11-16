@@ -127,7 +127,7 @@ class TestValid(TestCase):
             "did:web:QmUchSB5f5DJQks9CeyLJjhAy4iKJcYzRyiuYq3sjV13px",
             # Did urls are not allowed
             "did:tdw:QmP9VWaTCHcyztDpRj9XSHvZbmYe3m9HZ61KoDtZgWaXVU:example.com%3A5000#z6MkkzY9skorPaoEbCJFKUo7thD8Yb8MBs28aJRopf1TUo9V",
-            "did:tdw:QmZiKXwQVfyZVuvCsuHpQh4arSUpEmeVVRvSfv3uiEycSr:example.com%3A5000#whois",
+            "did:tdw:QmZiKXwQVfyZVuvCsuHpQh4arSUpEmeVVRvSfv3uiEycSr:example.com%3A5000/whois",
         ]
         for non_valid_tdw_did in non_valid_tdw_dids:
             with self.assertRaises(ValidationError):
