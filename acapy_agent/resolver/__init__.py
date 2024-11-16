@@ -49,6 +49,12 @@ async def setup(context: InjectionContext):
     await web_resolver.setup(context)
     registry.register_resolver(web_resolver)
 
+    tdw_resolver = ClassProvider(
+        "acapy_agent.resolver.default.tdw.TdwDIDResolver"
+    ).provide(context.settings, context.injector)
+    await tdw_resolver.setup(context)
+    registry.register_resolver(tdw_resolver)
+
     if context.settings.get("resolver.universal"):
         universal_resolver = ClassProvider(
             "acapy_agent.resolver.default.universal.UniversalResolver"
