@@ -24,7 +24,7 @@ from aiohttp import ClientSession
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
-INDY = getenv("OLD", "http://indy:3001")
+INDY = getenv("INDY", "http://indy:3001")
 
 
 def summary(presentation: V20PresExRecord) -> str:
@@ -361,7 +361,9 @@ async def anoncreds_present_proof_v2(
 
 async def main():
     """Test Controller protocols."""
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
+    async with Controller(base_url=ALICE) as alice, Controller(
+        base_url=BOB
+    ) as bob, Controller(base_url=INDY) as indy:
         # Connecting
         alice_conn, bob_conn = await didexchange(alice, bob)
 
@@ -476,8 +478,8 @@ async def main():
             ],
         )
 
-    # Test a non-anoncreds agent using old indy format
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=INDY) as indy:
+        # Test a non-anoncreds agent using old indy format
+
         # Connecting
         alice_conn, indy_conn = await didexchange(alice, indy)
 
