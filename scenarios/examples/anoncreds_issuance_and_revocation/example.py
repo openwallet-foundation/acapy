@@ -364,6 +364,12 @@ async def main():
     async with Controller(base_url=ALICE) as alice, Controller(
         base_url=BOB
     ) as bob, Controller(base_url=INDY) as indy:
+        """
+            This section of the test script demonstrates the issuance, presentation and 
+            revocation of a credential where both the issuer and holder are anoncreds 
+            capaple agents.
+        """
+
         # Connecting
         alice_conn, bob_conn = await didexchange(alice, bob)
 
@@ -478,7 +484,12 @@ async def main():
             ],
         )
 
-        # Test a non-anoncreds agent using old indy format
+        """
+            This section of the test script demonstrates the issuance, presentation and 
+            revocation of a credential where the issuer is an anoncreds capaple agent, but
+            the holder is not, and instread uses the fallback to the indy issuance and 
+            presentation handlers.
+        """
 
         # Connecting
         alice_conn, indy_conn = await didexchange(alice, indy)

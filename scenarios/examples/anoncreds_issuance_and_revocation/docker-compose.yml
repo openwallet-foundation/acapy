@@ -93,7 +93,7 @@
     environment:
       - ALICE=http://alice:3001
       - BOB=http://bob:3001
-      - Indy=http://indy:3001
+      - INDY=http://indy:3001
     volumes:
       - ./example.py:/usr/src/app/example.py:ro,z
     command: python -m example
