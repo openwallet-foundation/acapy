@@ -102,6 +102,8 @@
         condition: service_healthy
       bob:
         condition: service_healthy
+      indy:
+        condition: service_healthy
 
   tails:
     image: ghcr.io/bcgov/tails-server:latest
