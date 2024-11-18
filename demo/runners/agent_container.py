@@ -474,8 +474,6 @@ class AriesAgent(DemoAgent):
                     "indy"
                 ) or pres_request_by_format.get("anoncreds")
 
-                print("****************************")
-                print(pres_request_by_format)
                 pres_request_dif = pres_request_by_format.get("dif")
                 request = {}
 
@@ -1077,11 +1075,13 @@ class AgentContainer:
 
         return matched
 
-    async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
+    async def request_proof(
+        self, proof_request, explicit_revoc_required: bool = False, is_anoncreds=False
+    ):
         log_status("#20 Request proof of degree from alice")
 
         if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
-            indy_proof_request = {
+            proof_request = {
                 "name": (
                     proof_request["name"] if "name" in proof_request else "Proof of stuff"
                 ),
@@ -1097,24 +1097,24 @@ class AgentContainer:
                 # plug in revocation where requested in the supplied proof request
                 non_revoked = {"to": int(time.time())}
                 if "non_revoked" in proof_request:
-                    indy_proof_request["non_revoked"] = non_revoked
+                    proof_request["non_revoked"] = non_revoked
                     non_revoked_supplied = True
                 for attr in proof_request["requested_attributes"]:
                     if "non_revoked" in proof_request["requested_attributes"][attr]:
-                        indy_proof_request["requested_attributes"][attr][
-                            "non_revoked"
-                        ] = non_revoked
+                        proof_request["requested_attributes"][attr]["non_revoked"] = (
+                            non_revoked
+                        )
                         non_revoked_supplied = True
                 for pred in proof_request["requested_predicates"]:
                     if "non_revoked" in proof_request["requested_predicates"][pred]:
-                        indy_proof_request["requested_predicates"][pred][
-                            "non_revoked"
-                        ] = non_revoked
+                        proof_request["requested_predicates"][pred]["non_revoked"] = (
+                            non_revoked
+                        )
                         non_revoked_supplied = True
 
                 if not non_revoked_supplied and not explicit_revoc_required:
                     # else just make it global
-                    indy_proof_request["non_revoked"] = non_revoked
+                    proof_request["non_revoked"] = non_revoked
 
             else:
                 # make sure we are not leaking non-revoc requests
@@ -1127,13 +1127,16 @@ class AgentContainer:
                     if "non_revoked" in proof_request["requested_predicates"][pred]:
                         del proof_request["requested_predicates"][pred]["non_revoked"]
 
-            log_status(f"  >>> asking for proof for request: {indy_proof_request}")
+            log_status(f"  >>> asking for proof for request: {proof_request}")
+
+            if is_anoncreds:
+                presentation_request = {"anoncreds": proof_request}
+            else:
+                presentation_request = {"indy": proof_request}
 
             proof_request_web_request = {
                 "connection_id": self.agent.connection_id,
-                "presentation_request": {
-                    "indy": indy_proof_request,
-                },
+                "presentation_request": presentation_request,
                 "trace": self.exchange_tracing,
             }
             proof_exchange = await self.agent.admin_POST(
@@ -1144,7 +1147,6 @@ class AgentContainer:
 
         elif self.cred_type == CRED_FORMAT_JSON_LD:
             # TODO create and send the json-ld proof request
-            pass
             return None
 
         else:

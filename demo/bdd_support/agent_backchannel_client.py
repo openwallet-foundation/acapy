@@ -143,11 +143,13 @@ def aries_container_issue_credential(
     the_container: AgentContainer,
     cred_def_id: str,
     cred_attrs: list,
+    filter_type: str = "indy",
 ):
     return run_coroutine(
         the_container.issue_credential,
         cred_def_id,
         cred_attrs,
+        filter_type=filter_type,
     )
 
 
@@ -167,11 +169,13 @@ def aries_container_request_proof(
     the_container: AgentContainer,
     proof_request: dict,
     explicit_revoc_required: bool = False,
+    is_anoncreds: bool = False,
 ):
     return run_coroutine(
         the_container.request_proof,
         proof_request,
         explicit_revoc_required=explicit_revoc_required,
+        is_anoncreds=is_anoncreds,
     )
 
 
