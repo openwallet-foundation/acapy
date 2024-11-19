@@ -37,9 +37,6 @@ class DidIndyManager:
 
     def _create_key_pair(self, options: dict, key_type: KeyType) -> Key:
         seed = options.get("seed")
-        if seed and not self.profile.settings.get("wallet.allow_insecure_seed"):
-            raise WalletError("Insecure seed is not allowed")
-
         if seed:
             seed = validate_seed(seed)
             return Key.from_secret_bytes(key_type, seed)
