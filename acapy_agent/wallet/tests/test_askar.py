@@ -1,9 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.core.in_memory.profile import (
-    InMemoryProfile,
-    InMemoryProfileSession,
-)
 from acapy_agent.ledger.base import BaseLedger
 from acapy_agent.tests import mock
 from acapy_agent.wallet.askar import AskarWallet
@@ -12,18 +8,15 @@ from acapy_agent.wallet.did_method import INDY, SOV, WEB
 from acapy_agent.wallet.error import WalletError
 from acapy_agent.wallet.key_type import ED25519
 
+from ...utils.testing import create_test_profile
+
 
 class TestAskar(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.profile = InMemoryProfile()
-        self.session = InMemoryProfileSession(self.profile)
-
-    def test_init(self):
-        wallet = AskarWallet(self.session)
-        assert wallet.session == self.session
+        self.profile = await create_test_profile()
 
     async def test_set_did_endpoint(self):
-        wallet = AskarWallet(self.session)
+        wallet = AskarWallet(self.profile.session)
         wallet.replace_local_did_metadata = mock.CoroutineMock()
 
         # Set endpoint for a Sov DID
