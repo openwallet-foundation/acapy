@@ -88,9 +88,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        # if self.anoncreds_handler:
-        #     return self.anoncreds_handler.get_format_identifier(message_type)
 
         return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
 
@@ -98,9 +95,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         self, message_type: str, data: dict
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
-        # Temporary shim while the new anoncreds library integration is in progress
-        # if self.anoncreds_handler:
-        #     return self.anoncreds_handler.get_format_data(message_type, data)
 
         return (
             V20PresFormat(
