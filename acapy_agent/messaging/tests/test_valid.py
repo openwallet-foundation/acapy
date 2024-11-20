@@ -12,6 +12,7 @@ from ..valid import (
     CREDENTIAL_TYPE_VALIDATE,
     DID_KEY_VALIDATE,
     DID_POSTURE_VALIDATE,
+    DID_TDW_VALIDATE,
     ENDPOINT_TYPE_VALIDATE,
     ENDPOINT_VALIDATE,
     INDY_CRED_DEF_ID_VALIDATE,
@@ -113,6 +114,24 @@ class TestValid(TestCase):
 
         INDY_DID_VALIDATE("Q4zqM7aXqm7gDQkUVLng9h")
         INDY_DID_VALIDATE("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
+
+    def test_tdw_did(self):
+        valid_tdw_dids = [
+            "did:tdw:QmUchSB5f5DJQks9CeyLJjhAy4iKJcYzRyiuYq3sjV13px:example.com",
+            "did:tdw:QmZiKXwQVfyZVuvCsuHpQh4arSUpEmeVVRvSfv3uiEycSr:example.com%3A5000",
+        ]
+        for valid_tdw_did in valid_tdw_dids:
+            DID_TDW_VALIDATE(valid_tdw_did)
+
+        non_valid_tdw_dids = [
+            "did:web:QmUchSB5f5DJQks9CeyLJjhAy4iKJcYzRyiuYq3sjV13px",
+            # Did urls are not allowed
+            "did:tdw:QmP9VWaTCHcyztDpRj9XSHvZbmYe3m9HZ61KoDtZgWaXVU:example.com%3A5000#z6MkkzY9skorPaoEbCJFKUo7thD8Yb8MBs28aJRopf1TUo9V",
+            "did:tdw:QmZiKXwQVfyZVuvCsuHpQh4arSUpEmeVVRvSfv3uiEycSr:example.com%3A5000/whois",
+        ]
+        for non_valid_tdw_did in non_valid_tdw_dids:
+            with self.assertRaises(ValidationError):
+                DID_TDW_VALIDATE(non_valid_tdw_did)
 
     def test_indy_raw_public_key(self):
         non_indy_raw_public_keys = [
