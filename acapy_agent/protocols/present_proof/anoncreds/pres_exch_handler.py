@@ -40,7 +40,9 @@ class AnonCredsPresExchHandler:
 
     def _extract_proof_request(self, pres_ex_record):
         if isinstance(pres_ex_record, V20PresExRecord):
-            return pres_ex_record.pres_request.attachment(V20PresFormat.Format.ANONCREDS)
+            return pres_ex_record.pres_request.attachment(
+                V20PresFormat.Format.ANONCREDS
+            ) or pres_ex_record.pres_request.attachment(V20PresFormat.Format.INDY)
         elif isinstance(pres_ex_record, V10PresentationExchange):
             return pres_ex_record._presentation_request.ser
 
@@ -232,8 +234,8 @@ class AnonCredsPresExchHandler:
     ) -> dict:
         """Return Anoncreds proof request as dict."""
 
-        # If not anoncreds capable, try to use indy handler. THis should be removed when
-        # indy filter is compleqtly retired
+        # If not anoncreds capable, try to use indy handler. This should be removed when
+        # indy filter is completely retired
         if not isinstance(self._profile, AskarAnoncredsProfile):
             from ..indy.pres_exch_handler import IndyPresExchHandler
 

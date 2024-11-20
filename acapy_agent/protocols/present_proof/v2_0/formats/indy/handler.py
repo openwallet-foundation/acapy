@@ -6,7 +6,6 @@ from typing import Mapping, Optional, Tuple
 
 from marshmallow import RAISE
 
-from ......askar.profile_anon import AskarAnoncredsProfile
 from ......core.profile import Profile
 from ......indy.holder import IndyHolder
 from ......indy.models.predicate import Predicate
@@ -90,8 +89,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         """
         # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_identifier(message_type)
+        # if self.anoncreds_handler:
+        #     return self.anoncreds_handler.get_format_identifier(message_type)
 
         return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
 
@@ -100,8 +99,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
         # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_data(message_type, data)
+        # if self.anoncreds_handler:
+        #     return self.anoncreds_handler.get_format_data(message_type, data)
 
         return (
             V20PresFormat(
@@ -155,9 +154,11 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        if isinstance(self.profile, AskarAnoncredsProfile):
-            raise V20PresFormatHandlerError(
-                "This issuer is anoncreds capable. Please use the anonreds format."
+
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.create_pres(
+                pres_ex_record,
+                request_data,
             )
 
         requested_credentials = {}
@@ -351,8 +352,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             return await self.anoncreds_handler.verify_pres(pres_ex_record)
 
         pres_request_msg = pres_ex_record.pres_request
-        indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
-        indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
+        from ..anoncreds.handler import AnonCredsPresExchangeHandler
+
+        indy_proof_request = pres_request_msg.attachment(
+            IndyPresExchangeHandler.format
+        ) or pres_request_msg.attachment(AnonCredsPresExchangeHandler.format)
+        indy_proof = pres_ex_record.pres.attachment(
+            IndyPresExchangeHandler.format
+        ) or pres_ex_record.pres.attachment(AnonCredsPresExchangeHandler.format)
         indy_handler = IndyPresExchHandler(self._profile)
         (
             schemas,

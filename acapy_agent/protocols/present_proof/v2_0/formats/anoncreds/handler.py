@@ -131,12 +131,15 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         requested_credentials = {}
+
+        from ..indy.handler import IndyPresExchangeHandler
+
         if not request_data:
             try:
                 proof_request = pres_ex_record.pres_request
                 proof_request = proof_request.attachment(
                     AnonCredsPresExchangeHandler.format
-                )
+                ) or proof_request.attachment(IndyPresExchangeHandler.format)
                 requested_credentials = (
                     await get_requested_creds_from_proof_request_preview(
                         proof_request,
@@ -147,8 +150,13 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 LOGGER.warning(f"{err}")
                 raise V20PresFormatHandlerError(f"No matching credentials found: {err}")
         else:
-            if AnonCredsPresExchangeHandler.format.api in request_data:
-                spec = request_data.get(AnonCredsPresExchangeHandler.format.api)
+            if (
+                AnonCredsPresExchangeHandler.format.api in request_data
+                or IndyPresExchangeHandler.format.api in request_data
+            ):
+                spec = request_data.get(
+                    AnonCredsPresExchangeHandler.format.api
+                ) or request_data.get(IndyPresExchangeHandler.format.api)
                 requested_credentials = {
                     "self_attested_attributes": spec["self_attested_attributes"],
                     "requested_attributes": spec["requested_attributes"],
@@ -166,9 +174,11 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
 
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
+            from ..indy.handler import IndyPresExchangeHandler
+
             proof_req = pres_ex_record.pres_request.attachment(
                 AnonCredsPresExchangeHandler.format
-            )
+            ) or pres_ex_record.pres_request.attachment(IndyPresExchangeHandler.format)
 
             # revealed attrs
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():

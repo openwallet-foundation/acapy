@@ -989,11 +989,17 @@ async def _create_free_offer(
     )
 
     cred_manager = V20CredManager(profile)
-    (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
-        cred_ex_record,
-        comment=comment,
-        replacement_id=replacement_id,
-    )
+    try:
+        (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
+            cred_ex_record,
+            comment=comment,
+            replacement_id=replacement_id,
+        )
+    except ValueError as err:
+        LOGGER.exception(f"Error creating credential offer: {err}")
+        async with profile.session() as session:
+            await cred_ex_record.save_error_state(session, reason=err)
+        raise web.HTTPBadRequest(reason=err)
 
     return (cred_ex_record, cred_offer_message)
 

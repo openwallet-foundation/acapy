@@ -105,10 +105,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 session, cred_ex_id
             )
 
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.get_detail_record(cred_ex_id)
-
         if len(records) > 1:
             LOGGER.warning(
                 "Cred ex id %s has %d %s detail records: should be 1",
@@ -140,9 +136,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_identifier(message_type)
 
         return ATTACHMENT_FORMAT[message_type][IndyCredFormatHandler.format.api]
 
@@ -162,9 +155,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             CredFormatAttachment: Credential format and attachment data objects
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_data(message_type, data)
 
         return (
             V20CredFormat(
@@ -451,9 +441,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
         cred_offer = cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
+        from ..anoncreds.handler import AnonCredsCredFormatHandler
+
         cred_request = cred_ex_record.cred_request.attachment(
             IndyCredFormatHandler.format
-        )
+        ) or cred_ex_record.cred_request.attachment(AnonCredsCredFormatHandler.format)
         cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
@@ -526,9 +518,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         if hasattr(self, "anoncreds_handler") and self.anoncreds_handler:
             return await self.anoncreds_handler.store_credential(cred_ex_record, cred_id)
 
+        from ..anoncreds.handler import AnonCredsCredFormatHandler
+
         cred = cred_ex_record.cred_issue.attachment(
             IndyCredFormatHandler.format
-            # For anoncreds compatibility, check for both formats
         ) or cred_ex_record.cred_issue.attachment(AnonCredsCredFormatHandler.format)
 
         rev_reg_def = None

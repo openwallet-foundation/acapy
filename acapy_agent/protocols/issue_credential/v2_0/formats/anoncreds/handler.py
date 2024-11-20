@@ -251,10 +251,12 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
+        from ..indy.handler import IndyCredFormatHandler
+
         holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
-        )
+        ) or cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
 
         if "nonce" not in cred_offer:
             raise V20CredFormatError("Missing nonce in credential offer")
@@ -280,8 +282,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 }
             # This is for compatability with a holder that isn't anoncreds capable
             except AnonCredsResolutionError:
-                from ..indy.handler import IndyCredFormatHandler
-
                 return await IndyCredFormatHandler.create_cred_request_result(
                     self, cred_offer, holder_did, cred_def_id
                 )
@@ -323,6 +323,12 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Issue anoncreds credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
+
+        from ..indy.handler import IndyCredFormatHandler
+
+        if cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format):
+            indy_handler = IndyCredFormatHandler(self.profile)
+            return await indy_handler.issue_credential(cred_ex_record, retries)
 
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
@@ -387,7 +393,11 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store anoncreds credential."""
-        cred = cred_ex_record.cred_issue.attachment(AnonCredsCredFormatHandler.format)
+        from ..indy.handler import IndyCredFormatHandler
+
+        cred = cred_ex_record.cred_issue.attachment(
+            AnonCredsCredFormatHandler.format
+        ) or cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -404,8 +414,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 rev_reg_def = rev_reg_def_result.revocation_registry
 
         except AnonCredsResolutionError:
-            from ..indy.handler import IndyCredFormatHandler
-
             return await IndyCredFormatHandler.store_credential(
                 self, cred_ex_record, cred_id
             )
