@@ -182,7 +182,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
         """Create indy credential proposal."""
-        # Temporary shim while the new anoncreds library integration is in progress
+        # Create the proposal with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.create_proposal(
                 cred_ex_record,
@@ -296,7 +296,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create indy credential request."""
 
-        # This is for reverse compatibility
+        # Create the request with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.create_request(
                 cred_ex_record,
@@ -350,7 +350,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
         """Receive indy credential request."""
-        # Temporary shim while the new anoncreds library integration is in progress
+        # Receive the request with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.receive_request(
                 cred_ex_record,

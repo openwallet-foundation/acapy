@@ -132,11 +132,13 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
         """Create a presentation."""
         requested_credentials = {}
 
+        # This is used for the fallback to indy format
         from ..indy.handler import IndyPresExchangeHandler
 
         if not request_data:
             try:
                 proof_request = pres_ex_record.pres_request
+                # Fall back to indy format should be removed when indy format retired
                 proof_request = proof_request.attachment(
                     AnonCredsPresExchangeHandler.format
                 ) or proof_request.attachment(IndyPresExchangeHandler.format)
@@ -150,6 +152,7 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 LOGGER.warning(f"{err}")
                 raise V20PresFormatHandlerError(f"No matching credentials found: {err}")
         else:
+            # Fall back to indy format should be removed when indy format retired
             if (
                 AnonCredsPresExchangeHandler.format.api in request_data
                 or IndyPresExchangeHandler.format.api in request_data
@@ -176,6 +179,7 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
             """Check for bait and switch in presented values vs. proposal request."""
             from ..indy.handler import IndyPresExchangeHandler
 
+            # Fall back to indy format should be removed when indy format retired
             proof_req = pres_ex_record.pres_request.attachment(
                 AnonCredsPresExchangeHandler.format
             ) or pres_ex_record.pres_request.attachment(IndyPresExchangeHandler.format)

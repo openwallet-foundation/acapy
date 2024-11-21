@@ -250,10 +250,11 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
             )
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
+        holder_did = request_data.get("holder_did") if request_data else None
 
+        # For backwards compatibility, remove indy backup when indy format is retired
         from ..indy.handler import IndyCredFormatHandler
 
-        holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
         ) or cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
@@ -324,6 +325,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Issue anoncreds credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
+        # For backwards compatibility, remove indy backup when indy format is retired
         from ..indy.handler import IndyCredFormatHandler
 
         if cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format):
@@ -393,6 +395,8 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store anoncreds credential."""
+
+        # For backwards compatibility, remove indy backup when indy format is retired
         from ..indy.handler import IndyCredFormatHandler
 
         cred = cred_ex_record.cred_issue.attachment(

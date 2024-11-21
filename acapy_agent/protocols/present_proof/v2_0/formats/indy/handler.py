@@ -346,8 +346,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             return await self.anoncreds_handler.verify_pres(pres_ex_record)
 
         pres_request_msg = pres_ex_record.pres_request
-        from ..anoncreds.handler import AnonCredsPresExchangeHandler
 
+        # The `or` anoncreds format is for the indy <--> anoncreds compatibility
         indy_proof_request = pres_request_msg.attachment(
             IndyPresExchangeHandler.format
         ) or pres_request_msg.attachment(AnonCredsPresExchangeHandler.format)
