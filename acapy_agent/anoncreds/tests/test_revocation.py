@@ -48,7 +48,7 @@ rev_reg_def = RevRegDef(
             "accum_key": {"z": "1 0BB...386"},
         },
         tails_hash="58NNWYnVxVFzAfUztwGSNBL4551XNq6nXk56pCiKJxxt",
-        tails_location="http://tails-server.com",
+        tails_location="https://tails-server.com",
     ),
     issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
     type="CL_ACCUM",
@@ -840,7 +840,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 None,
                 mock.MagicMock(
                     upload_tails_file=mock.CoroutineMock(
-                        return_value=(True, "http://tails-server.com")
+                        return_value=(True, "https://tails-server.com")
                     )
                 ),
             ]
@@ -853,7 +853,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 None,
                 mock.MagicMock(
                     upload_tails_file=mock.CoroutineMock(
-                        return_value=(None, "http://tails-server.com"),
+                        return_value=(None, "https://tails-server.com"),
                     )
                 ),
             ]
