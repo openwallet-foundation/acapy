@@ -212,7 +212,7 @@ class Dispatcher:
             handler = context.message
             if self.collector:
                 handler = self.collector.wrap_coro(handler, [handler.__qualname__])
-            await handler(context, responder, payload=inbound_message.payload)
+            await handler()(context, responder, payload=inbound_message.payload)
 
     async def make_v2_message(self, profile: Profile, parsed_msg: dict) -> BaseMessage:
         """Deserialize a message dict into the appropriate message instance.
