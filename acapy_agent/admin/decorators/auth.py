@@ -2,7 +2,7 @@
 
 import functools
 import re
-from typing import Optional, Pattern, Sequence, cast
+from typing import Optional, Pattern
 
 from aiohttp import web
 
@@ -95,11 +95,10 @@ def _base_wallet_route_access(additional_routes: str, request_path: str) -> bool
 
 
 def _build_additional_routes_pattern(pattern_string: str) -> Optional[Pattern]:
-    """Build pattern from string."""
-    base_wallet_routes = cast(Sequence[str], pattern_string)
-    if base_wallet_routes:
-        return re.compile("^(?:" + "|".join(base_wallet_routes) + ")")
-    return None
+    """Build pattern from space delimited list of paths."""
+    # create array and add word boundary to avoid false positives
+    paths = pattern_string.split(" ")
+    return re.compile("^((?:)" + "|".join(paths) + ")$")
 
 
 def _matches_additional_routes(pattern: Pattern, path: str) -> bool:
