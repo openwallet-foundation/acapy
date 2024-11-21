@@ -50,7 +50,7 @@ def tenant_authentication(handler):
     - check for a valid bearer token in the Autorization header if running
     in multi-tenant mode
     - check for a valid x-api-key header if running in single-tenant mode
-    - check if the base wallet has access to teh requested path if running
+    - check if the base wallet has access to the requested path if running
     in multi-tenant mode
     """
 
