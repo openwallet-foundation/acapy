@@ -256,7 +256,7 @@ class Dispatcher:
             #instance = message_cls[0] #message_cls.deserialize(parsed_msg)
             instance = registry.handlers[message_cls[0]]
             if isinstance(instance, DeferLoad):
-                instance = message_cls.resolved
+                instance = instance.resolved
         except BaseModelError as e:
             if "/problem-report" in message_type:
                 raise ProblemReportParseError("Error parsing problem report message")

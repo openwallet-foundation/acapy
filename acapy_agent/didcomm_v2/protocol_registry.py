@@ -1,6 +1,7 @@
 """Registry for DIDComm V2 Protocols."""
 
-from typing import Coroutine, Dict, Sequence
+from ..utils.classloader import DeferLoad
+from typing import Coroutine, Dict, Sequence, Union
 
 
 class V2ProtocolRegistry:
@@ -35,6 +36,8 @@ class V2ProtocolRegistry:
                 result = (query,)
         return result or ()
 
-    def register_handler(self, message_type: str, handler: Coroutine):
+    def register_handler(self, message_type: str, handler: Union[Coroutine, str]):
         """Register a new message type to handler association."""
+        if isinstance(handler, str):
+                handler = DeferLoad(handler)
         self._type_to_message_handler[message_type] = handler
