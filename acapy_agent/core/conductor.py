@@ -856,19 +856,7 @@ class Conductor:
 
     async def check_for_wallet_upgrades_in_progress(self):
         """Check for upgrade and upgrade if needed."""
-
-        # We need to use the correct multitenant manager for single vs multiple wallets
-        # here because the multitenant provider hasn't been initialized yet.
-        manager_type = self.context.settings.get_value(
-            "multitenant.wallet_type", default="basic"
-        ).lower()
-
-        manager_class = MultitenantManagerProvider.MANAGER_TYPES.get(
-            manager_type, manager_type
-        )
-
-        multitenant_mgr = self.context.inject_or(manager_class)
-        if multitenant_mgr:
+        if self.context.settings.get_value("multitenant.enabled"):
             subwallet_profiles = await get_subwallet_profiles_from_storage(
                 self.root_profile
             )
