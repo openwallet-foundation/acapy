@@ -97,8 +97,10 @@ def _base_wallet_route_access(additional_routes: str, request_path: str) -> bool
 def _build_additional_routes_pattern(pattern_string: str) -> Optional[Pattern]:
     """Build pattern from space delimited list of paths."""
     # create array and add word boundary to avoid false positives
-    paths = pattern_string.split(" ")
-    return re.compile("^((?:)" + "|".join(paths) + ")$")
+    if pattern_string:
+        paths = pattern_string.split(" ")
+        return re.compile("^((?:)" + "|".join(paths) + ")$")
+    return None
 
 
 def _matches_additional_routes(pattern: Pattern, path: str) -> bool:
