@@ -836,21 +836,40 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     async def test_upload_tails_file(self):
         self.profile.inject_or = mock.Mock(
-            return_value=mock.MagicMock(
-                upload_tails_file=mock.CoroutineMock(
-                    side_effect=[
-                        (True, "http://tails-server.com"),
-                        (None, "http://tails-server.com"),
-                        (True, "not-http://tails-server.com"),
-                    ]
-                )
-            )
+            side_effect=[
+                None,
+                mock.MagicMock(
+                    upload_tails_file=mock.CoroutineMock(
+                        return_value=(True, "http://tails-server.com")
+                    )
+                ),
+            ]
         )
         # valid
         await self.revocation.upload_tails_file(rev_reg_def)
         # upload fails
+        self.profile.inject_or = mock.Mock(
+            side_effect=[
+                None,
+                mock.MagicMock(
+                    upload_tails_file=mock.CoroutineMock(
+                        return_value=(None, "http://tails-server.com"),
+                    )
+                ),
+            ]
+        )
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await self.revocation.upload_tails_file(rev_reg_def)
+        self.profile.inject_or = mock.Mock(
+            side_effect=[
+                None,
+                mock.MagicMock(
+                    upload_tails_file=mock.CoroutineMock(
+                        return_value=(True, "not-http://tails-server.com"),
+                    )
+                ),
+            ]
+        )
         # tails location does not match
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await self.revocation.upload_tails_file(rev_reg_def)
