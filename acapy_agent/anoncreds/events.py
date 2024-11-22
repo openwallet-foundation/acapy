@@ -4,7 +4,7 @@ import re
 from typing import NamedTuple, Optional
 
 from ..core.event_bus import Event
-from .models.anoncreds_revocation import RevRegDef
+from .models.revocation import RevRegDef
 
 CRED_DEF_FINISHED_EVENT = "anoncreds::credential-definition::finished"
 REV_REG_DEF_FINISHED_EVENT = "anoncreds::revocation-registry-definition::finished"

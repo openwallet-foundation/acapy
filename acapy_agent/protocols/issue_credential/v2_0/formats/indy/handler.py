@@ -7,6 +7,7 @@ from typing import Mapping, Optional, Tuple
 
 from marshmallow import RAISE
 
+from ......askar.profile_anon import AskarAnoncredsProfile
 from ......cache.base import BaseCache
 from ......core.profile import Profile
 from ......indy.holder import IndyHolder, IndyHolderError
@@ -14,7 +15,6 @@ from ......indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ......indy.models.cred import IndyCredentialSchema
 from ......indy.models.cred_abstract import IndyCredAbstractSchema
 from ......indy.models.cred_request import IndyCredRequestSchema
-from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_SCHEMA,
@@ -105,10 +105,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 session, cred_ex_id
             )
 
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.get_detail_record(cred_ex_id)
-
         if len(records) > 1:
             LOGGER.warning(
                 "Cred ex id %s has %d %s detail records: should be 1",
@@ -140,9 +136,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_identifier(message_type)
 
         return ATTACHMENT_FORMAT[message_type][IndyCredFormatHandler.format.api]
 
@@ -162,9 +155,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             CredFormatAttachment: Credential format and attachment data objects
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_data(message_type, data)
 
         return (
             V20CredFormat(
@@ -192,7 +182,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
         """Create indy credential proposal."""
-        # Temporary shim while the new anoncreds library integration is in progress
+        # Create the proposal with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.create_proposal(
                 cred_ex_record,
@@ -217,12 +207,12 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_offer(cred_proposal_message)
+        if isinstance(self.profile, AskarAnoncredsProfile):
+            raise V20CredFormatError(
+                "This issuer is anoncreds capable. Please use the anonreds format."
+            )
 
         issuer = self.profile.inject(IndyIssuer)
-        ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
         cred_def_id = await self._match_sent_cred_def_id(
@@ -275,11 +265,38 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         """Receive indy credential offer."""
 
+    async def create_cred_request_result(self, cred_offer, holder_did, cred_def_id):
+        """Create credential request result."""
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
+        async with ledger:
+            cred_def = await ledger.get_credential_definition(cred_def_id)
+
+        holder = self.profile.inject(IndyHolder)
+        request_json, metadata_json = await holder.create_credential_request(
+            cred_offer, cred_def, holder_did
+        )
+
+        return {
+            "request": json.loads(request_json),
+            "metadata": json.loads(metadata_json),
+        }
+
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create indy credential request."""
-        # Temporary shim while the new anoncreds library integration is in progress
+
+        # Create the request with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.create_request(
                 cred_ex_record,
@@ -302,31 +319,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         nonce = cred_offer["nonce"]
         cred_def_id = cred_offer["cred_def_id"]
 
-        async def _create():
-            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-            if multitenant_mgr:
-                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
-            else:
-                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id,
-                    txn_record_type=GET_CRED_DEF,
-                )
-            )[1]
-            async with ledger:
-                cred_def = await ledger.get_credential_definition(cred_def_id)
-
-            holder = self.profile.inject(IndyHolder)
-            request_json, metadata_json = await holder.create_credential_request(
-                cred_offer, cred_def, holder_did
-            )
-
-            return {
-                "request": json.loads(request_json),
-                "metadata": json.loads(metadata_json),
-            }
-
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None
         cache = self.profile.inject_or(BaseCache)
@@ -335,10 +327,14 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 if entry.result:
                     cred_req_result = entry.result
                 else:
-                    cred_req_result = await _create()
+                    cred_req_result = await self.create_cred_request_result(
+                        cred_offer, holder_did, cred_def_id
+                    )
                     await entry.set_result(cred_req_result, 3600)
         if not cred_req_result:
-            cred_req_result = await _create()
+            cred_req_result = await self.create_cred_request_result(
+                cred_offer, holder_did, cred_def_id
+            )
 
         detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
@@ -354,7 +350,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
         """Receive indy credential request."""
-        # Temporary shim while the new anoncreds library integration is in progress
+        # Receive the request with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.receive_request(
                 cred_ex_record,
@@ -445,9 +441,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
         cred_offer = cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
+        from ..anoncreds.handler import AnonCredsCredFormatHandler
+
         cred_request = cred_ex_record.cred_request.attachment(
             IndyCredFormatHandler.format
-        )
+        ) or cred_ex_record.cred_request.attachment(AnonCredsCredFormatHandler.format)
         cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
@@ -517,10 +515,14 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         """Store indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
+        if hasattr(self, "anoncreds_handler") and self.anoncreds_handler:
             return await self.anoncreds_handler.store_credential(cred_ex_record, cred_id)
 
-        cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
+        from ..anoncreds.handler import AnonCredsCredFormatHandler
+
+        cred = cred_ex_record.cred_issue.attachment(
+            IndyCredFormatHandler.format
+        ) or cred_ex_record.cred_issue.attachment(AnonCredsCredFormatHandler.format)
 
         rev_reg_def = None
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)

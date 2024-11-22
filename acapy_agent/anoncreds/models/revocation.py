@@ -7,15 +7,14 @@ from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 from typing_extensions import Literal
 
-from acapy_agent.messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_OR_KEY_DID_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_REV_REG_ID_EXAMPLE,
-)
-
 from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.valid import (
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_DID_EXAMPLE,
+    ANONCREDS_REV_REG_ID_EXAMPLE,
+    ISO8601_DATETIME_EXAMPLE,
+    RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
+)
 
 
 class RevRegDefValue(BaseModel):
@@ -60,7 +59,7 @@ class RevRegDefValueSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     public_keys = fields.Dict(
-        data_key="publicKeys", metadata={"example": INDY_RAW_PUBLIC_KEY_EXAMPLE}
+        data_key="publicKeys", metadata={"example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE}
     )
     max_cred_num = fields.Int(data_key="maxCredNum", metadata={"example": 777})
     tails_location = fields.Str(
@@ -131,7 +130,7 @@ class RevRegDefSchema(BaseModelSchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition or schema",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
     )
@@ -139,7 +138,7 @@ class RevRegDefSchema(BaseModelSchema):
     cred_def_id = fields.Str(
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
         data_key="credDefId",
     )
@@ -209,7 +208,7 @@ class RevRegDefStateSchema(BaseModelSchema):
     revocation_registry_definition_id = fields.Str(
         metadata={
             "description": "revocation registry definition id",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         }
     )
     revocation_registry_definition = fields.Nested(
@@ -380,14 +379,14 @@ class RevListSchema(BaseModelSchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition or schema",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
     )
     rev_reg_def_id = fields.Str(
         metadata={
             "description": "The ID of the revocation registry definition",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
         data_key="revRegDefId",
     )
@@ -409,7 +408,7 @@ class RevListSchema(BaseModelSchema):
     timestamp = fields.Int(
         metadata={
             "description": "Timestamp at which revocation list is applicable",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
         required=False,
     )

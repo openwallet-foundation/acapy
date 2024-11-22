@@ -1,4 +1,4 @@
-"""V2.0 present-proof indy presentation-exchange format handler."""
+"""V2.0 present-proof anoncreds presentation-exchange format handler."""
 
 import json
 import logging
@@ -7,12 +7,12 @@ from typing import Mapping, Optional, Tuple
 from marshmallow import RAISE
 
 from ......anoncreds.holder import AnonCredsHolder
+from ......anoncreds.models.predicate import Predicate
+from ......anoncreds.models.presentation_request import AnoncredsPresentationRequestSchema
+from ......anoncreds.models.proof import AnoncredsProofSchema
+from ......anoncreds.models.utils import get_requested_creds_from_proof_request_preview
 from ......anoncreds.util import generate_pr_nonce
 from ......anoncreds.verifier import AnonCredsVerifier
-from ......indy.models.predicate import Predicate
-from ......indy.models.proof import IndyProofSchema
-from ......indy.models.proof_request import IndyProofRequestSchema
-from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 from ....anoncreds.pres_exch_handler import AnonCredsPresExchHandler
@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 class AnonCredsPresExchangeHandler(V20PresFormatHandler):
     """Anoncreds presentation format handler."""
 
-    format = V20PresFormat.Format.INDY
+    format = V20PresFormat.Format.ANONCREDS
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
@@ -55,9 +55,9 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
 
         """
         mapping = {
-            PRES_20_REQUEST: IndyProofRequestSchema,
-            PRES_20_PROPOSAL: IndyProofRequestSchema,
-            PRES_20: IndyProofSchema,
+            PRES_20_REQUEST: AnoncredsPresentationRequestSchema,
+            PRES_20_PROPOSAL: AnoncredsPresentationRequestSchema,
+            PRES_20: AnoncredsProofSchema,
         }
 
         # Get schema class
@@ -109,20 +109,20 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        indy_proof_request = pres_ex_record.pres_proposal.attachment(
+        proof_request = pres_ex_record.pres_proposal.attachment(
             AnonCredsPresExchangeHandler.format
         )
         if request_data:
-            indy_proof_request["name"] = request_data.get("name", "proof-request")
-            indy_proof_request["version"] = request_data.get("version", "1.0")
-            indy_proof_request["nonce"] = (
+            proof_request["name"] = request_data.get("name", "proof-request")
+            proof_request["version"] = request_data.get("version", "1.0")
+            proof_request["nonce"] = (
                 request_data.get("nonce") or await generate_pr_nonce()
             )
         else:
-            indy_proof_request["name"] = "proof-request"
-            indy_proof_request["version"] = "1.0"
-            indy_proof_request["nonce"] = await generate_pr_nonce()
-        return self.get_format_data(PRES_20_REQUEST, indy_proof_request)
+            proof_request["name"] = "proof-request"
+            proof_request["version"] = "1.0"
+            proof_request["nonce"] = await generate_pr_nonce()
+        return self.get_format_data(PRES_20_REQUEST, proof_request)
 
     async def create_pres(
         self,
@@ -131,45 +131,58 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         requested_credentials = {}
+
+        # This is used for the fallback to indy format
+        from ..indy.handler import IndyPresExchangeHandler
+
         if not request_data:
             try:
                 proof_request = pres_ex_record.pres_request
-                indy_proof_request = proof_request.attachment(
+                # Fall back to indy format should be removed when indy format retired
+                proof_request = proof_request.attachment(
                     AnonCredsPresExchangeHandler.format
-                )
-                requested_credentials = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_request,
-                    preview=None,
-                    holder=AnonCredsHolder(self._profile),
+                ) or proof_request.attachment(IndyPresExchangeHandler.format)
+                requested_credentials = (
+                    await get_requested_creds_from_proof_request_preview(
+                        proof_request,
+                        holder=AnonCredsHolder(self._profile),
+                    )
                 )
             except ValueError as err:
                 LOGGER.warning(f"{err}")
-                raise V20PresFormatHandlerError(
-                    f"No matching Indy credentials found: {err}"
-                )
+                raise V20PresFormatHandlerError(f"No matching credentials found: {err}")
         else:
-            if AnonCredsPresExchangeHandler.format.api in request_data:
-                indy_spec = request_data.get(AnonCredsPresExchangeHandler.format.api)
+            # Fall back to indy format should be removed when indy format retired
+            if (
+                AnonCredsPresExchangeHandler.format.api in request_data
+                or IndyPresExchangeHandler.format.api in request_data
+            ):
+                spec = request_data.get(
+                    AnonCredsPresExchangeHandler.format.api
+                ) or request_data.get(IndyPresExchangeHandler.format.api)
                 requested_credentials = {
-                    "self_attested_attributes": indy_spec["self_attested_attributes"],
-                    "requested_attributes": indy_spec["requested_attributes"],
-                    "requested_predicates": indy_spec["requested_predicates"],
+                    "self_attested_attributes": spec["self_attested_attributes"],
+                    "requested_attributes": spec["requested_attributes"],
+                    "requested_predicates": spec["requested_predicates"],
                 }
-        indy_handler = AnonCredsPresExchHandler(self._profile)
-        indy_proof = await indy_handler.return_presentation(
+        handler = AnonCredsPresExchHandler(self._profile)
+        presentation_proof = await handler.return_presentation(
             pres_ex_record=pres_ex_record,
             requested_credentials=requested_credentials,
         )
-        return self.get_format_data(PRES_20, indy_proof)
+        return self.get_format_data(PRES_20, presentation_proof)
 
     async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
         """Receive a presentation and check for presented values vs. proposal request."""
 
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
+            from ..indy.handler import IndyPresExchangeHandler
+
+            # Fall back to indy format should be removed when indy format retired
             proof_req = pres_ex_record.pres_request.attachment(
                 AnonCredsPresExchangeHandler.format
-            )
+            ) or pres_ex_record.pres_request.attachment(IndyPresExchangeHandler.format)
 
             # revealed attrs
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
@@ -256,7 +269,8 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 for req_restriction in req_restrictions:
                     for k in list(req_restriction):  # cannot modify en passant
                         if k.startswith("attr::"):
-                            req_restriction.pop(k)  # let indy-sdk reject mismatch here
+                            # let anoncreds-sdk reject mismatch here
+                            req_restriction.pop(k)
                 sub_proof_index = pred_spec["sub_proof_index"]
                 for ge_proof in proof["proof"]["proofs"][sub_proof_index][
                     "primary_proof"
@@ -313,10 +327,8 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
 
         """
         pres_request_msg = pres_ex_record.pres_request
-        indy_proof_request = pres_request_msg.attachment(
-            AnonCredsPresExchangeHandler.format
-        )
-        indy_proof = pres_ex_record.pres.attachment(AnonCredsPresExchangeHandler.format)
+        proof_request = pres_request_msg.attachment(AnonCredsPresExchangeHandler.format)
+        proof = pres_ex_record.pres.attachment(AnonCredsPresExchangeHandler.format)
         verifier = AnonCredsVerifier(self._profile)
 
         (
@@ -324,13 +336,13 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
             cred_defs,
             rev_reg_defs,
             rev_lists,
-        ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
+        ) = await verifier.process_pres_identifiers(proof["identifiers"])
 
         verifier = AnonCredsVerifier(self._profile)
 
         (verified, verified_msgs) = await verifier.verify_presentation(
-            indy_proof_request,
-            indy_proof,
+            proof_request,
+            proof,
             schemas,
             cred_defs,
             rev_reg_defs,

@@ -26,8 +26,6 @@ from aries_askar.error import AskarError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from acapy_agent.anoncreds.models.anoncreds_cred_def import CredDef
-
 from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
@@ -43,7 +41,8 @@ from .issuer import (
     STATE_FINISHED,
     AnonCredsIssuer,
 )
-from .models.anoncreds_revocation import (
+from .models.credential_definition import CredDef
+from .models.revocation import (
     RevList,
     RevListResult,
     RevListState,

@@ -12,8 +12,8 @@ from ...messaging.valid import (
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_REV_REG_ID_EXAMPLE,
     INDY_REV_REG_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
     NATURAL_NUM_EXAMPLE,
     NATURAL_NUM_VALIDATE,
 )
@@ -180,10 +180,10 @@ class IndyRevRegDefSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     ver = fields.Str(
-        validate=INDY_VERSION_VALIDATE,
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
         metadata={
             "description": "Version of revocation registry definition",
-            "example": INDY_VERSION_EXAMPLE,
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
         },
     )
     id_ = fields.Str(
@@ -294,10 +294,10 @@ class IndyRevRegEntrySchema(BaseModelSchema):
         unknown = EXCLUDE
 
     ver = fields.Str(
-        validate=INDY_VERSION_VALIDATE,
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
         metadata={
             "description": "Version of revocation registry entry",
-            "example": INDY_VERSION_EXAMPLE,
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
         },
     )
     value = fields.Nested(

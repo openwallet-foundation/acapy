@@ -362,6 +362,21 @@ class IndyDID(Regexp):
         )
 
 
+class AnoncredsDID(Regexp):
+    """Validate value against indy DID."""
+
+    EXAMPLE = "did:(method):WgWxqztrNooG92RXvxSTWv"
+    PATTERN = re.compile("^(did:[a-z]:.+$)?$")
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            IndyDID.PATTERN,
+            error="Value {input} is not an decentralized identifier (DID)",
+        )
+
+
 class DIDValidation(Regexp):
     """Validate value against any valid DID spec."""
 
@@ -400,8 +415,8 @@ class MaybeIndyDID(Regexp):
         )
 
 
-class IndyRawPublicKey(Regexp):
-    """Validate value against indy (Ed25519VerificationKey2018) raw public key."""
+class RawPublicEd25519VerificationKey2018(Regexp):
+    """Validate value against (Ed25519VerificationKey2018) raw public key."""
 
     EXAMPLE = "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
     PATTERN = rf"^[{B58}]{{43,44}}$"
@@ -410,7 +425,7 @@ class IndyRawPublicKey(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndyRawPublicKey.PATTERN,
+            RawPublicEd25519VerificationKey2018.PATTERN,
             error="Value {input} is not a raw Ed25519VerificationKey2018 key",
         )
 
@@ -423,7 +438,9 @@ class RoutingKey(Regexp):
     """
 
     EXAMPLE = DIDKey.EXAMPLE
-    PATTERN = re.compile(DIDKey.PATTERN.pattern + "|" + IndyRawPublicKey.PATTERN)
+    PATTERN = re.compile(
+        DIDKey.PATTERN.pattern + "|" + RawPublicEd25519VerificationKey2018.PATTERN
+    )
 
     def __init__(self):
         """Initialize the instance."""
@@ -458,8 +475,23 @@ class IndyCredDefId(Regexp):
         )
 
 
-class IndyVersion(Regexp):
-    """Validate value against indy version specification."""
+class AnoncredsCredDefId(Regexp):
+    """Validate value against anoncreds credential definition identifier specification."""
+
+    EXAMPLE = "did:(method):3:CL:20:tag"
+    PATTERN = r"^(.+$)"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            IndyCredDefId.PATTERN,
+            error="Value {input} is not an anoncreds credential definition identifier",
+        )
+
+
+class MajorMinorVersion(Regexp):
+    """Validate value against major minor version specification."""
 
     EXAMPLE = "1.0"
     PATTERN = r"^[0-9.]+$"
@@ -468,8 +500,8 @@ class IndyVersion(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndyVersion.PATTERN,
-            error="Value {input} is not an indy version (use only digits and '.')",
+            MajorMinorVersion.PATTERN,
+            error="Value {input} is not a valid version major minor version (use only digits and '.')",  # noqa: E501
         )
 
 
@@ -485,6 +517,21 @@ class IndySchemaId(Regexp):
         super().__init__(
             IndySchemaId.PATTERN,
             error="Value {input} is not an indy schema identifier",
+        )
+
+
+class AnoncredsSchemaId(Regexp):
+    """Validate value against indy schema identifier specification."""
+
+    EXAMPLE = "did:(method):2:schema_name:1.0"
+    PATTERN = r"^(.+$)"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            IndySchemaId.PATTERN,
+            error="Value {input} is not an anoncreds schema identifier",
         )
 
 
@@ -508,6 +555,21 @@ class IndyRevRegId(Regexp):
         )
 
 
+class AnoncredsRevRegId(Regexp):
+    """Validate value against anoncreds revocation registry identifier specification."""
+
+    EXAMPLE = "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0"
+    PATTERN = r"^(.+$)"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            AnoncredsRevRegId.PATTERN,
+            error="Value {input} is not an anoncreds revocation registry identifier",
+        )
+
+
 class IndyCredRevId(Regexp):
     """Validate value against indy credential revocation identifier specification."""
 
@@ -523,8 +585,8 @@ class IndyCredRevId(Regexp):
         )
 
 
-class IndyPredicate(OneOf):
-    """Validate value against indy predicate."""
+class Predicate(OneOf):
+    """Validate value against predicate."""
 
     EXAMPLE = ">="
 
@@ -537,8 +599,8 @@ class IndyPredicate(OneOf):
         )
 
 
-class IndyISO8601DateTime(Regexp):
-    """Validate value against ISO 8601 datetime format, indy profile."""
+class ISO8601DateTime(Regexp):
+    """Validate value against ISO 8601 datetime format."""
 
     EXAMPLE = epoch_to_str(EXAMPLE_TIMESTAMP)
     PATTERN = (
@@ -550,7 +612,7 @@ class IndyISO8601DateTime(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndyISO8601DateTime.PATTERN,
+            ISO8601DateTime.PATTERN,
             error="Value {input} is not a date in valid format",
         )
 
@@ -960,29 +1022,38 @@ INDY_DID_EXAMPLE = IndyDID.EXAMPLE
 GENERIC_DID_VALIDATE = MaybeIndyDID()
 GENERIC_DID_EXAMPLE = MaybeIndyDID.EXAMPLE
 
-INDY_RAW_PUBLIC_KEY_VALIDATE = IndyRawPublicKey()
-INDY_RAW_PUBLIC_KEY_EXAMPLE = IndyRawPublicKey.EXAMPLE
+RAW_ED25519_2018_PUBLIC_KEY_VALIDATE = RawPublicEd25519VerificationKey2018()
+RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE = RawPublicEd25519VerificationKey2018.EXAMPLE
 
 INDY_SCHEMA_ID_VALIDATE = IndySchemaId()
 INDY_SCHEMA_ID_EXAMPLE = IndySchemaId.EXAMPLE
 
+ANONCREDS_SCHEMA_ID_VALIDATE = AnoncredsSchemaId()
+ANONCREDS_SCHEMA_ID_EXAMPLE = AnoncredsSchemaId.EXAMPLE
+
 INDY_CRED_DEF_ID_VALIDATE = IndyCredDefId()
 INDY_CRED_DEF_ID_EXAMPLE = IndyCredDefId.EXAMPLE
+
+ANONCREDS_CRED_DEF_ID_VALIDATE = AnoncredsCredDefId()
+ANONCREDS_CRED_DEF_ID_EXAMPLE = AnoncredsCredDefId.EXAMPLE
 
 INDY_REV_REG_ID_VALIDATE = IndyRevRegId()
 INDY_REV_REG_ID_EXAMPLE = IndyRevRegId.EXAMPLE
 
+ANONCREDS_REV_REG_ID_VALIDATE = AnoncredsRevRegId()
+ANONCREDS_REV_REG_ID_EXAMPLE = AnoncredsRevRegId.EXAMPLE
+
 INDY_CRED_REV_ID_VALIDATE = IndyCredRevId()
 INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
 
-INDY_VERSION_VALIDATE = IndyVersion()
-INDY_VERSION_EXAMPLE = IndyVersion.EXAMPLE
+MAJOR_MINOR_VERSION_VALIDATE = MajorMinorVersion()
+MAJOR_MINOR_VERSION_EXAMPLE = MajorMinorVersion.EXAMPLE
 
-INDY_PREDICATE_VALIDATE = IndyPredicate()
-INDY_PREDICATE_EXAMPLE = IndyPredicate.EXAMPLE
+PREDICATE_VALIDATE = Predicate()
+PREDICATE_EXAMPLE = Predicate.EXAMPLE
 
-INDY_ISO8601_DATETIME_VALIDATE = IndyISO8601DateTime()
-INDY_ISO8601_DATETIME_EXAMPLE = IndyISO8601DateTime.EXAMPLE
+ISO8601_DATETIME_VALIDATE = ISO8601DateTime()
+ISO8601_DATETIME_EXAMPLE = ISO8601DateTime.EXAMPLE
 
 RFC3339_DATETIME_VALIDATE = RFC3339DateTime()
 RFC3339_DATETIME_EXAMPLE = RFC3339DateTime.EXAMPLE
@@ -1037,3 +1108,6 @@ PRESENTATION_TYPE_EXAMPLE = PresentationType.EXAMPLE
 
 INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
 INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
+
+ANONCREDS_DID_VALIDATE = AnoncredsDID()
+ANONCREDS_DID_EXAMPLE = AnoncredsDID.EXAMPLE

@@ -6,7 +6,7 @@ import pytest
 from aiohttp.web import HTTPNotFound
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.models.anoncreds_revocation import RevRegDef, RevRegDefValue
+from ...anoncreds.models.revocation import RevRegDef, RevRegDefValue
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import routes as test_module

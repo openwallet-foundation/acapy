@@ -10,7 +10,7 @@ from ...anoncreds.base import (
     AnonCredsObjectAlreadyExists,
     AnonCredsSchemaAlreadyExists,
 )
-from ...anoncreds.models.anoncreds_cred_def import (
+from ...anoncreds.models.credential_definition import (
     CredDef,
     CredDefResult,
     CredDefState,
@@ -19,7 +19,7 @@ from ...anoncreds.models.anoncreds_cred_def import (
     CredDefValueRevocation,
     GetCredDefResult,
 )
-from ...anoncreds.models.anoncreds_schema import (
+from ...anoncreds.models.schema import (
     AnonCredsSchema,
     GetSchemaResult,
     SchemaResult,

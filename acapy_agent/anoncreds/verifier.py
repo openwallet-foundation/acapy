@@ -1,4 +1,4 @@
-"""Indy-Credx verifier implementation."""
+"""Anoncreds verifier implementation."""
 
 import asyncio
 import logging
@@ -9,10 +9,10 @@ from typing import List, Mapping, Tuple
 from anoncreds import AnoncredsError, Presentation, W3cPresentation
 
 from ..core.profile import Profile
-from ..indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..messaging.util import canon, encode
 from ..vc.vc_ld.validation_result import PresentationVerificationResult
-from .models.anoncreds_cred_def import GetCredDefResult
+from .models.credential_definition import GetCredDefResult
+from .models.utils import extract_non_revocation_intervals_from_proof_request
 from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class AnonCredsVerifier:
         """Remove superfluous non-revocation intervals in presentation request.
 
         Irrevocable credentials constitute proof of non-revocation, but
-        indy rejects proof requests with non-revocation intervals lining up
+        anoncreds rejects proof requests with non-revocation intervals lining up
         with non-revocable credentials in proof: seek and remove.
 
         Args:
@@ -116,13 +116,15 @@ class AnonCredsVerifier:
 
         Args:
             profile: relevant profile
-            pres_req: indy proof request
-            pres: indy proof request
+            pres_req: anoncreds proof request
+            pres: anoncreds proof request
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
         """
         msgs = []
         now = int(time())
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
+        non_revoc_intervals = extract_non_revocation_intervals_from_proof_request(
+            pres_req
+        )
         LOGGER.debug(f">>> got non-revoc intervals: {non_revoc_intervals}")
 
         # timestamp for irrevocable credential

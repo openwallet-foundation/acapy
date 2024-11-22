@@ -7,7 +7,10 @@ from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_OR_KEY_DID_EXAMPLE, INDY_SCHEMA_ID_EXAMPLE
+from ...messaging.valid import (
+    ANONCREDS_DID_EXAMPLE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
+)
 
 
 class AnonCredsSchema(BaseModel):
@@ -58,7 +61,7 @@ class AnonCredsSchemaSchema(BaseModelSchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition or schema",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
     )
@@ -129,7 +132,10 @@ class GetSchemaResultSchema(BaseModelSchema):
 
     schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
     schema_id = fields.Str(
-        metadata={"description": "Schema identifier", "example": INDY_SCHEMA_ID_EXAMPLE}
+        metadata={
+            "description": "Schema identifier",
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
+        }
     )
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
@@ -185,7 +191,7 @@ class SchemaStateSchema(BaseModelSchema):
     schema_id = fields.Str(
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         }
     )
     schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")

@@ -16,6 +16,7 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.models.presentation_request import AnoncredsPresentationRequestSchema
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.cred_precis import IndyCredPrecisSchema
@@ -118,6 +119,11 @@ class V20PresExRecordListSchema(OpenAPISchema):
 class V20PresProposalByFormatSchema(OpenAPISchema):
     """Schema for presentation proposal per format."""
 
+    anoncreds = fields.Nested(
+        AnoncredsPresentationRequestSchema,
+        required=False,
+        metadata={"description": "Presentation proposal for anoncreds"},
+    )
     indy = fields.Nested(
         IndyProofRequestSchema,
         required=False,
@@ -192,6 +198,11 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
 class V20PresRequestByFormatSchema(OpenAPISchema):
     """Presentation request per format."""
 
+    anoncreds = fields.Nested(
+        AnoncredsPresentationRequestSchema,
+        required=False,
+        metadata={"description": "Presentation proposal for anoncreds"},
+    )
     indy = fields.Nested(
         IndyProofRequestSchema,
         required=False,
@@ -293,6 +304,11 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
 class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     """Presentation specification schema by format, for send-presentation request."""
 
+    anoncreds = fields.Nested(
+        IndyPresSpecSchema,
+        required=False,
+        metadata={"description": "Presentation specification for anoncreds"},
+    )
     indy = fields.Nested(
         IndyPresSpecSchema,
         required=False,
@@ -406,7 +422,10 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
     attach = []
     for fmt_api, item_by_fmt in by_format.items():
-        if fmt_api == V20PresFormat.Format.INDY.api:
+        if (
+            fmt_api == V20PresFormat.Format.ANONCREDS.api
+            or fmt_api == V20PresFormat.Format.INDY.api
+        ):
             attach.append(AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api))
         elif fmt_api == V20PresFormat.Format.DIF.api:
             attach.append(AttachDecorator.data_json(mapping=item_by_fmt, ident=fmt_api))
@@ -557,19 +576,24 @@ async def present_proof_credentials_list(request: web.BaseRequest):
 
     wallet_type = profile.settings.get_value("wallet.type")
     if wallet_type == "askar-anoncreds":
-        indy_holder = AnonCredsHolder(profile)
+        holder = AnonCredsHolder(profile)
     else:
-        indy_holder = profile.inject(IndyHolder)
-    indy_credentials = []
-    # INDY
+        holder = profile.inject(IndyHolder)
+    credentials = []
+    # ANONCREDS or INDY
     try:
-        indy_pres_request = pres_ex_record.by_format["pres_request"].get(
-            V20PresFormat.Format.INDY.api
+        # try anoncreds and fallback to indy
+        pres_request = pres_ex_record.by_format["pres_request"].get(
+            V20PresFormat.Format.ANONCREDS.api
         )
-        if indy_pres_request:
-            indy_credentials = (
-                await indy_holder.get_credentials_for_presentation_request_by_referent(
-                    indy_pres_request,
+        if not pres_request:
+            pres_request = pres_ex_record.by_format["pres_request"].get(
+                V20PresFormat.Format.INDY.api
+            )
+        if pres_request:
+            credentials = (
+                await holder.get_credentials_for_presentation_request_by_referent(
+                    pres_request,
                     pres_referents,
                     start,
                     count,
@@ -771,7 +795,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
-    credentials = list(indy_credentials) + dif_cred_value_list
+    credentials = list(credentials) + dif_cred_value_list
     return web.json_response(credentials)
 
 
@@ -911,8 +935,11 @@ async def present_proof_create_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
-    if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
-        await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+    if pres_request_spec:
+        if V20PresFormat.Format.INDY.api in pres_request_spec:
+            await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+        if V20PresFormat.Format.ANONCREDS.api in pres_request_spec:
+            await _add_nonce(pres_request_spec[V20PresFormat.Format.ANONCREDS.api])
 
     pres_request_message = V20PresRequest(
         comment=comment,
@@ -995,8 +1022,11 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
-    if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
-        await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+    if pres_request_spec:
+        if V20PresFormat.Format.INDY.api in pres_request_spec:
+            await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+        if V20PresFormat.Format.ANONCREDS.api in pres_request_spec:
+            await _add_nonce(pres_request_spec[V20PresFormat.Format.ANONCREDS.api])
     pres_request_message = V20PresRequest(
         comment=comment,
         will_confirm=True,
@@ -1157,7 +1187,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
-    supported_formats = ["dif", "indy"]
+    supported_formats = ["anoncreds", "dif", "indy"]
     if not any(x in body for x in supported_formats):
         raise web.HTTPBadRequest(
             reason=(

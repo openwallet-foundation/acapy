@@ -21,15 +21,15 @@ from ..anoncreds.issuer import (
     CATEGORY_CRED_DEF_PRIVATE,
     CATEGORY_SCHEMA,
 )
-from ..anoncreds.models.anoncreds_cred_def import CredDef, CredDefState
-from ..anoncreds.models.anoncreds_revocation import (
+from ..anoncreds.models.credential_definition import CredDef, CredDefState
+from ..anoncreds.models.revocation import (
     RevList,
     RevListState,
     RevRegDef,
     RevRegDefState,
     RevRegDefValue,
 )
-from ..anoncreds.models.anoncreds_schema import SchemaState
+from ..anoncreds.models.schema import SchemaState
 from ..anoncreds.revocation import (
     CATEGORY_REV_LIST,
     CATEGORY_REV_REG_DEF,

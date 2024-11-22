@@ -45,8 +45,8 @@ from ...vc.ld_proofs.document_loader import DocumentLoader
 from ...wallet.error import WalletNotFoundError
 from .. import holder as test_module
 from ..holder import CATEGORY_CREDENTIAL, AnonCredsHolder, AnonCredsHolderError
-from ..models.anoncreds_cred_def import CredDef, CredDefValue, CredDefValuePrimary
-from ..models.anoncreds_revocation import GetRevListResult, RevList
+from ..models.credential_definition import CredDef, CredDefValue, CredDefValuePrimary
+from ..models.revocation import GetRevListResult, RevList
 from ..registry import AnonCredsRegistry
 
 
