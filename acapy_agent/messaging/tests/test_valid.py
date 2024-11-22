@@ -19,20 +19,20 @@ from ..valid import (
     INDY_CRED_REV_ID_VALIDATE,
     INDY_DID_VALIDATE,
     INDY_EXTRA_WQL_VALIDATE,
-    INDY_ISO8601_DATETIME_VALIDATE,
-    INDY_PREDICATE_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
     INDY_REV_REG_ID_VALIDATE,
     INDY_REV_REG_SIZE_VALIDATE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_VERSION_VALIDATE,
     INDY_WQL_VALIDATE,
     INT_EPOCH_VALIDATE,
+    ISO8601_DATETIME_VALIDATE,
     JWS_HEADER_KID_VALIDATE,
     JWT_VALIDATE,
+    MAJOR_MINOR_VERSION_VALIDATE,
     NATURAL_NUM_VALIDATE,
     NUM_STR_NATURAL_VALIDATE,
     NUM_STR_WHOLE_VALIDATE,
+    PREDICATE_VALIDATE,
+    RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     SHA256_VALIDATE,
     UUID4_VALIDATE,
     WHOLE_NUM_VALIDATE,
@@ -141,9 +141,11 @@ class TestValid(TestCase):
         ]
         for non_indy_raw_public_key in non_indy_raw_public_keys:
             with self.assertRaises(ValidationError):
-                INDY_RAW_PUBLIC_KEY_VALIDATE(non_indy_raw_public_key)
+                RAW_ED25519_2018_PUBLIC_KEY_VALIDATE(non_indy_raw_public_key)
 
-        INDY_RAW_PUBLIC_KEY_VALIDATE("Q4zqM7aXqm7gDQkUVLng9hQ4zqM7aXqm7gDQkUVLng9h")
+        RAW_ED25519_2018_PUBLIC_KEY_VALIDATE(
+            "Q4zqM7aXqm7gDQkUVLng9hQ4zqM7aXqm7gDQkUVLng9h"
+        )
 
     def test_jws_header_kid(self):
         non_kids = [
@@ -283,12 +285,12 @@ class TestValid(TestCase):
         non_versions = ["-1", "", "3_5", "3.5a"]
         for non_version in non_versions:
             with self.assertRaises(ValidationError):
-                INDY_VERSION_VALIDATE(non_version)
+                MAJOR_MINOR_VERSION_VALIDATE(non_version)
 
-        INDY_VERSION_VALIDATE("1.0")
-        INDY_VERSION_VALIDATE(".05")
-        INDY_VERSION_VALIDATE("1.2.3")
-        INDY_VERSION_VALIDATE("..")  # perverse but technically OK
+        MAJOR_MINOR_VERSION_VALIDATE("1.0")
+        MAJOR_MINOR_VERSION_VALIDATE(".05")
+        MAJOR_MINOR_VERSION_VALIDATE("1.2.3")
+        MAJOR_MINOR_VERSION_VALIDATE("..")  # perverse but technically OK
 
     def test_schema_id(self):
         non_schema_ids = [
@@ -311,12 +313,12 @@ class TestValid(TestCase):
         non_predicates = [">>", "", " >= ", "<<<=", "==", "=", "!="]
         for non_predicate in non_predicates:
             with self.assertRaises(ValidationError):
-                INDY_PREDICATE_VALIDATE(non_predicate)
+                PREDICATE_VALIDATE(non_predicate)
 
-        INDY_PREDICATE_VALIDATE("<")
-        INDY_PREDICATE_VALIDATE("<=")
-        INDY_PREDICATE_VALIDATE(">=")
-        INDY_PREDICATE_VALIDATE(">")
+        PREDICATE_VALIDATE("<")
+        PREDICATE_VALIDATE("<=")
+        PREDICATE_VALIDATE(">=")
+        PREDICATE_VALIDATE(">")
 
     def test_indy_date(self):
         non_datetimes = [
@@ -329,17 +331,17 @@ class TestValid(TestCase):
         ]
         for non_datetime in non_datetimes:
             with self.assertRaises(ValidationError):
-                INDY_ISO8601_DATETIME_VALIDATE(non_datetime)
+                ISO8601_DATETIME_VALIDATE(non_datetime)
 
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00Z")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01T00:00:00Z")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01T00:00:00")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00+00:00")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00-00:00")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00-00:00")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00.1-00:00")
-        INDY_ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00.123456-00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00Z")
+        ISO8601_DATETIME_VALIDATE("2020-01-01T00:00:00Z")
+        ISO8601_DATETIME_VALIDATE("2020-01-01T00:00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00+00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00-00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00-00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00.1-00:00")
+        ISO8601_DATETIME_VALIDATE("2020-01-01 00:00:00.123456-00:00")
 
     def test_indy_wql(self):
         non_wqls = [

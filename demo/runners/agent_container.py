@@ -36,6 +36,8 @@ from runners.support.utils import (  # noqa:E402
     log_timer,
 )
 
+from .support.agent import CRED_FORMAT_ANONCREDS
+
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
@@ -272,16 +274,25 @@ class AriesAgent(DemoAgent):
 
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
+
+            def _should_send_request_without_data(message):
+                """Formats that do not require credential request data."""
+                cred_offer_by_format = message["by_format"].get("cred_offer")
+
+                return (
+                    not message.get("by_format")
+                    or cred_offer_by_format.get("anoncreds")
+                    or cred_offer_by_format.get("indy")
+                    or cred_offer_by_format.get("vc_di")
+                )
+
             # Should wait for a tiny bit for the delete tests
             await asyncio.sleep(0.2)
             if not message.get("by_format"):
                 # this should not happen, something hinky when running in IDE...
                 # this will work if using indy payloads
                 self.log(f"No 'by_format' in message: {message}")
-                await self.admin_POST(
-                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
-                )
-            elif message["by_format"]["cred_offer"].get("indy"):
+            elif _should_send_request_without_data(message):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
                 )
@@ -294,10 +305,6 @@ class AriesAgent(DemoAgent):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request", data
                 )
-            elif message["by_format"]["cred_offer"].get("vc_di"):
-                await self.admin_POST(
-                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
-                )
 
         elif state == "done":
             pass
@@ -308,6 +315,26 @@ class AriesAgent(DemoAgent):
             self.log("Problem report message:", message.get("error_msg"))
 
     async def handle_issue_credential_v2_0_indy(self, message):
+        rev_reg_id = message.get("rev_reg_id")
+        cred_rev_id = message.get("cred_rev_id")
+        cred_id_stored = message.get("cred_id_stored")
+
+        if cred_id_stored:
+            cred_id = message["cred_id_stored"]
+            log_status(f"#18.1 Stored credential {cred_id} in wallet")
+            cred = await self.admin_GET(f"/credential/{cred_id}")
+            log_json(cred, label="Credential details:")
+            self.log("credential_id", cred_id)
+            self.log("cred_def_id", cred["cred_def_id"])
+            self.log("schema_id", cred["schema_id"])
+            # track last successfully received credential
+            self.last_credential_received = cred
+
+        if rev_reg_id and cred_rev_id:
+            self.log(f"Revocation registry ID: {rev_reg_id}")
+            self.log(f"Credential revocation ID: {cred_rev_id}")
+
+    async def handle_issue_credential_v2_0_anoncreds(self, message):
         rev_reg_id = message.get("rev_reg_id")
         cred_rev_id = message.get("cred_rev_id")
         cred_id_stored = message.get("cred_id_stored")
@@ -442,16 +469,18 @@ class AriesAgent(DemoAgent):
                 # this should not happen, something hinky when running in IDE...
                 self.log(f"No 'by_format' in message: {message}")
             else:
-                pres_request_indy = (
-                    message["by_format"].get("pres_request", {}).get("indy")
-                )
-                pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
+                pres_request_by_format = message["by_format"].get("pres_request", {})
+                pres_request = pres_request_by_format.get(
+                    "indy"
+                ) or pres_request_by_format.get("anoncreds")
+
+                pres_request_dif = pres_request_by_format.get("dif")
                 request = {}
 
-                if not pres_request_dif and not pres_request_indy:
+                if not pres_request_dif and not pres_request:
                     raise Exception("Invalid presentation request received")
 
-                if pres_request_indy:
+                if pres_request:
                     # include self-attested attributes (not included in credentials)
                     creds_by_reft = {}
                     revealed = {}
@@ -463,7 +492,6 @@ class AriesAgent(DemoAgent):
                         creds = await self.admin_GET(
                             f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                         )
-                        # print(">>> creds:", creds)
                         if creds:
                             # select only indy credentials
                             creds = [x for x in creds if "cred_info" in x]
@@ -484,7 +512,7 @@ class AriesAgent(DemoAgent):
 
                         # submit the proof wit one unrevealed revealed attribute
                         revealed_flag = False
-                        for referent in pres_request_indy["requested_attributes"]:
+                        for referent in pres_request["requested_attributes"]:
                             if referent in creds_by_reft:
                                 revealed[referent] = {
                                     "cred_id": creds_by_reft[referent]["cred_info"][
@@ -496,7 +524,7 @@ class AriesAgent(DemoAgent):
                             else:
                                 self_attested[referent] = "my self-attested value"
 
-                        for referent in pres_request_indy["requested_predicates"]:
+                        for referent in pres_request["requested_predicates"]:
                             if referent in creds_by_reft:
                                 predicates[referent] = {
                                     "cred_id": creds_by_reft[referent]["cred_info"][
@@ -504,15 +532,15 @@ class AriesAgent(DemoAgent):
                                     ]
                                 }
 
-                        log_status("#25 Generate the indy proof")
-                        indy_request = {
-                            "indy": {
+                        log_status("#25 Generate the proof")
+                        request = {
+                            "indy" if "indy" in pres_request_by_format else "anoncreds": {
                                 "requested_predicates": predicates,
                                 "requested_attributes": revealed,
                                 "self_attested_attributes": self_attested,
                             }
                         }
-                        request.update(indy_request)
+                        request.update(request)
                     except ClientError:
                         pass
 
@@ -779,7 +807,7 @@ class AgentContainer:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
             if endorser_role == "author" or endorser_role == "endorser":
                 self.public_did = True
-                self.cred_type = CRED_FORMAT_INDY
+                # self.cred_type = CRED_FORMAT_INDY
 
         self.reuse_connections = reuse_connections
         self.multi_use_invitations = multi_use_invitations
@@ -938,7 +966,7 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
+        if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
                 schema_name,
@@ -981,20 +1009,26 @@ class AgentContainer:
         self,
         cred_def_id: str,
         cred_attrs: list,
+        filter_type: str = "indy",
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
+        if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,
             }
+            if filter_type == "indy":
+                _filter = {"indy": {"cred_def_id": cred_def_id}}
+            else:
+                _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
+
             offer_request = {
                 "connection_id": self.agent.connection_id,
                 "comment": f"Offer on cred def id {cred_def_id}",
                 "auto_remove": False,
                 "credential_preview": cred_preview,
-                "filter": {"indy": {"cred_def_id": cred_def_id}},
+                "filter": _filter,
                 "trace": self.exchange_tracing,
             }
             cred_exchange = await self.agent.admin_POST(
@@ -1041,11 +1075,13 @@ class AgentContainer:
 
         return matched
 
-    async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
+    async def request_proof(
+        self, proof_request, explicit_revoc_required: bool = False, is_anoncreds=False
+    ):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
-            indy_proof_request = {
+        if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
+            proof_request = {
                 "name": (
                     proof_request["name"] if "name" in proof_request else "Proof of stuff"
                 ),
@@ -1061,24 +1097,24 @@ class AgentContainer:
                 # plug in revocation where requested in the supplied proof request
                 non_revoked = {"to": int(time.time())}
                 if "non_revoked" in proof_request:
-                    indy_proof_request["non_revoked"] = non_revoked
+                    proof_request["non_revoked"] = non_revoked
                     non_revoked_supplied = True
                 for attr in proof_request["requested_attributes"]:
                     if "non_revoked" in proof_request["requested_attributes"][attr]:
-                        indy_proof_request["requested_attributes"][attr][
-                            "non_revoked"
-                        ] = non_revoked
+                        proof_request["requested_attributes"][attr]["non_revoked"] = (
+                            non_revoked
+                        )
                         non_revoked_supplied = True
                 for pred in proof_request["requested_predicates"]:
                     if "non_revoked" in proof_request["requested_predicates"][pred]:
-                        indy_proof_request["requested_predicates"][pred][
-                            "non_revoked"
-                        ] = non_revoked
+                        proof_request["requested_predicates"][pred]["non_revoked"] = (
+                            non_revoked
+                        )
                         non_revoked_supplied = True
 
                 if not non_revoked_supplied and not explicit_revoc_required:
                     # else just make it global
-                    indy_proof_request["non_revoked"] = non_revoked
+                    proof_request["non_revoked"] = non_revoked
 
             else:
                 # make sure we are not leaking non-revoc requests
@@ -1091,13 +1127,16 @@ class AgentContainer:
                     if "non_revoked" in proof_request["requested_predicates"][pred]:
                         del proof_request["requested_predicates"][pred]["non_revoked"]
 
-            log_status(f"  >>> asking for proof for request: {indy_proof_request}")
+            log_status(f"  >>> asking for proof for request: {proof_request}")
+
+            if is_anoncreds:
+                presentation_request = {"anoncreds": proof_request}
+            else:
+                presentation_request = {"indy": proof_request}
 
             proof_request_web_request = {
                 "connection_id": self.agent.connection_id,
-                "presentation_request": {
-                    "indy": indy_proof_request,
-                },
+                "presentation_request": presentation_request,
                 "trace": self.exchange_tracing,
             }
             proof_exchange = await self.agent.admin_POST(
@@ -1108,7 +1147,6 @@ class AgentContainer:
 
         elif self.cred_type == CRED_FORMAT_JSON_LD:
             # TODO create and send the json-ld proof request
-            pass
             return None
 
         else:
@@ -1125,7 +1163,7 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
+        if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 
@@ -1514,12 +1552,14 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
         aip = 20
 
     if "cred_type" in args and args.cred_type not in [
+        CRED_FORMAT_ANONCREDS,
         CRED_FORMAT_INDY,
         CRED_FORMAT_VC_DI,
     ]:
         public_did = None
         aip = 20
     elif "cred_type" in args and args.cred_type in [
+        CRED_FORMAT_ANONCREDS,
         CRED_FORMAT_INDY,
         CRED_FORMAT_VC_DI,
     ]:
@@ -1528,6 +1568,12 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
         public_did = args.public_did if "public_did" in args else None
 
     cred_type = args.cred_type if "cred_type" in args else None
+
+    # Set anoncreds agent to use anoncreds credential format
+    wallet_type = arg_file_dict.get("wallet-type") or args.wallet_type
+    if wallet_type == "askar-anoncreds":
+        cred_type = CRED_FORMAT_ANONCREDS
+
     log_msg(
         f"Initializing demo agent {agent_ident} with AIP {aip} and credential type {cred_type}"
     )
@@ -1564,7 +1610,7 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
         mediation=args.mediation,
         cred_type=cred_type,
         use_did_exchange=(aip == 20) if ("aip" in args) else args.did_exchange,
-        wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
+        wallet_type=wallet_type,
         public_did=public_did,
         seed="random" if public_did else None,
         arg_file=arg_file,

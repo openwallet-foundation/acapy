@@ -149,9 +149,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
-                    mock.MagicMock(  # indy
+                    mock.MagicMock(  # anoncreds
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
+                    None,  # indy
                     None,  # ld_proof
                     None,  # vc_di
                 ]
@@ -162,7 +163,8 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                 mock_response.assert_called_once_with(
                     {
                         "cred_ex_record": mock_cx_rec.serialize.return_value,
-                        "indy": {"...": "..."},
+                        "anoncreds": {"...": "..."},
+                        "indy": None,
                         "ld_proof": None,
                         "vc_di": None,
                     }
@@ -185,6 +187,9 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
+                    mock.MagicMock(  # anoncreds
+                        serialize=mock.MagicMock(return_value={"anon": "creds"})
+                    ),
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"in": "dy"})
                     ),
@@ -202,6 +207,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                 mock_response.assert_called_once_with(
                     {
                         "cred_ex_record": mock_cx_rec.serialize.return_value,
+                        "anoncreds": {"anon": "creds"},
                         "indy": {"in": "dy"},
                         "ld_proof": {"ld": "proof"},
                         "vc_di": {"vc": "di"},
@@ -1230,9 +1236,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
-                    mock.MagicMock(  # indy
+                    mock.MagicMock(  # anoncreds
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
+                    None,
                     None,  # ld_proof
                     None,  # vc_di
                 ]
@@ -1248,7 +1255,8 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
-                    "indy": {"...": "..."},
+                    "anoncreds": {"...": "..."},
+                    "indy": None,
                     "ld_proof": None,
                     "vc_di": None,
                 }
@@ -1277,7 +1285,8 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
-                    None,
+                    None,  # anoncreds
+                    None,  # indy
                     None,  # ld_proof
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
@@ -1295,6 +1304,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "anoncreds": None,
                     "indy": None,
                     "ld_proof": None,
                     "vc_di": {"...": "..."},
@@ -1498,6 +1508,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             )
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
+                    None,  # anoncreds
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
@@ -1519,6 +1530,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "anoncreds": None,
                     "indy": {"...": "..."},
                     "ld_proof": None,
                     "vc_di": None,
@@ -1575,6 +1587,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "anoncreds": None,
                     "indy": {"...": "..."},
                     "ld_proof": None,
                     "vc_di": None,
@@ -1678,6 +1691,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             )
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
+                    None,  # anoncreds
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),

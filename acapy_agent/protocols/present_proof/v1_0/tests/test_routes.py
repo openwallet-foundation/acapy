@@ -4,8 +4,10 @@ from unittest import IsolatedAsyncioTestCase
 from marshmallow import ValidationError
 
 from .....admin.request_context import AdminRequestContext
+from .....anoncreds.models.presentation_request import (
+    AnoncredsPresentationReqAttrSpecSchema,
+)
 from .....indy.holder import IndyHolder
-from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
@@ -35,7 +37,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         )
 
     async def test_validate_proof_req_attr_spec(self):
-        aspec = IndyProofReqAttrSpecSchema()
+        aspec = AnoncredsPresentationReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
         aspec.validate_fields(
             {

@@ -17,6 +17,7 @@ from runners.agent_container import (  # noqa:E402
     create_agent_with_args,
 )
 from runners.support.agent import (  # noqa:E402
+    CRED_FORMAT_ANONCREDS,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
     CRED_FORMAT_VC_DI,
@@ -111,7 +112,7 @@ class FaberAgent(AriesAgent):
             return offer_request
 
         elif aip == 20:
-            if cred_type == CRED_FORMAT_INDY:
+            if cred_type == CRED_FORMAT_ANONCREDS or cred_type == CRED_FORMAT_INDY:
                 self.cred_attrs[cred_def_id] = {
                     "name": "Alice Smith",
                     "date": "2018-05-28",
@@ -127,12 +128,16 @@ class FaberAgent(AriesAgent):
                         for (n, v) in self.cred_attrs[cred_def_id].items()
                     ],
                 }
+                if cred_type == CRED_FORMAT_ANONCREDS:
+                    _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
+                else:
+                    _filter = {"indy": {"cred_def_id": cred_def_id}}
                 offer_request = {
                     "connection_id": self.connection_id,
                     "comment": f"Offer on cred def id {cred_def_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
-                    "filter": {"indy": {"cred_def_id": cred_def_id}},
+                    "filter": _filter,
                     "trace": exchange_tracing,
                 }
                 return offer_request
@@ -249,7 +254,7 @@ class FaberAgent(AriesAgent):
                     "restrictions": [{"schema_name": "degree schema"}],
                 }
             ]
-            indy_proof_request = {
+            proof_request = {
                 "name": "Proof of Education",
                 "version": "1.0",
                 "requested_attributes": {
@@ -261,10 +266,10 @@ class FaberAgent(AriesAgent):
             }
 
             if revocation:
-                indy_proof_request["non_revoked"] = {"to": int(time.time())}
+                proof_request["non_revoked"] = {"to": int(time.time())}
 
             proof_request_web_request = {
-                "proof_request": indy_proof_request,
+                "proof_request": proof_request,
                 "trace": exchange_tracing,
             }
             if not connectionless:
@@ -272,7 +277,7 @@ class FaberAgent(AriesAgent):
             return proof_request_web_request
 
         elif aip == 20:
-            if cred_type == CRED_FORMAT_INDY:
+            if cred_type == CRED_FORMAT_ANONCREDS or cred_type == CRED_FORMAT_INDY:
                 req_attrs = [
                     {
                         "name": "name",
@@ -312,7 +317,7 @@ class FaberAgent(AriesAgent):
                         "restrictions": [{"schema_name": "degree schema"}],
                     }
                 ]
-                indy_proof_request = {
+                proof_request = {
                     "name": "Proof of Education",
                     "version": "1.0",
                     "requested_attributes": {
@@ -325,14 +330,19 @@ class FaberAgent(AriesAgent):
                 }
 
                 if revocation:
-                    indy_proof_request["non_revoked"] = {"to": int(time.time())}
+                    proof_request["non_revoked"] = {"to": int(time.time())}
 
+                if cred_type == CRED_FORMAT_ANONCREDS:
+                    presentation_request = {"anoncreds": proof_request}
+                else:
+                    presentation_request = {"indy": proof_request}
                 proof_request_web_request = {
-                    "presentation_request": {"indy": indy_proof_request},
+                    "presentation_request": presentation_request,
                     "trace": exchange_tracing,
                 }
                 if not connectionless:
                     proof_request_web_request["connection_id"] = self.connection_id
+
                 return proof_request_web_request
 
             elif cred_type == CRED_FORMAT_VC_DI:
@@ -537,7 +547,11 @@ async def main(args):
             "birthdate_dateint",
             "timestamp",
         ]
-        if faber_agent.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
+        if faber_agent.cred_type in [
+            CRED_FORMAT_ANONCREDS,
+            CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI,
+        ]:
             faber_agent.public_did = True
             await faber_agent.initialize(
                 the_agent=agent,
@@ -569,6 +583,7 @@ async def main(args):
         exchange_tracing = False
         options = "    (1) Issue Credential\n"
         if faber_agent.cred_type in [
+            CRED_FORMAT_ANONCREDS,
             CRED_FORMAT_INDY,
             CRED_FORMAT_VC_DI,
         ]:
@@ -664,12 +679,14 @@ async def main(args):
 
             elif option == "1a":
                 new_cred_type = await prompt(
-                    "Enter credential type ({}, {}): ".format(
+                    "Enter credential type ({}, {}, {}): ".format(
+                        CRED_FORMAT_ANONCREDS,
                         CRED_FORMAT_INDY,
                         CRED_FORMAT_VC_DI,
                     )
                 )
                 if new_cred_type in [
+                    CRED_FORMAT_ANONCREDS,
                     CRED_FORMAT_INDY,
                     CRED_FORMAT_VC_DI,
                 ]:
@@ -689,7 +706,11 @@ async def main(args):
                     )
 
                 elif faber_agent.aip == 20:
-                    if faber_agent.cred_type == CRED_FORMAT_INDY:
+                    if faber_agent.cred_type in [
+                        CRED_FORMAT_ANONCREDS,
+                        CRED_FORMAT_INDY,
+                        CRED_FORMAT_VC_DI,
+                    ]:
                         offer_request = faber_agent.agent.generate_credential_offer(
                             faber_agent.aip,
                             faber_agent.cred_type,
@@ -702,14 +723,6 @@ async def main(args):
                             faber_agent.aip,
                             faber_agent.cred_type,
                             None,
-                            exchange_tracing,
-                        )
-
-                    elif faber_agent.cred_type == CRED_FORMAT_VC_DI:
-                        offer_request = faber_agent.agent.generate_credential_offer(
-                            faber_agent.aip,
-                            faber_agent.cred_type,
-                            faber_agent.cred_def_id,
                             exchange_tracing,
                         )
 
@@ -742,7 +755,12 @@ async def main(args):
                     pass
 
                 elif faber_agent.aip == 20:
-                    if faber_agent.cred_type == CRED_FORMAT_INDY:
+                    if faber_agent.cred_type in [
+                        CRED_FORMAT_ANONCREDS,
+                        CRED_FORMAT_INDY,
+                        CRED_FORMAT_VC_DI,
+                        CRED_FORMAT_JSON_LD,
+                    ]:
                         proof_request_web_request = (
                             faber_agent.agent.generate_proof_request_web_request(
                                 faber_agent.aip,
@@ -751,27 +769,6 @@ async def main(args):
                                 exchange_tracing,
                             )
                         )
-
-                    elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
-                        proof_request_web_request = (
-                            faber_agent.agent.generate_proof_request_web_request(
-                                faber_agent.aip,
-                                faber_agent.cred_type,
-                                faber_agent.revocation,
-                                exchange_tracing,
-                            )
-                        )
-
-                    elif faber_agent.cred_type == CRED_FORMAT_VC_DI:
-                        proof_request_web_request = (
-                            faber_agent.agent.generate_proof_request_web_request(
-                                faber_agent.aip,
-                                faber_agent.cred_type,
-                                faber_agent.revocation,
-                                exchange_tracing,
-                            )
-                        )
-
                     else:
                         raise Exception(
                             "Error invalid credential type:" + faber_agent.cred_type
@@ -819,28 +816,12 @@ async def main(args):
                     qr.print_ascii(invert=True)
 
                 elif faber_agent.aip == 20:
-                    if faber_agent.cred_type == CRED_FORMAT_INDY:
-                        proof_request_web_request = (
-                            faber_agent.agent.generate_proof_request_web_request(
-                                faber_agent.aip,
-                                faber_agent.cred_type,
-                                faber_agent.revocation,
-                                exchange_tracing,
-                                connectionless=True,
-                            )
-                        )
-                    elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
-                        proof_request_web_request = (
-                            faber_agent.agent.generate_proof_request_web_request(
-                                faber_agent.aip,
-                                faber_agent.cred_type,
-                                faber_agent.revocation,
-                                exchange_tracing,
-                                connectionless=True,
-                            )
-                        )
-
-                    elif faber_agent.cred_type == CRED_FORMAT_VC_DI:
+                    if faber_agent.cred_type in [
+                        CRED_FORMAT_ANONCREDS,
+                        CRED_FORMAT_INDY,
+                        CRED_FORMAT_VC_DI,
+                        CRED_FORMAT_JSON_LD,
+                    ]:
                         proof_request_web_request = (
                             faber_agent.agent.generate_proof_request_web_request(
                                 faber_agent.aip,

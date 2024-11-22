@@ -7,7 +7,7 @@ from aiohttp import web
 from ...admin.request_context import AdminRequestContext
 from ...anoncreds.base import AnonCredsObjectNotFound
 from ...anoncreds.issuer import AnonCredsIssuer
-from ...anoncreds.models.anoncreds_schema import (
+from ...anoncreds.models.schema import (
     AnonCredsSchema,
     SchemaResult,
     SchemaState,

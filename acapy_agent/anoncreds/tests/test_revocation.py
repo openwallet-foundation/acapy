@@ -16,8 +16,8 @@ from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
 
 from ...anoncreds.issuer import AnonCredsIssuer
-from ...anoncreds.models.anoncreds_cred_def import CredDef
-from ...anoncreds.models.anoncreds_revocation import (
+from ...anoncreds.models.credential_definition import CredDef
+from ...anoncreds.models.revocation import (
     RevList,
     RevListResult,
     RevListState,
@@ -26,7 +26,7 @@ from ...anoncreds.models.anoncreds_revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...anoncreds.models.anoncreds_schema import (
+from ...anoncreds.models.schema import (
     AnonCredsSchema,
     GetSchemaResult,
 )
@@ -48,7 +48,7 @@ rev_reg_def = RevRegDef(
             "accum_key": {"z": "1 0BB...386"},
         },
         tails_hash="58NNWYnVxVFzAfUztwGSNBL4551XNq6nXk56pCiKJxxt",
-        tails_location="http://tails-server.com",
+        tails_location="https://tails-server.com",
     ),
     issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
     type="CL_ACCUM",
@@ -836,21 +836,40 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     async def test_upload_tails_file(self):
         self.profile.inject_or = mock.Mock(
-            return_value=mock.MagicMock(
-                upload_tails_file=mock.CoroutineMock(
-                    side_effect=[
-                        (True, "http://tails-server.com"),
-                        (None, "http://tails-server.com"),
-                        (True, "not-http://tails-server.com"),
-                    ]
-                )
-            )
+            side_effect=[
+                None,
+                mock.MagicMock(
+                    upload_tails_file=mock.CoroutineMock(
+                        return_value=(True, "https://tails-server.com")
+                    )
+                ),
+            ]
         )
         # valid
         await self.revocation.upload_tails_file(rev_reg_def)
         # upload fails
+        self.profile.inject_or = mock.Mock(
+            side_effect=[
+                None,
+                mock.MagicMock(
+                    upload_tails_file=mock.CoroutineMock(
+                        return_value=(None, "https://tails-server.com"),
+                    )
+                ),
+            ]
+        )
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await self.revocation.upload_tails_file(rev_reg_def)
+        self.profile.inject_or = mock.Mock(
+            side_effect=[
+                None,
+                mock.MagicMock(
+                    upload_tails_file=mock.CoroutineMock(
+                        return_value=(True, "not-http://tails-server.com"),
+                    )
+                ),
+            ]
+        )
         # tails location does not match
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await self.revocation.upload_tails_file(rev_reg_def)

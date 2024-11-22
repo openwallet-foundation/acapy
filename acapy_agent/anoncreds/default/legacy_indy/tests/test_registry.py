@@ -16,25 +16,6 @@ from base58 import alphabet
 from .....anoncreds.base import AnonCredsSchemaAlreadyExists
 from .....anoncreds.default.legacy_indy import registry as test_module
 from .....anoncreds.issuer import AnonCredsIssuer
-from .....anoncreds.models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    CredDefValue,
-    CredDefValuePrimary,
-)
-from .....anoncreds.models.anoncreds_revocation import (
-    RevList,
-    RevListResult,
-    RevRegDef,
-    RevRegDefResult,
-    RevRegDefState,
-    RevRegDefValue,
-)
-from .....anoncreds.models.anoncreds_schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-    SchemaResult,
-)
 from .....askar.profile_anon import (
     AskarAnoncredsProfileSession,
 )
@@ -55,6 +36,21 @@ from .....revocation_anoncreds.models.issuer_cred_rev_record import (
 )
 from .....tests import mock
 from .....utils.testing import create_test_profile
+from ....models.credential_definition import (
+    CredDef,
+    CredDefResult,
+    CredDefValue,
+    CredDefValuePrimary,
+)
+from ....models.revocation import (
+    RevList,
+    RevListResult,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
+    RevRegDefValue,
+)
+from ....models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"

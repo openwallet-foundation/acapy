@@ -8,8 +8,10 @@ from marshmallow import ValidationError
 
 from .....admin.request_context import AdminRequestContext
 from .....anoncreds.holder import AnonCredsHolder
+from .....anoncreds.models.presentation_request import (
+    AnoncredsPresentationReqAttrSpecSchema,
+)
 from .....anoncreds.verifier import AnonCredsVerifier
-from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
@@ -223,7 +225,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
     async def test_validate_proof_req_attr_spec(self):
-        aspec = IndyProofReqAttrSpecSchema()
+        aspec = AnoncredsPresentationReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
         aspec.validate_fields(
             {

@@ -1,4 +1,4 @@
-"""Utilities to deal with indy."""
+"""Classes to represent anoncreds presentation request."""
 
 from typing import Mapping, Optional
 
@@ -14,7 +14,7 @@ from marshmallow import (
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
     INT_EPOCH_EXAMPLE,
     INT_EPOCH_VALIDATE,
     MAJOR_MINOR_VERSION_EXAMPLE,
@@ -26,17 +26,22 @@ from ...messaging.valid import (
 )
 
 
-class IndyProofReqAttrSpecSchema(OpenAPISchema):
-    """Schema for attribute specification in indy proof request."""
+class AnoncredsPresentationReqPredSpecSchema(OpenAPISchema):
+    """Schema for predicate specification in anoncreds proof request."""
 
     name = fields.Str(
-        required=False,
-        metadata={"example": "favouriteDrink", "description": "Attribute name"},
+        required=True, metadata={"example": "index", "description": "Attribute name"}
     )
-    names = fields.List(
-        fields.Str(metadata={"example": "age"}),
-        required=False,
-        metadata={"description": "Attribute name group"},
+    p_type = fields.Str(
+        required=True,
+        validate=PREDICATE_VALIDATE,
+        metadata={
+            "description": "Predicate type ('<', '<=', '>=', or '>')",
+            "example": PREDICATE_EXAMPLE,
+        },
+    )
+    p_value = fields.Int(
+        required=True, metadata={"description": "Threshold value", "strict": True}
     )
     restrictions = fields.List(
         fields.Dict(
@@ -47,7 +52,7 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                 ),
                 metadata={"example": "cred_def_id"},
             ),
-            values=fields.Str(metadata={"example": INDY_CRED_DEF_ID_EXAMPLE}),
+            values=fields.Str(metadata={"example": ANONCREDS_CRED_DEF_ID_EXAMPLE}),
         ),
         required=False,
         metadata={
@@ -85,7 +90,73 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                     },
                 ),
             },
-            name="IndyProofReqAttrSpecNonRevokedSchema",
+            name="AnoncredsPresentationReqPredSpecNonRevokedSchema",
+        ),
+        allow_none=True,
+        required=False,
+    )
+
+
+class AnoncredsPresentationReqAttrSpecSchema(OpenAPISchema):
+    """Schema for attribute specification in anoncreds proof request."""
+
+    name = fields.Str(
+        required=False,
+        metadata={"example": "favouriteDrink", "description": "Attribute name"},
+    )
+    names = fields.List(
+        fields.Str(metadata={"example": "age"}),
+        required=False,
+        metadata={"description": "Attribute name group"},
+    )
+    restrictions = fields.List(
+        fields.Dict(
+            keys=fields.Str(
+                validate=validate.Regexp(
+                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|"
+                    "cred_def_id|attr::.+::value$"
+                ),
+                metadata={"example": "cred_def_id"},
+            ),
+            values=fields.Str(metadata={"example": ANONCREDS_CRED_DEF_ID_EXAMPLE}),
+        ),
+        required=False,
+        metadata={
+            "description": (
+                "If present, credential must satisfy one of given restrictions: specify"
+                " schema_id, schema_issuer_did, schema_name, schema_version,"
+                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " <attribute-name> represents a credential attribute name"
+            )
+        },
+    )
+    non_revoked = fields.Nested(
+        Schema.from_dict(
+            {
+                "from": fields.Int(
+                    required=False,
+                    validate=INT_EPOCH_VALIDATE,
+                    metadata={
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": INT_EPOCH_EXAMPLE,
+                    },
+                ),
+                "to": fields.Int(
+                    required=False,
+                    validate=INT_EPOCH_VALIDATE,
+                    metadata={
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": INT_EPOCH_EXAMPLE,
+                    },
+                ),
+            },
+            name="AnoncredsPresentationReqAttrSpecNonRevokedSchema",
         ),
         allow_none=True,
         required=False,
@@ -117,84 +188,13 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
             )
 
 
-class IndyProofReqPredSpecSchema(OpenAPISchema):
-    """Schema for predicate specification in indy proof request."""
-
-    name = fields.Str(
-        required=True, metadata={"example": "index", "description": "Attribute name"}
-    )
-    p_type = fields.Str(
-        required=True,
-        validate=PREDICATE_VALIDATE,
-        metadata={
-            "description": "Predicate type ('<', '<=', '>=', or '>')",
-            "example": PREDICATE_EXAMPLE,
-        },
-    )
-    p_value = fields.Int(
-        required=True, metadata={"description": "Threshold value", "strict": True}
-    )
-    restrictions = fields.List(
-        fields.Dict(
-            keys=fields.Str(
-                validate=validate.Regexp(
-                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|"
-                    "cred_def_id|attr::.+::value$"
-                ),
-                metadata={"example": "cred_def_id"},
-            ),
-            values=fields.Str(metadata={"example": INDY_CRED_DEF_ID_EXAMPLE}),
-        ),
-        required=False,
-        metadata={
-            "description": (
-                "If present, credential must satisfy one of given restrictions: specify"
-                " schema_id, schema_issuer_did, schema_name, schema_version,"
-                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
-                " <attribute-name> represents a credential attribute name"
-            )
-        },
-    )
-    non_revoked = fields.Nested(
-        Schema.from_dict(
-            {
-                "from": fields.Int(
-                    required=False,
-                    validate=INT_EPOCH_VALIDATE,
-                    metadata={
-                        "description": (
-                            "Earliest time of interest in non-revocation interval"
-                        ),
-                        "strict": True,
-                        "example": INT_EPOCH_EXAMPLE,
-                    },
-                ),
-                "to": fields.Int(
-                    required=False,
-                    validate=INT_EPOCH_VALIDATE,
-                    metadata={
-                        "description": (
-                            "Latest time of interest in non-revocation interval"
-                        ),
-                        "strict": True,
-                        "example": INT_EPOCH_EXAMPLE,
-                    },
-                ),
-            },
-            name="IndyProofReqPredSpecNonRevokedSchema",
-        ),
-        allow_none=True,
-        required=False,
-    )
-
-
-class IndyProofRequest(BaseModel):
-    """Indy proof request."""
+class AnoncredsPresentationRequest(BaseModel):
+    """anoncreds proof request."""
 
     class Meta:
-        """Indy proof request metadata."""
+        """Anoncreds proof request metadata."""
 
-        schema_class = "IndyProofRequestSchema"
+        schema_class = "AnoncredsPresentationRequestSchema"
 
     def __init__(
         self,
@@ -206,7 +206,7 @@ class IndyProofRequest(BaseModel):
         non_revoked: Optional[Mapping] = None,
         **kwargs,
     ):
-        """Initialize indy cred abstract object.
+        """Initialize anoncreds cred abstract object.
 
         Args:
             nonce (str): The nonce value.
@@ -229,13 +229,13 @@ class IndyProofRequest(BaseModel):
         self.non_revoked = non_revoked
 
 
-class IndyProofRequestSchema(BaseModelSchema):
-    """Schema for indy proof request."""
+class AnoncredsPresentationRequestSchema(BaseModelSchema):
+    """Schema for anoncreds proof request."""
 
     class Meta:
-        """Indy proof request schema metadata."""
+        """Anoncreds proof request schema metadata."""
 
-        model_class = IndyProofRequest
+        model_class = AnoncredsPresentationRequest
         unknown = EXCLUDE
 
     nonce = fields.Str(
@@ -262,7 +262,7 @@ class IndyProofRequestSchema(BaseModelSchema):
         keys=fields.Str(
             metadata={"decription": "Attribute referent", "example": "0_legalname_uuid"}
         ),
-        values=fields.Nested(IndyProofReqAttrSpecSchema()),
+        values=fields.Nested(AnoncredsPresentationReqAttrSpecSchema()),
         metadata={"description": "Requested attribute specifications of proof request"},
     )
     requested_predicates = fields.Dict(
@@ -270,7 +270,7 @@ class IndyProofRequestSchema(BaseModelSchema):
         keys=fields.Str(
             metadata={"description": "Predicate referent", "example": "0_age_GE_uuid"}
         ),
-        values=fields.Nested(IndyProofReqPredSpecSchema()),
+        values=fields.Nested(AnoncredsPresentationReqPredSpecSchema()),
         metadata={"description": "Requested predicate specifications of proof request"},
     )
     non_revoked = fields.Nested(
@@ -299,7 +299,7 @@ class IndyProofRequestSchema(BaseModelSchema):
                     },
                 ),
             },
-            name="IndyProofRequestNonRevokedSchema",
+            name="AnoncredPresentationRequestNonRevokedSchema",
         ),
         allow_none=True,
         required=False,
