@@ -112,6 +112,4 @@ class UniversalResolver(BaseDIDResolver):
 
     async def _get_supported_did_regex(self) -> Pattern:
         props = await self._fetch_resolver_props()
-        return _compile_supported_did_regex(
-            driver["http"]["pattern"] for driver in props.values()
-        )
+        return _compile_supported_did_regex(driver for driver in props.keys())
