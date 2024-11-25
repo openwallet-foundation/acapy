@@ -119,6 +119,16 @@ async def test_fetch_resolver_props(mock_client_session: MockClientSession):
 
 @pytest.mark.asyncio
 async def test_get_supported_did_regex():
+    # Old response format
+    props = {"example": {"http": {"pattern": "match a test string"}}}
+    with mock.patch.object(
+        UniversalResolver,
+        "_fetch_resolver_props",
+        mock.CoroutineMock(return_value=props),
+    ):
+        pattern = await UniversalResolver()._get_supported_did_regex()
+        assert pattern.fullmatch("match a test string")
+
     # Example response from dev universal resolver 1.0
     props = {
         "^(did:sov:(?:(?:\\w[-\\w]*(?::\\w[-\\w]*)*):)?(?:[1-9A-HJ-NP-Za-km-z]{21,22}))$": {
