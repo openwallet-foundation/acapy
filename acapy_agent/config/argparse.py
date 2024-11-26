@@ -1634,8 +1634,7 @@ class WalletGroup(ArgumentGroup):
         )
         parser.add_argument(
             "--wallet-test",
-            type=str,
-            metavar="<wallet-test>",
+            action="store_true",
             default=False,
             env_var="ACAPY_WALLET_TEST",
             help=(
