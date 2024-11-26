@@ -119,6 +119,7 @@ async def test_fetch_resolver_props(mock_client_session: MockClientSession):
 
 @pytest.mark.asyncio
 async def test_get_supported_did_regex():
+    # Old response format
     props = {"example": {"http": {"pattern": "match a test string"}}}
     with mock.patch.object(
         UniversalResolver,
@@ -127,6 +128,29 @@ async def test_get_supported_did_regex():
     ):
         pattern = await UniversalResolver()._get_supported_did_regex()
         assert pattern.fullmatch("match a test string")
+
+    # Example response from dev universal resolver 1.0
+    props = {
+        "^(did:sov:(?:(?:\\w[-\\w]*(?::\\w[-\\w]*)*):)?(?:[1-9A-HJ-NP-Za-km-z]{21,22}))$": {
+            "libIndyPath": "",
+            "openParallel": "false",
+            "poolVersions": "_;2;test;2;builder;2;danube;2;idunion;2;idunion:test;2;indicio;2;indicio:test;2;indicio:demo;2;nxd;2;findy:test;2;bcovrin;2;bcovrin:test;2;bcovrin:dev;2;candy;2;candy:test;2;candy:dev;2",
+            "submitterDidSeeds": "_;_;test;_;builder;_;danube;_;idunion;_;idunion:test;_;indicio;_;indicio:test;_;indicio:demo;_;nxd;_;findy:test;_;bcovrin;_;bcovrin:test;_;bcovrin:dev;_;candy;_;candy:test;_;candy:dev;_",
+            "http": {
+                "resolveUri": "http://driver-did-sov:8080/1.0/identifiers/",
+                "propertiesUri": "http://driver-did-sov:8080/1.0/properties",
+            },
+            "walletNames": "_;w1;test;w2;builder;w3;danube;w4;idunion;w5;idunion:test;w6;indicio;w7;indicio:test;w8;indicio:demo;w9;nxd;w11;findy:test;w12;bcovrin;w13;bcovrin:test;w14;bcovrin:dev;w15;candy;w16;candy:test;w17;candy:dev;w18",
+            "poolConfigs": "_;./sovrin/_.txn;test;./sovrin/test.txn;builder;./sovrin/builder.txn;danube;./sovrin/danube.txn;idunion;./sovrin/idunion.txn;idunion:test;./sovrin/idunion-test.txn;indicio;./sovrin/indicio.txn;indicio:test;./sovrin/indicio-test.txn;indicio:demo;./sovrin/indicio-demo.txn;nxd;./sovrin/nxd.txn;bcovrin:test;./sovrin/bcovrin-test.txn;candy;./sovrin/candy.txn;candy:test;./sovrin/candy-test.txn;candy:dev;./sovrin/candy-dev.txn",
+        }
+    }
+    with mock.patch.object(
+        UniversalResolver,
+        "_fetch_resolver_props",
+        mock.CoroutineMock(return_value=props),
+    ):
+        pattern = await UniversalResolver()._get_supported_did_regex()
+        assert pattern.match("did:sov:WRfXPg8dantKVubE3HX8pw")
 
 
 def test_compile_supported_did_regex():
