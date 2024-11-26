@@ -84,7 +84,7 @@ pytest-asyncio = "^0.24.0"
 pytest-cov = "^5.0.0"
 pytest-ruff = "^0.4.1"
 pytest-xdist = "^3.6.1"
-debugpy = "^1.8.8"
+debugpy = "^1.8.9"
 
 [tool.poetry.extras]
 askar = ["aries-askar", "indy-credx", "indy-vdr", "anoncreds"]
