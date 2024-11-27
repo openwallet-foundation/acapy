@@ -436,11 +436,12 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
         proof_req_x["non_revoked"] = {"from": 1600000000, "to": 1600001000}
         proof_x["identifiers"][0]["timestamp"] = 1579890000
-        with mock.patch.object(
-            test_module, "LOGGER", mock.MagicMock()
-        ) as mock_logger, mock.patch.object(
-            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
-        ) as mock_get_ledger:
+        with (
+            mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger,
+            mock.patch.object(
+                IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+            ) as mock_get_ledger,
+        ):
             mock_get_ledger.return_value = (None, self.ledger)
             pre_logger_calls = mock_logger.info.call_count
             await self.verifier.check_timestamps(

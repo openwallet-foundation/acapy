@@ -134,11 +134,14 @@ class TestQueriesHandler:
         request_context.connection_ready = True
         handler = QueriesHandler()
         responder = MockResponder()
-        with mock.patch.object(
-            V20DiscoveryMgr, "execute_protocol_query", mock.CoroutineMock()
-        ) as mock_exec_protocol_query, mock.patch.object(
-            V20DiscoveryMgr, "execute_goal_code_query", mock.CoroutineMock()
-        ) as mock_goal_code_protocol_query:
+        with (
+            mock.patch.object(
+                V20DiscoveryMgr, "execute_protocol_query", mock.CoroutineMock()
+            ) as mock_exec_protocol_query,
+            mock.patch.object(
+                V20DiscoveryMgr, "execute_goal_code_query", mock.CoroutineMock()
+            ) as mock_goal_code_protocol_query,
+        ):
             mock_exec_protocol_query.return_value = [
                 {"test": "test"},
                 {

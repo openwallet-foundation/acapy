@@ -33,13 +33,15 @@ class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": self.test_conn_id}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_connection_record, mock.patch.object(
-            test_module, "BasicMessage", autospec=True
-        ) as mock_basic_message, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_connection_record,
+            mock.patch.object(
+                test_module, "BasicMessage", autospec=True
+            ) as mock_basic_message,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_connection_record.retrieve_by_id = mock.CoroutineMock()
 
             await test_module.connections_send_message(self.request)
@@ -50,10 +52,11 @@ class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": self.test_conn_id}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_connection_record, mock.patch.object(
-            test_module, "BasicMessage", autospec=True
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_connection_record,
+            mock.patch.object(test_module, "BasicMessage", autospec=True),
         ):
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = mock.CoroutineMock(
@@ -67,11 +70,14 @@ class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": self.test_conn_id}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_connection_record, mock.patch.object(
-            test_module, "BasicMessage", autospec=True
-        ) as mock_basic_message:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_connection_record,
+            mock.patch.object(
+                test_module, "BasicMessage", autospec=True
+            ) as mock_basic_message,
+        ):
             # Emulate connection not ready
             mock_connection_record.retrieve_by_id = mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False

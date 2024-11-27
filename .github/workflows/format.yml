@@ -17,5 +17,5 @@ jobs:
       - name: Ruff Format and Lint Check
         uses: chartboost/ruff-action@v1
         with:
-          version: 0.5.7
+          version: 0.8.0
           args: "format --check"

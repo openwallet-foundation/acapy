@@ -47,20 +47,24 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             test_module.execute(["bad"])
 
     async def test_upgrade_storage_from_version_included(self):
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             await test_module.upgrade(
                 settings={
                     "upgrade.config_path": "./acapy_agent/commands/default_version_upgrade_config.yml",
@@ -69,20 +73,24 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_storage_missing_from_version(self):
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             await test_module.upgrade(settings={})
 
     async def test_upgrade_from_version(self):
@@ -91,11 +99,14 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.from_version": "v0.7.2",
             }
         )
-        with mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -109,11 +120,14 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.page_size": 1,
             }
         )
-        with mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -131,11 +145,14 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.force_upgrade": True,
             }
         )
-        with mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -148,11 +165,14 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.page_size": 1,
             }
         )
-        with mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -164,29 +184,32 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 type_filter="acapy_version", tag_query={}
             )
             await storage.delete_record(version_storage_record)
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_record_path": [
-                                "acapy_agent.connections.models.conn_record.ConnRecord"
-                            ]
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_record_path": [
+                                    "acapy_agent.connections.models.conn_record.ConnRecord"
+                                ]
+                            },
+                            "update_existing_records": True,
                         },
-                        "update_existing_records": True,
-                    },
-                }
+                    }
+                ),
             ),
         ):
             await test_module.upgrade(
@@ -202,30 +225,33 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 type_filter="acapy_version", tag_query={}
             )
             await storage.delete_record(version_storage_record)
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_record_path": [
-                                "acapy_agent.connections.models.conn_record.ConnRecord"
-                            ]
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_record_path": [
+                                    "acapy_agent.connections.models.conn_record.ConnRecord"
+                                ]
+                            },
+                            "update_existing_records": True,
                         },
-                        "update_existing_records": True,
-                    },
-                    "fix_issue_rev_reg": {"fix_issue_rev_reg_records": True},
-                }
+                        "fix_issue_rev_reg": {"fix_issue_rev_reg_records": True},
+                    }
+                ),
             ),
         ):
             await test_module.upgrade(
@@ -265,20 +291,24 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 type_filter="acapy_version", tag_query={}
             )
             await storage.delete_record(version_storage_record)
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()):
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+        ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     settings={
@@ -296,30 +326,33 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 type_filter="acapy_version", tag_query={}
             )
             await storage.delete_record(version_storage_record)
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_record_path": [
-                                "acapy_agent.connections.models.conn_record.ConnRecord"
-                            ]
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_record_path": [
+                                    "acapy_agent.connections.models.conn_record.ConnRecord"
+                                ]
+                            },
+                            "update_existing_records": True,
                         },
-                        "update_existing_records": True,
-                    },
-                    "v0.6.0": {"update_existing_records_b": True},
-                }
+                        "v0.6.0": {"update_existing_records_b": True},
+                    }
+                ),
             ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
@@ -331,28 +364,31 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             assert "No function specified for" in str(ctx.exception)
 
     async def test_upgrade_x_class_not_found(self):
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_record_path": [
-                                "acapy_agent.connections.models.conn_record.Invalid"
-                            ],
-                        }
-                    },
-                }
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_record_path": [
+                                    "acapy_agent.connections.models.conn_record.Invalid"
+                                ],
+                            }
+                        },
+                    }
+                ),
             ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
@@ -364,28 +400,34 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             assert "Unknown Record type" in str(ctx.exception)
 
     async def test_execute(self):
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            ConnRecord,
-            "query",
-            mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), mock.patch.object(ConnRecord, "save", mock.CoroutineMock()), mock.patch.object(
-            asyncio, "get_event_loop", mock.MagicMock()
-        ) as mock_get_event_loop, mock.patch.object(
-            # Normally, this would be a CoroutingMock. However, the coroutine
-            # is awaited by run_until_complete, which is mocked out.
-            # Use MagicMock to prevent unawaited coroutine warnings.
-            test_module,
-            "upgrade",
-            mock.MagicMock(),
+            mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(return_value=[ConnRecord()]),
+            ),
+            mock.patch.object(ConnRecord, "save", mock.CoroutineMock()),
+            mock.patch.object(
+                asyncio, "get_event_loop", mock.MagicMock()
+            ) as mock_get_event_loop,
+            mock.patch.object(
+                # Normally, this would be a CoroutingMock. However, the coroutine
+                # is awaited by run_until_complete, which is mocked out.
+                # Use MagicMock to prevent unawaited coroutine warnings.
+                test_module,
+                "upgrade",
+                mock.MagicMock(),
+            ),
         ):
             mock_get_event_loop.return_value = mock.MagicMock(
                 run_until_complete=mock.MagicMock(),
@@ -401,28 +443,31 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_x_invalid_record_type(self):
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_exch_record_path": [
-                                "acapy_agent.connections.models.connection_target.ConnectionTarget"
-                            ],
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_exch_record_path": [
+                                    "acapy_agent.connections.models.connection_target.ConnectionTarget"
+                                ],
+                            }
                         }
                     }
-                }
+                ),
             ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
@@ -434,35 +479,38 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             assert "Only BaseRecord can be resaved" in str(ctx.exception)
 
     async def test_upgrade_force(self):
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        self.profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_record_path": [
-                                "acapy_agent.connections.models.conn_record.ConnRecord"
-                            ],
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_record_path": [
+                                    "acapy_agent.connections.models.conn_record.ConnRecord"
+                                ],
+                            },
+                            "update_existing_records": True,
                         },
-                        "update_existing_records": True,
-                    },
-                    "v0.7.3": {
-                        "update_existing_records": True,
-                    },
-                    "v0.7.1": {
-                        "update_existing_records": False,
-                    },
-                }
+                        "v0.7.3": {
+                            "update_existing_records": True,
+                        },
+                        "v0.7.1": {
+                            "update_existing_records": False,
+                        },
+                    }
+                ),
             ),
         ):
             await test_module.upgrade(
@@ -511,9 +559,10 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         assert "upgrade requires either profile or settings" in str(ctx.exception)
 
     def test_main(self):
-        with mock.patch.object(test_module, "__name__", "__main__"), mock.patch.object(
-            test_module, "execute", mock.MagicMock()
-        ) as mock_execute:
+        with (
+            mock.patch.object(test_module, "__name__", "__main__"),
+            mock.patch.object(test_module, "execute", mock.MagicMock()) as mock_execute,
+        ):
             test_module.main()
             mock_execute.assert_called_once
 
@@ -711,30 +760,31 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 await test_module.upgrade(profile=self.profile)
             assert "Explicit upgrade flag with critical value found" in str(ctx.exception)
 
-        with mock.patch.object(
-            test_module, "LOGGER", mock.MagicMock()
-        ) as mock_logger, mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            mock.MagicMock(
-                return_value={
-                    "v0.7.2": {
-                        "resave_records": {
-                            "base_record_path": [
-                                "acapy_agent.connections.models.conn_record.ConnRecord"
-                            ],
+        with (
+            mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger,
+            mock.patch.object(
+                test_module.yaml,
+                "safe_load",
+                mock.MagicMock(
+                    return_value={
+                        "v0.7.2": {
+                            "resave_records": {
+                                "base_record_path": [
+                                    "acapy_agent.connections.models.conn_record.ConnRecord"
+                                ],
+                            },
+                            "update_existing_records": True,
                         },
-                        "update_existing_records": True,
-                    },
-                    "v0.7.3": {
-                        "update_existing_records": True,
-                        "explicit_upgrade": "warning",
-                    },
-                    "v0.7.1": {
-                        "update_existing_records": True,
-                        "explicit_upgrade": "warning",
-                    },
-                }
+                        "v0.7.3": {
+                            "update_existing_records": True,
+                            "explicit_upgrade": "warning",
+                        },
+                        "v0.7.1": {
+                            "update_existing_records": True,
+                            "explicit_upgrade": "warning",
+                        },
+                    }
+                ),
             ),
         ):
             await test_module.upgrade(profile=self.profile)

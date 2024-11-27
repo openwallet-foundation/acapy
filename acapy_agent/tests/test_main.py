@@ -5,11 +5,11 @@ from .. import __main__ as test_module
 
 class TestMain(TestCase):
     def test_main(self):
-        with mock.patch.object(test_module, "__name__", "__main__"), mock.patch.object(
-            test_module, "init_debug", mock.MagicMock()
-        ) as mock_debug, mock.patch.object(
-            test_module, "run", mock.MagicMock()
-        ) as mock_run:
+        with (
+            mock.patch.object(test_module, "__name__", "__main__"),
+            mock.patch.object(test_module, "init_debug", mock.MagicMock()) as mock_debug,
+            mock.patch.object(test_module, "run", mock.MagicMock()) as mock_run,
+        ):
             args = ["aca-py"]
             test_module.main(args)
             mock_debug.assert_called_once_with(args)

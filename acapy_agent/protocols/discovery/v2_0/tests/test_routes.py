@@ -46,11 +46,12 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            V20DiscoveryMgr, "create_and_send_query", autospec=True
-        ) as mock_create_query:
+        with (
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(
+                V20DiscoveryMgr, "create_and_send_query", autospec=True
+            ) as mock_create_query,
+        ):
             mock_create_query.return_value = test_rec
             await test_module.query_features(self.request)
             mock_response.assert_called_once_with(test_rec.serialize())
@@ -74,11 +75,12 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            V20DiscoveryMgr, "create_and_send_query", autospec=True
-        ) as mock_create_query:
+        with (
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(
+                V20DiscoveryMgr, "create_and_send_query", autospec=True
+            ) as mock_create_query,
+        ):
             mock_create_query.return_value = test_rec
             await test_module.query_features(self.request)
             mock_response.assert_called_once_with(test_rec.serialize())
@@ -98,11 +100,12 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            test_module, "V20DiscoveryExchangeRecord", autospec=True
-        ) as mock_ex_rec:
+        with (
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(
+                test_module, "V20DiscoveryExchangeRecord", autospec=True
+            ) as mock_ex_rec,
+        ):
             mock_ex_rec.retrieve_by_connection_id.return_value = test_rec
             await test_module.query_records(self.request)
             mock_response.assert_called_once_with({"results": [test_rec.serialize()]})
@@ -112,9 +115,12 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
 
         self.request.query = {"connection_id": "test"}
 
-        with mock.patch.object(test_module.web, "json_response"), mock.patch.object(
-            test_module, "V20DiscoveryExchangeRecord", autospec=True
-        ) as mock_ex_rec:
+        with (
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(
+                test_module, "V20DiscoveryExchangeRecord", autospec=True
+            ) as mock_ex_rec,
+        ):
             mock_ex_rec.retrieve_by_connection_id.side_effect = StorageError
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.query_records(self.request)
@@ -143,11 +149,12 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             ),
         ]
 
-        with mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            test_module, "V20DiscoveryExchangeRecord", autospec=True
-        ) as mock_ex_rec:
+        with (
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(
+                test_module, "V20DiscoveryExchangeRecord", autospec=True
+            ) as mock_ex_rec,
+        ):
             mock_ex_rec.query.return_value = test_recs
             await test_module.query_records(self.request)
             mock_response.assert_called_once_with(
@@ -157,9 +164,12 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
     async def test_query_records_connection_x(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(test_module.web, "json_response"), mock.patch.object(
-            test_module, "V20DiscoveryExchangeRecord", autospec=True
-        ) as mock_ex_rec:
+        with (
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(
+                test_module, "V20DiscoveryExchangeRecord", autospec=True
+            ) as mock_ex_rec,
+        ):
             mock_ex_rec.query.side_effect = StorageError
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.query_records(self.request)

@@ -78,13 +78,16 @@ class TestMediationGrantHandler:
         handler, responder = MediationGrantHandler(), MockResponder()
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with mock.patch.object(
-            context.connection_record,
-            "metadata_get",
-            mock.CoroutineMock(return_value=True),
-        ), mock.patch.object(
-            test_module, "MediationManager", autospec=True
-        ) as mock_mediation_manager:
+        with (
+            mock.patch.object(
+                context.connection_record,
+                "metadata_get",
+                mock.CoroutineMock(return_value=True),
+            ),
+            mock.patch.object(
+                test_module, "MediationManager", autospec=True
+            ) as mock_mediation_manager,
+        ):
             await handler.handle(context, responder)
             mock_mediation_manager.return_value.set_default_mediator.assert_called_once_with(
                 record
@@ -127,12 +130,15 @@ class TestMediationGrantHandler:
         handler, responder = MediationGrantHandler(), MockResponder()
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with mock.patch.object(
-            context.connection_record,
-            "metadata_get",
-            mock.CoroutineMock(return_value=False),
-        ), mock.patch.object(
-            test_module, "MediationManager", autospec=True
-        ) as mock_mediation_manager:
+        with (
+            mock.patch.object(
+                context.connection_record,
+                "metadata_get",
+                mock.CoroutineMock(return_value=False),
+            ),
+            mock.patch.object(
+                test_module, "MediationManager", autospec=True
+            ) as mock_mediation_manager,
+        ):
             await handler.handle(context, responder)
             mock_mediation_manager.return_value.set_default_mediator.assert_not_called()

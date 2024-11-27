@@ -397,21 +397,27 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             ),
         ]
 
-        with mock.patch.object(
-            RouteRecord, "query", mock.CoroutineMock()
-        ) as mock_route_rec_query, mock.patch.object(
-            test_module.LOGGER, "error", mock.MagicMock()
-        ) as mock_logger_error:
+        with (
+            mock.patch.object(
+                RouteRecord, "query", mock.CoroutineMock()
+            ) as mock_route_rec_query,
+            mock.patch.object(
+                test_module.LOGGER, "error", mock.MagicMock()
+            ) as mock_logger_error,
+        ):
             mock_route_rec_query.side_effect = StorageNotFoundError("no record")
 
             await manager.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
 
-        with mock.patch.object(
-            RouteRecord, "query", mock.CoroutineMock()
-        ) as mock_route_rec_query, mock.patch.object(
-            test_module.LOGGER, "error", mock.MagicMock()
-        ) as mock_logger_error:
+        with (
+            mock.patch.object(
+                RouteRecord, "query", mock.CoroutineMock()
+            ) as mock_route_rec_query,
+            mock.patch.object(
+                test_module.LOGGER, "error", mock.MagicMock()
+            ) as mock_logger_error,
+        ):
             mock_route_rec_query.return_value = [
                 mock.MagicMock(delete_record=mock.CoroutineMock())
             ] * 2

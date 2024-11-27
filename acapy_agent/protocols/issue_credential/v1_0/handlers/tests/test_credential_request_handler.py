@@ -128,10 +128,11 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch.object(
-            test_module, "CredentialManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            cred_ex_rec, "save_error_state", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "CredentialManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(cred_ex_rec, "save_error_state", mock.CoroutineMock()),
         ):
             mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
@@ -146,11 +147,12 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
             handler = test_module.CredentialRequestHandler()
             responder = MockResponder()
 
-            with mock.patch.object(
-                responder, "send_reply", mock.CoroutineMock()
-            ), mock.patch.object(
-                handler._logger, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(responder, "send_reply", mock.CoroutineMock()),
+                mock.patch.object(
+                    handler._logger, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 

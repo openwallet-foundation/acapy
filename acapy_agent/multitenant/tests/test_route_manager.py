@@ -61,11 +61,16 @@ async def test_route_for_key_sub_mediator_no_base_mediator(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
     )
 
-    with mock.patch.object(
-        route_manager, "get_base_wallet_mediator", mock.CoroutineMock(return_value=None)
-    ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
-    ) as mock_create_route_record:
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_base_wallet_mediator",
+            mock.CoroutineMock(return_value=None),
+        ),
+        mock.patch.object(
+            RoutingManager, "create_route_record", mock.CoroutineMock()
+        ) as mock_create_route_record,
+    ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,
@@ -102,13 +107,16 @@ async def test_route_for_key_sub_mediator_and_base_mediator(
         connection_id="test-base-mediator-conn-id",
     )
 
-    with mock.patch.object(
-        route_manager,
-        "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
-    ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
-    ) as mock_create_route_record:
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_base_wallet_mediator",
+            mock.CoroutineMock(return_value=base_mediation_record),
+        ),
+        mock.patch.object(
+            RoutingManager, "create_route_record", mock.CoroutineMock()
+        ) as mock_create_route_record,
+    ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,
@@ -142,13 +150,16 @@ async def test_route_for_key_base_mediator_no_sub_mediator(
         connection_id="test-base-mediator-conn-id",
     )
 
-    with mock.patch.object(
-        route_manager,
-        "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
-    ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
-    ) as mock_create_route_record:
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_base_wallet_mediator",
+            mock.CoroutineMock(return_value=base_mediation_record),
+        ),
+        mock.patch.object(
+            RoutingManager, "create_route_record", mock.CoroutineMock()
+        ) as mock_create_route_record,
+    ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,

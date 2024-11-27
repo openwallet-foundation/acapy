@@ -43,13 +43,13 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock(save=mock.CoroutineMock())
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_class, mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_class,
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_class.retrieve_by_id.return_value = mock_conn_rec
             mock_didx_mgr.return_value.create_request = mock.CoroutineMock()
 
@@ -70,9 +70,12 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
     async def test_didx_accept_invitation_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+        ):
             mock_didx_mgr.return_value.create_request = mock.CoroutineMock(
                 side_effect=test_module.DIDXManagerError()
             )
@@ -88,11 +91,10 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
             "mediator_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         }
 
-        with mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_didx_mgr.return_value.create_request_implicit = mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     serialize=mock.MagicMock(return_value="mock serialization")
@@ -111,9 +113,10 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
             "auto_accept": "true",
         }
 
-        with mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_mgr.return_value.create_request_implicit = mock.CoroutineMock(
                 side_effect=StorageNotFoundError("not found")
             )
@@ -130,9 +133,10 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
             "auto_accept": "true",
         }
 
-        with mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_mgr.return_value.create_request_implicit = mock.CoroutineMock(
                 side_effect=test_module.WalletError("wallet error")
             )
@@ -152,13 +156,11 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.DIDXRequest, "deserialize", mock.MagicMock()
-        ), mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module.DIDXRequest, "deserialize", mock.MagicMock()),
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=mock_conn_rec
             )
@@ -174,11 +176,11 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         self.request._thread.pthid = "did:sov:0000000000000000000000"
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module.DIDXRequest, "deserialize", mock.MagicMock()
-        ), mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module.DIDXRequest, "deserialize", mock.MagicMock()),
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
                 side_effect=StorageNotFoundError("tricorder must be broken")
             )
@@ -195,11 +197,13 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         self.request._thread.pthid = "did:sov:0000000000000000000000"
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module.DIDXRequest, "deserialize", mock.MagicMock()
-        ) as mock_didx_req_deser, mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ), mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.DIDXRequest, "deserialize", mock.MagicMock()
+            ) as mock_didx_req_deser,
+            mock.patch.object(test_module, "DIDXManager", autospec=True),
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_req_deser.side_effect = test_module.BaseModelError("bad bits")
             with self.assertRaises(test_module.web.HTTPBadRequest) as context:
                 await test_module.didx_receive_request_implicit(self.request)
@@ -214,13 +218,13 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_didx_mgr.return_value.create_response = mock.CoroutineMock()
 
@@ -241,11 +245,13 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
     async def test_didx_accept_request_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_mgr.return_value.create_response = mock.CoroutineMock(
                 side_effect=test_module.DIDXManagerError()
             )
@@ -257,11 +263,13 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.json = mock.CoroutineMock(return_value={"reason": "asdf"})
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_mgr.return_value.reject = mock.CoroutineMock()
 
             await test_module.didx_reject(self.request)
@@ -282,11 +290,13 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.json = mock.CoroutineMock(return_value={"reason": "asdf"})
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module, "DIDXManager", autospec=True
-        ) as mock_didx_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(test_module, "DIDXManager", autospec=True) as mock_didx_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_didx_mgr.return_value.reject = mock.CoroutineMock(
                 side_effect=test_module.DIDXManagerError()
             )

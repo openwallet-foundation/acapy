@@ -169,11 +169,10 @@ class TestMultitenantManager(IsolatedAsyncioTestCase):
             assert profile.settings.get("mediation.clear") is True
 
     async def test_update_wallet_update_wallet_profile(self):
-        with mock.patch.object(
-            WalletRecord, "retrieve_by_id"
-        ) as retrieve_by_id, mock.patch.object(
-            WalletRecord, "save"
-        ) as wallet_record_save:
+        with (
+            mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id,
+            mock.patch.object(WalletRecord, "save") as wallet_record_save,
+        ):
             wallet_id = "test-wallet-id"
             wallet_profile = await create_test_profile()
             self.manager._profiles.put("test-wallet-id", wallet_profile)

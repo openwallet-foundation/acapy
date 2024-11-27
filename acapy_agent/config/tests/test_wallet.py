@@ -67,10 +67,13 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            test_module, "seed_to_did", mock.MagicMock()
-        ) as mock_seed_to_did, mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "seed_to_did", mock.MagicMock()
+            ) as mock_seed_to_did,
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -106,10 +109,13 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
 
         self.context.injector.bind_instance(ProfileManager, MockManager(self.profile))
 
-        with mock.patch.object(
-            test_module, "seed_to_did", mock.MagicMock()
-        ) as mock_seed_to_did, mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "seed_to_did", mock.MagicMock()
+            ) as mock_seed_to_did,
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -135,10 +141,11 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            MockManager, "open", mock.CoroutineMock()
-        ) as mock_mgr_open, mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(MockManager, "open", mock.CoroutineMock()) as mock_mgr_open,
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             mock_mgr_open.side_effect = test_module.ProfileNotFoundError()
 
@@ -180,12 +187,15 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            test_module,
-            "seed_to_did",
-            mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        ), mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module,
+                "seed_to_did",
+                mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+            ),
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             with self.assertRaises(test_module.ConfigError):
                 await test_module.wallet_config(self.context, provision=True)
@@ -206,10 +216,13 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            test_module, "seed_to_did", mock.MagicMock()
-        ) as mock_seed_to_did, mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "seed_to_did", mock.MagicMock()
+            ) as mock_seed_to_did,
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -230,12 +243,15 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            test_module,
-            "seed_to_did",
-            mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        ), mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module,
+                "seed_to_did",
+                mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+            ),
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             await test_module.wallet_config(self.context, provision=True)
 
@@ -249,10 +265,13 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            test_module, "seed_to_did", mock.MagicMock()
-        ) as mock_seed_to_did, mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "seed_to_did", mock.MagicMock()
+            ) as mock_seed_to_did,
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -275,10 +294,13 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with mock.patch.object(
-            MockManager, "provision", mock.CoroutineMock()
-        ) as mock_mgr_provision, mock.patch.object(
-            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                MockManager, "provision", mock.CoroutineMock()
+            ) as mock_mgr_provision,
+            mock.patch.object(
+                test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
+            ),
         ):
             mock_mgr_provision.return_value = self.profile
 
