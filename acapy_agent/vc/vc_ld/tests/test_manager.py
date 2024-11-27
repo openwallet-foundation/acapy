@@ -158,15 +158,18 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
             assert did_info == did
 
     async def test_get_suite_for_document(self):
-        with mock.patch.object(
-            self.manager,
-            "assert_can_issue_with_id_and_proof_type",
-            mock.CoroutineMock(),
-        ) as mock_can_issue, mock.patch.object(
-            self.manager,
-            "_did_info_for_did",
-            mock.CoroutineMock(),
-        ) as mock_did_info:
+        with (
+            mock.patch.object(
+                self.manager,
+                "assert_can_issue_with_id_and_proof_type",
+                mock.CoroutineMock(),
+            ) as mock_can_issue,
+            mock.patch.object(
+                self.manager,
+                "_did_info_for_did",
+                mock.CoroutineMock(),
+            ) as mock_did_info,
+        ):
             suite = await self.manager._get_suite_for_document(self.vc, self.options)
 
             assert suite.signature_type == self.options.proof_type

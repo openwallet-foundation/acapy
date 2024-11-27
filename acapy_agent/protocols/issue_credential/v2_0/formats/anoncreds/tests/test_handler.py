@@ -1146,15 +1146,19 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
-        ) as mock_rev_reg, mock.patch.object(
-            test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
-        ) as mock_get_detail_record:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            ),
+            mock.patch.object(
+                test_module, "RevocationRegistry", autospec=True
+            ) as mock_rev_reg,
+            mock.patch.object(
+                test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
+            ) as mock_get_detail_record,
+        ):
             mock_rev_reg.from_definition = mock.MagicMock(
                 return_value=mock.MagicMock(
                     get_or_fetch_local_tails_path=mock.CoroutineMock()
@@ -1251,11 +1255,14 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             side_effect=test_module.AnonCredsHolderError("Problem", {"message": "Nope"})
         )
 
-        with mock.patch.object(
-            test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
-        ) as mock_get_detail_record, mock.patch.object(
-            test_module.RevocationRegistry, "from_definition", mock.MagicMock()
-        ) as mock_rev_reg:
+        with (
+            mock.patch.object(
+                test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
+            ) as mock_get_detail_record,
+            mock.patch.object(
+                test_module.RevocationRegistry, "from_definition", mock.MagicMock()
+            ) as mock_rev_reg,
+        ):
             mock_get_detail_record.return_value = mock.MagicMock(
                 cred_request_metadata=cred_req_meta,
                 save=mock.CoroutineMock(),

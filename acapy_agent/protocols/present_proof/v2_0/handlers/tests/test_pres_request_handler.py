@@ -220,11 +220,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
             )
@@ -261,11 +264,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
@@ -304,11 +310,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             save_error_state=mock.CoroutineMock(),
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -347,11 +356,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             save_error_state=mock.CoroutineMock(),
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -389,11 +401,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -463,11 +478,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -526,11 +544,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             pres_proposal=pres_proposal,
             auto_present=True,
         )
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -585,11 +606,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -644,11 +668,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(AnonCredsHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -704,11 +731,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -760,11 +790,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(AnonCredsHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -810,11 +843,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -864,11 +900,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(AnonCredsHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -923,11 +962,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -982,11 +1024,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(AnonCredsHolder, self.mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -1084,11 +1129,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             pres_proposal=pres_proposal.serialize(),
             auto_present=True,
         )
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -1186,11 +1234,14 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             pres_proposal=pres_proposal.serialize(),
             auto_present=True,
         )
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+        ):
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance

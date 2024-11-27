@@ -21,17 +21,20 @@ class TestProvision(IsolatedAsyncioTestCase):
 
     async def test_provision_ledger_configured(self):
         profile = mock.MagicMock(close=mock.CoroutineMock())
-        with mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(
-                return_value=(
-                    profile,
-                    mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(
+                    return_value=(
+                        profile,
+                        mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    )
+                ),
             ),
-        ), mock.patch.object(
-            test_module, "ledger_config", mock.CoroutineMock(return_value=True)
+            mock.patch.object(
+                test_module, "ledger_config", mock.CoroutineMock(return_value=True)
+            ),
         ):
             await test_module.provision({})
 
@@ -44,9 +47,10 @@ class TestProvision(IsolatedAsyncioTestCase):
                 await test_module.provision({})
 
     def test_main(self):
-        with mock.patch.object(test_module, "__name__", "__main__"), mock.patch.object(
-            test_module, "execute", mock.MagicMock()
-        ) as mock_execute:
+        with (
+            mock.patch.object(test_module, "__name__", "__main__"),
+            mock.patch.object(test_module, "execute", mock.MagicMock()) as mock_execute,
+        ):
             test_module.main()
             mock_execute.assert_called_once
 
@@ -55,12 +59,13 @@ class TestProvision(IsolatedAsyncioTestCase):
         mediation_invite = "test-invite"
         test_profile = await create_test_profile()
 
-        with mock.patch.object(
-            test_module.MediationInviteStore, "store"
-        ) as invite_store, mock.patch.object(
-            test_module,
-            "wallet_config",
-            mock.CoroutineMock(return_value=(test_profile, mock.MagicMock())),
+        with (
+            mock.patch.object(test_module.MediationInviteStore, "store") as invite_store,
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                mock.CoroutineMock(return_value=(test_profile, mock.MagicMock())),
+            ),
         ):
             # when
             await test_module.provision({"mediation.invite": mediation_invite})

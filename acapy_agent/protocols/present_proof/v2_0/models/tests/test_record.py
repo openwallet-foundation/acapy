@@ -124,11 +124,12 @@ class TestRecord(IsolatedAsyncioTestCase):
             record.state = V20PresExRecord.STATE_PROPOSAL_RECEIVED
             await record.save(session)
 
-            with mock.patch.object(
-                record, "save", mock.CoroutineMock()
-            ) as mock_save, mock.patch.object(
-                test_module.LOGGER, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(record, "save", mock.CoroutineMock()) as mock_save,
+                mock.patch.object(
+                    test_module.LOGGER, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 mock_save.side_effect = test_module.StorageError()
                 await record.save_error_state(session, reason="testing")
                 mock_log_exc.assert_called_once()

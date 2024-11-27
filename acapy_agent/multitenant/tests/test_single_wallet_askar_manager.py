@@ -43,11 +43,14 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch(
-            "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
-        ) as wallet_config, mock.patch(
-            "acapy_agent.multitenant.single_wallet_askar_manager.AskarProfile",
-        ) as AskarProfile:
+        with (
+            mock.patch(
+                "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
+            ) as wallet_config,
+            mock.patch(
+                "acapy_agent.multitenant.single_wallet_askar_manager.AskarProfile",
+            ) as AskarProfile,
+        ):
             sub_wallet_profile_context = InjectionContext()
             sub_wallet_profile = AskarProfile(None, None)
             sub_wallet_profile.context.copy.return_value = sub_wallet_profile_context
@@ -115,11 +118,14 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch(
-            "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
-        ) as wallet_config, mock.patch(
-            "acapy_agent.multitenant.single_wallet_askar_manager.AskarAnoncredsProfile",
-        ) as AskarAnoncredsProfile:
+        with (
+            mock.patch(
+                "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
+            ) as wallet_config,
+            mock.patch(
+                "acapy_agent.multitenant.single_wallet_askar_manager.AskarAnoncredsProfile",
+            ) as AskarAnoncredsProfile,
+        ):
             sub_wallet_profile_context = InjectionContext()
             sub_wallet_profile = AskarAnoncredsProfile(None, None)
             sub_wallet_profile.context.copy.return_value = sub_wallet_profile_context

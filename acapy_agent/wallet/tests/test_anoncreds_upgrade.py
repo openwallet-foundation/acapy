@@ -329,17 +329,19 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 )
             )
 
-            with mock.patch.object(
-                anoncreds_upgrade, "upgrade_and_delete_schema_records"
-            ), mock.patch.object(
-                anoncreds_upgrade, "upgrade_and_delete_cred_def_records"
-            ), mock.patch.object(
-                AskarProfileSession, "rollback"
-            ) as mock_rollback, mock.patch.object(
-                AskarProfileSession,
-                "commit",
-                # Don't wait for sleep in retry to speed up test
-            ) as mock_commit, mock.patch.object(asyncio, "sleep"):
+            with (
+                mock.patch.object(anoncreds_upgrade, "upgrade_and_delete_schema_records"),
+                mock.patch.object(
+                    anoncreds_upgrade, "upgrade_and_delete_cred_def_records"
+                ),
+                mock.patch.object(AskarProfileSession, "rollback") as mock_rollback,
+                mock.patch.object(
+                    AskarProfileSession,
+                    "commit",
+                    # Don't wait for sleep in retry to speed up test
+                ) as mock_commit,
+                mock.patch.object(asyncio, "sleep"),
+            ):
                 """
                 Only tests schemas and cred_defs failing to upgrade because the other objects are
                 hard to mock. These tests should be enough to cover them as the logic is the same.

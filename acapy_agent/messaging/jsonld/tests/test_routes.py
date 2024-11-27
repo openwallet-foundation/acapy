@@ -353,13 +353,13 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({"valid": True})  # expected response
 
         # compact, expand take a LONG TIME: do them once above, mock for error cases
-        with mock.patch.object(
-            jsonld, "compact", mock.MagicMock()
-        ) as mock_compact, mock.patch.object(
-            jsonld, "expand", mock.MagicMock()
-        ) as mock_expand, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(jsonld, "compact", mock.MagicMock()) as mock_compact,
+            mock.patch.object(jsonld, "expand", mock.MagicMock()) as mock_expand,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_expand.return_value = [mock.MagicMock()]
             mock_compact.return_value = {
                 "@context": "...",
@@ -388,13 +388,13 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
             result = await test_module.verify(self.request)
             assert "error" in json.loads(result)
 
-        with mock.patch.object(
-            jsonld, "compact", mock.MagicMock()
-        ) as mock_compact, mock.patch.object(
-            jsonld, "expand", mock.MagicMock()
-        ) as mock_expand, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(jsonld, "compact", mock.MagicMock()) as mock_compact,
+            mock.patch.object(jsonld, "expand", mock.MagicMock()) as mock_expand,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_expand.return_value = [mock.MagicMock()]
             mock_compact.return_value = {
                 "@context": "...",
@@ -503,13 +503,13 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
         # compact, expand take a LONG TIME: do them once above, mock for error cases
         posted_request = deepcopy(POSTED_REQUEST)
         self.request.json = mock.CoroutineMock(return_value=posted_request)
-        with mock.patch.object(
-            jsonld, "compact", mock.MagicMock()
-        ) as mock_compact, mock.patch.object(
-            jsonld, "expand", mock.MagicMock()
-        ) as mock_expand, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(jsonld, "compact", mock.MagicMock()) as mock_compact,
+            mock.patch.object(jsonld, "expand", mock.MagicMock()) as mock_expand,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_expand.return_value = [mock.MagicMock()]
             mock_compact.return_value = {}  # drop all attributes
             mock_response.side_effect = lambda x: json.dumps(x)

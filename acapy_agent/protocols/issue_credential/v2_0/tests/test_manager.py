@@ -145,11 +145,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             )
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.create_proposal = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -186,11 +185,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         connection_id = "test_conn_id"
         comment = "comment"
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.create_proposal = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -236,11 +234,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             )
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.receive_proposal = mock.CoroutineMock()
 
             cred_proposal = V20CredProposal(
@@ -308,11 +305,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             cred_proposal=cred_proposal,
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.create_offer = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -384,11 +380,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             cred_proposal=cred_proposal,
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.create_offer = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -492,15 +487,15 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             thread_id=thread_id,
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            mock.CoroutineMock(return_value=stored_cx_rec),
-        ) as mock_retrieve, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord,
+                "retrieve_by_conn_and_thread",
+                mock.CoroutineMock(return_value=stored_cx_rec),
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.receive_offer = mock.CoroutineMock()
 
             cx_rec = await self.manager.receive_offer(cred_offer, connection_id)
@@ -549,13 +544,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         self.context.conn_record = mock.MagicMock()
         self.context.conn_record.connection_id = connection_id
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.receive_offer = mock.CoroutineMock()
             mock_retrieve.side_effect = (StorageNotFoundError(),)
             cx_rec = await self.manager.receive_offer(cred_offer, connection_id)
@@ -602,11 +597,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.create_request = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -689,11 +683,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.create_request = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -754,13 +747,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_retrieve.side_effect = (StorageNotFoundError(),)
             mock_handler.return_value.receive_request = mock.CoroutineMock()
 
@@ -799,13 +792,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         mock_conn = mock.MagicMock(connection_id="test_conn_id")
         mock_oob = mock.MagicMock()
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_retrieve.return_value = stored_cx_rec
             mock_handler.return_value.receive_request = mock.CoroutineMock()
 
@@ -834,11 +827,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
         )
 
-        with mock.patch.object(V20CredExRecord, "save", autospec=True), mock.patch.object(
-            V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_retrieve.side_effect = (StorageNotFoundError(),)
             mock_handler.return_value.receive_request = mock.CoroutineMock()
 
@@ -926,11 +921,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.issue_credential = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -1033,11 +1027,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         )
         self.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.issue_credential = mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -1139,15 +1132,15 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            mock.CoroutineMock(),
-        ) as mock_retrieve, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord,
+                "retrieve_by_conn_and_thread",
+                mock.CoroutineMock(),
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.receive_credential = mock.CoroutineMock()
             mock_retrieve.return_value = stored_cx_rec
             ret_cx_rec = await self.manager.receive_credential(
@@ -1282,13 +1275,13 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             thread_id=thread_id,
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            test_module.V20CredManager, "delete_cred_ex_record", autospec=True
-        ) as mock_delete, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                test_module.V20CredManager, "delete_cred_ex_record", autospec=True
+            ) as mock_delete,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_handler.return_value.store_credential = mock.CoroutineMock()
 
             ret_cx_rec = await self.manager.store_credential(
@@ -1329,15 +1322,18 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             auto_remove=True,
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save_ex, mock.patch.object(
-            V20CredExRecord, "delete_record", autospec=True
-        ) as mock_delete_ex, mock.patch.object(
-            test_module.LOGGER, "exception", mock.MagicMock()
-        ) as mock_log_exception, mock.patch.object(
-            test_module.LOGGER, "warning", mock.MagicMock()
-        ) as mock_log_warning:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save_ex,
+            mock.patch.object(
+                V20CredExRecord, "delete_record", autospec=True
+            ) as mock_delete_ex,
+            mock.patch.object(
+                test_module.LOGGER, "exception", mock.MagicMock()
+            ) as mock_log_exception,
+            mock.patch.object(
+                test_module.LOGGER, "warning", mock.MagicMock()
+            ) as mock_log_warning,
+        ):
             mock_delete_ex.side_effect = test_module.StorageError()
             (_, ack) = await self.manager.send_cred_ack(stored_exchange)
             assert ack._thread
@@ -1361,15 +1357,18 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
 
         ack = V20CredAck()
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as mock_save, mock.patch.object(
-            V20CredExRecord, "delete_record", autospec=True
-        ) as mock_delete, mock.patch.object(
-            V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            test_module.V20CredManager, "delete_cred_ex_record", autospec=True
-        ) as mock_delete:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord, "delete_record", autospec=True
+            ) as mock_delete,
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(
+                test_module.V20CredManager, "delete_cred_ex_record", autospec=True
+            ) as mock_delete,
+        ):
             mock_retrieve.return_value = stored_cx_rec
             ret_cx_rec = await self.manager.receive_credential_ack(
                 ack,
@@ -1386,13 +1385,15 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         stored_cx_rec = mock.MagicMock(delete_record=mock.CoroutineMock())
         stored_indy = mock.MagicMock(delete_record=mock.CoroutineMock())
 
-        with mock.patch.object(
-            V20CredExRecord, "delete_record", autospec=True
-        ), mock.patch.object(
-            V20CredExRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            test_module, "V20CredFormat", mock.MagicMock()
-        ) as mock_cred_format:
+        with (
+            mock.patch.object(V20CredExRecord, "delete_record", autospec=True),
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(
+                test_module, "V20CredFormat", mock.MagicMock()
+            ) as mock_cred_format,
+        ):
             mock_retrieve.return_value = stored_cx_rec
             mock_cred_format.Format = [
                 mock.MagicMock(
@@ -1428,13 +1429,14 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            V20CredExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            mock.CoroutineMock(),
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20CredExRecord,
+                "retrieve_by_conn_and_thread",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = stored_exchange
 
             ret_exchange = await self.manager.receive_problem_report(

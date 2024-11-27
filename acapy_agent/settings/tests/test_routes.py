@@ -190,11 +190,12 @@ async def test_update_profile_settings(mock_response, profile):
         ),
         __getitem__=lambda _, k: request_dict[k],
     )
-    with mock.patch.object(
-        multi_tenant_manager, "update_wallet"
-    ) as update_wallet, mock.patch.object(
-        multi_tenant_manager, "get_wallet_and_profile"
-    ) as get_wallet_and_profile:
+    with (
+        mock.patch.object(multi_tenant_manager, "update_wallet") as update_wallet,
+        mock.patch.object(
+            multi_tenant_manager, "get_wallet_and_profile"
+        ) as get_wallet_and_profile,
+    ):
         get_wallet_and_profile.return_value = (
             mock.MagicMock(
                 settings={

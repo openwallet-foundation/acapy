@@ -134,11 +134,10 @@ class TestInboundSession(IsolatedAsyncioTestCase):
         )
         test_msg = mock.MagicMock()
 
-        with mock.patch.object(
-            sess, "parse_inbound", mock.CoroutineMock()
-        ) as encode, mock.patch.object(
-            sess, "receive_inbound", mock.MagicMock()
-        ) as receive:
+        with (
+            mock.patch.object(sess, "parse_inbound", mock.CoroutineMock()) as encode,
+            mock.patch.object(sess, "receive_inbound", mock.MagicMock()) as receive,
+        ):
             result = await sess.receive(test_msg)
             encode.assert_awaited_once_with(test_msg)
             receive.assert_called_once_with(encode.return_value)
@@ -165,11 +164,10 @@ class TestInboundSession(IsolatedAsyncioTestCase):
         )
         test_msg = mock.MagicMock()
 
-        with mock.patch.object(
-            sess, "parse_inbound", mock.CoroutineMock()
-        ) as encode, mock.patch.object(
-            sess, "receive_inbound", mock.MagicMock()
-        ) as receive:
+        with (
+            mock.patch.object(sess, "parse_inbound", mock.CoroutineMock()) as encode,
+            mock.patch.object(sess, "receive_inbound", mock.MagicMock()) as receive,
+        ):
             result = await sess.receive(test_msg)
             encode.assert_awaited_once_with(test_msg)
             receive.assert_called_once_with(encode.return_value)

@@ -94,14 +94,17 @@ class TestDisclosuresHandler:
 
         handler = DisclosuresHandler()
         mock_responder = MockResponder()
-        with mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(side_effect=StorageNotFoundError),
-        ), mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "retrieve_by_connection_id",
-            mock.CoroutineMock(return_value=discovery_record),
+        with (
+            mock.patch.object(
+                V20DiscoveryExchangeRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(side_effect=StorageNotFoundError),
+            ),
+            mock.patch.object(
+                V20DiscoveryExchangeRecord,
+                "retrieve_by_connection_id",
+                mock.CoroutineMock(return_value=discovery_record),
+            ),
         ):
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -127,14 +130,17 @@ class TestDisclosuresHandler:
 
         handler = DisclosuresHandler()
         mock_responder = MockResponder()
-        with mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(side_effect=StorageNotFoundError),
-        ), mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "retrieve_by_connection_id",
-            mock.CoroutineMock(side_effect=StorageNotFoundError),
+        with (
+            mock.patch.object(
+                V20DiscoveryExchangeRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(side_effect=StorageNotFoundError),
+            ),
+            mock.patch.object(
+                V20DiscoveryExchangeRecord,
+                "retrieve_by_connection_id",
+                mock.CoroutineMock(side_effect=StorageNotFoundError),
+            ),
         ):
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
