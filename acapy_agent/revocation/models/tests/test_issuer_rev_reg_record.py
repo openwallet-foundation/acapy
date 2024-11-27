@@ -178,28 +178,32 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
         _test_profile.context.injector.bind_instance(BaseLedger, self.ledger)
-        with mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "query_by_ids",
-            mock.CoroutineMock(
-                return_value=[
-                    test_module.IssuerCredRevRecord(
-                        record_id=test_module.UUID4_EXAMPLE,
-                        state=test_module.IssuerCredRevRecord.STATE_REVOKED,
-                        cred_ex_id=test_module.UUID4_EXAMPLE,
-                        rev_reg_id=REV_REG_ID,
-                        cred_rev_id="1",
-                    )
-                ]
+        with (
+            mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "query_by_ids",
+                mock.CoroutineMock(
+                    return_value=[
+                        test_module.IssuerCredRevRecord(
+                            record_id=test_module.UUID4_EXAMPLE,
+                            state=test_module.IssuerCredRevRecord.STATE_REVOKED,
+                            cred_ex_id=test_module.UUID4_EXAMPLE,
+                            rev_reg_id=REV_REG_ID,
+                            cred_rev_id="1",
+                        )
+                    ]
+                ),
             ),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_revoc_reg_id",
-            mock.CoroutineMock(return_value=rec),
-        ), mock.patch.object(
-            test_module,
-            "generate_ledger_rrrecovery_txn",
-            mock.CoroutineMock(return_value=rev_reg_delta),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_revoc_reg_id",
+                mock.CoroutineMock(return_value=rec),
+            ),
+            mock.patch.object(
+                test_module,
+                "generate_ledger_rrrecovery_txn",
+                mock.CoroutineMock(return_value=rev_reg_delta),
+            ),
         ):
             assert (
                 _test_rev_reg_delta,

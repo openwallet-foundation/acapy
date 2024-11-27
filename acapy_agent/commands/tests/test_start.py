@@ -25,22 +25,23 @@ class TestStart(IsolatedAsyncioTestCase):
         await test_module.shutdown_app(mock_conductor)
 
     def test_exec_start(self):
-        with mock.patch.object(
-            # Normally this would be a CoroutineMock. However, it is awaited by
-            # run_loop, which is mocked out. So we mock it as a MagicMock.
-            test_module,
-            "start_app",
-            mock.MagicMock(),
-        ) as start_app, mock.patch.object(
-            test_module, "run_loop"
-        ) as run_loop, mock.patch.object(
-            # Same here as note above
-            test_module,
-            "shutdown_app",
-            mock.MagicMock(),
-        ) as shutdown_app, mock.patch.object(
-            test_module, "uvloop", mock.MagicMock()
-        ) as mock_uvloop:
+        with (
+            mock.patch.object(
+                # Normally this would be a CoroutineMock. However, it is awaited by
+                # run_loop, which is mocked out. So we mock it as a MagicMock.
+                test_module,
+                "start_app",
+                mock.MagicMock(),
+            ) as start_app,
+            mock.patch.object(test_module, "run_loop") as run_loop,
+            mock.patch.object(
+                # Same here as note above
+                test_module,
+                "shutdown_app",
+                mock.MagicMock(),
+            ) as shutdown_app,
+            mock.patch.object(test_module, "uvloop", mock.MagicMock()) as mock_uvloop,
+        ):
             mock_uvloop.install = mock.MagicMock()
             test_module.execute(
                 [
@@ -102,11 +103,10 @@ class TestStart(IsolatedAsyncioTestCase):
         startup_call = startup()
         shutdown = mock.CoroutineMock()
         shutdown_call = shutdown()
-        with mock.patch.object(
-            test_module, "asyncio", autospec=True
-        ) as mock_asyncio, mock.patch.object(
-            test_module, "LOGGER", autospec=True
-        ) as mock_logger:
+        with (
+            mock.patch.object(test_module, "asyncio", autospec=True) as mock_asyncio,
+            mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger,
+        ):
             test_module.run_loop(startup_call, shutdown_call)
             mock_add = mock_asyncio.get_event_loop.return_value.add_signal_handler
             mock_add.assert_called_once()
@@ -135,10 +135,9 @@ class TestStart(IsolatedAsyncioTestCase):
             mock_logger.exception.assert_called_once()
 
     def test_main(self):
-        with mock.patch.object(
-            test_module, "__name__", "__main__"
-        ) as mock_name, mock.patch.object(
-            test_module, "execute", mock.MagicMock()
-        ) as mock_execute:
+        with (
+            mock.patch.object(test_module, "__name__", "__main__") as mock_name,
+            mock.patch.object(test_module, "execute", mock.MagicMock()) as mock_execute,
+        ):
             test_module.main()
             mock_execute.assert_called_once

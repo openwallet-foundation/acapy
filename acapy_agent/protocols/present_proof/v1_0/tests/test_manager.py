@@ -340,9 +340,10 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
     async def test_create_exchange_for_proposal(self):
         proposal = PresentationProposal()
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(PresentationProposal, "serialize", autospec=True):
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(PresentationProposal, "serialize", autospec=True),
+        ):
             exchange = await self.manager.create_exchange_for_proposal(
                 CONN_ID,
                 proposal,
@@ -441,13 +442,15 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -484,13 +487,15 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -545,13 +550,15 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -616,13 +623,15 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
         self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module.LOGGER, "info", mock.MagicMock()
-        ) as mock_log_info:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module.LOGGER, "info", mock.MagicMock()
+            ) as mock_log_info,
+        ):
             mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
@@ -690,13 +699,15 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ), mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True),
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -776,13 +787,15 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -921,13 +934,14 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ), mock.patch.object(
-            V10PresentationExchange,
-            "retrieve_by_tag_filter",
-            mock.CoroutineMock(return_value=exchange_dummy),
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True),
+            mock.patch.object(
+                V10PresentationExchange,
+                "retrieve_by_tag_filter",
+                mock.CoroutineMock(return_value=exchange_dummy),
+            ) as retrieve_ex,
+        ):
             retrieve_ex.side_effect = [exchange_dummy]
             exchange_out = await self.manager.receive_presentation(
                 PRES, connection_record, None
@@ -1024,11 +1038,12 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ), mock.patch.object(
-            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True),
+            mock.patch.object(
+                V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.side_effect = [exchange_dummy]
             exchange_out = await self.manager.receive_presentation(PRES, None, None)
             assert exchange_out.state == (
@@ -1125,11 +1140,12 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
             },
         )
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ), mock.patch.object(
-            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True),
+            mock.patch.object(
+                V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = exchange_dummy
             with self.assertRaises(PresentationManagerError):
                 await self.manager.receive_presentation(PRES, connection_record, None)
@@ -1137,11 +1153,12 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
     async def test_receive_presentation_connectionless(self):
         exchange_dummy = V10PresentationExchange()
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation(PRES, None, None)
             save_ex.assert_called_once()
@@ -1221,11 +1238,12 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
         exchange_dummy = V10PresentationExchange()
         message = mock.MagicMock()
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation_ack(
                 message, connection_record
@@ -1242,11 +1260,12 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
         exchange_dummy = V10PresentationExchange()
         message = mock.MagicMock(_verification_result="true")
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation_ack(
                 message, connection_record
@@ -1275,17 +1294,19 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            V10PresentationExchange, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10PresentationExchange,
-            "retrieve_by_tag_filter",
-            mock.CoroutineMock(),
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        with (
+            mock.patch.object(V10PresentationExchange, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V10PresentationExchange,
+                "retrieve_by_tag_filter",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+            mock.patch.object(
+                self.profile,
+                "session",
+                mock.MagicMock(return_value=self.profile.session()),
+            ) as session,
+        ):
             retrieve_ex.return_value = stored_exchange
 
             ret_exchange = await self.manager.receive_problem_report(

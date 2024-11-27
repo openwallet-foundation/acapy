@@ -426,17 +426,20 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             mock_retrieve.assert_called_once_with(ANY, {"invi_msg_id": "the-pthid"})
 
         # Connection id is not the same, state is AWAIT_RESPONSE. oob has connection_id
-        with mock.patch.object(
-            OobRecord,
-            "retrieve_by_tag_filter",
-            mock.CoroutineMock(return_value=self.oob_record),
-        ) as mock_retrieve, mock.patch.object(
-            ConnRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(
-                return_value=mock.MagicMock(delete_record=mock.CoroutineMock())
-            ),
-        ) as mock_retrieve_conn:
+        with (
+            mock.patch.object(
+                OobRecord,
+                "retrieve_by_tag_filter",
+                mock.CoroutineMock(return_value=self.oob_record),
+            ) as mock_retrieve,
+            mock.patch.object(
+                ConnRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(
+                    return_value=mock.MagicMock(delete_record=mock.CoroutineMock())
+                ),
+            ) as mock_retrieve_conn,
+        ):
             self.oob_record.role = OobRecord.ROLE_SENDER
             self.oob_record.state = OobRecord.STATE_AWAIT_RESPONSE
             self.context.connection_record = mock.MagicMock(

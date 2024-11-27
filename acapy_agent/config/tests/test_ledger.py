@@ -317,11 +317,14 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 },
             ],
         }
-        with mock.patch.object(
-            test_module,
-            "fetch_genesis_transactions",
-            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
-        ), mock.patch("builtins.open", mock.MagicMock()) as mock_open:
+        with (
+            mock.patch.object(
+                test_module,
+                "fetch_genesis_transactions",
+                mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+            ),
+            mock.patch("builtins.open", mock.MagicMock()) as mock_open,
+        ):
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
                     return_value=mock.MagicMock(
@@ -412,11 +415,14 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             ],
             "ledger.genesis_url": "http://localhost:9000/genesis",
         }
-        with mock.patch.object(
-            test_module,
-            "fetch_genesis_transactions",
-            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
-        ), mock.patch("builtins.open", mock.MagicMock()) as mock_open:
+        with (
+            mock.patch.object(
+                test_module,
+                "fetch_genesis_transactions",
+                mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+            ),
+            mock.patch("builtins.open", mock.MagicMock()) as mock_open,
+        ):
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
                     return_value=mock.MagicMock(
@@ -474,11 +480,14 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 },
             ],
         }
-        with mock.patch.object(
-            test_module,
-            "fetch_genesis_transactions",
-            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
-        ), mock.patch("builtins.open", mock.MagicMock()) as mock_open:
+        with (
+            mock.patch.object(
+                test_module,
+                "fetch_genesis_transactions",
+                mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+            ),
+            mock.patch("builtins.open", mock.MagicMock()) as mock_open,
+        ):
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
                     return_value=mock.MagicMock(
@@ -537,11 +546,14 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 },
             ]
         }
-        with mock.patch.object(
-            test_module,
-            "fetch_genesis_transactions",
-            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
-        ), mock.patch("builtins.open", mock.MagicMock()) as mock_open:
+        with (
+            mock.patch.object(
+                test_module,
+                "fetch_genesis_transactions",
+                mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+            ),
+            mock.patch("builtins.open", mock.MagicMock()) as mock_open,
+        ):
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
                     return_value=mock.MagicMock(
@@ -596,11 +608,14 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 },
             ],
         }
-        with mock.patch.object(
-            test_module,
-            "fetch_genesis_transactions",
-            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
-        ), mock.patch("builtins.open", mock.MagicMock()) as mock_open:
+        with (
+            mock.patch.object(
+                test_module,
+                "fetch_genesis_transactions",
+                mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+            ),
+            mock.patch("builtins.open", mock.MagicMock()) as mock_open,
+        ):
             mock_open.side_effect = IOError("no read permission")
             with self.assertRaises(test_module.ConfigError):
                 await test_module.load_multiple_genesis_transactions_from_config(settings)
@@ -629,31 +644,38 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             "aml_record": {"aml": ["wallet_agreement", "on_file"]},
         }
 
-        with mock.patch.object(
-            test_module, "use_asyncio_event_loop", mock.MagicMock()
-        ), mock.patch.object(
-            test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
-        ) as mock_prompt:
+        with (
+            mock.patch.object(test_module, "use_asyncio_event_loop", mock.MagicMock()),
+            mock.patch.object(
+                test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
+            ) as mock_prompt,
+        ):
             mock_prompt.side_effect = EOFError()
             assert not await test_module.accept_taa(
                 None, self.profile, taa_info, provision=False
             )
 
-        with mock.patch.object(
-            test_module, "use_asyncio_event_loop", mock.MagicMock()
-        ) as mock_use_aio_loop, mock.patch.object(
-            test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
-        ) as mock_prompt:
+        with (
+            mock.patch.object(
+                test_module, "use_asyncio_event_loop", mock.MagicMock()
+            ) as mock_use_aio_loop,
+            mock.patch.object(
+                test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
+            ) as mock_prompt,
+        ):
             mock_prompt.return_value = "x"
             assert not await test_module.accept_taa(
                 None, self.profile, taa_info, provision=False
             )
 
-        with mock.patch.object(
-            test_module, "use_asyncio_event_loop", mock.MagicMock()
-        ) as mock_use_aio_loop, mock.patch.object(
-            test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
-        ) as mock_prompt:
+        with (
+            mock.patch.object(
+                test_module, "use_asyncio_event_loop", mock.MagicMock()
+            ) as mock_use_aio_loop,
+            mock.patch.object(
+                test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
+            ) as mock_prompt,
+        ):
             mock_ledger = mock.MagicMock(accept_txn_author_agreement=mock.CoroutineMock())
             mock_prompt.return_value = ""
             assert await test_module.accept_taa(

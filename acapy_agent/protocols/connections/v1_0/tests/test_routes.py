@@ -146,11 +146,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock(return_value={"hello": "world"})
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
 
             await test_module.connections_retrieve(self.request)
@@ -159,11 +160,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_endpoints(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_mgr_cls.return_value = mock.MagicMock(
                 get_endpoints=mock.CoroutineMock(
                     return_value=("localhost:8080", "1.2.3.4:8081")
@@ -180,9 +182,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_endpoints_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr_cls, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr_cls,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_conn_mgr_cls.return_value = mock.MagicMock(
                 get_endpoints=mock.CoroutineMock(side_effect=StorageNotFoundError())
             )
@@ -201,13 +206,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"conn_id": "dummy"}
         mock_conn_rec = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
-        ) as mock_metadata_get_all, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(
+                mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
+            ) as mock_metadata_get_all,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_metadata_get_all.return_value = {"hello": "world"}
 
@@ -220,15 +227,16 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         self.request.query = {"key": "test"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
-        ), mock.patch.object(
-            mock_conn_rec, "metadata_get", mock.CoroutineMock()
-        ) as mock_metadata_get, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(mock_conn_rec, "metadata_get_all", mock.CoroutineMock()),
+            mock.patch.object(
+                mock_conn_rec, "metadata_get", mock.CoroutineMock()
+            ) as mock_metadata_get,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_metadata_get.return_value = {"test": "value"}
 
@@ -240,11 +248,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"conn_id": "dummy"}
         mock_conn_rec = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
-        ) as mock_metadata_get_all, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(
+                mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
+            ) as mock_metadata_get_all,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_metadata_get_all.side_effect = StorageNotFoundError()
 
@@ -262,15 +274,18 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             return_value={"metadata": {"hello": "world"}}
         )
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
-        ) as mock_metadata_get_all, mock.patch.object(
-            mock_conn_rec, "metadata_set", mock.CoroutineMock()
-        ) as mock_metadata_set, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(
+                mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
+            ) as mock_metadata_get_all,
+            mock.patch.object(
+                mock_conn_rec, "metadata_set", mock.CoroutineMock()
+            ) as mock_metadata_set,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_metadata_get_all.return_value = {"hello": "world"}
 
@@ -285,13 +300,16 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             return_value={"metadata": {"hello": "world"}}
         )
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            mock_conn_rec, "metadata_get_all", mock.CoroutineMock()
-        ), mock.patch.object(
-            mock_conn_rec, "metadata_set", mock.CoroutineMock()
-        ) as mock_metadata_set, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(mock_conn_rec, "metadata_get_all", mock.CoroutineMock()),
+            mock.patch.object(
+                mock_conn_rec, "metadata_set", mock.CoroutineMock()
+            ) as mock_metadata_set,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_metadata_set.side_effect = StorageNotFoundError()
 
@@ -343,11 +361,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "multi_use": "true",
         }
 
-        with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_mgr.return_value.create_invitation = mock.CoroutineMock(
                 return_value=(
                     mock.MagicMock(  # connection record
@@ -450,13 +469,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnectionInvitation, "deserialize", autospec=True
-        ), mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnectionInvitation, "deserialize", autospec=True
+            ),
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_mgr.return_value.receive_invitation = mock.CoroutineMock(
                 return_value=mock_conn_rec
             )
@@ -474,10 +495,11 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnectionInvitation, "deserialize", autospec=True
-        ) as mock_inv_deser, mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+        with (
+            mock.patch.object(
+                test_module.ConnectionInvitation, "deserialize", autospec=True
+            ) as mock_inv_deser,
+            mock.patch.object(test_module, "ConnectionManager", autospec=True),
         ):
             mock_inv_deser.side_effect = test_module.BaseModelError()
 
@@ -501,11 +523,14 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnectionInvitation, "deserialize", autospec=True
-        ), mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr:
+        with (
+            mock.patch.object(
+                test_module.ConnectionInvitation, "deserialize", autospec=True
+            ),
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+        ):
             mock_conn_mgr.return_value.receive_invitation = mock.CoroutineMock(
                 side_effect=StorageNotFoundError()
             )
@@ -523,13 +548,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_conn_mgr.return_value.create_request = mock.CoroutineMock()
 
@@ -550,11 +577,14 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_accept_invitation_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+        ):
             mock_conn_mgr.return_value.create_request = mock.CoroutineMock(
                 side_effect=test_module.ConnectionManagerError()
             )
@@ -566,11 +596,14 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query["mediation_id"] = "some-id"
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+        ):
             mock_conn_mgr.return_value.create_request = mock.CoroutineMock(
                 side_effect=StorageNotFoundError()
             )
@@ -587,13 +620,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_conn_mgr.return_value.create_response = mock.CoroutineMock()
 
@@ -614,11 +649,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_accept_request_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_conn_mgr.return_value.create_response = mock.CoroutineMock(
                 side_effect=test_module.ConnectionManagerError()
             )
@@ -631,11 +670,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.delete_record = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
 
             await test_module.connections_remove(self.request)
@@ -650,11 +690,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.delete_record = mock.CoroutineMock()
         assert (await cache.get("conn_rec_state::dummy")) == "active"
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
 
             await test_module.connections_remove(self.request)
@@ -714,11 +755,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_their_info.did = "their_did"
         mock_their_info.verkey = "their_verkey"
 
-        with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_conn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_mgr.return_value.create_static_connection = mock.CoroutineMock(
                 return_value=(mock_my_info, mock_their_info, mock_conn_rec)
             )

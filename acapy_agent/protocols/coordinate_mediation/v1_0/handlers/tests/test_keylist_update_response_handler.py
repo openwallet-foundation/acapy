@@ -57,11 +57,10 @@ class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
 
     async def test_handler(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
-        with mock.patch.object(
-            MediationManager, "store_update_results"
-        ) as mock_store, mock.patch.object(
-            handler, "notify_keylist_updated"
-        ) as mock_notify:
+        with (
+            mock.patch.object(MediationManager, "store_update_results") as mock_store,
+            mock.patch.object(handler, "notify_keylist_updated") as mock_notify,
+        ):
             await handler.handle(self.context, responder)
             mock_store.assert_called_once_with(TEST_CONN_ID, self.updated)
             mock_notify.assert_called_once_with(

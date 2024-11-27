@@ -97,11 +97,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
             )
@@ -149,11 +152,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
@@ -222,11 +228,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -302,11 +311,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = mock_px_rec
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -368,11 +380,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -435,11 +450,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -498,11 +516,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -570,11 +591,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         )
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -694,11 +718,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -798,11 +825,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         mock_holder.get_credentials_for_presentation_request_by_referent = by_reft
         self.request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex_cls:
+        with (
+            mock.patch.object(
+                test_module, "PresentationManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(
+                test_module, "V10PresentationExchange", autospec=True
+            ) as mock_pres_ex_cls,
+        ):
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=px_rec_instance

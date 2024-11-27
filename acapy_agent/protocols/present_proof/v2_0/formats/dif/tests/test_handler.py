@@ -727,17 +727,20 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
-        with mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            mock.CoroutineMock(),
-        ) as mock_create_vp, mock.patch.object(
-            VCHolder,
-            "search_credentials",
-            mock.CoroutineMock(
-                return_value=mock.MagicMock(
-                    fetch=mock.CoroutineMock(return_value=cred_list)
-                )
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "create_vp",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+            mock.patch.object(
+                VCHolder,
+                "search_credentials",
+                mock.CoroutineMock(
+                    return_value=mock.MagicMock(
+                        fetch=mock.CoroutineMock(return_value=cred_list)
+                    )
+                ),
             ),
         ):
             mock_create_vp.return_value = DIF_PRES
@@ -2211,11 +2214,12 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with mock.patch.object(
-            test_module.LOGGER, "error", mock.MagicMock()
-        ) as mock_log_err, mock.patch.object(
-            jsonld, "expand", mock.MagicMock()
-        ) as mock_jsonld_expand:
+        with (
+            mock.patch.object(
+                test_module.LOGGER, "error", mock.MagicMock()
+            ) as mock_log_err,
+            mock.patch.object(jsonld, "expand", mock.MagicMock()) as mock_jsonld_expand,
+        ):
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()

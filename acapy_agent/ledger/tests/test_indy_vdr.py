@@ -51,10 +51,12 @@ async def ledger():
     async def close():
         ledger.pool.handle = None
 
-    with mock.patch.object(ledger.pool, "open", open), mock.patch.object(
-        ledger.pool, "close", close
-    ), mock.patch.object(
-        ledger, "is_ledger_read_only", mock.CoroutineMock(return_value=False)
+    with (
+        mock.patch.object(ledger.pool, "open", open),
+        mock.patch.object(ledger.pool, "close", close),
+        mock.patch.object(
+            ledger, "is_ledger_read_only", mock.CoroutineMock(return_value=False)
+        ),
     ):
         yield ledger
 
@@ -338,14 +340,17 @@ class TestIndyVdrLedger:
 
         async with ledger:
             ledger.pool.read_only = True
-            with mock.patch.object(
-                ledger,
-                "check_existing_schema",
-                mock.CoroutineMock(return_value=False),
-            ), mock.patch.object(
-                ledger,
-                "is_ledger_read_only",
-                mock.CoroutineMock(return_value=True),
+            with (
+                mock.patch.object(
+                    ledger,
+                    "check_existing_schema",
+                    mock.CoroutineMock(return_value=False),
+                ),
+                mock.patch.object(
+                    ledger,
+                    "is_ledger_read_only",
+                    mock.CoroutineMock(return_value=True),
+                ),
             ):
                 with pytest.raises(LedgerError):
                     await ledger.create_and_send_schema(
@@ -768,25 +773,28 @@ class TestIndyVdrLedger:
             test_did = await wallet.create_public_did(SOV, ED25519)
 
         async with ledger:
-            with mock.patch.object(
-                ledger,
-                "_construct_attr_json",
-                mock.CoroutineMock(
-                    return_value=json.dumps(
-                        {
-                            "endpoint": {
+            with (
+                mock.patch.object(
+                    ledger,
+                    "_construct_attr_json",
+                    mock.CoroutineMock(
+                        return_value=json.dumps(
+                            {
                                 "endpoint": {
-                                    "endpoint": "https://url",
-                                    "routingKeys": [],
+                                    "endpoint": {
+                                        "endpoint": "https://url",
+                                        "routingKeys": [],
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
+                    ),
+                ) as mock_construct_attr_json,
+                mock.patch.object(
+                    ledger,
+                    "get_all_endpoints_for_did",
+                    mock.CoroutineMock(return_value={}),
                 ),
-            ) as mock_construct_attr_json, mock.patch.object(
-                ledger,
-                "get_all_endpoints_for_did",
-                mock.CoroutineMock(return_value={}),
             ):
                 await ledger.update_endpoint_for_did(
                     test_did.did,

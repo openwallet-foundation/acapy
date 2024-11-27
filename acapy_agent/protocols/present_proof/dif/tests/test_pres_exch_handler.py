@@ -2177,27 +2177,33 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 cred_tags={"some": "tag"},
             ),
         ]
-        with mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            mock.CoroutineMock(),
-        ) as mock_did_info, mock.patch.object(
-            DIFPresExchHandler,
-            "make_requirement",
-            mock.CoroutineMock(),
-        ) as mock_make_req, mock.patch.object(
-            DIFPresExchHandler,
-            "apply_requirements",
-            mock.CoroutineMock(),
-        ) as mock_apply_req, mock.patch.object(
-            DIFPresExchHandler,
-            "merge",
-            mock.CoroutineMock(),
-        ) as mock_merge, mock.patch.object(
-            test_module,
-            "create_presentation",
-            mock.CoroutineMock(),
-        ) as mock_create_vp:
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "_did_info_for_did",
+                mock.CoroutineMock(),
+            ) as mock_did_info,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "make_requirement",
+                mock.CoroutineMock(),
+            ) as mock_make_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "apply_requirements",
+                mock.CoroutineMock(),
+            ) as mock_apply_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "merge",
+                mock.CoroutineMock(),
+            ) as mock_merge,
+            mock.patch.object(
+                test_module,
+                "create_presentation",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+        ):
             mock_make_req.return_value = mock.MagicMock()
             mock_apply_req.return_value = mock.MagicMock()
             mock_merge.return_value = (VC_RECORDS, {})
@@ -2229,31 +2235,38 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_list, pd_list = await self.setup_tuple(self.profile)
-        with mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            mock.CoroutineMock(),
-        ) as mock_did_info, mock.patch.object(
-            DIFPresExchHandler,
-            "make_requirement",
-            mock.CoroutineMock(),
-        ) as mock_make_req, mock.patch.object(
-            DIFPresExchHandler,
-            "apply_requirements",
-            mock.CoroutineMock(),
-        ) as mock_apply_req, mock.patch.object(
-            DIFPresExchHandler,
-            "merge",
-            mock.CoroutineMock(),
-        ) as mock_merge, mock.patch.object(
-            test_module,
-            "create_presentation",
-            mock.CoroutineMock(),
-        ) as mock_create_vp, mock.patch.object(
-            test_module,
-            "sign_presentation",
-            mock.CoroutineMock(),
-        ) as mock_sign_vp:
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "_did_info_for_did",
+                mock.CoroutineMock(),
+            ) as mock_did_info,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "make_requirement",
+                mock.CoroutineMock(),
+            ) as mock_make_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "apply_requirements",
+                mock.CoroutineMock(),
+            ) as mock_apply_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "merge",
+                mock.CoroutineMock(),
+            ) as mock_merge,
+            mock.patch.object(
+                test_module,
+                "create_presentation",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+            mock.patch.object(
+                test_module,
+                "sign_presentation",
+                mock.CoroutineMock(),
+            ) as mock_sign_vp,
+        ):
             mock_make_req.return_value = mock.MagicMock()
             mock_apply_req.return_value = mock.MagicMock()
             mock_merge.return_value = (cred_list, {})
@@ -2286,31 +2299,38 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_list, pd_list = await self.setup_tuple(self.profile)
-        with mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            mock.CoroutineMock(),
-        ) as mock_did_info, mock.patch.object(
-            DIFPresExchHandler,
-            "make_requirement",
-            mock.CoroutineMock(),
-        ) as mock_make_req, mock.patch.object(
-            DIFPresExchHandler,
-            "apply_requirements",
-            mock.CoroutineMock(),
-        ) as mock_apply_req, mock.patch.object(
-            DIFPresExchHandler,
-            "merge",
-            mock.CoroutineMock(),
-        ) as mock_merge, mock.patch.object(
-            test_module,
-            "create_presentation",
-            mock.CoroutineMock(),
-        ) as mock_create_vp, mock.patch.object(
-            DIFPresExchHandler,
-            "get_sign_key_credential_subject_id",
-            mock.CoroutineMock(),
-        ) as mock_sign_key_cred_subject:
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "_did_info_for_did",
+                mock.CoroutineMock(),
+            ) as mock_did_info,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "make_requirement",
+                mock.CoroutineMock(),
+            ) as mock_make_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "apply_requirements",
+                mock.CoroutineMock(),
+            ) as mock_apply_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "merge",
+                mock.CoroutineMock(),
+            ) as mock_merge,
+            mock.patch.object(
+                test_module,
+                "create_presentation",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "get_sign_key_credential_subject_id",
+                mock.CoroutineMock(),
+            ) as mock_sign_key_cred_subject,
+        ):
             mock_make_req.return_value = mock.MagicMock()
             mock_apply_req.return_value = mock.MagicMock()
             mock_merge.return_value = (cred_list, {})

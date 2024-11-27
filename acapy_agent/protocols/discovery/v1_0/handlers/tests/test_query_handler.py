@@ -69,11 +69,14 @@ class TestQueryHandler:
         request_context.connection_ready = True
         handler = QueryHandler()
         responder = MockResponder()
-        with mock.patch.object(
-            ProtocolRegistry, "protocols_matching_query", mock.MagicMock()
-        ), mock.patch.object(
-            ProtocolRegistry, "prepare_disclosed", mock.CoroutineMock()
-        ) as mock_prepare_disclosed:
+        with (
+            mock.patch.object(
+                ProtocolRegistry, "protocols_matching_query", mock.MagicMock()
+            ),
+            mock.patch.object(
+                ProtocolRegistry, "prepare_disclosed", mock.CoroutineMock()
+            ) as mock_prepare_disclosed,
+        ):
             mock_prepare_disclosed.return_value = [
                 {"test": "test"},
                 {

@@ -224,11 +224,13 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
                 message=mock.MagicMock(enc_payload=b"encr"),
             )
         ]
-        with mock.patch.object(
-            mgr, "deliver_queued_message", mock.MagicMock()
-        ), mock.patch.object(
-            mgr.outbound_event, "wait", mock.CoroutineMock()
-        ) as mock_wait, mock.patch.object(test_module, "trace_event", mock.MagicMock()):
+        with (
+            mock.patch.object(mgr, "deliver_queued_message", mock.MagicMock()),
+            mock.patch.object(
+                mgr.outbound_event, "wait", mock.CoroutineMock()
+            ) as mock_wait,
+            mock.patch.object(test_module, "trace_event", mock.MagicMock()),
+        ):
             mock_wait.side_effect = KeyError()  # cover state=NEW logic and bail
 
             with self.assertRaises(KeyError):
@@ -245,11 +247,13 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
                 message=mock.MagicMock(enc_payload=b"encr"),
             )
         ]
-        with mock.patch.object(
-            mgr, "deliver_queued_message", mock.MagicMock()
-        ), mock.patch.object(
-            mgr.outbound_event, "wait", mock.CoroutineMock()
-        ) as mock_wait, mock.patch.object(test_module, "trace_event", mock.MagicMock()):
+        with (
+            mock.patch.object(mgr, "deliver_queued_message", mock.MagicMock()),
+            mock.patch.object(
+                mgr.outbound_event, "wait", mock.CoroutineMock()
+            ) as mock_wait,
+            mock.patch.object(test_module, "trace_event", mock.MagicMock()),
+        ):
             mock_wait.side_effect = KeyError()  # cover state=DELIVER logic and bail
 
             with self.assertRaises(KeyError):
@@ -278,14 +282,13 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(self.profile, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
-        with mock.patch.object(
-            test_module.LOGGER, "exception", mock.MagicMock()
-        ), mock.patch.object(
-            test_module.LOGGER, "error", mock.MagicMock()
-        ), mock.patch.object(
-            test_module.LOGGER, "isEnabledFor", mock.MagicMock()
-        ) as mock_logger_enabled, mock.patch.object(
-            mgr, "process_queued", mock.MagicMock()
+        with (
+            mock.patch.object(test_module.LOGGER, "exception", mock.MagicMock()),
+            mock.patch.object(test_module.LOGGER, "error", mock.MagicMock()),
+            mock.patch.object(
+                test_module.LOGGER, "isEnabledFor", mock.MagicMock()
+            ) as mock_logger_enabled,
+            mock.patch.object(mgr, "process_queued", mock.MagicMock()),
         ):
             mock_logger_enabled.return_value = True  # cover debug logging
             mgr.finished_deliver(mock_queued, mock_completed_x)

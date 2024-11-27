@@ -117,11 +117,12 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
             handler = test_module.CredentialIssueHandler()
             responder = MockResponder()
 
-            with mock.patch.object(
-                responder, "send_reply", mock.CoroutineMock()
-            ), mock.patch.object(
-                handler._logger, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(responder, "send_reply", mock.CoroutineMock()),
+                mock.patch.object(
+                    handler._logger, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 

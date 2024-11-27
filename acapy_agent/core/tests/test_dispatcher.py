@@ -105,11 +105,14 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             "@type": DIDCommPrefix.qualify_current(StubAgentMessage.Meta.message_type)
         }
 
-        with mock.patch.object(
-            StubAgentMessageHandler, "handle", autospec=True
-        ) as handler_mock, mock.patch.object(
-            test_module, "BaseConnectionManager", autospec=True
-        ) as conn_mgr_mock:
+        with (
+            mock.patch.object(
+                StubAgentMessageHandler, "handle", autospec=True
+            ) as handler_mock,
+            mock.patch.object(
+                test_module, "BaseConnectionManager", autospec=True
+            ) as conn_mgr_mock,
+        ):
             conn_mgr_mock.return_value = mock.MagicMock(
                 find_inbound_connection=mock.CoroutineMock(
                     return_value=mock.MagicMock(connection_id="dummy")
@@ -148,10 +151,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             "@type": DIDCommPrefix.qualify_current(StubAgentMessage.Meta.message_type)
         }
 
-        with mock.patch.object(
-            StubAgentMessageHandler, "handle", autospec=True
-        ) as handler_mock, mock.patch.object(
-            test_module, "BaseConnectionManager", autospec=True
+        with (
+            mock.patch.object(
+                StubAgentMessageHandler, "handle", autospec=True
+            ) as handler_mock,
+            mock.patch.object(test_module, "BaseConnectionManager", autospec=True),
         ):
             await dispatcher.queue_message(
                 dispatcher.profile, make_inbound(message), rcv.send
@@ -217,11 +221,12 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         rcv = Receiver()
         message = {"@type": "doc/proto-name/1.1/no-such-message-type"}
 
-        with mock.patch.object(
-            StubAgentMessageHandler, "handle", autospec=True
-        ), mock.patch.object(
-            registry, "resolve_message_class", mock.MagicMock()
-        ) as mock_resolve:
+        with (
+            mock.patch.object(StubAgentMessageHandler, "handle", autospec=True),
+            mock.patch.object(
+                registry, "resolve_message_class", mock.MagicMock()
+            ) as mock_resolve,
+        ):
             mock_resolve.return_value = mock.MagicMock(
                 deserialize=mock.MagicMock(side_effect=test_module.BaseModelError())
             )
@@ -258,10 +263,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             "@type": DIDCommPrefix.qualify_current(StubV1_2AgentMessage.Meta.message_type)
         }
 
-        with mock.patch.object(
-            StubAgentMessageHandler, "handle", autospec=True
-        ) as handler_mock, mock.patch.object(
-            test_module, "BaseConnectionManager", autospec=True
+        with (
+            mock.patch.object(
+                StubAgentMessageHandler, "handle", autospec=True
+            ) as handler_mock,
+            mock.patch.object(test_module, "BaseConnectionManager", autospec=True),
         ):
             await dispatcher.queue_message(
                 dispatcher.profile, make_inbound(message), rcv.send
@@ -393,12 +399,13 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         outbound_message = await responder.create_outbound(
             json.dumps(message.serialize())
         )
-        with mock.patch.object(
-            responder, "_send", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module.BaseResponder,
-            "conn_rec_active_state_check",
-            mock.CoroutineMock(return_value=True),
+        with (
+            mock.patch.object(responder, "_send", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module.BaseResponder,
+                "conn_rec_active_state_check",
+                mock.CoroutineMock(return_value=True),
+            ),
         ):
             await responder.send_outbound(outbound_message)
 
@@ -418,12 +425,13 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(message)
-        with mock.patch.object(
-            responder, "_send", mock.CoroutineMock()
-        ), mock.patch.object(
-            test_module.BaseResponder,
-            "conn_rec_active_state_check",
-            mock.CoroutineMock(return_value=True),
+        with (
+            mock.patch.object(responder, "_send", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module.BaseResponder,
+                "conn_rec_active_state_check",
+                mock.CoroutineMock(return_value=True),
+            ),
         ):
             await responder.send_outbound(
                 message=outbound_message,

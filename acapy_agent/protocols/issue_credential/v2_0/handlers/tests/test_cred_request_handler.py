@@ -102,10 +102,11 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            cred_ex_rec, "save_error_state", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(cred_ex_rec, "save_error_state", mock.CoroutineMock()),
         ):
             mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
@@ -120,11 +121,14 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
             handler = test_module.V20CredRequestHandler()
             responder = MockResponder()
 
-            with mock.patch.object(
-                responder, "send_reply", mock.CoroutineMock()
-            ) as mock_send_reply, mock.patch.object(
-                handler._logger, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(
+                    responder, "send_reply", mock.CoroutineMock()
+                ) as mock_send_reply,
+                mock.patch.object(
+                    handler._logger, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 
@@ -142,10 +146,11 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            cred_ex_rec, "save_error_state", mock.CoroutineMock()
+        with (
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(cred_ex_rec, "save_error_state", mock.CoroutineMock()),
         ):
             mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
@@ -160,11 +165,14 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
             handler = test_module.V20CredRequestHandler()
             responder = MockResponder()
 
-            with mock.patch.object(
-                responder, "send_reply", mock.CoroutineMock()
-            ) as mock_send_reply, mock.patch.object(
-                handler._logger, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(
+                    responder, "send_reply", mock.CoroutineMock()
+                ) as mock_send_reply,
+                mock.patch.object(
+                    handler._logger, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 

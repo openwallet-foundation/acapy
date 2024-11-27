@@ -210,11 +210,10 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         mock_route_manager.route_verkey = mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)
 
-        with mock.patch.object(
-            WalletRecord, "save"
-        ) as wallet_record_save, mock.patch.object(
-            self.manager, "get_wallet_profile"
-        ) as get_wallet_profile:
+        with (
+            mock.patch.object(WalletRecord, "save") as wallet_record_save,
+            mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile,
+        ):
             get_wallet_profile.return_value = await create_test_profile()
 
             wallet_record = await self.manager.create_wallet(
@@ -247,13 +246,11 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         mock_route_manager = mock.MagicMock()
         mock_route_manager.route_verkey = mock.CoroutineMock()
 
-        with mock.patch.object(
-            WalletRecord, "save"
-        ) as wallet_record_save, mock.patch.object(
-            self.manager, "get_wallet_profile"
-        ) as get_wallet_profile, mock.patch.object(
-            BaseWallet, "get_public_did"
-        ) as get_public_did:
+        with (
+            mock.patch.object(WalletRecord, "save") as wallet_record_save,
+            mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile,
+            mock.patch.object(BaseWallet, "get_public_did") as get_public_did,
+        ):
             mock_profile = await create_test_profile()
             mock_profile.context.injector.bind_instance(RouteManager, mock_route_manager)
             get_wallet_profile.return_value = mock_profile
@@ -277,11 +274,10 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
             assert wallet_record.wallet_key == "test_key"
 
     async def test_update_wallet(self):
-        with mock.patch.object(
-            WalletRecord, "retrieve_by_id"
-        ) as retrieve_by_id, mock.patch.object(
-            WalletRecord, "save"
-        ) as wallet_record_save:
+        with (
+            mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id,
+            mock.patch.object(WalletRecord, "save") as wallet_record_save,
+        ):
             wallet_id = "test-wallet-id"
             retrieve_by_id.return_value = WalletRecord(
                 wallet_id=wallet_id,
@@ -315,17 +311,15 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
                 await self.manager.remove_wallet("test")
 
     async def test_remove_wallet_removes_profile_wallet_storage_records(self):
-        with mock.patch.object(
-            WalletRecord, "retrieve_by_id"
-        ) as retrieve_by_id, mock.patch.object(
-            self.manager, "get_wallet_profile"
-        ) as get_wallet_profile, mock.patch.object(
-            self.manager, "remove_wallet_profile"
-        ) as remove_wallet_profile, mock.patch.object(
-            WalletRecord, "delete_record"
-        ) as wallet_delete_record, mock.patch.object(
-            AskarStorage, "delete_all_records"
-        ) as delete_all_records:
+        with (
+            mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id,
+            mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile,
+            mock.patch.object(
+                self.manager, "remove_wallet_profile"
+            ) as remove_wallet_profile,
+            mock.patch.object(WalletRecord, "delete_record") as wallet_delete_record,
+            mock.patch.object(AskarStorage, "delete_all_records") as delete_all_records,
+        ):
             wallet_record = WalletRecord(
                 wallet_id="test",
                 key_management_mode=WalletRecord.MODE_UNMANAGED,
@@ -555,10 +549,9 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
             algorithm="HS256",
         )
 
-        with mock.patch.object(
-            self.manager, "get_wallet_profile"
-        ) as get_wallet_profile, self.assertRaises(
-            MultitenantManagerError, msg="Token not valid"
+        with (
+            mock.patch.object(self.manager, "get_wallet_profile") as get_wallet_profile,
+            self.assertRaises(MultitenantManagerError, msg="Token not valid"),
         ):
             await self.manager.get_profile_for_token(self.profile.context, token)
 
@@ -632,12 +625,15 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
     async def test_get_profile_for_key(self):
         mock_wallet = mock.MagicMock()
         mock_wallet.requires_external_key = False
-        with mock.patch.object(
-            self.manager,
-            "_get_wallet_by_key",
-            mock.CoroutineMock(return_value=mock_wallet),
-        ), mock.patch.object(
-            self.manager, "get_wallet_profile", mock.CoroutineMock()
-        ) as mock_get_wallet_profile:
+        with (
+            mock.patch.object(
+                self.manager,
+                "_get_wallet_by_key",
+                mock.CoroutineMock(return_value=mock_wallet),
+            ),
+            mock.patch.object(
+                self.manager, "get_wallet_profile", mock.CoroutineMock()
+            ) as mock_get_wallet_profile,
+        ):
             profile = await self.manager.get_profile_for_key(self.context, "test-verkey")
             assert profile == mock_get_wallet_profile.return_value

@@ -1190,11 +1190,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         mock_conn = mock.MagicMock()
         mock_conn.connection_id = "dummy"
 
-        with mock.patch.object(
-            AskarWallet, "get_local_did_for_verkey", mock.CoroutineMock()
-        ) as mock_wallet_get_local_did_for_verkey, mock.patch.object(
-            self.manager, "find_connection", mock.CoroutineMock()
-        ) as mock_mgr_find_conn:
+        with (
+            mock.patch.object(
+                AskarWallet, "get_local_did_for_verkey", mock.CoroutineMock()
+            ) as mock_wallet_get_local_did_for_verkey,
+            mock.patch.object(
+                self.manager, "find_connection", mock.CoroutineMock()
+            ) as mock_mgr_find_conn,
+        ):
             mock_wallet_get_local_did_for_verkey.return_value = DIDInfo(
                 self.test_did,
                 self.test_verkey,
@@ -1216,11 +1219,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         mock_conn = mock.MagicMock()
         mock_conn.connection_id = "dummy"
 
-        with mock.patch.object(
-            AskarWallet, "get_local_did_for_verkey", mock.CoroutineMock()
-        ) as mock_wallet_get_local_did_for_verkey, mock.patch.object(
-            self.manager, "find_connection", mock.CoroutineMock()
-        ) as mock_mgr_find_conn:
+        with (
+            mock.patch.object(
+                AskarWallet, "get_local_did_for_verkey", mock.CoroutineMock()
+            ) as mock_wallet_get_local_did_for_verkey,
+            mock.patch.object(
+                self.manager, "find_connection", mock.CoroutineMock()
+            ) as mock_mgr_find_conn,
+        ):
             mock_wallet_get_local_did_for_verkey.side_effect = InjectionError()
             mock_mgr_find_conn.return_value = mock_conn
 
@@ -1236,11 +1242,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         mock_conn = mock.MagicMock()
         mock_conn.connection_id = "dummy"
 
-        with mock.patch.object(
-            AskarWallet, "get_local_did_for_verkey", mock.CoroutineMock()
-        ) as mock_wallet_get_local_did_for_verkey, mock.patch.object(
-            self.manager, "find_connection", mock.CoroutineMock()
-        ) as mock_mgr_find_conn:
+        with (
+            mock.patch.object(
+                AskarWallet, "get_local_did_for_verkey", mock.CoroutineMock()
+            ) as mock_wallet_get_local_did_for_verkey,
+            mock.patch.object(
+                self.manager, "find_connection", mock.CoroutineMock()
+            ) as mock_mgr_find_conn,
+        ):
             mock_wallet_get_local_did_for_verkey.side_effect = WalletNotFoundError()
             mock_mgr_find_conn.return_value = mock_conn
 
@@ -1339,11 +1348,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
             )
 
-            with mock.patch.object(
-                ConnectionTarget, "serialize", autospec=True
-            ) as mock_conn_target_ser, mock.patch.object(
-                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-            ) as mock_conn_rec_retrieve_by_id:
+            with (
+                mock.patch.object(
+                    ConnectionTarget, "serialize", autospec=True
+                ) as mock_conn_target_ser,
+                mock.patch.object(
+                    ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+                ) as mock_conn_rec_retrieve_by_id,
+            ):
                 mock_conn_rec_retrieve_by_id.return_value = mock_conn
                 mock_conn_target_ser.return_value = {"serialized": "value"}
                 targets = await self.manager.get_connection_targets(
@@ -1383,13 +1395,17 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 state=ConnRecord.State.COMPLETED.rfc160,
             )
 
-            with mock.patch.object(
-                ConnectionTarget, "serialize", autospec=True
-            ) as mock_conn_target_ser, mock.patch.object(
-                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-            ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-                self.manager, "fetch_connection_targets", mock.CoroutineMock()
-            ) as mock_fetch_connection_targets:
+            with (
+                mock.patch.object(
+                    ConnectionTarget, "serialize", autospec=True
+                ) as mock_conn_target_ser,
+                mock.patch.object(
+                    ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+                ) as mock_conn_rec_retrieve_by_id,
+                mock.patch.object(
+                    self.manager, "fetch_connection_targets", mock.CoroutineMock()
+                ) as mock_fetch_connection_targets,
+            ):
                 mock_fetch_connection_targets.return_value = [ConnectionTarget()]
                 mock_conn_rec_retrieve_by_id.return_value = mock_conn
                 mock_conn_target_ser.return_value = {"serialized": "value"}
@@ -1428,13 +1444,17 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 state=ConnRecord.State.COMPLETED.rfc160,
             )
 
-            with mock.patch.object(
-                ConnectionTarget, "serialize", autospec=True
-            ) as mock_conn_target_ser, mock.patch.object(
-                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-            ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
-                self.manager, "fetch_connection_targets", mock.CoroutineMock()
-            ) as mock_fetch_connection_targets:
+            with (
+                mock.patch.object(
+                    ConnectionTarget, "serialize", autospec=True
+                ) as mock_conn_target_ser,
+                mock.patch.object(
+                    ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+                ) as mock_conn_rec_retrieve_by_id,
+                mock.patch.object(
+                    self.manager, "fetch_connection_targets", mock.CoroutineMock()
+                ) as mock_fetch_connection_targets,
+            ):
                 mock_fetch_connection_targets.return_value = [ConnectionTarget()]
                 mock_conn_rec_retrieve_by_id.return_value = mock_conn
                 mock_conn_target_ser.return_value = {"serialized": "value"}
@@ -1522,9 +1542,12 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         self.multitenant_mgr.get_default_mediator.return_value = None
         self.route_manager.route_static = mock.CoroutineMock()
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            AskarWallet, "create_local_did", autospec=True
-        ) as mock_wallet_create_local_did:
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                AskarWallet, "create_local_did", autospec=True
+            ) as mock_wallet_create_local_did,
+        ):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 self.test_did,
                 self.test_verkey,
@@ -1552,11 +1575,15 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         )
         self.multitenant_mgr.get_default_mediator.return_value = None
         self.route_manager.route_static = mock.CoroutineMock()
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            AskarWallet, "create_local_did", autospec=True
-        ) as mock_wallet_create_local_did, mock.patch.object(
-            V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
-        ) as mock_proactive_disclose_features:
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                AskarWallet, "create_local_did", autospec=True
+            ) as mock_wallet_create_local_did,
+            mock.patch.object(
+                V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
+            ) as mock_proactive_disclose_features,
+        ):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 self.test_did,
                 self.test_verkey,
@@ -1581,12 +1608,15 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         default_mediator = mock.MagicMock()
         self.route_manager.route_static = mock.CoroutineMock()
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            AskarWallet, "create_local_did", autospec=True
-        ) as mock_wallet_create_local_did, mock.patch.object(
-            BaseConnectionManager, "create_did_document"
-        ) as create_did_document, mock.patch.object(
-            BaseConnectionManager, "store_did_document"
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                AskarWallet, "create_local_did", autospec=True
+            ) as mock_wallet_create_local_did,
+            mock.patch.object(
+                BaseConnectionManager, "create_did_document"
+            ) as create_did_document,
+            mock.patch.object(BaseConnectionManager, "store_did_document"),
         ):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 self.test_did,
@@ -1675,11 +1705,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
 
     async def test_find_connection_retrieve_by_did_auto_disclose_features(self):
         self.context.update_settings({"auto_disclose_features": True})
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did, mock.patch.object(
-            V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
-        ) as mock_proactive_disclose_features:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_did,
+            mock.patch.object(
+                V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
+            ) as mock_proactive_disclose_features,
+        ):
             mock_conn_retrieve_by_did.return_value = mock.MagicMock(
                 state=ConnRecord.State.RESPONSE.rfc23,
                 save=mock.CoroutineMock(),
@@ -1695,11 +1728,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             mock_proactive_disclose_features.assert_called_once()
 
     async def test_find_connection_retrieve_by_invitation_key(self):
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did, mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_msg_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_invitation_msg_id:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_did,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_invitation_msg_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_invitation_msg_id,
+        ):
             mock_conn_retrieve_by_did.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_invitation_msg_id.return_value = mock.MagicMock(
                 state=ConnRecord.State.RESPONSE,
@@ -1714,11 +1750,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             assert conn_rec
 
     async def test_find_connection_retrieve_none_by_invitation_key(self):
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did, mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_invitation_msg_id:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_did,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_invitation_key", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_invitation_msg_id,
+        ):
             mock_conn_retrieve_by_did.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_invitation_msg_id.return_value = None
 
@@ -1732,13 +1771,17 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
     async def test_get_endpoints(self):
         conn_id = "dummy"
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            AskarWallet, "get_local_did", autospec=True
-        ) as mock_wallet_get_local_did, mock.patch.object(
-            self.manager, "get_connection_targets", mock.CoroutineMock()
-        ) as mock_get_conn_targets:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(
+                AskarWallet, "get_local_did", autospec=True
+            ) as mock_wallet_get_local_did,
+            mock.patch.object(
+                self.manager, "get_connection_targets", mock.CoroutineMock()
+            ) as mock_get_conn_targets,
+        ):
             mock_retrieve.return_value = mock.MagicMock()
             mock_wallet_get_local_did.return_value = mock.MagicMock(
                 metadata={"endpoint": "localhost:8020"}
