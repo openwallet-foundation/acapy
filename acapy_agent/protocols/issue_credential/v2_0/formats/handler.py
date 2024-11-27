@@ -1,7 +1,7 @@
 """V2.0 issue-credential base credential format handler."""
 
 import logging
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Mapping, Optional, Tuple
 
 from .....core.error import BaseError
@@ -60,7 +60,8 @@ class V20CredFormatHandler(ABC):
     def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages."""
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def validate_fields(cls, message_type: str, attachment_data: dict) -> None:
         """Validate attachment data for specific message type and format."""
 
