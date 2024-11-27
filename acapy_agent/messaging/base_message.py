@@ -1,6 +1,6 @@
 """Base message."""
 
-from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Type
 
@@ -23,15 +23,18 @@ class BaseMessage(ABC):
     the context of the plugin.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _type(self) -> str:
         """Return message type."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _id(self) -> str:
         """Return message id."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _thread_id(self) -> Optional[str]:
         """Return message thread id."""
 
@@ -39,10 +42,12 @@ class BaseMessage(ABC):
     def serialize(self, msg_format: DIDCommVersion = DIDCommVersion.v1) -> dict:
         """Return serialized message in format specified."""
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def deserialize(cls, value: dict, msg_format: DIDCommVersion = DIDCommVersion.v1):
         """Return message object deserialized from value in format specified."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def Handler(self) -> Type["BaseHandler"]:
         """Return reference to handler class."""
