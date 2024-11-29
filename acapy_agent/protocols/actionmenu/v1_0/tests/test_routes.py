@@ -73,13 +73,13 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Perform", autospec=True
-        ) as mock_perform, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Perform", autospec=True) as mock_perform,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
 
             await test_module.actionmenu_perform(self.request)
@@ -93,9 +93,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Perform", autospec=True),
+        ):
             # Emulate storage not found (bad connection id)
             mock_conn_record.retrieve_by_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -108,9 +111,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Perform", autospec=True),
+        ):
             # Emulate connection not ready
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_conn_record.retrieve_by_id.return_value.is_ready = False
@@ -122,13 +128,13 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "MenuRequest", autospec=True
-        ) as menu_request, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "MenuRequest", autospec=True) as menu_request,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
 
             await test_module.actionmenu_request(self.request)
@@ -142,9 +148,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Perform", autospec=True),
+        ):
             # Emulate storage not found (bad connection id)
             mock_conn_record.retrieve_by_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -157,9 +166,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(test_module, "Perform", autospec=True):
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Perform", autospec=True),
+        ):
             # Emulate connection not ready
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_conn_record.retrieve_by_id.return_value.is_ready = False
@@ -171,13 +183,13 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Menu", autospec=True
-        ) as mock_menu, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Menu", autospec=True) as mock_menu,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_menu.deserialize = mock.MagicMock()
 
@@ -192,11 +204,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Menu", autospec=True
-        ) as mock_menu:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Menu", autospec=True) as mock_menu,
+        ):
             mock_conn_record.retrieve_by_id = mock.CoroutineMock()
             mock_menu.deserialize = mock.MagicMock(
                 side_effect=test_module.BaseModelError("cannot deserialize")
@@ -209,11 +222,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Menu", autospec=True
-        ) as mock_menu:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Menu", autospec=True) as mock_menu,
+        ):
             mock_menu.deserialize = mock.MagicMock()
 
             # Emulate storage not found (bad connection id)
@@ -228,11 +242,12 @@ class TestActionMenuRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_record, mock.patch.object(
-            test_module, "Menu", autospec=True
-        ) as mock_menu:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_record,
+            mock.patch.object(test_module, "Menu", autospec=True) as mock_menu,
+        ):
             mock_menu.deserialize = mock.MagicMock()
 
             # Emulate connection not ready

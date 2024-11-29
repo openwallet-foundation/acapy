@@ -62,11 +62,12 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
         self.test_did = "sample-did"
 
     async def test_transactions_list(self):
-        with mock.patch.object(
-            TransactionRecord, "query", mock.CoroutineMock()
-        ) as mock_query, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                TransactionRecord, "query", mock.CoroutineMock()
+            ) as mock_query,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_query.return_value = [
                 mock.MagicMock(serialize=mock.MagicMock(return_value={"...": "..."}))
             ]
@@ -75,9 +76,12 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({"results": [{"...": "..."}]})
 
     async def test_transactions_list_x(self):
-        with mock.patch.object(
-            TransactionRecord, "query", mock.CoroutineMock()
-        ) as mock_query, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                TransactionRecord, "query", mock.CoroutineMock()
+            ) as mock_query,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_query.side_effect = test_module.StorageError()
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -86,11 +90,12 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_transactions_retrieve(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."})
             )
@@ -129,15 +134,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_request=mock.CoroutineMock(
                     return_value=(
@@ -193,11 +201,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -224,13 +235,17 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_request=mock.CoroutineMock(
                     return_value=(
@@ -260,13 +275,17 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_request=mock.CoroutineMock(
                     return_value=(
@@ -302,13 +321,17 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_request=mock.CoroutineMock(
                     return_value=(
@@ -344,11 +367,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -375,13 +401,17 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
                 "expires_time": "2021-03-29T05:22:19Z",
             }
         )
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_request=mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()
@@ -423,15 +453,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_endorse_response=mock.CoroutineMock(
                     return_value=(
@@ -523,11 +556,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."})
@@ -554,11 +590,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(return_value=None)
             )
@@ -588,13 +627,17 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_endorse_response=mock.CoroutineMock(
                     return_value=(
@@ -639,11 +682,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -682,13 +728,17 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             side_effect=test_module.LedgerError()
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_endorse_response=mock.CoroutineMock(
                     return_value=(
@@ -733,13 +783,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_endorse_response=mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()
@@ -779,15 +834,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_refuse_response=mock.CoroutineMock(
                     return_value=(
@@ -859,11 +917,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."})
@@ -890,11 +951,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(return_value=None)
             )
@@ -923,11 +987,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -962,13 +1029,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_refuse_response=mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()
@@ -993,15 +1065,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_cancel_transaction(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 cancel_transaction=mock.CoroutineMock(
                     return_value=(
@@ -1043,11 +1118,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_cancel_transaction_conn_rec_base_model_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."})
@@ -1059,11 +1137,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_cancel_transaction_no_jobs_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(return_value=None)
             )
@@ -1077,11 +1158,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_cancel_transaction_wrong_my_job_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -1101,13 +1185,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_cancel_transaction_txn_mgr_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 cancel_transaction=mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()
@@ -1132,15 +1221,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_transaction_resend(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 transaction_resend=mock.CoroutineMock(
                     return_value=(
@@ -1182,11 +1274,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_transaction_resend_conn_rec_base_model_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             mock_txn_rec_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"...": "..."})
@@ -1198,11 +1293,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_transaction_resend_no_jobs_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(return_value=None)
             )
@@ -1216,11 +1314,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_transaction_resend_my_wrong_job_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -1241,13 +1342,18 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_transaction_resend_txn_mgr_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 transaction_resend=mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()
@@ -1272,13 +1378,15 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_set_endorser_role(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 set_transaction_my_job=mock.CoroutineMock()
             )
@@ -1322,11 +1430,12 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_set_endorser_info(self):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query = {"endorser_did": "did", "endorser_name": "name"}
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -1354,11 +1463,12 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def test_set_endorser_info_no_prior_value(self):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query = {"endorser_did": "did", "endorser_name": "name"}
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     side_effect=[
@@ -1466,13 +1576,15 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
 
     async def test_transaction_write_schema_txn(self):
         self.request.match_info = {"tran_id": "dummy"}
-        with mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_txn_mgr.return_value.complete_transaction = mock.CoroutineMock()
 
             mock_txn_mgr.return_value.complete_transaction.return_value = (
@@ -1526,11 +1638,14 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
 
     async def test_transaction_write_schema_txn_complete_x(self):
         self.request.match_info = {"tran_id": "dummy"}
-        with mock.patch.object(
-            TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                TransactionRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_txn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 complete_transaction=mock.CoroutineMock(
                     side_effect=test_module.StorageError()

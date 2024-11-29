@@ -255,12 +255,13 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         await self.handler.receive_proposal(cred_ex_record, cred_proposal_message)
 
     async def test_create_offer(self):
-        with mock.patch.object(
-            VcLdpManager,
-            "assert_can_issue_with_id_and_proof_type",
-            mock.CoroutineMock(),
-        ) as mock_can_issue, patch.object(
-            test_module, "get_properties_without_context", return_value=[]
+        with (
+            mock.patch.object(
+                VcLdpManager,
+                "assert_can_issue_with_id_and_proof_type",
+                mock.CoroutineMock(),
+            ) as mock_can_issue,
+            patch.object(test_module, "get_properties_without_context", return_value=[]),
         ):
             (cred_format, attachment) = await self.handler.create_offer(
                 self.cred_proposal
@@ -295,11 +296,14 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             ],
         )
 
-        with mock.patch.object(
-            VcLdpManager,
-            "assert_can_issue_with_id_and_proof_type",
-            mock.CoroutineMock(),
-        ), patch.object(test_module, "get_properties_without_context", return_value=[]):
+        with (
+            mock.patch.object(
+                VcLdpManager,
+                "assert_can_issue_with_id_and_proof_type",
+                mock.CoroutineMock(),
+            ),
+            patch.object(test_module, "get_properties_without_context", return_value=[]),
+        ):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         # assert BBS url added to context
@@ -320,11 +324,14 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             ],
         )
 
-        with mock.patch.object(
-            VcLdpManager,
-            "assert_can_issue_with_id_and_proof_type",
-            mock.CoroutineMock(),
-        ), patch.object(test_module, "get_properties_without_context", return_value=[]):
+        with (
+            mock.patch.object(
+                VcLdpManager,
+                "assert_can_issue_with_id_and_proof_type",
+                mock.CoroutineMock(),
+            ),
+            patch.object(test_module, "get_properties_without_context", return_value=[]),
+        ):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         # assert BBS url added to context
@@ -342,15 +349,19 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
 
     async def test_create_offer_x_wrong_attributes(self):
         missing_properties = ["foo"]
-        with mock.patch.object(
-            self.manager,
-            "assert_can_issue_with_id_and_proof_type",
-            mock.CoroutineMock(),
-        ), patch.object(
-            test_module,
-            "get_properties_without_context",
-            return_value=missing_properties,
-        ), self.assertRaises(LinkedDataProofException) as context:
+        with (
+            mock.patch.object(
+                self.manager,
+                "assert_can_issue_with_id_and_proof_type",
+                mock.CoroutineMock(),
+            ),
+            patch.object(
+                test_module,
+                "get_properties_without_context",
+                return_value=missing_properties,
+            ),
+            self.assertRaises(LinkedDataProofException) as context,
+        ):
             await self.handler.create_offer(self.cred_proposal)
 
         assert (
@@ -885,17 +896,24 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         cred_id = "cred_id"
         self.holder.store_credential = mock.CoroutineMock()
 
-        with mock.patch.object(
-            self.manager,
-            "_get_suite",
-            mock.CoroutineMock(),
-        ), mock.patch.object(
-            self.manager,
-            "verify_credential",
-            mock.CoroutineMock(return_value=DocumentVerificationResult(verified=False)),
-        ), mock.patch.object(
-            self.manager,
-            "_get_proof_purpose",
-        ), self.assertRaises(V20CredFormatError) as context:
+        with (
+            mock.patch.object(
+                self.manager,
+                "_get_suite",
+                mock.CoroutineMock(),
+            ),
+            mock.patch.object(
+                self.manager,
+                "verify_credential",
+                mock.CoroutineMock(
+                    return_value=DocumentVerificationResult(verified=False)
+                ),
+            ),
+            mock.patch.object(
+                self.manager,
+                "_get_proof_purpose",
+            ),
+            self.assertRaises(V20CredFormatError) as context,
+        ):
             await self.handler.store_credential(cred_ex_record, cred_id)
         assert "Received invalid credential: " in str(context.exception)

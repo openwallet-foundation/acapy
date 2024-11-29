@@ -1,7 +1,7 @@
-"""present-proof-v2 format handler - supports DIF and INDY."""
+"""present-proof-v2 format handler - supports ANONCREDS, DIF and INDY."""
 
 import logging
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
 from .....core.error import BaseError
@@ -56,7 +56,8 @@ class V20PresFormatHandler(ABC):
     def get_format_data(self, message_type: str, data: dict) -> PresFormatAttachment:
         """Get presentation format and attach objects for use in pres_ex messages."""
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def validate_fields(cls, message_type: str, attachment_data: dict) -> None:
         """Validate attachment data for specific message type and format."""
 

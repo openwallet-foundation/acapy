@@ -9,9 +9,9 @@ from typing_extensions import Literal
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_OR_KEY_DID_EXAMPLE,
-    INDY_SCHEMA_ID_EXAMPLE,
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_DID_EXAMPLE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
@@ -256,7 +256,7 @@ class CredDefSchema(BaseModelSchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition or schema",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
     )
@@ -264,7 +264,7 @@ class CredDefSchema(BaseModelSchema):
         data_key="schemaId",
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         },
     )
     type = fields.Str(validate=OneOf(["CL"]))
@@ -333,7 +333,7 @@ class CredDefStateSchema(BaseModelSchema):
     credential_definition_id = fields.Str(
         metadata={
             "description": "credential definition id",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
         allow_none=True,
     )
@@ -434,7 +434,7 @@ class GetCredDefResultSchema(BaseModelSchema):
     credential_definition_id = fields.Str(
         metadata={
             "description": "credential definition id",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
     credential_definition = fields.Nested(

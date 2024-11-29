@@ -174,13 +174,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             )
             await mediation_record.save(session)
 
-            with mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ) as mock_attach_deco, mock.patch.object(
-                self.multitenant_mgr, "get_default_mediator"
-            ) as mock_get_default_mediator, mock.patch.object(
-                AdminResponder, "send_reply"
-            ) as mock_send_reply:
+            with (
+                mock.patch.object(
+                    test_module, "AttachDecorator", autospec=True
+                ) as mock_attach_deco,
+                mock.patch.object(
+                    self.multitenant_mgr, "get_default_mediator"
+                ) as mock_get_default_mediator,
+                mock.patch.object(AdminResponder, "send_reply") as mock_send_reply,
+            ):
                 mock_get_default_mediator.return_value = mediation_record
                 invi_rec = await self.oob_manager.create_invitation(
                     my_endpoint="testendpoint",
@@ -206,15 +208,18 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 ED25519,
             )
             public_did_info = await wallet.get_public_did()
-            with mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ) as mock_attach_deco, mock.patch.object(
-                self.multitenant_mgr, "get_default_mediator"
-            ) as mock_get_default_mediator, mock.patch.object(
-                self.manager, "resolve_connection_targets", mock.CoroutineMock()
-            ) as mock_resolve_targets, mock.patch.object(
-                AdminResponder, "send_reply"
-            ) as mock_send_reply:
+            with (
+                mock.patch.object(
+                    test_module, "AttachDecorator", autospec=True
+                ) as mock_attach_deco,
+                mock.patch.object(
+                    self.multitenant_mgr, "get_default_mediator"
+                ) as mock_get_default_mediator,
+                mock.patch.object(
+                    self.manager, "resolve_connection_targets", mock.CoroutineMock()
+                ) as mock_resolve_targets,
+                mock.patch.object(AdminResponder, "send_reply") as mock_send_reply,
+            ):
                 mock_resolve_targets.return_value = [
                     mock.MagicMock(recipient_keys=["test"])
                 ]
@@ -289,11 +294,14 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             )
             await mediation_record.save(session)
 
-            with mock.patch.object(
-                self.manager, "create_did_document", mock.CoroutineMock()
-            ) as mock_create_did_doc, mock.patch.object(
-                self.multitenant_mgr, "get_default_mediator"
-            ) as mock_get_default_mediator:
+            with (
+                mock.patch.object(
+                    self.manager, "create_did_document", mock.CoroutineMock()
+                ) as mock_create_did_doc,
+                mock.patch.object(
+                    self.multitenant_mgr, "get_default_mediator"
+                ) as mock_get_default_mediator,
+            ):
                 mock_get_default_mediator.return_value = mediation_record
                 mock_create_did_doc.return_value = mock.MagicMock(
                     serialize=mock.MagicMock(return_value={})
@@ -370,8 +378,11 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 SOV,
                 ED25519,
             )
-        with self.assertRaises(DIDXManagerError) as context, mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+        with (
+            self.assertRaises(DIDXManagerError) as context,
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+            ),
         ):
             await self.manager.create_request_implicit(
                 their_public_did=TestConfig.test_target_did,
@@ -414,13 +425,17 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
         )
 
-        with mock.patch.object(
-            AskarWallet, "create_local_did", autospec=True
-        ) as mock_wallet_create_local_did, mock.patch.object(
-            self.manager, "create_did_document", mock.CoroutineMock()
-        ) as mock_create_did_doc, mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco:
+        with (
+            mock.patch.object(
+                AskarWallet, "create_local_did", autospec=True
+            ) as mock_wallet_create_local_did,
+            mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc,
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_deco,
+        ):
             mock_create_did_doc.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={})
             )
@@ -625,24 +640,35 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             STATE_REQUEST = ConnRecord.State.REQUEST
             self.profile.context.update_settings({"public_invites": True})
             ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ) as mock_attach_deco, mock.patch.object(
-                test_module, "DIDXResponse", autospec=True
-            ) as mock_response, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
-            ), mock.patch.object(
-                self.manager, "create_did_document", mock.CoroutineMock()
-            ) as mock_create_did_doc, mock.patch.object(
-                MediationManager, "prepare_request", autospec=True
-            ) as mock_mediation_mgr_prep_req, mock.patch.object(
-                self.manager, "store_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(
+                    test_module, "AttachDecorator", autospec=True
+                ) as mock_attach_deco,
+                mock.patch.object(
+                    test_module, "DIDXResponse", autospec=True
+                ) as mock_response,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(
+                        return_value={"id": "did:sov:" + TestConfig.test_did}
+                    ),
+                ),
+                mock.patch.object(
+                    self.manager, "create_did_document", mock.CoroutineMock()
+                ) as mock_create_did_doc,
+                mock.patch.object(
+                    MediationManager, "prepare_request", autospec=True
+                ) as mock_mediation_mgr_prep_req,
+                mock.patch.object(
+                    self.manager, "store_did_document", mock.CoroutineMock()
+                ),
             ):
                 mock_create_did_doc.return_value = mock.MagicMock(
                     serialize=mock.MagicMock(return_value={})
@@ -760,27 +786,36 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             STATE_REQUEST = ConnRecord.State.REQUEST
             self.profile.context.update_settings({"public_invites": True})
             ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ) as mock_attach_deco, mock.patch.object(
-                test_module, "DIDXResponse", autospec=True
-            ) as mock_response, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
-            ), mock.patch.object(
-                self.manager, "create_did_document", mock.CoroutineMock()
-            ) as mock_create_did_doc, mock.patch.object(
-                self.manager,
-                "record_keys_for_resolvable_did",
-                mock.CoroutineMock(),
-            ), mock.patch.object(
-                MediationManager, "prepare_request", autospec=True
-            ) as mock_mediation_mgr_prep_req:
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(
+                    test_module, "AttachDecorator", autospec=True
+                ) as mock_attach_deco,
+                mock.patch.object(
+                    test_module, "DIDXResponse", autospec=True
+                ) as mock_response,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
+                ),
+                mock.patch.object(
+                    self.manager, "create_did_document", mock.CoroutineMock()
+                ) as mock_create_did_doc,
+                mock.patch.object(
+                    self.manager,
+                    "record_keys_for_resolvable_did",
+                    mock.CoroutineMock(),
+                ),
+                mock.patch.object(
+                    MediationManager, "prepare_request", autospec=True
+                ) as mock_mediation_mgr_prep_req,
+            ):
                 mock_create_did_doc.return_value = mock.MagicMock(
                     serialize=mock.MagicMock(return_value={})
                 )
@@ -856,11 +891,14 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             STATE_REQUEST = ConnRecord.State.REQUEST
             self.profile.context.update_settings({"public_invites": True})
             ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture:
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+            ):
                 mock_conn_record = mock.MagicMock(
                     accept=ACCEPT_AUTO,
                     my_did=None,
@@ -964,16 +1002,21 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
             self.profile.context.update_settings({"public_invites": True})
             mock_conn_rec_state_request = ConnRecord.State.REQUEST
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value={"id": "LjgpST2rjsoxYegQDRm7EL"}),
-            ), mock.patch.object(
-                self.manager, "store_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(return_value={"id": "LjgpST2rjsoxYegQDRm7EL"}),
+                ),
+                mock.patch.object(
+                    self.manager, "store_did_document", mock.CoroutineMock()
+                ),
             ):
                 mock_conn_record = mock.MagicMock(
                     accept=ConnRecord.ACCEPT_MANUAL,
@@ -1028,14 +1071,18 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
             self.profile.context.update_settings({"public_invites": True})
             mock_conn_rec_state_request = ConnRecord.State.REQUEST
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(side_effect=DIDXManagerError),
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(side_effect=DIDXManagerError),
+                ),
             ):
                 mock_conn_record = mock.MagicMock(
                     accept=ConnRecord.ACCEPT_MANUAL,
@@ -1088,14 +1135,13 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             self.profile.context.update_settings({"public_invites": False})
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ), mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ), mock.patch.object(
-                test_module, "DIDXResponse", autospec=True
-            ), mock.patch.object(
-                self.manager, "create_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(test_module, "ConnRecord", mock.MagicMock()),
+                mock.patch.object(test_module, "AttachDecorator", autospec=True),
+                mock.patch.object(test_module, "DIDXResponse", autospec=True),
+                mock.patch.object(
+                    self.manager, "create_did_document", mock.CoroutineMock()
+                ),
             ):
                 with self.assertRaises(DIDXManagerError) as context:
                     await self.manager.receive_request(
@@ -1133,22 +1179,28 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 {"public_invites": True, "debug.auto_accept_requests": False}
             )
             mock_conn_rec_state_request = ConnRecord.State.REQUEST
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ), mock.patch.object(
-                test_module, "DIDXResponse", autospec=True
-            ), mock.patch.object(
-                self.manager, "create_did_document", mock.CoroutineMock()
-            ), mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
-            ), mock.patch.object(
-                self.manager, "store_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(test_module, "AttachDecorator", autospec=True),
+                mock.patch.object(test_module, "DIDXResponse", autospec=True),
+                mock.patch.object(
+                    self.manager, "create_did_document", mock.CoroutineMock()
+                ),
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(
+                        return_value={"id": "did:sov:" + TestConfig.test_did}
+                    ),
+                ),
+                mock.patch.object(
+                    self.manager, "store_did_document", mock.CoroutineMock()
+                ),
             ):
                 mock_conn_record = mock.MagicMock(
                     accept=ConnRecord.ACCEPT_MANUAL,
@@ -1213,16 +1265,23 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
             self.profile.context.update_settings({"public_invites": True})
 
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
-            ), mock.patch.object(
-                self.manager, "store_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(
+                        return_value={"id": "did:sov:" + TestConfig.test_did}
+                    ),
+                ),
+                mock.patch.object(
+                    self.manager, "store_did_document", mock.CoroutineMock()
+                ),
             ):
                 mock_did_posture.get = mock.MagicMock(
                     return_value=test_module.DIDPosture.PUBLIC
@@ -1279,16 +1338,23 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
             STATE_REQUEST = ConnRecord.State.REQUEST
 
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "DIDPosture", autospec=True
-            ) as mock_did_posture, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
-            ), mock.patch.object(
-                self.manager, "store_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "DIDPosture", autospec=True
+                ) as mock_did_posture,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(
+                        return_value={"id": "did:sov:" + TestConfig.test_did}
+                    ),
+                ),
+                mock.patch.object(
+                    self.manager, "store_did_document", mock.CoroutineMock()
+                ),
             ):
                 mock_did_posture.get = mock.MagicMock(
                     return_value=test_module.DIDPosture.PUBLIC
@@ -1363,18 +1429,26 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             self.profile.context.update_settings({"public_invites": True})
-            with mock.patch.object(
-                test_module, "ConnRecord", mock.MagicMock()
-            ) as mock_conn_rec_cls, mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ) as mock_attach_deco, mock.patch.object(
-                test_module, "DIDXResponse", autospec=True
-            ) as mock_response, mock.patch.object(
-                self.manager,
-                "verify_diddoc",
-                mock.CoroutineMock(return_value={"id": "did:sov:" + TestConfig.test_did}),
-            ), mock.patch.object(
-                self.manager, "store_did_document", mock.CoroutineMock()
+            with (
+                mock.patch.object(
+                    test_module, "ConnRecord", mock.MagicMock()
+                ) as mock_conn_rec_cls,
+                mock.patch.object(
+                    test_module, "AttachDecorator", autospec=True
+                ) as mock_attach_deco,
+                mock.patch.object(
+                    test_module, "DIDXResponse", autospec=True
+                ) as mock_response,
+                mock.patch.object(
+                    self.manager,
+                    "verify_diddoc",
+                    mock.CoroutineMock(
+                        return_value={"id": "did:sov:" + TestConfig.test_did}
+                    ),
+                ),
+                mock.patch.object(
+                    self.manager, "store_did_document", mock.CoroutineMock()
+                ),
             ):
                 mock_conn_rec_cls.retrieve_by_invitation_msg_id = mock.CoroutineMock(
                     return_value=mock_conn
@@ -1451,15 +1525,19 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
     async def test_create_response(self):
         conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()), mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco, mock.patch.object(
-            test_module, "DIDXResponse", autospec=True
-        ), mock.patch.object(
-            self.manager, "create_did_document", mock.CoroutineMock()
-        ) as mock_create_did_doc:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_deco,
+            mock.patch.object(test_module, "DIDXResponse", autospec=True),
+            mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc,
+        ):
             mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
@@ -1499,15 +1577,17 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             await record.save(session)
             await record.attach_invitation(session, invi)
 
-            with mock.patch.object(
-                ConnRecord, "log_state", autospec=True
-            ), mock.patch.object(
-                ConnRecord, "retrieve_request", autospec=True
-            ), mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-                record, "metadata_get", mock.CoroutineMock(return_value=False)
-            ), mock.patch.object(
-                test_module, "AttachDecorator", autospec=True
-            ) as mock_attach_deco:
+            with (
+                mock.patch.object(ConnRecord, "log_state", autospec=True),
+                mock.patch.object(ConnRecord, "retrieve_request", autospec=True),
+                mock.patch.object(ConnRecord, "save", autospec=True),
+                mock.patch.object(
+                    record, "metadata_get", mock.CoroutineMock(return_value=False)
+                ),
+                mock.patch.object(
+                    test_module, "AttachDecorator", autospec=True
+                ) as mock_attach_deco,
+            ):
                 mock_attach_deco.data_base64 = mock.MagicMock(
                     return_value=mock.MagicMock(
                         data=mock.MagicMock(sign=mock.CoroutineMock())
@@ -1548,12 +1628,13 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             await record.save(session)
             await record.attach_invitation(session, invi)
 
-            with mock.patch.object(
-                ConnRecord, "log_state", autospec=True
-            ), mock.patch.object(
-                ConnRecord, "retrieve_request", autospec=True
-            ), mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-                record, "metadata_get", mock.CoroutineMock(return_value=False)
+            with (
+                mock.patch.object(ConnRecord, "log_state", autospec=True),
+                mock.patch.object(ConnRecord, "retrieve_request", autospec=True),
+                mock.patch.object(ConnRecord, "save", autospec=True),
+                mock.patch.object(
+                    record, "metadata_get", mock.CoroutineMock(return_value=False)
+                ),
             ):
                 with self.assertRaises(DIDXManagerError) as context:
                     await self.manager.create_response(
@@ -1571,15 +1652,19 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             }
         )
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_request"
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()), mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco, mock.patch.object(
-            self.manager, "create_did_document", mock.CoroutineMock()
-        ) as mock_create_did_doc, mock.patch.object(
-            AskarWallet, "create_local_did", autospec=True
-        ) as mock_wallet_create_local_did:
+        with (
+            mock.patch.object(test_module.ConnRecord, "retrieve_request"),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_deco,
+            mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc,
+            mock.patch.object(
+                AskarWallet, "create_local_did", autospec=True
+            ) as mock_wallet_create_local_did,
+        ):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 TestConfig.test_did,
                 TestConfig.test_verkey,
@@ -1604,17 +1689,22 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             state=ConnRecord.State.REQUEST.rfc23,
         )
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()), mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco, mock.patch.object(
-            test_module, "DIDXResponse", autospec=True
-        ), mock.patch.object(
-            self.manager, "create_did_document", mock.CoroutineMock()
-        ) as mock_create_did_doc, mock.patch.object(
-            AskarWallet, "get_local_did", mock.CoroutineMock()
-        ) as mock_get_loc_did:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_deco,
+            mock.patch.object(test_module, "DIDXResponse", autospec=True),
+            mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc,
+            mock.patch.object(
+                AskarWallet, "get_local_did", mock.CoroutineMock()
+            ) as mock_get_loc_did,
+        ):
             mock_get_loc_did.return_value = self.did_info
             mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
@@ -1635,11 +1725,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         self.profile.context.update_settings({"emit_did_peer_2": False})
 
-        with mock.patch.object(
-            self.manager, "create_did_peer_2", mock.CoroutineMock()
-        ) as mock_create_did_peer_2, mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                self.manager, "create_did_peer_2", mock.CoroutineMock()
+            ) as mock_create_did_peer_2,
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+        ):
             mock_create_did_peer_2.return_value = DIDInfo(
                 TestConfig.test_did_peer_2,
                 TestConfig.test_verkey,
@@ -1663,11 +1757,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         self.profile.context.update_settings({"emit_did_peer_4": False})
 
-        with mock.patch.object(
-            self.manager, "create_did_peer_4", mock.CoroutineMock()
-        ) as mock_create_did_peer_4, mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                self.manager, "create_did_peer_4", mock.CoroutineMock()
+            ) as mock_create_did_peer_4,
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+        ):
             mock_create_did_peer_4.return_value = DIDInfo(
                 TestConfig.test_did_peer_4,
                 TestConfig.test_verkey,
@@ -1691,11 +1789,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         self.profile.context.update_settings({"emit_did_peer_4": False})
 
-        with mock.patch.object(
-            self.manager, "create_did_peer_4", mock.CoroutineMock()
-        ) as mock_create_did_peer_4, mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()):
+        with (
+            mock.patch.object(
+                self.manager, "create_did_peer_4", mock.CoroutineMock()
+            ) as mock_create_did_peer_4,
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+        ):
             mock_create_did_peer_4.return_value = DIDInfo(
                 TestConfig.test_did_peer_4,
                 TestConfig.test_verkey,
@@ -1731,15 +1833,19 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()), mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco, mock.patch.object(
-            test_module, "DIDXResponse", autospec=True
-        ), mock.patch.object(
-            self.manager, "create_did_document", mock.CoroutineMock()
-        ) as mock_create_did_doc:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_deco,
+            mock.patch.object(test_module, "DIDXResponse", autospec=True),
+            mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc,
+        ):
             mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
@@ -1754,15 +1860,19 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
     async def test_create_response_use_public_did_x_no_public_did(self):
         conn_rec = ConnRecord(connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23)
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-        ), mock.patch.object(conn_rec, "save", mock.CoroutineMock()), mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_deco, mock.patch.object(
-            test_module, "DIDXResponse", autospec=True
-        ), mock.patch.object(
-            self.manager, "create_did_document", mock.CoroutineMock()
-        ) as mock_create_did_doc:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            ),
+            mock.patch.object(conn_rec, "save", mock.CoroutineMock()),
+            mock.patch.object(
+                test_module, "AttachDecorator", autospec=True
+            ) as mock_attach_deco,
+            mock.patch.object(test_module, "DIDXResponse", autospec=True),
+            mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc,
+        ):
             mock_create_did_doc.return_value = mock.MagicMock(serialize=mock.MagicMock())
             mock_attach_deco.data_base64 = mock.MagicMock(
                 return_value=mock.MagicMock(
@@ -1798,12 +1908,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             recipient_did_public=True,
         )
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, mock.patch.object(
-            self.manager, "store_did_document", mock.CoroutineMock()
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_id,
+            mock.patch.object(self.manager, "store_did_document", mock.CoroutineMock()),
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
@@ -1856,14 +1969,18 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         )
         self.context.update_settings({"auto_disclose_features": True})
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, mock.patch.object(
-            V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
-        ) as mock_proactive_disclose_features, mock.patch.object(
-            self.manager, "store_did_document", mock.CoroutineMock()
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_id,
+            mock.patch.object(
+                V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
+            ) as mock_proactive_disclose_features,
+            mock.patch.object(self.manager, "store_did_document", mock.CoroutineMock()),
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
@@ -1912,12 +2029,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did, mock.patch.object(
-            self.manager, "store_did_document", mock.CoroutineMock()
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_did,
+            mock.patch.object(self.manager, "store_did_document", mock.CoroutineMock()),
         ):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = mock.MagicMock(
@@ -1958,11 +2078,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did:
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_did", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_did,
+        ):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.side_effect = StorageNotFoundError()
 
@@ -1984,9 +2108,12 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id:
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+        ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 state=ConnRecord.State.ABANDONED.rfc23
             )
@@ -2007,14 +2134,20 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             recipient_did_public=True,
         )
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, mock.patch.object(
-            DIDDoc, "deserialize", mock.MagicMock()
-        ) as mock_did_doc_deser, mock.patch.object(
-            self.manager, "record_keys_for_resolvable_did", mock.CoroutineMock()
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_id,
+            mock.patch.object(
+                DIDDoc, "deserialize", mock.MagicMock()
+            ) as mock_did_doc_deser,
+            mock.patch.object(
+                self.manager, "record_keys_for_resolvable_did", mock.CoroutineMock()
+            ),
         ):
             mock_did_doc_deser.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did
@@ -2047,14 +2180,20 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             recipient_did_public=True,
         )
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, mock.patch.object(
-            DIDDoc, "deserialize", mock.MagicMock()
-        ) as mock_did_doc_deser, mock.patch.object(
-            self.manager, "record_keys_for_resolvable_did", mock.CoroutineMock()
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_id,
+            mock.patch.object(
+                DIDDoc, "deserialize", mock.MagicMock()
+            ) as mock_did_doc_deser,
+            mock.patch.object(
+                self.manager, "record_keys_for_resolvable_did", mock.CoroutineMock()
+            ),
         ):
             mock_did_doc_deser.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did
@@ -2092,12 +2231,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
 
-        with mock.patch.object(ConnRecord, "save", autospec=True), mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, mock.patch.object(
-            self.manager, "store_did_document", mock.CoroutineMock()
+        with (
+            mock.patch.object(ConnRecord, "save", autospec=True),
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_id,
+            mock.patch.object(self.manager, "store_did_document", mock.CoroutineMock()),
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
@@ -2139,11 +2281,14 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         mock_complete = mock.MagicMock()
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
         self.context.update_settings({"auto_disclose_features": True})
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
-            V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
-        ) as mock_proactive_disclose_features:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_req_id,
+            mock.patch.object(
+                V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
+            ) as mock_proactive_disclose_features,
+        ):
             mock_conn_retrieve_by_req_id.return_value.save = mock.CoroutineMock()
             mock_conn_retrieve_by_req_id.return_value.my_did = None
             mock_conn_retrieve_by_req_id.return_value.their_did = None

@@ -28,13 +28,15 @@ class TestForwardHandler(IsolatedAsyncioTestCase):
         handler = test_module.ForwardHandler()
 
         responder = MockResponder()
-        with mock.patch.object(
-            test_module, "RoutingManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_connection_mgr, mock.patch.object(
-            self.context.profile, "notify", autospec=True
-        ) as mock_notify:
+        with (
+            mock.patch.object(test_module, "RoutingManager", autospec=True) as mock_mgr,
+            mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_connection_mgr,
+            mock.patch.object(
+                self.context.profile, "notify", autospec=True
+            ) as mock_notify,
+        ):
             mock_mgr.return_value.get_recipient = mock.CoroutineMock(
                 return_value=RouteRecord(connection_id="dummy")
             )

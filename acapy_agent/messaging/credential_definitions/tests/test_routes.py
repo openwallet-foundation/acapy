@@ -103,13 +103,17 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             "conn_id": "dummy",
         }
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_txn_mgr.return_value = mock.MagicMock(
                 create_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -152,11 +156,14 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             "conn_id": "dummy",
         }
 
-        with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, mock.patch.object(
-            test_module, "TransactionManager", mock.MagicMock()
-        ) as mock_txn_mgr:
+        with (
+            mock.patch.object(
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve,
+            mock.patch.object(
+                test_module, "TransactionManager", mock.MagicMock()
+            ) as mock_txn_mgr,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -356,11 +363,14 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             mock.MagicMock(MultitenantManager, autospec=True),
         )
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch.object(test_module.web, "json_response") as mock_response:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            ),
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             result = await test_module.credential_definitions_get_credential_definition(
                 self.request
             )

@@ -239,11 +239,14 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
                 "verkey": "ABUF7uxYTxZ6qYdZ4G9e1Gi",
             }
         )
-        with mock.patch.object(
-            test_module.asyncio, "wait", mock.CoroutineMock()
-        ) as mock_wait, mock.patch.object(
-            test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
-        ) as mock_verify_spv_proof:
+        with (
+            mock.patch.object(
+                test_module.asyncio, "wait", mock.CoroutineMock()
+            ) as mock_wait,
+            mock.patch.object(
+                test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
+            ) as mock_verify_spv_proof,
+        ):
             mock_build_get_nym_req.return_value = mock.MagicMock()
             mock_submit.return_value = get_nym_reply
             mock_wait.return_value = mock_submit.return_value
@@ -354,11 +357,14 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
     ):
         get_nym_reply = deepcopy(GET_NYM_INDY_VDR_REPLY)
         get_nym_reply["data"]["verkey"] = "ABUF7uxYTxZ6qYdZ4G9e1Gi"
-        with mock.patch.object(
-            test_module.asyncio, "wait", mock.CoroutineMock()
-        ) as mock_wait, mock.patch.object(
-            test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
-        ) as mock_verify_spv_proof:
+        with (
+            mock.patch.object(
+                test_module.asyncio, "wait", mock.CoroutineMock()
+            ) as mock_wait,
+            mock.patch.object(
+                test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
+            ) as mock_verify_spv_proof,
+        ):
             mock_build_get_nym_req.return_value = mock.MagicMock()
             mock_submit.return_value = get_nym_reply
             mock_wait.return_value = mock_submit.return_value
@@ -425,11 +431,14 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
         )
         get_nym_reply = deepcopy(GET_NYM_REPLY)
         get_nym_reply["result"]["data"]["verkey"] = "ABUF7uxYTxZ6qYdZ4G9e1Gi"
-        with mock.patch.object(
-            test_module.asyncio, "wait", mock.CoroutineMock()
-        ) as mock_wait, mock.patch.object(
-            test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
-        ) as mock_verify_spv_proof:
+        with (
+            mock.patch.object(
+                test_module.asyncio, "wait", mock.CoroutineMock()
+            ) as mock_wait,
+            mock.patch.object(
+                test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
+            ) as mock_verify_spv_proof,
+        ):
             mock_build_get_nym_req.return_value = mock.MagicMock()
             mock_submit.return_value = get_nym_reply
             mock_wait.return_value = mock_submit.return_value
@@ -450,11 +459,14 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
     async def test_lookup_did_in_configured_ledgers_x(
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
-        with mock.patch.object(
-            test_module.asyncio, "wait", mock.CoroutineMock()
-        ) as mock_wait, mock.patch.object(
-            test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
-        ) as mock_verify_spv_proof:
+        with (
+            mock.patch.object(
+                test_module.asyncio, "wait", mock.CoroutineMock()
+            ) as mock_wait,
+            mock.patch.object(
+                test_module.SubTrie, "verify_spv_proof", mock.CoroutineMock()
+            ) as mock_verify_spv_proof,
+        ):
             mock_build_get_nym_req.return_value = mock.MagicMock()
             mock_submit.return_value = GET_NYM_INDY_VDR_REPLY
             mock_wait.return_value = mock_submit.return_value

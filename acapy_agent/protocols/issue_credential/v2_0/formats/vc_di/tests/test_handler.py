@@ -9,11 +9,11 @@ from marshmallow import ValidationError
 
 from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from .......anoncreds.issuer import AnonCredsIssuer
-from .......anoncreds.models.anoncreds_cred_def import (
+from .......anoncreds.models.credential_definition import (
     CredDef,
     GetCredDefResult,
 )
-from .......anoncreds.models.anoncreds_revocation import (
+from .......anoncreds.models.revocation import (
     GetRevRegDefResult,
     RevRegDef,
 )
@@ -727,7 +727,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # assert data is encoded as base64
         assert attachment.data.base64
 
-    @pytest.mark.asyncio
     async def test_match_sent_cred_def_id_error(self):
         tag_query = {"tag": "test_tag"}
 
@@ -737,7 +736,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             context.exception
         )
 
-    @pytest.mark.asyncio
     async def test_store_credential(self):
         attr_values = {
             "legalName": "value",

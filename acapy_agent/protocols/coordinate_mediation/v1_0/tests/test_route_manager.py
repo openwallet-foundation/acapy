@@ -78,13 +78,14 @@ async def test_get_or_create_my_did_no_did(
 ):
     conn_record.my_did = None
     mock_did_info = mock.MagicMock()
-    with mock.patch.object(
-        AskarWallet,
-        "create_local_did",
-        mock.CoroutineMock(return_value=mock_did_info),
-    ) as mock_create_local_did, mock.patch.object(
-        conn_record, "save", mock.CoroutineMock()
-    ) as mock_save:
+    with (
+        mock.patch.object(
+            AskarWallet,
+            "create_local_did",
+            mock.CoroutineMock(return_value=mock_did_info),
+        ) as mock_create_local_did,
+        mock.patch.object(conn_record, "save", mock.CoroutineMock()) as mock_save,
+    ):
         info = await route_manager.get_or_create_my_did(profile, conn_record)
         assert mock_did_info == info
         mock_create_local_did.assert_called_once()
@@ -110,12 +111,15 @@ async def test_mediation_record_for_connection_mediation_id(
     profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
-    with mock.patch.object(
-        route_manager,
-        "mediation_record_if_id",
-        mock.CoroutineMock(return_value=mediation_record),
-    ) as mock_mediation_record_if_id, mock.patch.object(
-        route_manager, "save_mediator_for_connection", mock.CoroutineMock()
+    with (
+        mock.patch.object(
+            route_manager,
+            "mediation_record_if_id",
+            mock.CoroutineMock(return_value=mediation_record),
+        ) as mock_mediation_record_if_id,
+        mock.patch.object(
+            route_manager, "save_mediator_for_connection", mock.CoroutineMock()
+        ),
     ):
         assert await route_manager.mediation_records_for_connection(
             profile, conn_record, mediation_record.mediation_id
@@ -133,12 +137,15 @@ async def test_mediation_record_for_connection_mediation_metadata(
     conn_record.metadata_get.return_value = {
         MediationManager.METADATA_ID: mediation_record.mediation_id
     }
-    with mock.patch.object(
-        route_manager,
-        "mediation_record_if_id",
-        mock.CoroutineMock(return_value=mediation_record),
-    ) as mock_mediation_record_if_id, mock.patch.object(
-        route_manager, "save_mediator_for_connection", mock.CoroutineMock()
+    with (
+        mock.patch.object(
+            route_manager,
+            "mediation_record_if_id",
+            mock.CoroutineMock(return_value=mediation_record),
+        ) as mock_mediation_record_if_id,
+        mock.patch.object(
+            route_manager, "save_mediator_for_connection", mock.CoroutineMock()
+        ),
     ):
         assert await route_manager.mediation_records_for_connection(
             profile, conn_record, "another-mediation-id"
@@ -153,12 +160,15 @@ async def test_mediation_record_for_connection_default(
     profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
-    with mock.patch.object(
-        route_manager,
-        "mediation_record_if_id",
-        mock.CoroutineMock(return_value=mediation_record),
-    ) as mock_mediation_record_if_id, mock.patch.object(
-        route_manager, "save_mediator_for_connection", mock.CoroutineMock()
+    with (
+        mock.patch.object(
+            route_manager,
+            "mediation_record_if_id",
+            mock.CoroutineMock(return_value=mediation_record),
+        ) as mock_mediation_record_if_id,
+        mock.patch.object(
+            route_manager, "save_mediator_for_connection", mock.CoroutineMock()
+        ),
     ):
         assert await route_manager.mediation_records_for_connection(
             profile, conn_record, None, or_default=True
@@ -210,13 +220,16 @@ async def test_mediation_record_if_id_with_id_and_default(
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", state=MediationRecord.STATE_GRANTED
     )
-    with mock.patch.object(
-        MediationRecord,
-        "retrieve_by_id",
-        mock.CoroutineMock(return_value=mediation_record),
-    ) as mock_retrieve_by_id, mock.patch.object(
-        MediationManager, "get_default_mediator", mock.CoroutineMock()
-    ) as mock_get_default_mediator:
+    with (
+        mock.patch.object(
+            MediationRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(return_value=mediation_record),
+        ) as mock_retrieve_by_id,
+        mock.patch.object(
+            MediationManager, "get_default_mediator", mock.CoroutineMock()
+        ) as mock_get_default_mediator,
+    ):
         actual = await route_manager.mediation_record_if_id(
             profile, mediation_id=mediation_record.mediation_id, or_default=True
         )
@@ -233,13 +246,16 @@ async def test_mediation_record_if_id_without_id_and_default(
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", state=MediationRecord.STATE_GRANTED
     )
-    with mock.patch.object(
-        MediationRecord, "retrieve_by_id", mock.CoroutineMock()
-    ) as mock_retrieve_by_id, mock.patch.object(
-        MediationManager,
-        "get_default_mediator",
-        mock.CoroutineMock(return_value=mediation_record),
-    ) as mock_get_default_mediator:
+    with (
+        mock.patch.object(
+            MediationRecord, "retrieve_by_id", mock.CoroutineMock()
+        ) as mock_retrieve_by_id,
+        mock.patch.object(
+            MediationManager,
+            "get_default_mediator",
+            mock.CoroutineMock(return_value=mediation_record),
+        ) as mock_get_default_mediator,
+    ):
         actual = await route_manager.mediation_record_if_id(
             profile, mediation_id=None, or_default=True
         )
@@ -253,11 +269,16 @@ async def test_mediation_record_if_id_without_id_and_no_default(
     profile: Profile,
     route_manager: RouteManager,
 ):
-    with mock.patch.object(
-        MediationRecord, "retrieve_by_id", mock.CoroutineMock(return_value=None)
-    ) as mock_retrieve_by_id, mock.patch.object(
-        MediationManager, "get_default_mediator", mock.CoroutineMock(return_value=None)
-    ) as mock_get_default_mediator:
+    with (
+        mock.patch.object(
+            MediationRecord, "retrieve_by_id", mock.CoroutineMock(return_value=None)
+        ) as mock_retrieve_by_id,
+        mock.patch.object(
+            MediationManager,
+            "get_default_mediator",
+            mock.CoroutineMock(return_value=None),
+        ) as mock_get_default_mediator,
+    ):
         assert (
             await route_manager.mediation_record_if_id(
                 profile, mediation_id=None, or_default=True
@@ -319,21 +340,24 @@ async def test_route_connection_state_inviter_replace_key_none(
     mock_did_info = mock.MagicMock(DIDInfo)
     conn_record.invitation_key = TEST_RECORD_VERKEY
 
-    with mock.patch.object(
-        route_manager,
-        "get_or_create_my_did",
-        mock.CoroutineMock(return_value=mock_did_info),
-    ), mock.patch.object(
-        AskarWallet,
-        "get_public_did",
-        mock.CoroutineMock(
-            return_value=DIDInfo(
-                TEST_RECORD_DID,
-                TEST_RECORD_VERKEY,
-                None,
-                method=SOV,
-                key_type=ED25519,
-            )
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_or_create_my_did",
+            mock.CoroutineMock(return_value=mock_did_info),
+        ),
+        mock.patch.object(
+            AskarWallet,
+            "get_public_did",
+            mock.CoroutineMock(
+                return_value=DIDInfo(
+                    TEST_RECORD_DID,
+                    TEST_RECORD_VERKEY,
+                    None,
+                    method=SOV,
+                    key_type=ED25519,
+                )
+            ),
         ),
     ):
         await route_manager.route_connection_as_inviter(
@@ -355,11 +379,14 @@ async def test_route_connection_state_invitee(
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.state = "invitation"
     conn_record.their_role = "responder"
-    with mock.patch.object(
-        route_manager, "route_connection_as_invitee", mock.CoroutineMock()
-    ) as mock_route_connection_as_invitee, mock.patch.object(
-        route_manager, "route_connection_as_inviter", mock.CoroutineMock()
-    ) as mock_route_connection_as_inviter:
+    with (
+        mock.patch.object(
+            route_manager, "route_connection_as_invitee", mock.CoroutineMock()
+        ) as mock_route_connection_as_invitee,
+        mock.patch.object(
+            route_manager, "route_connection_as_inviter", mock.CoroutineMock()
+        ) as mock_route_connection_as_inviter,
+    ):
         await route_manager.route_connection(profile, conn_record, [mediation_record])
         mock_route_connection_as_invitee.assert_called_once()
         mock_route_connection_as_inviter.assert_not_called()
@@ -372,11 +399,14 @@ async def test_route_connection_state_inviter(
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.state = "request"
     conn_record.their_role = "requester"
-    with mock.patch.object(
-        route_manager, "route_connection_as_invitee", mock.CoroutineMock()
-    ) as mock_route_connection_as_invitee, mock.patch.object(
-        route_manager, "route_connection_as_inviter", mock.CoroutineMock()
-    ) as mock_route_connection_as_inviter:
+    with (
+        mock.patch.object(
+            route_manager, "route_connection_as_invitee", mock.CoroutineMock()
+        ) as mock_route_connection_as_invitee,
+        mock.patch.object(
+            route_manager, "route_connection_as_inviter", mock.CoroutineMock()
+        ) as mock_route_connection_as_inviter,
+    ):
         await route_manager.route_connection(profile, conn_record, [mediation_record])
         mock_route_connection_as_inviter.assert_called_once()
         mock_route_connection_as_invitee.assert_not_called()

@@ -476,11 +476,10 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
             )
         )
 
-        with mock.patch.object(
-            TransactionRecord, "save", autospec=True
-        ) as save_record, mock.patch.object(
-            ConnRecord, "retrieve_by_id"
-        ) as mock_conn_rec_retrieve:
+        with (
+            mock.patch.object(TransactionRecord, "save", autospec=True) as save_record,
+            mock.patch.object(ConnRecord, "retrieve_by_id") as mock_conn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={
@@ -534,11 +533,10 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         )
         self.ledger.get_indy_storage = future
 
-        with mock.patch.object(
-            TransactionRecord, "save", autospec=True
-        ) as save_record, mock.patch.object(
-            ConnRecord, "retrieve_by_id"
-        ) as mock_conn_rec_retrieve:
+        with (
+            mock.patch.object(TransactionRecord, "save", autospec=True) as save_record,
+            mock.patch.object(ConnRecord, "retrieve_by_id") as mock_conn_rec_retrieve,
+        ):
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
                 metadata_get=mock.CoroutineMock(
                     return_value={

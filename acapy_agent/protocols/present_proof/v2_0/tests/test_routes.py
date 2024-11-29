@@ -6,8 +6,10 @@ from unittest.mock import ANY
 from marshmallow import ValidationError
 
 from .....admin.request_context import AdminRequestContext
+from .....anoncreds.models.presentation_request import (
+    AnoncredsPresentationReqAttrSpecSchema,
+)
 from .....indy.holder import IndyHolder
-from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
@@ -221,7 +223,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
     async def test_validate_proof_req_attr_spec(self):
-        aspec = IndyProofReqAttrSpecSchema()
+        aspec = AnoncredsPresentationReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
         aspec.validate_fields(
             {
@@ -254,11 +256,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         mock_pres_ex_rec_inst = mock.MagicMock(
             serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"})
         )
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.query = mock.CoroutineMock(
                 return_value=[mock_pres_ex_rec_inst]
             )
@@ -337,11 +342,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.return_value = mock.MagicMock(
                 retrieve_by_id=mock.CoroutineMock()
             )
@@ -363,11 +371,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.return_value = mock.MagicMock(
                 retrieve_by_id=mock.CoroutineMock()
             )
@@ -427,11 +438,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             error_msg=None,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
 
             await test_module.present_proof_credentials_list(self.request)
@@ -504,11 +518,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             error_msg=None,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
 
             await test_module.present_proof_credentials_list(self.request)
@@ -577,11 +594,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             error_msg=None,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
 
             await test_module.present_proof_credentials_list(self.request)
@@ -650,11 +670,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             error_msg=None,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
 
             await test_module.present_proof_credentials_list(self.request)
@@ -723,11 +746,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             error_msg=None,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
 
             await test_module.present_proof_credentials_list(self.request)
@@ -789,10 +815,11 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         mock_vc_holder.search_credentials = mock.MagicMock()
         self.profile.context.injector.bind_instance(VCHolder, mock_vc_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
         ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -849,10 +876,11 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         mock_vc_holder.search_credentials = mock.MagicMock()
         self.profile.context.injector.bind_instance(VCHolder, mock_vc_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
         ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -906,10 +934,11 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         mock_vc_holder.search_credentials = mock.MagicMock()
         self.profile.context.injector.bind_instance(VCHolder, mock_vc_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
         ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -966,10 +995,11 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         mock_vc_holder.search_credentials = mock.MagicMock()
         self.profile.context.injector.bind_instance(VCHolder, mock_vc_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
         ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -1032,11 +1062,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(VCHolder, mock_vc_holder)
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
@@ -1095,10 +1128,11 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             error_msg=None,
         )
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
         ):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
@@ -1107,11 +1141,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     async def test_present_proof_retrieve(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_pres_ex_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_pres_ex_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_pres_ex_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     serialize=mock.MagicMock(
@@ -1163,15 +1200,16 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ), mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+            mock.patch.object(test_module, "V20PresExRecord", autospec=True),
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(is_ready=True)
             )
@@ -1197,10 +1235,11 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     async def test_present_proof_send_proposal_not_ready(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresProposal", autospec=True
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(test_module, "V20PresProposal", autospec=True),
         ):
             mock_conn_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(is_ready=False)
@@ -1212,11 +1251,12 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     async def test_present_proof_send_proposal_x(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr,
+        ):
             mock_pres_mgr.return_value.create_exchange_for_proposal = mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     serialize=mock.MagicMock(side_effect=test_module.StorageError()),
@@ -1238,13 +1278,15 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresRequest", autospec=True
-        ), mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(test_module, "V20PresRequest", autospec=True),
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 serialize=mock.MagicMock(return_value={"thread_id": "sample-thread-id"})
             )
@@ -1266,11 +1308,13 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresRequest", autospec=True
-        ), mock.patch.object(test_module.web, "json_response", mock.MagicMock()):
+        with (
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(test_module, "V20PresRequest", autospec=True),
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
+        ):
             mock_pres_mgr_inst = mock.MagicMock(
                 create_exchange_for_request=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -1293,17 +1337,19 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresRequest", autospec=True
-        ), mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ), mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(test_module, "V20PresRequest", autospec=True),
+            mock.patch.object(test_module, "V20PresExRecord", autospec=True),
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_conn_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_px_rec_inst = mock.MagicMock(
                 serialize=mock.MagicMock({"thread_id": "sample-thread-id"})
@@ -1357,13 +1403,16 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresRequest", autospec=True
-        ), mock.patch.object(test_module, "V20PresExRecord", autospec=True):
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(test_module, "V20PresRequest", autospec=True),
+            mock.patch.object(test_module, "V20PresExRecord", autospec=True),
+        ):
             mock_conn_rec_inst = mock.MagicMock()
             mock_conn_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock_conn_rec_inst
@@ -1399,15 +1448,20 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
@@ -1452,11 +1506,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
@@ -1490,11 +1547,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
@@ -1578,13 +1638,17 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PROPOSAL_RECEIVED,
@@ -1632,15 +1696,18 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
@@ -1683,15 +1750,18 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
@@ -1756,15 +1826,18 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_px_rec_cls.retrieve_by_id = mock.CoroutineMock(
                 return_value=px_rec_instance
             )
@@ -1829,11 +1902,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
@@ -1871,11 +1947,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
@@ -1943,13 +2022,18 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
@@ -1983,15 +2067,20 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     async def test_present_proof_verify_presentation(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
                 state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
@@ -2048,14 +2137,17 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     async def test_present_proof_verify_presentation_x(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ) as mock_pres_mgr_cls, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_conn_rec_cls,
+            mock.patch.object(
+                test_module, "V20PresManager", autospec=True
+            ) as mock_pres_mgr_cls,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec_cls,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
         ):
             mock_px_rec_inst = mock.MagicMock(
                 connection_id="dummy",
@@ -2093,15 +2185,16 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
         magic_report = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ), mock.patch.object(
-            test_module, "problem_report_for_record", mock.MagicMock()
-        ) as mock_problem_report, mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "V20PresManager", autospec=True),
+            mock.patch.object(
+                test_module, "problem_report_for_record", mock.MagicMock()
+            ) as mock_problem_report,
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_px_rec.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
             )
@@ -2134,13 +2227,13 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20PresManager", autospec=True
-        ), mock.patch.object(
-            test_module, "problem_report_for_record", mock.MagicMock()
-        ), mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec:
+        with (
+            mock.patch.object(test_module, "V20PresManager", autospec=True),
+            mock.patch.object(test_module, "problem_report_for_record", mock.MagicMock()),
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec,
+        ):
             mock_px_rec.retrieve_by_id = mock.CoroutineMock(
                 side_effect=test_module.StorageError()
             )
@@ -2151,11 +2244,14 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     async def test_present_proof_remove(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20PresExRecord", autospec=True
+            ) as mock_px_rec,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as mock_response,
+        ):
             mock_px_rec.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     state=test_module.V20PresExRecord.STATE_DONE,

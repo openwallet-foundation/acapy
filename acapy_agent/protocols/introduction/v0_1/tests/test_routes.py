@@ -70,11 +70,12 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.serialize = mock.MagicMock()
 
-        with mock.patch.object(
-            self.context, "inject_or", mock.MagicMock()
-        ) as mock_ctx_inject, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                self.context, "inject_or", mock.MagicMock()
+            ) as mock_ctx_inject,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_ctx_inject.return_value = mock.MagicMock(
                 start_introduction=mock.CoroutineMock()
             )

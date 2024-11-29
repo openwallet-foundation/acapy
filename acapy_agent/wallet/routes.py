@@ -9,11 +9,10 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
-from acapy_agent.connections.base_manager import BaseConnectionManager
-
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
+from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -35,12 +34,12 @@ from ..messaging.valid import (
     GENERIC_DID_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
     NON_SD_LIST_EXAMPLE,
     NON_SD_LIST_VALIDATE,
+    RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
+    RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     SD_JWT_EXAMPLE,
     SD_JWT_VALIDATE,
     UUID4_EXAMPLE,
@@ -95,10 +94,10 @@ class DIDSchema(OpenAPISchema):
     )
     verkey = fields.Str(
         required=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Public verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
     posture = fields.Str(
@@ -293,10 +292,10 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     verkey = fields.Str(
         required=False,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Verification key of interest",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
     posture = fields.Str(

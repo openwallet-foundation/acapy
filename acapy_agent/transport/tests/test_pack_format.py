@@ -221,7 +221,7 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
             serializer.get_recipient_keys(json.dumps(enc_message))
 
 
-class TestDIDCommMessaging(DIDCommMessaging):
+class MockDIDCommMessaging(DIDCommMessaging):
     def __init__(
         self,
     ):
@@ -255,7 +255,7 @@ class TestV2PackWireFormat(IsolatedAsyncioTestCase):
         message_json = json.dumps(message)
         async with self.profile.session() as session:
             session.context.injector.bind_instance(
-                DIDCommMessaging, TestDIDCommMessaging()
+                DIDCommMessaging, MockDIDCommMessaging()
             )
             with self.assertRaises(WireFormatParseError) as context:
                 await wire_format.parse_message(session, message_json)
@@ -273,7 +273,7 @@ class TestV2PackWireFormat(IsolatedAsyncioTestCase):
     async def test_fallback(self):
         serializer = V2PackWireFormat()
 
-        test_dm = TestDIDCommMessaging()
+        test_dm = MockDIDCommMessaging()
         test_dm.packaging.unpack = mock.AsyncMock(side_effect=CryptoServiceError())
         async with self.profile.session() as session:
             session.context.injector.bind_instance(DIDCommMessaging, test_dm)
@@ -289,7 +289,7 @@ class TestV2PackWireFormat(IsolatedAsyncioTestCase):
     async def test_encode(self):
         serializer = V2PackWireFormat()
 
-        test_dm = TestDIDCommMessaging()
+        test_dm = MockDIDCommMessaging()
         test_dm.pack = mock.AsyncMock(
             return_value=PackResult(
                 message=self.test_message, target_services=mock.MagicMock()

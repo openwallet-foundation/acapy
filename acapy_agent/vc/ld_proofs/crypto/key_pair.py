@@ -1,6 +1,6 @@
 """Base key pair class."""
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
 
@@ -15,7 +15,8 @@ class KeyPair(ABC):
     async def verify(self, message: Union[List[bytes], bytes], signature: bytes) -> bool:
         """Verify message(s) against signature using key pair."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def has_public_key(self) -> bool:
         """Whether key pair has a public key.
 
@@ -23,7 +24,8 @@ class KeyPair(ABC):
         in the verification process.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def public_key(self) -> Optional[bytes]:
         """Getter for the public key bytes.
 

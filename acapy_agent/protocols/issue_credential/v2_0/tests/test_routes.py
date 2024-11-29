@@ -135,11 +135,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_retrieve(self):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -149,9 +150,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
-                    mock.MagicMock(  # indy
+                    mock.MagicMock(  # anoncreds
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
+                    None,  # indy
                     None,  # ld_proof
                     None,  # vc_di
                 ]
@@ -162,7 +164,8 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                 mock_response.assert_called_once_with(
                     {
                         "cred_ex_record": mock_cx_rec.serialize.return_value,
-                        "indy": {"...": "..."},
+                        "anoncreds": {"...": "..."},
+                        "indy": None,
                         "ld_proof": None,
                         "vc_di": None,
                     }
@@ -171,11 +174,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_retrieve_indy_ld_proof(self):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -185,6 +189,9 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
+                    mock.MagicMock(  # anoncreds
+                        serialize=mock.MagicMock(return_value={"anon": "creds"})
+                    ),
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"in": "dy"})
                     ),
@@ -202,6 +209,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                 mock_response.assert_called_once_with(
                     {
                         "cred_ex_record": mock_cx_rec.serialize.return_value,
+                        "anoncreds": {"anon": "creds"},
                         "indy": {"in": "dy"},
                         "ld_proof": {"ld": "proof"},
                         "vc_di": {"vc": "di"},
@@ -225,11 +233,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_retrieve_x(self):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -248,13 +257,14 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_create(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.V20CredPreview, "deserialize", autospec=True
-        ), mock.patch.object(test_module.web, "json_response") as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.V20CredPreview, "deserialize", autospec=True),
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_mgr.return_value.create_offer = mock.CoroutineMock()
 
             mock_cred_mgr.return_value.create_offer.return_value = (
@@ -277,13 +287,14 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_create_x(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.V20CredPreview, "deserialize", autospec=True
-        ), mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.V20CredPreview, "deserialize", autospec=True),
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_cred_mgr.return_value.create_offer = mock.CoroutineMock()
 
             mock_cred_mgr.return_value.create_offer.return_value = (
@@ -317,13 +328,14 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_send(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.V20CredPreview, "deserialize", autospec=True
-        ), mock.patch.object(test_module.web, "json_response") as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.V20CredPreview, "deserialize", autospec=True),
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_mgr.return_value.create_offer = mock.CoroutineMock()
 
             mock_cred_mgr.return_value.create_offer.return_value = (
@@ -347,17 +359,19 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "OobRecord", autospec=True
-        ) as mock_oob_rec, mock.patch.object(
-            test_module, "default_did_from_verkey", autospec=True
-        ) as mock_default_did_from_verkey, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cred_ex, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "OobRecord", autospec=True) as mock_oob_rec,
+            mock.patch.object(
+                test_module, "default_did_from_verkey", autospec=True
+            ) as mock_default_did_from_verkey,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cred_ex,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_oob_rec.retrieve_by_tag_filter = mock.CoroutineMock(
                 return_value=mock.MagicMock(our_recipient_key="our-recipient_key")
             )
@@ -397,11 +411,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
@@ -427,11 +442,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
 
             mock_cred_mgr.return_value.create_offer.return_value = (
@@ -445,12 +461,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_send_x(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.V20CredPreview, "deserialize", autospec=True
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.V20CredPreview, "deserialize", autospec=True),
         ):
             mock_cred_ex_record = mock.MagicMock(
                 serialize=mock.MagicMock(side_effect=test_module.BaseModelError()),
@@ -487,13 +503,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cx_rec = mock.MagicMock()
             mock_cred_mgr.return_value.create_proposal.return_value = mock_cx_rec
 
@@ -519,12 +535,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_send_proposal_no_conn_record(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.V20CredPreview, "deserialize", autospec=True
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.V20CredPreview, "deserialize", autospec=True),
         ):
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock(
@@ -548,11 +564,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             mock_cx_rec = mock.MagicMock(
                 serialize=mock.MagicMock(side_effect=test_module.BaseModelError()),
                 save_error_state=mock.CoroutineMock(),
@@ -565,12 +582,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_send_proposal_not_ready(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.V20CredPreview, "deserialize", autospec=True
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.V20CredPreview, "deserialize", autospec=True),
         ):
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock()
@@ -593,13 +610,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         )
 
         self.context.update_settings({"debug.auto_respond_credential_offer": True})
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_mgr.return_value.create_offer = mock.CoroutineMock()
             mock_cx_rec = mock.MagicMock()
             mock_cred_mgr.return_value.create_offer.return_value = (
@@ -636,11 +653,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             mock_cx_rec = mock.MagicMock(
                 serialize=mock.MagicMock(
                     side_effect=test_module.BaseModelError(),
@@ -669,13 +687,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_mgr.return_value.create_offer = mock.CoroutineMock()
             mock_cx_rec = mock.MagicMock()
             mock_cred_mgr.return_value.create_offer.return_value = (
@@ -707,13 +725,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             # Mock the creation of a credential offer, especially for handling VC-DI
             mock_cred_mgr.return_value.create_offer = mock.CoroutineMock()
             mock_cx_rec = mock.MagicMock()
@@ -753,11 +771,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
@@ -783,11 +802,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
@@ -812,11 +832,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_cx_rec = mock.MagicMock(
                 serialize=mock.MagicMock(side_effect=test_module.BaseModelError()),
                 save_error_state=mock.CoroutineMock(),
@@ -837,15 +859,16 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_PROPOSAL_RECEIVED
@@ -868,13 +891,16 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_PROPOSAL_RECEIVED
@@ -910,13 +936,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock(
@@ -963,13 +991,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={})
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -994,15 +1024,16 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_OFFER_RECEIVED
@@ -1038,13 +1069,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -1071,13 +1104,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -1105,13 +1140,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_mgr.return_value.create_request = mock.CoroutineMock()
 
             mock_cx_rec = mock.MagicMock()
@@ -1139,11 +1174,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
@@ -1165,11 +1201,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
@@ -1190,11 +1227,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_cred_mgr.return_value.create_request = mock.CoroutineMock(
                 side_effect=[
                     test_module.LedgerError(),
@@ -1211,17 +1250,17 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_REQUEST_RECEIVED
@@ -1230,9 +1269,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
-                    mock.MagicMock(  # indy
+                    mock.MagicMock(  # anoncreds
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
+                    None,
                     None,  # ld_proof
                     None,  # vc_di
                 ]
@@ -1248,7 +1288,8 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
-                    "indy": {"...": "..."},
+                    "anoncreds": {"...": "..."},
+                    "indy": None,
                     "ld_proof": None,
                     "vc_di": None,
                 }
@@ -1258,17 +1299,17 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_REQUEST_RECEIVED
@@ -1277,7 +1318,8 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
-                    None,
+                    None,  # anoncreds
+                    None,  # indy
                     None,  # ld_proof
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
@@ -1295,6 +1337,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "anoncreds": None,
                     "indy": None,
                     "ld_proof": None,
                     "vc_di": {"...": "..."},
@@ -1325,13 +1368,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             serialize=mock.MagicMock(),
             save_error_state=mock.CoroutineMock(),
         )
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+        ):
             mock_cx_rec.state = mock_cx_rec_cls.STATE_REQUEST_RECEIVED
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock(return_value=mock_cx_rec)
 
@@ -1353,13 +1398,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_REQUEST_RECEIVED
@@ -1387,13 +1434,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             serialize=mock.MagicMock(),
             save_error_state=mock.CoroutineMock(),
         )
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+        ):
             mock_cx_rec.state = mock_cx_rec_cls.STATE_REQUEST_RECEIVED
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock(return_value=mock_cx_rec)
 
@@ -1417,13 +1466,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             serialize=mock.MagicMock(),
             save_error_state=mock.CoroutineMock(),
         )
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+        ):
             mock_cx_rec.state = mock_cx_rec_cls.STATE_REQUEST_RECEIVED
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock(return_value=mock_cx_rec)
 
@@ -1449,13 +1500,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         mock_conn_rec = mock.MagicMock(ConnRecord, autospec=True)
         mock_conn_rec.retrieve_by_id = mock.CoroutineMock(return_value=ConnRecord())
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock(return_value=mock_cx_rec)
             mock_cred_mgr.return_value = mock.MagicMock(
                 issue_credential=mock.CoroutineMock(
@@ -1481,23 +1534,24 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            V20CredFormat.Format, "handler"
-        ) as mock_handler:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_CREDENTIAL_RECEIVED
             )
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
+                    None,  # anoncreds
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
@@ -1519,6 +1573,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "anoncreds": None,
                     "indy": {"...": "..."},
                     "ld_proof": None,
                     "vc_di": None,
@@ -1531,19 +1586,22 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response, mock.patch.object(
-            LDProofCredFormatHandler, "get_detail_record", autospec=True
-        ) as mock_ld_proof_get_detail_record, mock.patch.object(
-            IndyCredFormatHandler, "get_detail_record", autospec=True
-        ) as mock_indy_get_detail_record:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(
+                LDProofCredFormatHandler, "get_detail_record", autospec=True
+            ) as mock_ld_proof_get_detail_record,
+            mock.patch.object(
+                IndyCredFormatHandler, "get_detail_record", autospec=True
+            ) as mock_indy_get_detail_record,
+        ):
             mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock()
             mock_cx_rec_cls.retrieve_by_id.return_value.state = (
                 test_module.V20CredExRecord.STATE_CREDENTIAL_RECEIVED
@@ -1575,6 +1633,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
+                    "anoncreds": None,
                     "indy": {"...": "..."},
                     "ld_proof": None,
                     "vc_di": None,
@@ -1600,13 +1659,15 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock(
@@ -1634,13 +1695,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec, mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec,
+            mock.patch.object(test_module, "V20CredManager", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec,
+        ):
             mock_cx_rec.connection_id = "conn-123"
             mock_cx_rec.thread_id = "conn-123"
             mock_cx_rec.retrieve_by_id = mock.CoroutineMock()
@@ -1659,15 +1720,17 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cx_rec_cls, mock.patch.object(
-            test_module.web, "json_response"
-        ), mock.patch.object(V20CredFormat.Format, "handler") as mock_handler:
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cx_rec_cls,
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
             mock_cx_rec = mock.MagicMock(
                 state=mock_cx_rec_cls.STATE_CREDENTIAL_RECEIVED,
                 serialize=mock.MagicMock(side_effect=test_module.BaseModelError()),
@@ -1678,6 +1741,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             )
             mock_handler.return_value.get_detail_record = mock.CoroutineMock(
                 side_effect=[
+                    None,  # anoncreds
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
@@ -1702,11 +1766,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def test_credential_exchange_remove(self):
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ) as mock_cred_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_mgr.return_value = mock.MagicMock(
                 delete_cred_ex_record=mock.CoroutineMock()
             )
@@ -1751,15 +1816,16 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"cred_ex_id": "dummy"}
         magic_report = mock.MagicMock()
 
-        with mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cred_ex, mock.patch.object(
-            test_module, "problem_report_for_record", mock.MagicMock()
-        ) as mock_problem_report, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(test_module, "V20CredManager", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cred_ex,
+            mock.patch.object(
+                test_module, "problem_report_for_record", mock.MagicMock()
+            ) as mock_problem_report,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_cred_ex.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
             )
@@ -1779,11 +1845,12 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ), mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cred_ex:
+        with (
+            mock.patch.object(test_module, "V20CredManager", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cred_ex,
+        ):
             mock_cred_ex.retrieve_by_id = mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
             )
@@ -1797,13 +1864,13 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"cred_ex_id": "dummy"}
 
-        with mock.patch.object(
-            test_module, "V20CredManager", autospec=True
-        ), mock.patch.object(
-            test_module, "problem_report_for_record", mock.MagicMock()
-        ), mock.patch.object(
-            test_module, "V20CredExRecord", autospec=True
-        ) as mock_cred_ex:
+        with (
+            mock.patch.object(test_module, "V20CredManager", autospec=True),
+            mock.patch.object(test_module, "problem_report_for_record", mock.MagicMock()),
+            mock.patch.object(
+                test_module, "V20CredExRecord", autospec=True
+            ) as mock_cred_ex,
+        ):
             mock_cred_ex.retrieve_by_id = mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     save_error_state=mock.CoroutineMock(

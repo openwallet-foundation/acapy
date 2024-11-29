@@ -226,13 +226,16 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=(None, self.ledger)),
-        ), mock.patch.object(
-            RevocationRegistry, "from_definition", mock.MagicMock()
-        ) as mock_from_def:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=(None, self.ledger)),
+            ),
+            mock.patch.object(
+                RevocationRegistry, "from_definition", mock.MagicMock()
+            ) as mock_from_def,
+        ):
             result = await self.revoc.get_ledger_registry("dummy2")
             assert result == mock_from_def.return_value
             assert "dummy2" in IndyRevocation.REV_REG_CACHE

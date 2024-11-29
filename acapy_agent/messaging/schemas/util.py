@@ -11,8 +11,8 @@ from ..valid import (
     INDY_DID_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
 )
 
 
@@ -37,8 +37,11 @@ class SchemaQueryStringSchema(OpenAPISchema):
     )
     schema_version = fields.Str(
         required=False,
-        validate=INDY_VERSION_VALIDATE,
-        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
+        metadata={
+            "description": "Schema version",
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
+        },
     )
 
 

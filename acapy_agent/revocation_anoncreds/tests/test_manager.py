@@ -61,16 +61,18 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
-        with mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "retrieve_by_cred_ex_id",
-            mock.CoroutineMock(),
-        ) as mock_retrieve, mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc, mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        with (
+            mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "retrieve_by_cred_ex_id",
+                mock.CoroutineMock(),
+            ) as mock_retrieve,
+            mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc,
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            ),
         ):
             mock_retrieve.return_value = mock.MagicMock(
                 rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
@@ -139,20 +141,23 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
         self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session, mock.patch.object(
-            self.profile,
-            "transaction",
-            mock.MagicMock(return_value=session.return_value),
-        ) as session, mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        with (
+            mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc,
+            mock.patch.object(
+                self.profile,
+                "session",
+                mock.MagicMock(return_value=self.profile.session()),
+            ) as session,
+            mock.patch.object(
+                self.profile,
+                "transaction",
+                mock.MagicMock(return_value=session.return_value),
+            ) as session,
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            ),
         ):
             revoc.return_value.get_issuer_rev_reg_record = mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
@@ -189,14 +194,17 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             send_entry=mock.CoroutineMock(),
             clear_pending=mock.CoroutineMock(),
         )
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            mock.CoroutineMock(return_value=[mock_issuer_rev_reg_record]),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "query_by_pending",
+                mock.CoroutineMock(return_value=[mock_issuer_rev_reg_record]),
+            ),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            ),
         ):
             issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             issuer.merge_revocation_registry_deltas = mock.AsyncMock(side_effect=deltas)
@@ -245,15 +253,18 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 clear_pending=mock.CoroutineMock(),
             ),
         ]
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(
-                side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "query_by_pending",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+            ),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(
+                    side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+                ),
             ),
         ):
             issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
@@ -304,15 +315,18 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 clear_pending=mock.CoroutineMock(),
             ),
         ]
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(
-                side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "query_by_pending",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+            ),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(
+                    side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+                ),
             ),
         ):
             issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)

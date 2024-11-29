@@ -29,8 +29,8 @@ from ..valid import (
     BASE64_VALIDATE,
     BASE64URL_NO_PAD_EXAMPLE,
     BASE64URL_NO_PAD_VALIDATE,
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_ISO8601_DATETIME_VALIDATE,
+    ISO8601_DATETIME_EXAMPLE,
+    ISO8601_DATETIME_VALIDATE,
     JWS_HEADER_KID_EXAMPLE,
     JWS_HEADER_KID_VALIDATE,
     SHA256_EXAMPLE,
@@ -778,12 +778,12 @@ class AttachDecoratorSchema(BaseModelSchema):
     )
     lastmod_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "Hint regarding last modification datetime, in ISO-8601 format"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     description = fields.Str(

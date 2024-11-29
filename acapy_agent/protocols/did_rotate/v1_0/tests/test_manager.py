@@ -92,9 +92,12 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
             RotateProblemReport(problem_items=[{"did": test_to_did}])
         )
 
-        with mock.patch.object(
-            self.manager, "_ensure_supported_did", side_effect=test_problem_report
-        ), mock.patch.object(self.responder, "send", mock.CoroutineMock()) as mock_send:
+        with (
+            mock.patch.object(
+                self.manager, "_ensure_supported_did", side_effect=test_problem_report
+            ),
+            mock.patch.object(self.responder, "send", mock.CoroutineMock()) as mock_send,
+        ):
             await self.manager.receive_rotate(
                 mock_conn_record, Rotate(to_did=test_to_did)
             )

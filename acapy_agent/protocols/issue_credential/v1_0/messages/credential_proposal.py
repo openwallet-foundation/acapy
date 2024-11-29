@@ -12,8 +12,8 @@ from .....messaging.valid import (
     INDY_DID_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
 )
 from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
@@ -104,8 +104,8 @@ class CredentialProposalSchema(AgentMessageSchema):
     schema_version = fields.Str(
         required=False,
         allow_none=False,
-        validate=INDY_VERSION_VALIDATE,
-        metadata={"example": INDY_VERSION_EXAMPLE},
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
+        metadata={"example": MAJOR_MINOR_VERSION_EXAMPLE},
     )
     cred_def_id = fields.Str(
         required=False,

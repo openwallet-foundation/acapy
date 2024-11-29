@@ -1,4 +1,4 @@
-"""Utilities for dif presentation exchange attachment."""
+"""Utilities for anoncreds presentation exchange attachment."""
 
 import json
 import logging
@@ -6,14 +6,15 @@ import time
 from typing import Dict, Optional, Tuple, Union
 
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ....anoncreds.models.anoncreds_cred_def import CredDef
-from ....anoncreds.models.anoncreds_revocation import RevRegDef
-from ....anoncreds.models.anoncreds_schema import AnonCredsSchema
+from ....anoncreds.models.credential_definition import CredDef
+from ....anoncreds.models.revocation import RevRegDef
+from ....anoncreds.models.schema import AnonCredsSchema
+from ....anoncreds.models.utils import extract_non_revocation_intervals_from_proof_request
 from ....anoncreds.registry import AnonCredsRegistry
 from ....anoncreds.revocation import AnonCredsRevocation
+from ....askar.profile_anon import AskarAnoncredsProfile
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
@@ -22,7 +23,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsPresExchHandlerError(BaseError):
-    """Base class for Indy Presentation Exchange related errors."""
+    """Base class for Anoncreds Presentation Exchange related errors."""
 
 
 class AnonCredsPresExchHandler:
@@ -39,7 +40,9 @@ class AnonCredsPresExchHandler:
 
     def _extract_proof_request(self, pres_ex_record):
         if isinstance(pres_ex_record, V20PresExRecord):
-            return pres_ex_record.pres_request.attachment(V20PresFormat.Format.INDY)
+            return pres_ex_record.pres_request.attachment(
+                V20PresFormat.Format.ANONCREDS
+            ) or pres_ex_record.pres_request.attachment(V20PresFormat.Format.INDY)
         elif isinstance(pres_ex_record, V10PresentationExchange):
             return pres_ex_record._presentation_request.ser
 
@@ -229,10 +232,23 @@ class AnonCredsPresExchHandler:
         pres_ex_record: Union[V10PresentationExchange, V20PresExRecord],
         requested_credentials: Optional[dict] = None,
     ) -> dict:
-        """Return Indy proof request as dict."""
+        """Return Anoncreds proof request as dict."""
+
+        # If not anoncreds capable, try to use indy handler. This should be removed when
+        # indy filter is completely retired
+        if not isinstance(self._profile, AskarAnoncredsProfile):
+            from ..indy.pres_exch_handler import IndyPresExchHandler
+
+            handler = IndyPresExchHandler(self._profile)
+            return await handler.return_presentation(
+                pres_ex_record, requested_credentials
+            )
+
         requested_credentials = requested_credentials or {}
         proof_request = self._extract_proof_request(pres_ex_record)
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
+        non_revoc_intervals = extract_non_revocation_intervals_from_proof_request(
+            proof_request
+        )
 
         requested_referents = self._get_requested_referents(
             proof_request, requested_credentials, non_revoc_intervals
@@ -253,12 +269,12 @@ class AnonCredsPresExchHandler:
 
         self._set_timestamps(requested_credentials, requested_referents)
 
-        indy_proof_json = await self.holder.create_presentation(
+        proof_json = await self.holder.create_presentation(
             proof_request,
             requested_credentials,
             schemas,
             cred_defs,
             revocation_states,
         )
-        indy_proof = json.loads(indy_proof_json)
-        return indy_proof
+        proof = json.loads(proof_json)
+        return proof
