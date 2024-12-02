@@ -87,7 +87,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                     )
                 ),
             ]
-            mock_conn_rec.query.return_value = [conns[2], conns[0], conns[1]]  # jumbled
+            mock_conn_rec.query.return_value = conns
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.connections_list(self.request)
@@ -101,6 +101,8 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                     },
                     limit=100,
                     offset=0,
+                    order_by="id",
+                    descending=False,
                     post_filter_positive={
                         "their_role": list(ConnRecord.Role.REQUESTER.value),
                         "connection_protocol": "connections/1.0",

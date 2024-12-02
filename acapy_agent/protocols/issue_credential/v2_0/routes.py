@@ -26,7 +26,10 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
+from ....messaging.models.paginated_query import (
+    PaginatedQuerySchema,
+    get_paginated_query_params,
+)
 from ....messaging.valid import (
     ANONCREDS_DID_EXAMPLE,
     ANONCREDS_SCHEMA_ID_EXAMPLE,
@@ -611,7 +614,7 @@ async def credential_exchange_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
-    limit, offset = get_limit_offset(request)
+    limit, offset, order_by, descending = get_paginated_query_params(request)
 
     try:
         async with profile.session() as session:
@@ -620,6 +623,8 @@ async def credential_exchange_list(request: web.BaseRequest):
                 tag_filter=tag_filter,
                 limit=limit,
                 offset=offset,
+                order_by=order_by,
+                descending=descending,
                 post_filter_positive=post_filter,
             )
 

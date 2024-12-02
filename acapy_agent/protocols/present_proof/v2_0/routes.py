@@ -27,7 +27,10 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
+from ....messaging.models.paginated_query import (
+    PaginatedQuerySchema,
+    get_paginated_query_params,
+)
 from ....messaging.valid import (
     INDY_EXTRA_WQL_EXAMPLE,
     INDY_EXTRA_WQL_VALIDATE,
@@ -467,7 +470,7 @@ async def present_proof_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
-    limit, offset = get_limit_offset(request)
+    limit, offset, order_by, descending = get_paginated_query_params(request)
 
     try:
         async with profile.session() as session:
@@ -476,6 +479,8 @@ async def present_proof_list(request: web.BaseRequest):
                 tag_filter=tag_filter,
                 limit=limit,
                 offset=offset,
+                order_by=order_by,
+                descending=descending,
                 post_filter_positive=post_filter,
             )
         results = [record.serialize() for record in records]

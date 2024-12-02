@@ -54,7 +54,7 @@ did-tdw = "^0.2.1"
 
 
 # askar
-aries-askar = { version = "~0.3.2", optional = true }
+aries-askar-ff137 = {version = "==0.3.3b0", source = "testpypi", optional = true}
 indy-credx = { version = "~1.1.1", optional = true }
 indy-vdr = { version = "~0.4.0", optional = true }
 anoncreds = { version = "0.2.0", optional = true }
@@ -87,12 +87,17 @@ pytest-xdist = "^3.6.1"
 debugpy = "^1.8.9"
 
 [tool.poetry.extras]
-askar = ["aries-askar", "indy-credx", "indy-vdr", "anoncreds"]
+askar = ["aries-askar-ff137", "indy-credx", "indy-vdr", "anoncreds"]
 bbs = ["ursa-bbs-signatures"]
 didcommv2 = ["didcomm-messaging"]
 
 [tool.poetry.scripts]
 aca-py = "acapy_agent.__main__:script_main"
+
+[[tool.poetry.source]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+priority = "supplemental"
 
 [tool.ruff]
 lint.select = ["B006", "C", "D", "E", "F"]
