@@ -17,7 +17,7 @@ and verify the installation on your system.
 To rebuild the project and settings from scratch:
 
 ``` bash
-cd docs; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../acapy_agent/ $(find ../acapy_agent/ -name '*tests*', cd ..)
+cd docs; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../acapy_agent/ $(find ../acapy_agent/ -name '*tests*'); cd ..
 ```
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
