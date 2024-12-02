@@ -439,6 +439,7 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "--from-version",
                     "v0.7.0",
                     "--force-upgrade",
+                    "--wallet-test",
                 ]
             )
 

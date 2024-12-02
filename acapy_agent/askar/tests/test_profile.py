@@ -3,10 +3,11 @@ from unittest import mock
 
 import pytest
 
-from ...askar.profile import AskarProfile
+from ...askar.profile import AskarProfile, AskarProfileManager
 from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
 from .. import profile as test_module
+from ..profile_anon import AskarAnonProfileManager
 
 
 @pytest.fixture
@@ -107,15 +108,17 @@ async def test_profile_manager_transaction():
 
 @pytest.mark.asyncio
 async def test_profile_manager_store():
-    profile = "profileId"
-
-    with mock.patch("acapy_agent.askar.profile.AskarProfile") as AskarProfile:
-        askar_profile = AskarProfile(None, False, profile_id=profile)
-        askar_profile.profile_id = profile
-        askar_profile_session = mock.MagicMock()
-        askar_profile.store.session.return_value = askar_profile_session
-
-        sessionProfile = test_module.AskarProfileSession(askar_profile, False)
-
-        assert sessionProfile._opener == askar_profile_session
-        askar_profile.store.session.assert_called_once_with(profile)
+    config = {
+        "test": True,
+    }
+    context = InjectionContext(
+        settings=config,
+    )
+    await AskarProfileManager().provision(
+        context=context,
+        config=config,
+    )
+    await AskarAnonProfileManager().provision(
+        context=context,
+        config=config,
+    )
