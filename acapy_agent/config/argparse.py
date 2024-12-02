@@ -1610,13 +1610,13 @@ class WalletGroup(ArgumentGroup):
             "--wallet-type",
             type=str,
             metavar="<wallet-type>",
-            default="basic",
+            default="askar",
             env_var="ACAPY_WALLET_TYPE",
             help=(
                 "Specifies the type of wallet provider to use. "
-                "Supported internal storage types are 'basic' (memory), 'askar' "
+                "Supported internal storage types are 'askar' "
                 "and 'askar-anoncreds'."
-                "The default (if not specified) is 'basic'."
+                "The default (if not specified) is 'askar'."
             ),
         )
         parser.add_argument(
@@ -1627,9 +1627,21 @@ class WalletGroup(ArgumentGroup):
             env_var="ACAPY_WALLET_STORAGE_TYPE",
             help=(
                 "Specifies the type of wallet backend to use. "
-                "Supported internal storage types are 'basic' (memory), "
-                "'default' (sqlite), and 'postgres_storage'.  The default, "
+                "Supported internal storage types are 'default' (sqlite), "
+                "and 'postgres_storage'.  The default, "
                 "if not specified, is 'default'."
+            ),
+        )
+        parser.add_argument(
+            "--wallet-test",
+            action="store_true",
+            default=False,
+            env_var="ACAPY_WALLET_TEST",
+            help=(
+                "Using this option will create a wallet with an in-memory askar wallet "
+                "storage with a random name. This is useful for testing purposes. "
+                "The data will not be persisted after the agent is stopped. The default "
+                "is False. "
             ),
         )
         parser.add_argument(
@@ -1714,6 +1726,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_type"] = args.wallet_storage_type
         if args.wallet_type:
             settings["wallet.type"] = args.wallet_type
+        if args.wallet_test:
+            settings["wallet.test"] = True
         if args.wallet_key_derivation_method:
             settings["wallet.key_derivation_method"] = args.wallet_key_derivation_method
         if args.wallet_rekey_derivation_method:
@@ -1731,7 +1745,7 @@ class WalletGroup(ArgumentGroup):
         # check required settings for persistent wallets
         if settings["wallet.type"] in ["askar", "askar-anoncreds"]:
             # requires name, key
-            if not args.wallet_name or not args.wallet_key:
+            if not args.wallet_test and (not args.wallet_name or not args.wallet_key):
                 raise ArgsParseError(
                     "Parameters --wallet-name and --wallet-key must be provided "
                     "for persistent wallets"
