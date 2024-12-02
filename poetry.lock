@@ -1260,7 +1260,7 @@ files = [
 name = "indy-vdr"
 version = "0.4.2"
 description = ""
-optional = true
+optional = false
 python-versions = ">=3.6.3"
 files = [
     {file = "indy_vdr-0.4.2-py3-none-macosx_10_9_universal2.whl", hash = "sha256:21e4cc22bdb1de581e4abe00e2201d970f46e05d2420437fe023052614867553"},
@@ -3079,11 +3079,10 @@ multidict = ">=4.0"
 propcache = ">=0.2.0"
 
 [extras]
-askar = ["aries-askar", "indy-vdr"]
 bbs = ["ursa-bbs-signatures"]
 didcommv2 = ["didcomm-messaging"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "668263a192b422dea7574ff198f84cdf6ecb6780a1ad56ed8287ae13e26340a4"
+content-hash = "6db2eb06e99764e6bd25fd0af73398153a1d6b5da9e2577c5e5772d9969a46ef"
