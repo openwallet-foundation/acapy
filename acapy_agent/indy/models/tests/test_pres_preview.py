@@ -5,9 +5,6 @@ from unittest import TestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from ....core.in_memory import InMemoryProfile
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
@@ -15,6 +12,8 @@ from ....messaging.util import canon
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....protocols.didcomm_prefix import DIDCommPrefix
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ..non_rev_interval import IndyNonRevocationInterval
 from ..predicate import Predicate
 from ..pres_preview import (
@@ -393,10 +392,10 @@ class TestIndyPresPreviewAsync:
         copy_indy_proof_req = deepcopy(INDY_PROOF_REQ)
 
         pres_preview = deepcopy(PRES_PREVIEW)
-        mock_profile = InMemoryProfile.test_profile()
-        context = mock_profile.context
+        self.profile = await create_test_profile()
+        context = self.profile.context
         context.injector.bind_instance(
-            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.profile)
         )
         with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
@@ -411,7 +410,7 @@ class TestIndyPresPreviewAsync:
             )
             indy_proof_req_revo = await pres_preview.indy_proof_request(
                 **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
-                profile=mock_profile,
+                profile=self.profile,
             )
 
         for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
@@ -435,11 +434,11 @@ class TestIndyPresPreviewAsync:
         copy_indy_proof_req = deepcopy(INDY_PROOF_REQ)
 
         pres_preview = deepcopy(PRES_PREVIEW)
-        mock_profile = InMemoryProfile.test_profile()
-        mock_profile.settings["ledger.ledger_config_list"] = [{"id": "test"}]
-        context = mock_profile.context
+        self.profile = await create_test_profile()
+        self.profile.settings["ledger.ledger_config_list"] = [{"id": "test"}]
+        context = self.profile.context
         context.injector.bind_instance(
-            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.profile)
         )
         context.injector.bind_instance(
             BaseMultitenantManager,
@@ -458,7 +457,7 @@ class TestIndyPresPreviewAsync:
             )
             indy_proof_req_revo = await pres_preview.indy_proof_request(
                 **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
-                profile=mock_profile,
+                profile=self.profile,
                 non_revoc_intervals={
                     CD_ID[s_id]: IndyNonRevocationInterval(1234567890, EPOCH_NOW)
                     for s_id in S_ID

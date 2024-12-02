@@ -2,22 +2,24 @@ name: Nightly Publish
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
   tests:
+    if: github.repository_owner == 'openwallet-foundation' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.12"]
-    if: github.repository == 'openwallet-foundation/acapy' || github.event_name == 'workflow_dispatch'
+
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Tests
+
+      - name: Run Tests
         uses: ./.github/actions/run-unit-tests
         with:
           python-version: ${{ matrix.python-version }}
@@ -30,13 +32,16 @@ jobs:
     outputs:
       commits_today: ${{ steps.commits.outputs.commits_today }}
       date: ${{ steps.date.outputs.date }}
+    if: github.repository_owner == 'openwallet-foundation' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-      - name: print latest_commit
+      - name: Print Latest Commit
         run: echo ${{ github.sha }}
-      - name: Get new commits
+
+      - name: Get New Commits
         id: commits
         run: echo "commits_today=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_OUTPUT
+
       - name: Get Date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT

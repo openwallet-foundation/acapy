@@ -1,7 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -9,6 +7,8 @@ from ......messaging.responder import MockResponder
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...messages.forward_invitation import ForwardInvitation
 from .. import forward_invitation_handler as test_module
 
@@ -22,7 +22,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
 
         self.context.connection_ready = True
         self.context.message = ForwardInvitation(

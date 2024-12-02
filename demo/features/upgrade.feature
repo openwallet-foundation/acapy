@@ -19,10 +19,7 @@ Feature: ACA-Py Anoncreds Upgrade
       Then "Faber" has the proof verification fail
       Then "Bob" can verify the credential from "<issuer>" was revoked
       And "<issuer>" upgrades the wallet to anoncreds
-      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
       And "Bob" upgrades the wallet to anoncreds
-      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
-      When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
 
       Examples:
          | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |

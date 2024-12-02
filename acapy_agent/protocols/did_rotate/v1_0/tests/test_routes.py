@@ -2,10 +2,10 @@ import unittest
 from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
 from .....protocols.didcomm_prefix import DIDCommPrefix
 from .....storage.error import StorageNotFoundError
 from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import message_types as test_message_types
 from .. import routes as test_module
 from ..messages import Hangup, Rotate
@@ -29,12 +29,12 @@ def generate_mock_rotate_message():
 class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(self.session_inject, profile)
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -110,7 +110,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             test_module.ConnRecord,
             "retrieve_by_id",
             mock.CoroutineMock(side_effect=StorageNotFoundError()),
-        ) as mock_retrieve_by_id:
+        ):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.rotate(self.request)
 

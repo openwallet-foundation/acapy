@@ -591,8 +591,14 @@ class V20CredManager:
         ]
         handled_formats = []
 
-        # check that we didn't receive any formats not present in the request
-        if set(issue_formats) - set(req_formats):
+        def _check_formats():
+            """Allow indy issue fomat and anoncreds req format or matching formats."""
+            return (
+                issue_formats == [V20CredFormat.Format.INDY]
+                and req_formats == [V20CredFormat.Format.ANONCREDS]
+            ) or len(set(issue_formats) - set(req_formats)) == 0
+
+        if not _check_formats():
             raise V20CredManagerError(
                 "Received issue credential format(s) not present in credential "
                 f"request: {set(issue_formats) - set(req_formats)}"

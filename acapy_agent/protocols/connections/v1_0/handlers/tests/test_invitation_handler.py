@@ -3,14 +3,15 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers.connection_invitation_handler import ConnectionInvitationHandler
 from ...messages.connection_invitation import ConnectionInvitation
 from ...messages.problem_report import ConnectionProblemReport, ProblemReportReason
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

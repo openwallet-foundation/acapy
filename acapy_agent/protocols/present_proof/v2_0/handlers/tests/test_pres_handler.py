@@ -1,26 +1,25 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...messages.pres import V20Pres
 from .. import pres_handler as test_module
 
 
 class TestV20PresHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = False
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -42,15 +41,14 @@ class TestV20PresHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_auto_verify(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = True
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -73,15 +71,14 @@ class TestV20PresHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_auto_verify_x(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = True
 
         oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=oob_record
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 

@@ -16,21 +16,21 @@ from . import ALICE, FABER, MULTI, Agent, logger
 logger.info("start testing mediated connections...")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def faber():
     """faber agent fixture."""
     logger.info(f"faber = {FABER}")
     yield Agent(FABER)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def alice():
     """resolver agent fixture."""
     logger.info(f"alice = {ALICE}")
     yield Agent(ALICE)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def multi_one():
     """resolver agent fixture."""
     agent = Agent(MULTI)
@@ -42,7 +42,7 @@ def multi_one():
     yield agent
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def mediation_invite():
     invitation_url = os.getenv("MEDIATOR_INVITATION_URL")
     logger.info(f"MEDIATOR_INVITATION_URL = {invitation_url}")
@@ -97,7 +97,7 @@ def initialize_mediation(agent: Agent, invitation):
     return result
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def faber_mediator(faber, mediation_invite):
     logger.info("faber_mediator...")
     result = initialize_mediation(faber, mediation_invite)
@@ -105,7 +105,7 @@ def faber_mediator(faber, mediation_invite):
     yield result
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def alice_mediator(alice, mediation_invite):
     logger.info("alice_mediator...")
     result = initialize_mediation(alice, mediation_invite)
@@ -113,7 +113,7 @@ def alice_mediator(alice, mediation_invite):
     yield result
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(loop_scope="session")
 def multi_one_mediator(multi_one, mediation_invite):
     logger.info("multi_one_mediator...")
     result = initialize_mediation(multi_one, mediation_invite)

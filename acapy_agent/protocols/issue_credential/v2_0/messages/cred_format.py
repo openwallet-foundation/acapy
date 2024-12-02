@@ -11,6 +11,7 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from .....utils.classloader import DeferLoad
+from ..models.detail.anoncreds import V20CredExRecordAnoncreds
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
 
@@ -31,6 +32,14 @@ class V20CredFormat(BaseModel):
     class Format(Enum):
         """Attachment format."""
 
+        ANONCREDS = FormatSpec(
+            "anoncreds/",
+            V20CredExRecordAnoncreds,
+            DeferLoad(
+                "acapy_agent.protocols.issue_credential.v2_0"
+                ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
+            ),
+        )
         INDY = FormatSpec(
             "hlindy/",
             V20CredExRecordIndy,
@@ -39,23 +48,6 @@ class V20CredFormat(BaseModel):
                 ".formats.indy.handler.IndyCredFormatHandler"
             ),
         )
-        """
-        Once we switch to anoncreds this will replace the above INDY definition.
-        
-        In the meantime there are some hardcoded references in the 
-            "...formats.indy.handler.IndyCredFormatHandler" class.
-        
-        ::
-        
-            INDY = FormatSpec(
-                "hlindy/",
-                V20CredExRecordIndy,
-                DeferLoad(
-                    "acapy_agent.protocols.issue_credential.v2_0"
-                    ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
-                ),
-            )
-        """
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,
@@ -97,7 +89,9 @@ class V20CredFormat(BaseModel):
             return self.value.aries
 
         @property
-        def detail(self) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof]:
+        def detail(
+            self,
+        ) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof, V20CredExRecordAnoncreds]:
             """Accessor for credential exchange detail class."""
             return self.value.detail
 

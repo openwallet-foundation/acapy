@@ -1,30 +1,28 @@
-"""V2.0 issue-credential indy credential format handler."""
+"""V2.0 issue-credential anoncreds credential format handler."""
 
 import json
 import logging
 from typing import Mapping, Optional, Tuple
 
+from anoncreds import CredentialDefinition, Schema
 from marshmallow import RAISE
 
+from ......anoncreds.base import AnonCredsResolutionError
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ......anoncreds.issuer import AnonCredsIssuer
+from ......anoncreds.issuer import CATEGORY_CRED_DEF, CATEGORY_SCHEMA, AnonCredsIssuer
+from ......anoncreds.models.credential import AnoncredsCredentialSchema
+from ......anoncreds.models.credential_offer import AnoncredsCredentialOfferSchema
+from ......anoncreds.models.credential_proposal import (
+    AnoncredsCredentialDefinitionProposal,
+)
+from ......anoncreds.models.credential_request import AnoncredsCredRequestSchema
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
-from ......indy.models.cred import IndyCredentialSchema
-from ......indy.models.cred_abstract import IndyCredAbstractSchema
-from ......indy.models.cred_request import IndyCredRequestSchema
-from ......ledger.base import BaseLedger
-from ......ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    IndyLedgerRequestsExecutor,
-)
 from ......messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
-    CredDefQueryStringSchema,
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
 from ...message_types import (
@@ -40,16 +38,16 @@ from ...messages.cred_offer import V20CredOffer
 from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
-from ...models.detail.indy import V20CredExRecordIndy
+from ...models.detail.anoncreds import V20CredExRecordAnoncreds
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
 LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsCredFormatHandler(V20CredFormatHandler):
-    """Indy credential format handler."""
+    """Anoncreds credential format handler."""
 
-    format = V20CredFormat.Format.INDY
+    format = V20CredFormat.Format.ANONCREDS
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
@@ -71,10 +69,10 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
 
         """
         mapping = {
-            CRED_20_PROPOSAL: CredDefQueryStringSchema,
-            CRED_20_OFFER: IndyCredAbstractSchema,
-            CRED_20_REQUEST: IndyCredRequestSchema,
-            CRED_20_ISSUE: IndyCredentialSchema,
+            CRED_20_PROPOSAL: AnoncredsCredentialDefinitionProposal,
+            CRED_20_OFFER: AnoncredsCredentialOfferSchema,
+            CRED_20_REQUEST: AnoncredsCredRequestSchema,
+            CRED_20_ISSUE: AnoncredsCredentialSchema,
         }
 
         # Get schema class
@@ -83,7 +81,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
 
-    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordIndy:
+    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordAnoncreds:
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
@@ -167,7 +165,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
-        """Create indy credential proposal."""
+        """Create anoncreds credential proposal."""
         if proposal_data is None:
             proposal_data = {}
 
@@ -176,7 +174,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def receive_proposal(
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
     ) -> None:
-        """Receive indy credential proposal.
+        """Receive anoncreds credential proposal.
 
         No custom handling is required for this step.
         """
@@ -184,35 +182,37 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def create_offer(
         self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
-        """Create indy credential offer."""
+        """Create anoncreds credential offer."""
 
         issuer = AnonCredsIssuer(self.profile)
-        ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
+        anoncreds_attachment = cred_proposal_message.attachment(
+            AnonCredsCredFormatHandler.format
+        )
+
+        if not anoncreds_attachment:
+            anoncreds_attachment = cred_proposal_message.attachment(
+                V20CredFormat.Format.INDY.api
+            )
+
         cred_def_id = await issuer.match_created_credential_definitions(
-            **cred_proposal_message.attachment(AnonCredsCredFormatHandler.format)
+            **anoncreds_attachment
         )
 
         async def _create():
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
-        else:
-            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                cred_def_id,
-                txn_record_type=GET_CRED_DEF,
+        async with self.profile.session() as session:
+            cred_def_entry = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+            cred_def_dict = CredentialDefinition.load(cred_def_entry.value).to_dict()
+            schema_entry = await session.handle.fetch(
+                CATEGORY_SCHEMA, cred_def_dict["schemaId"]
             )
-        )[1]
-        async with ledger:
-            schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
-            schema = await ledger.get_schema(schema_id)
-        schema_attrs = set(schema["attrNames"])
+            schema_dict = Schema.load(schema_entry.value).to_dict()
+
+        schema_attrs = set(schema_dict["attrNames"])
         preview_attrs = set(cred_proposal_message.credential_preview.attr_dict())
         if preview_attrs != schema_attrs:
             raise V20CredFormatError(
@@ -238,23 +238,26 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
-        """Receive indy credential offer."""
+        """Receive anoncreds credential offer."""
 
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
-        """Create indy credential request."""
+        """Create anoncreds credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
-                "Indy issue credential format cannot start from credential request"
+                "Anoncreds issue credential format cannot start from credential request"
             )
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
-
         holder_did = request_data.get("holder_did") if request_data else None
+
+        # For backwards compatibility, remove indy backup when indy format is retired
+        from ..indy.handler import IndyCredFormatHandler
+
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
-        )
+        ) or cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
 
         if "nonce" not in cred_offer:
             raise V20CredFormatError("Missing nonce in credential offer")
@@ -265,19 +268,24 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         async def _create():
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
 
-            cred_def_result = await anoncreds_registry.get_credential_definition(
-                self.profile, cred_def_id
-            )
+            try:
+                cred_def_result = await anoncreds_registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
+                holder = AnonCredsHolder(self.profile)
+                request_json, metadata_json = await holder.create_credential_request(
+                    cred_offer, cred_def_result.credential_definition, holder_did
+                )
 
-            holder = AnonCredsHolder(self.profile)
-            request_json, metadata_json = await holder.create_credential_request(
-                cred_offer, cred_def_result.credential_definition, holder_did
-            )
-
-            return {
-                "request": json.loads(request_json),
-                "metadata": json.loads(metadata_json),
-            }
+                return {
+                    "request": json.loads(request_json),
+                    "metadata": json.loads(metadata_json),
+                }
+            # This is for compatability with a holder that isn't anoncreds capable
+            except AnonCredsResolutionError:
+                return await IndyCredFormatHandler.create_cred_request_result(
+                    self, cred_offer, holder_did, cred_def_id
+                )
 
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None
@@ -292,7 +300,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         if not cred_req_result:
             cred_req_result = await _create()
 
-        detail_record = V20CredExRecordIndy(
+        detail_record = V20CredExRecordAnoncreds(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
         )
@@ -305,17 +313,24 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
-        """Receive indy credential request."""
+        """Receive anoncreds credential request."""
         if not cred_ex_record.cred_offer:
             raise V20CredFormatError(
-                "Indy issue credential format cannot start from credential request"
+                "Anoncreds issue credential format cannot start from credential request"
             )
 
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
-        """Issue indy credential."""
+        """Issue anoncreds credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
+
+        # For backwards compatibility, remove indy backup when indy format is retired
+        from ..indy.handler import IndyCredFormatHandler
+
+        if cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format):
+            indy_handler = IndyCredFormatHandler(self.profile)
+            return await indy_handler.issue_credential(cred_ex_record, retries)
 
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
@@ -342,7 +357,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
         async with self._profile.transaction() as txn:
-            detail_record = V20CredExRecordIndy(
+            detail_record = V20CredExRecordAnoncreds(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_def_id,
                 cred_rev_id=cred_rev_id,
@@ -371,7 +386,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
-        """Receive indy credential.
+        """Receive anoncreds credential.
 
         Validation is done in the store credential step.
         """
@@ -379,21 +394,33 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
-        """Store indy credential."""
-        cred = cred_ex_record.cred_issue.attachment(AnonCredsCredFormatHandler.format)
+        """Store anoncreds credential."""
+
+        # For backwards compatibility, remove indy backup when indy format is retired
+        from ..indy.handler import IndyCredFormatHandler
+
+        cred = cred_ex_record.cred_issue.attachment(
+            AnonCredsCredFormatHandler.format
+        ) or cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        cred_def_result = await anoncreds_registry.get_credential_definition(
-            self.profile, cred["cred_def_id"]
-        )
-        if cred.get("rev_reg_id"):
-            rev_reg_def_result = (
-                await anoncreds_registry.get_revocation_registry_definition(
-                    self.profile, cred["rev_reg_id"]
-                )
+        try:
+            cred_def_result = await anoncreds_registry.get_credential_definition(
+                self.profile, cred["cred_def_id"]
             )
-            rev_reg_def = rev_reg_def_result.revocation_registry
+            if cred.get("rev_reg_id"):
+                rev_reg_def_result = (
+                    await anoncreds_registry.get_revocation_registry_definition(
+                        self.profile, cred["rev_reg_id"]
+                    )
+                )
+                rev_reg_def = rev_reg_def_result.revocation_registry
+
+        except AnonCredsResolutionError:
+            return await IndyCredFormatHandler.store_credential(
+                self, cred_ex_record, cred_id
+            )
 
         holder = AnonCredsHolder(self.profile)
         cred_offer_message = cred_ex_record.cred_offer

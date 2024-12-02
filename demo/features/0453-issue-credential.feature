@@ -30,7 +30,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --wallet-type askar-anoncreds                   | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           |
        | --public-did --wallet-type askar-anoncreds --cred-type vc_di | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           |
 
-    @Release @WalletType_Askar_AnonCreds @AltTests
+    @PR @Release @WalletType_Askar_AnonCreds
     Examples:
        | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
        | --public-did --wallet-type askar-anoncreds |                               | driverslicense | Data_DL_NormalizedValues |            |           |

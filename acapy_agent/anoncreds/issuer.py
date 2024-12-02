@@ -24,8 +24,8 @@ from ..core.profile import Profile
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import CredDefFinishedEvent
-from .models.anoncreds_cred_def import CredDef, CredDefResult
-from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
+from .models.credential_definition import CredDef, CredDefResult
+from .models.schema import AnonCredsSchema, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)

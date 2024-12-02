@@ -56,14 +56,14 @@ from ...base import (
 )
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
-from ...models.anoncreds_cred_def import (
+from ...models.credential_definition import (
     CredDef,
     CredDefResult,
     CredDefState,
     CredDefValue,
     GetCredDefResult,
 )
-from ...models.anoncreds_revocation import (
+from ...models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
@@ -74,7 +74,7 @@ from ...models.anoncreds_revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...models.anoncreds_schema import (
+from ...models.schema import (
     AnonCredsSchema,
     GetSchemaResult,
     SchemaResult,

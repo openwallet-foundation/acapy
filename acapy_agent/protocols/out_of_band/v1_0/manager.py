@@ -461,7 +461,7 @@ class InvitationCreator:
             did_method = PEER4 if did_peer_4 else PEER2
             my_info = await self.oob.fetch_invitation_reuse_did(did_method)
             if not my_info:
-                LOGGER.warn("No invitation DID found, creating new DID")
+                LOGGER.warning("No invitation DID found, creating new DID")
 
         if not my_info:
             did_metadata = (

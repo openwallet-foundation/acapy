@@ -8,6 +8,7 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.trustping.v1_0.messages.ping import Ping
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import connection_response_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_response import ConnectionResponse
@@ -16,8 +17,8 @@ from ...models.connection_detail import ConnectionDetail
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
@@ -86,7 +87,7 @@ class TestResponseHandler:
         )
         messages = responder.messages
         assert len(messages) == 1
-        result, target = messages[0]
+        result, _ = messages[0]
         assert isinstance(result, Ping)
 
     @pytest.mark.asyncio

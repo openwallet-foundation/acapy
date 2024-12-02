@@ -39,11 +39,14 @@ class TestCrypto(TestCase):
         assert test_module.sign_pk_from_sk(secret_key) in secret_key
 
     def test_decode_pack_message_x(self):
-        with mock.patch.object(
-            test_module, "decode_pack_message_outer", mock.MagicMock()
-        ) as mock_decode_outer, mock.patch.object(
-            test_module, "extract_payload_key", mock.MagicMock()
-        ) as mock_extract:
+        with (
+            mock.patch.object(
+                test_module, "decode_pack_message_outer", mock.MagicMock()
+            ) as mock_decode_outer,
+            mock.patch.object(
+                test_module, "extract_payload_key", mock.MagicMock()
+            ) as mock_extract,
+        ):
             mock_decode_outer.return_value = (b"wrapper", {"my": b"recip"}, True)
 
             with pytest.raises(ValueError) as excinfo:

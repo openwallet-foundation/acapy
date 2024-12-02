@@ -29,8 +29,10 @@ class CreateKeyRequestSchema(OpenAPISchema):
     seed = fields.Str(
         required=False,
         metadata={
-            "description": "Optional seed to generate the key pair. \
-                Must enable insecure wallet mode.",
+            "description": (
+                "Optional seed to generate the key pair. "
+                "Must enable insecure wallet mode."
+            ),
             "example": "00000000000000000000000000000000",
         },
     )
@@ -38,8 +40,9 @@ class CreateKeyRequestSchema(OpenAPISchema):
     kid = fields.Str(
         required=False,
         metadata={
-            "description": "Optional kid to bind to the keypair, \
-                such as a verificationMethod.",
+            "description": (
+                "Optional kid to bind to the keypair, such as a verificationMethod."
+            ),
             "example": "did:web:example.com#key-01",
         },
     )
@@ -77,8 +80,9 @@ class UpdateKeyRequestSchema(OpenAPISchema):
     kid = fields.Str(
         required=True,
         metadata={
-            "description": "New kid to bind to the key pair, \
-                such as a verificationMethod.",
+            "description": (
+                "New kid to bind to the key pair, such as a verificationMethod."
+            ),
             "example": "did:web:example.com#key-02",
         },
     )

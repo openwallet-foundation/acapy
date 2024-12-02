@@ -110,8 +110,16 @@ class UniversalResolver(BaseDIDResolver):
                     "Failed to retrieve resolver properties: " + await resp.text()
                 )
 
-    async def _get_supported_did_regex(self) -> Pattern:
+    async def _get_supported_did_regex(self):
         props = await self._fetch_resolver_props()
-        return _compile_supported_did_regex(
-            driver["http"]["pattern"] for driver in props.values()
-        )
+
+        def _get_patterns():
+            """Handle both old and new properties responses."""
+            patterns = list(props.values())[0].get("http", {}).get("pattern")
+            if not patterns:
+                return props.keys()
+            else:
+                return [driver["http"]["pattern"] for driver in props.values()]
+
+        patterns = _get_patterns()
+        return _compile_supported_did_regex(patterns)

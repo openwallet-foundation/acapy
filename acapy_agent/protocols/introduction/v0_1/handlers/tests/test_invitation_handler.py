@@ -1,13 +1,13 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from ...messages.invitation import Invitation
 from .. import invitation_handler as test_module
 
@@ -21,7 +21,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 class TestInvitationHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
         self.context.connection_ready = True
         self.context.message = Invitation(
             invitation=ConnectionInvitation(
@@ -38,8 +38,6 @@ class TestInvitationHandler(IsolatedAsyncioTestCase):
 
     async def test_handle(self):
         handler = test_module.InvitationHandler()
-
-        mock_conn_rec = mock.MagicMock(connection_id="dummy")
 
         responder = MockResponder()
         with mock.patch.object(

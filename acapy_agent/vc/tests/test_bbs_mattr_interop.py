@@ -2,10 +2,9 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from ...core.in_memory import InMemoryProfile
-from ...wallet.in_memory import InMemoryWallet
+from ...utils.testing import create_test_profile
+from ...wallet.base import BaseWallet
 from ...wallet.key_type import BLS12381G2
-from ...wallet.util import b58_to_bytes
 from ..ld_proofs import (
     AssertionProofPurpose,
     BbsBlsSignature2020,
@@ -34,28 +33,19 @@ from .document_loader import custom_document_loader
 @pytest.mark.ursa_bbs_signatures
 class TestBbsMattrInterop(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.wallet = InMemoryWallet(self.profile)
-
-        # Manually add key as we only have the private key, no seed (from mattr bbs repo)
-        private_key_base58 = "5D6Pa8dSwApdnfg7EZR8WnGfvLDCZPZGsZ5Y1ELL9VDj"
-        public_key_base58 = "oqpWYKaZD9M1Kbe94BVXpr8WTdFBNZyKv48cziTiQUeuhm7sBhCABMyYG4kcMrseC68YTFFgyhiNeBKjzdKk9MiRWuLv5H4FFujQsQK2KTAtzU8qTBiZqBHMmnLF4PL7Ytu"
-        self.profile.keys[public_key_base58] = {
-            # we don't have the seed
-            "seed": "seed",
-            "secret": b58_to_bytes(private_key_base58),
-            "verkey": public_key_base58,
-            "metadata": {},
-            "key_type": BLS12381G2,
-            "kid": None,
-        }
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key_info = await wallet.create_key(
+                key_type=BLS12381G2,
+            )
 
         self.signature_issuer_suite = BbsBlsSignature2020(
             verification_method="did:example:489398593#test",
             key_pair=WalletKeyPair(
                 profile=self.profile,
                 key_type=BLS12381G2,
-                public_key_base58=public_key_base58,
+                public_key_base58=key_info.verkey,
             ),
         )
 

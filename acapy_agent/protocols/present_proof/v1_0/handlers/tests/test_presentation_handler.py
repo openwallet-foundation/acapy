@@ -1,90 +1,73 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...messages.presentation import Presentation
 from .. import presentation_handler as test_module
 
 
 class TestPresentationHandler(IsolatedAsyncioTestCase):
-    async def test_called(self):
-        request_context = RequestContext.test_context()
-        request_context.message_receipt = MessageReceipt()
-        request_context.settings["debug.auto_verify_presentation"] = False
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile()
+        self.request_context = RequestContext.test_context(self.profile)
+        self.request_context.message_receipt = MessageReceipt()
+        self.request_context.settings["debug.auto_verify_presentation"] = False
 
-        oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
+        self.oob_record = mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
+        mock_oob_processor.find_oob_record_for_inbound_message = mock.CoroutineMock(
+            return_value=self.oob_record
         )
-        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+        self.request_context.injector.bind_instance(
+            OobMessageProcessor, mock_oob_processor
+        )
 
+    async def test_called(self):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation = mock.CoroutineMock()
-            request_context.message = Presentation()
-            request_context.connection_ready = True
-            request_context.connection_record = mock.MagicMock()
+            self.request_context.message = Presentation()
+            self.request_context.connection_ready = True
+            self.request_context.connection_record = mock.MagicMock()
             handler = test_module.PresentationHandler()
             responder = MockResponder()
-            await handler.handle(request_context, responder)
+            await handler.handle(self.request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context.profile)
+        mock_pres_mgr.assert_called_once_with(self.request_context.profile)
         mock_pres_mgr.return_value.receive_presentation.assert_called_once_with(
-            request_context.message, request_context.connection_record, oob_record
+            self.request_context.message,
+            self.request_context.connection_record,
+            self.oob_record,
         )
         assert not responder.messages
 
     async def test_called_auto_verify(self):
-        request_context = RequestContext.test_context()
-        request_context.message_receipt = MessageReceipt()
-        request_context.settings["debug.auto_verify_presentation"] = True
-
-        oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
-        )
-        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value.receive_presentation = mock.CoroutineMock()
             mock_pres_mgr.return_value.verify_presentation = mock.CoroutineMock()
-            request_context.message = Presentation()
-            request_context.connection_ready = True
-            request_context.connection_record = mock.MagicMock()
+            self.request_context.message = Presentation()
+            self.request_context.connection_ready = True
+            self.request_context.connection_record = mock.MagicMock()
             handler = test_module.PresentationHandler()
             responder = MockResponder()
-            await handler.handle(request_context, responder)
+            await handler.handle(self.request_context, responder)
 
-        mock_pres_mgr.assert_called_once_with(request_context.profile)
+        mock_pres_mgr.assert_called_once_with(self.request_context.profile)
         mock_pres_mgr.return_value.receive_presentation.assert_called_once_with(
-            request_context.message, request_context.connection_record, oob_record
+            self.request_context.message,
+            self.request_context.connection_record,
+            self.oob_record,
         )
         assert not responder.messages
 
     async def test_called_auto_verify_x(self):
-        request_context = RequestContext.test_context()
-        request_context.message_receipt = MessageReceipt()
-        request_context.settings["debug.auto_verify_presentation"] = True
-
-        oob_record = mock.MagicMock()
-        mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.CoroutineMock(
-                return_value=oob_record
-            )
-        )
-        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
@@ -97,14 +80,14 @@ class TestPresentationHandler(IsolatedAsyncioTestCase):
                 ),
             )
 
-            request_context.message = Presentation()
-            request_context.connection_ready = True
-            request_context.connection_record = mock.MagicMock()
+            self.request_context.message = Presentation()
+            self.request_context.connection_ready = True
+            self.request_context.connection_record = mock.MagicMock()
             handler = test_module.PresentationHandler()
             responder = MockResponder()
 
             with mock.patch.object(
                 handler._logger, "exception", mock.MagicMock()
             ) as mock_log_exc:
-                await handler.handle(request_context, responder)
+                await handler.handle(self.request_context, responder)
                 mock_log_exc.assert_called_once()

@@ -1,22 +1,26 @@
  services:
-  alice:
+  agency:
     image: acapy-test
     ports:
       - "3001:3001"
     command: >
       start
-        --label Alice
+        --label Agency
         --inbound-transport http 0.0.0.0 3000
         --outbound-transport http
-        --endpoint http://alice:3000
+        --endpoint http://agency:3000
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
         --genesis-url http://test.bcovrin.vonx.io/genesis
-        --wallet-type askar-anoncreds
-        --wallet-name alice
+        --wallet-type askar
+        --wallet-name agency
         --wallet-key insecure
         --auto-provision
+        --multitenant
+        --multitenant-admin
+        --jwt-secret insecure
+        --multitenancy-config wallet_type=single-wallet-askar key_derivation_method=RAW
         --log-level info
         --debug-webhooks
         --notify-revocation
@@ -30,22 +34,50 @@
       tails:
         condition: service_started
 
-  bob:
+  holder_anoncreds:
     image: acapy-test
     ports:
       - "3002:3001"
     command: >
       start
-        --label Bob
+        --label Holder-Anoncreds
         --inbound-transport http 0.0.0.0 3000
         --outbound-transport http
-        --endpoint http://bob:3000
+        --endpoint http://holder_anoncreds:3000
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
         --genesis-url http://test.bcovrin.vonx.io/genesis
         --wallet-type askar-anoncreds
-        --wallet-name bob
+        --wallet-name holder_anoncreds
+        --wallet-key insecure
+        --auto-provision
+        --log-level info
+        --debug-webhooks
+        --monitor-revocation-notification
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+
+  holder_indy:
+    image: acapy-test
+    ports:
+      - "3003:3001"
+    command: >
+      start
+        --label Holder-Indy
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://holder_indy:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name holder_indy
         --wallet-key insecure
         --auto-provision
         --log-level info
@@ -63,15 +95,18 @@
     build:
       context: ../..
     environment:
-      - ALICE=http://alice:3001
-      - BOB=http://bob:3001
+      - AGENCY=http://agency:3001
+      - HOLDER_ANONCREDS=http://holder_anoncreds:3001
+      - HOLDER_INDY=http://holder_indy:3001
     volumes:
       - ./example.py:/usr/src/app/example.py:ro,z
     command: python -m example
     depends_on:
-      alice:
+      agency:
         condition: service_healthy
-      bob:
+      holder_anoncreds:
+        condition: service_healthy
+      holder_indy:
         condition: service_healthy
 
   tails:

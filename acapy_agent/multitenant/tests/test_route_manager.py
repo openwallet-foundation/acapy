@@ -1,8 +1,5 @@
 import pytest
 
-from acapy_agent.tests import mock
-
-from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile
 from ...messaging.responder import BaseResponder, MockResponder
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
@@ -12,6 +9,8 @@ from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from ..base import BaseMultitenantManager
 from ..route_manager import BaseWalletRouteManager, MultitenantRouteManager
 
@@ -24,38 +23,26 @@ TEST_ROUTE_VERKEY_REF2 = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQh
 
 
 @pytest.fixture
-def wallet_id():
-    yield "test-wallet-id"
-
-
-@pytest.fixture
 def mock_responder():
     yield MockResponder()
 
 
 @pytest.fixture
-def root_profile(mock_responder: MockResponder):
-    yield InMemoryProfile.test_profile(
-        bind={
-            BaseResponder: mock_responder,
-        }
-    )
+async def root_profile(mock_responder: MockResponder):
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(BaseResponder, mock_responder)
+    yield profile
 
 
 @pytest.fixture
-def sub_profile(mock_responder: MockResponder, wallet_id: str):
-    yield InMemoryProfile.test_profile(
-        settings={
-            "wallet.id": wallet_id,
-        },
-        bind={
-            BaseResponder: mock_responder,
-        },
-    )
+async def sub_profile(mock_responder: MockResponder):
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(BaseResponder, mock_responder)
+    yield profile
 
 
 @pytest.fixture
-def route_manager(root_profile: Profile, sub_profile: Profile, wallet_id: str):
+def route_manager(root_profile: Profile, sub_profile: Profile):
     yield MultitenantRouteManager(root_profile)
 
 
@@ -68,18 +55,22 @@ def base_route_manager():
 async def test_route_for_key_sub_mediator_no_base_mediator(
     route_manager: MultitenantRouteManager,
     mock_responder: MockResponder,
-    wallet_id: str,
     sub_profile: Profile,
 ):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
     )
 
-    with mock.patch.object(
-        route_manager, "get_base_wallet_mediator", mock.CoroutineMock(return_value=None)
-    ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
-    ) as mock_create_route_record:
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_base_wallet_mediator",
+            mock.CoroutineMock(return_value=None),
+        ),
+        mock.patch.object(
+            RoutingManager, "create_route_record", mock.CoroutineMock()
+        ) as mock_create_route_record,
+    ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,
@@ -89,7 +80,7 @@ async def test_route_for_key_sub_mediator_no_base_mediator(
         )
 
     mock_create_route_record.assert_called_once_with(
-        recipient_key=TEST_VERKEY, internal_wallet_id=wallet_id
+        recipient_key=TEST_VERKEY, internal_wallet_id=sub_profile.name
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
@@ -107,7 +98,6 @@ async def test_route_for_key_sub_mediator_and_base_mediator(
     sub_profile: Profile,
     route_manager: MultitenantRouteManager,
     mock_responder: MockResponder,
-    wallet_id: str,
 ):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
@@ -117,13 +107,16 @@ async def test_route_for_key_sub_mediator_and_base_mediator(
         connection_id="test-base-mediator-conn-id",
     )
 
-    with mock.patch.object(
-        route_manager,
-        "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
-    ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
-    ) as mock_create_route_record:
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_base_wallet_mediator",
+            mock.CoroutineMock(return_value=base_mediation_record),
+        ),
+        mock.patch.object(
+            RoutingManager, "create_route_record", mock.CoroutineMock()
+        ) as mock_create_route_record,
+    ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,
@@ -133,7 +126,7 @@ async def test_route_for_key_sub_mediator_and_base_mediator(
         )
 
     mock_create_route_record.assert_called_once_with(
-        recipient_key=TEST_VERKEY, internal_wallet_id=wallet_id
+        recipient_key=TEST_VERKEY, internal_wallet_id=sub_profile.name
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
@@ -151,20 +144,22 @@ async def test_route_for_key_base_mediator_no_sub_mediator(
     sub_profile: Profile,
     route_manager: MultitenantRouteManager,
     mock_responder: MockResponder,
-    wallet_id: str,
 ):
     base_mediation_record = MediationRecord(
         mediation_id="test-base-mediation-id",
         connection_id="test-base-mediator-conn-id",
     )
 
-    with mock.patch.object(
-        route_manager,
-        "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
-    ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
-    ) as mock_create_route_record:
+    with (
+        mock.patch.object(
+            route_manager,
+            "get_base_wallet_mediator",
+            mock.CoroutineMock(return_value=base_mediation_record),
+        ),
+        mock.patch.object(
+            RoutingManager, "create_route_record", mock.CoroutineMock()
+        ) as mock_create_route_record,
+    ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,
@@ -174,7 +169,7 @@ async def test_route_for_key_base_mediator_no_sub_mediator(
         )
 
     mock_create_route_record.assert_called_once_with(
-        recipient_key=TEST_VERKEY, internal_wallet_id=wallet_id
+        recipient_key=TEST_VERKEY, internal_wallet_id=sub_profile.name
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
@@ -367,7 +362,7 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
 async def test_connection_from_recipient_key(
     sub_profile: Profile, base_route_manager: BaseWalletRouteManager
 ):
-    manager = mock.MagicMock()
+    manager = mock.MagicMock(BaseMultitenantManager, autospec=True)
     manager.get_profile_for_key = mock.CoroutineMock(return_value=sub_profile)
     sub_profile.context.injector.bind_instance(BaseMultitenantManager, manager)
     with mock.patch.object(

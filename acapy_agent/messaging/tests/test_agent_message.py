@@ -3,8 +3,9 @@ from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import EXCLUDE, fields
 
-from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
+from ...utils.testing import create_test_profile
+from ...wallet.base import BaseWallet
 from ...wallet.key_type import ED25519
 from ..agent_message import AgentMessage, AgentMessageSchema
 from ..decorators.signature_decorator import SignatureDecorator
@@ -70,53 +71,56 @@ class TestAgentMessage(IsolatedAsyncioTestCase):
         assert "Can't instantiate abstract" in str(context.exception)
 
     async def test_field_signature(self):
-        session = InMemoryProfile.test_session()
-        wallet = session.wallet
-        key_info = await wallet.create_signing_key(ED25519)
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key_info = await wallet.create_signing_key(ED25519)
 
-        msg = SignedAgentMessage()
-        msg.value = None
-        with self.assertRaises(BaseModelError) as context:
+            msg = SignedAgentMessage()
+            msg.value = None
+            with self.assertRaises(BaseModelError) as context:
+                await msg.sign_field("value", key_info.verkey, wallet)
+            assert "field has no value for signature" in str(context.exception)
+
+            msg.value = "Test value"
+            with self.assertRaises(BaseModelError) as context:
+                msg.serialize()
+            assert "Missing signature for field" in str(context.exception)
+
             await msg.sign_field("value", key_info.verkey, wallet)
-        assert "field has no value for signature" in str(context.exception)
+            sig = msg.get_signature("value")
+            assert isinstance(sig, SignatureDecorator)
 
-        msg.value = "Test value"
-        with self.assertRaises(BaseModelError) as context:
-            msg.serialize()
-        assert "Missing signature for field" in str(context.exception)
+            assert await sig.verify(wallet)
+            assert await msg.verify_signed_field("value", wallet) == key_info.verkey
+            assert await msg.verify_signatures(wallet)
 
-        await msg.sign_field("value", key_info.verkey, wallet)
-        sig = msg.get_signature("value")
-        assert isinstance(sig, SignatureDecorator)
+            with self.assertRaises(BaseModelError) as context:
+                await msg.verify_signed_field("value", wallet, "bogus-verkey")
+            assert "Signer verkey of signature does not match" in str(context.exception)
 
-        assert await sig.verify(wallet)
-        assert await msg.verify_signed_field("value", wallet) == key_info.verkey
-        assert await msg.verify_signatures(wallet)
+            serial = msg.serialize()
+            assert "value~sig" in serial and "value" not in serial
 
-        with self.assertRaises(BaseModelError) as context:
-            await msg.verify_signed_field("value", wallet, "bogus-verkey")
-        assert "Signer verkey of signature does not match" in str(context.exception)
+            (_, timestamp) = msg._decorators.field("value")["sig"].decode()
+            tamper_deco = await SignatureDecorator.create(
+                "tamper", key_info.verkey, wallet
+            )
+            msg._decorators.field("value")["sig"].sig_data = tamper_deco.sig_data
+            with self.assertRaises(BaseModelError) as context:
+                await msg.verify_signed_field("value", wallet)
+            assert "Field signature verification failed" in str(context.exception)
+            assert not await msg.verify_signatures(wallet)
 
-        serial = msg.serialize()
-        assert "value~sig" in serial and "value" not in serial
+            msg.value = "Test value"
+            msg._decorators.field("value").pop("sig")
+            with self.assertRaises(BaseModelError) as context:
+                await msg.verify_signed_field("value", wallet)
+            assert "Missing field signature" in str(context.exception)
 
-        (_, timestamp) = msg._decorators.field("value")["sig"].decode()
-        tamper_deco = await SignatureDecorator.create("tamper", key_info.verkey, wallet)
-        msg._decorators.field("value")["sig"].sig_data = tamper_deco.sig_data
-        with self.assertRaises(BaseModelError) as context:
-            await msg.verify_signed_field("value", wallet)
-        assert "Field signature verification failed" in str(context.exception)
-        assert not await msg.verify_signatures(wallet)
-
-        msg.value = "Test value"
-        msg._decorators.field("value").pop("sig")
-        with self.assertRaises(BaseModelError) as context:
-            await msg.verify_signed_field("value", wallet)
-        assert "Missing field signature" in str(context.exception)
-
-        loaded = SignedAgentMessage.deserialize(serial)
-        assert isinstance(loaded, SignedAgentMessage)
-        assert await loaded.verify_signed_field("value", wallet) == key_info.verkey
+            loaded = SignedAgentMessage.deserialize(serial)
+            assert isinstance(loaded, SignedAgentMessage)
+            assert await loaded.verify_signed_field("value", wallet) == key_info.verkey
 
     async def test_assign_thread(self):
         msg = BasicAgentMessage()
@@ -189,7 +193,6 @@ class TestAgentMessage(IsolatedAsyncioTestCase):
 
         print("tracer:", tracer.serialize())
 
-        msg3 = BasicAgentMessage()
         msg.add_trace_decorator()
         assert msg._trace
 
@@ -246,7 +249,7 @@ class TestAgentMessageSchema(IsolatedAsyncioTestCase):
                 },
             },
         ]:
-            with self.assertRaises(BaseModelError) as context:
+            with self.assertRaises(BaseModelError):
                 SignedAgentMessage.deserialize(serial)
 
     def test_serde(self):

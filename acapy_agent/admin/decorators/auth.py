@@ -1,6 +1,8 @@
 """Authentication decorators for the admin API."""
 
 import functools
+import re
+from typing import Optional, Pattern
 
 from aiohttp import web
 
@@ -48,6 +50,8 @@ def tenant_authentication(handler):
     - check for a valid bearer token in the Autorization header if running
     in multi-tenant mode
     - check for a valid x-api-key header if running in single-tenant mode
+    - check if the base wallet has access to the requested path if running
+    in multi-tenant mode
     """
 
     @functools.wraps(handler)
@@ -61,11 +65,15 @@ def tenant_authentication(handler):
         )
         insecure_mode = bool(profile.settings.get("admin.admin_insecure_mode"))
         multitenant_enabled = profile.settings.get("multitenant.enabled")
+        base_wallet_allowed_route = _base_wallet_route_access(
+            profile.settings.get("multitenant.base_wallet_routes"), request.path
+        )
 
         # CORS fix: allow OPTIONS method access to paths without a token
         if (
             (multitenant_enabled and authorization_header)
             or (not multitenant_enabled and valid_key)
+            or (multitenant_enabled and valid_key and base_wallet_allowed_route)
             or insecure_mode
             or request.method == "OPTIONS"
         ):
@@ -78,3 +86,25 @@ def tenant_authentication(handler):
             )
 
     return tenant_auth
+
+
+def _base_wallet_route_access(additional_routes: str, request_path: str) -> bool:
+    """Check if request path matches additional routes."""
+    additional_routes_pattern = _build_additional_routes_pattern(additional_routes)
+    return _matches_additional_routes(additional_routes_pattern, request_path)
+
+
+def _build_additional_routes_pattern(pattern_string: str) -> Optional[Pattern]:
+    """Build pattern from space delimited list of paths."""
+    # create array and add word boundary to avoid false positives
+    if pattern_string:
+        paths = pattern_string.split(" ")
+        return re.compile("^((?:)" + "|".join(paths) + ")$")
+    return None
+
+
+def _matches_additional_routes(pattern: Pattern, path: str) -> bool:
+    """Matches request path to provided pattern."""
+    if pattern and path:
+        return bool(pattern.match(path))
+    return False

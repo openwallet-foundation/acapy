@@ -67,7 +67,7 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
         assert rev_reg.tails_local_path == "dummy"
         rev_reg.tails_public_uri = "dummy"
         assert rev_reg.tails_public_uri == "dummy"
-        return rev_reg.reg_def == REV_REG_DEF
+        assert rev_reg.reg_def == REV_REG_DEF
 
     async def test_tails_local_path(self):
         rr_def_public = deepcopy(REV_REG_DEF)
@@ -128,13 +128,11 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
             rmtree(TAILS_DIR, ignore_errors=True)
 
         more_magic = mock.MagicMock()
-        with mock.patch.object(
-            test_module, "Session", autospec=True
-        ) as mock_session, mock.patch.object(
-            base58, "b58encode", mock.MagicMock()
-        ) as mock_b58enc, mock.patch.object(
-            Path, "is_file", autospec=True
-        ) as mock_is_file:
+        with (
+            mock.patch.object(test_module, "Session", autospec=True) as mock_session,
+            mock.patch.object(base58, "b58encode", mock.MagicMock()) as mock_b58enc,
+            mock.patch.object(Path, "is_file", autospec=True) as mock_is_file,
+        ):
             mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
             more_magic.get = mock.MagicMock(
                 return_value=mock.MagicMock(

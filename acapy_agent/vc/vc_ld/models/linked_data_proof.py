@@ -6,8 +6,8 @@ from marshmallow import INCLUDE, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_ISO8601_DATETIME_VALIDATE,
+    ISO8601_DATETIME_EXAMPLE,
+    ISO8601_DATETIME_VALIDATE,
     UUID4_EXAMPLE,
     Uri,
 )
@@ -93,13 +93,13 @@ class LinkedDataProofSchema(BaseModelSchema):
 
     created = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "The string value of an ISO8601 combined date and time string generated"
                 " by the Signature Algorithm"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
 

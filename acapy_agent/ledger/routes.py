@@ -25,10 +25,10 @@ from ..messaging.valid import (
     ENDPOINT_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
     INT_EPOCH_EXAMPLE,
     INT_EPOCH_VALIDATE,
+    RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
+    RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
 )
 from ..multitenant.base import BaseMultitenantManager
@@ -133,10 +133,10 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     )
     verkey = fields.Str(
         required=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
     alias = fields.Str(
@@ -230,10 +230,10 @@ class GetDIDVerkeyResponseSchema(OpenAPISchema):
 
     verkey = fields.Str(
         allow_none=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Full verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )
 

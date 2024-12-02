@@ -8,7 +8,6 @@ from typing import Iterable, List, Optional, Tuple, cast
 import jwt
 
 from ..config.injection_context import InjectionContext
-from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
@@ -21,27 +20,28 @@ from ..storage.base import BaseStorage
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
-from .error import WalletKeyMissingError
+from .error import (
+    InvalidTokenError,
+    MissingProfileError,
+    WalletAlreadyExistsError,
+    WalletKeyMissingError,
+)
 
 LOGGER = logging.getLogger(__name__)
-
-
-class MultitenantManagerError(BaseError):
-    """Generic multitenant error."""
 
 
 class BaseMultitenantManager(ABC):
     """Base class for handling multitenancy."""
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Optional[Profile]):
         """Initialize base multitenant Manager.
 
         Args:
             profile: The profile for this manager
         """
-        self._profile = profile
         if not profile:
-            raise MultitenantManagerError("Missing profile")
+            raise MissingProfileError()
+        self._profile = profile
 
     @property
     @abstractmethod
@@ -93,6 +93,7 @@ class BaseMultitenantManager(ABC):
         Args:
             base_context: Base context to get base_webhook_urls
             wallet_record: Wallet record to get dispatch_type and webhook_urls
+
         Returns:
             webhook urls according to dispatch_type
         """
@@ -156,7 +157,7 @@ class BaseMultitenantManager(ABC):
                 to not store the wallet key, or "managed" to store the wallet key
 
         Raises:
-            MultitenantManagerError: If the wallet name already exists
+            WalletAlreadyExistsError: If the wallet name already exists
 
         Returns:
             WalletRecord: The newly created wallet record
@@ -169,9 +170,7 @@ class BaseMultitenantManager(ABC):
         async with self._profile.session() as session:
             # Check if the wallet name already exists to avoid indy wallet errors
             if wallet_name and await self._wallet_name_exists(session, wallet_name):
-                raise MultitenantManagerError(
-                    f"Wallet with name {wallet_name} already exists"
-                )
+                raise WalletAlreadyExistsError(wallet_name)
 
             # In unmanaged mode we don't want to store the wallet key
             if key_management_mode == WalletRecord.MODE_UNMANAGED:
@@ -254,7 +253,7 @@ class BaseMultitenantManager(ABC):
 
         wallet_key = wallet_key or wallet.wallet_key
         if wallet.requires_external_key and not wallet_key:
-            raise WalletKeyMissingError("Missing key to open wallet")
+            raise WalletKeyMissingError()
 
         profile = await self.get_wallet_profile(
             self._profile.context,
@@ -353,7 +352,8 @@ class BaseMultitenantManager(ABC):
 
         Raises:
             WalletKeyMissingError: If the wallet_key is missing for an unmanaged wallet
-            InvalidTokenError: If there is an exception while decoding the token
+            InvalidTokenError: If the decoded token is invalid
+            jwt.InvalidTokenError: If there is an exception while decoding the token
 
         Returns:
             Profile associated with the token
@@ -378,7 +378,7 @@ class BaseMultitenantManager(ABC):
             extra_settings["wallet.key"] = wallet_key
 
         if wallet.jwt_iat and wallet.jwt_iat != iat:
-            raise MultitenantManagerError("Token not valid")
+            raise InvalidTokenError()
 
         profile = await self.get_wallet_profile(context, wallet, extra_settings)
 

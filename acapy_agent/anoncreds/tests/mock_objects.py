@@ -356,10 +356,23 @@ MOCK_REV_REG_DEFS = {
     }
 }
 
+MOCK_REV_REG_DEF = {
+    "issuerId": "did:web:example.org",
+    "revocDefType": "CL_ACCUM",
+    "credDefId": "Gs6cQcvrtWoZKsbBhD3dQJ:3:CL:140384:mctc",
+    "tag": "MyCustomCredentialDefinition",
+    "value": {
+        "publicKeys": {"accumKey": {"z": "1 0BB...386"}},
+        "maxCredNum": 666,
+        "tailsLocation": "https://my.revocations.tails/tailsfile.txt",
+        "tailsHash": "91zvq2cFmBZmHCcLqFyzv7bfehHH5rMhdAG5wTjqy2PE",
+    },
+}
+
 MOCK_CRED = {
     "schema_id": "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94",
     "cred_def_id": "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema",
-    "rev_reg_id": None,
+    "rev_reg_id": "Sc886XPwD1gDcHwmmLDeR2:3:Sc886XPwD1gDcHwmmLDeR2:3:CL:18:tag:CL_ACCUM:0",
     "values": {
         "first_name": {"raw": "Alice", "encoded": "113...335"},
         "last_name": {"raw": "Garcia", "encoded": "532...452"},
@@ -375,19 +388,6 @@ MOCK_CRED = {
         "r_credential": None,
     },
     "signature_correctness_proof": {"se": "898...935", "c": "935...598"},
-    "rev_reg": None,
-    "witness": None,
-}
-
-MOCK_REV_REG_DEF = {
-    "issuerId": "did:web:example.org",
-    "revocDefType": "CL_ACCUM",
-    "credDefId": "Gs6cQcvrtWoZKsbBhD3dQJ:3:CL:140384:mctc",
-    "tag": "MyCustomCredentialDefinition",
-    "value": {
-        "publicKeys": {"accumKey": {"z": "1 0BB...386"}},
-        "maxCredNum": 666,
-        "tailsLocation": "https://my.revocations.tails/tailsfile.txt",
-        "tailsHash": "91zvq2cFmBZmHCcLqFyzv7bfehHH5rMhdAG5wTjqy2PE",
-    },
+    "rev_reg": MOCK_REV_REG_DEF,
+    "witness": "977...590",
 }

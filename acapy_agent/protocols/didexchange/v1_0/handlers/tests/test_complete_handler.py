@@ -5,6 +5,7 @@ from acapy_agent.tests import mock
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ......wallet.did_method import DIDMethods
 from ...manager import DIDXManagerError
 from ...messages.complete import DIDXComplete
@@ -13,8 +14,8 @@ from .. import complete_handler as test_module
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.injector.bind_instance(DIDMethods, DIDMethods())
     ctx.message_receipt = MessageReceipt()
     yield ctx
@@ -29,7 +30,6 @@ class TestDIDXCompleteHandler:
         mock_conn_mgr.return_value.accept_complete = mock.CoroutineMock()
         request_context.message = DIDXComplete()
         handler_inst = test_module.DIDXCompleteHandler()
-        responder = MockResponder()
         await handler_inst.handle(request_context, None)
 
         mock_conn_mgr.return_value.accept_complete.assert_called_once_with(

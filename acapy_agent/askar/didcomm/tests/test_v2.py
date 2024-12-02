@@ -4,9 +4,8 @@ from unittest import mock
 import pytest
 from aries_askar import AskarError, Key, KeyAlg, Session
 
-from ....config.injection_context import InjectionContext
 from ....utils.jwe import JweEnvelope, JweRecipient, b64url
-from ...profile import AskarProfileManager
+from ....utils.testing import create_test_profile
 from .. import v2 as test_module
 
 ALICE_KID = "did:example:alice#key-1"
@@ -17,15 +16,7 @@ MESSAGE = b"Expecto patronum"
 
 @pytest.fixture()
 async def session():
-    context = InjectionContext()
-    profile = await AskarProfileManager().provision(
-        context,
-        {
-            "name": ":memory:",
-            "key": await AskarProfileManager.generate_store_key(),
-            "key_derivation_method": "RAW",  # much faster than using argon-hashed keys
-        },
-    )
+    profile = await create_test_profile()
     async with profile.session() as session:
         yield session.handle
     del session
@@ -57,7 +48,7 @@ class TestAskarDidCommV2:
         assert plaintext == MESSAGE
 
     @pytest.mark.asyncio
-    async def test_es_encrypt_x(self, session: Session):
+    async def test_es_encrypt_x(self):
         alg = KeyAlg.X25519
         bob_sk = Key.generate(alg)
         bob_pk = Key.from_jwk(bob_sk.get_jwk_public())
@@ -312,7 +303,7 @@ class TestAskarDidCommV2:
         alice_sk = Key.generate(alg)
         alice_pk = Key.from_jwk(alice_sk.get_jwk_public())
         bob_sk = Key.generate(alg)
-        bob_pk = Key.from_jwk(bob_sk.get_jwk_public())
+        Key.from_jwk(bob_sk.get_jwk_public())
 
         # receiver must have the private keypair accessible
         await session.insert_key("my_sk", bob_sk, tags={"kid": BOB_KID})

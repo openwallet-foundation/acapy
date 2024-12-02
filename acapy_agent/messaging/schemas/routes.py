@@ -49,8 +49,8 @@ from ..valid import (
     B58,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
     UUID4_EXAMPLE,
 )
 from .util import (
@@ -70,8 +70,11 @@ class SchemaSendRequestSchema(OpenAPISchema):
     )
     schema_version = fields.Str(
         required=True,
-        validate=INDY_VERSION_VALIDATE,
-        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
+        metadata={
+            "description": "Schema version",
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
+        },
     )
     attributes = fields.List(
         fields.Str(metadata={"description": "attribute name", "example": "score"}),

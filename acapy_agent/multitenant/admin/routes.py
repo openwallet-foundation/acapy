@@ -224,6 +224,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     key_management_mode = fields.Str(
         dump_default=WalletRecord.MODE_MANAGED,
+        # MTODO: add unmanaged mode once implemented
         validate=validate.OneOf((WalletRecord.MODE_MANAGED,)),
         metadata={
             "description": "Key management method to use for this wallet.",

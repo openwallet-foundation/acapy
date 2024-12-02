@@ -593,14 +593,15 @@ def step_impl(context, agent_name):
         agent["agent"], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"]
     )
     context.cred_exchange = cred_exchange
+    cred_exchange_format = cred_exchange.get("indy") or cred_exchange.get("anoncreds")
 
     agent_container_POST(
         agent["agent"],
         endpoint,
         data={
-            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "cred_rev_id": cred_exchange_format["cred_rev_id"],
             "publish": False,
-            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
+            "rev_reg_id": cred_exchange_format["rev_reg_id"],
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
         },
     )
@@ -627,11 +628,13 @@ def step_impl(context, agent_name):
     context.cred_exchange = cred_exchange
     connection_id = agent["agent"].agent.connection_id
 
+    cred_exchange_format = cred_exchange.get("indy") or cred_exchange.get("anoncreds")
+
     # revoke the credential
     if not is_anoncreds(agent):
         data = {
-            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
-            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "rev_reg_id": cred_exchange_format["rev_reg_id"],
+            "cred_rev_id": cred_exchange_format["cred_rev_id"],
             "publish": False,
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
         }
@@ -642,9 +645,9 @@ def step_impl(context, agent_name):
         endpoint = "/revocation/revoke"
     else:
         data = {
-            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "cred_rev_id": cred_exchange_format["cred_rev_id"],
             "publish": False,
-            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
+            "rev_reg_id": cred_exchange_format["rev_reg_id"],
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
             "options": {
                 "endorser_connection_id": connection_id,
@@ -676,15 +679,17 @@ def step_impl(context, agent_name):
     else:
         endpoint = "/anoncreds/revocation/publish-revocations"
 
+    cred_exchange_format = context.cred_exchange.get("indy") or context.cred_exchange.get(
+        "anoncreds"
+    )
+
     # create rev_reg entry transaction
     created_rev_reg = agent_container_POST(
         agent["agent"],
         endpoint,
         data={
             "rrid2crid": {
-                context.cred_exchange["indy"]["rev_reg_id"]: [
-                    context.cred_exchange["indy"]["cred_rev_id"]
-                ]
+                cred_exchange_format["rev_reg_id"]: [cred_exchange_format["cred_rev_id"]]
             }
         },
         params={},
@@ -703,14 +708,15 @@ def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
     connection_id = agent["agent"].agent.connection_id
+    cred_exchange_format = context.cred_exchange.get("indy") or context.cred_exchange.get(
+        "anoncreds"
+    )
 
     # create rev_reg entry transaction
     if not is_anoncreds(agent):
         data = {
             "rrid2crid": {
-                context.cred_exchange["indy"]["rev_reg_id"]: [
-                    context.cred_exchange["indy"]["cred_rev_id"]
-                ]
+                cred_exchange_format["rev_reg_id"]: [cred_exchange_format["cred_rev_id"]]
             }
         }
         params = {
@@ -721,9 +727,7 @@ def step_impl(context, agent_name):
     else:
         data = {
             "rrid2crid": {
-                context.cred_exchange["indy"]["rev_reg_id"]: [
-                    context.cred_exchange["indy"]["cred_rev_id"]
-                ]
+                cred_exchange_format["rev_reg_id"]: [cred_exchange_format["cred_rev_id"]]
             },
             "options": {
                 "endorser_connection_id": connection_id,

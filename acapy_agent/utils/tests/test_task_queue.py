@@ -106,11 +106,10 @@ class TestTaskQueue(IsolatedAsyncioTestCase):
         async def noop():
             return
 
-        with mock.patch.object(
-            queue, "drain", mock.MagicMock()
-        ) as mock_drain, mock.patch.object(
-            queue, "wait_for", mock.CoroutineMock()
-        ) as mock_wait_for:
+        with (
+            mock.patch.object(queue, "drain", mock.MagicMock()) as mock_drain,
+            mock.patch.object(queue, "wait_for", mock.CoroutineMock()) as mock_wait_for,
+        ):
             mock_drain.side_effect = [queue.loop.create_task(noop()), None]
             await queue.complete(cleanup=True)
 

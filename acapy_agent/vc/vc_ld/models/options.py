@@ -5,8 +5,8 @@ from typing import Optional
 from marshmallow import INCLUDE, Schema, fields
 
 from acapy_agent.messaging.valid import (
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_ISO8601_DATETIME_VALIDATE,
+    ISO8601_DATETIME_EXAMPLE,
+    ISO8601_DATETIME_VALIDATE,
     UUID4_EXAMPLE,
 )
 
@@ -124,13 +124,13 @@ class LDProofVCOptionsSchema(BaseModelSchema):
 
     created = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "The date and time of the proof (with a maximum accuracy in seconds)."
                 " Defaults to current system time"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
 

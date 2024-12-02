@@ -11,8 +11,8 @@ from .base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
-from .models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
-from .models.anoncreds_revocation import (
+from .models.credential_definition import CredDef, CredDefResult, GetCredDefResult
+from .models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
@@ -20,7 +20,7 @@ from .models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
 )
-from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
 LOGGER = logging.getLogger(__name__)
 

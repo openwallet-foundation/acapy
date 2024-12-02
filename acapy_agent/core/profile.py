@@ -342,7 +342,6 @@ class ProfileManagerProvider(BaseProvider):
     MANAGER_TYPES = {
         "askar": "acapy_agent.askar.profile.AskarProfileManager",
         "askar-anoncreds": "acapy_agent.askar.profile_anon.AskarAnonProfileManager",
-        "in_memory": "acapy_agent.core.in_memory.InMemoryProfileManager",
     }
 
     def __init__(self):
@@ -351,11 +350,7 @@ class ProfileManagerProvider(BaseProvider):
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the profile manager instance."""
-        mgr_type = settings.get_value("wallet.type", default="in_memory")
-
-        if mgr_type.lower() == "basic":
-            # map previous value
-            mgr_type = "in_memory"
+        mgr_type = settings.get_value("wallet.type", default="askar")
 
         # mgr_type may be a fully qualified class name
         mgr_class = self.MANAGER_TYPES.get(mgr_type.lower(), mgr_type)

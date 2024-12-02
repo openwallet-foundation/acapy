@@ -4,16 +4,16 @@ from acapy_agent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from .. import perform_handler as handler
 
 
 class TestPerformHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
 
     async def test_called(self):
-        MenuService = mock.MagicMock(handler.BaseMenuService, autospec=True)
-        self.menu_service = MenuService()
+        self.menu_service = mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
 
         self.context.connection_record = mock.MagicMock()
@@ -34,8 +34,7 @@ class TestPerformHandler(IsolatedAsyncioTestCase):
         assert target == {}
 
     async def test_called_no_active_menu(self):
-        MenuService = mock.MagicMock(handler.BaseMenuService, autospec=True)
-        self.menu_service = MenuService()
+        self.menu_service = mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
 
         self.context.connection_record = mock.MagicMock()

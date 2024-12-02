@@ -4,10 +4,9 @@ import json
 import pytest
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
 
-from acapy_agent.tests import mock
-
 from ....config.injection_context import InjectionContext
-from ....core.in_memory import InMemoryProfile
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...outbound.message import OutboundMessage
 from ...wire_format import JsonWireFormat
 from .. import ws as test_module
@@ -17,17 +16,20 @@ from ..ws import WsTransport
 
 
 class TestWsTransport(AioHTTPTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.message_results = []
         self.port = unused_port()
         self.session = None
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.transport = WsTransport(
             "0.0.0.0", self.port, self.create_session, root_profile=self.profile
         )
         self.transport.wire_format = JsonWireFormat()
         self.result_event = None
-        super().setUp()
+        await super().asyncSetUp()
+
+    def get_profile(self):
+        return self.profile
 
     def create_session(
         self,
@@ -40,7 +42,7 @@ class TestWsTransport(AioHTTPTestCase):
     ):
         if not self.session:
             session = InboundSession(
-                profile=InMemoryProfile.test_profile(),
+                profile=self.get_profile(),
                 can_respond=can_respond,
                 inbound_handler=self.receive_message,
                 session_id=None,
@@ -87,7 +89,7 @@ class TestWsTransport(AioHTTPTestCase):
 
             assert self.session is not None
             assert len(self.message_results) == 1
-            received, receipt, can_respond = self.message_results[0]
+            received, _, can_respond = self.message_results[0]
             assert received == test_message
             assert can_respond
 

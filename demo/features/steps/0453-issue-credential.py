@@ -62,10 +62,9 @@ def step_impl(context, issuer, credential_data):
     agent = context.active_agents[issuer]
 
     cred_attrs = read_credential_data(context.schema_name, credential_data)
+    filter_type = "indy" if not is_anoncreds(agent) else "anoncreds"
     cred_exchange = aries_container_issue_credential(
-        agent["agent"],
-        context.cred_def_id,
-        cred_attrs,
+        agent["agent"], context.cred_def_id, cred_attrs, filter_type
     )
 
     context.cred_attrs = cred_attrs

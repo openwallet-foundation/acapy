@@ -3,6 +3,7 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ......wallet.did_method import DIDMethods
 from .....out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...handlers.invitation_handler import InvitationHandler
@@ -10,8 +11,8 @@ from ...messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.injector.bind_instance(DIDMethods, DIDMethods())
     ctx.message_receipt = MessageReceipt()
     yield ctx

@@ -4,14 +4,12 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from ....askar.profile import AskarProfileManager
-from ....config.injection_context import InjectionContext
 from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from .. import holder, issuer, verifier
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -44,43 +42,29 @@ PRES_REQ_REV = {
 @pytest.mark.indy_credx
 class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        context = InjectionContext(enforce_typing=False)
-        mock_ledger = mock.MagicMock(
-            get_credential_definition=mock.CoroutineMock(return_value={"value": {}}),
-            get_revoc_reg_delta=mock.CoroutineMock(
-                return_value=(
-                    {"value": {"...": "..."}},
-                    1234567890,
-                )
-            ),
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.get_credential_definition = mock.CoroutineMock(
+            return_value={"value": {}}
         )
-        mock_ledger.__aenter__ = mock.CoroutineMock(return_value=mock_ledger)
+        mock_ledger.get_revoc_reg_delta = mock.CoroutineMock(
+            return_value=(
+                {"value": {"...": "..."}},
+                1234567890,
+            )
+        )
+
         self.ledger = mock_ledger
 
-        self.holder_profile = await AskarProfileManager().provision(
-            context,
-            {
-                "name": ":memory:",
-                "key": await AskarProfileManager.generate_store_key(),
-                "key_derivation_method": "RAW",
-            },
+        self.holder_profile = await create_test_profile()
+        self.issuer_profile = await create_test_profile()
+        self.issuer_profile._context.injector.bind_instance(BaseLedger, self.ledger)
+
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
         )
-        self.issuer_profile = await AskarProfileManager().provision(
-            context,
-            {
-                "name": ":memory:",
-                "key": await AskarProfileManager.generate_store_key(),
-                "key_derivation_method": "RAW",
-            },
-        )
-        self.issuer_profile._context.injector.bind_instance(BaseLedger, mock_ledger)
         self.issuer_profile._context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            mock.MagicMock(
-                get_ledger_for_identifier=mock.CoroutineMock(
-                    return_value=(None, mock_ledger)
-                )
-            ),
+            IndyLedgerRequestsExecutor, mock_executor
         )
 
         self.holder = holder.IndyCredxHolder(self.holder_profile)
@@ -299,7 +283,7 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
             assert not skipped_ids
             rev_delta_2 = json.loads(rev_delta_2_json)
 
-            merged = await self.issuer.merge_revocation_registry_deltas(
+            await self.issuer.merge_revocation_registry_deltas(
                 rev_delta_init, rev_delta_2
             )
 

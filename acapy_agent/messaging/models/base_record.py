@@ -20,7 +20,7 @@ from ...storage.base import (
 )
 from ...storage.record import StorageRecord
 from ..util import datetime_to_str, time_now
-from ..valid import INDY_ISO8601_DATETIME_EXAMPLE, INDY_ISO8601_DATETIME_VALIDATE
+from ..valid import ISO8601_DATETIME_EXAMPLE, ISO8601_DATETIME_VALIDATE
 from .base import BaseModel, BaseModelError, BaseModelSchema
 
 LOGGER = logging.getLogger(__name__)
@@ -591,18 +591,18 @@ class BaseRecordSchema(BaseModelSchema):
     )
     created_at = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Time of record creation",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     updated_at = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": "Time of last record update",
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
 

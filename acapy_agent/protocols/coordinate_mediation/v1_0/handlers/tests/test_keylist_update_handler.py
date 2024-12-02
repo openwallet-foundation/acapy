@@ -8,6 +8,7 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.keylist_update import KeylistUpdate
 from ...messages.keylist_update_response import KeylistUpdateResponse
@@ -24,7 +25,7 @@ class TestKeylistUpdateHandler(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
         self.session = await self.context.session()
         self.context.message = KeylistUpdate(
             updates=[
@@ -39,9 +40,8 @@ class TestKeylistUpdateHandler(IsolatedAsyncioTestCase):
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()
         self.context.connection_ready = False
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(self.context, responder)
-            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_record(self):
         handler, responder = KeylistUpdateHandler(), MockResponder()

@@ -2,16 +2,15 @@ from unittest import IsolatedAsyncioTestCase
 
 from aiohttp import web
 
-from acapy_agent.tests import mock
-
-from ...core.in_memory.profile import InMemoryProfile
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from ..decorators.auth import admin_authentication, tenant_authentication
 from ..request_context import AdminRequestContext
 
 
 class TestAdminAuthentication(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "admin_api_key",
                 "admin.admin_insecure_mode": False,
@@ -62,8 +61,8 @@ class TestAdminAuthentication(IsolatedAsyncioTestCase):
 
 
 class TestTenantAuthentication(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "admin_api_key",
                 "admin.admin_insecure_mode": False,
@@ -134,3 +133,27 @@ class TestTenantAuthentication(IsolatedAsyncioTestCase):
         decor_func = tenant_authentication(self.decorated_handler)
         await decor_func(self.request)
         self.decorated_handler.assert_called_once_with(self.request)
+
+    async def test_base_wallet_additional_route_allowed(self):
+        self.profile.settings["multitenant.base_wallet_routes"] = "/extra-route"
+        self.request = mock.MagicMock(
+            __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "admin_api_key"},
+            method="POST",
+            path="/extra-route",
+        )
+        decor_func = tenant_authentication(self.decorated_handler)
+        await decor_func(self.request)
+        self.decorated_handler.assert_called_once_with(self.request)
+
+    async def test_base_wallet_additional_route_denied(self):
+        self.profile.settings["multitenant.base_wallet_routes"] = "/extra-route"
+        self.request = mock.MagicMock(
+            __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "admin_api_key"},
+            method="POST",
+            path="/extra-route-wrong",
+        )
+        decor_func = tenant_authentication(self.decorated_handler)
+        with self.assertRaises(web.HTTPUnauthorized):
+            await decor_func(self.request)

@@ -5,27 +5,35 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 from aiohttp.web import HTTPBadRequest, HTTPNotFound
 
-from acapy_agent.core.in_memory import InMemoryProfile
-from acapy_agent.revocation.error import RevocationError
-from acapy_agent.tests import mock
-
 from ...admin.request_context import AdminRequestContext
-from ...askar.profile_anon import AskarAnoncredsProfile
-from ...protocols.endorse_transaction.v1_0.manager import TransactionManagerError
+from ...ledger.base import BaseLedger
+from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
+from ...protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
+from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
+    TransactionRecord,
+)
+from ...revocation.error import RevocationError
+from ...storage.askar import AskarStorage
+from ...storage.base import BaseStorage
 from ...storage.error import StorageError
-from ...storage.in_memory import InMemoryStorage
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import routes as test_module
+from ..manager import RevocationManager
+from ..models.issuer_rev_reg_record import IssuerRevRegRecord
 
 
 class TestRevocationRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
-        self.profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = self.profile.context
-        setattr(self.context, "profile", self.profile)
+        self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -40,14 +48,13 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
         self.test_did = "sample-did"
 
-        self.author_profile = InMemoryProfile.test_profile(
+        self.author_profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "author-key",
             }
         )
         self.author_profile.settings.set_value("endorser.author", True)
-        self.author_context = self.author_profile.context
-        setattr(self.author_context, "profile", self.author_profile)
+        self.author_context = AdminRequestContext.test_context({}, self.author_profile)
         self.author_request_dict = {
             "context": self.author_context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -110,11 +117,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -130,13 +138,18 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value="dummy-conn-id"),
-        ), mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value="dummy-conn-id"),
+            ),
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(TransactionManager, "create_record", mock.CoroutineMock()),
+        ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
                 return_value={"result": "..."}
             )
@@ -150,17 +163,21 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                 "cred_rev_id": "23",
                 "publish": "false",
                 "connection_id": "dummy-conn-id",
+                "cred_ex_id": "dummy-cxid",
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ), mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value="test_conn_id"),
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value="test_conn_id"),
+            ),
+            mock.patch.object(TransactionManager, "create_record", mock.CoroutineMock()),
         ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
                 return_value={"result": "..."}
@@ -177,18 +194,24 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value="dummy-conn-id"),
-        ), mock.patch.object(test_module.web, "json_response"):
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value=None),
+            ),
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(TransactionManager, "create_record", mock.CoroutineMock()),
+        ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
                 return_value={"result": "..."}
             )
 
-            await test_module.revoke(self.author_request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.revoke(self.author_request)
 
     async def test_revoke_endorser(self):
         self.author_request.json = mock.CoroutineMock(
@@ -200,14 +223,17 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ), mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value="test_conn_id"),
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value="test_conn_id"),
+            ),
+            mock.patch.object(TransactionManager, "create_record", mock.CoroutineMock()),
         ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
                 return_value={"result": "..."}
@@ -224,12 +250,15 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value=None),
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value=None),
+            ),
         ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock()
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -243,11 +272,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -263,11 +293,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
             )
@@ -278,11 +309,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
     async def test_publish_revocations(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             pub_pending = mock.CoroutineMock()
             mock_mgr.return_value.publish_pending_revocations = mock.CoroutineMock(
                 return_value=({}, pub_pending.return_value)
@@ -305,14 +337,27 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                 await test_module.publish_revocations(self.request)
 
     async def test_publish_revocations_endorser(self):
-        self.author_request.json = mock.CoroutineMock()
+        self.author_request.json = mock.CoroutineMock(return_value={})
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value="dummy-conn-id"),
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value="dummy-conn-id"),
+            ),
+            mock.patch.object(
+                TransactionManager,
+                "create_record",
+                mock.CoroutineMock(return_value=TransactionRecord()),
+            ),
+            mock.patch.object(
+                TransactionManager,
+                "create_request",
+                mock.CoroutineMock(),
+            ),
         ):
             pub_pending = mock.CoroutineMock()
             mock_mgr.return_value.publish_pending_revocations = mock.CoroutineMock(
@@ -341,37 +386,52 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             result = await test_module.publish_revocations(self.author_request)
             assert result.status == 200
 
-            # exceptions
-            with mock.patch.object(
-                test_module, "TransactionManager", autospec=True
-            ) as mock_txn_mgr:
-                mock_txn_mgr.return_value.create_record = mock.CoroutineMock(
-                    side_effect=StorageError()
-                )
-                with self.assertRaises(test_module.web.HTTPBadRequest):
-                    result = await test_module.publish_revocations(self.author_request)
+    async def test_publish_revocations_endorser_exceptions(self):
+        self.author_request.json = mock.CoroutineMock(return_value={})
+        with mock.patch.object(
+            test_module, "TransactionManager", autospec=True
+        ) as mock_txn_mgr:
+            mock_txn_mgr.return_value.create_record = mock.CoroutineMock(
+                side_effect=StorageError()
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.publish_revocations(self.author_request)
 
-            with mock.patch.object(
-                test_module, "TransactionManager", autospec=True
-            ) as mock_txn_mgr:
-                mock_txn_mgr.return_value.create_request = mock.CoroutineMock(
-                    side_effect=[StorageError(), TransactionManagerError()]
-                )
-                with self.assertRaises(test_module.web.HTTPBadRequest):
-                    await test_module.publish_revocations(self.author_request)
-                with self.assertRaises(test_module.web.HTTPBadRequest):
-                    await test_module.publish_revocations(self.author_request)
+        with mock.patch.object(
+            test_module, "TransactionManager", autospec=True
+        ) as mock_txn_mgr:
+            mock_txn_mgr.return_value.create_request = mock.CoroutineMock(
+                side_effect=[StorageError(), TransactionManagerError()]
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.publish_revocations(self.author_request)
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.publish_revocations(self.author_request)
 
     async def test_publish_revocations_endorser_x(self):
         self.author_request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module,
-            "get_endorser_connection_id",
-            mock.CoroutineMock(return_value=None),
-        ), mock.patch.object(test_module.web, "json_response") as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(
+                test_module,
+                "get_endorser_connection_id",
+                mock.CoroutineMock(return_value=None),
+            ),
+            mock.patch.object(test_module.web, "json_response"),
+        ):
+            pub_pending = mock.CoroutineMock()
+            mock_mgr.return_value.publish_pending_revocations = mock.CoroutineMock(
+                return_value=(
+                    [
+                        {"result": "..."},
+                        {"result": "..."},
+                    ],
+                    pub_pending.return_value,
+                )
+            )
             pub_pending = mock.CoroutineMock()
             mock_mgr.return_value.publish_pending_revocations = pub_pending
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -380,11 +440,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
     async def test_clear_pending_revocations(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             clear_pending = mock.CoroutineMock()
             mock_mgr.return_value.clear_pending_revocations = clear_pending
 
@@ -397,11 +458,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
     async def test_clear_pending_revocations_x(self):
         self.request.json = mock.CoroutineMock()
 
-        with mock.patch.object(
-            test_module, "RevocationManager", autospec=True
-        ) as mock_mgr, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "RevocationManager", autospec=True
+            ) as mock_mgr,
+            mock.patch.object(test_module.web, "json_response"),
+        ):
             clear_pending = mock.CoroutineMock(side_effect=test_module.StorageError())
             mock_mgr.return_value.clear_pending_revocations = clear_pending
 
@@ -417,14 +479,15 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            InMemoryStorage, "find_all_records", autospec=True
-        ) as mock_find, mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
-            mock_find.return_value = True
+        with (
+            mock.patch.object(AskarStorage, "find_all_records"),
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 init_issuer_registry=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -447,15 +510,18 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            InMemoryStorage, "find_all_records", autospec=True
-        ) as mock_find, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                BaseStorage, "find_all_records", autospec=True
+            ) as mock_find,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_find.return_value = False
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.create_rev_reg(self.request)
+                await test_module.create_rev_reg(self.request)
             mock_json_response.assert_not_called()
 
     async def test_create_rev_reg_no_revo_support(self):
@@ -467,14 +533,18 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            InMemoryStorage, "find_all_records", autospec=True
-        ) as mock_find, mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
-            mock_find = True
+        with (
+            mock.patch.object(
+                AskarStorage, "find_all_records", autospec=True
+            ) as mock_find,
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
+            mock_find.return_value = True
             mock_indy_revoc.return_value = mock.MagicMock(
                 init_issuer_registry=mock.CoroutineMock(
                     side_effect=test_module.RevocationNotSupportedError(
@@ -484,7 +554,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPBadRequest):
-                result = await test_module.create_rev_reg(self.request)
+                await test_module.create_rev_reg(self.request)
 
             mock_json_response.assert_not_called()
 
@@ -495,11 +565,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
         }
 
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord, "query", mock.CoroutineMock()
-        ) as mock_query, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord, "query", mock.CoroutineMock()
+            ) as mock_query,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_query.return_value = [mock.MagicMock(revoc_reg_id="dummy")]
 
             result = await test_module.rev_regs_created(self.request)
@@ -512,11 +585,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -535,11 +611,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -547,7 +626,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.get_rev_reg(self.request)
+                await test_module.get_rev_reg(self.request)
             mock_json_response.assert_not_called()
 
     async def test_get_rev_reg_issued(self):
@@ -556,18 +635,22 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_revoc_reg_id",
-            mock.CoroutineMock(),
-        ) as mock_retrieve, mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "query_by_ids",
-            mock.CoroutineMock(),
-        ) as mock_query, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
-            mock_query.return_value = return_value = [{"...": "..."}, {"...": "..."}]
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_revoc_reg_id",
+                mock.CoroutineMock(),
+            ),
+            mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "query_by_ids",
+                mock.CoroutineMock(),
+            ) as mock_query,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
+            mock_query.return_value = [{"...": "..."}, {"...": "..."}]
             result = await test_module.get_rev_reg_issued_count(self.request)
 
             mock_json_response.assert_called_once_with({"result": 2})
@@ -600,13 +683,16 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "cred_rev_id": CRED_REV_ID,
         }
 
-        with mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "retrieve_by_ids",
-            mock.CoroutineMock(),
-        ) as mock_retrieve, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "retrieve_by_ids",
+                mock.CoroutineMock(),
+            ) as mock_retrieve,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value="dummy")
             )
@@ -620,13 +706,16 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
         self.request.query = {"cred_ex_id": CRED_EX_ID}
 
-        with mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "retrieve_by_cred_ex_id",
-            mock.CoroutineMock(),
-        ) as mock_retrieve, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "retrieve_by_cred_ex_id",
+                mock.CoroutineMock(),
+            ) as mock_retrieve,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_retrieve.return_value = mock.MagicMock(
                 serialize=mock.MagicMock(return_value="dummy")
             )
@@ -650,10 +739,11 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
         with mock.patch.object(
             test_module.IssuerCredRevRecord,
-            "retrieve_by_ids",
-            mock.CoroutineMock(),
-        ) as mock_retrieve:
-            mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
+            "retrieve_by_cred_ex_id",
+            mock.CoroutineMock(
+                side_effect=test_module.StorageNotFoundError("no such rec")
+            ),
+        ):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.get_cred_rev_record(self.request)
 
@@ -661,11 +751,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_active_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -682,11 +775,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_active_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -694,7 +790,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.get_active_rev_reg(self.request)
+                await test_module.get_active_rev_reg(self.request)
             mock_json_response.assert_not_called()
 
     async def test_get_tails_file(self):
@@ -703,11 +799,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "FileResponse", mock.Mock()
-        ) as mock_file_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "FileResponse", mock.Mock()
+            ) as mock_file_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(tails_local_path="dummy")
@@ -724,11 +823,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "FileResponse", mock.Mock()
-        ) as mock_file_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "FileResponse", mock.Mock()
+            ) as mock_file_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -736,7 +838,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.get_tails_file(self.request)
+                await test_module.get_tails_file(self.request)
             mock_file_response.assert_not_called()
 
     async def test_upload_tails_file_basic(self):
@@ -745,11 +847,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_upload = mock.CoroutineMock()
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
@@ -815,11 +920,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -840,11 +948,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "FileResponse", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "FileResponse", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -852,7 +963,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.send_rev_reg_def(self.request)
+                await test_module.send_rev_reg_def(self.request)
             mock_json_response.assert_not_called()
 
     async def test_send_rev_reg_def_x(self):
@@ -883,11 +994,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -907,11 +1021,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "FileResponse", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "FileResponse", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -919,7 +1036,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.send_rev_reg_entry(self.request)
+                await test_module.send_rev_reg_entry(self.request)
             mock_json_response.assert_not_called()
 
     async def test_send_rev_reg_entry_x(self):
@@ -953,11 +1070,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             return_value={"tails_public_uri": f"http://sample.ca:8181/tails/{REV_REG_ID}"}
         )
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -981,11 +1101,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             return_value={"tails_public_uri": f"http://sample.ca:8181/tails/{REV_REG_ID}"}
         )
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "FileResponse", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "FileResponse", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -993,7 +1116,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.update_rev_reg(self.request)
+                await test_module.update_rev_reg(self.request)
             mock_json_response.assert_not_called()
 
     async def test_update_rev_reg_x(self):
@@ -1035,11 +1158,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
         }
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "json_response", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
@@ -1068,11 +1194,14 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
         }
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as mock_indy_revoc, mock.patch.object(
-            test_module.web, "FileResponse", mock.Mock()
-        ) as mock_json_response:
+        with (
+            mock.patch.object(
+                test_module, "IndyRevocation", autospec=True
+            ) as mock_indy_revoc,
+            mock.patch.object(
+                test_module.web, "FileResponse", mock.Mock()
+            ) as mock_json_response,
+        ):
             mock_indy_revoc.return_value = mock.MagicMock(
                 get_issuer_rev_reg_record=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError(error_code="dummy")
@@ -1080,88 +1209,8 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.set_rev_reg_state(self.request)
+                await test_module.set_rev_reg_state(self.request)
             mock_json_response.assert_not_called()
-
-    async def test_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
-            settings={"wallet.type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarAnoncredsProfile,
-        )
-        self.context = AdminRequestContext.test_context({}, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
-
-        self.request.json = mock.CoroutineMock(
-            return_value={
-                "rev_reg_id": "rr_id",
-                "cred_rev_id": "23",
-                "publish": "false",
-            }
-        )
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.revoke(self.request)
-
-        self.request.json = mock.CoroutineMock()
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.publish_revocations(self.request)
-
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.clear_pending_revocations(self.request)
-
-        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        self.request.json = mock.CoroutineMock(
-            return_value={
-                "max_cred_num": "1000",
-                "credential_definition_id": CRED_DEF_ID,
-            }
-        )
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.create_rev_reg(self.request)
-
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.get_rev_reg(self.request)
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.get_rev_reg_issued(self.request)
-
-        CRED_REV_ID = "1"
-        self.request.query = {
-            "rev_reg_id": REV_REG_ID,
-            "cred_rev_id": CRED_REV_ID,
-        }
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.get_cred_rev_record(self.request)
-
-        self.request.match_info = {"cred_def_id": CRED_DEF_ID}
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.get_active_rev_reg(self.request)
-
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.get_tails_file(self.request)
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.upload_tails_file(self.request)
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.send_rev_reg_def(self.request)
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.send_rev_reg_entry(self.request)
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.update_rev_reg(self.request)
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.set_rev_reg_state(self.request)
 
     async def test_register(self):
         mock_app = mock.MagicMock()
@@ -1188,6 +1237,30 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}
 
         assert "tags" in mock_app._state["swagger_dict"]
+
+    @mock.patch.object(
+        IssuerRevRegRecord, "retrieve_by_revoc_reg_id", return_value=mock.MagicMock()
+    )
+    @mock.patch.object(
+        RevocationManager, "update_rev_reg_revoked_state", return_value=(True, True, True)
+    )
+    async def test_update_rev_reg_revoked_state(self, *_):
+        self.request.query = {"apply_ledger_update": "true"}
+        self.request.match_info = {"rev_reg_id": "rev_reg_id"}
+
+        mock_ledger_manager = mock.MagicMock(BaseMultipleLedgerManager, autospec=True)
+        mock_ledger_manager.get_write_ledgers = mock.CoroutineMock("ledger")
+        self.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_ledger_manager
+        )
+
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.pool = mock.MagicMock(genesis_txns="genesis_txns")
+        self.context.injector.bind_instance(BaseLedger, mock_ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, mock_ledger)
+
+        result = await test_module.update_rev_reg_revoked_state(self.request)
+        assert result.status == 200
 
 
 class TestDeleteTails(IsolatedAsyncioTestCase):

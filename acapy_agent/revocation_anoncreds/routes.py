@@ -24,7 +24,7 @@ from ..anoncreds.base import (
 )
 from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ..anoncreds.issuer import AnonCredsIssuerError
-from ..anoncreds.models.anoncreds_revocation import RevRegDefState
+from ..anoncreds.models.revocation import RevRegDefState
 from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ..anoncreds.routes import (
     create_transaction_for_endorser_description,

@@ -8,6 +8,7 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ......wallet.did_method import DIDMethods
 from ...messages.mediate_grant import MediationGrant
 from ...messages.mediate_request import MediationRequest
@@ -24,7 +25,7 @@ class TestMediationRequestHandler(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         """setup dependencies of messaging"""
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
         self.context.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.session = await self.context.session()
         self.context.message = MediationRequest()
@@ -35,9 +36,8 @@ class TestMediationRequestHandler(IsolatedAsyncioTestCase):
         """test mediation handler"""
         handler, responder = MediationRequestHandler(), MockResponder()
         self.context.connection_ready = False
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(self.context, responder)
-            assert "no active connection" in str(exc.value)
 
     async def test_handler_mediation_record_already_exists(self):
         handler, responder = MediationRequestHandler(), MockResponder()
@@ -68,5 +68,5 @@ class TestMediationRequestHandler(IsolatedAsyncioTestCase):
         assert record.state == MediationRecord.STATE_GRANTED
         messages = responder.messages
         assert len(messages) == 1
-        result, _target = messages[0]
+        result, _ = messages[0]
         assert isinstance(result, MediationGrant)

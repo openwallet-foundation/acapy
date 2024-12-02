@@ -42,9 +42,12 @@ class TestClassLoader(TestCase):
             assert ClassLoader.load_module("acapy_agent", "not.a-module") is None
 
     def test_import_error(self):
-        with mock.patch.object(
-            test_module, "import_module", autospec=True
-        ) as import_module, mock.patch.object(test_module.sys, "modules", {}):
+        with (
+            mock.patch.object(
+                test_module, "import_module", autospec=True
+            ) as import_module,
+            mock.patch.object(test_module.sys, "modules", {}),
+        ):
             import_module.side_effect = ModuleNotFoundError
             with self.assertRaises(ModuleLoadError):
                 ClassLoader.load_module("acapy_agent.config")

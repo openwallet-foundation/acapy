@@ -49,9 +49,6 @@ class AskarStoreConfig:
         )
 
         self.name = config.get("name") or Profile.DEFAULT_NAME
-        self.in_memory = self.name == ":memory:"
-        if self.in_memory:
-            self.name = Profile.DEFAULT_NAME
 
         self.storage_config = config.get("storage_config", None)
         self.storage_creds = config.get("storage_creds", None)
@@ -63,19 +60,17 @@ class AskarStoreConfig:
             storage_type = "postgres"
         if storage_type not in ("postgres", "sqlite"):
             raise ProfileError(f"Unsupported storage type: {storage_type}")
-        if storage_type != "sqlite" and self.in_memory:
-            raise ProfileError("In-memory wallet only supported for SQLite backend")
         self.storage_type = storage_type
 
-    def get_uri(self, create: bool = False) -> str:
+    def get_uri(self, create: bool = False, in_memory: Optional[bool] = False) -> str:
         """Accessor for the storage URI."""
         uri = f"{self.storage_type}://"
         if self.storage_type == "sqlite":
-            if self.in_memory:
+            if in_memory:
                 uri += ":memory:"
-            else:
-                path = storage_path("wallet", self.name, create=create).as_posix()
-                uri += urllib.parse.quote(f"{path}/sqlite.db")
+                return uri
+            path = storage_path("wallet", self.name, create=create).as_posix()
+            uri += urllib.parse.quote(f"{path}/sqlite.db")
         elif self.storage_type == "postgres":
             if not self.storage_config:
                 raise ProfileError("No 'storage_config' provided for postgres store")
@@ -143,7 +138,9 @@ class AskarStoreConfig:
 
         raise ProfileError("Error opening store") from err
 
-    async def open_store(self, provision: bool = False) -> "AskarOpenStore":
+    async def open_store(
+        self, provision: bool = False, in_memory: Optional[bool] = False
+    ) -> "AskarOpenStore":
         """Open a store, removing and/or creating it if so configured.
 
         Raises:
@@ -153,9 +150,9 @@ class AskarStoreConfig:
         """
 
         try:
-            if provision or self.in_memory:
+            if provision:
                 store = await Store.provision(
-                    self.get_uri(create=True),
+                    self.get_uri(create=True, in_memory=in_memory),
                     self.key_derivation_method,
                     self.key,
                     recreate=self.auto_recreate,

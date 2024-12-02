@@ -3,16 +3,14 @@ from unittest import IsolatedAsyncioTestCase
 
 from aries_askar import AskarErrorCode
 
-from acapy_agent.tests import mock
-
 from ...admin.request_context import AdminRequestContext
 from ...anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ...askar.profile_anon import AskarAnoncredsProfile
-from ...core.in_memory.profile import InMemoryProfile
 from ...indy.holder import IndyHolder
 from ...ledger.base import BaseLedger
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import routes as test_module
 
 VC_RECORD = VCRecord(
@@ -35,8 +33,8 @@ VC_RECORD = VCRecord(
 
 
 class TestHolderRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
-        self.profile = InMemoryProfile.test_profile(
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
@@ -52,16 +50,19 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
             headers={"x-api-key": "secret-key"},
         )
+        self.profile.context.injector.bind_instance(
+            IndyHolder, mock.MagicMock(IndyHolder, autospec=True)
+        )
 
     async def test_credentials_get(self):
         self.request.match_info = {"credential_id": "dummy"}
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credential = mock.CoroutineMock(
+            return_value=json.dumps({"hello": "world"})
+        )
         self.profile.context.injector.bind_instance(
             IndyHolder,
-            mock.MagicMock(
-                get_credential=mock.CoroutineMock(
-                    return_value=json.dumps({"hello": "world"})
-                )
-            ),
+            mock_holder,
         )
 
         with mock.patch.object(
@@ -74,12 +75,11 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     @mock.patch.object(AnonCredsHolder, "get_credential")
     async def test_credentials_get_with_anoncreds(self, mock_get_credential):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet.type": "askar-anoncreds",
                 "admin.admin_api_key": "secret-key",
             },
-            profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
@@ -109,14 +109,11 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
     async def test_credentials_get_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_credential=mock.CoroutineMock(
-                    side_effect=test_module.WalletNotFoundError()
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credential = mock.CoroutineMock(
+            side_effect=test_module.WalletNotFoundError()
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_get(self.request)
@@ -126,10 +123,9 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseLedger, mock.create_autospec(BaseLedger)
         )
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(credential_revoked=mock.CoroutineMock(return_value=False)),
-        )
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.credential_revoked = mock.CoroutineMock(return_value=False)
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
@@ -141,12 +137,11 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     @mock.patch.object(AnonCredsHolder, "credential_revoked")
     async def test_credentials_revoked_with_anoncreds(self, mock_credential_revoked):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet.type": "askar-anoncreds",
                 "admin.admin_api_key": "secret-key",
             },
-            profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
@@ -184,46 +179,37 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseLedger, mock.create_autospec(BaseLedger)
         )
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                credential_revoked=mock.CoroutineMock(
-                    side_effect=test_module.WalletNotFoundError("no such cred")
-                )
-            ),
+
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.credential_revoked = mock.CoroutineMock(
+            side_effect=test_module.WalletNotFoundError("no such cred")
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_revoked(self.request)
 
     async def test_credentials_x_ledger(self):
         self.request.match_info = {"credential_id": "dummy"}
-        ledger = mock.create_autospec(BaseLedger)
         self.profile.context.injector.bind_instance(
             BaseLedger, mock.create_autospec(BaseLedger)
         )
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                credential_revoked=mock.CoroutineMock(
-                    side_effect=test_module.LedgerError("down for maintenance")
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.credential_revoked = mock.CoroutineMock(
+            side_effect=test_module.LedgerError("down for maintenance")
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.credentials_revoked(self.request)
 
     async def test_attribute_mime_types_get(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_mime_type=mock.CoroutineMock(
-                    side_effect=[None, {"a": "application/jpeg"}]
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_mime_type = mock.CoroutineMock(
+            side_effect=[None, {"a": "application/jpeg"}]
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with mock.patch.object(test_module.web, "json_response") as mock_response:
             await test_module.credentials_attr_mime_types_get(self.request)
@@ -236,12 +222,11 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     @mock.patch.object(AnonCredsHolder, "get_mime_type")
     async def test_attribute_mime_types_get_with_anoncreds(self, mock_get_mime_type):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet.type": "askar-anoncreds",
                 "admin.admin_api_key": "secret-key",
             },
-            profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
@@ -272,10 +257,9 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
     async def test_credentials_remove(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(delete_credential=mock.CoroutineMock(return_value=None)),
-        )
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.delete_credential = mock.CoroutineMock(return_value=None)
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
@@ -287,12 +271,11 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     @mock.patch.object(AnonCredsHolder, "delete_credential")
     async def test_credentials_remove_with_anoncreds(self, mock_delete_credential):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet.type": "askar-anoncreds",
                 "admin.admin_api_key": "secret-key",
             },
-            profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
@@ -331,25 +314,22 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
     async def test_credentials_remove_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                delete_credential=mock.CoroutineMock(
-                    side_effect=test_module.WalletNotFoundError()
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.delete_credential = mock.CoroutineMock(
+            side_effect=test_module.WalletNotFoundError()
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
+
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_remove(self.request)
 
     async def test_credentials_list(self):
         self.request.query = {"start": "0", "count": "10"}
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_credentials=mock.CoroutineMock(return_value=[{"hello": "world"}])
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credentials = mock.CoroutineMock(
+            return_value=[{"hello": "world"}]
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
@@ -361,12 +341,11 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     @mock.patch.object(AnonCredsHolder, "get_credentials")
     async def test_credentials_list_with_anoncreds(self, mock_get_credentials):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet.type": "askar-anoncreds",
                 "admin.admin_api_key": "secret-key",
             },
-            profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
@@ -399,70 +378,55 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
     async def test_credentials_list_x_holder(self):
         self.request.query = {"start": "0", "count": "10"}
-        self.profile.context.injector.bind_instance(
-            IndyHolder,
-            mock.MagicMock(
-                get_credentials=mock.CoroutineMock(
-                    side_effect=test_module.IndyHolderError()
-                )
-            ),
+        mock_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_holder.get_credentials = mock.CoroutineMock(
+            side_effect=test_module.IndyHolderError()
         )
+        self.profile.context.injector.bind_instance(IndyHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.credentials_list(self.request)
 
     async def test_w3c_cred_get(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                retrieve_credential_by_id=mock.CoroutineMock(return_value=VC_RECORD)
-            ),
-        )
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.retrieve_credential_by_id = mock.CoroutineMock(return_value=VC_RECORD)
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
         ) as json_response:
-            result = await test_module.w3c_cred_get(self.request)
+            await test_module.w3c_cred_get(self.request)
             json_response.assert_called_once_with(VC_RECORD.serialize())
 
     async def test_w3c_cred_get_not_found_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                retrieve_credential_by_id=mock.CoroutineMock(
-                    side_effect=test_module.StorageNotFoundError()
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.retrieve_credential_by_id = mock.CoroutineMock(
+            side_effect=test_module.StorageNotFoundError()
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.w3c_cred_get(self.request)
 
     async def test_w3c_cred_get_storage_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                retrieve_credential_by_id=mock.CoroutineMock(
-                    side_effect=test_module.StorageError()
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.retrieve_credential_by_id = mock.CoroutineMock(
+            side_effect=test_module.StorageError()
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.w3c_cred_get(self.request)
 
     async def test_w3c_cred_remove(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                retrieve_credential_by_id=mock.CoroutineMock(return_value=VC_RECORD),
-                delete_credential=mock.CoroutineMock(return_value=None),
-            ),
-        )
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.retrieve_credential_by_id = mock.CoroutineMock(return_value=VC_RECORD)
+        mock_holder.delete_credential = mock.CoroutineMock(return_value=None)
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
@@ -473,29 +437,23 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
 
     async def test_w3c_cred_remove_not_found_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                retrieve_credential_by_id=mock.CoroutineMock(
-                    side_effect=test_module.StorageNotFoundError()
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.retrieve_credential_by_id = mock.CoroutineMock(
+            side_effect=test_module.StorageNotFoundError()
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.w3c_cred_remove(self.request)
 
     async def test_w3c_cred_remove_storage_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                retrieve_credential_by_id=mock.CoroutineMock(return_value=VC_RECORD),
-                delete_credential=mock.CoroutineMock(
-                    side_effect=test_module.StorageError()
-                ),
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.retrieve_credential_by_id = mock.CoroutineMock(return_value=VC_RECORD)
+        mock_holder.delete_credential = mock.CoroutineMock(
+            side_effect=test_module.StorageError()
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.w3c_cred_remove(self.request)
@@ -512,21 +470,18 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
                 "max_results": "1",
             }
         )
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(return_value=[VC_RECORD])
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(
+                fetch=mock.CoroutineMock(return_value=[VC_RECORD])
+            )
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
         ) as json_response:
-            result = await test_module.w3c_creds_list(self.request)
+            await test_module.w3c_creds_list(self.request)
             json_response.assert_called_once_with({"results": [VC_RECORD.serialize()]})
 
     async def test_w3c_creds_list_not_found_x(self):
@@ -541,18 +496,13 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
                 "max_results": "1",
             }
         )
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(
-                            side_effect=test_module.StorageNotFoundError()
-                        )
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(
+                fetch=mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+            )
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.w3c_creds_list(self.request)
@@ -569,16 +519,13 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
                 "max_results": "1",
             }
         )
-        self.profile.context.injector.bind_instance(
-            VCHolder,
-            mock.MagicMock(
-                search_credentials=mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        fetch=mock.CoroutineMock(side_effect=test_module.StorageError())
-                    )
-                )
-            ),
+        mock_holder = mock.MagicMock(VCHolder, autospec=True)
+        mock_holder.search_credentials = mock.MagicMock(
+            return_value=mock.MagicMock(
+                fetch=mock.CoroutineMock(side_effect=test_module.StorageError())
+            )
         )
+        self.profile.context.injector.bind_instance(VCHolder, mock_holder)
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.w3c_creds_list(self.request)

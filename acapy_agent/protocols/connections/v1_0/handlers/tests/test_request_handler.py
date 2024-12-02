@@ -5,12 +5,12 @@ from acapy_agent.tests import mock
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_request import ConnectionRequest
@@ -19,19 +19,19 @@ from ...models.connection_detail import ConnectionDetail
 
 
 @pytest.fixture()
-async def request_context() -> RequestContext:
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
 
 @pytest.fixture()
-async def session(request_context) -> ProfileSession:
+async def session(request_context):
     yield await request_context.session()
 
 
 @pytest.fixture()
-async def connection_record(request_context, session) -> ConnRecord:
+async def connection_record(request_context, session):
     record = ConnRecord()
     request_context.connection_record = record
     await record.save(session)
@@ -147,7 +147,7 @@ class TestRequestHandler:
             storage,
             "find_record",
             mock.CoroutineMock(side_effect=StorageNotFoundError),
-        ) as mock_storage_find_record:
+        ):
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)

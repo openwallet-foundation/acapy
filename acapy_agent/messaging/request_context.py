@@ -12,10 +12,7 @@ from ..config.settings import Settings
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile, ProfileSession
 from ..transport.inbound.receipt import MessageReceipt
-from ..utils.classloader import DeferLoad
 from .agent_message import AgentMessage
-
-IN_MEM = DeferLoad("acapy_agent.core.in_memory.InMemoryProfile")
 
 
 class RequestContext:
@@ -216,9 +213,9 @@ class RequestContext:
         self._context.update_settings(settings)
 
     @classmethod
-    def test_context(cls) -> "RequestContext":
+    def test_context(cls, profile) -> "RequestContext":
         """Quickly set up a new request context for tests."""
-        return RequestContext(IN_MEM.resolved.test_profile())
+        return RequestContext(profile)
 
     def __repr__(self) -> str:
         """Provide a human readable representation of this object.

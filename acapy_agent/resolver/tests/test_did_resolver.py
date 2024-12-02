@@ -6,7 +6,7 @@ from typing import Pattern
 import pytest
 from pydid import DID, BasicDIDDocument, DIDDocument, VerificationMethod
 
-from ...core.in_memory import InMemoryProfile
+from ...utils.testing import create_test_profile
 from ..base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
@@ -94,8 +94,9 @@ def resolver():
 
 
 @pytest.fixture
-def profile():
-    yield InMemoryProfile.test_profile()
+async def profile():
+    profile = await create_test_profile()
+    yield profile
 
 
 def test_create_resolver(resolver):

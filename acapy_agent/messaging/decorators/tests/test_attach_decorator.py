@@ -6,10 +6,9 @@ from unittest import TestCase
 import pytest
 from uuid_utils import uuid4
 
-from acapy_agent.wallet.base import BaseWallet
-
-from ....core.in_memory import InMemoryProfile
 from ....messaging.models.base import BaseModelError
+from ....utils.testing import create_test_profile
+from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.key_type import ED25519
 from ....wallet.util import b64_to_bytes, bytes_to_b64
@@ -79,7 +78,8 @@ def seed():
 
 @pytest.fixture()
 async def wallet():
-    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(DIDMethods, DIDMethods())
     async with profile.session() as session:
         wallet = session.inject(BaseWallet)
         yield wallet
@@ -191,7 +191,7 @@ class TestAttachDecorator(TestCase):
             },
         ]
         for bad in badness:
-            with pytest.raises(BaseModelError) as excinfo:
+            with pytest.raises(BaseModelError):
                 AttachDecoratorDataJWS.deserialize(bad)
 
     def test_embedded_b64(self):
@@ -246,7 +246,7 @@ class TestAttachDecorator(TestCase):
         )
 
         dumped = decorator.serialize()
-        loaded = AttachDecorator.deserialize(dumped)
+        AttachDecorator.deserialize(dumped)
 
         assert decorator.ident == IDENT
         assert decorator.mime_type == MIME_TYPE
@@ -286,7 +286,7 @@ class TestAttachDecorator(TestCase):
         )
 
         dumped = decorator.serialize()
-        loaded = AttachDecorator.deserialize(dumped)
+        AttachDecorator.deserialize(dumped)
 
         assert decorator.ident == IDENT
         assert decorator.mime_type == MIME_TYPE
@@ -462,7 +462,6 @@ class TestAttachDecoratorSignature:
         assert indy_cred == INDY_CRED
 
         # Test tamper evidence
-        jws_parts = deco_indy.data.jws.signature.split(".")
         tampered = bytearray(b64_to_bytes(deco_indy.data.jws.signature, urlsafe=True))
         tampered[0] = (tampered[0] + 1) % 256
         deco_indy.data.jws.signature = bytes_to_b64(
@@ -518,7 +517,7 @@ class TestAttachDecoratorSignature:
 
         # De/serialize to exercise initializer with JWS
         deco_dict = deco_indy.serialize()
-        deco = AttachDecorator.deserialize(deco_dict)
+        AttachDecorator.deserialize(deco_dict)
         deco_dict["data"]["links"] = "https://en.wikipedia.org/wiki/Potato"
         with pytest.raises(BaseModelError):
             AttachDecorator.deserialize(deco_dict)  # now has base64 and links

@@ -30,6 +30,13 @@ class V20PresFormat(BaseModel):
     class Format(Enum):
         """Attachment format."""
 
+        ANONCREDS = FormatSpec(
+            "anoncreds/",
+            DeferLoad(
+                "acapy_agent.protocols.present_proof.v2_0"
+                ".formats.anoncreds.handler.AnonCredsPresExchangeHandler"
+            ),
+        )
         INDY = FormatSpec(
             "hlindy/",
             DeferLoad(
@@ -37,19 +44,6 @@ class V20PresFormat(BaseModel):
                 ".formats.indy.handler.IndyPresExchangeHandler"
             ),
         )
-        """
-        To make the switch from indy to anoncreds replace the above with the following.
-        
-        ::
-        
-            INDY = FormatSpec(
-                "hlindy/",
-                DeferLoad(
-                    "acapy_agent.protocols.present_proof.v2_0"
-                    ".formats.anoncreds.handler.AnonCredsPresExchangeHandler"
-                ),
-            )
-        """
         DIF = FormatSpec(
             "dif/",
             DeferLoad(

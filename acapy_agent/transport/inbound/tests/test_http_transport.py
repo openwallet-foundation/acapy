@@ -4,10 +4,9 @@ import json
 import pytest
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
 
-from acapy_agent.tests import mock
-
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...outbound.message import OutboundMessage
 from ...wire_format import JsonWireFormat
 from .. import http as test_module
@@ -17,9 +16,10 @@ from ..session import InboundSession
 
 
 class TestHttpTransport(AioHTTPTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.message_results = []
         self.port = unused_port()
+        self.profile = await create_test_profile()
         self.session = None
         self.transport = HttpTransport(
             "0.0.0.0", self.port, self.create_session, max_message_size=65535
@@ -28,7 +28,10 @@ class TestHttpTransport(AioHTTPTestCase):
         assert not self.transport.wire_format.get_recipient_keys(None)  # cover method
         self.result_event = None
         self.response_message = None
-        super().setUp()
+        await super().asyncSetUp()
+
+    def get_profile(self):
+        return self.profile
 
     def create_session(
         self,
@@ -41,7 +44,7 @@ class TestHttpTransport(AioHTTPTestCase):
     ):
         if not self.session:
             session = InboundSession(
-                profile=InMemoryProfile.test_profile(),
+                profile=self.get_profile(),
                 can_respond=can_respond,
                 inbound_handler=self.receive_message,
                 session_id=None,
@@ -121,7 +124,7 @@ class TestHttpTransport(AioHTTPTestCase):
                     )
                 ),
                 can_respond=True,
-                profile=InMemoryProfile.test_profile(),
+                profile=(await create_test_profile()),
                 clear_response=mock.MagicMock(),
                 wait_response=mock.CoroutineMock(return_value=b"Hello world"),
                 response_buffer="something",
@@ -134,7 +137,7 @@ class TestHttpTransport(AioHTTPTestCase):
                 receive=mock.CoroutineMock(
                     side_effect=test_module.WireFormatParseError()
                 ),
-                profile=InMemoryProfile.test_profile(),
+                profile=(await create_test_profile()),
             )
             async with self.client.post("/", data=test_message) as resp:
                 status = resp.status

@@ -23,7 +23,6 @@ from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from uuid_utils import uuid4
 
-from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
@@ -33,7 +32,8 @@ from ..vc.ld_proofs import DocumentLoader
 from ..vc.vc_ld import VerifiableCredential
 from ..wallet.error import WalletNotFoundError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .models.anoncreds_cred_def import CredDef
+from .models.credential_definition import CredDef
+from .models.schema import AnonCredsSchema
 from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)

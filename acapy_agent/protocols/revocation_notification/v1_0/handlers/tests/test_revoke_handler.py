@@ -5,10 +5,10 @@ from typing import Generator
 import pytest
 
 from ......core.event_bus import EventBus, MockEventBus
-from ......core.in_memory import InMemoryProfile
 from ......core.profile import Profile
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import BaseResponder, MockResponder
+from ......utils.testing import create_test_profile
 from ...messages.revoke import Revoke
 from ..revoke_handler import RevokeHandler
 
@@ -24,8 +24,10 @@ def responder():
 
 
 @pytest.fixture
-def profile(event_bus):
-    yield InMemoryProfile.test_profile(bind={EventBus: event_bus})
+async def profile(event_bus):
+    profile = await create_test_profile()
+    profile.context.injector.bind_instance(EventBus, event_bus)
+    yield profile
 
 
 @pytest.fixture

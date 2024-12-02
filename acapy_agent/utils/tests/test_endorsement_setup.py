@@ -1,9 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ...connections.models.conn_record import ConnRecord
-from ...core.in_memory.profile import InMemoryProfile
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import endorsement_setup
 from ..endorsement_setup import attempt_auto_author_with_endorser_setup
 
@@ -15,8 +14,8 @@ class MockConnRecord:
 
 
 class TestEndorsementSetupUtil(IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.profile = InMemoryProfile.test_profile()
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile()
 
     @mock.patch.object(endorsement_setup.LOGGER, "info", return_value=mock.MagicMock())
     async def test_not_enough_configs_for_connection(self, mock_logger):
@@ -62,3 +61,42 @@ class TestEndorsementSetupUtil(IsolatedAsyncioTestCase):
             assert "Error accepting endorser invitation" not in call[0][0]
 
         assert mock_conn_record.called
+
+    @mock.patch.object(
+        ConnRecord,
+        "retrieve_by_alias",
+        return_value=[ConnRecord(connection_id="test-connection-id")],
+    )
+    @mock.patch.object(endorsement_setup.LOGGER, "info", return_value=mock.MagicMock())
+    async def test_has_previous_connection(self, mock_logger, *_):
+        await endorsement_setup.attempt_auto_author_with_endorser_setup(self.profile)
+
+        # No invitation
+        self.profile.settings.set_value("endorser.author", True)
+        self.profile.settings.set_value("endorser.endorser_alias", "test-alias")
+        await endorsement_setup.attempt_auto_author_with_endorser_setup(self.profile)
+
+        assert mock_logger.call_count == 1
+        assert (
+            mock_logger.call_args_list[0][0][0]
+            == "Connected to endorser from previous connection."
+        )
+
+    @mock.patch.object(
+        ConnRecord,
+        "retrieve_by_alias",
+        side_effect=Exception("No connection"),
+    )
+    @mock.patch.object(endorsement_setup.LOGGER, "info", return_value=mock.MagicMock())
+    async def test_does_not_have_previous_connection_with_did_but_no_invitation(
+        self, mock_logger, *_
+    ):
+        await endorsement_setup.attempt_auto_author_with_endorser_setup(self.profile)
+
+        # No invitation
+        self.profile.settings.set_value("endorser.author", True)
+        self.profile.settings.set_value("endorser.endorser_alias", "test-alias")
+        self.profile.settings.set_value(
+            "endorser.endorser_public_did", "WuE7ndRJgAGbJYnwDXV7Pz"
+        )
+        await endorsement_setup.attempt_auto_author_with_endorser_setup(self.profile)
