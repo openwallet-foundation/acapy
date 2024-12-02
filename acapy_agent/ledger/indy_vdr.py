@@ -739,8 +739,11 @@ class IndyVdrLedger(BaseLedger):
             if all_exist_endpoints
             else None
         )
+        existing_routing_keys = (
+            all_exist_endpoints.get("routingKeys") if all_exist_endpoints else None
+        )
 
-        if exist_endpoint_of_type != endpoint:
+        if exist_endpoint_of_type != endpoint or existing_routing_keys != routing_keys:
             if self.read_only:
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
