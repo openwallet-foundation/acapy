@@ -2,7 +2,7 @@
 
 ## 1.1.1rc0
 
-### December 2, 2024
+### December 3, 2024
 
 Release 1.1.1 is a patch update to ACA-Py that contains a lengthy list of adjustments, improvements and fixes, with a focus on removing Technical Debt. The most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. While arguably a breaking change (and we mention it below), we're confident no one is using the in-memory wallet (right?!?) any where other than in tests. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet were updated to use SQLite's in-memory wallet.
 
