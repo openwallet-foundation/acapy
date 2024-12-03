@@ -24,6 +24,7 @@ While there are no breaking changes in this release that might impact production
 #### 1.1.1 Categorized List of Pull Requests
 
 - AnonCreds VC Issuance and Presentation Enhancement / Fixes
+  - Repair release bdd tests [\#3376](https://github.com/openwallet-foundation/acapy/pull/3376) [jamshale](https://github.com/jamshale)
   - Fix tails upload for anoncreds multitenancy [\#3346](https://github.com/openwallet-foundation/acapy/pull/3346) [jamshale](https://github.com/jamshale)
   - Fix subwallet anoncreds upgrade check [\#3345](https://github.com/openwallet-foundation/acapy/pull/3345) [jamshale](https://github.com/jamshale)
   - Add anoncreds issuance and presentation format [\#3331](https://github.com/openwallet-foundation/acapy/pull/3331) [jamshale](https://github.com/jamshale)
@@ -70,7 +71,7 @@ While there are no breaking changes in this release that might impact production
   - 1.1.1rc0 [\#3372](https://github.com/openwallet-foundation/acapy/pull/3372) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2024-12-02+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2024-12-03+author%3Aapp%2Fdependabot+)
 
 
 ## 1.1.0
