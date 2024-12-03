@@ -14,7 +14,7 @@ ARG uid=1001
 ARG user=aries
 ARG acapy_name="aries-cloudagent"
 ARG acapy_version
-ARG acapy_reqs=[askar,didcommv2]
+ARG acapy_reqs=[didcommv2]
 
 ENV HOME="/home/$user" \
     APP_ROOT="$HOME" \
