@@ -12,9 +12,11 @@ import weakref
 from typing import Callable, Coroutine, Optional, Union
 
 from aiohttp.web import HTTPException
+from didcomm_messaging import DIDCommMessaging, RoutingService
 
 from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
+from ..connections.models.connection_target import ConnectionTarget
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..messaging.base_message import BaseMessage, DIDCommVersion
@@ -156,6 +158,49 @@ class Dispatcher:
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
 
+        session = await profile.session()
+        ctx = session
+        messaging = ctx.inject(DIDCommMessaging)
+        routing_service = ctx.inject(RoutingService)
+        frm = inbound_message.payload.get("from")
+        services = await routing_service._resolve_services(messaging.resolver, frm)
+        chain = [
+            {
+                "did": frm,
+                "service": services,
+            }
+        ]
+
+        # Loop through service DIDs until we run out of DIDs to forward to
+        to_did = services[0].service_endpoint.uri
+        found_forwardable_service = await routing_service.is_forwardable_service(
+            messaging.resolver, services[0]
+        )
+        while found_forwardable_service:
+            services = await routing_service._resolve_services(messaging.resolver, to_did)
+            if services:
+                chain.append(
+                    {
+                        "did": to_did,
+                        "service": services,
+                    }
+                )
+                to_did = services[0].service_endpoint.uri
+            found_forwardable_service = (
+                await routing_service.is_forwardable_service(messaging.resolver, services[0])
+                if services
+                else False
+            )
+        reply_destination = [
+            ConnectionTarget(
+                did=inbound_message.receipt.sender_verkey,
+                endpoint=service.service_endpoint.uri,
+                recipient_keys=[inbound_message.receipt.sender_verkey],
+                sender_key=inbound_message.receipt.recipient_verkey,
+            )
+            for service in chain[-1]["service"]
+        ]
+
         # send a DCV2 Problem Report here for testing, and to punt procotol handling down
         # the road a bit
         context = RequestContext(profile)
@@ -167,6 +212,7 @@ class Dispatcher:
             send_outbound,
             reply_session_id=inbound_message.session_id,
             reply_to_verkey=inbound_message.receipt.sender_verkey,
+            target_list=reply_destination
         )
 
         context.injector.bind_instance(BaseResponder, responder)
