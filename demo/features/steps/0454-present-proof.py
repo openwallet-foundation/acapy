@@ -37,7 +37,7 @@ def step_impl(context, verifier, request_for_proof, prover):
     proof_exchange = aries_container_request_proof(
         agent["agent"],
         proof_request_info,
-        agent["agent"].wallet_type == "askar-anoncreds",
+        is_anoncreds=agent["agent"].wallet_type == "askar-anoncreds",
     )
 
     context.proof_request = proof_request_info
