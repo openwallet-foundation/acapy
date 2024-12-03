@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir poetry
 ADD README.md pyproject.toml poetry.lock ./
 
 ARG all_extras=0
-RUN if ! [ -z ${all_extras} ]; then poetry install --no-root --no-directory --all-extras; else poetry install --no-root --no-directory -E "askar didcommv2"; fi
+RUN if ! [ -z ${all_extras} ]; then poetry install --no-root --no-directory --all-extras; else poetry install --no-root --no-directory -E "didcommv2"; fi
 
 ADD acapy_agent ./acapy_agent
 ADD scripts ./scripts
