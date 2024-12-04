@@ -170,8 +170,9 @@ def step_impl(context, holder):
         agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
     )
     context.cred_exchange = cred_exchange
-    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
-    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    _format = "indy" if cred_exchange.get("indy") else "anoncreds"
+    print("rev_reg_id:", cred_exchange[_format]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange[_format]["cred_rev_id"])
     print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
 
     # revoke the credential
@@ -184,8 +185,8 @@ def step_impl(context, holder):
         agent["agent"],
         endpoint,
         data={
-            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
-            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "rev_reg_id": cred_exchange[_format]["rev_reg_id"],
+            "cred_rev_id": cred_exchange[_format]["cred_rev_id"],
             "publish": "Y",
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
         },
@@ -208,19 +209,22 @@ def step_impl(context, holder):
 
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
-    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
-    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    _format = "indy" if cred_exchange.get("indy") else "anoncreds"
+    print("rev_reg_id:", cred_exchange[_format]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange[_format]["cred_rev_id"])
     print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
 
     # check wallet status
     wallet_revoked_creds = agent_container_GET(
         agent["agent"],
-        "/revocation/registry/" + cred_exchange["indy"]["rev_reg_id"] + "/issued/details",
+        "/revocation/registry/"
+        + cred_exchange[_format]["rev_reg_id"]
+        + "/issued/details",
     )
     print("wallet_revoked_creds:", wallet_revoked_creds)
     matched = False
     for rec in wallet_revoked_creds:
-        if rec["cred_rev_id"] == cred_exchange["indy"]["cred_rev_id"]:
+        if rec["cred_rev_id"] == cred_exchange[_format]["cred_rev_id"]:
             matched = True
             assert rec["state"] == "revoked"
     assert matched
@@ -229,18 +233,18 @@ def step_impl(context, holder):
     ledger_revoked_creds = agent_container_GET(
         agent["agent"],
         "/revocation/registry/"
-        + cred_exchange["indy"]["rev_reg_id"]
+        + cred_exchange[_format]["rev_reg_id"]
         + "/issued/indy_recs",
     )
     print("ledger_revoked_creds:", ledger_revoked_creds)
     print(
         "assert",
-        cred_exchange["indy"]["cred_rev_id"],
+        cred_exchange[_format]["cred_rev_id"],
         "in",
         ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"],
     )
     assert (
-        int(cred_exchange["indy"]["cred_rev_id"])
+        int(cred_exchange[_format]["cred_rev_id"])
         in ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"]
     )
 
@@ -265,8 +269,9 @@ def step_impl(context, holder):
         agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
     )
     context.cred_exchange = cred_exchange
-    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
-    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    _format = "indy" if cred_exchange.get("indy") else "anoncreds"
+    print("rev_reg_id:", cred_exchange[_format]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange[_format]["cred_rev_id"])
     print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
 
     # revoke the credential
@@ -275,8 +280,8 @@ def step_impl(context, holder):
             agent["agent"],
             "/revocation/revoke",
             data={
-                "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
-                "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+                "rev_reg_id": cred_exchange[_format]["rev_reg_id"],
+                "cred_rev_id": cred_exchange[_format]["cred_rev_id"],
                 "publish": "Y",
                 "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
             },
@@ -297,18 +302,21 @@ def step_impl(context, holder):
 
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
-    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
-    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    _format = "indy" if cred_exchange.get("indy") else "anoncreds"
+    print("rev_reg_id:", cred_exchange[_format]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange[_format]["cred_rev_id"])
     print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
 
     # check wallet status
     wallet_revoked_creds = agent_container_GET(
         agent["agent"],
-        "/revocation/registry/" + cred_exchange["indy"]["rev_reg_id"] + "/issued/details",
+        "/revocation/registry/"
+        + cred_exchange[_format]["rev_reg_id"]
+        + "/issued/details",
     )
     matched = False
     for rec in wallet_revoked_creds:
-        if rec["cred_rev_id"] == cred_exchange["indy"]["cred_rev_id"]:
+        if rec["cred_rev_id"] == cred_exchange[_format]["cred_rev_id"]:
             matched = True
             assert rec["state"] == "revoked"
     assert matched
@@ -317,12 +325,12 @@ def step_impl(context, holder):
     ledger_revoked_creds = agent_container_GET(
         agent["agent"],
         "/revocation/registry/"
-        + cred_exchange["indy"]["rev_reg_id"]
+        + cred_exchange[_format]["rev_reg_id"]
         + "/issued/indy_recs",
     )
     print("ledger_revoked_creds:", ledger_revoked_creds)
     assert (
-        int(cred_exchange["indy"]["cred_rev_id"])
+        int(cred_exchange[_format]["cred_rev_id"])
         not in ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"]
     )
 
