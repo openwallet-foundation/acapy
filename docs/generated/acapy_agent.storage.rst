@@ -41,14 +41,6 @@ acapy\_agent.storage.error module
    :undoc-members:
    :show-inheritance:
 
-acapy\_agent.storage.in\_memory module
---------------------------------------
-
-.. automodule:: acapy_agent.storage.in_memory
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 acapy\_agent.storage.record module
 ----------------------------------
 

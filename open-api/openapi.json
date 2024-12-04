@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.1.0"
+    "version" : "v1.1.1"
   },
   "servers" : [ {
     "url" : "/"
@@ -390,7 +390,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create a credential definition on the connected ledger",
+        "summary" : "Create a credential definition on the connected datastore",
         "tags" : [ "anoncreds - credential definitions" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -549,7 +549,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create and publish a revocation status list on the connected ledger",
+        "summary" : "Create and publish a revocation status list on the connected datastore",
         "tags" : [ "anoncreds - revocation" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -578,7 +578,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create and publish a registration revocation on the connected ledger",
+        "summary" : "Create and publish a registration revocation on the connected datastore",
         "tags" : [ "anoncreds - revocation" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -1012,7 +1012,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create a schema on the connected ledger",
+        "summary" : "Create a schema on the connected datastore",
         "tags" : [ "anoncreds - schemas" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7747,7 +7747,7 @@
           },
           "issuerId" : {
             "description" : "Issuer Identifier of the credential definition or schema",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
             "type" : "string"
           },
           "name" : {
@@ -7761,6 +7761,170 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "AnoncredPresentationRequestNonRevoked" : {
+        "properties" : {
+          "from" : {
+            "description" : "Earliest time of interest in non-revocation interval",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "to" : {
+            "description" : "Latest time of interest in non-revocation interval",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnoncredsPresentationReqAttrSpec" : {
+        "properties" : {
+          "name" : {
+            "description" : "Attribute name",
+            "example" : "favouriteDrink",
+            "type" : "string"
+          },
+          "names" : {
+            "description" : "Attribute name group",
+            "items" : {
+              "example" : "age",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "non_revoked" : {
+            "$ref" : "#/components/schemas/AnoncredsPresentationReqAttrSpecNonRevoked"
+          },
+          "restrictions" : {
+            "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
+            "items" : {
+              "additionalProperties" : {
+                "example" : "did:(method):3:CL:20:tag",
+                "type" : "string"
+              },
+              "type" : "object"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "AnoncredsPresentationReqAttrSpecNonRevoked" : {
+        "properties" : {
+          "from" : {
+            "description" : "Earliest time of interest in non-revocation interval",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "to" : {
+            "description" : "Latest time of interest in non-revocation interval",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnoncredsPresentationReqPredSpec" : {
+        "properties" : {
+          "name" : {
+            "description" : "Attribute name",
+            "example" : "index",
+            "type" : "string"
+          },
+          "non_revoked" : {
+            "$ref" : "#/components/schemas/AnoncredsPresentationReqPredSpecNonRevoked"
+          },
+          "p_type" : {
+            "description" : "Predicate type ('<', '<=', '>=', or '>')",
+            "enum" : [ "<", "<=", ">=", ">" ],
+            "example" : ">=",
+            "type" : "string"
+          },
+          "p_value" : {
+            "description" : "Threshold value",
+            "type" : "integer"
+          },
+          "restrictions" : {
+            "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
+            "items" : {
+              "additionalProperties" : {
+                "example" : "did:(method):3:CL:20:tag",
+                "type" : "string"
+              },
+              "type" : "object"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "name", "p_type", "p_value" ],
+        "type" : "object"
+      },
+      "AnoncredsPresentationReqPredSpecNonRevoked" : {
+        "properties" : {
+          "from" : {
+            "description" : "Earliest time of interest in non-revocation interval",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "to" : {
+            "description" : "Latest time of interest in non-revocation interval",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnoncredsPresentationRequest" : {
+        "properties" : {
+          "name" : {
+            "description" : "Proof request name",
+            "example" : "Proof request",
+            "type" : "string"
+          },
+          "non_revoked" : {
+            "$ref" : "#/components/schemas/AnoncredPresentationRequestNonRevoked"
+          },
+          "nonce" : {
+            "description" : "Nonce",
+            "example" : "1",
+            "pattern" : "^[1-9][0-9]*$",
+            "type" : "string"
+          },
+          "requested_attributes" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/AnoncredsPresentationReqAttrSpec"
+            },
+            "description" : "Requested attribute specifications of proof request",
+            "type" : "object"
+          },
+          "requested_predicates" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/AnoncredsPresentationReqPredSpec"
+            },
+            "description" : "Requested predicate specifications of proof request",
+            "type" : "object"
+          },
+          "version" : {
+            "description" : "Proof request version",
+            "example" : "1.0",
+            "pattern" : "^[0-9.]+$",
+            "type" : "string"
+          }
+        },
+        "required" : [ "requested_attributes", "requested_predicates" ],
         "type" : "object"
       },
       "AttachDecorator" : {
@@ -8376,12 +8540,12 @@
             "type" : "string"
           },
           "kid" : {
-            "description" : "Optional kid to bind to the keypair,                 such as a verificationMethod.",
+            "description" : "Optional kid to bind to the keypair, such as a verificationMethod.",
             "example" : "did:web:example.com#key-01",
             "type" : "string"
           },
           "seed" : {
-            "description" : "Optional seed to generate the key pair.                 Must enable insecure wallet mode.",
+            "description" : "Optional seed to generate the key pair. Must enable insecure wallet mode.",
             "example" : "00000000000000000000000000000000",
             "type" : "string"
           }
@@ -8450,7 +8614,7 @@
           },
           "wallet_type" : {
             "description" : "Type of the wallet to create. Must be same as base wallet.",
-            "enum" : [ "askar", "askar-anoncreds", "in_memory" ],
+            "enum" : [ "askar", "askar-anoncreds" ],
             "example" : "askar",
             "type" : "string"
           },
@@ -8555,12 +8719,12 @@
         "properties" : {
           "issuerId" : {
             "description" : "Issuer Identifier of the credential definition or schema",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
             "type" : "string"
           },
           "schemaId" : {
             "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "example" : "did:(method):2:schema_name:1.0",
             "type" : "string"
           },
           "tag" : {
@@ -8643,7 +8807,7 @@
           },
           "credential_definition_id" : {
             "description" : "credential definition id",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "example" : "did:(method):3:CL:20:tag",
             "nullable" : true,
             "type" : "string"
           },
@@ -9322,7 +9486,7 @@
             "type" : "string"
           },
           "mediation_id" : {
-            "description" : "Medation ID to use for endpoint information.",
+            "description" : "Mediation ID to use for endpoint information.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
             "type" : "string"
@@ -9553,47 +9717,47 @@
         "additionalProperties" : true,
         "properties" : {
           "challenge" : {
-            "description" : "The value is used once for a particular domain and window of time.                     This value is used to mitigate replay attacks.",
+            "description" : "The value is used once for a particular domain and window of time. This value is used to mitigate replay attacks.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           },
           "created" : {
-            "description" : "The date and time the proof was created is OPTIONAL and, if                     included, MUST be specified as an [XMLSCHEMA11-2]                         dateTimeStamp string",
+            "description" : "The date and time the proof was created is OPTIONAL and, if included, MUST be specified as an [XMLSCHEMA11-2] dateTimeStamp string",
             "example" : "2010-01-01T19:23:24Z",
             "type" : "string"
           },
           "cryptosuite" : {
-            "description" : "An identifier for the cryptographic suite that can be used to                     verify the proof.",
+            "description" : "An identifier for the cryptographic suite that can be used to verify the proof.",
             "example" : "eddsa-jcs-2022",
             "type" : "string"
           },
           "domain" : {
-            "description" : "It conveys one or more security domains in which the proof is                     meant to be used.",
+            "description" : "It conveys one or more security domains in which the proof is meant to be used.",
             "example" : "example.com",
             "type" : "string"
           },
           "expires" : {
-            "description" : "The expires property is OPTIONAL and, if present, specifies when                     the proof expires. If present, it MUST be an [XMLSCHEMA11-2]                         dateTimeStamp string",
+            "description" : "The expires property is OPTIONAL and, if present, specifies when the proof expires. If present, it MUST be an [XMLSCHEMA11-2] dateTimeStamp string",
             "example" : "2010-01-01T19:23:24Z",
             "type" : "string"
           },
           "id" : {
-            "description" : "An optional identifier for the proof, which MUST be a URL [URL],                     such as a UUID as a URN",
+            "description" : "An optional identifier for the proof, which MUST be a URL [URL], such as a UUID as a URN",
             "example" : "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
             "type" : "string"
           },
           "nonce" : {
-            "description" : "One use of this field is to increase privacy by decreasing                 linkability that is the result of deterministically                     generated signatures.",
+            "description" : "One use of this field is to increase privacy by decreasing linkability that is the result of deterministically generated signatures.",
             "example" : "CF69iO3nfvqRsRBNElE8b4wO39SyJHPM7Gg1nExltW5vSfQA1lvDCR/zXX1To0/4NLo==",
             "type" : "string"
           },
           "previousProof" : {
-            "description" : "Each value identifies another data integrity proof that                 MUST verify before the current proof is processed.",
+            "description" : "Each value identifies another data integrity proof that MUST verify before the current proof is processed.",
             "example" : "urn:uuid:6a1676b8-b51f-11ed-937b-d76685a20ff5",
             "type" : "string"
           },
           "proofPurpose" : {
-            "description" : "The proof purpose acts as a safeguard to prevent the                 proof from being misused by being applied to a purpose other than                     the one that was intended.",
+            "description" : "The proof purpose acts as a safeguard to prevent the proof from being misused by being applied to a purpose other than the one that was intended.",
             "example" : "assertionMethod",
             "type" : "string"
           },
@@ -9603,12 +9767,12 @@
             "type" : "string"
           },
           "type" : {
-            "description" : "The specific type of proof MUST be specified as a string that maps                     to a URL [URL].",
+            "description" : "The specific type of proof MUST be specified as a string that maps to a URL [URL].",
             "example" : "DataIntegrityProof",
             "type" : "string"
           },
           "verificationMethod" : {
-            "description" : "A verification method is the means and information                 needed to verify the proof. ",
+            "description" : "A verification method is the means and information needed to verify the proof.",
             "example" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -9862,7 +10026,7 @@
           },
           "credential_definition_id" : {
             "description" : "credential definition id",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "example" : "did:(method):3:CL:20:tag",
             "type" : "string"
           },
           "credential_definitions_metadata" : {
@@ -9935,7 +10099,7 @@
           },
           "schema_id" : {
             "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "example" : "did:(method):2:schema_name:1.0",
             "type" : "string"
           },
           "schema_metadata" : {
@@ -9950,7 +10114,7 @@
           "schema_ids" : {
             "items" : {
               "description" : "Schema identifiers",
-              "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+              "example" : "did:(method):2:schema_name:1.0",
               "type" : "string"
             },
             "type" : "array"
@@ -11015,12 +11179,12 @@
         "properties" : {
           "issuerId" : {
             "description" : "Issuer Identifier of the credential definition",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
             "type" : "string"
           },
           "schemaId" : {
             "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "example" : "did:(method):2:schema_name:1.0",
             "type" : "string"
           },
           "tag" : {
@@ -11036,12 +11200,12 @@
         "properties" : {
           "credDefId" : {
             "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "example" : "did:(method):2:schema_name:1.0",
             "type" : "string"
           },
           "issuerId" : {
             "description" : "Issuer Identifier of the credential definition or schema",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
             "type" : "string"
           },
           "maxCredNum" : {
@@ -12813,12 +12977,12 @@
           },
           "issuerId" : {
             "description" : "Issuer Identifier of the credential definition or schema",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
             "type" : "string"
           },
           "revRegDefId" : {
             "description" : "The ID of the revocation registry definition",
-            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "example" : "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0",
             "type" : "string"
           },
           "revocationList" : {
@@ -12843,7 +13007,7 @@
           },
           "rev_reg_def_id" : {
             "description" : "Revocation registry definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "example" : "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0",
             "type" : "string"
           }
         },
@@ -12932,12 +13096,12 @@
         "properties" : {
           "credDefId" : {
             "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "example" : "did:(method):3:CL:20:tag",
             "type" : "string"
           },
           "issuerId" : {
             "description" : "Issuer Identifier of the credential definition or schema",
-            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
             "type" : "string"
           },
           "revocDefType" : {
@@ -12999,7 +13163,7 @@
           },
           "revocation_registry_definition_id" : {
             "description" : "revocation registry definition id",
-            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "example" : "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0",
             "type" : "string"
           },
           "state" : {
@@ -13559,7 +13723,7 @@
           },
           "schema_id" : {
             "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "example" : "did:(method):2:schema_name:1.0",
             "type" : "string"
           },
           "state" : {
@@ -14085,7 +14249,7 @@
       "UpdateKeyRequest" : {
         "properties" : {
           "kid" : {
-            "description" : "New kid to bind to the key pair,                 such as a verificationMethod.",
+            "description" : "New kid to bind to the key pair, such as a verificationMethod.",
             "example" : "did:web:example.com#key-02",
             "type" : "string"
           },
@@ -15335,6 +15499,13 @@
       },
       "V20CredFilter" : {
         "properties" : {
+          "anoncreds" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilterAnoncreds"
+            } ],
+            "description" : "Credential filter for anoncreds",
+            "type" : "object"
+          },
           "indy" : {
             "allOf" : [ {
               "$ref" : "#/components/schemas/V20CredFilterIndy"
@@ -15355,6 +15526,31 @@
             } ],
             "description" : "Credential filter for vc_di",
             "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "V20CredFilterAnoncreds" : {
+        "properties" : {
+          "cred_def_id" : {
+            "description" : "Credential definition identifier",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "epoch" : {
+            "description" : "Credential epoch time",
+            "example" : "2021-08-24",
+            "type" : "string"
+          },
+          "issuer_id" : {
+            "description" : "Credential issuer DID",
+            "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "schema_id" : {
+            "description" : "Schema identifier",
+            "example" : "did:(method):2:schema_name:1.0",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -16192,6 +16388,13 @@
       },
       "V20PresProposalByFormat" : {
         "properties" : {
+          "anoncreds" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/AnoncredsPresentationRequest"
+            } ],
+            "description" : "Presentation proposal for anoncreds",
+            "type" : "object"
+          },
           "dif" : {
             "allOf" : [ {
               "$ref" : "#/components/schemas/DIFProofProposal"
@@ -16281,6 +16484,13 @@
       },
       "V20PresRequestByFormat" : {
         "properties" : {
+          "anoncreds" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/AnoncredsPresentationRequest"
+            } ],
+            "description" : "Presentation proposal for anoncreds",
+            "type" : "object"
+          },
           "dif" : {
             "allOf" : [ {
               "$ref" : "#/components/schemas/DIFProofRequest"
@@ -16332,6 +16542,13 @@
       },
       "V20PresSpecByFormatRequest" : {
         "properties" : {
+          "anoncreds" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyPresSpec"
+            } ],
+            "description" : "Presentation specification for anoncreds",
+            "type" : "object"
+          },
           "auto_remove" : {
             "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
