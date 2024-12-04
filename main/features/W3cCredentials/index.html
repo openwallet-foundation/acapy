@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../JsonLdCredentials/">
+      
+      
+        <link rel="next" href="../SelectiveDisclosureJWTs/">
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
@@ -16,7 +20,7 @@
     
     
       
-        <title>W3cCredentials - ACA-Py Docs</title>
+        <title>Issuing and Presenting W3C Data Integrity VCs - ACA-Py Docs</title>
       
     
     
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              W3cCredentials
+              Issuing and Presenting W3C Data Integrity VCs
             
           </span>
         </div>
@@ -224,10 +228,12 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../DevReadMe/" class="md-tabs__link">
           
   
@@ -514,25 +520,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -543,7 +552,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Features
@@ -818,6 +827,262 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Issuing and Presenting W3C Data Integrity VCs
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Issuing and Presenting W3C Data Integrity VCs
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      General Concept
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#verifiable-credentials-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifiable Credentials Data Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifiable-presentations-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifiable Presentations Data Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dif-presentation-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      DIF Presentation Format
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preparing-to-issue-a-credential" class="md-nav__link">
+    <span class="md-ellipsis">
+      Preparing to Issue a Credential
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Preparing to Issue a Credential">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vc-di-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      VC-DI Context
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signature-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      Signature Suite
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#did-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      DID Method
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#issue-a-credential" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue a Credential
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify-a-credential" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify a Credential
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#present-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Present Proof
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Present Proof">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requesting-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requesting Proof
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#presenting-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Presenting Proof
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifying-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifying Proof
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#glossary-of-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      Glossary of Terms
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references-and-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      References and Resources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2237,6 +2502,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2245,16 +2512,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#verifiable-credential-data-integrity-vc-di-credentials-in-aca-py" class="md-nav__link">
-    <span class="md-ellipsis">
-      Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#table-of-contents" class="md-nav__link">
     <span class="md-ellipsis">
       Table of Contents
@@ -2262,8 +2519,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#general-concept" class="md-nav__link">
     <span class="md-ellipsis">
       General Concept
@@ -2271,26 +2528,92 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       Prerequisites
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#preparing-to-issue-a-credential" class="md-nav__link">
+  <a href="#verifiable-credentials-data-model" class="md-nav__link">
     <span class="md-ellipsis">
-      Preparing to Issue a Credential
+      Verifiable Credentials Data Model
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
+  <a href="#verifiable-presentations-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifiable Presentations Data Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dif-presentation-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      DIF Presentation Format
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preparing-to-issue-a-credential" class="md-nav__link">
+    <span class="md-ellipsis">
+      Preparing to Issue a Credential
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Preparing to Issue a Credential">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vc-di-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      VC-DI Context
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signature-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      Signature Suite
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#did-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      DID Method
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#issue-a-credential" class="md-nav__link">
     <span class="md-ellipsis">
       Issue a Credential
@@ -2298,8 +2621,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#verify-a-credential" class="md-nav__link">
     <span class="md-ellipsis">
       Verify a Credential
@@ -2307,20 +2630,72 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#present-proof" class="md-nav__link">
     <span class="md-ellipsis">
       Present Proof
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Present Proof">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requesting-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requesting Proof
+    </span>
+  </a>
+  
 </li>
         
           <li class="md-nav__item">
+  <a href="#presenting-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Presenting Proof
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifying-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifying Proof
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#appendix" class="md-nav__link">
     <span class="md-ellipsis">
       Appendix
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#glossary-of-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      Glossary of Terms
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references-and-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      References and Resources
     </span>
   </a>
   
@@ -2349,64 +2724,54 @@
   
 
 
-  <h1>W3cCredentials</h1>
-
-<h2 id="verifiable-credential-data-integrity-vc-di-credentials-in-aca-py">Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py<a class="headerlink" href="#verifiable-credential-data-integrity-vc-di-credentials-in-aca-py" title="Permanent link">&para;</a></h2>
+<h1 id="verifiable-credential-data-integrity-vc-di-credentials-in-aca-py">Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py<!-- omit in toc --><a class="headerlink" href="#verifiable-credential-data-integrity-vc-di-credentials-in-aca-py" title="Permanent link">&para;</a></h1>
 <p>This document outlines a new functionality within Aries Agent that facilitates the issuance of credentials and presentations in compliance with the W3C standard.</p>
-<h3 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h3>
+<h2 id="table-of-contents">Table of Contents<!-- omit in toc --><a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="#verifiable-credential-data-integrity-vc-di-credentials-in-aca-py">Verifiable Credential Data Integrity (VC-DI) Credentials in ACA-Py</a></li>
-<li><a href="#table-of-contents">Table of Contents</a></li>
 <li><a href="#general-concept">General Concept</a></li>
-<li><a href="#prerequisites">Prerequisites</a><ul>
+<li><a href="#prerequisites">Prerequisites</a></li>
 <li><a href="#verifiable-credentials-data-model">Verifiable Credentials Data Model</a></li>
 <li><a href="#verifiable-presentations-data-model">Verifiable Presentations Data Model</a></li>
 <li><a href="#dif-presentation-format">DIF Presentation Format</a></li>
-</ul>
-</li>
-<li><a href="#preparing-to-issue-a-credential">Preparing to Issue a Credential</a><ul>
+<li><a href="#preparing-to-issue-a-credential">Preparing to Issue a Credential</a></li>
 <li><a href="#vc-di-context">VC-DI Context</a></li>
 <li><a href="#signature-suite">Signature Suite</a></li>
-<li><a href="#did-method">DID Method</a></li>
+<li><a href="#did-method">DID Method</a><ul>
 <li><a href="#didkey"><code>did:key</code></a></li>
 </ul>
 </li>
 <li><a href="#issue-a-credential">Issue a Credential</a></li>
 <li><a href="#verify-a-credential">Verify a Credential</a></li>
-<li><a href="#present-proof">Present Proof</a><ul>
+<li><a href="#present-proof">Present Proof</a></li>
 <li><a href="#requesting-proof">Requesting Proof</a></li>
 <li><a href="#presenting-proof">Presenting Proof</a></li>
 <li><a href="#verifying-proof">Verifying Proof</a></li>
-</ul>
-</li>
-<li><a href="#appendix">Appendix</a><ul>
+<li><a href="#appendix">Appendix</a></li>
 <li><a href="#glossary-of-terms">Glossary of Terms</a></li>
 <li><a href="#references-and-resources">References and Resources</a></li>
 </ul>
-</li>
-</ul>
-<h3 id="general-concept">General Concept<a class="headerlink" href="#general-concept" title="Permanent link">&para;</a></h3>
+<h2 id="general-concept">General Concept<a class="headerlink" href="#general-concept" title="Permanent link">&para;</a></h2>
 <p>The introduction of VC-DI credentials in ACA-Py facilitates the issuance of credentials and presentations in adherence to the W3C standard.</p>
-<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <p>Before utilizing this feature, it is essential to have the following:</p>
-<h4 id="verifiable-credentials-data-model">Verifiable Credentials Data Model<a class="headerlink" href="#verifiable-credentials-data-model" title="Permanent link">&para;</a></h4>
+<h3 id="verifiable-credentials-data-model">Verifiable Credentials Data Model<a class="headerlink" href="#verifiable-credentials-data-model" title="Permanent link">&para;</a></h3>
 <p>A basic understanding of the Verifiable Credentials Data Model is required. Resources for reference include:</p>
 <ul>
 <li><a href="https://www.w3.org/TR/vc-data-model/">Verifiable Credentials Data Model</a></li>
 </ul>
-<h4 id="verifiable-presentations-data-model">Verifiable Presentations Data Model<a class="headerlink" href="#verifiable-presentations-data-model" title="Permanent link">&para;</a></h4>
+<h3 id="verifiable-presentations-data-model">Verifiable Presentations Data Model<a class="headerlink" href="#verifiable-presentations-data-model" title="Permanent link">&para;</a></h3>
 <p>Familiarity with the Verifiable Presentations Data Model is necessary. Relevant resources can be found at:</p>
 <ul>
 <li><a href="https://www.w3.org/TR/vc-data-model/#presentations">Verifiable Presentations Data Model</a></li>
 </ul>
-<h4 id="dif-presentation-format">DIF Presentation Format<a class="headerlink" href="#dif-presentation-format" title="Permanent link">&para;</a></h4>
+<h3 id="dif-presentation-format">DIF Presentation Format<a class="headerlink" href="#dif-presentation-format" title="Permanent link">&para;</a></h3>
 <p>Understanding the DIF Presentation Format is recommended. Access resources at:</p>
 <ul>
 <li><a href="https://identity.foundation/presentation-exchange/">DIF Presentation Format</a></li>
 </ul>
-<h3 id="preparing-to-issue-a-credential">Preparing to Issue a Credential<a class="headerlink" href="#preparing-to-issue-a-credential" title="Permanent link">&para;</a></h3>
+<h2 id="preparing-to-issue-a-credential">Preparing to Issue a Credential<a class="headerlink" href="#preparing-to-issue-a-credential" title="Permanent link">&para;</a></h2>
 <p>To prepare for credential issuance, the following steps must be taken:</p>
-<h4 id="vc-di-context">VC-DI Context<a class="headerlink" href="#vc-di-context" title="Permanent link">&para;</a></h4>
+<h3 id="vc-di-context">VC-DI Context<a class="headerlink" href="#vc-di-context" title="Permanent link">&para;</a></h3>
 <p>Ensure that every property key in the document is mappable to an IRI. This requires either the property key to be an IRI by default or to have the shorthand property mapped in the <code>@context</code> of the document.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&quot;@context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -2418,14 +2783,14 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">]</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
 </code></pre></div>
-<h4 id="signature-suite">Signature Suite<a class="headerlink" href="#signature-suite" title="Permanent link">&para;</a></h4>
+<h3 id="signature-suite">Signature Suite<a class="headerlink" href="#signature-suite" title="Permanent link">&para;</a></h3>
 <p>Select a signature suite for use. VC-DI format currently supports EdDSA signature suites for issuing credentials.</p>
 <ul>
 <li><a href="https://w3c.github.io/vc-di-eddsa/#ed25519signature2020-0"><code>Ed25519Signature2020</code></a></li>
 </ul>
-<h4 id="did-method">DID Method<a class="headerlink" href="#did-method" title="Permanent link">&para;</a></h4>
+<h3 id="did-method">DID Method<a class="headerlink" href="#did-method" title="Permanent link">&para;</a></h3>
 <p>Choose a DID method for issuing the credential. VC-DI format currently supports the <code>did:key</code> method.</p>
-<h5 id="didkey"><code>did:key</code><a class="headerlink" href="#didkey" title="Permanent link">&para;</a></h5>
+<h4 id="didkey"><code>did:key</code><a class="headerlink" href="#didkey" title="Permanent link">&para;</a></h4>
 <p>A <code>did:key</code> did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the <a href="https://w3c-ccg.github.io/did-method-key/">did:key Method Specification</a> for more information.</p>
 <p>You can create a <code>did:key</code> using the <code>/wallet/did/create</code> endpoint with the following body.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{
@@ -2435,7 +2800,7 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  }
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>}
 </code></pre></div>
-<h3 id="issue-a-credential">Issue a Credential<a class="headerlink" href="#issue-a-credential" title="Permanent link">&para;</a></h3>
+<h2 id="issue-a-credential">Issue a Credential<a class="headerlink" href="#issue-a-credential" title="Permanent link">&para;</a></h2>
 <p>The issuance of W3C credentials is facilitated through the <code>/issue-credential-2.0/send</code> endpoint. This process adheres to the formats described in <a href="https://github.com/hyperledger/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md">RFC 0809 VC-DI</a> and utilizes <code>didcomm</code> for communication between agents.</p>
 <p>To issue a W3C credential, follow these steps:</p>
 <ol>
@@ -2519,7 +2884,7 @@ The response should confirm the credential issuance.</li>
 </code></pre></div>
 </details>
 
-<h3 id="verify-a-credential">Verify a Credential<a class="headerlink" href="#verify-a-credential" title="Permanent link">&para;</a></h3>
+<h2 id="verify-a-credential">Verify a Credential<a class="headerlink" href="#verify-a-credential" title="Permanent link">&para;</a></h2>
 <p>To verify a credential, follow these steps:</p>
 <ol>
 <li><strong>Prepare the Verification Request:</strong>
@@ -2636,8 +3001,8 @@ The response should confirm the credential verification.</li>
 </code></pre></div>
 </details>
 
-<h3 id="present-proof">Present Proof<a class="headerlink" href="#present-proof" title="Permanent link">&para;</a></h3>
-<h4 id="requesting-proof">Requesting Proof<a class="headerlink" href="#requesting-proof" title="Permanent link">&para;</a></h4>
+<h2 id="present-proof">Present Proof<a class="headerlink" href="#present-proof" title="Permanent link">&para;</a></h2>
+<h3 id="requesting-proof">Requesting Proof<a class="headerlink" href="#requesting-proof" title="Permanent link">&para;</a></h3>
 <p>To request proof, follow these steps:</p>
 <ol>
 <li><strong>Prepare the Proof Request:</strong>
@@ -2729,7 +3094,7 @@ The response should confirm the credential verification.</li>
 </code></pre></div>
    </details>
 
-<h4 id="presenting-proof">Presenting Proof<a class="headerlink" href="#presenting-proof" title="Permanent link">&para;</a></h4>
+<h3 id="presenting-proof">Presenting Proof<a class="headerlink" href="#presenting-proof" title="Permanent link">&para;</a></h3>
 <p>To present proof, follow these steps:</p>
 <ol>
 <li><strong>Prepare the Presentation Data:</strong>
@@ -2827,7 +3192,7 @@ The response should confirm the credential verification.</li>
 </code></pre></div>
    </details>
 
-<h4 id="verifying-proof">Verifying Proof<a class="headerlink" href="#verifying-proof" title="Permanent link">&para;</a></h4>
+<h3 id="verifying-proof">Verifying Proof<a class="headerlink" href="#verifying-proof" title="Permanent link">&para;</a></h3>
 <p>To verify presented proof, follow these steps:</p>
 <ol>
 <li><strong>Prepare the Verification Data:</strong>
@@ -2947,8 +3312,8 @@ The response should confirm the credential verification.</li>
 </code></pre></div>
    </details>
 
-<h3 id="appendix">Appendix<a class="headerlink" href="#appendix" title="Permanent link">&para;</a></h3>
-<h4 id="glossary-of-terms">Glossary of Terms<a class="headerlink" href="#glossary-of-terms" title="Permanent link">&para;</a></h4>
+<h2 id="appendix">Appendix<a class="headerlink" href="#appendix" title="Permanent link">&para;</a></h2>
+<h3 id="glossary-of-terms">Glossary of Terms<a class="headerlink" href="#glossary-of-terms" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>VC-DI:</strong> Verifiable Credential Data Integrity</li>
 <li><strong>W3C:</strong> World Wide Web Consortium</li>
@@ -2956,7 +3321,7 @@ The response should confirm the credential verification.</li>
 <li><strong>EdDSA:</strong> Edwards-curve Digital Signature Algorithm</li>
 <li><strong>DIF:</strong> Decentralized Identity Foundation</li>
 </ul>
-<h4 id="references-and-resources">References and Resources<a class="headerlink" href="#references-and-resources" title="Permanent link">&para;</a></h4>
+<h3 id="references-and-resources">References and Resources<a class="headerlink" href="#references-and-resources" title="Permanent link">&para;</a></h3>
 <ul>
 <li><a href="https://aca-py.org">ACA-Py Documentation</a></li>
 <li><a href="https://www.w3.org/TR/vc-data-model/">Verifiable Credentials Data Model</a></li>
@@ -2995,6 +3360,44 @@ The response should confirm the credential verification.</li>
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../JsonLdCredentials/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Using W3C JSON-LD Signed Credentials">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Using W3C JSON-LD Signed Credentials
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../SelectiveDisclosureJWTs/" class="md-footer__link md-footer__link--next" aria-label="Next: Using SD-JWTs">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Using SD-JWTs
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">

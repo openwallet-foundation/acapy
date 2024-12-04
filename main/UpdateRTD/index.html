@@ -834,6 +834,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../features/W3cCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Issuing and Presenting W3C Data Integrity VCs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../features/SelectiveDisclosureJWTs/" class="md-nav__link">
         
   
@@ -2460,7 +2481,7 @@ evolves, the RTD files need to be regenerated and possibly updated, as described
 and verify the installation on your system.</p>
 <h3 id="generate-module-files">Generate Module Files<a class="headerlink" href="#generate-module-files" title="Permanent link">&para;</a></h3>
 <p>To rebuild the project and settings from scratch:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>generated<span class="p">;</span><span class="w"> </span>sphinx-apidoc<span class="w"> </span>-f<span class="w"> </span>-M<span class="w"> </span>-o<span class="w">  </span>./generated<span class="w"> </span>../acapy_agent/<span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>../acapy_agent/<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*tests*&#39;</span>,<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..<span class="k">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>generated<span class="p">;</span><span class="w"> </span>sphinx-apidoc<span class="w"> </span>-f<span class="w"> </span>-M<span class="w"> </span>-o<span class="w">  </span>./generated<span class="w"> </span>../acapy_agent/<span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>../acapy_agent/<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*tests*&#39;</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
 </code></pre></div>
 <p>Note that the <code>find</code> command that is used to exclude any of the <code>test</code> python files from the RTD documentation.</p>
 <p>Check the <code>git status</code> in your repo to see if the generator updates, adds or removes any existing RTD modules (in the <code>generated</code> folder).</p>
