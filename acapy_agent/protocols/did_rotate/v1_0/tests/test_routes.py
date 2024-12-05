@@ -123,6 +123,28 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.rotate(self.request)
 
+    async def test_rotate_did_validation_errors(self):
+        self.request.match_info = {"conn_id": test_conn_id}
+        self.request.json = mock.CoroutineMock(return_value=test_valid_rotate_request)
+
+        for error_class in [
+            test_module.UnsupportedDIDMethodError,
+            test_module.UnresolvableDIDError,
+            test_module.UnresolvableDIDCommServicesError,
+        ]:
+            with mock.patch.object(
+                test_module,
+                "DIDRotateManager",
+                autospec=True,
+                return_value=mock.MagicMock(
+                    ensure_supported_did=mock.CoroutineMock(
+                        side_effect=error_class("test error")
+                    ),
+                ),
+            ):
+                with self.assertRaises(test_module.web.HTTPBadRequest):
+                    await test_module.rotate(self.request)
+
 
 if __name__ == "__main__":
     unittest.main()
