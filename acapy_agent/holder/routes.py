@@ -33,6 +33,7 @@ from ..messaging.valid import (
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
 )
+from ..storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecordSchema
@@ -66,16 +67,40 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
 
     start = fields.Str(
         required=False,
+        load_default=0,
         validate=NUM_STR_WHOLE_VALIDATE,
-        metadata={"description": "Start index", "example": NUM_STR_WHOLE_EXAMPLE},
+        metadata={
+            "description": "Start index (DEPRECATED - use offset instead)",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+            "deprecated": True,
+        },
     )
     count = fields.Str(
         required=False,
+        load_default=10,
         validate=NUM_STR_NATURAL_VALIDATE,
         metadata={
-            "description": "Maximum number to retrieve",
+            "description": "Maximum number to retrieve (DEPRECATED - use limit instead)",
             "example": NUM_STR_NATURAL_EXAMPLE,
+            "deprecated": True,
         },
+    )
+    limit = fields.Int(
+        required=False,
+        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        metadata={"description": "Number of results to return", "example": 50},
+        error_messages={
+            "validator_failed": (
+                "Value must be greater than 0 and "
+                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
+            )
+        },
+    )
+    offset = fields.Int(
+        required=False,
+        validate=lambda x: x >= 0,
+        metadata={"description": "Offset for pagination", "example": 0},
+        error_messages={"validator_failed": "Value must be 0 or greater"},
     )
     wql = fields.Str(
         required=False,
@@ -379,25 +404,32 @@ async def credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    start = request.query.get("start")
-    count = request.query.get("count")
+
+    # Handle both old style start/count and new limit/offset
+    # TODO: Remove start/count and swap to PaginatedQuerySchema and get_limit_offset
+    if "limit" in request.query or "offset" in request.query:
+        # New style - use limit/offset
+        limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+        offset = int(request.query.get("offset", 0))
+    else:
+        # Old style - use start/count
+        limit = int(request.query.get("count", "10"))
+        offset = int(request.query.get("start", "0"))
 
     # url encoded json wql
     encoded_wql = request.query.get("wql") or "{}"
     wql = json.loads(encoded_wql)
 
-    # defaults
-    start = int(start) if isinstance(start, str) else 0
-    count = int(count) if isinstance(count, str) else 10
-
     if context.settings.get(wallet_type_config) == "askar-anoncreds":
         holder = AnonCredsHolder(context.profile)
-        credentials = await holder.get_credentials(start, count, wql)
+        credentials = await holder.get_credentials(limit=limit, offset=offset, wql=wql)
     else:
         async with context.profile.session() as session:
             holder = session.inject(IndyHolder)
             try:
-                credentials = await holder.get_credentials(start, count, wql)
+                credentials = await holder.get_credentials(
+                    limit=limit, offset=offset, wql=wql
+                )
             except IndyHolderError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -476,7 +508,6 @@ async def w3c_cred_remove(request: web.BaseRequest):
     summary="Fetch W3C credentials from wallet",
 )
 @request_schema(W3CCredentialsListRequestSchema())
-@querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
 @tenant_authentication
 async def w3c_creds_list(request: web.BaseRequest):
