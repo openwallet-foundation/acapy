@@ -7763,7 +7763,7 @@
         },
         "type" : "object"
       },
-      "AnoncredPresentationRequestNonRevoked" : {
+      "AnoncredsPresentationRequestNonRevoked" : {
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -7895,7 +7895,7 @@
             "type" : "string"
           },
           "non_revoked" : {
-            "$ref" : "#/components/schemas/AnoncredPresentationRequestNonRevoked"
+            "$ref" : "#/components/schemas/AnoncredsPresentationRequestNonRevoked"
           },
           "nonce" : {
             "description" : "Nonce",
