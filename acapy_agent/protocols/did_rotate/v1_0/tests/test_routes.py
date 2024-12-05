@@ -57,7 +57,8 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
         "DIDRotateManager",
         autospec=True,
         return_value=mock.MagicMock(
-            rotate_my_did=mock.CoroutineMock(return_value=generate_mock_rotate_message())
+            rotate_my_did=mock.CoroutineMock(return_value=generate_mock_rotate_message()),
+            ensure_supported_did=mock.CoroutineMock(),
         ),
     )
     async def test_rotate(self, *_):
@@ -102,7 +103,15 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
                 }
             )
 
-    async def test_rotate_conn_not_found(self):
+    @mock.patch.object(
+        test_module,
+        "DIDRotateManager",
+        autospec=True,
+        return_value=mock.MagicMock(
+            ensure_supported_did=mock.CoroutineMock(),
+        ),
+    )
+    async def test_rotate_conn_not_found(self, *_):
         self.request.match_info = {"conn_id": test_conn_id}
         self.request.json = mock.CoroutineMock(return_value=test_valid_rotate_request)
 
