@@ -122,7 +122,6 @@ With the Key storage updates, the DID records become less significant of a const
 - **Category:** did
 - **Name:** the value of the did, e.g. `did:example:123` (no "unqualified" DIDs allowed)
 - **Value:** a JSON object with the following attributes:
-    - `did`: the DID (or nym)
     - `method`: the method name, e.g. `peer`
     - `metadata`: A container for arbitrary metadata; the DID Method implementation may determine what, if any, metadata is used
 - **Tags:**
