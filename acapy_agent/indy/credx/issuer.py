@@ -330,6 +330,11 @@ class IndyCredxIssuer(IndyIssuer):
             revoc = None
             credential_revocation_id = None
 
+        # This is for compatibility with an anoncreds holder
+        if not credential_request.get("prover_did"):
+            credential_request["prover_did"] = credential_request["entropy"]
+            del credential_request["entropy"]
+
         try:
             (
                 credential,
