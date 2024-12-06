@@ -15,8 +15,8 @@ PROTOCOL_PACKAGE = "acapy_agent.protocols.did_rotate.v1_0"
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
         ROTATE: f"{PROTOCOL_PACKAGE}.messages.rotate.Rotate",
-        ACK: f"{PROTOCOL_PACKAGE}.messages.ack.Ack",
+        ACK: f"{PROTOCOL_PACKAGE}.messages.ack.RotateAck",
         HANGUP: f"{PROTOCOL_PACKAGE}.messages.hangup.Hangup",
-        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
+        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.RotateProblemReport",
     }
 )

@@ -94,7 +94,7 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
 
         with (
             mock.patch.object(
-                self.manager, "_ensure_supported_did", side_effect=test_problem_report
+                self.manager, "ensure_supported_did", side_effect=test_problem_report
             ),
             mock.patch.object(self.responder, "send", mock.CoroutineMock()) as mock_send,
         ):
