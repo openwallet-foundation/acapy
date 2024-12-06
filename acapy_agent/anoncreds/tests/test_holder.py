@@ -55,11 +55,6 @@ class MockCredReceived:
         self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
         self.cred_def_id = "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
 
-        if bad_schema:
-            self.schema_id = "bad-schema-id"
-        if bad_cred_def:
-            self.cred_def_id = "bad-cred-def-id"
-
     schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
     cred_def_id = "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
     rev_reg_id = None
@@ -72,14 +67,9 @@ class MockCredReceived:
 
 
 class MockCredReceivedW3C:
-    def __init__(self, bad_schema=False, bad_cred_def=False):
+    def __init__(self):
         self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
         self.cred_def_id = "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
-
-        if bad_schema:
-            self.schema_id = "bad-schema-id"
-        if bad_cred_def:
-            self.cred_def_id = "bad-cred-def-id"
 
     def to_json_buffer(self):
         return b"credential"
@@ -89,9 +79,7 @@ class MockCredReceivedW3C:
 
 
 class MockCredential:
-    def __init__(self, bad_schema=False, bad_cred_def=False):
-        self.bad_schema = bad_schema
-        self.bad_cred_def = bad_cred_def
+    def __init__(self):
         self.rev_reg_id = "rev-reg-id"
         self.rev_reg_index = 0
 
@@ -101,21 +89,17 @@ class MockCredential:
         return MOCK_CRED
 
     def process(self, *args, **kwargs):
-        return MockCredReceived(self.bad_schema, self.bad_cred_def)
+        return MockCredReceived()
 
 
 class MockW3Credential:
-    def __init__(self, bad_schema=False, bad_cred_def=False):
-        self.bad_schema = bad_schema
-        self.bad_cred_def = bad_cred_def
-
     cred = mock.AsyncMock(auto_spec=W3cCredential)
 
     def to_dict(self):
         return MOCK_W3C_CRED
 
     def process(self, *args, **kwargs):
-        return MockCredReceivedW3C(self.bad_schema, self.bad_cred_def)
+        return MockCredReceivedW3C()
 
 
 class MockMasterSecret:
@@ -285,8 +269,6 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         side_effect=[
             MockCredential(),
             MockCredential(),
-            MockCredential(bad_schema=True),
-            MockCredential(bad_cred_def=True),
         ],
     )
     async def test_store_credential(self, mock_load, mock_master_secret):
@@ -295,6 +277,9 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 insert=mock.CoroutineMock(return_value=None),
                 commit=mock.CoroutineMock(return_value=None),
             )
+        )
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry, mock.MagicMock(AnonCredsRegistry, autospec=True)
         )
 
         # Valid
@@ -320,20 +305,6 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             },
             {"cred-req-meta": "cred-req-meta"},
         )
-
-        # Test bad id's
-        with self.assertRaises(AnonCredsHolderError):
-            await self.holder.store_credential(
-                MOCK_CRED_DEF,
-                MOCK_PRES,
-                {"cred-req-meta": "cred-req-meta"},
-            )
-        with self.assertRaises(AnonCredsHolderError):
-            await self.holder.store_credential(
-                MOCK_CRED_DEF,
-                MOCK_CRED,
-                {"cred-req-meta": "cred-req-meta"},
-            )
 
     @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
@@ -362,7 +333,9 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 commit=mock.CoroutineMock(return_value=None),
             )
         )
-
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry, mock.MagicMock(AnonCredsRegistry, autospec=True)
+        )
         with mock.patch.object(jsonld, "expand", return_value=MagicMock()):
             with mock.patch.object(JsonLdProcessor, "get_values", return_value=["type1"]):
                 result = await self.holder.store_credential_w3c(
@@ -383,6 +356,9 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     async def test_store_credential_failed_trx(self, *_):
         self.profile.transaction = mock.MagicMock(
             side_effect=[AskarError(AskarErrorCode.UNEXPECTED, "test")]
+        )
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry, mock.MagicMock(AnonCredsRegistry, autospec=True)
         )
 
         with self.assertRaises(AnonCredsHolderError):

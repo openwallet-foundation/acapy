@@ -24,6 +24,8 @@ class AnoncredsCredRequest(BaseModel):
 
     def __init__(
         self,
+        entropy: Optional[str] = None,
+        # For compatibility with credx agents, which uses `prover_did` instead of `entropy` # noqa
         prover_did: Optional[str] = None,
         cred_def_id: Optional[str] = None,
         blinded_ms: Optional[Mapping] = None,
@@ -33,6 +35,7 @@ class AnoncredsCredRequest(BaseModel):
     ):
         """Initialize anoncreds credential request."""
         super().__init__(**kwargs)
+        self.entropy = entropy
         self.prover_did = prover_did
         self.cred_def_id = cred_def_id
         self.blinded_ms = blinded_ms
@@ -49,8 +52,16 @@ class AnoncredsCredRequestSchema(BaseModelSchema):
         model_class = AnoncredsCredRequest
         unknown = EXCLUDE
 
+    entropy = fields.Str(
+        required=False,
+        metadata={
+            "description": "Prover DID/Random String/UUID",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    # For compatibility with credx agents, which uses `prover_did` instead of `entropy`
     prover_did = fields.Str(
-        required=True,
+        required=False,
         metadata={
             "description": "Prover DID/Random String/UUID",
             "example": UUID4_EXAMPLE,
