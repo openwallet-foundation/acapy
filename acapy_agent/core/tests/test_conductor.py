@@ -1,5 +1,5 @@
-from io import StringIO
 from unittest import IsolatedAsyncioTestCase
+from unittest.mock import call
 
 import pytest
 
@@ -1314,6 +1314,18 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         test_profile = await create_test_profile(None, await builder.build_context())
 
+        # Define expected invitation URLs
+        expected_oob_url = "http://localhost?oob=test_oob_invite"
+        expected_ci_url = "http://localhost?c_i=test_ci_invite"
+
+        # Mock the InvitationRecord returned by create_invitation for OOB
+        mock_oob_invitation = mock.MagicMock()
+        mock_oob_invitation.invitation.to_url.return_value = expected_oob_url
+
+        # Mock the InvitationRecord returned by create_invitation for Connections Protocol
+        mock_ci_invitation = mock.MagicMock()
+        mock_ci_invitation.to_url.return_value = expected_ci_url
+
         with (
             mock.patch.object(
                 test_module,
@@ -1323,21 +1335,37 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
                 ),
             ),
-            mock.patch("sys.stdout", new=StringIO()) as captured,
             mock.patch.object(
                 test_module, "OutboundTransportManager", autospec=True
             ) as mock_outbound_mgr,
+            mock.patch.object(test_module, "OutOfBandManager") as oob_mgr,
+            mock.patch.object(test_module, "ConnectionManager") as conn_mgr,
+            mock.patch.object(test_module.LOGGER, "info") as mock_logger_info,
         ):
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
+
+            # Configure create_invitation to return the mocked invitations
+            oob_mgr.return_value.create_invitation = mock.CoroutineMock(
+                return_value=mock_oob_invitation
+            )
+            conn_mgr.return_value.create_invitation = mock.CoroutineMock(
+                return_value=(None, mock_ci_invitation)
+            )
+
+            # Execute the conductor lifecycle
             await conductor.setup()
 
             await conductor.start()
             await conductor.stop()
-            value = captured.getvalue()
-            assert "http://localhost?oob=" in value
-            assert "http://localhost?c_i=" in value
+
+            # Assert that LOGGER.info was called twice with the expected URLs
+            expected_calls = [
+                call(f"Invitation URL:\n{expected_oob_url}"),
+                call(f"Invitation URL (Connections protocol):\n{expected_ci_url}"),
+            ]
+            mock_logger_info.assert_has_calls(expected_calls, any_order=True)
 
     async def test_clear_default_mediator(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
