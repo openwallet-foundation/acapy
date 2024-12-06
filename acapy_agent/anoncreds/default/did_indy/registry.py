@@ -118,3 +118,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> RevListResult:
         """Update a revocation list on the registry."""
         raise NotImplementedError()
+
+    async def get_schema_info_by_id(self, schema_id: str) -> dict:
+        """Get a schema info from the registry."""
+        return await super().get_schema_info_by_id(schema_id)
