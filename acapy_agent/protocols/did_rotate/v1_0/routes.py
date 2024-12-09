@@ -12,7 +12,12 @@ from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import DID_WEB_EXAMPLE, UUID4_EXAMPLE
 from ....storage.error import StorageNotFoundError
-from .manager import DIDRotateManager
+from .manager import (
+    DIDRotateManager,
+    UnresolvableDIDCommServicesError,
+    UnresolvableDIDError,
+    UnsupportedDIDMethodError,
+)
 from .message_types import SPEC_URI
 from .messages.hangup import HangupSchema as HangupMessageSchema
 from .messages.rotate import RotateSchema as RotateMessageSchema
@@ -62,6 +67,16 @@ async def rotate(request: web.BaseRequest):
 
     body = await request.json()
     to_did = body["to_did"]
+
+    # Validate DID before proceeding
+    try:
+        await did_rotate_mgr.ensure_supported_did(to_did)
+    except (
+        UnsupportedDIDMethodError,
+        UnresolvableDIDError,
+        UnresolvableDIDCommServicesError,
+    ) as err:
+        raise web.HTTPBadRequest(reason=str(err)) from err
 
     async with context.session() as session:
         try:
