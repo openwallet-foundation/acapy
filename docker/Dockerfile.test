@@ -11,12 +11,12 @@ WORKDIR /usr/src/app
 
 RUN pip install --no-cache-dir poetry
 
-ADD ./README.md pyproject.toml ./poetry.lock ./
+COPY ./README.md pyproject.toml ./poetry.lock ./
 RUN mkdir acapy_agent && touch acapy_agent/__init__.py
 
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --no-directory --all-extras --with=dev; else poetry install --no-directory -E "didcommv2" --with=dev; fi
 
-ADD . .
+COPY . .
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run pytest \"$@\"", "--"]
