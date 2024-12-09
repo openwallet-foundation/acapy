@@ -3,6 +3,8 @@
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
 from marshmallow import fields
+from didcomm_messaging import DIDCommMessaging, RoutingService
+from didcomm_messaging.resolver import DIDResolver as DMPResolver
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
@@ -17,7 +19,12 @@ from .messages.ping import Ping
 class PingRequestSchema(OpenAPISchema):
     """Request schema for performing a ping."""
 
-    comment = fields.Str(
+    to = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={"description": "Comment for the ping message"},
+    )
+    response_requested = fields.Bool(
         required=False,
         allow_none=True,
         metadata={"description": "Comment for the ping message"},
@@ -42,7 +49,6 @@ class PingConnIdMatchInfoSchema(OpenAPISchema):
 
 
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")
-@match_info_schema(PingConnIdMatchInfoSchema())
 @request_schema(PingRequestSchema())
 @response_schema(PingRequestResponseSchema(), 200, description="")
 @tenant_authentication
@@ -57,27 +63,30 @@ async def connections_send_ping(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     body = await request.json()
-    comment = body.get("comment")
+    to = body.get("to")
+    response_requested = body.get("response_requested")
 
     try:
         async with context.profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+            resolver = session.inject(DMPResolver)
+            did_doc = await resolver.resolve(to)
+    except Exception as err:
+        raise web.HTTPNotFound(reason=str(err)) from err
 
-    if not connection.is_ready:
-        raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
+    #if not connection.is_ready:
+    #    raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
 
-    msg = Ping(comment=comment)
-    await outbound_handler(msg, connection_id=connection_id)
+    #msg = Ping(did=did, response_requested=response_requested)
+    #await outbound_handler(msg, connection_id=connection_id)
 
-    return web.json_response({"thread_id": msg._thread_id})
+    #return web.json_response({"thread_id": msg._thread_id})
+    return web.json_response({"thread_id": "blah"})
 
 
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.post("/trust-ping/{conn_id}/send-ping", connections_send_ping)])
+    app.add_routes([web.post("/trust-ping/send-ping", connections_send_ping)])
 
 
 def post_process_routes(app: web.Application):
