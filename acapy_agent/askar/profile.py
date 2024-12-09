@@ -119,7 +119,7 @@ class AskarProfile(Profile):
             IndyIssuer,
             ClassProvider("acapy_agent.indy.credx.issuer.IndyCredxIssuer", ref(self)),
         )
-        injector.soft_bind_provider(
+        injector.bind_provider(
             VCHolder,
             ClassProvider(
                 "acapy_agent.storage.vc_holder.askar.AskarVCHolder",
