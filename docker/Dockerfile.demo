@@ -9,25 +9,25 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 	https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
 	chmod ug+x bin/jq
 
-# Add and install Aries Agent code
+# Copy and install Aries Agent code
 RUN pip install --no-cache-dir poetry
 
-ADD README.md pyproject.toml poetry.lock ./
+COPY README.md pyproject.toml poetry.lock ./
 
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --no-root --no-directory --all-extras; else poetry install --no-root --no-directory -E "didcommv2"; fi
 
-ADD acapy_agent ./acapy_agent
-ADD scripts ./scripts
+COPY acapy_agent ./acapy_agent
+COPY scripts ./scripts
 
 RUN pip3 install --no-cache-dir -e .
 
 RUN mkdir demo && chown -R aries:aries demo && chmod -R ug+rw demo
 
-# Add and install demo code
-ADD demo/requirements.txt ./demo/requirements.txt
+# Copy and install demo code
+COPY demo/requirements.txt ./demo/requirements.txt
 RUN pip3 install --no-cache-dir -r demo/requirements.txt
 
-ADD demo ./demo
+COPY demo ./demo
 
 ENTRYPOINT ["bash", "-c", "demo/ngrok-wait.sh \"$@\"", "--"]
