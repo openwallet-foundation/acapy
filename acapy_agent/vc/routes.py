@@ -133,6 +133,9 @@ async def verify_credential_route(request: web.BaseRequest):
 
 
 @docs(tags=["vc-api"], summary="Store a credential")
+@request_schema(web_schemas.VerifyCredentialRequest())
+@response_schema(web_schemas.StoreCredentialResponse(), 200, description="")
+@tenant_authentication
 async def store_credential_route(request: web.BaseRequest):
     """Request handler for storing a credential.
 
