@@ -132,7 +132,7 @@ ANONCREDS_OFFER = {
     "nonce": "1234567890",
 }
 ANONCREDS_CRED_REQ = {
-    "prover_did": TEST_DID,
+    "entropy": TEST_DID,
     "cred_def_id": CRED_DEF_ID,
     "blinded_ms": {
         "u": "12345",
