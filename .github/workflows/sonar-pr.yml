@@ -1,4 +1,4 @@
-name: Sonar Scan and Coverage
+name: Sonar Scan and Coverage on PRs
 
 on:
   workflow_run:
@@ -58,7 +58,7 @@ jobs:
           # Need to change source in coverage report because it was generated from another context
           sed -i 's/\/home\/runner\/work\/acapy\/acapy\//\/github\/workspace\//g' test-reports/coverage.xml
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

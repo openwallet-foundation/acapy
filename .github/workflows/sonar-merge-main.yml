@@ -1,4 +1,4 @@
-name: Sonar Scan and Coverage
+name: Sonar Scan and Coverage on merge to main
 on:
   push:
     branches:
@@ -20,7 +20,7 @@ jobs:
             os: "ubuntu-latest"
             is_pr: "false" 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@latest
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
