@@ -405,9 +405,8 @@ class VcLdpManager:
     async def store_credential(
         self,
         vc: VerifiableCredential,
-        options: LDProofVCOptions,
         cred_id: Optional[str] = None,
-    ) -> VerifiableCredential:
+    ) -> VCRecord:
         """Store a verifiable credential."""
 
         # Saving expanded type as a cred_tag
@@ -436,6 +435,8 @@ class VcLdpManager:
             vc_holder = session.inject(VCHolder)
 
             await vc_holder.store_credential(vc_record)
+
+        return vc_record
 
     async def verify_credential(
         self, vc: VerifiableCredential
