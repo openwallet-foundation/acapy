@@ -1,12 +1,10 @@
 import pytest
 
-
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
-
+from ..askar import AskarVCHolder
 from ..base import VCHolder
 from ..vc_record import VCRecord
-
 from . import test_in_memory_vc_holder as in_memory
 
 
@@ -22,6 +20,7 @@ async def make_profile():
             "key_derivation_method": "RAW",  # much faster than using argon-hashed keys
         },
     )
+    profile.context.injector.bind_instance(VCHolder, AskarVCHolder(profile))
     return profile
 
 
