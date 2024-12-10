@@ -17,6 +17,7 @@ from ...models.revocation import (
     RevRegDefResult,
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from ...models.schema_info import AnoncredsSchemaInfo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -119,6 +120,6 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Update a revocation list on the registry."""
         raise NotImplementedError()
 
-    async def get_schema_info_by_id(self, schema_id: str) -> dict:
+    async def get_schema_info_by_id(self, schema_id: str) -> AnoncredsSchemaInfo:
         """Get a schema info from the registry."""
         return await super().get_schema_info_by_id(schema_id)
