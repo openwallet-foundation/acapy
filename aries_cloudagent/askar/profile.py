@@ -5,7 +5,6 @@ import logging
 import time
 
 # import traceback
-
 from typing import Any, Mapping
 from weakref import ref
 
@@ -26,8 +25,7 @@ from ..storage.vc_holder.base import VCHolder
 from ..utils.multi_ledger import get_write_ledger_config_for_profile
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import validate_seed
-
-from .store import AskarStoreConfig, AskarOpenStore
+from .store import AskarOpenStore, AskarStoreConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -118,7 +116,7 @@ class AskarProfile(Profile):
             VCHolder,
             ClassProvider(
                 "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",
-                ref(self),
+                ClassProvider.Inject(Profile),
             ),
         )
         if (
