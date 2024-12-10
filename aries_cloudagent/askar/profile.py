@@ -118,7 +118,7 @@ class AskarProfile(Profile):
             VCHolder,
             ClassProvider(
                 "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",
-                ref(self),
+                ClassProvider.Inject(Profile),
             ),
         )
         if (
