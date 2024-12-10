@@ -87,7 +87,7 @@ async def main():
             json={"verifiableCredential": cred["verifiableCredential"]},
         )
         result = await bob.get("/vc/credentials")
-        assert len(result) == 0
+        assert len(result["results"]) == 0
 
 
 if __name__ == "__main__":
