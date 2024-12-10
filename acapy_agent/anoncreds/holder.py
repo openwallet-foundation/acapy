@@ -236,9 +236,9 @@ class AnonCredsHolder:
         credential_id = credential_id or str(uuid4())
         tags = {
             "schema_id": credential_data["schema_id"],
-            "schema_issuer_id": schema_info["issuer_id"],
-            "schema_name": schema_info["name"],
-            "schema_version": schema_info["version"],
+            "schema_issuer_id": schema_info.issuer_id,
+            "schema_name": schema_info.name,
+            "schema_version": schema_info.version,
             "issuer_id": credential_definition["issuerId"],
             "cred_def_id": cred_recvd.cred_def_id,
             "rev_reg_id": cred_recvd.rev_reg_id or "None",
