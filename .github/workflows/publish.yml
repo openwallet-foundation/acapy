@@ -51,12 +51,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || '' }}
-
-      - name: Gather image info
-        id: info
-        run: |
-          echo "repo-owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
-
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
@@ -72,15 +66,15 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: hyperledger
+          password: ${{ secrets.HYPERLEDGER_GHCR_PAT }}
 
       - name: Setup Image Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
+            ghcr.io/hyperledger/aries-cloudagent-python
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 
