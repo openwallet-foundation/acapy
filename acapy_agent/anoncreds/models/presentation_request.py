@@ -47,7 +47,7 @@ class AnoncredsPresentationReqPredSpecSchema(OpenAPISchema):
         fields.Dict(
             keys=fields.Str(
                 validate=validate.Regexp(
-                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|"
+                    "^schema_id|schema_issuer_id|schema_name|schema_version|issuer_id|"
                     "cred_def_id|attr::.+::value$"
                 ),
                 metadata={"example": "cred_def_id"},
@@ -58,8 +58,8 @@ class AnoncredsPresentationReqPredSpecSchema(OpenAPISchema):
         metadata={
             "description": (
                 "If present, credential must satisfy one of given restrictions: specify"
-                " schema_id, schema_issuer_did, schema_name, schema_version,"
-                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " schema_id, schema_issuer_id, schema_name, schema_version,"
+                " issuer_id, cred_def_id, and/or attr::<attribute-name>::value where"
                 " <attribute-name> represents a credential attribute name"
             )
         },
@@ -113,7 +113,7 @@ class AnoncredsPresentationReqAttrSpecSchema(OpenAPISchema):
         fields.Dict(
             keys=fields.Str(
                 validate=validate.Regexp(
-                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|"
+                    "^schema_id|schema_issuer_id|schema_name|schema_version|issuer_id|"
                     "cred_def_id|attr::.+::value$"
                 ),
                 metadata={"example": "cred_def_id"},
@@ -124,8 +124,8 @@ class AnoncredsPresentationReqAttrSpecSchema(OpenAPISchema):
         metadata={
             "description": (
                 "If present, credential must satisfy one of given restrictions: specify"
-                " schema_id, schema_issuer_did, schema_name, schema_version,"
-                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " schema_id, schema_issuer_id, schema_name, schema_version,"
+                " issuer_id, cred_def_id, and/or attr::<attribute-name>::value where"
                 " <attribute-name> represents a credential attribute name"
             )
         },
