@@ -1,5 +1,6 @@
 """DID Web Registry."""
 
+import logging
 import re
 from typing import Optional, Pattern, Sequence
 
@@ -16,6 +17,8 @@ from ...models.revocation import (
     RevRegDefResult,
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+
+LOGGER = logging.getLogger(__name__)
 
 
 class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
@@ -40,7 +43,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def setup(self, context: InjectionContext):
         """Setup."""
-        print("Successfully registered DIDWebRegistry")
+        LOGGER.info("Successfully registered DIDWebRegistry")
 
     async def get_schema(self, profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
