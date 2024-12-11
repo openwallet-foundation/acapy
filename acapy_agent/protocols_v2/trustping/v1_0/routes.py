@@ -273,7 +273,7 @@ class BasicMessageSchema(BaseDIDCommV2Schema):
 @request_schema(BasicMessageSchema())
 @response_schema(PingRequestResponseSchema(), 200, description="")
 @tenant_authentication
-async def basic_message(request: web.BaseRequest):
+async def basic_message_send(request: web.BaseRequest):
     """Request handler for sending a trust ping to a connection.
 
     Args:
