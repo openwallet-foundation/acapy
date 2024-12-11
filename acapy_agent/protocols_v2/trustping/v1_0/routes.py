@@ -155,7 +155,7 @@ async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
     return reply_destination
 
 
-@docs(tags=["trustping"], summary="Send a trust ping to a connection")
+@docs(tags=["trustping", "didcommv2"], summary="Send a trust ping to a connection")
 @request_schema(PingRequestSchema())
 @response_schema(PingRequestResponseSchema(), 200, description="")
 @tenant_authentication
@@ -219,5 +219,12 @@ def post_process_routes(app: web.Application):
             "name": "trustping",
             "description": "Trust-ping over connection",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
+    )
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "didcommv2",
+            "description": "DIDComm V2 based protocols for Interop-a-thon",
+            "externalDocs": {"description": "Specification", "url": "https://didcomm.org"},
         }
     )
