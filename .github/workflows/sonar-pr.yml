@@ -64,5 +64,5 @@ jobs:
             -Dsonar.pullrequest.base=${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
             -Dsonar.coverage.exclusions=**/tests/**,**/demo/**,**/docs/**,**/docker/**,**/scripts/**,**/scenarios/**
             -Dsonar.cpd.exclusions=**/tests/**,**/demo/**,**/docs/**,**/docker/**,**/scripts/**,**/scenarios/**
-            -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
+            -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.sources=./
