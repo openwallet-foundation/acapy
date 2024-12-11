@@ -34,7 +34,11 @@ async def list_credentials_route(request: web.BaseRequest):
     holder = context.inject(VCHolder)
     try:
         search = holder.search_credentials()
-        records = [record.serialize()["cred_value"] for record in await search.fetch()]
+        records = {
+            "results": [
+                record.serialize()["cred_value"] for record in await search.fetch()
+            ]
+        }
         return web.json_response(records, status=200)
     except (StorageError, StorageNotFoundError) as err:
         return web.json_response({"message": err.roll_up}, status=400)
@@ -133,6 +137,9 @@ async def verify_credential_route(request: web.BaseRequest):
 
 
 @docs(tags=["vc-api"], summary="Store a credential")
+@request_schema(web_schemas.StoreCredentialRequest())
+@response_schema(web_schemas.StoreCredentialResponse(), 200, description="")
+@tenant_authentication
 async def store_credential_route(request: web.BaseRequest):
     """Request handler for storing a credential.
 
@@ -153,7 +160,7 @@ async def store_credential_route(request: web.BaseRequest):
         options = LDProofVCOptions.deserialize(options)
 
         await manager.verify_credential(vc)
-        await manager.store_credential(vc, options, cred_id)
+        await manager.store_credential(vc, cred_id)
 
         return web.json_response({"credentialId": cred_id}, status=200)
 

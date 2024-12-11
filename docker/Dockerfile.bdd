@@ -4,6 +4,6 @@ FROM faber-alice-demo
 RUN pip3 install --no-cache-dir -r demo/requirements.behave.txt
 
 WORKDIR ./demo
-ADD demo/multi_ledger_config_bdd.yml ./demo/multi_ledger_config.yml
+COPY demo/multi_ledger_config_bdd.yml ./demo/multi_ledger_config.yml
 RUN chmod a+w .
 ENTRYPOINT ["behave"]

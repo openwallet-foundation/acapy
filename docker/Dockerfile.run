@@ -15,12 +15,12 @@ RUN apt-get update && apt-get install -y curl && apt-get clean
 RUN pip install --no-cache-dir poetry
 
 RUN mkdir -p acapy_agent && touch acapy_agent/__init__.py
-ADD pyproject.toml poetry.lock README.md ./
+COPY pyproject.toml poetry.lock README.md ./
 RUN mkdir -p log && chmod -R ug+rw log
 
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --all-extras; else poetry install -E "didcommv2"; fi
 
-ADD . .
+COPY . .
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]

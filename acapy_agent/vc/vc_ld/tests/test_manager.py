@@ -331,7 +331,7 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
         self.vc.issuer = did.did
         self.options.proof_type = Ed25519Signature2018.signature_type
         cred = await self.manager.issue(self.vc, self.options)
-        await self.manager.store_credential(cred, self.options, TEST_UUID)
+        await self.manager.store_credential(cred, TEST_UUID)
         async with self.profile.session() as session:
             holder = session.inject(VCHolder)
             record = await holder.retrieve_credential_by_id(record_id=TEST_UUID)

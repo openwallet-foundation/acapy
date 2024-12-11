@@ -32,17 +32,17 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
 # Format specifications
 ATTACHMENT_FORMAT = {
     PRES_20_PROPOSAL: {
-        V20PresFormat.Format.ANONCREDS.api: "anoncreds/proof-req@v2.0",
+        V20PresFormat.Format.ANONCREDS.api: "anoncreds/proof-proposal@v1.0",
         V20PresFormat.Format.INDY.api: "hlindy/proof-req@v2.0",
         V20PresFormat.Format.DIF.api: "dif/presentation-exchange/definitions@v1.0",
     },
     PRES_20_REQUEST: {
-        V20PresFormat.Format.ANONCREDS.api: "anoncreds/proof-req@v2.0",
+        V20PresFormat.Format.ANONCREDS.api: "anoncreds/proof-request@v1.0",
         V20PresFormat.Format.INDY.api: "hlindy/proof-req@v2.0",
         V20PresFormat.Format.DIF.api: "dif/presentation-exchange/definitions@v1.0",
     },
     PRES_20: {
-        V20PresFormat.Format.ANONCREDS.api: "anoncreds/proof@v2.0",
+        V20PresFormat.Format.ANONCREDS.api: "anoncreds/proof@v1.0",
         V20PresFormat.Format.INDY.api: "hlindy/proof@v2.0",
         V20PresFormat.Format.DIF.api: "dif/presentation-exchange/submission@v1.0",
     },

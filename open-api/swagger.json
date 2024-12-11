@@ -6396,7 +6396,7 @@
         }
       }
     },
-    "AnoncredPresentationRequestNonRevoked" : {
+    "AnoncredsPresentationRequestNonRevoked" : {
       "type" : "object",
       "properties" : {
         "from" : {
@@ -6530,7 +6530,7 @@
           "description" : "Proof request name"
         },
         "non_revoked" : {
-          "$ref" : "#/definitions/AnoncredPresentationRequestNonRevoked"
+          "$ref" : "#/definitions/AnoncredsPresentationRequestNonRevoked"
         },
         "nonce" : {
           "type" : "string",
