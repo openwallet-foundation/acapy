@@ -78,8 +78,6 @@ from .did_method import (
     DIDMethod,
     DIDMethods,
     HolderDefinedDid,
-    CHEQD,
-    TDW,
 )
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
@@ -321,16 +319,6 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        validate=validate.OneOf(
-            [
-                KEY.method_name,
-                SOV.method_name,
-                TDW.method_name,
-                CHEQD.method_name,
-                PEER2.method_name,
-                PEER4.method_name,
-            ]
-        ),
         metadata={
             "example": KEY.method_name,
             "description": (
