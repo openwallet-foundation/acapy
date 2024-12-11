@@ -16,7 +16,7 @@ from .message_types import SPEC_URI
 from .messages.ping import Ping
 
 
-class PingRequestSchema(OpenAPISchema):
+class BaseDIDCommV2Schema(OpenAPISchema):
     """Request schema for performing a ping."""
 
     to_did = fields.Str(
@@ -24,6 +24,11 @@ class PingRequestSchema(OpenAPISchema):
         allow_none=False,
         metadata={"description": "Comment for the ping message"},
     )
+
+
+class PingRequestSchema(BaseDIDCommV2Schema):
+    """Request schema for performing a ping."""
+
     response_requested = fields.Bool(
         required=False,
         allow_none=True,
@@ -202,8 +207,18 @@ async def connections_send_ping(request: web.BaseRequest):
     return web.json_response(msg.message)
 
 
+class DiscoverFeaturesQuerySchema(BaseDIDCommV2Schema):
+    """Request schema for performing a ping."""
+
+    queries = fields.Bool(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Comment for the ping message"},
+    )
+
+
 @docs(tags=["didcommv2"], summary="Request the list of supported features")
-@request_schema(PingRequestSchema())
+@request_schema(DiscoverFeaturesQuerySchema())
 @response_schema(PingRequestResponseSchema(), 200, description="")
 @tenant_authentication
 async def discover_features_query(request: web.BaseRequest):
@@ -244,8 +259,18 @@ async def discover_features_query(request: web.BaseRequest):
     return web.json_response(msg.message)
 
 
-@docs(tags=["didcommv2"], summary="Request the list of supported features")
-@request_schema(PingRequestSchema())
+class BasicMessageSchema(BaseDIDCommV2Schema):
+    """Request schema for performing a ping."""
+
+    content = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={"description": "Basic Message message content"},
+    )
+
+
+@docs(tags=["didcommv2"], summary="Send a Basic Message")
+@request_schema(BasicMessageSchema())
 @response_schema(PingRequestResponseSchema(), 200, description="")
 @tenant_authentication
 async def basic_message(request: web.BaseRequest):
