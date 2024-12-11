@@ -123,7 +123,7 @@ class AskarProfile(Profile):
             VCHolder,
             ClassProvider(
                 "acapy_agent.storage.vc_holder.askar.AskarVCHolder",
-                ref(self),
+                ClassProvider.Inject(Profile),
             ),
         )
         if (

@@ -299,7 +299,7 @@ class AnoncredsPresentationRequestSchema(BaseModelSchema):
                     },
                 ),
             },
-            name="AnoncredPresentationRequestNonRevokedSchema",
+            name="AnoncredsPresentationRequestNonRevokedSchema",
         ),
         allow_none=True,
         required=False,
