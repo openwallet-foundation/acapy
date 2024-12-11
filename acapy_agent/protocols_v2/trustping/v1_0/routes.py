@@ -202,10 +202,53 @@ async def connections_send_ping(request: web.BaseRequest):
     return web.json_response(msg.message)
 
 
+@docs(tags=["didcommv2"], summary="Request the list of supported features")
+@request_schema(PingRequestSchema())
+@response_schema(PingRequestResponseSchema(), 200, description="")
+@tenant_authentication
+async def discover_features_query(request: web.BaseRequest):
+    """Request handler for sending a trust ping to a connection.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
+    body = await request.json()
+    to_did = body.get("to_did")
+
+    our_did = await get_mydid(request)
+    their_did = to_did
+    reply_destination = await get_target(request, to_did, our_did)
+    msg = V2AgentMessage(
+        message={
+            "type": "https://didcomm.org/discover-features/2.0/queries",
+            "body": {
+                "queries": [
+                    {
+                        "feature-type": "protocol",
+                        "match": "https://didcomm.org/*",
+                    },
+                    {
+                        "feature-type": "goal-code",
+                        "match": "org.didcomm.*",
+                    },
+                ]
+            },
+            "to": [their_did],
+            "from": our_did,
+        }
+    )
+    await outbound_handler(msg, target_list=reply_destination)
+    return web.json_response(msg.message)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes([web.post("/trust-ping/send-ping", connections_send_ping)])
+    app.add_routes([web.post("/discover-features/send-query", discover_features_query)])
 
 
 def post_process_routes(app: web.Application):
