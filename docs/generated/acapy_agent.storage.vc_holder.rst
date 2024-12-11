@@ -25,14 +25,6 @@ acapy\_agent.storage.vc\_holder.base module
    :undoc-members:
    :show-inheritance:
 
-acapy\_agent.storage.vc\_holder.in\_memory module
--------------------------------------------------
-
-.. automodule:: acapy_agent.storage.vc_holder.in_memory
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 acapy\_agent.storage.vc\_holder.vc\_record module
 -------------------------------------------------
 

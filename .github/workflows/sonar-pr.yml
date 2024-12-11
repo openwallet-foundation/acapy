@@ -1,4 +1,4 @@
-name: Sonar Scan and Coverage
+name: Sonar Scan and Coverage on PRs
 
 on:
   workflow_run:
@@ -15,7 +15,7 @@ jobs:
         with:
             fetch-depth: 0
       - name: Download PR number artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v7
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
@@ -26,7 +26,7 @@ jobs:
         with:
           path: ./PR_NUMBER
       - name: Download Test Coverage
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v7
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
@@ -58,7 +58,7 @@ jobs:
           # Need to change source in coverage report because it was generated from another context
           sed -i 's/\/home\/runner\/work\/acapy\/acapy\//\/github\/workspace\//g' test-reports/coverage.xml
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

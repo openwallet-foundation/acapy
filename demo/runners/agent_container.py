@@ -1366,7 +1366,7 @@ def arg_parser(ident: str = None, port: int = 8020):
             type=str,
             default=CRED_FORMAT_INDY,
             metavar=("<cred-type>"),
-            help="Credential type (indy, json-ld)",
+            help="Credential type (indy, json-ld, vc_di)",
         )
     parser.add_argument(
         "--aip",
@@ -1571,7 +1571,7 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
 
     # Set anoncreds agent to use anoncreds credential format
     wallet_type = arg_file_dict.get("wallet-type") or args.wallet_type
-    if wallet_type == "askar-anoncreds":
+    if wallet_type == "askar-anoncreds" and cred_type == CRED_FORMAT_INDY:
         cred_type = CRED_FORMAT_ANONCREDS
 
     log_msg(

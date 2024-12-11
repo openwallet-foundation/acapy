@@ -6,14 +6,6 @@ acapy\_agent.core package
    :undoc-members:
    :show-inheritance:
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   acapy_agent.core.in_memory
-
 Submodules
 ----------
 

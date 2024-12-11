@@ -97,6 +97,7 @@ nav:
     - Configuring Multiple Indy Ledgers: features/Multiledger.md
     - Automatically Endorsing Indy Transations: features/Endorser.md
     - Using W3C JSON-LD Signed Credentials: features/JsonLdCredentials.md
+    - Issuing and Presenting W3C Data Integrity VCs: features/W3cCredentials.md
     - Using SD-JWTs: features/SelectiveDisclosureJWTs.md
     - AnonCreds Presentation Validation: features/AnoncredsProofValidation.md
     - Multiple Credential Types: features/Multicredentials.md

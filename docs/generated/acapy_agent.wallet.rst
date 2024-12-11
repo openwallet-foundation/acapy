@@ -106,14 +106,6 @@ acapy\_agent.wallet.error module
    :undoc-members:
    :show-inheritance:
 
-acapy\_agent.wallet.in\_memory module
--------------------------------------
-
-.. automodule:: acapy_agent.wallet.in_memory
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 acapy\_agent.wallet.jwt module
 ------------------------------
 

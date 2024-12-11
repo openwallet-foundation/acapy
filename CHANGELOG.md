@@ -1,5 +1,79 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.1.1rc0
+
+### December 3, 2024
+
+Release 1.1.1 is a patch update to ACA-Py that contains a lengthy list of adjustments, improvements and fixes, with a focus on removing Technical Debt. The most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. While arguably a breaking change (and we mention it below), we're confident no one is using the in-memory wallet (right?!?) any where other than in tests. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet were updated to use SQLite's in-memory wallet.
+
+The first step to full support of [did:tdw](https://identity.foundation/trustdidweb/) (soon to be renamed to `did:webvh` for "`did:web` + Verifiable History") has been added to ACA-Py -- a resolver. We're working on adding new DID Registration for it and other DID Methods, enabling ACA-Py to be used easily with a variety of DID Methods.
+
+The move to the [OpenWallet Foundation](https://openwallet.foundation/) is now complete. For up to date details on what the repo move means for ACA-Py users, including steps for updating deployments, please see latest in [GitHub Issue #3250].
+
+[GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
+
+### 1.1.1 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.1.1 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
+
+### 1.1.1 Breaking Changes
+
+While there are no breaking changes in this release that might impact production deployments, the removal of the "in-memory" wallet implementation might be break some test scripts. Rather than using the in-memory wallet, tests should be updated to use SQLite's special `sqlite://:memory:` database instead. This results in a better alignment between tests and a production environment.
+
+
+#### 1.1.1 Categorized List of Pull Requests
+
+- AnonCreds VC Issuance and Presentation Enhancement / Fixes
+  - Repair release bdd tests [\#3376](https://github.com/openwallet-foundation/acapy/pull/3376) [jamshale](https://github.com/jamshale)
+  - Fix tails upload for anoncreds multitenancy [\#3346](https://github.com/openwallet-foundation/acapy/pull/3346) [jamshale](https://github.com/jamshale)
+  - Fix subwallet anoncreds upgrade check [\#3345](https://github.com/openwallet-foundation/acapy/pull/3345) [jamshale](https://github.com/jamshale)
+  - Add anoncreds issuance and presentation format [\#3331](https://github.com/openwallet-foundation/acapy/pull/3331) [jamshale](https://github.com/jamshale)
+  - Fix endorsement setup with existing connection [\#3309](https://github.com/openwallet-foundation/acapy/pull/3309) [jamshale](https://github.com/jamshale)
+  - Update accumulator value in wallet on repair [\#3299](https://github.com/openwallet-foundation/acapy/pull/3299) [jamshale](https://github.com/jamshale)
+
+- Middleware Handling and Multi-tenancy
+  - Restore `--base-wallet-routes` flag functionality [\#3344](https://github.com/openwallet-foundation/acapy/pull/3344) [esune](https://github.com/esune)
+  - :white_check_mark: Re-add ready_middleware unit tests [\#3330](https://github.com/openwallet-foundation/acapy/pull/3330) [ff137](https://github.com/ff137)
+  - :sparkles: Handle NotFound and UnprocessableEntity errors in middleware [\#3327](https://github.com/openwallet-foundation/acapy/pull/3327) [ff137](https://github.com/ff137)
+  - :art: Refactor Multitenant Manager errors and exception handling [\#3323](https://github.com/openwallet-foundation/acapy/pull/3323) [ff137](https://github.com/ff137)
+  - Don't pass rekey to sub_wallet_profile [\#3312](https://github.com/openwallet-foundation/acapy/pull/3312) [jamshale](https://github.com/jamshale)
+
+- DID Registration and Resolution
+  - fix: check routing keys on indy_vdr endpoint refresh [\#3371](https://github.com/openwallet-foundation/acapy/pull/3371) [dbluhm](https://github.com/dbluhm)
+  - Fix/universal resolver [\#3354](https://github.com/openwallet-foundation/acapy/pull/3354) [jamshale](https://github.com/jamshale)
+  - More robust verification method selection by did [\#3279](https://github.com/openwallet-foundation/acapy/pull/3279) [dbluhm](https://github.com/dbluhm)
+  - did:tdw resolver [\#3237](https://github.com/openwallet-foundation/acapy/pull/3237) [jamshale](https://github.com/jamshale)
+
+- DIDComm Updates and Enhancements
+  - :bug: Rearrange connection record deletion after hangup [\#3310](https://github.com/openwallet-foundation/acapy/pull/3310) [ff137](https://github.com/ff137)
+  - :bug: Handle failure to resolve DIDComm services in DIDXManager [\#3298](https://github.com/openwallet-foundation/acapy/pull/3298) [ff137](https://github.com/ff137)
+
+- Test Suite Updates and Artifact Publishing
+  - Add test wallet config option [\#3355](https://github.com/openwallet-foundation/acapy/pull/3355) [jamshale](https://github.com/jamshale)
+  - :art: Fix current test warnings [\#3338](https://github.com/openwallet-foundation/acapy/pull/3338) [ff137](https://github.com/ff137)
+  - :construction_worker: Fix Nightly Publish to not run on forks [\#3333](https://github.com/openwallet-foundation/acapy/pull/3333) [ff137](https://github.com/ff137)
+
+- Internal Improvements / Cleanups / Tech Debt Updates
+  - :zap: Add class caching to DeferLoad [\#3361](https://github.com/openwallet-foundation/acapy/pull/3361) [ff137](https://github.com/ff137
+  - :art: Sync Ruff version in configs and apply formatting [\#3358](https://github.com/openwallet-foundation/acapy/pull/3358) [ff137](https://github.com/ff137)
+  - :art: Replace deprecated ABC decorators [\#3357](https://github.com/openwallet-foundation/acapy/pull/3357) [ff137](https://github.com/ff137)
+  - :art: Refactor the logging module monolith [\#3319](https://github.com/openwallet-foundation/acapy/pull/3319) [ff137](https://github.com/ff137)
+  - :wrench: set default fixture scope for pytest-asyncio [\#3318](https://github.com/openwallet-foundation/acapy/pull/3318) [ff137](https://github.com/ff137)
+  - Docs (devcontainer) Change folder names [\#3317](https://github.com/openwallet-foundation/acapy/pull/3317) [loneil](https://github.com/loneil)
+  - :art: Refactor string concatenation in model descriptions [\#3313](https://github.com/openwallet-foundation/acapy/pull/3313) [ff137](https://github.com/ff137)
+  - Remove in memory wallet [\#3311](https://github.com/openwallet-foundation/acapy/pull/3311) [jamshale](https://github.com/jamshale)
+
+- Consolidate Dependabot updates and other library/dependency updates
+  - Week 49 Library upgrades [\#3368](https://github.com/openwallet-foundation/acapy/pull/3368) [jamshale](https://github.com/jamshale) 
+  - :arrow_up: Update lock file [\#3296](https://github.com/openwallet-foundation/acapy/pull/3296) [ff137](https://github.com/ff137)
+
+- Release management pull requests:
+  - 1.1.1rc0 [\#3372](https://github.com/openwallet-foundation/acapy/pull/3372) [swcurran](https://github.com/swcurran)
+
+- Dependabot PRs
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2024-12-03+author%3Aapp%2Fdependabot+)
+
+
 ## 1.1.0
 
 ### October 15, 2024
