@@ -97,6 +97,13 @@ TDW = DIDMethod(
     holder_defined_did=HolderDefinedDid.NO,
 )
 
+CHEQD = DIDMethod(
+    name="cheqd",
+    key_types=[ED25519],
+    rotation=True,
+    holder_defined_did=HolderDefinedDid.ALLOWED,
+)
+
 
 class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
@@ -110,6 +117,7 @@ class DIDMethods:
             PEER2.method_name: PEER2,
             PEER4.method_name: PEER4,
             TDW.method_name: TDW,
+            CHEQD.method_name: CHEQD,
         }
 
     def registered(self, method: str) -> bool:

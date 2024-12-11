@@ -363,16 +363,20 @@ class IndyDID(Regexp):
 
 
 class AnoncredsDID(Regexp):
-    """Validate value against indy DID."""
+    """Validate value against anoncreds DID."""
+
+    METHOD = r"([a-zA-Z0-9_]+)"
+    NETWORK = r"(:[a-zA-Z0-9_.%-]+)?"  # Optional network
+    METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
 
     EXAMPLE = "did:(method):WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile("^(did:[a-z]:.+$)?$")
+    PATTERN = re.compile(rf"^did:{METHOD}{NETWORK}:{METHOD_ID}")
 
     def __init__(self):
         """Initialize the instance."""
 
         super().__init__(
-            IndyDID.PATTERN,
+            DIDValidation.PATTERN,
             error="Value {input} is not an decentralized identifier (DID)",
         )
 
@@ -381,6 +385,7 @@ class DIDValidation(Regexp):
     """Validate value against any valid DID spec."""
 
     METHOD = r"([a-zA-Z0-9_]+)"
+    NETWORK = r"(:[a-zA-Z0-9_.%-]+)?"  # Optional network
     METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
     PARAMS = r"((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)"
     PATH = r"(\/[^#?]*)?"
@@ -388,7 +393,9 @@ class DIDValidation(Regexp):
     FRAGMENT = r"(\#.*)?$"
 
     EXAMPLE = "did:peer:WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(rf"^did:{METHOD}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$")
+    PATTERN = re.compile(
+        rf"^did:{METHOD}{NETWORK}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$"
+    )
 
     def __init__(self):
         """Initialize the instance."""
@@ -485,7 +492,7 @@ class AnoncredsCredDefId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndyCredDefId.PATTERN,
+            AnoncredsCredDefId.PATTERN,
             error="Value {input} is not an anoncreds credential definition identifier",
         )
 
@@ -530,7 +537,7 @@ class AnoncredsSchemaId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndySchemaId.PATTERN,
+            AnoncredsSchemaId.PATTERN,
             error="Value {input} is not an anoncreds schema identifier",
         )
 

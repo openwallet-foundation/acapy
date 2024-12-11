@@ -32,12 +32,12 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_CRED_DEF_ID_VALIDATE,
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_CRED_DEF_ID_VALIDATE,
     INDY_CRED_REV_ID_EXAMPLE,
     INDY_CRED_REV_ID_VALIDATE,
-    INDY_REV_REG_ID_EXAMPLE,
-    INDY_REV_REG_ID_VALIDATE,
+    ANONCREDS_REV_REG_ID_EXAMPLE,
+    ANONCREDS_REV_REG_ID_VALIDATE,
     INDY_REV_REG_SIZE_EXAMPLE,
     INDY_REV_REG_SIZE_VALIDATE,
     UUID4_EXAMPLE,
@@ -86,10 +86,10 @@ class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     credential_definition_id = fields.Str(
-        validate=INDY_CRED_DEF_ID_VALIDATE,
+        validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
     max_cred_num = fields.Int(
@@ -143,10 +143,10 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
 
     rev_reg_id = fields.Str(
         required=False,
-        validate=INDY_REV_REG_ID_VALIDATE,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
         metadata={
             "description": "Revocation registry identifier",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
     cred_rev_id = fields.Str(
@@ -182,18 +182,18 @@ class RevRegId(OpenAPISchema):
 
     rev_reg_id = fields.Str(
         required=False,
-        validate=INDY_REV_REG_ID_VALIDATE,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
         metadata={
             "description": "Revocation registry identifier",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
     cred_def_id = fields.Str(
         required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE,
+        validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
 
@@ -270,7 +270,7 @@ class PublishRevocationsSchema(OpenAPISchema):
 
     rrid2crid = fields.Dict(
         required=False,
-        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
+        keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
                 validate=INDY_CRED_REV_ID_VALIDATE,
@@ -303,7 +303,7 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
 
     purge = fields.Dict(
         required=False,
-        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
+        keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
                 validate=INDY_CRED_REV_ID_VALIDATE,
@@ -383,10 +383,10 @@ class RevRegsCreatedSchema(OpenAPISchema):
 
     rev_reg_ids = fields.List(
         fields.Str(
-            validate=INDY_REV_REG_ID_VALIDATE,
+            validate=ANONCREDS_REV_REG_ID_VALIDATE,
             metadata={
                 "description": "Revocation registry identifiers",
-                "example": INDY_REV_REG_ID_EXAMPLE,
+                "example": ANONCREDS_REV_REG_ID_EXAMPLE,
             },
         )
     )
@@ -401,7 +401,7 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
             "description": "Public URI to the tails file",
             "example": (
                 "http://192.168.56.133:6543/revocation/registry/"
-                f"{INDY_REV_REG_ID_EXAMPLE}/tails-file"
+                f"{ANONCREDS_REV_REG_ID_EXAMPLE}/tails-file"
             ),
         },
     )
@@ -412,10 +412,10 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
 
     cred_def_id = fields.Str(
         required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE,
+        validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
     state = fields.Str(
@@ -452,10 +452,10 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
 
     rev_reg_id = fields.Str(
         required=True,
-        validate=INDY_REV_REG_ID_VALIDATE,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
         metadata={
             "description": "Revocation Registry identifier",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
 
@@ -465,10 +465,10 @@ class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
 
     cred_def_id = fields.Str(
         required=True,
-        validate=INDY_CRED_DEF_ID_VALIDATE,
+        validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
 
