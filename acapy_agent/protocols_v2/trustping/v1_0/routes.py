@@ -67,37 +67,8 @@ def format_did_info(info: DIDInfo):
             "metadata": info.metadata,
         }
 
-
-@docs(tags=["trustping"], summary="Send a trust ping to a connection")
-@request_schema(PingRequestSchema())
-@response_schema(PingRequestResponseSchema(), 200, description="")
-@tenant_authentication
-async def connections_send_ping(request: web.BaseRequest):
-    """Request handler for sending a trust ping to a connection.
-
-    Args:
-        request: aiohttp request object
-
-    """
+async def get_mydid(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    #connection_id = request.match_info["conn_id"]
-    outbound_handler = request["outbound_message_router"]
-    body = await request.json()
-    to_did = body.get("to_did")
-    response_requested = body.get("response_requested")
-
-    try:
-        async with context.profile.session() as session:
-            resolver = session.inject(DMPResolver)
-            did_doc = await resolver.resolve(to_did)
-    except Exception as err:
-        raise web.HTTPNotFound(reason=str(err)) from err
-
-    #if not connection.is_ready:
-    #    raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
-
-    #msg = Ping(did=did, response_requested=response_requested)
-    #await outbound_handler(msg, connection_id=connection_id)
     #filter_did = request.query.get("did")
     #filter_verkey = request.query.get("verkey")
     filter_posture = DIDPosture.get(request.query.get("posture"))
@@ -126,8 +97,18 @@ async def connections_send_ping(request: web.BaseRequest):
             ]
 
     results.sort(key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"]))
+    our_did = results[0]["did"]
+    return our_did
 
-    # return web.json_response({"results": results})
+async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
+    context: AdminRequestContext = request["context"]
+
+    try:
+        async with context.profile.session() as session:
+            resolver = session.inject(DMPResolver)
+            did_doc = await resolver.resolve(to_did)
+    except Exception as err:
+        raise web.HTTPNotFound(reason=str(err)) from err
 
     async with context.session() as session:
         ctx = session
@@ -167,13 +148,43 @@ async def connections_send_ping(request: web.BaseRequest):
                 did=f"{to_did}#key-1",
                 endpoint=service.service_endpoint.uri,
                 recipient_keys=[f"{to_did}#key-1"],
-                sender_key=results[0]["did"] + "#key-1",
+                sender_key=from_did + "#key-1",
             )
             for service in chain[-1]["service"]
         ]
+    return reply_destination
 
+
+@docs(tags=["trustping"], summary="Send a trust ping to a connection")
+@request_schema(PingRequestSchema())
+@response_schema(PingRequestResponseSchema(), 200, description="")
+@tenant_authentication
+async def connections_send_ping(request: web.BaseRequest):
+    """Request handler for sending a trust ping to a connection.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    #connection_id = request.match_info["conn_id"]
+    outbound_handler = request["outbound_message_router"]
+    body = await request.json()
+    to_did = body.get("to_did")
+    response_requested = body.get("response_requested")
+
+    #if not connection.is_ready:
+    #    raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
+
+    #msg = Ping(did=did, response_requested=response_requested)
+    #await outbound_handler(msg, connection_id=connection_id)
+
+    # return web.json_response({"results": results})
+
+
+    our_did = await get_mydid(request)
     their_did = to_did
-    our_did = results[0]["did"]
+    reply_destination = await get_target(request, to_did, our_did)
     msg = V2AgentMessage(
         message={
             "type": "https://didcomm.org/trust-ping/2.0/ping",
