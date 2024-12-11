@@ -70,7 +70,15 @@ from .anoncreds_upgrade import (
 )
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import KEY, PEER2, PEER4, SOV, DIDMethod, DIDMethods, HolderDefinedDid
+from .did_method import (
+    KEY,
+    PEER2,
+    PEER4,
+    SOV,
+    DIDMethod,
+    DIDMethods,
+    HolderDefinedDid,
+)
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
@@ -311,9 +319,6 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        validate=validate.OneOf(
-            [KEY.method_name, SOV.method_name, PEER2.method_name, PEER4.method_name]
-        ),
         metadata={
             "example": KEY.method_name,
             "description": (
