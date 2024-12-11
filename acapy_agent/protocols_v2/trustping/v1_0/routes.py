@@ -198,6 +198,10 @@ async def connections_send_ping(request: web.BaseRequest):
             "from": our_did,
         }
     )
+
+    if response_requested:
+        msg.message["response_requested"] = True
+
     ## await responder.send_reply(error_result)
     await outbound_handler(msg, target_list=reply_destination)
 
