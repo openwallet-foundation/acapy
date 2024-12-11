@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
 
+import pydantic
 import pydid
 from base58 import b58decode
 from did_peer_2 import KeySpec, generate
@@ -444,7 +445,7 @@ class BaseConnectionManager:
         try:
             doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
-        except ResolverError as error:
+        except (ResolverError, pydantic.ValidationError) as error:
             raise BaseConnectionManagerError("Failed to resolve DID services") from error
 
         if not doc.service:
