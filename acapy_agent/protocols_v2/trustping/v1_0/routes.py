@@ -81,7 +81,7 @@ async def get_mydid(request: web.BaseRequest):
     async with context.session() as session:
         did_methods: DIDMethods = session.inject(DIDMethods)
         filter_method: DIDMethod | None = did_methods.from_method(
-            request.query.get("method") or "did:peer:4"
+            request.query.get("method") or "did:peer:2"
         )
         #key_types = session.inject(KeyTypes)
         #filter_key_type = key_types.from_key_type(request.query.get("key_type", ""))
@@ -150,10 +150,10 @@ async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
             )
         reply_destination = [
             ConnectionTarget(
-                did=f"{to_did}#key-0",
+                did=f"{to_did}#key-1",
                 endpoint=service.service_endpoint.uri,
-                recipient_keys=[f"{to_did}#key-0"],
-                sender_key=from_did + "#key-0",
+                recipient_keys=[f"{to_did}#key-1"],
+                sender_key=from_did + "#key-1",
             )
             for service in chain[-1]["service"]
         ]
