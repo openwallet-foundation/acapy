@@ -8,6 +8,12 @@ services:
       - 5433:5432
     volumes:
       - wallet-db-data:/var/lib/pgsql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DB_USER"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   alice:
     image: bcgovimages/aries-cloudagent:py3.12_1.0.1
@@ -43,42 +49,8 @@ services:
     depends_on:
       tails:
         condition: service_started
-
-  alice-upgrade:
-    image: acapy-test
-    profiles: ["upgrade-test"]
-    ports:
-      - "3001:3001"
-    environment:
-      RUST_LOG: 'aries-askar::log::target=error'
-    command: >
-      start
-        --label Alice
-        --inbound-transport http 0.0.0.0 3000
-        --outbound-transport http
-        --endpoint http://alice:3000
-        --admin 0.0.0.0 3001
-        --admin-insecure-mode
-        --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
-        --wallet-type askar
-        --wallet-name alice
-        --wallet-key insecure
-        --wallet-storage-type "postgres_storage"
-        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
-        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
-        --auto-provision
-        --log-level debug
-        --debug-webhooks
-    healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
-      start_period: 30s
-      interval: 7s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      tails:
-        condition: service_started
+      wallet-db:
+        condition: service_healthy
 
   bob:
     image: acapy-test
@@ -112,6 +84,11 @@ services:
       interval: 7s
       timeout: 5s
       retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
 
   tails:
     image: ghcr.io/bcgov/tails-server:latest
