@@ -79,11 +79,13 @@ async def main():
         environment={'RUST_LOG': 'aries-askar::log::target=error'},
         healthcheck=alice_container.attrs['Config']['Healthcheck'],
         name='alice',
+        network='simple_restart_default',
         ports=alice_container.attrs['NetworkSettings']['Ports'],
     )
     print(">>> new container:", 'alice', json.dumps(new_alice_container.attrs))
 
     wait_until_healthy(new_alice_container)
+    print(">>> new alice container is healthy")
 
     # TODO run some more tests ...  alice should still be connected to bob for example ...
 
