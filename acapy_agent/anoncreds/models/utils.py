@@ -39,8 +39,8 @@ async def get_requested_creds_from_proof_request_preview(
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             presentation_request=proof_request,
             referents=(referent,),
-            start=0,
-            count=100,
+            offset=0,
+            limit=100,
         )
         if not credentials:
             raise ValueError(_get_value_error_msg(proof_request, referent))
@@ -61,8 +61,8 @@ async def get_requested_creds_from_proof_request_preview(
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             presentation_request=proof_request,
             referents=(referent,),
-            start=0,
-            count=100,
+            offset=0,
+            limit=100,
         )
         if not credentials:
             raise ValueError(_get_value_error_msg(proof_request, referent))

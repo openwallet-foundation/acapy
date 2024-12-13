@@ -36,6 +36,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....wallet.error import WalletNotFoundError
@@ -237,20 +238,41 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
     )
     start = fields.Str(
         required=False,
+        load_default="0",
         validate=NUM_STR_WHOLE_VALIDATE,
         metadata={
-            "description": "Start index",
+            "description": "Start index (DEPRECATED - use offset instead)",
             "strict": True,
             "example": NUM_STR_WHOLE_EXAMPLE,
+            "deprecated": True,
         },
     )
     count = fields.Str(
         required=False,
+        load_default="10",
         validate=NUM_STR_NATURAL_VALIDATE,
         metadata={
-            "description": "Maximum number to retrieve",
+            "description": "Maximum number to retrieve (DEPRECATED - use limit instead)",
             "example": NUM_STR_NATURAL_EXAMPLE,
+            "deprecated": True,
         },
+    )
+    limit = fields.Int(
+        required=False,
+        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        metadata={"description": "Number of results to return", "example": 50},
+        error_messages={
+            "validator_failed": (
+                "Value must be greater than 0 and "
+                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
+            )
+        },
+    )
+    offset = fields.Int(
+        required=False,
+        validate=lambda x: x >= 0,
+        metadata={"description": "Offset for pagination", "example": 0},
+        error_messages={"validator_failed": "Value must be 0 or greater"},
     )
     extra_query = fields.Str(
         required=False,
@@ -413,25 +435,29 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    start = request.query.get("start")
-    count = request.query.get("count")
+    # Handle both old style start/count and new limit/offset
+    # TODO: Remove start/count and swap to PaginatedQuerySchema and get_limit_offset
+    if "limit" in request.query or "offset" in request.query:
+        # New style - use limit/offset
+        limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+        offset = int(request.query.get("offset", 0))
+    else:
+        # Old style - use start/count
+        limit = int(request.query.get("count", "10"))
+        offset = int(request.query.get("start", "0"))
 
     # url encoded json extra_query
     encoded_extra_query = request.query.get("extra_query") or "{}"
     extra_query = json.loads(encoded_extra_query)
-
-    # defaults
-    start = int(start) if isinstance(start, str) else 0
-    count = int(count) if isinstance(count, str) else 10
 
     holder = profile.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record._presentation_request.ser,
             presentation_referents,
-            start,
-            count,
-            extra_query,
+            offset=offset,
+            limit=limit,
+            extra_query=extra_query,
         )
     except IndyHolderError as err:
         if pres_ex_record:
