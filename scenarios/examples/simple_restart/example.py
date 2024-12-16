@@ -15,7 +15,16 @@ from docker.models.networks import Network
 
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
-from acapy_controller.protocols import connection, didexchange
+from acapy_controller.protocols import (
+    connection,
+    didexchange,
+    indy_anoncred_credential_artifacts,
+    indy_anoncred_onboard,
+    indy_anoncreds_publish_revocation,
+    indy_anoncreds_revoke,
+    indy_issue_credential_v2,
+    indy_present_proof_v2,
+)
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
@@ -24,25 +33,67 @@ BOB = getenv("BOB", "http://bob:3001")
 def healthy(container: Container) -> bool:
     """Check if container is healthy."""
     inspect_results = container.attrs
+    print(">>> state:", inspect_results["State"])
     return inspect_results["State"]["Running"] and inspect_results["State"]["Health"]["Status"] == "healthy"
 
 
-def wait_until_healthy(container: Container, attempts: int = 350):
+def unhealthy(container: Container) -> bool:
+    """Check if container is unhealthy."""
+    inspect_results = container.attrs
+    print(">>> state:", inspect_results["State"])
+    return not inspect_results["State"]["Running"]
+
+
+def wait_until_healthy(client, container_id: str, attempts: int = 350, is_healthy=True):
     """Wait until container is healthy."""
+    container = client.containers.get(container_id)
     print((container.name, container.status))
     for _ in range(attempts):
-        if healthy(container):
+        if (is_healthy and healthy(container)) or unhealthy(container):
             return
         else:
             time.sleep(1)
+        container = client.containers.get(container_id)
     raise TimeoutError("Timed out waiting for container")
 
 
 async def main():
     """Test Controller protocols."""
     async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
-        await connection(alice, bob)
-        await didexchange(alice, bob)
+        # connect the 2 agents
+        print(">>> connecting agents ...")
+        (alice_conn, bob_conn) = await didexchange(alice, bob)
+
+        # setup alice as an issuer
+        print(">>> setting up alice as issuer ...")
+        await indy_anoncred_onboard(alice)
+        schema, cred_def = await indy_anoncred_credential_artifacts(
+            alice,
+            ["firstname", "lastname"],
+            support_revocation=True,
+        )
+
+        # Issue a credential
+        print(">>> issue credential ...")
+        alice_cred_ex, _ = await indy_issue_credential_v2(
+            alice,
+            bob,
+            alice_conn.connection_id,
+            bob_conn.connection_id,
+            cred_def.credential_definition_id,
+            {"firstname": "Bob", "lastname": "Builder"},
+        )
+
+        # Present the the credential's attributes
+        print(">>> present proof ...")
+        await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[{"name": "firstname"}],
+        )
+        print(">>> Done!")
 
     # play with docker
     client = docker.from_env()
@@ -59,19 +110,16 @@ async def main():
     # try to restart a container (stop alice and start alice-upgrade)
     alice_docker_container = docker_containers['alice']
     alice_container = client.containers.get(alice_docker_container['Id'])
-    print(">>> container:", 'alice', json.dumps(alice_container.attrs))
 
-    bob_docker_container = docker_containers['bob']
-    bob_container = client.containers.get(bob_docker_container['Id'])
-    print(">>> container:", 'bob', json.dumps(bob_container.attrs))
-
+    print(">>> shut down alice ...")
     alice_container.stop()
+
+    print(">>> waiting for alice container to exit ...")
+    alice_id = alice_container.attrs['Id']
+    wait_until_healthy(client, alice_id, is_healthy=False)
     alice_container.remove()
 
-    print(">>> waiting for alice container to exit")
-    time.sleep(10)
-
-    print(">>> start new alice container")
+    print(">>> start new alice container ...")
     new_alice_container = client.containers.run(
         'acapy-test',
         command=alice_container.attrs['Config']['Cmd'],
@@ -79,15 +127,27 @@ async def main():
         environment={'RUST_LOG': 'aries-askar::log::target=error'},
         healthcheck=alice_container.attrs['Config']['Healthcheck'],
         name='alice',
-        network='simple_restart_default',
+        network=alice_container.attrs['HostConfig']['NetworkMode'],
         ports=alice_container.attrs['NetworkSettings']['Ports'],
     )
     print(">>> new container:", 'alice', json.dumps(new_alice_container.attrs))
+    alice_id = new_alice_container.attrs['Id']
 
-    wait_until_healthy(new_alice_container)
+    wait_until_healthy(client, alice_id)
     print(">>> new alice container is healthy")
 
-    # TODO run some more tests ...  alice should still be connected to bob for example ...
+    # run some more tests ...  alice should still be connected to bob for example ...
+    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
+        # Present the the credential's attributes
+        print(">>> present proof ... again ...")
+        await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[{"name": "firstname"}],
+        )
+        print(">>> Done! (again)")
 
 
 if __name__ == "__main__":
