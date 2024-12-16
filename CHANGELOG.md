@@ -1,5 +1,22 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.12.3rc0
+
+### December 16, 2024
+
+A patch release to add address a bug found in the Linked Data Verifiable Credential handling for multi-tenant holders. The bug was fixed in the main branch, [PR 3391 - BREAKING: VCHolder multitenant binding](https://github.com/openwallet-foundation/acapy/pull/3391), and with this release is backported to 0.12 Long Term Support branch. Prior to this release, holder credentials received into a single tenant wallet were visible in the admin wallet, and when used in "admin insecure mode", visibile in all tenants.
+
+### 0.12.3rc0 Breaking Changes
+
+The release impacts those using the GET /vc/credentials endpoint; the response is now an object with a single results attribute where it was previously just a flat list.
+
+#### 0.12.3rc0 Categorized List of Pull Requests
+
+- Multitenant LD-VC Holders
+  - Patch PR 3391 - 0.12.lts [\#3396](https://github.com/openwallet-foundation/acapy/pull/3396)
+- Release management pull requests
+  - 0.12.3rc0 [\#3405](https://github.com/hyperledger/aries-cloudagent-python/pull/3405) [swcurran](https://github.com/swcurran)
+
 ## 0.12.2
 
 ### August 2, 2024
