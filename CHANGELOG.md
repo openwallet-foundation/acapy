@@ -8,7 +8,7 @@ A patch release to add address a bug found in the Linked Data Verifiable Credent
 
 ### 0.12.3rc0 Breaking Changes
 
-The release impacts those using the GET /vc/credentials endpoint; the response is now an object with a single results attribute where it was previously just a flat list.
+There are no breaking changes in this release.
 
 #### 0.12.3rc0 Categorized List of Pull Requests
 
