@@ -87,7 +87,7 @@ pytest-asyncio = "^0.25.0"
 pytest-cov = "^5.0.0"
 pytest-ruff = "^0.4.1"
 pytest-xdist = "^3.6.1"
-debugpy = "^1.8.9"
+debugpy = "^1.8.11"
 
 [tool.poetry.extras]
 bbs = ["ursa-bbs-signatures"]
