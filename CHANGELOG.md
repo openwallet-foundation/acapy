@@ -4,7 +4,7 @@
 
 ### December 17, 2024
 
-A patch release to add address a bug found in the Linked Data Verifiable Credential handling for multi-tenant holders. The bug was fixed in the main branch, [PR 3391 - BREAKING: VCHolder multitenant binding](https://github.com/openwallet-foundation/acapy/pull/3391), and with this release is backported to 0.12 Long Term Support branch. Prior to this release, holder credentials received into a tenant wallet were actually received into the multi=tenant admin wallet.
+A patch release to add address a bug found in the Linked Data Verifiable Credential handling for multi-tenant holders. The bug was fixed in the main branch, [PR 3391 - BREAKING: VCHolder multitenant binding](https://github.com/openwallet-foundation/acapy/pull/3391), and with this release is backported to 0.12 Long Term Support branch. Prior to this release, holder credentials received into a tenant wallet were actually received into the multi-tenant admin wallet.
 
 ### 0.12.3 Breaking Changes
 
