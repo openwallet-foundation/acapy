@@ -444,7 +444,7 @@ class BaseConnectionManager:
         try:
             doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
-        except ResolverError as error:
+        except (ResolverError, ValueError) as error:
             raise BaseConnectionManagerError("Failed to resolve DID services") from error
 
         if not doc.service:
