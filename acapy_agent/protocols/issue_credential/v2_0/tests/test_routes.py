@@ -61,6 +61,29 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
+    async def test_validate_cred_filter_anoncreds_schema(self):
+        schema = test_module.V20CredFilterSchema()
+        schema.validate_fields({"anoncreds": {"issuer_id": TEST_DID}})
+        schema.validate_fields(
+            {"anoncreds": {"issuer_id": TEST_DID, "schema_version": "1.0"}}
+        )
+        schema.validate_fields(
+            {
+                "anoncreds": {"issuer_id": TEST_DID},
+            }
+        )
+        schema.validate_fields(
+            {
+                "anoncreds": {},
+            }
+        )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(["hopeless", "stop"])
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"veres-one": {"no": "support"}})
+
     async def test_validate_create_schema(self):
         schema = test_module.V20IssueCredSchemaCore()
         schema.validate(

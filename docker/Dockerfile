@@ -3,7 +3,7 @@ FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
 
-ADD . .
+COPY . .
 
 RUN pip install --no-cache-dir poetry
 RUN poetry build
