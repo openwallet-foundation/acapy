@@ -6,8 +6,6 @@ services:
       - POSTGRES_PASSWORD=DB_PASSWORD
     ports:
       - 5433:5432
-    volumes:
-      - wallet-db-data:/var/lib/pgsql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U DB_USER"]
       interval: 10s
@@ -124,6 +122,3 @@ services:
         condition: service_healthy
       bob:
         condition: service_healthy
-
-volumes:
-  wallet-db-data:

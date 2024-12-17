@@ -33,14 +33,12 @@ BOB = getenv("BOB", "http://bob:3001")
 def healthy(container: Container) -> bool:
     """Check if container is healthy."""
     inspect_results = container.attrs
-    print(">>> state:", inspect_results["State"])
     return inspect_results["State"]["Running"] and inspect_results["State"]["Health"]["Status"] == "healthy"
 
 
 def unhealthy(container: Container) -> bool:
     """Check if container is unhealthy."""
     inspect_results = container.attrs
-    print(">>> state:", inspect_results["State"])
     return not inspect_results["State"]["Running"]
 
 
@@ -133,21 +131,29 @@ async def main():
     print(">>> new container:", 'alice', json.dumps(new_alice_container.attrs))
     alice_id = new_alice_container.attrs['Id']
 
-    wait_until_healthy(client, alice_id)
-    print(">>> new alice container is healthy")
+    try:
+        wait_until_healthy(client, alice_id)
+        print(">>> new alice container is healthy")
 
-    # run some more tests ...  alice should still be connected to bob for example ...
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
-        # Present the the credential's attributes
-        print(">>> present proof ... again ...")
-        await indy_present_proof_v2(
-            bob,
-            alice,
-            bob_conn.connection_id,
-            alice_conn.connection_id,
-            requested_attributes=[{"name": "firstname"}],
-        )
-        print(">>> Done! (again)")
+        # run some more tests ...  alice should still be connected to bob for example ...
+        async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
+            # Present the the credential's attributes
+            print(">>> present proof ... again ...")
+            await indy_present_proof_v2(
+                bob,
+                alice,
+                bob_conn.connection_id,
+                alice_conn.connection_id,
+                requested_attributes=[{"name": "firstname"}],
+            )
+            print(">>> Done! (again)")
+    finally:
+        # cleanup - shut down alice agent (not part of docker compose)
+        print(">>> shut down alice ...")
+        alice_container = client.containers.get(alice_id)
+        alice_container.stop()
+        wait_until_healthy(client, alice_id, is_healthy=False)
+        alice_container.remove()
 
 
 if __name__ == "__main__":
