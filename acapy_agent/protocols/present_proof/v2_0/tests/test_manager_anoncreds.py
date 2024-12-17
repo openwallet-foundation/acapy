@@ -6,6 +6,8 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from .....anoncreds.holder import AnonCredsHolder
+from .....anoncreds.models.cred_def_info import AnoncredsCredDefInfo
+from .....anoncreds.registry import AnonCredsRegistry
 from .....anoncreds.verifier import AnonCredsVerifier
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
@@ -469,6 +471,11 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
         )
         injector.bind_instance(AnonCredsHolder, self.holder)
+        registry = mock.MagicMock(AnonCredsRegistry, autospec=True)
+        registry.get_cred_def_info_by_id = mock.CoroutineMock(
+            return_value=AnoncredsCredDefInfo(issuer_id=ISSUER_DID)
+        )
+        injector.bind_instance(AnonCredsRegistry, registry)
 
         self.verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
         self.verifier.verify_presentation = mock.CoroutineMock(return_value=("true", []))
