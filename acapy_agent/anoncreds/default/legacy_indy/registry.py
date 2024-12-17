@@ -56,6 +56,7 @@ from ...base import (
 )
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
+from ...models.cred_def_info import AnoncredsCredDefInfo
 from ...models.credential_definition import (
     CredDef,
     CredDefResult,
@@ -1238,4 +1239,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             issuer_id=schema_id_parts.group(1),
             name=schema_id_parts.group(2),
             version=schema_id_parts.group(3),
+        )
+
+    async def get_cred_def_info_by_id(self, cred_def_id: str) -> AnoncredsCredDefInfo:
+        """Get cred def info by cred def id."""
+        return AnoncredsCredDefInfo(
+            issuer_id=cred_def_id.split(":")[-5],
         )

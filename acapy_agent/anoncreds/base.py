@@ -135,9 +135,13 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     async def get_schema_info_by_id(self, schema_id: str) -> AnoncredsSchemaInfo:
         """Get a schema info from the registry."""
 
+    @abstractmethod
+    async def get_cred_def_info_by_id(self, schema_id: str) -> AnoncredsSchemaInfo:
+        """Get a cred def info from the registry."""
+
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
-    """Base Anon Creds Registrar."""
+    """Base Anoncreds Registrar."""
 
     @abstractmethod
     async def register_schema(
