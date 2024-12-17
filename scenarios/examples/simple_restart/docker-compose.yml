@@ -111,7 +111,6 @@ services:
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - ALICE=http://alice:3001
-      - ALICE_UPGRADE=http://alice-upgrade:3001
       - BOB=http://bob:3001
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
