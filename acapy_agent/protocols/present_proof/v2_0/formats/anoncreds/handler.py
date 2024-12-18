@@ -201,7 +201,9 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
                 registry = self.profile.inject(AnonCredsRegistry)
                 schema = await registry.get_schema(self.profile, schema_id)
-                cred_def = await registry.get_credential_definition(cred_def_id)
+                cred_def = await registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
                 criteria = {
                     "schema_id": schema_id,
                     "schema_issuer_did": schema.schema_value.issuer_id,
@@ -239,7 +241,9 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
                 registry = self.profile.inject(AnonCredsRegistry)
                 schema = await registry.get_schema(self.profile, schema_id)
-                cred_def = await registry.get_credential_definition(cred_def_id)
+                cred_def = await registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
                 criteria = {
                     "schema_id": schema_id,
                     "schema_issuer_did": schema.schema_value.issuer_id,
@@ -304,7 +308,9 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
                 registry = self.profile.inject(AnonCredsRegistry)
                 schema = await registry.get_schema(self.profile, schema_id)
-                cred_def = await registry.get_credential_definition(cred_def_id)
+                cred_def = await registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
                 criteria = {
                     "schema_id": schema_id,
                     "schema_issuer_did": schema.schema_value.issuer_id,
