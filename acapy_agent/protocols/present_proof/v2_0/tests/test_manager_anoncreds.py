@@ -2117,7 +2117,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             "name": "highScore",
             "p_type": ">=",
             "p_value": 1000000,
-            "restrictions": [{"issuer_id": "FFFFFFFFFFFFFFFFFFFFFF"}],  # fake issuer
+            "restrictions": [{"issuer_did": "FFFFFFFFFFFFFFFFFFFFFF"}],  # fake issuer
             "non_revoked": {"from": NOW, "to": NOW},
         }
         pres_proposal = V20PresProposal(
