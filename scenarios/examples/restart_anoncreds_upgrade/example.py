@@ -29,6 +29,10 @@ from examples.util import (
     healthy,
     unhealthy,
     wait_until_healthy,
+    anoncreds_presentation_summary,
+    auto_select_credentials_for_presentation_request,
+    anoncreds_issue_credential_v2,
+    anoncreds_present_proof_v2,
 )
 
 
@@ -86,12 +90,33 @@ async def main():
             docker_containers[container_name] = {'Id': container_id, 'Running': container_is_running}
             print(">>> container:", container_name, docker_containers[container_name])
 
-    # try to restart a container (stop alice and start alice-upgrade)
     alice_docker_container = docker_containers['alice']
     alice_container = client.containers.get(alice_docker_container['Id'])
+    alice_command = alice_container.attrs['Config']['Cmd']
 
-    print(">>> shut down alice ...")
-    alice_container.stop()
+    # command is a List, find the wallet type and replace "askar" with "askar-anoncreds"
+    correct_wallet_type = False
+    wallet_name = None
+    for i in range(len(alice_command)-1):
+        if alice_command[i] == "--wallet-type":
+            alice_command[i+1] = "askar-anoncreds"
+            correct_wallet_type = True
+        elif alice_command[i] == "--wallet-name":
+            wallet_name = alice_command[i+1]
+    if not correct_wallet_type or not wallet_name:
+        raise Exception("Error unable to upgrade wallet type to askar-anoncreds")
+
+    async with Controller(base_url=ALICE) as alice:
+        # call the wallet upgrade endpoint to upgrade to askar-anoncreds
+        await alice.post(
+            "/anoncreds/wallet/upgrade",
+            params={
+                "wallet_name": wallet_name,
+            },
+        )
+
+        # Wait for the upgrade ...
+        await asyncio.sleep(2)
 
     print(">>> waiting for alice container to exit ...")
     alice_id = alice_container.attrs['Id']
@@ -104,7 +129,7 @@ async def main():
         print(">>> start new alice container ...")
         new_alice_container = client.containers.run(
             'acapy-test',
-            command=alice_container.attrs['Config']['Cmd'],
+            command=alice_command,
             detach=True,
             environment={'RUST_LOG': 'aries-askar::log::target=error'},
             healthcheck=alice_container.attrs['Config']['Healthcheck'],
@@ -112,6 +137,7 @@ async def main():
             network=alice_container.attrs['HostConfig']['NetworkMode'],
             ports=alice_container.attrs['NetworkSettings']['Ports'],
         )
+        print(">>> new container:", 'alice', json.dumps(new_alice_container.attrs))
         alice_id = new_alice_container.attrs['Id']
 
         wait_until_healthy(client, alice_id)
@@ -121,7 +147,7 @@ async def main():
         async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
             # Present the the credential's attributes
             print(">>> present proof ... again ...")
-            await indy_present_proof_v2(
+            await anoncreds_present_proof_v2(
                 bob,
                 alice,
                 bob_conn.connection_id,
