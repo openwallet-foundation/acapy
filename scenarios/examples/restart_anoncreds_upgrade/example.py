@@ -162,7 +162,7 @@ def start_new_container(
     return (new_agent_container, new_agent_id)
 
 
-def stop_and_remove_container(agent_id):
+def stop_and_remove_container(client, agent_id):
     # cleanup - shut down agent (not part of docker compose)
     print(">>> shut down agent ...")
     agent_container = client.containers.get(agent_id)
@@ -313,10 +313,10 @@ async def main():
     finally:
         if alice_id and new_alice_container:
             # cleanup - shut down alice agent (not part of docker compose)
-            stop_and_remove_container(alice_id)
+            stop_and_remove_container(client, alice_id)
         if bob_id and new_bob_container:
             # cleanup - shut down bob agent (not part of docker compose)
-            stop_and_remove_container(bob_id)
+            stop_and_remove_container(client, bob_id)
 
 
 if __name__ == "__main__":
