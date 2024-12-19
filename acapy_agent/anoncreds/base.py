@@ -132,7 +132,9 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         """Get a revocation list from the registry."""
 
     @abstractmethod
-    async def get_schema_info_by_id(self, schema_id: str) -> AnoncredsSchemaInfo:
+    async def get_schema_info_by_id(
+        self, profile: Profile, schema_id: str
+    ) -> AnoncredsSchemaInfo:
         """Get a schema info from the registry."""
 
 

@@ -231,7 +231,9 @@ class AnonCredsHolder:
     ) -> str:
         credential_data = cred_recvd.to_dict()
         registry = self.profile.inject(AnonCredsRegistry)
-        schema_info = await registry.get_schema_info_by_id(credential_data["schema_id"])
+        schema_info = await registry.get_schema_info_by_id(
+            self.profile, credential_data["schema_id"]
+        )
 
         credential_id = credential_id or str(uuid4())
         tags = {
