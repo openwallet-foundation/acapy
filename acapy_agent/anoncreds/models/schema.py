@@ -64,6 +64,7 @@ class AnonCredsSchemaSchema(BaseModelSchema):
             "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
+        required=True,
     )
     attr_names = fields.List(
         fields.Str(
@@ -74,11 +75,15 @@ class AnonCredsSchemaSchema(BaseModelSchema):
         ),
         metadata={"description": "Schema attribute names"},
         data_key="attrNames",
+        required=True,
     )
     name = fields.Str(
-        metadata={"description": "Schema name", "example": "Example schema"}
+        metadata={"description": "Schema name", "example": "Example schema"},
+        required=True,
     )
-    version = fields.Str(metadata={"description": "Schema version", "example": "1.0"})
+    version = fields.Str(
+        metadata={"description": "Schema version", "example": "1.0"}, required=True
+    )
 
 
 class GetSchemaResult(BaseModel):
