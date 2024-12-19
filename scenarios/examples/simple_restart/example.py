@@ -11,7 +11,6 @@ import time
 import docker
 from docker.errors import NotFound
 from docker.models.containers import Container
-from docker.models.networks import Network
 
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
@@ -26,33 +25,15 @@ from acapy_controller.protocols import (
     indy_present_proof_v2,
 )
 
+from examples.util import (
+    healthy,
+    unhealthy,
+    wait_until_healthy,
+)
+
+
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
-
-
-def healthy(container: Container) -> bool:
-    """Check if container is healthy."""
-    inspect_results = container.attrs
-    return inspect_results["State"]["Running"] and inspect_results["State"]["Health"]["Status"] == "healthy"
-
-
-def unhealthy(container: Container) -> bool:
-    """Check if container is unhealthy."""
-    inspect_results = container.attrs
-    return not inspect_results["State"]["Running"]
-
-
-def wait_until_healthy(client, container_id: str, attempts: int = 350, is_healthy=True):
-    """Wait until container is healthy."""
-    container = client.containers.get(container_id)
-    print((container.name, container.status))
-    for _ in range(attempts):
-        if (is_healthy and healthy(container)) or unhealthy(container):
-            return
-        else:
-            time.sleep(1)
-        container = client.containers.get(container_id)
-    raise TimeoutError("Timed out waiting for container")
 
 
 async def main():
@@ -117,21 +98,22 @@ async def main():
     wait_until_healthy(client, alice_id, is_healthy=False)
     alice_container.remove()
 
-    print(">>> start new alice container ...")
-    new_alice_container = client.containers.run(
-        'acapy-test',
-        command=alice_container.attrs['Config']['Cmd'],
-        detach=True,
-        environment={'RUST_LOG': 'aries-askar::log::target=error'},
-        healthcheck=alice_container.attrs['Config']['Healthcheck'],
-        name='alice',
-        network=alice_container.attrs['HostConfig']['NetworkMode'],
-        ports=alice_container.attrs['NetworkSettings']['Ports'],
-    )
-    print(">>> new container:", 'alice', json.dumps(new_alice_container.attrs))
-    alice_id = new_alice_container.attrs['Id']
-
+    new_alice_container = None
+    alice_id = None
     try:
+        print(">>> start new alice container ...")
+        new_alice_container = client.containers.run(
+            'acapy-test',
+            command=alice_container.attrs['Config']['Cmd'],
+            detach=True,
+            environment={'RUST_LOG': 'aries-askar::log::target=error'},
+            healthcheck=alice_container.attrs['Config']['Healthcheck'],
+            name='alice',
+            network=alice_container.attrs['HostConfig']['NetworkMode'],
+            ports=alice_container.attrs['NetworkSettings']['Ports'],
+        )
+        alice_id = new_alice_container.attrs['Id']
+
         wait_until_healthy(client, alice_id)
         print(">>> new alice container is healthy")
 
@@ -148,12 +130,13 @@ async def main():
             )
             print(">>> Done! (again)")
     finally:
-        # cleanup - shut down alice agent (not part of docker compose)
-        print(">>> shut down alice ...")
-        alice_container = client.containers.get(alice_id)
-        alice_container.stop()
-        wait_until_healthy(client, alice_id, is_healthy=False)
-        alice_container.remove()
+        if alice_id and new_alice_container:
+            # cleanup - shut down alice agent (not part of docker compose)
+            print(">>> shut down alice ...")
+            alice_container = client.containers.get(alice_id)
+            alice_container.stop()
+            wait_until_healthy(client, alice_id, is_healthy=False)
+            alice_container.remove()
 
 
 if __name__ == "__main__":
