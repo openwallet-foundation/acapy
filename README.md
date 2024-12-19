@@ -11,6 +11,7 @@ For details on what this means for ACA-Py users, including steps for updating de
 [GitHub Issue #3250]: https://github.com/openwallet-foundation/acapy/issues/3250
 
 <p float="left">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/openwallet-foundation/acapy"><img src="https://api.scorecard.dev/projects/github.com/openwallet-foundation/acapy/badge" />
   <a href="https://pypi.org/project/acapy-agent/"><img src="https://img.shields.io/pypi/v/acapy-agent" width="100" height="20" />
   <img src="https://sonarcloud.io/images/project_badges/sonarcloud-white.svg" width="120" height="20" />
   <img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=coverage" width="120"  height="20" />
