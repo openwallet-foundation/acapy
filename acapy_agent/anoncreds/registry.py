@@ -21,6 +21,7 @@ from .models.revocation import (
     RevRegDefResult,
 )
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema_info import AnoncredsSchemaInfo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -98,6 +99,13 @@ class AnonCredsRegistry:
             profile,
             credential_definition_id,
         )
+
+    async def get_schema_info_by_id(
+        self, profile: Profile, schema_id: str
+    ) -> AnoncredsSchemaInfo:
+        """Get a schema info from the registry."""
+        resolver = await self._resolver_for_identifier(schema_id)
+        return await resolver.get_schema_info_by_id(profile, schema_id)
 
     async def register_credential_definition(
         self,

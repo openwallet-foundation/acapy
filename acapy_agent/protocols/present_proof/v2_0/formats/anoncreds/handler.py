@@ -11,6 +11,7 @@ from ......anoncreds.models.predicate import Predicate
 from ......anoncreds.models.presentation_request import AnoncredsPresentationRequestSchema
 from ......anoncreds.models.proof import AnoncredsProofSchema
 from ......anoncreds.models.utils import get_requested_creds_from_proof_request_preview
+from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.util import generate_pr_nonce
 from ......anoncreds.verifier import AnonCredsVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -175,7 +176,7 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
     async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
         """Receive a presentation and check for presented values vs. proposal request."""
 
-        def _check_proof_vs_proposal():
+        async def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
             from ..indy.handler import IndyPresExchangeHandler
 
@@ -198,13 +199,18 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 sub_proof_index = attr_spec["sub_proof_index"]
                 schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
+                registry = self.profile.inject(AnonCredsRegistry)
+                schema = await registry.get_schema(self.profile, schema_id)
+                cred_def = await registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
                 criteria = {
                     "schema_id": schema_id,
-                    "schema_issuer_did": schema_id.split(":")[-4],
-                    "schema_name": schema_id.split(":")[-2],
-                    "schema_version": schema_id.split(":")[-1],
+                    "schema_issuer_did": schema.schema_value.issuer_id,
+                    "schema_name": schema.schema_value.name,
+                    "schema_version": schema.schema_value.version,
                     "cred_def_id": cred_def_id,
-                    "issuer_did": cred_def_id.split(":")[-5],
+                    "issuer_did": cred_def.credential_definition.issuer_id,
                     f"attr::{name}::value": proof_value,
                 }
 
@@ -233,13 +239,18 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 sub_proof_index = attr_spec["sub_proof_index"]
                 schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
+                registry = self.profile.inject(AnonCredsRegistry)
+                schema = await registry.get_schema(self.profile, schema_id)
+                cred_def = await registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
                 criteria = {
                     "schema_id": schema_id,
-                    "schema_issuer_did": schema_id.split(":")[-4],
-                    "schema_name": schema_id.split(":")[-2],
-                    "schema_version": schema_id.split(":")[-1],
+                    "schema_issuer_did": schema.schema_value.issuer_id,
+                    "schema_name": schema.schema_value.name,
+                    "schema_version": schema.schema_value.version,
                     "cred_def_id": cred_def_id,
-                    "issuer_did": cred_def_id.split(":")[-5],
+                    "issuer_did": cred_def.credential_definition.issuer_id,
                     **{
                         f"attr::{name}::value": value
                         for name, value in proof_values.items()
@@ -294,13 +305,18 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
 
                 schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
+                registry = self.profile.inject(AnonCredsRegistry)
+                schema = await registry.get_schema(self.profile, schema_id)
+                cred_def = await registry.get_credential_definition(
+                    self.profile, cred_def_id
+                )
                 criteria = {
                     "schema_id": schema_id,
-                    "schema_issuer_did": schema_id.split(":")[-4],
-                    "schema_name": schema_id.split(":")[-2],
-                    "schema_version": schema_id.split(":")[-1],
+                    "schema_issuer_did": schema.schema_value.issuer_id,
+                    "schema_name": schema.schema_value.name,
+                    "schema_version": schema.schema_value.version,
                     "cred_def_id": cred_def_id,
-                    "issuer_did": cred_def_id.split(":")[-5],
+                    "issuer_did": cred_def.credential_definition.issuer_id,
                 }
 
                 if (
@@ -313,7 +329,7 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                     )
 
         proof = message.attachment(AnonCredsPresExchangeHandler.format)
-        _check_proof_vs_proposal()
+        await _check_proof_vs_proposal()
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """Verify a presentation.

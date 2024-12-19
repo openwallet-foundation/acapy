@@ -6,6 +6,14 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from .....anoncreds.holder import AnonCredsHolder
+from .....anoncreds.models.credential_definition import (
+    CredDef,
+    CredDefValue,
+    CredDefValuePrimary,
+    GetCredDefResult,
+)
+from .....anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
+from .....anoncreds.registry import AnonCredsRegistry
 from .....anoncreds.verifier import AnonCredsVerifier
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
@@ -469,6 +477,37 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
         )
         injector.bind_instance(AnonCredsHolder, self.holder)
+        registry = mock.MagicMock(AnonCredsRegistry, autospec=True)
+        registry.get_schema = mock.CoroutineMock(
+            return_value=GetSchemaResult(
+                schema=AnonCredsSchema(
+                    issuer_id=ISSUER_DID,
+                    name="vidya",
+                    version="1.0",
+                    attr_names=["player", "screenCapture", "highScore"],
+                ),
+                schema_id=S_ID,
+                resolution_metadata={},
+                schema_metadata={},
+            )
+        )
+        registry.get_credential_definition = mock.CoroutineMock(
+            return_value=GetCredDefResult(
+                credential_definition_id="TUku9MDGa7QALbAJX4oAww:3:CL:531757:MYCO_Consent_Enablement",
+                credential_definition=CredDef(
+                    issuer_id=ISSUER_DID,
+                    schema_id=S_ID,
+                    tag="tag",
+                    type="CL",
+                    value=CredDefValue(
+                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
+                    ),
+                ),
+                credential_definition_metadata={},
+                resolution_metadata={},
+            )
+        )
+        injector.bind_instance(AnonCredsRegistry, registry)
 
         self.verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
         self.verifier.verify_presentation = mock.CoroutineMock(return_value=("true", []))

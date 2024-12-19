@@ -16,6 +16,7 @@ from .models.revocation import (
     RevRegDefResult,
 )
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema_info import AnoncredsSchemaInfo
 
 T = TypeVar("T")
 
@@ -130,9 +131,15 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
 
+    @abstractmethod
+    async def get_schema_info_by_id(
+        self, profile: Profile, schema_id: str
+    ) -> AnoncredsSchemaInfo:
+        """Get a schema info from the registry."""
+
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
-    """Base Anon Creds Registrar."""
+    """Base Anoncreds Registrar."""
 
     @abstractmethod
     async def register_schema(
