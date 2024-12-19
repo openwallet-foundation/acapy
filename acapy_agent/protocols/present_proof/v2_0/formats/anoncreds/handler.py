@@ -303,7 +303,6 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                         f"Proposed request predicate on {req_name} not in presentation"
                     )
 
-                sub_proof_index = attr_spec["sub_proof_index"]
                 schema_id = proof["identifiers"][sub_proof_index]["schema_id"]
                 cred_def_id = proof["identifiers"][sub_proof_index]["cred_def_id"]
                 registry = self.profile.inject(AnonCredsRegistry)
