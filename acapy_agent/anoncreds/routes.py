@@ -192,6 +192,11 @@ async def schemas_post(request: web.BaseRequest):
     name = schema_data.get("name")
     version = schema_data.get("version")
 
+    if not issuer_id or not attr_names or not name or not version:
+        raise web.HTTPBadRequest(
+            reason="issuerId, attrNames, name, and version are required"
+        )
+
     try:
         issuer = AnonCredsIssuer(profile)
         result = await issuer.create_and_register_schema(
@@ -524,6 +529,7 @@ class InnerRevRegDefSchema(OpenAPISchema):
             "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
+        required=True,
     )
     cred_def_id = fields.Str(
         metadata={
@@ -531,9 +537,11 @@ class InnerRevRegDefSchema(OpenAPISchema):
             "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         },
         data_key="credDefId",
+        required=True,
     )
     tag = fields.Str(
-        metadata={"description": "tag for revocation registry", "example": "default"}
+        metadata={"description": "tag for revocation registry", "example": "default"},
+        required=True,
     )
     max_cred_num = fields.Int(
         metadata={
@@ -541,6 +549,7 @@ class InnerRevRegDefSchema(OpenAPISchema):
             "example": 777,
         },
         data_key="maxCredNum",
+        required=True,
     )
 
 
@@ -649,7 +658,8 @@ class RevListCreateRequestSchema(OpenAPISchema):
         metadata={
             "description": "Revocation registry definition identifier",
             "example": ANONCREDS_REV_REG_ID_EXAMPLE,
-        }
+        },
+        required=True,
     )
     options = fields.Nested(RevListOptionsSchema)
 
