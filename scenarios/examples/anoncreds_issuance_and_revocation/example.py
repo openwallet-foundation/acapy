@@ -4,18 +4,13 @@ This script is for you to use to reproduce a bug or demonstrate a feature.
 """
 
 import asyncio
-import json
 from os import getenv
 from secrets import token_hex
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 from acapy_controller import Controller
-from acapy_controller.controller import Minimal, MinType
 from acapy_controller.logging import logging_to_stdout
 from acapy_controller.models import (
     CreateWalletResponse,
-    V20CredExRecordIndy,
-    V20PresExRecord,
     V20PresExRecordList,
 )
 from acapy_controller.protocols import (
@@ -25,16 +20,13 @@ from acapy_controller.protocols import (
     params,
 )
 from aiohttp import ClientSession
-
 from examples.util import (
-    SchemaResultAnoncreds,
     CredDefResultAnoncreds,
-    anoncreds_presentation_summary,
-    auto_select_credentials_for_presentation_request,
+    SchemaResultAnoncreds,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
+    anoncreds_presentation_summary,
 )
-
 
 AGENCY = getenv("AGENCY", "http://agency:3001")
 HOLDER_ANONCREDS = getenv("HOLDER_ANONCREDS", "http://holder_anoncreds:3001")
@@ -55,13 +47,15 @@ async def main():
             response=CreateWalletResponse,
         )
 
-    async with Controller(
-        base_url=AGENCY,
-        wallet_id=issuer.wallet_id,
-        subwallet_token=issuer.token,
-    ) as issuer, Controller(base_url=HOLDER_ANONCREDS) as holder_anoncreds, Controller(
-        base_url=HOLDER_INDY
-    ) as holder_indy:
+    async with (
+        Controller(
+            base_url=AGENCY,
+            wallet_id=issuer.wallet_id,
+            subwallet_token=issuer.token,
+        ) as issuer,
+        Controller(base_url=HOLDER_ANONCREDS) as holder_anoncreds,
+        Controller(base_url=HOLDER_INDY) as holder_indy,
+    ):
         """
             This section of the test script demonstrates the issuance, presentation and 
             revocation of a credential where both the issuer is not anoncreds capable 
