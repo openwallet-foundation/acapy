@@ -159,11 +159,21 @@ async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
     return reply_destination
 
 
-@docs(tags=["trustping", "didcommv2"], summary="Send a trust ping to a connection")
-@request_schema(PingRequestSchema())
+class DiscoverFeaturesQuerySchema(BaseDIDCommV2Schema):
+    """Request schema for performing a ping."""
+
+    queries = fields.Bool(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Comment for the ping message"},
+    )
+
+
+@docs(tags=["discoveryv2", "didcommv2"], summary="Request the list of supported features")
+@request_schema(DiscoverFeaturesQuerySchema())
 @response_schema(PingRequestResponseSchema(), 200, description="")
 @tenant_authentication
-async def connections_send_ping(request: web.BaseRequest):
+async def discover_features_query(request: web.BaseRequest):
     """Request handler for sending a trust ping to a connection.
 
     Args:
@@ -171,49 +181,40 @@ async def connections_send_ping(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    #connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     body = await request.json()
     to_did = body.get("to_did")
-    response_requested = body.get("response_requested")
-
-    #if not connection.is_ready:
-    #    raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
-
-    #msg = Ping(did=did, response_requested=response_requested)
-    #await outbound_handler(msg, connection_id=connection_id)
-
-    # return web.json_response({"results": results})
-
 
     our_did = await get_mydid(request)
     their_did = to_did
     reply_destination = await get_target(request, to_did, our_did)
     msg = V2AgentMessage(
         message={
-            "type": "https://didcomm.org/trust-ping/2.0/ping",
-            "body": {},
+            "type": "https://didcomm.org/discover-features/2.0/queries",
+            "body": {
+                "queries": [
+                    {
+                        "feature-type": "protocol",
+                        "match": "https://didcomm.org/*",
+                    },
+                    {
+                        "feature-type": "goal-code",
+                        "match": "org.didcomm.*",
+                    },
+                ]
+            },
             "to": [their_did],
             "from": our_did,
         }
     )
-
-    if response_requested:
-        msg.message["response_requested"] = True
-
-    ## await responder.send_reply(error_result)
     await outbound_handler(msg, target_list=reply_destination)
-
-
-
-    #return web.json_response({"thread_id": msg._thread_id})
     return web.json_response(msg.message)
 
 
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.post("/trust-ping/send-ping", connections_send_ping)])
+    app.add_routes([web.post("/discover-features/send-query", discover_features_query)])
 
 
 def post_process_routes(app: web.Application):
@@ -224,8 +225,8 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "trustpingv2",
-            "description": "Trust-ping to contact",
+            "name": "discoveryv2",
+            "description": "Feature Discovery to Contact",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
