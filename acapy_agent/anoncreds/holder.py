@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import re
 from typing import Dict, Optional, Sequence, Tuple, Union
 
 from anoncreds import (
@@ -150,8 +149,8 @@ class AnonCredsHolder:
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 CredentialRequest.create,
-                None,
                 holder_did,
+                None,
                 credential_definition.to_native(),
                 secret,
                 AnonCredsHolder.MASTER_SECRET_ID,
@@ -231,25 +230,19 @@ class AnonCredsHolder:
         rev_reg_def: Optional[dict] = None,
     ) -> str:
         credential_data = cred_recvd.to_dict()
-        schema_id = cred_recvd.schema_id
-        schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
-        if not schema_id_parts:
-            raise AnonCredsHolderError(f"Error parsing credential schema ID: {schema_id}")
-        cred_def_id = cred_recvd.cred_def_id
-        cdef_id_parts = re.match(r"^(\w+):3:CL:([^:]+):([^:]+)$", cred_def_id)
-        if not cdef_id_parts:
-            raise AnonCredsHolderError(
-                f"Error parsing credential definition ID: {cred_def_id}"
-            )
+        registry = self.profile.inject(AnonCredsRegistry)
+        schema_info = await registry.get_schema_info_by_id(
+            self.profile, credential_data["schema_id"]
+        )
 
         credential_id = credential_id or str(uuid4())
         tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": schema_id_parts[1],
-            "schema_name": schema_id_parts[2],
-            "schema_version": schema_id_parts[3],
-            "issuer_did": cdef_id_parts[1],
-            "cred_def_id": cred_def_id,
+            "schema_id": credential_data["schema_id"],
+            "schema_issuer_did": schema_info.issuer_id,
+            "schema_name": schema_info.name,
+            "schema_version": schema_info.version,
+            "issuer_did": credential_definition["issuerId"],
+            "cred_def_id": cred_recvd.cred_def_id,
             "rev_reg_id": cred_recvd.rev_reg_id or "None",
         }
 
