@@ -1,29 +1,28 @@
 import json
+import time
 from dataclasses import dataclass
 from secrets import randbelow
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 from uuid import uuid4
-import time
-
-import docker
-from docker.models.containers import Container
 
 from acapy_controller import Controller
 from acapy_controller.controller import Minimal, MinType
-from acapy_controller.logging import logging_to_stdout
 from acapy_controller.models import (
-    CreateWalletResponse,
     V20CredExRecordIndy,
     V20PresExRecord,
-    V20PresExRecordList,
 )
+
+from docker.models.containers import Container
 
 
 # docker utilities:
 def healthy(container: Container) -> bool:
     """Check if container is healthy."""
     inspect_results = container.attrs
-    return inspect_results["State"]["Running"] and inspect_results["State"]["Health"]["Status"] == "healthy"
+    return (
+        inspect_results["State"]["Running"]
+        and inspect_results["State"]["Health"]["Status"] == "healthy"
+    )
 
 
 def unhealthy(container: Container) -> bool:
@@ -45,18 +44,18 @@ def wait_until_healthy(client, container_id: str, attempts: int = 350, is_health
     raise TimeoutError("Timed out waiting for container")
 
 
-def update_wallet_type(agent_command: List, wallet_type:str) -> str:
-    for i in range(len(agent_command)-1):
+def update_wallet_type(agent_command: List, wallet_type: str) -> str:
+    for i in range(len(agent_command) - 1):
         if agent_command[i] == "--wallet-type":
-            agent_command[i+1] = wallet_type
+            agent_command[i + 1] = wallet_type
             return wallet_type
     raise Exception("Error unable to upgrade wallet type to askar-anoncreds")
 
 
 def get_wallet_name(agent_command: List) -> str:
-    for i in range(len(agent_command)-1):
+    for i in range(len(agent_command) - 1):
         if agent_command[i] == "--wallet-name":
-            return agent_command[i+1]
+            return agent_command[i + 1]
     raise Exception("Error unable to upgrade wallet type to askar-anoncreds")
 
 

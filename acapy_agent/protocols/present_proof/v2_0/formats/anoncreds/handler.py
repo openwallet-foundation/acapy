@@ -171,6 +171,13 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
             pres_ex_record=pres_ex_record,
             requested_credentials=requested_credentials,
         )
+
+        # This is used for the fallback to indy format. Should be removed when indy
+        # format retired
+        if request_data.get("indy"):
+            return IndyPresExchangeHandler(self.profile).get_format_data(
+                PRES_20, presentation_proof
+            )
         return self.get_format_data(PRES_20, presentation_proof)
 
     async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):

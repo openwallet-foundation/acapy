@@ -4,39 +4,25 @@ This script is for you to use to reproduce a bug or demonstrate a feature.
 """
 
 import asyncio
-from os import getenv
 import json
-import time
-
-import docker
-from docker.errors import NotFound
-from docker.models.containers import Container
+from os import getenv
 
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
 from acapy_controller.protocols import (
-    connection,
     didexchange,
     indy_anoncred_credential_artifacts,
     indy_anoncred_onboard,
-    indy_anoncreds_publish_revocation,
-    indy_anoncreds_revoke,
-    indy_issue_credential_v2,
-    indy_present_proof_v2,
 )
-
 from examples.util import (
-    healthy,
-    unhealthy,
-    wait_until_healthy,
-    update_wallet_type,
-    get_wallet_name,
-    anoncreds_presentation_summary,
-    auto_select_credentials_for_presentation_request,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
+    get_wallet_name,
+    update_wallet_type,
+    wait_until_healthy,
 )
 
+import docker
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB_ASKAR = getenv("BOB_ASKAR", "http://bob-askar:3001")
@@ -111,7 +97,7 @@ async def upgrade_wallet_and_shutdown_container(
     agent_controller,
     agent_container,
 ):
-    agent_command = agent_container.attrs['Config']['Cmd']
+    agent_command = agent_container.attrs["Config"]["Cmd"]
 
     # command is a List, find the wallet type and replace "askar" with "askar-anoncreds"
     correct_wallet_type = update_wallet_type(agent_command, "askar-anoncreds")
@@ -129,7 +115,7 @@ async def upgrade_wallet_and_shutdown_container(
     await asyncio.sleep(2)
 
     print(">>> waiting for container to exit ...")
-    agent_id = agent_container.attrs['Id']
+    agent_id = agent_container.attrs["Id"]
     wait_until_healthy(client, agent_id, is_healthy=False)
     agent_container.remove()
 
@@ -144,17 +130,17 @@ def start_new_container(
 ):
     print(">>> start new container ...")
     new_agent_container = client.containers.run(
-        'acapy-test',
+        "acapy-test",
         command=agent_command,
         detach=True,
-        environment={'RUST_LOG': 'aries-askar::log::target=error'},
-        healthcheck=agent_container.attrs['Config']['Healthcheck'],
+        environment={"RUST_LOG": "aries-askar::log::target=error"},
+        healthcheck=agent_container.attrs["Config"]["Healthcheck"],
         name=agent_label,
-        network=agent_container.attrs['HostConfig']['NetworkMode'],
-        ports=agent_container.attrs['NetworkSettings']['Ports'],
+        network=agent_container.attrs["HostConfig"]["NetworkMode"],
+        ports=agent_container.attrs["NetworkSettings"]["Ports"],
     )
     print(">>> new container:", agent_label, json.dumps(new_agent_container.attrs))
-    new_agent_id = new_agent_container.attrs['Id']
+    new_agent_id = new_agent_container.attrs["Id"]
 
     wait_until_healthy(client, new_agent_id)
     print(">>> new container is healthy")
@@ -198,7 +184,10 @@ async def main():
         alice_conns["askar"] = alice_conn
         bob_conns["askar"] = bob_conn
 
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ANONCREDS) as bob:
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ANONCREDS) as bob,
+    ):
         # connect to Bob (Anoncreds wallet) and issue (and revoke) some credentials
         (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
             alice,
@@ -210,7 +199,10 @@ async def main():
         alice_conns["anoncreds"] = alice_conn
         bob_conns["anoncreds"] = bob_conn
 
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ASKAR_ANON) as bob:
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ASKAR_ANON) as bob,
+    ):
         # connect to Bob (Askar wallet which will be upgraded) and issue (and revoke) some credentials
         (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
             alice,
@@ -229,15 +221,20 @@ async def main():
     containers = client.containers.list(all=True)
     docker_containers = {}
     for container in containers:
-        if 'com.docker.compose.service' in container.attrs['Config']['Labels']:
-            container_name = container.attrs['Config']['Labels']['com.docker.compose.service']
-            container_id = container.attrs['Id']
-            container_is_running = container.attrs['State']['Running']
-            docker_containers[container_name] = {'Id': container_id, 'Running': container_is_running}
+        if "com.docker.compose.service" in container.attrs["Config"]["Labels"]:
+            container_name = container.attrs["Config"]["Labels"][
+                "com.docker.compose.service"
+            ]
+            container_id = container.attrs["Id"]
+            container_is_running = container.attrs["State"]["Running"]
+            docker_containers[container_name] = {
+                "Id": container_id,
+                "Running": container_is_running,
+            }
             print(">>> container:", container_name, docker_containers[container_name])
 
-    alice_docker_container = docker_containers['alice']
-    alice_container = client.containers.get(alice_docker_container['Id'])
+    alice_docker_container = docker_containers["alice"]
+    alice_container = client.containers.get(alice_docker_container["Id"])
     async with Controller(base_url=ALICE) as alice:
         alice_command = await upgrade_wallet_and_shutdown_container(
             client,
@@ -245,8 +242,8 @@ async def main():
             alice_container,
         )
 
-    bob_docker_container = docker_containers['bob-askar-anon']
-    bob_container = client.containers.get(bob_docker_container['Id'])
+    bob_docker_container = docker_containers["bob-askar-anon"]
+    bob_container = client.containers.get(bob_docker_container["Id"])
     async with Controller(base_url=BOB_ASKAR_ANON) as bob:
         bob_command = await upgrade_wallet_and_shutdown_container(
             client,
@@ -274,7 +271,10 @@ async def main():
         )
 
         # run some more tests ...  alice should still be connected to bob for example ...
-        async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ASKAR) as bob:
+        async with (
+            Controller(base_url=ALICE) as alice,
+            Controller(base_url=BOB_ASKAR) as bob,
+        ):
             # Present the the credential's attributes
             print(">>> present proof ... again ...")
             await anoncreds_present_proof_v2(
@@ -286,7 +286,10 @@ async def main():
             )
             print(">>> Done! (again)")
 
-        async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ANONCREDS) as bob:
+        async with (
+            Controller(base_url=ALICE) as alice,
+            Controller(base_url=BOB_ANONCREDS) as bob,
+        ):
             # Present the the credential's attributes
             print(">>> present proof ... again ...")
             await anoncreds_present_proof_v2(
@@ -298,7 +301,10 @@ async def main():
             )
             print(">>> Done! (again)")
 
-        async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ASKAR_ANON) as bob:
+        async with (
+            Controller(base_url=ALICE) as alice,
+            Controller(base_url=BOB_ASKAR_ANON) as bob,
+        ):
             # Present the the credential's attributes
             print(">>> present proof ... again ...")
             await anoncreds_present_proof_v2(
