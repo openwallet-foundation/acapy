@@ -20,7 +20,7 @@ and mkdocs configuration.
 
 When the GitHub Action fires, it runs a container that carries out the following steps:
 
-- Checks out the triggering branch, either `main` or `docs-v<version>` (e.g `docs-v1.1.1`).
+- Checks out the triggering branch, either `main` or `docs-v<version>` (e.g `docs-v1.2.0rc0`).
 - Runs the script [scripts/prepmkdocs.sh], which moves and updates some of the
   markdown files so that they fit into the generated site. See the comments in
   the scripts for details about the copying and editing done via the script. In
@@ -97,7 +97,7 @@ To delete the documentation version, do the following:
 - Check your `git status` and make sure there are no changes in the branch --
   e.g., new files that shouldn't be added to the `gh-pages` branch. If there are
   any -- delete the files so they are not added.
-- Remove the folder for the RC.  For example `rm -rf 1.1.1rc0`
+- Remove the folder for the RC.  For example `rm -rf 1.2.0rc0`
 - Edit the `versions.json` file and remove the reference to the RC release in
   the file.
 - Push the changes via a PR to the ACA-Py `gh-pages` branch (don't PR them into

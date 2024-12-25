@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.1.1",
+    "version" : "v1.2.0rc0",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -518,7 +518,7 @@
           "description" : "Credential definition identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -541,7 +541,7 @@
           "description" : "Credential definition identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -578,7 +578,7 @@
           "description" : "Revocation registry identifier",
           "required" : false,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -624,7 +624,7 @@
           "description" : "Credential definition identifier",
           "required" : false,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$"
+          "pattern" : "^(.+$)"
         }, {
           "name" : "state",
           "in" : "query",
@@ -654,7 +654,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -677,7 +677,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         }, {
           "name" : "apply_ledger_update",
           "in" : "query",
@@ -706,7 +706,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -729,7 +729,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -752,7 +752,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -775,7 +775,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         }, {
           "name" : "state",
           "in" : "query",
@@ -805,7 +805,7 @@
           "description" : "Revocation Registry identifier",
           "required" : true,
           "type" : "string",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         } ],
         "responses" : {
           "200" : {
@@ -985,7 +985,7 @@
           "description" : "My DID",
           "required" : false,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "offset",
           "in" : "query",
@@ -1006,14 +1006,14 @@
           "description" : "Their DID",
           "required" : false,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "their_public_did",
           "in" : "query",
           "description" : "Their Public DID",
           "required" : false,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "their_role",
           "in" : "query",
@@ -1853,7 +1853,7 @@
           "description" : "Qualified public DID to which to request connection",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "alias",
           "in" : "query",
@@ -5716,8 +5716,22 @@
         "tags" : [ "vc-api" ],
         "summary" : "Store a credential",
         "produces" : [ "application/json" ],
-        "parameters" : [ ],
-        "responses" : { }
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/StoreCredentialRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/StoreCredentialResponse"
+            }
+          }
+        }
       }
     },
     "/vc/credentials/verify" : {
@@ -5867,7 +5881,7 @@
           "description" : "DID of interest",
           "required" : false,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "key_type",
           "in" : "query",
@@ -5880,8 +5894,7 @@
           "in" : "query",
           "description" : "DID method to query for. e.g. sov to only fetch indy/sov DIDs",
           "required" : false,
-          "type" : "string",
-          "enum" : [ "key", "sov", "did:peer:2", "did:peer:4" ]
+          "type" : "string"
         }, {
           "name" : "posture",
           "in" : "query",
@@ -5941,7 +5954,7 @@
           "description" : "DID of interest",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         } ],
         "responses" : {
           "200" : {
@@ -5978,7 +5991,7 @@
           "description" : "DID of interest",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "conn_id",
           "in" : "query",
@@ -6019,7 +6032,7 @@
           "description" : "DID of interest",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         } ],
         "responses" : {
           "200" : {
@@ -6369,6 +6382,7 @@
     },
     "AnonCredsSchema" : {
       "type" : "object",
+      "required" : [ "attrNames", "issuerId", "name", "version" ],
       "properties" : {
         "attrNames" : {
           "type" : "array",
@@ -6393,25 +6407,6 @@
           "type" : "string",
           "example" : "1.0",
           "description" : "Schema version"
-        }
-      }
-    },
-    "AnoncredsPresentationRequestNonRevoked" : {
-      "type" : "object",
-      "properties" : {
-        "from" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Earliest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        },
-        "to" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Latest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
         }
       }
     },
@@ -6557,6 +6552,25 @@
           "example" : "1.0",
           "description" : "Proof request version",
           "pattern" : "^[0-9.]+$"
+        }
+      }
+    },
+    "AnoncredsPresentationRequestNonRevoked" : {
+      "type" : "object",
+      "properties" : {
+        "from" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Earliest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        },
+        "to" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Latest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
         }
       }
     },
@@ -6851,7 +6865,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "Our DID for connection",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "request_id" : {
           "type" : "string",
@@ -6873,7 +6887,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "Their DID for connection",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "their_label" : {
           "type" : "string",
@@ -6916,7 +6930,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID for connection invitation",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "imageUrl" : {
           "type" : "string",
@@ -7962,7 +7976,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID of interest",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "key_type" : {
           "type" : "string",
@@ -8020,7 +8034,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "Specify final value of the did (including did:<method>: prefix)if the method supports or requires so.",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "key_type" : {
           "type" : "string",
@@ -8137,7 +8151,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID of exchange",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "did_doc~attach" : {
           "$ref" : "#/definitions/DIDXRequest_did_docattach"
@@ -9711,6 +9725,7 @@
     },
     "InnerRevRegDef" : {
       "type" : "object",
+      "required" : [ "credDefId", "issuerId", "maxCredNum", "tag" ],
       "properties" : {
         "credDefId" : {
           "type" : "string",
@@ -10222,7 +10237,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID of interest",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "headers" : {
           "type" : "object",
@@ -10539,7 +10554,15 @@
       "additionalProperties" : true
     },
     "ListCredentialsResponse" : {
-      "type" : "object"
+      "type" : "object",
+      "properties" : {
+        "results" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/VerifiableCredential"
+          }
+        }
+      }
     },
     "MediationCreateRequest" : {
       "type" : "object"
@@ -11332,7 +11355,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID for connection invitation",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "imageUrl" : {
           "type" : "string",
@@ -11434,6 +11457,7 @@
     },
     "RevListCreateRequest" : {
       "type" : "object",
+      "required" : [ "rev_reg_def_id" ],
       "properties" : {
         "options" : {
           "$ref" : "#/definitions/RevListOptions"
@@ -11730,9 +11754,9 @@
           "type" : "array",
           "items" : {
             "type" : "string",
-            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "example" : "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0",
             "description" : "Revocation registry identifiers",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+            "pattern" : "^(.+$)"
           }
         }
       }
@@ -11833,9 +11857,9 @@
         },
         "rev_reg_id" : {
           "type" : "string",
-          "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+          "example" : "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0",
           "description" : "Revocation registry identifier",
-          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+          "pattern" : "^(.+$)"
         },
         "thread_id" : {
           "type" : "string",
@@ -11910,7 +11934,7 @@
           "type" : "string",
           "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID of interest",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+)(:[a-zA-Z0-9_.%-]+)?:([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "headers" : {
           "type" : "object",
@@ -12290,6 +12314,22 @@
         }
       },
       "additionalProperties" : true
+    },
+    "StoreCredentialRequest" : {
+      "type" : "object",
+      "properties" : {
+        "verifiableCredential" : {
+          "$ref" : "#/definitions/VerifiableCredential"
+        }
+      }
+    },
+    "StoreCredentialResponse" : {
+      "type" : "object",
+      "properties" : {
+        "credentialId" : {
+          "type" : "string"
+        }
+      }
     },
     "SubmissionRequirements" : {
       "type" : "object",
@@ -13817,23 +13857,33 @@
       "properties" : {
         "cred_def_id" : {
           "type" : "string",
-          "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
+          "example" : "did:(method):3:CL:20:tag",
           "description" : "Credential definition identifier"
-        },
-        "epoch" : {
-          "type" : "string",
-          "example" : "2021-08-24",
-          "description" : "Credential epoch time"
         },
         "issuer_id" : {
           "type" : "string",
           "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
-          "description" : "Credential issuer DID"
+          "description" : "Credential issuer ID"
         },
         "schema_id" : {
           "type" : "string",
           "example" : "did:(method):2:schema_name:1.0",
           "description" : "Schema identifier"
+        },
+        "schema_issuer_id" : {
+          "type" : "string",
+          "example" : "did:(method):WgWxqztrNooG92RXvxSTWv",
+          "description" : "Schema issuer ID"
+        },
+        "schema_name" : {
+          "type" : "string",
+          "example" : "preferences",
+          "description" : "Schema name"
+        },
+        "schema_version" : {
+          "type" : "string",
+          "example" : "1.0",
+          "description" : "Schema version"
         }
       }
     },
