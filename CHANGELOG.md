@@ -102,7 +102,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
 
 ## 1.1.1
 
-ACA-Py Release 1.1.1 was a release candidate for 1.200. A mistake in the release PR meant the 1.1.1rc0 was tagged published to PyPi as Release 1.1.1. Since that was not intended to be a final release, the release changelog for 1.2.0 includes the Pull Requests that would have been in 1.1.1.
+ACA-Py Release 1.1.1 was a release candidate for 1.2.0. A mistake in the release PR meant the 1.1.1rc0 was tagged published to PyPi as Release 1.1.1. Since that was not intended to be a final release, the release changelog for 1.2.0 includes the Pull Requests that would have been in 1.1.1.
 
 ## 1.1.0
 
