@@ -1,12 +1,14 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.1.2rc0
+## 1.2.0rc0
 
 ### December 24, 2024
 
-Release 1.1.2 is a patch update to ACA-Py that contains a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. The most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. While arguably a breaking change (and we mention it below), we're confident no one is using the in-memory wallet (right?!?) any where other than in tests. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet were updated to use SQLite's in-memory wallet.
+Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
-The first step to full support of [did:webvh](https://identity.foundation/didwebvh/) ("`did:web` + Verifiable History"-- formerly `did:tdw`) has been added to ACA-Py -- a resolver. We're working on adding new DID Registration for it and other DID Methods, enabling ACA-Py to be used easily with a variety of DID Methods.
+The first step to full support of [did:webvh](https://identity.foundation/didwebvh/) ("`did:web` + Verifiable History"-- formerly `did:tdw`) has been added to ACA-Py -- a resolver. We're working on improving the new DID Registration mechanism for it, [Cheqd] and other DID Methods, enabling ACA-Py to be used easily with a variety of DID Methods.
+
+[Cheqd]: https://cheqd.io/
 
 The move to the [OpenWallet Foundation](https://openwallet.foundation/) is now complete. For up to date details on what the repo move means for ACA-Py users, including steps for updating deployments, please see latest in [GitHub Issue #3250].
 
@@ -14,11 +16,11 @@ A significant testing capability was added in this release -- the ability to run
 
 [GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
 
-### 1.1.2rc0 Deprecation Notices
+### 1.2.0rc0 Deprecation Notices
 
-The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.1.2 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.0 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
 
-### 1.1.2rc0 Breaking Changes
+### 1.2.0rc0 Breaking Changes
 
 The removal of the "in-memory" wallet implementation might be break some test scripts. Rather than using the in-memory wallet, tests should be updated to use SQLite's special `sqlite://:memory:` database instead. This results in a better alignment between the Askar storage configuration in test environments and what is used in production.
 
@@ -26,7 +28,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
 
 [PR #3391]: https://github.com/openwallet-foundation/acapy/pull/3391
 
-#### 1.1.2rc0 Categorized List of Pull Requests
+#### 1.2.0rc0 Categorized List of Pull Requests
 
 - AnonCreds VC Issuance and Presentation Enhancement / Fixes
   - Fix indy fallback format in presentation from holder [\#3413](https://github.com/openwallet-foundation/acapy/pull/3413) [jamshale](https://github.com/jamshale)
@@ -92,7 +94,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
   - :arrow_up: Update lock file [\#3296](https://github.com/openwallet-foundation/acapy/pull/3296) [ff137](https://github.com/ff137)
 
 - Release management pull requests:
-  - 1.1.2rc0 [\#3420](https://github.com/openwallet-foundation/acapy/pull/3420) [swcurran](https://github.com/swcurran)
+  - 1.2.0rc0 [\#3420](https://github.com/openwallet-foundation/acapy/pull/3420) [swcurran](https://github.com/swcurran)
   - 1.1.1rc0 [\#3372](https://github.com/openwallet-foundation/acapy/pull/3372) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
@@ -100,7 +102,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
 
 ## 1.1.1
 
-ACA-Py Release 1.1.1 was a release candidate for 1.1.2. A mistake in the release PR meant the 1.1.1rc0 was tagged published to PyPi as Release 1.1.1. Since that was not intended to be a final release, the release changelog for 1.1.2 includes the pull requests that would have been in 1.1.1.
+ACA-Py Release 1.1.1 was a release candidate for 1.200. A mistake in the release PR meant the 1.1.1rc0 was tagged published to PyPi as Release 1.1.1. Since that was not intended to be a final release, the release changelog for 1.2.0 includes the Pull Requests that would have been in 1.1.1.
 
 ## 1.1.0
 
