@@ -3,8 +3,6 @@
 # from ...didcomm_prefix import DIDCommPrefix
 import logging
 from ....messaging.v2_agent_message import V2AgentMessage
-from ....connections.models.connection_target import ConnectionTarget
-from didcomm_messaging import DIDCommMessaging, RoutingService
 
 SPEC_URI = "https://identity.foundation/didcomm-messaging/spec/#trust-ping-protocol-20"
 
@@ -16,12 +14,15 @@ PROTOCOL_PACKAGE = "acapy_agent.protocols_v2.trustping.v1_0"
 
 
 class trust_ping:
+    """Trust Ping 2.0 DIDComm V2 Protocol."""
     async def __call__(self, *args, **kwargs):
+        """Call the Handler."""
         await self.handle(*args, **kwargs)
 
     @staticmethod
     async def handle(context, responder, payload):
-        logger = logging.getLogger(__name__)
+        """Handle the incoming message."""
+        logging.getLogger(__name__)
         if not payload["body"].get("response_requested", False):
             return
         their_did = context.message_receipt.sender_verkey.split("#")[0]

@@ -1,18 +1,26 @@
 """Trust ping admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
+from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields
 from didcomm_messaging import DIDCommMessaging, RoutingService
 from didcomm_messaging.resolver import DIDResolver as DMPResolver
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
-from ....storage.error import StorageNotFoundError
 from .message_types import SPEC_URI
+
+from ....wallet.base import BaseWallet
+from ....wallet.did_info import DIDInfo
+from ....wallet.did_method import (
+    DIDMethod,
+    DIDMethods,
+)
+from ....wallet.did_posture import DIDPosture
+from ....messaging.v2_agent_message import V2AgentMessage
+from ....connections.models.connection_target import ConnectionTarget
 
 
 class BaseDIDCommV2Schema(OpenAPISchema):
@@ -52,24 +60,6 @@ class PingConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-from ....wallet.base import BaseWallet
-from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import (
-    KEY,
-    PEER2,
-    PEER4,
-    SOV,
-    DIDMethod,
-    DIDMethods,
-    HolderDefinedDid,
-)
-from ....wallet.did_posture import DIDPosture
-from ....wallet.error import WalletError, WalletNotFoundError
-from ....messaging.v2_agent_message import V2AgentMessage
-from ....connections.models.connection_target import ConnectionTarget
-from didcomm_messaging import DIDCommMessaging, RoutingService
-
-
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
     if info:
@@ -84,6 +74,7 @@ def format_did_info(info: DIDInfo):
 
 
 async def get_mydid(request: web.BaseRequest):
+    """Get a DID that can be used for communication."""
     context: AdminRequestContext = request["context"]
     # filter_did = request.query.get("did")
     # filter_verkey = request.query.get("verkey")
@@ -118,12 +109,13 @@ async def get_mydid(request: web.BaseRequest):
 
 
 async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
+    """Get Connection Target from did."""
     context: AdminRequestContext = request["context"]
 
     try:
         async with context.profile.session() as session:
             resolver = session.inject(DMPResolver)
-            did_doc = await resolver.resolve(to_did)
+            await resolver.resolve(to_did)
     except Exception as err:
         raise web.HTTPNotFound(reason=str(err)) from err
 
@@ -197,7 +189,7 @@ async def discover_features_query(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: AdminRequestContext = request["context"]
+    request["context"]
     outbound_handler = request["outbound_message_router"]
     body = await request.json()
     to_did = body.get("to_did")
