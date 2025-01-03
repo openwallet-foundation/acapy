@@ -4,22 +4,19 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 from aiohttp import web
 
-from acapy_agent.admin.request_context import AdminRequestContext
-from acapy_agent.anoncreds.base import AnonCredsObjectNotFound
-from acapy_agent.anoncreds.issuer import AnonCredsIssuer
-from acapy_agent.anoncreds.models.anoncreds_schema import (
+from ...admin.request_context import AdminRequestContext
+from ...anoncreds.base import AnonCredsObjectNotFound
+from ...anoncreds.issuer import AnonCredsIssuer
+from ...anoncreds.models.schema import (
     AnonCredsSchema,
     SchemaResult,
     SchemaState,
 )
-from acapy_agent.anoncreds.revocation import AnonCredsRevocation
-from acapy_agent.anoncreds.revocation_setup import DefaultRevocationSetup
-from acapy_agent.askar.profile_anon import AskarAnoncredsProfile
-from acapy_agent.core.event_bus import MockEventBus
-from acapy_agent.core.in_memory.profile import InMemoryProfile
-from acapy_agent.tests import mock
-
-from ...askar.profile import AskarProfile
+from ...anoncreds.revocation import AnonCredsRevocation
+from ...anoncreds.revocation_setup import DefaultRevocationSetup
+from ...core.event_bus import MockEventBus
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import routes as test_module
 
 
@@ -51,12 +48,11 @@ class MockRovocationRegistryDefinition:
 class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "wallet.type": "askar-anoncreds",
                 "admin.admin_api_key": "secret-key",
             },
-            profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
@@ -101,6 +97,13 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
                 },
                 {},
                 {"schema": {}},
+                {
+                    "schema": {
+                        "attrNames": ["score"],
+                        "name": "Example Schema",
+                        "version": "0.0.1",
+                    }
+                },
             ]
         )
         result = await test_module.schemas_post(self.request)
@@ -109,9 +112,12 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
         assert mock_create_and_register_schema.call_count == 1
 
         with self.assertRaises(web.HTTPBadRequest):
+            # Empty body
             await test_module.schemas_post(self.request)
-
-        await test_module.schemas_post(self.request)
+            # Empty schema
+            await test_module.schemas_post(self.request)
+            # Missing issuerId
+            await test_module.schemas_post(self.request)
 
     async def test_get_schema(self):
         self.request.match_info = {"schema_id": "schema_id"}
@@ -337,9 +343,8 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             await test_module.set_active_registry(self.request)
 
     async def test_schema_endpoints_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {
@@ -378,9 +383,8 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             await test_module.schemas_get(self.request)
 
     async def test_cred_def_endpoints_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {
@@ -422,9 +426,8 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             await test_module.cred_defs_get(self.request)
 
     async def test_rev_reg_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {
@@ -456,9 +459,8 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             await test_module.rev_reg_def_post(self.request)
 
     async def test_rev_list_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {
@@ -480,9 +482,8 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             await test_module.rev_list_post(self.request)
 
     async def test_uploads_tails_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {
@@ -502,9 +503,8 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             await test_module.upload_tails_file(self.request)
 
     async def test_active_registry_wrong_profile_403(self):
-        self.profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
-            profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
         self.request_dict = {

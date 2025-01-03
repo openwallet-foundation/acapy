@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Optional, Sequence, Text, Tuple
+from typing import Mapping, NamedTuple, Optional, Sequence, Text, Tuple
 
 from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
@@ -24,6 +24,17 @@ from .util import notify_pending_cleared_event, notify_revocation_published_even
 
 class RevocationManagerError(BaseError):
     """Revocation manager error."""
+
+
+class RevocationNotificationInfo(NamedTuple):
+    """Revocation notification information."""
+
+    rev_reg_id: str
+    cred_rev_id: str
+    thread_id: Optional[str]
+    connection_id: Optional[str]
+    comment: Optional[str]
+    notify_version: Optional[str]
 
 
 class RevocationManager:
@@ -107,6 +118,46 @@ class RevocationManager:
             write_ledger=write_ledger,
         )
 
+    async def _prepare_revocation_notification(
+        self,
+        revoc_notif_info: RevocationNotificationInfo,
+    ):
+        """Saves the revocation notification record, and thread_id if not provided."""
+        thread_id = (
+            revoc_notif_info.thread_id
+            or f"indy::{revoc_notif_info.rev_reg_id}::{revoc_notif_info.cred_rev_id}"
+        )
+        rev_notify_rec = RevNotificationRecord(
+            rev_reg_id=revoc_notif_info.rev_reg_id,
+            cred_rev_id=revoc_notif_info.cred_rev_id,
+            thread_id=thread_id,
+            connection_id=revoc_notif_info.connection_id,
+            comment=revoc_notif_info.comment,
+            version=revoc_notif_info.notify_version,
+        )
+        async with self._profile.session() as session:
+            await rev_notify_rec.save(session, reason="New revocation notification")
+
+    async def _get_endorsement_txn_for_revocation(
+        self, endorser_conn_id: str, issuer_rr_upd: IssuerRevRegRecord
+    ):
+        async with self._profile.session() as session:
+            try:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, endorser_conn_id
+                )
+            except StorageNotFoundError:
+                raise RevocationManagerError(
+                    "No endorser connection record found " f"for id: {endorser_conn_id}"
+                )
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        endorser_did = endorser_info["endorser_did"]
+        return await issuer_rr_upd.send_entry(
+            self._profile,
+            write_ledger=False,
+            endorser_did=endorser_did,
+        )
+
     async def revoke_credential(
         self,
         rev_reg_id: str,
@@ -150,8 +201,8 @@ class RevocationManager:
                 write_ledger is True, otherwise None.
         """
         issuer = self._profile.inject(IndyIssuer)
-
         revoc = IndyRevocation(self._profile)
+
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         if not issuer_rr_rec:
             raise RevocationManagerError(
@@ -159,71 +210,62 @@ class RevocationManager:
             )
 
         if notify:
-            thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
-            rev_notify_rec = RevNotificationRecord(
-                rev_reg_id=rev_reg_id,
-                cred_rev_id=cred_rev_id,
-                thread_id=thread_id,
-                connection_id=connection_id,
-                comment=comment,
-                version=notify_version,
+            await self._prepare_revocation_notification(
+                RevocationNotificationInfo(
+                    rev_reg_id=rev_reg_id,
+                    cred_rev_id=cred_rev_id,
+                    thread_id=thread_id,
+                    connection_id=connection_id,
+                    comment=comment,
+                    notify_version=notify_version,
+                ),
             )
-            async with self._profile.session() as session:
-                await rev_notify_rec.save(session, reason="New revocation notification")
 
-        if publish:
-            rev_reg = await revoc.get_ledger_registry(rev_reg_id)
-            await rev_reg.get_or_fetch_local_tails_path()
-            # pick up pending revocations on input revocation registry
-            crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
-            (delta_json, _) = await issuer.revoke_credentials(
-                issuer_rr_rec.cred_def_id,
-                issuer_rr_rec.revoc_reg_id,
-                issuer_rr_rec.tails_local_path,
-                crids,
-            )
-            async with self._profile.transaction() as txn:
-                issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
-                    txn, issuer_rr_rec.record_id, for_update=True
-                )
-                if delta_json:
-                    issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
-                await issuer_rr_upd.clear_pending(txn, crids)
-                await txn.commit()
-            await self.set_cred_revoked_state(rev_reg_id, crids)
-            if delta_json:
-                if write_ledger:
-                    rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
-                    await notify_revocation_published_event(
-                        self._profile, rev_reg_id, [cred_rev_id]
-                    )
-                    return rev_entry_resp
-                else:
-                    async with self._profile.session() as session:
-                        try:
-                            connection_record = await ConnRecord.retrieve_by_id(
-                                session, endorser_conn_id
-                            )
-                        except StorageNotFoundError:
-                            raise RevocationManagerError(
-                                "No endorser connection record found "
-                                f"for id: {endorser_conn_id}"
-                            )
-                        endorser_info = await connection_record.metadata_get(
-                            session, "endorser_info"
-                        )
-                    endorser_did = endorser_info["endorser_did"]
-                    rev_entry_resp = await issuer_rr_upd.send_entry(
-                        self._profile,
-                        write_ledger=write_ledger,
-                        endorser_did=endorser_did,
-                    )
-                    return rev_entry_resp
-        else:
+        if not publish:
+            # If not publishing, just mark the revocation as pending.
             async with self._profile.transaction() as txn:
                 await issuer_rr_rec.mark_pending(txn, cred_rev_id)
                 await txn.commit()
             return None
+
+        rev_reg = await revoc.get_ledger_registry(rev_reg_id)
+        await rev_reg.get_or_fetch_local_tails_path()
+        # pick up pending revocations on input revocation registry
+        crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
+        (delta_json, _) = await issuer.revoke_credentials(
+            issuer_rr_rec.cred_def_id,
+            issuer_rr_rec.revoc_reg_id,
+            issuer_rr_rec.tails_local_path,
+            crids,
+        )
+
+        # Update the revocation registry record with the new delta
+        # and clear pending revocations
+        async with self._profile.transaction() as txn:
+            issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
+                txn, issuer_rr_rec.record_id, for_update=True
+            )
+            if delta_json:
+                issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+            await issuer_rr_upd.clear_pending(txn, crids)
+            await txn.commit()
+
+        await self.set_cred_revoked_state(rev_reg_id, crids)
+
+        # Revocation list needs to be updated on ledger
+        if delta_json:
+            # Can write to ledger directly
+            if write_ledger:
+                rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
+                await notify_revocation_published_event(
+                    self._profile, rev_reg_id, [cred_rev_id]
+                )
+                return rev_entry_resp
+            # Author --> Need endorsed transaction for revocation
+            else:
+                return await self._get_endorsement_txn_for_revocation(
+                    endorser_conn_id, issuer_rr_upd
+                )
 
     async def update_rev_reg_revoked_state(
         self,

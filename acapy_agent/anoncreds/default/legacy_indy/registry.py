@@ -56,14 +56,14 @@ from ...base import (
 )
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
-from ...models.anoncreds_cred_def import (
+from ...models.credential_definition import (
     CredDef,
     CredDefResult,
     CredDefState,
     CredDefValue,
     GetCredDefResult,
 )
-from ...models.anoncreds_revocation import (
+from ...models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
@@ -74,12 +74,13 @@ from ...models.anoncreds_revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...models.anoncreds_schema import (
+from ...models.schema import (
     AnonCredsSchema,
     GetSchemaResult,
     SchemaResult,
     SchemaState,
 )
+from ...models.schema_info import AnoncredsSchemaInfo
 from ...revocation import (
     CATEGORY_REV_LIST,
     CATEGORY_REV_REG_DEF,
@@ -1229,3 +1230,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 )
         except LedgerError as err:
             raise AnonCredsRegistrationError(err.roll_up) from err
+
+    async def get_schema_info_by_id(
+        self, profile: Profile, schema_id: str
+    ) -> AnoncredsSchemaInfo:
+        """Get schema info by schema id."""
+        schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
+        return AnoncredsSchemaInfo(
+            issuer_id=schema_id_parts.group(1),
+            name=schema_id_parts.group(2),
+            version=schema_id_parts.group(3),
+        )

@@ -3,7 +3,7 @@
 import json
 import struct
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 from marshmallow import EXCLUDE, fields
 
@@ -15,8 +15,8 @@ from ..models.base import BaseModel, BaseModelSchema
 from ..valid import (
     BASE64URL_EXAMPLE,
     BASE64URL_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
+    RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
 )
 
 
@@ -86,7 +86,7 @@ class SignatureDecorator(BaseModel):
             signer=signer,
         )
 
-    def decode(self) -> (object, int):
+    def decode(self) -> Tuple[object, int]:
         """Decode the signature to its timestamp and value.
 
         Returns:
@@ -164,9 +164,9 @@ class SignatureDecoratorSchema(BaseModelSchema):
     )
     signer = fields.Str(
         required=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Signer verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
         },
     )

@@ -6,8 +6,8 @@ from typing import Generic, Optional, Pattern, Sequence, TypeVar
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..core.profile import Profile
-from .models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
-from .models.anoncreds_revocation import (
+from .models.credential_definition import CredDef, CredDefResult, GetCredDefResult
+from .models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
@@ -15,7 +15,8 @@ from .models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
 )
-from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema_info import AnoncredsSchemaInfo
 
 T = TypeVar("T")
 
@@ -130,9 +131,15 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
 
+    @abstractmethod
+    async def get_schema_info_by_id(
+        self, profile: Profile, schema_id: str
+    ) -> AnoncredsSchemaInfo:
+        """Get a schema info from the registry."""
+
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
-    """Base Anon Creds Registrar."""
+    """Base Anoncreds Registrar."""
 
     @abstractmethod
     async def register_schema(

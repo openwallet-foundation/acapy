@@ -9,9 +9,8 @@ import indy_vdr
 import pytest
 from anoncreds import RevocationRegistryDefinition
 
-from acapy_agent.tests import mock
-
-from ....models.anoncreds_revocation import RevList, RevRegDef, RevRegDefValue
+from .....tests import mock
+from ....models.revocation import RevList, RevRegDef, RevRegDefValue
 from ..recover import (
     RevocRecoveryException,
     _check_tails_hash_for_inconsistency,

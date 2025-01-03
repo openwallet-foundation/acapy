@@ -344,14 +344,12 @@ class VcLdpManager:
         verification_method = (
             options.verification_method
             or await verkey_id_strategy.get_verification_method_id_for_did(
-                issuer_id, self.profile, proof_purpose="assertionMethod"
+                issuer_id,
+                self.profile,
+                proof_type=proof_type,
+                proof_purpose="assertionMethod",
             )
         )
-
-        if verification_method is None:
-            raise VcLdpManagerError(
-                f"Unable to get retrieve verification method for did {issuer_id}"
-            )
 
         suite = await self._get_suite(
             proof_type=proof_type,
@@ -407,9 +405,8 @@ class VcLdpManager:
     async def store_credential(
         self,
         vc: VerifiableCredential,
-        options: LDProofVCOptions,
         cred_id: Optional[str] = None,
-    ) -> VerifiableCredential:
+    ) -> VCRecord:
         """Store a verifiable credential."""
 
         # Saving expanded type as a cred_tag
@@ -438,6 +435,8 @@ class VcLdpManager:
             vc_holder = session.inject(VCHolder)
 
             await vc_holder.store_credential(vc_record)
+
+        return vc_record
 
     async def verify_credential(
         self, vc: VerifiableCredential

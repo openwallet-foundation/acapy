@@ -26,6 +26,7 @@ CFG_MAP = {
     "storage_config",
     "storage_creds",
     "storage_type",
+    "test",
 }
 
 

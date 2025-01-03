@@ -1,21 +1,20 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import routes as test_module
 
 
 class TestTrustpingRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.session_inject = {}
-        profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(self.session_inject, profile)
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -32,13 +31,15 @@ class TestTrustpingRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={"comment": "some comment"})
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            test_module, "Ping", mock.MagicMock()
-        ) as mock_ping, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as json_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(test_module, "Ping", mock.MagicMock()) as mock_ping,
+            mock.patch.object(
+                test_module.web, "json_response", mock.MagicMock()
+            ) as json_response,
+        ):
             mock_ping.return_value = mock.MagicMock(_thread_id="dummy")
             mock_retrieve.return_value = mock.MagicMock(is_ready=True)
             result = await test_module.connections_send_ping(self.request)
@@ -49,11 +50,12 @@ class TestTrustpingRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={"comment": "some comment"})
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as json_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
+        ):
             mock_retrieve.side_effect = test_module.StorageNotFoundError()
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.connections_send_ping(self.request)
@@ -62,11 +64,12 @@ class TestTrustpingRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value={"comment": "some comment"})
         self.request.match_info = {"conn_id": "dummy"}
 
-        with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve, mock.patch.object(
-            test_module.web, "json_response", mock.MagicMock()
-        ) as json_response:
+        with (
+            mock.patch.object(
+                test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(test_module.web, "json_response", mock.MagicMock()),
+        ):
             mock_retrieve.return_value = mock.MagicMock(is_ready=False)
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.connections_send_ping(self.request)

@@ -13,8 +13,8 @@ from ..valid import (
     INDY_DID_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
 )
 
 CRED_DEF_SENT_RECORD_TYPE = "cred_def_sent"
@@ -41,8 +41,11 @@ class CredDefQueryStringSchema(OpenAPISchema):
     )
     schema_version = fields.Str(
         required=False,
-        validate=INDY_VERSION_VALIDATE,
-        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
+        metadata={
+            "description": "Schema version",
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
+        },
     )
     issuer_did = fields.Str(
         required=False,

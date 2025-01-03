@@ -3,11 +3,10 @@
 import pytest
 from did_peer_2 import peer2to3
 
-from acapy_agent.connections.models.conn_record import ConnRecord
-from acapy_agent.core.event_bus import EventBus
-
-from ....core.in_memory import InMemoryProfile
+from ....connections.models.conn_record import ConnRecord
+from ....core.event_bus import EventBus
 from ....core.profile import Profile
+from ....utils.testing import create_test_profile
 from .. import peer3 as test_module
 from ..peer2 import PeerDID2Resolver
 from ..peer3 import PeerDID3Resolver
@@ -23,9 +22,9 @@ def event_bus():
 
 
 @pytest.fixture
-def profile(event_bus: EventBus):
+async def profile(event_bus: EventBus):
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     profile.context.injector.bind_instance(EventBus, event_bus)
     yield profile
 
@@ -88,4 +87,4 @@ async def test_record_removal(
         await record.emit_event(session, record.serialize())
 
     with pytest.raises(test_module.DIDNotFound):
-        doc = await resolver.resolve(profile, TEST_DP3)
+        await resolver.resolve(profile, TEST_DP3)

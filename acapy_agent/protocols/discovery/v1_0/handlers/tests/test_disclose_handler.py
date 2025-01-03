@@ -1,11 +1,11 @@
 import pytest
 
-from acapy_agent.tests import mock
-
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
+from ......utils.testing import create_test_profile
 from .....didcomm_prefix import DIDCommPrefix
 from ...handlers.disclose_handler import DiscloseHandler
 from ...messages.disclose import Disclose
@@ -17,8 +17,8 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context():
-    ctx = RequestContext.test_context()
+async def request_context():
+    ctx = RequestContext.test_context(await create_test_profile())
     ctx.connection_ready = True
     ctx.connection_record = mock.MagicMock(connection_id="test123")
     yield ctx
@@ -53,7 +53,7 @@ class TestDiscloseHandler:
             V10DiscoveryExchangeRecord,
             "retrieve_by_id",
             mock.CoroutineMock(return_value=discovery_record),
-        ) as mock_get_rec_thread_id:
+        ):
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
 

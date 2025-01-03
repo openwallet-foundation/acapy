@@ -5,11 +5,16 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from .....anoncreds.holder import AnonCredsHolder
+from .....anoncreds.models.credential_definition import (
+    CredDef,
+    CredDefValue,
+    CredDefValuePrimary,
+    GetCredDefResult,
+)
+from .....anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
+from .....anoncreds.registry import AnonCredsRegistry
 from .....anoncreds.verifier import AnonCredsVerifier
-from .....core.in_memory import InMemoryProfile
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
@@ -25,6 +30,8 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .....vc.ld_proofs import DocumentLoader
 from .....vc.tests.document_loader import custom_document_loader
 from .....vc.vc_ld.validation_result import PresentationVerificationResult
@@ -75,7 +82,7 @@ PRES_PREVIEW = IndyPresPreview(
         )
     ],
 )
-INDY_PROOF_REQ_NAME = {
+ANONCREDS_PROOF_REQ_NAME = {
     "name": PROOF_REQ_NAME,
     "version": PROOF_REQ_VERSION,
     "nonce": PROOF_REQ_NONCE,
@@ -101,7 +108,7 @@ INDY_PROOF_REQ_NAME = {
         }
     },
 }
-INDY_PROOF_REQ_NAMES = {
+ANONCREDS_PROOF_REQ_NAMES = {
     "name": PROOF_REQ_NAME,
     "version": PROOF_REQ_VERSION,
     "nonce": PROOF_REQ_NONCE,
@@ -122,7 +129,7 @@ INDY_PROOF_REQ_NAMES = {
         }
     },
 }
-INDY_PROOF_REQ_SELFIE = {
+ANONCREDS_PROOF_REQ_SELFIE = {
     "name": PROOF_REQ_NAME,
     "version": PROOF_REQ_VERSION,
     "nonce": PROOF_REQ_NONCE,
@@ -134,7 +141,7 @@ INDY_PROOF_REQ_SELFIE = {
         "0_highscore_GE_uuid": {"name": "highScore", "p_type": ">=", "p_value": 1000000}
     },
 }
-INDY_PROOF = {
+ANONCREDS_PROOF = {
     "proof": {
         "proofs": [
             {
@@ -253,7 +260,7 @@ INDY_PROOF = {
         }
     ],
 }
-INDY_PROOF_NAMES = {
+ANONCREDS_PROOF_NAMES = {
     "proof": {
         "proofs": [
             {
@@ -380,12 +387,11 @@ INDY_PROOF_NAMES = {
 
 class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.profile.settings.set_value("wallet.type", "askar-anoncreds")
         injector = self.profile.context.injector
 
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": {"...": "..."}}}
@@ -434,8 +440,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             ),
         )
 
-        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -472,9 +477,39 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
         )
         injector.bind_instance(AnonCredsHolder, self.holder)
+        registry = mock.MagicMock(AnonCredsRegistry, autospec=True)
+        registry.get_schema = mock.CoroutineMock(
+            return_value=GetSchemaResult(
+                schema=AnonCredsSchema(
+                    issuer_id=ISSUER_DID,
+                    name="vidya",
+                    version="1.0",
+                    attr_names=["player", "screenCapture", "highScore"],
+                ),
+                schema_id=S_ID,
+                resolution_metadata={},
+                schema_metadata={},
+            )
+        )
+        registry.get_credential_definition = mock.CoroutineMock(
+            return_value=GetCredDefResult(
+                credential_definition_id="TUku9MDGa7QALbAJX4oAww:3:CL:531757:MYCO_Consent_Enablement",
+                credential_definition=CredDef(
+                    issuer_id=ISSUER_DID,
+                    schema_id=S_ID,
+                    tag="tag",
+                    type="CL",
+                    value=CredDefValue(
+                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
+                    ),
+                ),
+                credential_definition_metadata={},
+                resolution_metadata={},
+            )
+        )
+        injector.bind_instance(AnonCredsRegistry, registry)
 
-        Verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
-        self.verifier = Verifier()
+        self.verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
         self.verifier.verify_presentation = mock.CoroutineMock(return_value=("true", []))
         injector.bind_instance(AnonCredsVerifier, self.verifier)
 
@@ -516,13 +551,16 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
     async def test_create_exchange_for_proposal(self):
         proposal = V20PresProposal(
             formats=[
-                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
+                V20PresFormat(
+                    attach_id="anoncreds", format_=V20PresFormat.Format.ANONCREDS.aries
+                )
             ]
         )
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(V20PresProposal, "serialize", autospec=True):
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(V20PresProposal, "serialize", autospec=True),
+        ):
             px_rec = await self.manager.create_exchange_for_proposal(
                 CONN_ID,
                 proposal,
@@ -541,7 +579,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         connection_record = mock.MagicMock(connection_id=CONN_ID)
         proposal = V20PresProposal(
             formats=[
-                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
+                V20PresFormat(
+                    attach_id="anoncreds", format_=V20PresFormat.Format.ANONCREDS.aries
+                )
             ]
         )
         with mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
@@ -559,14 +599,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         px_rec = V20PresExRecord(
@@ -593,14 +633,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         px_rec = V20PresExRecord(
@@ -712,11 +752,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_req.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            DIFPresFormatHandler, "receive_pres", autospec=True
-        ) as mock_receive_pres, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(
+                DIFPresFormatHandler, "receive_pres", autospec=True
+            ) as mock_receive_pres,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             mock_receive_pres.return_value = False
             retrieve_ex.side_effect = [px_rec]
             with self.assertRaises(V20PresManagerError) as context:
@@ -729,14 +772,16 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             will_confirm=True,
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(mapping=INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(
+                    mapping=ANONCREDS_PROOF_REQ_NAME, ident="anoncreds"
+                )
             ],
         )
         pres_req.assign_thread_id("dummy")
@@ -769,14 +814,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -785,13 +830,15 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -799,9 +846,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+                ANONCREDS_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
-            request_data = {"indy": req_creds}
+            request_data = {"anoncreds": req_creds}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
@@ -817,9 +864,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 ),
                 V20PresFormat(
@@ -830,7 +877,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 ),
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds"),
                 AttachDecorator.data_json(DIF_PRES_REQ, ident="dif"),
             ],
         )
@@ -840,15 +887,18 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator_indy, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr, mock.patch.object(
-            DIFPresFormatHandler, "create_pres", autospec=True
-        ) as mock_create_pres:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator_indy,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+            mock.patch.object(
+                DIFPresFormatHandler, "create_pres", autospec=True
+            ) as mock_create_pres,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator_indy.data_base64 = mock.MagicMock(
@@ -861,9 +911,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+                ANONCREDS_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
-            request_data = {"indy": req_creds, "dif": DIF_PRES_REQ}
+            request_data = {"anoncreds": req_creds, "dif": DIF_PRES_REQ}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
@@ -876,19 +926,19 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
 
     @pytest.mark.skip(reason="Anoncreds-break")
     async def test_create_pres_proof_req_non_revoc_interval_none(self):
-        indy_proof_req_vcx = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req_vcx = deepcopy(ANONCREDS_PROOF_REQ_NAME)
         indy_proof_req_vcx["non_revoked"] = None  # simulate interop with indy-vcx
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req_vcx, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req_vcx, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -902,17 +952,20 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            ),
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -922,7 +975,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 indy_proof_req_vcx, preview=None, holder=self.holder
             )
-            request_data = {"indy": req_creds}
+            request_data = {"anoncreds": req_creds}
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 2
             assert len(req_creds["requested_predicates"]) == 1
@@ -938,14 +991,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_SELFIE, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_SELFIE, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
@@ -955,13 +1008,15 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -969,9 +1024,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_SELFIE, preview=None, holder=self.holder
+                ANONCREDS_PROOF_REQ_SELFIE, preview=None, holder=self.holder
             )
-            request_data = {"indy": req_creds}
+            request_data = {"anoncreds": req_creds}
 
             assert len(req_creds["self_attested_attributes"]) == 3
             assert not req_creds["requested_attributes"]
@@ -985,8 +1040,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
 
     @pytest.mark.skip(reason="Anoncreds-break")
     async def test_create_pres_no_revocation(self):
-        Ledger = mock.MagicMock(BaseLedger, autospec=True)
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": None}}
@@ -996,20 +1050,19 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -1036,22 +1089,24 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         self.holder.create_presentation = mock.AsyncMock(return_value="{}")
         self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module.LOGGER, "info", mock.MagicMock()
-        ) as mock_log_info:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module.LOGGER, "info", mock.MagicMock()
+            ) as mock_log_info,
+        ):
             mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+                ANONCREDS_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
             request_data = {
-                "indy": {
+                "anoncreds": {
                     "self_attested_attributes": req_creds["self_attested_attributes"],
                     "requested_attributes": req_creds["requested_attributes"],
                     "requested_predicates": req_creds["requested_predicates"],
@@ -1068,7 +1123,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             for pred_reft_spec in req_creds["requested_predicates"].values():
                 pred_reft_spec["timestamp"] = 1234567890
             request_data = {
-                "indy": {
+                "anoncreds": {
                     "self_attested_attributes": req_creds["self_attested_attributes"],
                     "requested_attributes": req_creds["requested_attributes"],
                     "requested_predicates": req_creds["requested_predicates"],
@@ -1082,20 +1137,19 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -1133,15 +1187,16 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr, mock.patch.object(
-            test_indy_util_module.LOGGER, "error", mock.MagicMock()
-        ) as mock_log_error:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+            mock.patch.object(test_indy_util_module.LOGGER, "error", mock.MagicMock()),
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -1156,20 +1211,19 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAMES, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.holder = Holder()
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         get_creds = mock.CoroutineMock(
             return_value=(
                 {
@@ -1224,13 +1278,15 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, mock.patch.object(
-            test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+            mock.patch.object(
+                test_indy_util_module, "RevocationRegistry", autospec=True
+            ) as mock_rr,
+        ):
             mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.data_base64 = mock.MagicMock(
@@ -1238,12 +1294,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
+                ANONCREDS_PROOF_REQ_NAMES, preview=None, holder=self.holder
             )
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 1
             assert len(req_creds["requested_predicates"]) == 1
-            request_data = {"indy": req_creds}
+            request_data = {"anoncreds": req_creds}
             (px_rec_out, pres_msg) = await self.manager.create_pres(
                 px_rec_in, request_data
             )
@@ -1254,23 +1310,23 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAMES, ident="anoncreds")
             ],
         )
-        px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
+        V20PresExRecord(pres_request=pres_request.serialize())
         get_creds = mock.CoroutineMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
         with self.assertRaises(ValueError):
             await indy_proof_req_preview2indy_requested_creds(
-                INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
+                ANONCREDS_PROOF_REQ_NAMES, preview=None, holder=self.holder
             )
 
         get_creds = mock.CoroutineMock(
@@ -1287,32 +1343,33 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
         await indy_proof_req_preview2indy_requested_creds(
-            INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
+            ANONCREDS_PROOF_REQ_NAMES, preview=None, holder=self.holder
         )
 
     async def test_no_matching_creds_indy_handler(self):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAMES, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAMES, ident="anoncreds")
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
         get_creds = mock.CoroutineMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                test_indy_handler, "AttachDecorator", autospec=True
+            ) as mock_attach_decorator,
+        ):
             mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
@@ -1323,44 +1380,50 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 (px_rec_out, pres_msg) = await self.manager.create_pres(
                     px_rec_in, request_data
                 )
-            assert "No matching Indy" in str(context.exception)
+            assert "AnonCreds interface requires AskarAnoncreds profile" in str(
+                context.exception
+            )
 
     async def test_receive_pres(self):
         connection_record = mock.MagicMock(connection_id=CONN_ID)
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
         pres.assign_thread_id("thread-id")
 
@@ -1372,25 +1435,22 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         # cover by_format property
         by_format = px_rec_dummy.by_format
 
-        assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
-        assert by_format.get("pres_request").get("indy") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_proposal").get("anoncreds") == ANONCREDS_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("anoncreds") == ANONCREDS_PROOF_REQ_NAME
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1399,41 +1459,45 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
-        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req = deepcopy(ANONCREDS_PROOF_REQ_NAME)
         indy_proof_req["requested_predicates"]["0_highscore_GE_uuid"]["restrictions"][0][
             "attr::player::value"
         ] = "impostor"
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
         pres.assign_thread_id("thread-id")
 
@@ -1445,25 +1509,22 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         # cover by_format property
         by_format = px_rec_dummy.by_format
 
-        assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
-        assert by_format.get("pres_request").get("indy") == indy_proof_req
+        assert by_format.get("pres_proposal").get("anoncreds") == ANONCREDS_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("anoncreds") == indy_proof_req
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1498,24 +1559,28 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
         pres.assign_thread_id("thread-id")
 
@@ -1526,24 +1591,21 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         # cover by_format property
         by_format = px_rec_dummy.by_format
 
-        assert by_format.get("pres_request").get("indy") == indy_proof_req
+        assert by_format.get("pres_request").get("anoncreds") == indy_proof_req
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
@@ -1562,7 +1624,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             },
             "requested_predicates": {},
         }
-        proof = deepcopy(INDY_PROOF)
+        proof = deepcopy(ANONCREDS_PROOF)
         proof["requested_proof"]["revealed_attrs"] = {
             "0_player_uuid": {
                 "sub_proof_index": 0,
@@ -1574,24 +1636,26 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(proof, ident="indy")],
+            presentations_attach=[AttachDecorator.data_base64(proof, ident="anoncreds")],
         )
         pres.assign_thread_id("thread-id")
 
@@ -1602,78 +1666,80 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         # cover by_format property
         by_format = px_rec_dummy.by_format
 
-        assert by_format.get("pres_request").get("indy") == indy_proof_req
+        assert by_format.get("pres_request").get("anoncreds") == indy_proof_req
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
-            retrieve_ex.assert_called_once_with(
-                session.return_value,
-                {"thread_id": "thread-id"},
-                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
-            )
+            assert retrieve_ex.call_args.args[1] == {"thread_id": "thread-id"}
+            assert retrieve_ex.call_args.args[2] == {
+                "role": V20PresExRecord.ROLE_VERIFIER,
+                "connection_id": CONN_ID,
+            }
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
     async def test_receive_pres_bait_and_switch_attr_name(self):
         connection_record = mock.MagicMock(connection_id=CONN_ID)
-        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req = deepcopy(ANONCREDS_PROOF_REQ_NAME)
         indy_proof_req["requested_attributes"]["0_screencapture_uuid"]["restrictions"][0][
             "attr::screenCapture::value"
         ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
         px_rec_dummy = V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -1685,33 +1751,41 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            proposals_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
 
         px_rec_dummy = V20PresExRecord(
@@ -1719,11 +1793,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -1731,43 +1806,47 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
 
     async def test_receive_pres_bait_and_switch_attr_names(self):
         connection_record = mock.MagicMock(connection_id=CONN_ID)
-        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAMES)
+        indy_proof_req = deepcopy(ANONCREDS_PROOF_REQ_NAMES)
         indy_proof_req["requested_attributes"]["0_player_uuid"]["restrictions"][0][
             "attr::screenCapture::value"
         ] = "c2NyZWVuIGNhcHR1cmUgc2hvd2luZyBzY29yZSBpbiB0aGUgbWlsbGlvbnM="
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            proposals_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_NAMES, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_NAMES, ident="anoncreds")
             ],
         )
 
@@ -1776,11 +1855,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -1794,34 +1874,40 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            proposals_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_NAMES, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_NAMES, ident="anoncreds")
             ],
         )
 
@@ -1830,11 +1916,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -1842,42 +1929,46 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
 
     async def test_receive_pres_bait_and_switch_pred(self):
         connection_record = mock.MagicMock(connection_id=CONN_ID)
-        indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
+        indy_proof_req = deepcopy(ANONCREDS_PROOF_REQ_NAME)
         indy_proof_req["requested_predicates"] = {}
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
 
         px_rec_dummy = V20PresExRecord(
@@ -1885,11 +1976,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -1905,33 +1997,41 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            proposals_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
 
         px_rec_dummy = V20PresExRecord(
@@ -1939,11 +2039,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -1959,33 +2060,41 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            proposals_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
 
         px_rec_dummy = V20PresExRecord(
@@ -1993,11 +2102,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -2013,33 +2123,41 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            proposals_attach=[AttachDecorator.data_base64(indy_proof_req, ident="indy")],
+            proposals_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
+            ],
         )
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+                AttachDecorator.data_base64(indy_proof_req, ident="anoncreds")
             ],
         )
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
 
         px_rec_dummy = V20PresExRecord(
@@ -2047,11 +2165,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             with self.assertRaises(V20PresFormatHandlerError) as context:
                 await self.manager.receive_pres(pres_x, connection_record, None)
@@ -2064,25 +2183,29 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
             will_confirm=True,
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds")
             ],
         )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 )
             ],
-            presentations_attach=[AttachDecorator.data_base64(INDY_PROOF, ident="indy")],
+            presentations_attach=[
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds")
+            ],
         )
         px_rec_in = V20PresExRecord(
             pres_request=pres_request,
@@ -2092,11 +2215,14 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            ),
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+        ):
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
 
@@ -2107,9 +2233,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
+                    attach_id="anoncreds",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
+                        V20PresFormat.Format.ANONCREDS.api
                     ],
                 ),
                 V20PresFormat(
@@ -2121,15 +2247,17 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             ],
             will_confirm=True,
             request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
+                AttachDecorator.data_base64(ANONCREDS_PROOF_REQ_NAME, ident="anoncreds"),
                 AttachDecorator.data_json(DIF_PRES_REQ, ident="dif"),
             ],
         )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                    attach_id="anoncreds",
+                    format_=ATTACHMENT_FORMAT[PRES_20][
+                        V20PresFormat.Format.ANONCREDS.api
+                    ],
                 ),
                 V20PresFormat(
                     attach_id="dif",
@@ -2137,7 +2265,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 ),
             ],
             presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF, ident="indy"),
+                AttachDecorator.data_base64(ANONCREDS_PROOF, ident="anoncreds"),
                 AttachDecorator.data_json(DIF_PRES, ident="dif"),
             ],
         )
@@ -2153,32 +2281,40 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            ),
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+        ):
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
 
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
 
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch(
-            "acapy_agent.vc.vc_ld.verify.verify_presentation",
-            mock.CoroutineMock(
-                return_value=PresentationVerificationResult(verified=False)
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
             ),
-        ), mock.patch.object(
-            AnonCredsVerifier,
-            "verify_presentation",
-            mock.CoroutineMock(
-                return_value=PresentationVerificationResult(verified=True)
+            mock.patch(
+                "acapy_agent.vc.vc_ld.verify.verify_presentation",
+                mock.CoroutineMock(
+                    return_value=PresentationVerificationResult(verified=False)
+                ),
             ),
-        ), mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            mock.patch.object(
+                AnonCredsVerifier,
+                "verify_presentation",
+                mock.CoroutineMock(
+                    return_value=PresentationVerificationResult(verified=True)
+                ),
+            ),
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+        ):
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
@@ -2224,11 +2360,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         px_rec_dummy = V20PresExRecord()
         message = mock.MagicMock()
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             px_rec_out = await self.manager.receive_pres_ack(message, conn_record)
             save_ex.assert_called_once()
@@ -2241,11 +2378,12 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         px_rec_dummy = V20PresExRecord()
         message = mock.MagicMock(_verification_result="true")
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+            ) as retrieve_ex,
+        ):
             retrieve_ex.return_value = px_rec_dummy
             px_rec_out = await self.manager.receive_pres_ack(message, conn_record)
             save_ex.assert_called_once()
@@ -2270,22 +2408,22 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             }
         )
 
-        with mock.patch.object(
-            V20PresExRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V20PresExRecord,
-            "retrieve_by_tag_filter",
-            mock.CoroutineMock(),
-        ) as retrieve_ex, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session:
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord,
+                "retrieve_by_tag_filter",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+            mock.patch.object(
+                self.profile,
+                "session",
+                mock.MagicMock(return_value=self.profile.session()),
+            ) as session,
+        ):
             retrieve_ex.return_value = stored_exchange
 
-            ret_exchange = await self.manager.receive_problem_report(
-                problem, connection_id
-            )
+            await self.manager.receive_problem_report(problem, connection_id)
             retrieve_ex.assert_called_once_with(
                 session.return_value,
                 {"thread_id": problem._thread_id},
@@ -2297,14 +2435,6 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
-        stored_exchange = V20PresExRecord(
-            pres_ex_id="dummy-cxid",
-            connection_id=connection_id,
-            initiator=V20PresExRecord.INITIATOR_SELF,
-            role=V20PresExRecord.ROLE_VERIFIER,
-            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
-            thread_id="dummy-thid",
-        )
         problem = V20PresProblemReport(
             description={
                 "en": "Change of plans",

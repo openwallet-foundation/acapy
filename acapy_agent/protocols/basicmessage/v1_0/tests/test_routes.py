@@ -1,22 +1,21 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from .....admin.request_context import AdminRequestContext
-from .....core.in_memory import InMemoryProfile
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from .. import routes as test_module
 
 
 class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        profile = InMemoryProfile.test_profile(
+        self.profile = await create_test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
             }
         )
-        self.context = AdminRequestContext.test_context(self.session_inject, profile)
+        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -34,16 +33,18 @@ class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": self.test_conn_id}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_connection_record, mock.patch.object(
-            test_module, "BasicMessage", autospec=True
-        ) as mock_basic_message, mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_connection_record,
+            mock.patch.object(
+                test_module, "BasicMessage", autospec=True
+            ) as mock_basic_message,
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+        ):
             mock_connection_record.retrieve_by_id = mock.CoroutineMock()
 
-            res = await test_module.connections_send_message(self.request)
+            await test_module.connections_send_message(self.request)
             mock_response.assert_called_once_with({})
             mock_basic_message.assert_called_once()
 
@@ -51,11 +52,12 @@ class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": self.test_conn_id}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_connection_record, mock.patch.object(
-            test_module, "BasicMessage", autospec=True
-        ) as mock_basic_message:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_connection_record,
+            mock.patch.object(test_module, "BasicMessage", autospec=True),
+        ):
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -68,11 +70,14 @@ class TestBasicMessageRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"conn_id": self.test_conn_id}
 
-        with mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_connection_record, mock.patch.object(
-            test_module, "BasicMessage", autospec=True
-        ) as mock_basic_message:
+        with (
+            mock.patch.object(
+                test_module, "ConnRecord", autospec=True
+            ) as mock_connection_record,
+            mock.patch.object(
+                test_module, "BasicMessage", autospec=True
+            ) as mock_basic_message,
+        ):
             # Emulate connection not ready
             mock_connection_record.retrieve_by_id = mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False

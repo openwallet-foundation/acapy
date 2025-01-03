@@ -55,6 +55,13 @@ class IndyPresExchHandler:
             proof_request = pres_ex_record.pres_request.attachment(
                 V20PresFormat.Format.INDY
             )
+            # If indy filter fails try anoncreds filter format. This is for a
+            # non-anoncreds agent that gets a anoncreds format proof request and
+            # should removed when indy format is fully retired.
+            if not proof_request:
+                proof_request = pres_ex_record.pres_request.attachment(
+                    V20PresFormat.Format.ANONCREDS
+                )
         elif isinstance(pres_ex_record, V10PresentationExchange):
             proof_request = pres_ex_record._presentation_request.ser
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)

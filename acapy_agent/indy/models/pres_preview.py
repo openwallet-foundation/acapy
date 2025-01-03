@@ -16,8 +16,8 @@ from ...messaging.util import canon
 from ...messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
-    INDY_PREDICATE_EXAMPLE,
-    INDY_PREDICATE_VALIDATE,
+    PREDICATE_EXAMPLE,
+    PREDICATE_VALIDATE,
 )
 from ...multitenant.base import BaseMultitenantManager
 from ...protocols.didcomm_prefix import DIDCommPrefix
@@ -100,10 +100,10 @@ class IndyPresPredSpecSchema(BaseModelSchema):
     )
     predicate = fields.Str(
         required=True,
-        validate=INDY_PREDICATE_VALIDATE,
+        validate=PREDICATE_VALIDATE,
         metadata={
             "description": "Predicate type ('<', '<=', '>=', or '>')",
-            "example": INDY_PREDICATE_EXAMPLE,
+            "example": PREDICATE_EXAMPLE,
         },
     )
     threshold = fields.Int(

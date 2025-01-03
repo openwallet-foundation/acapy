@@ -6,14 +6,11 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 from marshmallow import ValidationError
 
-from acapy_agent.tests import mock
-
 from .......anoncreds.holder import AnonCredsHolder
 from .......anoncreds.issuer import AnonCredsIssuer
 from .......anoncreds.revocation import AnonCredsRevocationRegistryFullError
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
-from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
@@ -23,6 +20,8 @@ from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......storage.record import StorageRecord
+from .......tests import mock
+from .......utils.testing import create_test_profile
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -37,10 +36,10 @@ from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_request import V20CredRequest
 from ....messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from ....models.cred_ex_record import V20CredExRecord
-from ....models.detail.indy import V20CredExRecordIndy
+from ....models.detail.anoncreds import V20CredExRecordAnoncreds
 from ...handler import V20CredFormatError
 from .. import handler as test_module
-from ..handler import LOGGER as INDY_LOGGER
+from ..handler import LOGGER as ANONCREDS_LOGGER
 from ..handler import AnonCredsCredFormatHandler
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
@@ -109,7 +108,7 @@ REV_REG_DEF = {
         "tailsLocation": TAILS_LOCAL,
     },
 }
-INDY_OFFER = {
+ANONCREDS_OFFER = {
     "schema_id": SCHEMA_ID,
     "cred_def_id": CRED_DEF_ID,
     "key_correctness_proof": {
@@ -132,8 +131,8 @@ INDY_OFFER = {
     },
     "nonce": "1234567890",
 }
-INDY_CRED_REQ = {
-    "prover_did": TEST_DID,
+ANONCREDS_CRED_REQ = {
+    "entropy": TEST_DID,
     "cred_def_id": CRED_DEF_ID,
     "blinded_ms": {
         "u": "12345",
@@ -149,7 +148,7 @@ INDY_CRED_REQ = {
     },
     "nonce": "9876543210",
 }
-INDY_CRED = {
+ANONCREDS_CRED = {
     "schema_id": SCHEMA_ID,
     "cred_def_id": CRED_DEF_ID,
     "rev_reg_id": REV_REG_ID,
@@ -194,14 +193,11 @@ INDY_CRED = {
 
 class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
+        self.profile = await create_test_profile()
         self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
         # Ledger
-        Ledger = mock.MagicMock()
-        self.ledger = Ledger()
+        self.ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger.get_schema = mock.CoroutineMock(return_value=SCHEMA)
         self.ledger.get_credential_definition = mock.CoroutineMock(return_value=CRED_DEF)
         self.ledger.get_revoc_reg_def = mock.CoroutineMock(return_value=REV_REG_DEF)
@@ -209,8 +205,8 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         self.ledger.credential_definition_id2schema_id = mock.CoroutineMock(
             return_value=SCHEMA_ID
         )
-        self.context.injector.bind_instance(BaseLedger, self.ledger)
-        self.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
                 get_ledger_for_identifier=mock.CoroutineMock(
@@ -220,15 +216,15 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
         # Context
         self.cache = InMemoryCache()
-        self.context.injector.bind_instance(BaseCache, self.cache)
+        self.profile.context.injector.bind_instance(BaseCache, self.cache)
 
         # Issuer
         self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
-        self.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         # Holder
         self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.context.injector.bind_instance(AnonCredsHolder, self.holder)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         self.handler = AnonCredsCredFormatHandler(self.profile)
         assert self.handler.profile
@@ -236,9 +232,9 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
     async def test_validate_fields(self):
         # Test correct data
         self.handler.validate_fields(CRED_20_PROPOSAL, {"cred_def_id": CRED_DEF_ID})
-        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)
-        self.handler.validate_fields(CRED_20_REQUEST, INDY_CRED_REQ)
-        self.handler.validate_fields(CRED_20_ISSUE, INDY_CRED)
+        self.handler.validate_fields(CRED_20_OFFER, ANONCREDS_OFFER)
+        self.handler.validate_fields(CRED_20_REQUEST, ANONCREDS_CRED_REQ)
+        self.handler.validate_fields(CRED_20_ISSUE, ANONCREDS_CRED)
 
         # test incorrect proposal
         with self.assertRaises(ValidationError):
@@ -248,40 +244,43 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
         # test incorrect offer
         with self.assertRaises(ValidationError):
-            offer = INDY_OFFER.copy()
+            offer = ANONCREDS_OFFER.copy()
             offer.pop("nonce")
             self.handler.validate_fields(CRED_20_OFFER, offer)
 
         # test incorrect request
         with self.assertRaises(ValidationError):
-            req = INDY_CRED_REQ.copy()
+            req = ANONCREDS_CRED_REQ.copy()
             req.pop("nonce")
             self.handler.validate_fields(CRED_20_REQUEST, req)
 
         # test incorrect cred
         with self.assertRaises(ValidationError):
-            cred = INDY_CRED.copy()
+            cred = ANONCREDS_CRED.copy()
             cred.pop("schema_id")
             self.handler.validate_fields(CRED_20_ISSUE, cred)
 
     async def test_get_indy_detail_record(self):
         cred_ex_id = "dummy"
         details_indy = [
-            V20CredExRecordIndy(
+            V20CredExRecordAnoncreds(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
                 cred_rev_id="0",
             ),
-            V20CredExRecordIndy(
+            V20CredExRecordAnoncreds(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
                 cred_rev_id="1",
             ),
         ]
-        await details_indy[0].save(self.session)
-        await details_indy[1].save(self.session)  # exercise logger warning on get()
+        async with self.profile.session() as session:
+            await details_indy[0].save(session)
+            await details_indy[1].save(session)  # exercise logger warning on get()
 
-        with mock.patch.object(INDY_LOGGER, "warning", mock.MagicMock()) as mock_warning:
+        with mock.patch.object(
+            ANONCREDS_LOGGER, "warning", mock.MagicMock()
+        ) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
             mock_warning.assert_called_once()
 
@@ -357,7 +356,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
@@ -382,7 +381,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         await self.session.storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=json.dumps(ANONCREDS_OFFER)
         )
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
@@ -393,13 +392,13 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         assert cred_format.attach_id == self.handler.format.api == attachment.ident
 
         # assert content of attachment is proposal data
-        assert attachment.content == INDY_OFFER
+        assert attachment.content == ANONCREDS_OFFER
 
         # assert data is encoded as base64
         assert attachment.data.base64
 
         self.issuer.create_credential_offer.reset_mock()
-        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
+        await self.handler.create_offer(cred_proposal)
         self.issuer.create_credential_offer.assert_not_called()
 
     @pytest.mark.skip(reason="Anoncreds-break")
@@ -420,7 +419,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
@@ -449,7 +448,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         await self.session.storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=json.dumps(ANONCREDS_OFFER)
         )
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
@@ -460,7 +459,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         assert cred_format.attach_id == self.handler.format.api == attachment.ident
 
         # assert content of attachment is proposal data
-        assert attachment.content == INDY_OFFER
+        assert attachment.content == ANONCREDS_OFFER
 
         # assert data is encoded as base64
         assert attachment.data.base64
@@ -483,7 +482,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
@@ -512,7 +511,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         await self.session.storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=json.dumps(ANONCREDS_OFFER)
         )
         with mock.patch.object(
             IndyLedgerRequestsExecutor,
@@ -529,7 +528,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
@@ -537,7 +536,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         self.issuer.create_credential_offer = mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=json.dumps(ANONCREDS_OFFER)
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -560,11 +559,11 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-id",
@@ -577,7 +576,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
         cred_req_meta = {}
         self.holder.create_credential_request = mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
+            return_value=(json.dumps(ANONCREDS_CRED_REQ), json.dumps(cred_req_meta))
         )
 
         (cred_format, attachment) = await self.handler.create_request(
@@ -585,14 +584,14 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         self.holder.create_credential_request.assert_called_once_with(
-            INDY_OFFER, cred_def, holder_did
+            ANONCREDS_OFFER, cred_def, holder_did
         )
 
         # assert identifier match
         assert cred_format.attach_id == self.handler.format.api == attachment.ident
 
         # assert content of attachment is proposal data
-        assert attachment.content == INDY_CRED_REQ
+        assert attachment.content == ANONCREDS_CRED_REQ
 
         # assert data is encoded as base64
         assert attachment.data.base64
@@ -620,16 +619,18 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.create_request(cred_ex_record)
-        assert "Indy issue credential format cannot start from credential request" in str(
-            context.exception
+        assert (
+            "Anoncreds issue credential format cannot start from credential request"
+            in str(context.exception)
         )
 
         cred_ex_record.state = None
 
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.create_request(cred_ex_record)
-        assert "Indy issue credential format cannot start from credential request" in str(
-            context.exception
+        assert (
+            "Anoncreds issue credential format cannot start from credential request"
+            in str(context.exception)
         )
 
     async def test_create_request_not_unique_x(self):
@@ -661,8 +662,9 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.receive_request(cred_ex_record, cred_request_message)
 
-        assert "Indy issue credential format cannot start from credential request" in str(
-            context.exception
+        assert (
+            "Anoncreds issue credential format cannot start from credential request"
+            in str(context.exception)
         )
 
     @pytest.mark.skip(reason="Anoncreds-break")
@@ -683,22 +685,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
 
         cred_ex_record = V20CredExRecord(
@@ -712,7 +714,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
         cred_rev_id = "1000"
         self.issuer.create_credential = mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(json.dumps(ANONCREDS_CRED), cred_rev_id)
         )
 
         with mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc:
@@ -735,8 +737,8 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
             self.issuer.create_credential.assert_called_once_with(
                 SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
+                ANONCREDS_OFFER,
+                ANONCREDS_CRED_REQ,
                 attr_values,
                 REV_REG_ID,
                 "dummy-path",
@@ -746,7 +748,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             assert cred_format.attach_id == self.handler.format.api == attachment.ident
 
             # assert content of attachment is proposal data
-            assert attachment.content == INDY_CRED
+            assert attachment.content == ANONCREDS_CRED
 
             # assert data is encoded as base64
             assert attachment.data.base64
@@ -771,22 +773,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
 
         cred_ex_record = V20CredExRecord(
@@ -799,7 +801,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         self.issuer.create_credential = mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), None)
+            return_value=(json.dumps(ANONCREDS_CRED), None)
         )
         self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value=CRED_DEF_NR
@@ -819,8 +821,8 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
             self.issuer.create_credential.assert_called_once_with(
                 SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
+                ANONCREDS_OFFER,
+                ANONCREDS_CRED_REQ,
                 attr_values,
                 None,
                 None,
@@ -830,7 +832,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         assert cred_format.attach_id == self.handler.format.api == attachment.ident
 
         # assert content of attachment is proposal data
-        assert attachment.content == INDY_CRED
+        assert attachment.content == ANONCREDS_CRED
 
         # assert data is encoded as base64
         assert attachment.data.base64
@@ -870,22 +872,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
 
         cred_ex_record = V20CredExRecord(
@@ -898,7 +900,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         self.issuer.create_credential = mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(json.dumps(ANONCREDS_CRED), cred_rev_id)
         )
 
         with mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc:
@@ -929,22 +931,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
 
         cred_ex_record = V20CredExRecord(
@@ -957,7 +959,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         self.issuer.create_credential = mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(json.dumps(ANONCREDS_CRED), cred_rev_id)
         )
 
         with mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc:
@@ -988,8 +990,6 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             "jurisdictionId": "value",
             "incorporationDate": "value",
         }
-        cred_rev_id = "1"
-
         cred_preview = V20CredPreview(
             attributes=[
                 V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
@@ -1001,22 +1001,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_request = V20CredRequest(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
 
         cred_ex_record = V20CredExRecord(
@@ -1080,11 +1080,11 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
@@ -1092,22 +1092,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
         cred_issue = V20CredIssue(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
+            credentials_attach=[AttachDecorator.data_base64(ANONCREDS_CRED, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1146,15 +1146,19 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             BaseMultitenantManager,
             mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with mock.patch.object(
-            IndyLedgerRequestsExecutor,
-            "get_ledger_for_identifier",
-            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
-        ), mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
-        ) as mock_rev_reg, mock.patch.object(
-            test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
-        ) as mock_get_detail_record:
+        with (
+            mock.patch.object(
+                IndyLedgerRequestsExecutor,
+                "get_ledger_for_identifier",
+                mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            ),
+            mock.patch.object(
+                test_module, "RevocationRegistry", autospec=True
+            ) as mock_rev_reg,
+            mock.patch.object(
+                test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
+            ) as mock_get_detail_record,
+        ):
             mock_rev_reg.from_definition = mock.MagicMock(
                 return_value=mock.MagicMock(
                     get_or_fetch_local_tails_path=mock.CoroutineMock()
@@ -1172,7 +1176,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
             self.holder.store_credential.assert_called_once_with(
                 CRED_DEF,
-                INDY_CRED,
+                ANONCREDS_CRED,
                 cred_req_meta,
                 {"pic": "image/jpeg"},
                 credential_id=cred_id,
@@ -1203,11 +1207,11 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            offers_attach=[AttachDecorator.data_base64(ANONCREDS_OFFER, ident="0")],
         )
         cred_offer.assign_thread_id(thread_id)
         cred_request = V20CredRequest(
@@ -1215,22 +1219,22 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+            requests_attach=[AttachDecorator.data_base64(ANONCREDS_CRED_REQ, ident="0")],
         )
         cred_issue = V20CredIssue(
             formats=[
                 V20CredFormat(
                     attach_id="0",
                     format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
-                        V20CredFormat.Format.INDY.api
+                        V20CredFormat.Format.ANONCREDS.api
                     ],
                 )
             ],
-            credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
+            credentials_attach=[AttachDecorator.data_base64(ANONCREDS_CRED, ident="0")],
         )
 
         stored_cx_rec = V20CredExRecord(
@@ -1251,11 +1255,14 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             side_effect=test_module.AnonCredsHolderError("Problem", {"message": "Nope"})
         )
 
-        with mock.patch.object(
-            test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
-        ) as mock_get_detail_record, mock.patch.object(
-            test_module.RevocationRegistry, "from_definition", mock.MagicMock()
-        ) as mock_rev_reg:
+        with (
+            mock.patch.object(
+                test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
+            ) as mock_get_detail_record,
+            mock.patch.object(
+                test_module.RevocationRegistry, "from_definition", mock.MagicMock()
+            ) as mock_rev_reg,
+        ):
             mock_get_detail_record.return_value = mock.MagicMock(
                 cred_request_metadata=cred_req_meta,
                 save=mock.CoroutineMock(),

@@ -1,8 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
-from ....wallet.in_memory import InMemoryWallet
+from ....utils.testing import create_test_profile
+from ....wallet.base import BaseWallet
 from ....wallet.key_type import ED25519
 from ..signature_decorator import SignatureDecorator
 
@@ -41,23 +41,24 @@ class TestSignatureDecorator(IsolatedAsyncioTestCase):
         TEST_MESSAGE = "Hello world"
         TEST_TIMESTAMP = 1234567890
 
-        profile = InMemoryProfile.test_profile()
-        wallet = InMemoryWallet(profile)
-        key_info = await wallet.create_signing_key(ED25519)
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key_info = await wallet.create_signing_key(ED25519)
 
-        deco = await SignatureDecorator.create(
-            Ping(), key_info.verkey, wallet, timestamp=None
-        )
-        assert deco
+            deco = await SignatureDecorator.create(
+                Ping(), key_info.verkey, wallet, timestamp=None
+            )
+            assert deco
 
-        deco = await SignatureDecorator.create(
-            TEST_MESSAGE, key_info.verkey, wallet, TEST_TIMESTAMP
-        )
+            deco = await SignatureDecorator.create(
+                TEST_MESSAGE, key_info.verkey, wallet, TEST_TIMESTAMP
+            )
 
-        (msg, timestamp) = deco.decode()
-        assert msg == TEST_MESSAGE
-        assert timestamp == TEST_TIMESTAMP
+            (msg, timestamp) = deco.decode()
+            assert msg == TEST_MESSAGE
+            assert timestamp == TEST_TIMESTAMP
 
-        await deco.verify(wallet)
-        deco.signature_type = "unsupported-sig-type"
-        assert not await deco.verify(wallet)
+            await deco.verify(wallet)
+            deco.signature_type = "unsupported-sig-type"
+            assert not await deco.verify(wallet)

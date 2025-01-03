@@ -88,9 +88,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_identifier(message_type)
 
         return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
 
@@ -98,9 +95,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         self, message_type: str, data: dict
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_data(message_type, data)
 
         return (
             V20PresFormat(
@@ -154,9 +148,12 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        # Temporary shim while the new anoncreds library integration is in progress
+
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_pres(pres_ex_record, request_data)
+            return await self.anoncreds_handler.create_pres(
+                pres_ex_record,
+                request_data,
+            )
 
         requested_credentials = {}
         if not request_data:
@@ -349,8 +346,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             return await self.anoncreds_handler.verify_pres(pres_ex_record)
 
         pres_request_msg = pres_ex_record.pres_request
-        indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
-        indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
+
+        # The `or` anoncreds format is for the indy <--> anoncreds compatibility
+        indy_proof_request = pres_request_msg.attachment(
+            IndyPresExchangeHandler.format
+        ) or pres_request_msg.attachment(AnonCredsPresExchangeHandler.format)
+        indy_proof = pres_ex_record.pres.attachment(
+            IndyPresExchangeHandler.format
+        ) or pres_ex_record.pres.attachment(AnonCredsPresExchangeHandler.format)
         indy_handler = IndyPresExchHandler(self._profile)
         (
             schemas,

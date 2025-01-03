@@ -9,6 +9,14 @@ acapy\_agent.protocols.issue\_credential.v2\_0.models.detail package
 Submodules
 ----------
 
+acapy\_agent.protocols.issue\_credential.v2\_0.models.detail.anoncreds module
+-----------------------------------------------------------------------------
+
+.. automodule:: acapy_agent.protocols.issue_credential.v2_0.models.detail.anoncreds
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.protocols.issue\_credential.v2\_0.models.detail.indy module
 ------------------------------------------------------------------------
 

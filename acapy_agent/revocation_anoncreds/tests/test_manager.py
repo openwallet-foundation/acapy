@@ -3,17 +3,16 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.revocation.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-)
-from acapy_agent.tests import mock
-
 from ...anoncreds.issuer import AnonCredsIssuer
-from ...core.in_memory import InMemoryProfile
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...revocation.models.issuer_cred_rev_record import (
+    IssuerCredRevRecord,
+)
+from ...tests import mock
+from ...utils.testing import create_test_profile
 from .. import manager as test_module
 from ..manager import RevocationManager, RevocationManagerError
 
@@ -30,7 +29,7 @@ TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
 
 class TestRevocationManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = await create_test_profile()
         self.manager = RevocationManager(self.profile)
 
     @pytest.mark.skip(reason="Anoncreds-break")
@@ -62,16 +61,18 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
-        with mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "retrieve_by_cred_ex_id",
-            mock.CoroutineMock(),
-        ) as mock_retrieve, mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc, mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        with (
+            mock.patch.object(
+                test_module.IssuerCredRevRecord,
+                "retrieve_by_cred_ex_id",
+                mock.CoroutineMock(),
+            ) as mock_retrieve,
+            mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc,
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            ),
         ):
             mock_retrieve.return_value = mock.MagicMock(
                 rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
@@ -114,7 +115,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
     @pytest.mark.skip(reason="Anoncreds-break")
     async def test_revoke_credential_no_rev_reg_rec(self):
         CRED_REV_ID = "1"
-        exchange = V10CredentialExchange(
+        V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
             credential_definition_id=CRED_DEF_ID,
             role=V10CredentialExchange.ROLE_ISSUER,
@@ -140,20 +141,23 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
         self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
-        with mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc, mock.patch.object(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.profile.session()),
-        ) as session, mock.patch.object(
-            self.profile,
-            "transaction",
-            mock.MagicMock(return_value=session.return_value),
-        ) as session, mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        with (
+            mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc,
+            mock.patch.object(
+                self.profile,
+                "session",
+                mock.MagicMock(return_value=self.profile.session()),
+            ) as session,
+            mock.patch.object(
+                self.profile,
+                "transaction",
+                mock.MagicMock(return_value=session.return_value),
+            ) as session,
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            ),
         ):
             revoc.return_value.get_issuer_rev_reg_record = mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
@@ -190,14 +194,17 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             send_entry=mock.CoroutineMock(),
             clear_pending=mock.CoroutineMock(),
         )
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            mock.CoroutineMock(return_value=[mock_issuer_rev_reg_record]),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "query_by_pending",
+                mock.CoroutineMock(return_value=[mock_issuer_rev_reg_record]),
+            ),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            ),
         ):
             issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             issuer.merge_revocation_registry_deltas = mock.AsyncMock(side_effect=deltas)
@@ -246,15 +253,18 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 clear_pending=mock.CoroutineMock(),
             ),
         ]
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(
-                side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "query_by_pending",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+            ),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(
+                    side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+                ),
             ),
         ):
             issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
@@ -305,15 +315,18 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 clear_pending=mock.CoroutineMock(),
             ),
         ]
-        with mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ), mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "retrieve_by_id",
-            mock.CoroutineMock(
-                side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+        with (
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "query_by_pending",
+                mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+            ),
+            mock.patch.object(
+                test_module.IssuerRevRegRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(
+                    side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
+                ),
             ),
         ):
             issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
@@ -349,7 +362,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             test_module.IssuerRevRegRecord,
             "query_by_pending",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
+        ):
             result = await self.manager.clear_pending_revocations()
             assert result == {}
 
@@ -373,7 +386,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             test_module.IssuerRevRegRecord,
             "query_by_pending",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
+        ):
             result = await self.manager.clear_pending_revocations({REV_REG_ID: None})
             assert result == {
                 REV_REG_ID: ["1", "2"],
@@ -400,7 +413,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             test_module.IssuerRevRegRecord,
             "query_by_pending",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
+        ):
             result = await self.manager.clear_pending_revocations({REV_REG_ID: ["9"]})
             assert result == {
                 REV_REG_ID: ["1", "2"],
@@ -418,7 +431,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             )
             await exchange_record.save(session)
 
-        for i in range(2):  # second pass gets from cache
+        for _ in range(2):  # second pass gets from cache
             for index in range(2):
                 ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
                     session, str(index), str(1000 + index)

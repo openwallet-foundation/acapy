@@ -1,12 +1,10 @@
 """Test json-ld credential."""
 
 import json
-from unittest import IsolatedAsyncioTestCase, mock
+from unittest import IsolatedAsyncioTestCase
 
-from ....core.in_memory import InMemoryProfile
-from ....vc.ld_proofs import DocumentLoader
+from ....utils.testing import create_test_profile
 from ....wallet.base import BaseWallet
-from ....wallet.in_memory import InMemoryWallet
 from ....wallet.key_type import ED25519
 from .. import credential as test_module
 from ..create_verify_data import DroppedAttributeError
@@ -20,7 +18,6 @@ from . import (
     TEST_VERIFY_OBJS,
     TEST_VERKEY,
 )
-from .document_loader import custom_document_loader
 
 
 class TestCredential(IsolatedAsyncioTestCase):
@@ -50,68 +47,64 @@ class TestCredential(IsolatedAsyncioTestCase):
 
 class TestOps(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.wallet = InMemoryWallet(InMemoryProfile.test_profile())
-        await self.wallet.create_signing_key(ED25519, TEST_SEED)
-
-        self.session = InMemoryProfile.test_session(bind={BaseWallet: self.wallet})
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(
-            self.profile,
-            "session",
-            mock.MagicMock(return_value=self.session),
-        )
-
-        self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            self.wallet = session.inject(BaseWallet)
+            await self.wallet.create_signing_key(ED25519, TEST_SEED)
 
     async def test_verify_credential(self):
-        for input_ in TEST_VERIFY_OBJS:
-            assert await verify_credential(
-                self.session,
-                input_.get("doc"),
-                input_.get("verkey"),
-            )
+        async with self.profile.session() as session:
+            for input_ in TEST_VERIFY_OBJS:
+                assert await verify_credential(
+                    session,
+                    input_.get("doc"),
+                    input_.get("verkey"),
+                )
 
     async def test_sign_credential(self):
-        for input_ in TEST_SIGN_OBJS:
-            result = await sign_credential(
-                self.session,
-                input_.get("doc"),
-                input_.get("options"),
-                TEST_VERKEY,
-            )
-            assert "proof" in result.keys()
-            assert "jws" in result.get("proof", {}).keys()
+        async with self.profile.session() as session:
+            for input_ in TEST_SIGN_OBJS:
+                result = await sign_credential(
+                    session,
+                    input_.get("doc"),
+                    input_.get("options"),
+                    TEST_VERKEY,
+                )
+                assert "proof" in result.keys()
+                assert "jws" in result.get("proof", {}).keys()
 
     async def test_sign_dropped_attribute_exception(self):
-        for input_ in TEST_SIGN_ERROR_OBJS:
-            with self.assertRaises(DroppedAttributeError) as context:
-                await sign_credential(
-                    self.session,
-                    input_.get("doc"),
-                    input_.get("options"),
-                    TEST_VERKEY,
-                )
-            assert "attribute2drop" in str(context.exception)
+        async with self.profile.session() as session:
+            for input_ in TEST_SIGN_ERROR_OBJS:
+                with self.assertRaises(DroppedAttributeError) as context:
+                    await sign_credential(
+                        session,
+                        input_.get("doc"),
+                        input_.get("options"),
+                        TEST_VERKEY,
+                    )
+                assert "attribute2drop" in str(context.exception)
 
     async def test_signature_option_type(self):
-        for input_ in TEST_SIGN_OBJS:
-            with self.assertRaises(SignatureTypeError):
-                input_["options"]["type"] = "Ed25519Signature2038"
-                await sign_credential(
-                    self.session,
-                    input_.get("doc"),
-                    input_.get("options"),
-                    TEST_VERKEY,
-                )
+        async with self.profile.session() as session:
+            for input_ in TEST_SIGN_OBJS:
+                with self.assertRaises(SignatureTypeError):
+                    input_["options"]["type"] = "Ed25519Signature2038"
+                    await sign_credential(
+                        session,
+                        input_.get("doc"),
+                        input_.get("options"),
+                        TEST_VERKEY,
+                    )
 
     async def test_invalid_jws_header(self):
         with self.assertRaises(BadJWSHeaderError):
-            await verify_credential(
-                self.session,
-                TEST_VERIFY_ERROR.get("doc"),
-                TEST_VERIFY_ERROR.get("verkey"),
-            )
+            async with self.profile.session() as session:
+                await verify_credential(
+                    session,
+                    TEST_VERIFY_ERROR.get("doc"),
+                    TEST_VERIFY_ERROR.get("verkey"),
+                )
 
     async def test_did_key(self):
         for verkey in (

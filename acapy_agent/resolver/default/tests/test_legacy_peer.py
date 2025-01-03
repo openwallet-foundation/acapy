@@ -3,14 +3,13 @@
 import pydid
 import pytest
 
-from acapy_agent.tests import mock
-
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....connections.models.diddoc.diddoc import DIDDoc
-from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....storage.error import StorageNotFoundError
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from .. import legacy_peer as test_module
 from ..legacy_peer import LegacyPeerDIDResolver
 
@@ -26,9 +25,9 @@ def resolver():
 
 
 @pytest.fixture
-def profile():
+async def profile():
     """Profile fixture."""
-    profile = InMemoryProfile.test_profile()
+    profile = await create_test_profile()
     profile.context.injector.bind_instance(BaseCache, InMemoryCache())
     yield profile
 
@@ -80,11 +79,10 @@ class TestLegacyPeerDIDResolver:
     @pytest.mark.asyncio
     async def test_resolve(self, resolver: LegacyPeerDIDResolver, profile: Profile):
         """Test resolve."""
-        with mock.patch.object(
-            test_module, "BaseConnectionManager"
-        ) as mock_mgr, mock.patch.object(
-            test_module, "LegacyDocCorrections"
-        ) as mock_corrections:
+        with (
+            mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr,
+            mock.patch.object(test_module, "LegacyDocCorrections") as mock_corrections,
+        ):
             doc = object()
             mock_corrections.apply = mock.MagicMock(return_value=doc)
             mock_mgr.return_value = mock.MagicMock(
@@ -103,19 +101,18 @@ class TestLegacyPeerDIDResolver:
 
         This should be impossible in practice but still.
         """
-        with mock.patch.object(
-            test_module, "BaseConnectionManager"
-        ) as mock_mgr, mock.patch.object(
-            test_module, "LegacyDocCorrections"
-        ) as mock_corrections, pytest.raises(test_module.DIDNotFound):
+        with (
+            mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr,
+            mock.patch.object(test_module, "LegacyDocCorrections") as mock_corrections,
+            pytest.raises(test_module.DIDNotFound),
+        ):
             doc = object
             mock_corrections.apply = mock.MagicMock(return_value=doc)
             mock_mgr.return_value = mock.MagicMock(
                 fetch_did_document=mock.CoroutineMock(side_effect=StorageNotFoundError)
             )
             resolver.supports = mock.CoroutineMock(return_value=True)
-            result = await resolver.resolve(profile, TEST_DID0)
-            assert result == doc
+            await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.parametrize(
         ("input_doc", "expected"),

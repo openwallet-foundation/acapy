@@ -75,7 +75,7 @@ class AskarProfile(Profile):
             read_only = bool(self.settings.get("ledger.read_only", False))
             socks_proxy = self.settings.get("ledger.socks_proxy")
             if read_only:
-                LOGGER.error("Note: setting ledger to read-only mode")
+                LOGGER.warning("Note: setting ledger to read-only mode")
             genesis_transactions = self.settings.get("ledger.genesis_transactions")
             cache = self.context.injector.inject_or(BaseCache)
             self.ledger_pool = IndyVdrLedgerPool(
@@ -123,7 +123,7 @@ class AskarProfile(Profile):
             VCHolder,
             ClassProvider(
                 "acapy_agent.storage.vc_holder.askar.AskarVCHolder",
-                ref(self),
+                ClassProvider.Inject(Profile),
             ),
         )
         if (
@@ -312,7 +312,7 @@ class AskarProfileSession(ProfileSession):
 
     def __del__(self):
         """Delete magic method."""
-        if self._handle:
+        if hasattr(self, "_handle") and self._handle:
             self._check_duration()
 
 
@@ -324,7 +324,9 @@ class AskarProfileManager(ProfileManager):
     ) -> Profile:
         """Provision a new instance of a profile."""
         store_config = AskarStoreConfig(config)
-        opened = await store_config.open_store(provision=True)
+        opened = await store_config.open_store(
+            provision=True, in_memory=config.get("test")
+        )
         return AskarProfile(opened, context)
 
     async def open(
@@ -332,7 +334,9 @@ class AskarProfileManager(ProfileManager):
     ) -> Profile:
         """Open an instance of an existing profile."""
         store_config = AskarStoreConfig(config)
-        opened = await store_config.open_store(provision=False)
+        opened = await store_config.open_store(
+            provision=False, in_memory=config.get("test")
+        )
         return AskarProfile(opened, context)
 
     @classmethod

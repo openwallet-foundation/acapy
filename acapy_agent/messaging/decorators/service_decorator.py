@@ -9,7 +9,10 @@ from typing import List, Optional
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import INDY_RAW_PUBLIC_KEY_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE
+from ..valid import (
+    RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
+    RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
+)
 
 
 class ServiceDecorator(BaseModel):
@@ -82,10 +85,10 @@ class ServiceDecoratorSchema(BaseModelSchema):
 
     recipient_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Recipient public key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
             },
         ),
         data_key="recipientKeys",
@@ -102,10 +105,10 @@ class ServiceDecoratorSchema(BaseModelSchema):
     )
     routing_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Routing key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
             },
         ),
         data_key="routingKeys",

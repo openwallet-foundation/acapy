@@ -15,14 +15,14 @@ from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_PREDICATE_EXAMPLE,
-    INDY_PREDICATE_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
     INT_EPOCH_EXAMPLE,
     INT_EPOCH_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
     NUM_STR_NATURAL_EXAMPLE,
     NUM_STR_NATURAL_VALIDATE,
+    PREDICATE_EXAMPLE,
+    PREDICATE_VALIDATE,
 )
 
 
@@ -125,10 +125,10 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
     )
     p_type = fields.Str(
         required=True,
-        validate=INDY_PREDICATE_VALIDATE,
+        validate=PREDICATE_VALIDATE,
         metadata={
             "description": "Predicate type ('<', '<=', '>=', or '>')",
-            "example": INDY_PREDICATE_EXAMPLE,
+            "example": PREDICATE_EXAMPLE,
         },
     )
     p_value = fields.Int(
@@ -251,10 +251,10 @@ class IndyProofRequestSchema(BaseModelSchema):
     version = fields.Str(
         required=False,
         dump_default="1.0",
-        validate=INDY_VERSION_VALIDATE,
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
         metadata={
             "description": "Proof request version",
-            "example": INDY_VERSION_EXAMPLE,
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
         },
     )
     requested_attributes = fields.Dict(

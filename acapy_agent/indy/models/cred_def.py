@@ -6,8 +6,8 @@ from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
-    INDY_VERSION_EXAMPLE,
-    INDY_VERSION_VALIDATE,
+    MAJOR_MINOR_VERSION_EXAMPLE,
+    MAJOR_MINOR_VERSION_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
@@ -92,10 +92,10 @@ class CredentialDefinitionSchema(OpenAPISchema):
     """Marshmallow schema for indy cred def."""
 
     ver = fields.Str(
-        validate=INDY_VERSION_VALIDATE,
+        validate=MAJOR_MINOR_VERSION_VALIDATE,
         metadata={
             "description": "Node protocol version",
-            "example": INDY_VERSION_EXAMPLE,
+            "example": MAJOR_MINOR_VERSION_EXAMPLE,
         },
     )
     ident = fields.Str(

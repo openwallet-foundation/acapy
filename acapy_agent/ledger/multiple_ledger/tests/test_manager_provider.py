@@ -2,12 +2,10 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
-from ....core.in_memory import InMemoryProfile
 from ....ledger.base import BaseLedger
 from ....ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
-from ..base_manager import MultipleLedgerManagerError
+from ....utils.testing import create_test_profile
 from ..manager_provider import MultiIndyLedgerManagerProvider
 
 TEST_GENESIS_TXN = {
@@ -54,27 +52,10 @@ LEDGER_CONFIG = [
 
 
 class TestMultiIndyLedgerManagerProvider(IsolatedAsyncioTestCase):
-    async def test_provide_invalid_manager(self):
-        profile = InMemoryProfile.test_profile()
-        provider = MultiIndyLedgerManagerProvider(profile)
-        context = InjectionContext()
-        context.settings["ledger.ledger_config_list"] = LEDGER_CONFIG
-        with self.assertRaises(MultipleLedgerManagerError):
-            provider.provide(context.settings, context.injector)
-
     @pytest.mark.askar
     async def test_provide_askar_manager(self):
         context = InjectionContext()
-        profile = await AskarProfileManager().provision(
-            context,
-            {
-                # "auto_recreate": True,
-                # "auto_remove": True,
-                "name": ":memory:",
-                "key": await AskarProfileManager.generate_store_key(),
-                "key_derivation_method": "RAW",  # much faster than using argon-hashed keys
-            },
-        )
+        profile = await create_test_profile()
         context.injector.bind_instance(
             BaseLedger, IndyVdrLedger(IndyVdrLedgerPool("name"), profile)
         )

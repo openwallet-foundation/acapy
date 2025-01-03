@@ -8,6 +8,7 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ...messages.keylist import Keylist
 from ...models.mediation_record import MediationRecord
 from ..keylist_handler import KeylistHandler
@@ -17,10 +18,10 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def context():
+async def context():
     """Fixture for context used in tests."""
     # pylint: disable=W0621
-    context = RequestContext.test_context()
+    context = RequestContext.test_context(await create_test_profile())
     context.message = Keylist()
     context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
     context.connection_ready = True
@@ -41,9 +42,8 @@ class TestKeylistHandler:
     async def test_handler_no_active_connection(self, context):
         handler, responder = KeylistHandler(), MockResponder()
         context.connection_ready = False
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(context, responder)
-            assert "inactive connection" in exc.value
 
     async def test_handler_no_record(self, context, caplog):
         handler, responder = KeylistHandler(), MockResponder()

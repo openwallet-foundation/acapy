@@ -11,8 +11,8 @@ from .base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
-from .models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
-from .models.anoncreds_revocation import (
+from .models.credential_definition import CredDef, CredDefResult, GetCredDefResult
+from .models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
     RevList,
@@ -20,7 +20,8 @@ from .models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
 )
-from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.schema_info import AnoncredsSchemaInfo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -98,6 +99,13 @@ class AnonCredsRegistry:
             profile,
             credential_definition_id,
         )
+
+    async def get_schema_info_by_id(
+        self, profile: Profile, schema_id: str
+    ) -> AnoncredsSchemaInfo:
+        """Get a schema info from the registry."""
+        resolver = await self._resolver_for_identifier(schema_id)
+        return await resolver.get_schema_info_by_id(profile, schema_id)
 
     async def register_credential_definition(
         self,

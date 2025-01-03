@@ -11,6 +11,7 @@ from ......core.event_bus import EventBus, MockEventBus
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......utils.testing import create_test_profile
 from ...manager import MediationManager
 from ...messages.inner.keylist_update_rule import KeylistUpdateRule
 from ...messages.inner.keylist_updated import KeylistUpdated
@@ -30,7 +31,7 @@ class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         """Setup test dependencies."""
-        self.context = RequestContext.test_context()
+        self.context = RequestContext.test_context(await create_test_profile())
         self.updated = [
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
@@ -51,17 +52,15 @@ class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
         self.context.connection_ready = False
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(self.context, responder)
-            assert "no active connection" in str(exc.value)
 
     async def test_handler(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
-        with mock.patch.object(
-            MediationManager, "store_update_results"
-        ) as mock_store, mock.patch.object(
-            handler, "notify_keylist_updated"
-        ) as mock_notify:
+        with (
+            mock.patch.object(MediationManager, "store_update_results") as mock_store,
+            mock.patch.object(handler, "notify_keylist_updated") as mock_notify,
+        ):
             await handler.handle(self.context, responder)
             mock_store.assert_called_once_with(TEST_CONN_ID, self.updated)
             mock_notify.assert_called_once_with(

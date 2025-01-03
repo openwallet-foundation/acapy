@@ -10,6 +10,7 @@ from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......multitenant.base import BaseMultitenantManager
+from ......utils.testing import create_test_profile
 from ...manager import MediationManager
 from ...messages.mediate_grant import MediationGrant
 from ...models.mediation_record import MediationRecord
@@ -24,7 +25,7 @@ TEST_ENDPOINT = "https://example.com"
 
 @pytest.fixture()
 async def context():
-    context = RequestContext.test_context()
+    context = RequestContext.test_context(await create_test_profile())
     context.message = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_VERKEY])
     context.connection_ready = True
     context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
@@ -43,15 +44,13 @@ class TestMediationGrantHandler:
     async def test_handler_no_active_connection(self, context: RequestContext):
         handler, responder = MediationGrantHandler(), MockResponder()
         context.connection_ready = False
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(context, responder)
-            assert "no active connection" in str(exc.value)
 
     async def test_handler_no_mediation_record(self, context: RequestContext):
         handler, responder = MediationGrantHandler(), MockResponder()
-        with pytest.raises(HandlerException) as exc:
+        with pytest.raises(HandlerException):
             await handler.handle(context, responder)
-            assert "has not been requested" in str(exc.value)
 
     @pytest.mark.parametrize(
         "grant",
@@ -79,13 +78,16 @@ class TestMediationGrantHandler:
         handler, responder = MediationGrantHandler(), MockResponder()
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with mock.patch.object(
-            context.connection_record,
-            "metadata_get",
-            mock.CoroutineMock(return_value=True),
-        ), mock.patch.object(
-            test_module, "MediationManager", autospec=True
-        ) as mock_mediation_manager:
+        with (
+            mock.patch.object(
+                context.connection_record,
+                "metadata_get",
+                mock.CoroutineMock(return_value=True),
+            ),
+            mock.patch.object(
+                test_module, "MediationManager", autospec=True
+            ) as mock_mediation_manager,
+        ):
             await handler.handle(context, responder)
             mock_mediation_manager.return_value.set_default_mediator.assert_called_once_with(
                 record
@@ -102,12 +104,12 @@ class TestMediationGrantHandler:
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
         )
 
-        multitenant_mgr = mock.CoroutineMock()
-        profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
+        multitenant_mgr = mock.MagicMock(BaseMultitenantManager, autospec=True)
 
         default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
         multitenant_mgr.get_default_mediator = mock.CoroutineMock()
         multitenant_mgr.get_default_mediator.return_value = default_base_mediator
+        profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
 
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
@@ -128,12 +130,15 @@ class TestMediationGrantHandler:
         handler, responder = MediationGrantHandler(), MockResponder()
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with mock.patch.object(
-            context.connection_record,
-            "metadata_get",
-            mock.CoroutineMock(return_value=False),
-        ), mock.patch.object(
-            test_module, "MediationManager", autospec=True
-        ) as mock_mediation_manager:
+        with (
+            mock.patch.object(
+                context.connection_record,
+                "metadata_get",
+                mock.CoroutineMock(return_value=False),
+            ),
+            mock.patch.object(
+                test_module, "MediationManager", autospec=True
+            ) as mock_mediation_manager,
+        ):
             await handler.handle(context, responder)
             mock_mediation_manager.return_value.set_default_mediator.assert_not_called()

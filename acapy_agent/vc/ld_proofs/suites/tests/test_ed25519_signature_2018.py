@@ -1,8 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
-from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
-from .....wallet.in_memory import InMemoryWallet
+from .....utils.testing import create_test_profile
+from .....wallet.base import BaseWallet
 from .....wallet.key_type import ED25519
 from ....tests.data import (
     TEST_LD_DOCUMENT,
@@ -22,11 +22,12 @@ class TestEd25519Signature2018(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.wallet = InMemoryWallet(self.profile)
-        self.key = await self.wallet.create_signing_key(
-            key_type=ED25519, seed=self.test_seed
-        )
+        self.profile = await create_test_profile()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            self.key = await wallet.create_signing_key(
+                key_type=ED25519, seed=self.test_seed
+            )
         self.verification_method = DIDKey.from_public_key_b58(
             self.key.verkey, ED25519
         ).key_id

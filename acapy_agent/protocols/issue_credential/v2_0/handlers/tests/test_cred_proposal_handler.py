@@ -1,17 +1,17 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
 from ...messages.cred_proposal import V20CredProposal
 from .. import cred_proposal_handler as test_module
 
 
 class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -35,7 +35,7 @@ class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_auto_offer(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -66,7 +66,7 @@ class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
         assert target == {}
 
     async def test_called_auto_offer_x_indy(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -86,16 +86,19 @@ class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
             handler = test_module.V20CredProposalHandler()
             responder = MockResponder()
 
-            with mock.patch.object(
-                responder, "send_reply", mock.CoroutineMock()
-            ) as mock_send_reply, mock.patch.object(
-                handler._logger, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(
+                    responder, "send_reply", mock.CoroutineMock()
+                ) as mock_send_reply,
+                mock.patch.object(
+                    handler._logger, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 
     async def test_called_auto_offer_x_anoncreds(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -115,16 +118,19 @@ class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
             handler = test_module.V20CredProposalHandler()
             responder = MockResponder()
 
-            with mock.patch.object(
-                responder, "send_reply", mock.CoroutineMock()
-            ) as mock_send_reply, mock.patch.object(
-                handler._logger, "exception", mock.MagicMock()
-            ) as mock_log_exc:
+            with (
+                mock.patch.object(
+                    responder, "send_reply", mock.CoroutineMock()
+                ) as mock_send_reply,
+                mock.patch.object(
+                    handler._logger, "exception", mock.MagicMock()
+                ) as mock_log_exc,
+            ):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 
     async def test_called_not_ready(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = mock.MagicMock()
 
@@ -146,7 +152,7 @@ class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     async def test_called_no_connection(self):
-        request_context = RequestContext.test_context()
+        request_context = RequestContext.test_context(await create_test_profile())
         request_context.message_receipt = MessageReceipt()
 
         request_context.message = V20CredProposal()

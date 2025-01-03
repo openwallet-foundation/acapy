@@ -2,11 +2,10 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
-from .....core.in_memory import InMemoryProfile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
+from .....utils.testing import create_test_profile
 from ....didcomm_prefix import DIDCommPrefix
 from ..manager import V10DiscoveryMgr
 from ..messages.disclose import Disclose
@@ -24,10 +23,8 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
         self._caplog = caplog
 
     async def asyncSetUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
+        self.profile = await create_test_profile()
         self.context = self.profile.context
-        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
         self.manager = V10DiscoveryMgr(self.profile)
         self.disclose = Disclose(
             protocols=[
@@ -46,11 +43,14 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_receive_disclosure(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
-        with mock.patch.object(
-            V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve:
+        with (
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "save", autospec=True
+            ) as save_ex,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+        ):
             mock_retrieve.return_value = TEST_DISCOVERY_EX_REC
             ex_rec = await self.manager.receive_disclose(
                 disclose_msg=self.disclose, connection_id=test_conn_id
@@ -65,19 +65,24 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_receive_disclosure_retrieve_by_conn(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
-        with mock.patch.object(
-            V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "exists_for_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_exists_for_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "retrieve_by_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_retrieve_by_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve_by_id:
+        with (
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "save", autospec=True
+            ) as save_ex,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "exists_for_connection_id",
+                mock.CoroutineMock(),
+            ) as mock_exists_for_connection_id,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "retrieve_by_connection_id",
+                mock.CoroutineMock(),
+            ) as mock_retrieve_by_connection_id,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve_by_id,
+        ):
             mock_retrieve_by_id.side_effect = StorageNotFoundError
             mock_exists_for_connection_id.return_value = True
             mock_retrieve_by_connection_id.return_value = TEST_DISCOVERY_EX_REC
@@ -94,15 +99,19 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_receive_disclosure_retrieve_by_conn_not_found(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
-        with mock.patch.object(
-            V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "exists_for_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_exists_for_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve_by_id:
+        with (
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "save", autospec=True
+            ) as save_ex,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "exists_for_connection_id",
+                mock.CoroutineMock(),
+            ) as mock_exists_for_connection_id,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve_by_id,
+        ):
             mock_retrieve_by_id.side_effect = StorageNotFoundError
             mock_exists_for_connection_id.return_value = False
             ex_rec = await self.manager.receive_disclose(
@@ -117,15 +126,19 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
 
     async def test_receive_disclosure_retrieve_new_ex_rec(self):
         test_conn_id = "test123"
-        with mock.patch.object(
-            V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "exists_for_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_exists_for_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
-        ) as mock_retrieve_by_id:
+        with (
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "save", autospec=True
+            ) as save_ex,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "exists_for_connection_id",
+                mock.CoroutineMock(),
+            ) as mock_exists_for_connection_id,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve_by_id,
+        ):
             mock_retrieve_by_id.side_effect = StorageNotFoundError
             mock_exists_for_connection_id.return_value = False
             ex_rec = await self.manager.receive_disclose(
@@ -151,23 +164,27 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
 
     async def test_create_and_send_query_with_connection(self):
         return_ex_rec = V10DiscoveryExchangeRecord(query_msg=Query(query="*"))
-        with mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "exists_for_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_exists_for_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "retrieve_by_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_retrieve_by_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "save",
-            mock.CoroutineMock(),
-        ) as save_ex, mock.patch.object(
-            V10DiscoveryMgr, "check_if_disclosure_received", mock.CoroutineMock()
-        ) as mock_disclosure_received, mock.patch.object(
-            self.responder, "send", mock.CoroutineMock()
-        ) as mock_send:
+        with (
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "exists_for_connection_id",
+                mock.CoroutineMock(),
+            ) as mock_exists_for_connection_id,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "retrieve_by_connection_id",
+                mock.CoroutineMock(),
+            ) as mock_retrieve_by_connection_id,
+            mock.patch.object(
+                V10DiscoveryExchangeRecord,
+                "save",
+                mock.CoroutineMock(),
+            ),
+            mock.patch.object(
+                V10DiscoveryMgr, "check_if_disclosure_received", mock.CoroutineMock()
+            ) as mock_disclosure_received,
+            mock.patch.object(self.responder, "send", mock.CoroutineMock()) as mock_send,
+        ):
             mock_exists_for_connection_id.return_value = True
             mock_retrieve_by_connection_id.return_value = V10DiscoveryExchangeRecord()
             mock_disclosure_received.return_value = return_ex_rec

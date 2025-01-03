@@ -2,11 +2,11 @@ from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import ValidationError
 
-from acapy_agent.tests import mock
-
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageDuplicateError, StorageNotFoundError
+from .....tests import mock
 from .....transport.inbound.receipt import MessageReceipt
+from .....utils.testing import create_test_profile
 from ..manager import RouteNotFoundError, RoutingManager, RoutingManagerError
 from ..models.route_record import RouteRecord, RouteRecordSchema
 
@@ -17,10 +17,9 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 class TestRoutingManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.context = RequestContext.test_context()
+        self.profile = await create_test_profile()
+        self.context = RequestContext.test_context(self.profile)
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-        self.transaction = await self.context.transaction()  # for coverage
-        self.profile = self.context.profile
         self.manager = RoutingManager(self.profile)
 
     async def test_create_manager_no_context(self):

@@ -624,7 +624,7 @@ class IndyVdrLedger(BaseLedger):
         seq_no = tokens[3]
         return (await self.get_schema(seq_no))["id"]
 
-    async def get_key_for_did(self, did: str) -> str:
+    async def get_key_for_did(self, did: str) -> Optional[str]:
         """Fetch the verkey for a ledger DID.
 
         Args:
@@ -739,8 +739,11 @@ class IndyVdrLedger(BaseLedger):
             if all_exist_endpoints
             else None
         )
+        existing_routing_keys = (
+            all_exist_endpoints.get("routingKeys") if all_exist_endpoints else None
+        )
 
-        if exist_endpoint_of_type != endpoint:
+        if exist_endpoint_of_type != endpoint or existing_routing_keys != routing_keys:
             if self.read_only:
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"

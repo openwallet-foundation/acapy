@@ -12,7 +12,7 @@ from .presentation import PresentationSchema, VerifiablePresentationSchema
 class ListCredentialsResponse(OpenAPISchema):
     """Response schema for listing credentials."""
 
-    results = [fields.Nested(VerifiableCredentialSchema)]
+    results = fields.List(fields.Nested(VerifiableCredentialSchema))
 
 
 class FetchCredentialResponse(OpenAPISchema):
@@ -45,6 +45,18 @@ class VerifyCredentialResponse(OpenAPISchema):
     """Request schema for verifying an LDP VP."""
 
     results = fields.Nested(PresentationVerificationResultSchema)
+
+
+class StoreCredentialRequest(OpenAPISchema):
+    """Request schema for verifying an LDP VP."""
+
+    verifiableCredential = fields.Nested(VerifiableCredentialSchema)
+
+
+class StoreCredentialResponse(OpenAPISchema):
+    """Request schema for verifying an LDP VP."""
+
+    credentialId = fields.Str()
 
 
 class ProvePresentationRequest(OpenAPISchema):

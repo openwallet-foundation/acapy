@@ -16,13 +16,12 @@ from marshmallow import fields
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..core.event_bus import EventBus
-from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_OR_KEY_DID_EXAMPLE,
-    INDY_REV_REG_ID_EXAMPLE,
-    INDY_SCHEMA_ID_EXAMPLE,
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_DID_EXAMPLE,
+    ANONCREDS_REV_REG_ID_EXAMPLE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
     UUIDFour,
 )
 from ..revocation.error import RevocationNotSupportedError
@@ -35,9 +34,9 @@ from .base import (
     AnonCredsResolutionError,
 )
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
-from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
-from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
-from .models.anoncreds_schema import (
+from .models.credential_definition import CredDefResultSchema, GetCredDefResultSchema
+from .models.revocation import RevListResultSchema, RevRegDefResultSchema
+from .models.schema import (
     AnonCredsSchemaSchema,
     GetSchemaResultSchema,
     SchemaResultSchema,
@@ -69,7 +68,7 @@ class SchemaIdMatchInfo(OpenAPISchema):
     schema_id = fields.Str(
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         }
     )
 
@@ -112,7 +111,7 @@ class SchemasQueryStringSchema(OpenAPISchema):
     schema_issuer_id = fields.Str(
         metadata={
             "description": "Schema issuer identifier",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         }
     )
 
@@ -124,7 +123,7 @@ class GetSchemasResponseSchema(OpenAPISchema):
         fields.Str(
             metadata={
                 "description": "Schema identifiers",
-                "example": INDY_SCHEMA_ID_EXAMPLE,
+                "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
             }
         )
     )
@@ -137,7 +136,7 @@ class SchemaPostRequestSchema(OpenAPISchema):
     options = fields.Nested(SchemaPostOptionSchema())
 
 
-@docs(tags=["anoncreds - schemas"], summary="Create a schema on the connected ledger")
+@docs(tags=["anoncreds - schemas"], summary="Create a schema on the connected datastore")
 @request_schema(SchemaPostRequestSchema())
 @response_schema(SchemaResultSchema(), 200, description="")
 @tenant_authentication
@@ -278,7 +277,7 @@ class CredIdMatchInfo(OpenAPISchema):
     cred_def_id = fields.Str(
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
         required=True,
     )
@@ -297,7 +296,7 @@ class InnerCredDefSchema(OpenAPISchema):
     schema_id = fields.Str(
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         },
         required=True,
         data_key="schemaId",
@@ -305,7 +304,7 @@ class InnerCredDefSchema(OpenAPISchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         },
         required=True,
         data_key="issuerId",
@@ -357,13 +356,13 @@ class CredDefsQueryStringSchema(OpenAPISchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         }
     )
     schema_id = fields.Str(
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         }
     )
     schema_name = fields.Str(
@@ -382,7 +381,7 @@ class CredDefsQueryStringSchema(OpenAPISchema):
 
 @docs(
     tags=["anoncreds - credential definitions"],
-    summary="Create a credential definition on the connected ledger",
+    summary="Create a credential definition on the connected datastore",
 )
 @request_schema(CredDefPostRequestSchema())
 @response_schema(CredDefResultSchema(), 200, description="")
@@ -522,19 +521,22 @@ class InnerRevRegDefSchema(OpenAPISchema):
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition or schema",
-            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "example": ANONCREDS_DID_EXAMPLE,
         },
         data_key="issuerId",
+        required=True,
     )
     cred_def_id = fields.Str(
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         },
         data_key="credDefId",
+        required=True,
     )
     tag = fields.Str(
-        metadata={"description": "tag for revocation registry", "example": "default"}
+        metadata={"description": "tag for revocation registry", "example": "default"},
+        required=True,
     )
     max_cred_num = fields.Int(
         metadata={
@@ -542,6 +544,7 @@ class InnerRevRegDefSchema(OpenAPISchema):
             "example": 777,
         },
         data_key="maxCredNum",
+        required=True,
     )
 
 
@@ -573,7 +576,7 @@ class RevRegCreateRequestSchemaAnoncreds(OpenAPISchema):
 
 @docs(
     tags=["anoncreds - revocation"],
-    summary="Create and publish a registration revocation on the connected ledger",
+    summary="Create and publish a registration revocation on the connected datastore",
 )
 @request_schema(RevRegCreateRequestSchemaAnoncreds())
 @response_schema(RevRegDefResultSchema(), 200, description="")
@@ -649,15 +652,16 @@ class RevListCreateRequestSchema(OpenAPISchema):
     rev_reg_def_id = fields.Str(
         metadata={
             "description": "Revocation registry definition identifier",
-            "example": INDY_REV_REG_ID_EXAMPLE,
-        }
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
+        },
+        required=True,
     )
     options = fields.Nested(RevListOptionsSchema)
 
 
 @docs(
     tags=["anoncreds - revocation"],
-    summary="Create and publish a revocation status list on the connected ledger",
+    summary="Create and publish a revocation status list on the connected datastore",
 )
 @request_schema(RevListCreateRequestSchema())
 @response_schema(RevListResultSchema(), 200, description="")
@@ -687,7 +691,7 @@ async def rev_list_post(request: web.BaseRequest):
         handle_value_error(e)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (AnonCredsRevocationError, LedgerError) as err:
+    except AnonCredsRevocationError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
 

@@ -1,14 +1,14 @@
 from unittest import IsolatedAsyncioTestCase
 
-from acapy_agent.tests import mock
-
 from ......connections.models import conn_record, connection_target
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
+from ......tests import mock
 from ......transport.inbound.receipt import MessageReceipt
+from ......utils.testing import create_test_profile
+from ......wallet.base import BaseWallet
 from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
 from ...handlers import request_handler as test_module
@@ -54,12 +54,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
         return doc
 
     async def asyncSetUp(self):
-        self.ctx = RequestContext.test_context()
-        self.ctx.message_receipt = MessageReceipt(
-            recipient_did="dummy",
-            recipient_did_public=True,
-        )
-        self.session = InMemoryProfile.test_session(
+        self.profile = await create_test_profile(
             {
                 "default_endpoint": "http://localhost",
                 "default_label": "This guy",
@@ -69,7 +64,12 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
                 "debug.auto_accept_requests_public": True,
             }
         )
-        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        self.ctx = RequestContext.test_context(self.profile)
+        self.ctx.message_receipt = MessageReceipt(
+            recipient_did="dummy",
+            recipient_did_public=True,
+        )
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
 
         self.conn_rec = conn_record.ConnRecord(
             my_did="55GkHamhTU1ZbTbV2ab9DE",
@@ -78,19 +78,20 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
             invitation_msg_id="12345678-1234-5678-1234-567812345678",
             their_role=conn_record.ConnRecord.Role.REQUESTER,
         )
-        await self.conn_rec.save(self.session)
+        async with self.profile.session() as session:
+            await self.conn_rec.save(session)
 
-        wallet = self.session.wallet
-        self.did_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
+            wallet = session.inject(BaseWallet)
+            self.did_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
 
-        self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
-        await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
+            self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
+            await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
 
-        self.request = DIDXRequest(
-            label=TEST_LABEL,
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
-        )
+            self.request = DIDXRequest(
+                label=TEST_LABEL,
+                did=TEST_DID,
+                did_doc_attach=self.did_doc_attach,
+            )
 
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
@@ -151,7 +152,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
             return_value=test_exist_conn
         )
         mock_didx_mgr.return_value.create_response = mock.CoroutineMock()
-        test_ctx = RequestContext.test_context()
+        test_ctx = RequestContext.test_context(self.profile)
         test_ctx.message = DIDXRequest()
         test_ctx.message_receipt = MessageReceipt()
         test_ctx.connection_record = test_exist_conn

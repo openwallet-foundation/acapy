@@ -8,8 +8,8 @@ from marshmallow import EXCLUDE, fields
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.util import datetime_now, datetime_to_str
 from .....messaging.valid import (
-    INDY_ISO8601_DATETIME_EXAMPLE,
-    INDY_ISO8601_DATETIME_VALIDATE,
+    ISO8601_DATETIME_EXAMPLE,
+    ISO8601_DATETIME_VALIDATE,
 )
 from ..message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
 
@@ -63,12 +63,12 @@ class BasicMessageSchema(AgentMessageSchema):
 
     sent_time = fields.Str(
         required=False,
-        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        validate=ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
                 "Time message was sent, ISO8601 with space date/time separator"
             ),
-            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+            "example": ISO8601_DATETIME_EXAMPLE,
         },
     )
     content = fields.Str(

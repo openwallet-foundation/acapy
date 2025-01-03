@@ -3,13 +3,12 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from acapy_agent.tests import mock
-
 from ....admin.server import AdminResponder
-from ....core.in_memory import InMemoryProfile
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
+from ....tests import mock
+from ....utils.testing import create_test_profile
 from ...error import WireFormatError
 from ...outbound.message import OutboundMessage
 from ..message import InboundMessage
@@ -18,8 +17,8 @@ from ..session import InboundSession
 
 
 class TestInboundSession(IsolatedAsyncioTestCase):
-    def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile()
 
     def test_init(self):
         test_inbound = mock.MagicMock()
@@ -135,11 +134,10 @@ class TestInboundSession(IsolatedAsyncioTestCase):
         )
         test_msg = mock.MagicMock()
 
-        with mock.patch.object(
-            sess, "parse_inbound", mock.CoroutineMock()
-        ) as encode, mock.patch.object(
-            sess, "receive_inbound", mock.MagicMock()
-        ) as receive:
+        with (
+            mock.patch.object(sess, "parse_inbound", mock.CoroutineMock()) as encode,
+            mock.patch.object(sess, "receive_inbound", mock.MagicMock()) as receive,
+        ):
             result = await sess.receive(test_msg)
             encode.assert_awaited_once_with(test_msg)
             receive.assert_called_once_with(encode.return_value)
@@ -166,11 +164,10 @@ class TestInboundSession(IsolatedAsyncioTestCase):
         )
         test_msg = mock.MagicMock()
 
-        with mock.patch.object(
-            sess, "parse_inbound", mock.CoroutineMock()
-        ) as encode, mock.patch.object(
-            sess, "receive_inbound", mock.MagicMock()
-        ) as receive:
+        with (
+            mock.patch.object(sess, "parse_inbound", mock.CoroutineMock()) as encode,
+            mock.patch.object(sess, "receive_inbound", mock.MagicMock()) as receive,
+        ):
             result = await sess.receive(test_msg)
             encode.assert_awaited_once_with(test_msg)
             receive.assert_called_once_with(encode.return_value)
