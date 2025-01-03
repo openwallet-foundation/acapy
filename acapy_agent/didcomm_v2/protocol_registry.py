@@ -39,5 +39,5 @@ class V2ProtocolRegistry:
     def register_handler(self, message_type: str, handler: Union[Coroutine, str]):
         """Register a new message type to handler association."""
         if isinstance(handler, str):
-                handler = DeferLoad(handler)
+            handler = DeferLoad(handler)
         self._type_to_message_handler[message_type] = handler

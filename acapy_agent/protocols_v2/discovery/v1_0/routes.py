@@ -51,14 +51,25 @@ class PingConnIdMatchInfoSchema(OpenAPISchema):
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
+
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import KEY, PEER2, PEER4, SOV, DIDMethod, DIDMethods, HolderDefinedDid
+from ....wallet.did_method import (
+    KEY,
+    PEER2,
+    PEER4,
+    SOV,
+    DIDMethod,
+    DIDMethods,
+    HolderDefinedDid,
+)
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError, WalletNotFoundError
 from ....messaging.v2_agent_message import V2AgentMessage
 from ....connections.models.connection_target import ConnectionTarget
 from didcomm_messaging import DIDCommMessaging, RoutingService
+
+
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
     if info:
@@ -71,10 +82,11 @@ def format_did_info(info: DIDInfo):
             "metadata": info.metadata,
         }
 
+
 async def get_mydid(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    #filter_did = request.query.get("did")
-    #filter_verkey = request.query.get("verkey")
+    # filter_did = request.query.get("did")
+    # filter_verkey = request.query.get("verkey")
     filter_posture = DIDPosture.get(request.query.get("posture"))
     results = []
     async with context.session() as session:
@@ -82,8 +94,8 @@ async def get_mydid(request: web.BaseRequest):
         filter_method: DIDMethod | None = did_methods.from_method(
             request.query.get("method") or "did:peer:2"
         )
-        #key_types = session.inject(KeyTypes)
-        #filter_key_type = key_types.from_key_type(request.query.get("key_type", ""))
+        # key_types = session.inject(KeyTypes)
+        # filter_key_type = key_types.from_key_type(request.query.get("key_type", ""))
         wallet: BaseWallet | None = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
@@ -97,12 +109,13 @@ async def get_mydid(request: web.BaseRequest):
                     or DIDPosture.get(info.metadata) is DIDPosture.WALLET_ONLY
                 )
                 and (not filter_method or info.method == filter_method)
-                #and (not filter_key_type or info.key_type == filter_key_type)
+                # and (not filter_key_type or info.key_type == filter_key_type)
             ]
 
     results.sort(key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"]))
     our_did = results[0]["did"]
     return our_did
+
 
 async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
     context: AdminRequestContext = request["context"]
@@ -133,7 +146,9 @@ async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
             messaging.resolver, services[0]
         )
         while found_forwardable_service:
-            services = await routing_service._resolve_services(messaging.resolver, to_target)
+            services = await routing_service._resolve_services(
+                messaging.resolver, to_target
+            )
             if services:
                 chain.append(
                     {
@@ -143,7 +158,9 @@ async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
                 )
                 to_target = services[0].service_endpoint.uri
             found_forwardable_service = (
-                await routing_service.is_forwardable_service(messaging.resolver, services[0])
+                await routing_service.is_forwardable_service(
+                    messaging.resolver, services[0]
+                )
                 if services
                 else False
             )
@@ -234,6 +251,9 @@ def post_process_routes(app: web.Application):
         {
             "name": "didcommv2",
             "description": "DIDComm V2 based protocols for Interop-a-thon",
-            "externalDocs": {"description": "Specification", "url": "https://didcomm.org"},
+            "externalDocs": {
+                "description": "Specification",
+                "url": "https://didcomm.org",
+            },
         }
     )

@@ -224,9 +224,7 @@ class PluginRegistry:
         goal_code_registry = context.inject(GoalCodeRegistry)
         if hasattr(mod, "HANDLERS"):
             for message_type, handler in mod.HANDLERS:
-                v2_protocol_registry.register_handler(
-                    message_type, handler
-                )
+                v2_protocol_registry.register_handler(message_type, handler)
         if hasattr(mod, "MESSAGE_TYPES"):
             protocol_registry.register_message_types(
                 mod.MESSAGE_TYPES, version_definition=version_definition

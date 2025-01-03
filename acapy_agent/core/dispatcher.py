@@ -187,7 +187,9 @@ class Dispatcher:
                 )
                 to_did = services[0].service_endpoint.uri
             found_forwardable_service = (
-                await routing_service.is_forwardable_service(messaging.resolver, services[0])
+                await routing_service.is_forwardable_service(
+                    messaging.resolver, services[0]
+                )
                 if services
                 else False
             )
@@ -212,7 +214,7 @@ class Dispatcher:
             send_outbound,
             reply_session_id=inbound_message.session_id,
             reply_to_verkey=inbound_message.receipt.sender_verkey,
-            target_list=reply_destination
+            target_list=reply_destination,
         )
 
         context.injector.bind_instance(BaseResponder, responder)
@@ -288,8 +290,8 @@ class Dispatcher:
 
         registry: V2ProtocolRegistry = self.profile.inject(V2ProtocolRegistry)
         try:
-            #message_cls = registry.resolve_message_class(message_type)
-            #if isinstance(message_cls, DeferLoad):
+            # message_cls = registry.resolve_message_class(message_type)
+            # if isinstance(message_cls, DeferLoad):
             #    message_cls = message_cls.resolved
             message_cls = registry.protocols_matching_query(message_type)
         except ProtocolMinorVersionNotSupported as e:
@@ -299,7 +301,7 @@ class Dispatcher:
             raise MessageParseError(f"Unrecognized message type {message_type}")
 
         try:
-            #instance = message_cls[0] #message_cls.deserialize(parsed_msg)
+            # instance = message_cls[0] #message_cls.deserialize(parsed_msg)
             instance = registry.handlers[message_cls[0]]
             if isinstance(instance, DeferLoad):
                 instance = instance.resolved
@@ -309,7 +311,6 @@ class Dispatcher:
             raise MessageParseError(f"Error deserializing message: {e}") from e
 
         return instance
-
 
     async def handle_v1_message(
         self,
