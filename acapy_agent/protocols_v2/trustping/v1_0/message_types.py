@@ -15,6 +15,7 @@ PROTOCOL_PACKAGE = "acapy_agent.protocols_v2.trustping.v1_0"
 
 class trust_ping:
     """Trust Ping 2.0 DIDComm V2 Protocol."""
+
     async def __call__(self, *args, **kwargs):
         """Call the Handler."""
         await self.handle(*args, **kwargs)

@@ -14,6 +14,7 @@ PROTOCOL_PACKAGE = "acapy_agent.protocols_v2.basicmessage.v1_0"
 
 class basic_message:
     """Basic Message 2.0 DIDComm V2 Protocol."""
+
     async def __call__(self, *args, **kwargs):
         """Call the Handler."""
         await self.handle(*args, **kwargs)

@@ -19,6 +19,7 @@ PING = "https://didcomm.org/trust-ping/2.0/ping"
 
 class discover_features:
     """Discover Features 2.0 DIDComm V2 Protocol."""
+
     async def __call__(self, *args, **kwargs):
         """Call the Handler."""
         await self.handle(*args, **kwargs)
