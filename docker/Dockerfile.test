@@ -9,7 +9,7 @@ RUN apt-get update -y && \
 
 WORKDIR /usr/src/app
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==1.8.3
 
 COPY ./README.md pyproject.toml ./poetry.lock ./
 RUN mkdir acapy_agent && touch acapy_agent/__init__.py
