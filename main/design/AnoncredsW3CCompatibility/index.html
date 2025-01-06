@@ -2580,7 +2580,7 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <p>could be the parameters for <code>create_offer</code> method.</p>
 <p>Create VC_DI Credential</p>
 <p><strong>NOTE: There has been some changes to <em>encoding of attribute values</em> for creating a credential, so we have to be adjust to the new changes.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">create_credential</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_credential</span><span class="p">(</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>        <span class="bp">self</span><span class="p">,</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="n">credential_offer</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">credential_request</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -2606,7 +2606,7 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="o">...</span>
 </code></pre></div>
 <p>Create VC_DI Credential Request</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">create_vc_di_credential_request</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_vc_di_credential_request</span><span class="p">(</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">credential_offer</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">credential_definition</span><span class="p">:</span> <span class="n">CredDef</span><span class="p">,</span> <span class="n">holder_did</span><span class="p">:</span> <span class="nb">str</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="o">...</span>
@@ -2629,7 +2629,7 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="o">...</span>
 </code></pre></div>
 <p>Create VC_DI Credential Presentation</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">create_vc_di_presentation</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_vc_di_presentation</span><span class="p">(</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>        <span class="bp">self</span><span class="p">,</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="n">presentation_request</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="n">requested_credentials</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -2672,7 +2672,7 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <p>Keeping in mind that we are trying to create anoncreds(not another type of VC) in w3c format, what if we add a protocol-level <strong>vc_di</strong> format support by adding a new format <code>VC_DI</code> in <code>./protocols/issue_credential/v2_0/messages/cred_format.py</code> -</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># /protocols/issue_credential/v2_0/messages/cred_format.py</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">class</span> <span class="nc">Format</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">Format</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="err">“””</span><span class="n">Attachment</span> <span class="n">Format</span><span class="err">”””</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">INDY</span> <span class="o">=</span> <span class="n">FormatSpec</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">LD_PROOF</span> <span class="o">=</span> <span class="n">FormatSpec</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
@@ -2688,10 +2688,10 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <p>And create a new CredExRecordVCDI in reference to V20CredExRecordLDProof</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># /protocols/issue_credential/v2_0/models/detail/w3c.py</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">class</span> <span class="nc">CredExRecordW3C</span><span class="p">(</span><span class="n">BaseRecord</span><span class="p">):</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">CredExRecordW3C</span><span class="p">(</span><span class="n">BaseRecord</span><span class="p">):</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Credential exchange W3C detail record.&quot;&quot;&quot;</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;CredExRecordW3C metadata.&quot;&quot;&quot;</span>
 <a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
 <a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>        <span class="n">schema_class</span> <span class="o">=</span> <span class="s2">&quot;CredExRecordW3CSchema&quot;</span>
@@ -2726,10 +2726,10 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <p>Assuming <code>VCDIDetail</code> and <code>VCDIOptions</code> are already in place, <code>VCDIDetailSchema</code> can be created like so:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># /protocols/issue_credential/v2_0/formats/vc_di/models/cred_detail.py</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">class</span> <span class="nc">VCDIDetailSchema</span><span class="p">(</span><span class="n">BaseModelSchema</span><span class="p">):</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">VCDIDetailSchema</span><span class="p">(</span><span class="n">BaseModelSchema</span><span class="p">):</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;VC_DI verifiable credential detail schema.&quot;&quot;&quot;</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Accept parameter overload.&quot;&quot;&quot;</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="n">INCLUDE</span>
@@ -2980,7 +2980,7 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <p>Storing a credential in the wallet is somewhat dependent on the kinds of metadata that are relevant. The metadata mapping between the W3C credential and an AnonCreds credential is not fully clear yet.</p>
 <p>One of the questions we need to answer is whether the preferred approach is to modify the existing store credential function so that any credential type is a valid input, or whether there should be a special function just for storing W3C credentials.</p>
 <p>We will duplicate this <a href="https://github.com/openwallet-foundation/acapy/blob/8cfe8283ddb2a85e090ea1b8a916df2d78298ec0/aries_cloudagent/anoncreds/holder.py#L167">store_credential</a> function and modify it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">store_w3c_credential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">store_w3c_credential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="p">{</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    <span class="o">...</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    <span class="o">...</span>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="k">try</span><span class="p">:</span>

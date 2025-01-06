@@ -2572,7 +2572,7 @@
 <h3 id="setup-method">setup method<a class="headerlink" href="#setup-method" title="Permanent link">&para;</a></h3>
 <p>If a setup method is provided, it will be called.  If not, the <code>message_types.py</code> and <code>routes.py</code> will be explicitly loaded.</p>
 <p>This would be in the <code>package/module __init__.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">InjectionContext</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">InjectionContext</span><span class="p">):</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">pass</span>
 </code></pre></div>
 <p>TODO I couldn't find an implementation of a custom <code>setup</code> in any of the existing plug-ins, so I'm not completely sure what are the best practices for this option.</p>
