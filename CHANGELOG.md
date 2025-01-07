@@ -2,7 +2,7 @@
 
 ## 1.2.0
 
-### January 7, 2025
+### January 8, 2025
 
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
@@ -105,7 +105,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
   - 1.1.1rc0 [\#3372](https://github.com/openwallet-foundation/acapy/pull/3372) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2025-01-07+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2025-01-08+author%3Aapp%2Fdependabot+)
 
 ## 1.1.1
 
