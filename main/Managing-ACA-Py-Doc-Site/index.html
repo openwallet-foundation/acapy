@@ -2280,15 +2280,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#adding-new-011x-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding new 0.11.x Releases
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -2379,15 +2370,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#adding-new-011x-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding new 0.11.x Releases
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -2421,7 +2403,7 @@ needed and this document describes those activities.</p>
 and mkdocs configuration.</p>
 <p>When the GitHub Action fires, it runs a container that carries out the following steps:</p>
 <ul>
-<li>Checks out the triggering branch, either <code>main</code> or <code>docs-v&lt;version&gt;</code> (e.g <code>docs-v1.2.0rc0</code>).</li>
+<li>Checks out the triggering branch, either <code>main</code> or <code>docs-v&lt;version&gt;</code> (e.g <code>docs-v1.2.0</code>).</li>
 <li>Runs the script <a href="https://github.com/openwallet-foundation/acapy/blob/main/scripts/prepmkdocs.sh">scripts/prepmkdocs.sh</a>, which moves and updates some of the
   markdown files so that they fit into the generated site. See the comments in
   the scripts for details about the copying and editing done via the script. In
@@ -2492,7 +2474,7 @@ the GitHub Action to do this automatically, but its not there yet.</p>
 <li>Check your <code>git status</code> and make sure there are no changes in the branch --
   e.g., new files that shouldn't be added to the <code>gh-pages</code> branch. If there are
   any -- delete the files so they are not added.</li>
-<li>Remove the folder for the RC.  For example <code>rm -rf 1.2.0rc0</code></li>
+<li>Remove the folder for the RC.  For example <code>rm -rf 1.2.0</code></li>
 <li>Edit the <code>versions.json</code> file and remove the reference to the RC release in
   the file.</li>
 <li>Push the changes via a PR to the ACA-Py <code>gh-pages</code> branch (don't PR them into
@@ -2500,30 +2482,6 @@ the GitHub Action to do this automatically, but its not there yet.</p>
 <li>Merge the PR and verify (after a few minutes) that the drop down no longer has
   the RC in it.</li>
 </ul>
-<h2 id="adding-new-011x-releases">Adding new 0.11.x Releases<a class="headerlink" href="#adding-new-011x-releases" title="Permanent link">&para;</a></h2>
-<p>The automatic generation process from ACA-Py started with release 0.12.0.
-Unfortunately, we declared release 0.11.x to be an Long Term Support version and
-so we still need to add 0.11.x version documentation to the generated site.
-Here's the (lousy) process to do this. Typically, <a href="https://github.com/swcurran">swcurran</a> will do this and no
-one else needs to worry about it. But for completeness, here is the process:</p>
-<ul>
-<li>Follow the instructions in the <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> repository to generate and
-  publish the documentation site for the new 0.11.x version.</li>
-<li>Have a local copy of the <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> repository. In that repo, run <code>git
-  checkout -b gh-pages --track upstream/gh-pages</code> to checkout a local copy of
-  the generated pages from that repo.</li>
-<li>In ACA-Py, run <code>git checkout -b gh-pages --track upstream/gh-pages</code> to create
-  a local branch from which you will push a PR.</li>
-<li>Copy the v0.11.x folder from <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> local to a new 0.11.x folder
-  in the ACA-Py local. Note the "v" that is on the folder in <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a>,
-  but not in ACA-Py.</li>
-<li>Edit the <code>versions.json</code> file to add the 0.11.x reference into the file.</li>
-<li>Push the changes via a PR to the ACA-Py <code>gh-pages</code> branch (don't PR them into
-  <code>main</code>!!).</li>
-<li>Merge the PR and verify (after a few minutes) that the drop down includes the
-  0.11.x version.</li>
-</ul>
-<p>Ugly! The LTS for 0.11 ends in January 2025 and this process can be dropped.</p>
 
 
 
