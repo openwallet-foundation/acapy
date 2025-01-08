@@ -67,9 +67,9 @@ def anoncreds_presentation_summary(presentation: V20PresExRecord) -> str:
         {
             "state": presentation.state,
             "verified": presentation.verified,
-            "presentation_request": request.model_dump(by_alias=True)
-            if request
-            else None,
+            "presentation_request": (
+                request.model_dump(by_alias=True) if request else None
+            ),
         },
         indent=2,
         sort_keys=True,
@@ -287,9 +287,11 @@ async def anoncreds_issue_credential_v2(
         state="done",
     )
     issuer_indy_record = await issuer.event_with_values(
-        topic="issue_credential_v2_0_anoncreds"
-        if is_issuer_anoncreds
-        else "issue_credential_v2_0_indy",
+        topic=(
+            "issue_credential_v2_0_anoncreds"
+            if is_issuer_anoncreds
+            else "issue_credential_v2_0_indy"
+        ),
         event_type=V20CredExRecordIndy,
     )
 
@@ -300,14 +302,18 @@ async def anoncreds_issue_credential_v2(
         state="done",
     )
     holder_indy_record = await holder.event_with_values(
-        topic="issue_credential_v2_0_anoncreds"
-        if is_holder_anoncreds
-        else "issue_credential_v2_0_indy",
+        topic=(
+            "issue_credential_v2_0_anoncreds"
+            if (is_holder_anoncreds or is_issuer_anoncreds)
+            else "issue_credential_v2_0_indy"
+        ),
         event_type=V20CredExRecordIndy,
     )
 
     return (
-        V20CredExRecordDetail(cred_ex_record=issuer_cred_ex, details=issuer_indy_record),
+        V20CredExRecordDetail(
+            cred_ex_record=issuer_cred_ex, details=issuer_indy_record
+        ),
         V20CredExRecordDetail(
             cred_ex_record=holder_cred_ex,
             details=holder_indy_record,

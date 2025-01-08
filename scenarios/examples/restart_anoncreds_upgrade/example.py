@@ -15,6 +15,7 @@ from acapy_controller.protocols import (
     indy_anoncred_onboard,
 )
 from examples.util import (
+    Settings,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
     get_wallet_name,
@@ -36,10 +37,17 @@ async def connect_agents_and_issue_credentials(
     inviter_cred_def,
     fname: str,
     lname: str,
+    inviter_conn=None,
+    invitee_conn=None,
 ):
+    is_inviter_anoncreds = (await inviter.get("/settings", response=Settings)).get(
+        "wallet.type"
+    ) == "askar-anoncreds"
+
     # connect the 2 agents
-    print(">>> connecting agents ...")
-    (inviter_conn, invitee_conn) = await didexchange(inviter, invitee)
+    if (not inviter_conn) or (not invitee_conn):
+        print(">>> connecting agents ...")
+        (inviter_conn, invitee_conn) = await didexchange(inviter, invitee)
 
     # Issue a credential
     print(">>> issue credential ...")
@@ -51,7 +59,6 @@ async def connect_agents_and_issue_credentials(
         inviter_cred_def.credential_definition_id,
         {"firstname": fname, "lastname": lname},
     )
-    print(">>> cred_ex:", inviter_cred_ex)
 
     # Present the the credential's attributes
     print(">>> present proof ...")
@@ -64,18 +71,32 @@ async def connect_agents_and_issue_credentials(
     )
 
     # Revoke credential
-    await inviter.post(
-        url="/revocation/revoke",
-        json={
-            "connection_id": inviter_conn.connection_id,
-            "rev_reg_id": inviter_cred_ex.details.rev_reg_id,
-            "cred_rev_id": inviter_cred_ex.details.cred_rev_id,
-            "publish": True,
-            "notify": True,
-            "notify_version": "v1_0",
-        },
-    )
-    await invitee.record(topic="revocation-notification")
+    if is_inviter_anoncreds:
+        await inviter.post(
+            url="/anoncreds/revocation/revoke",  # TODO need to check agent type (askar vs anoncreds)
+            json={
+                "connection_id": inviter_conn.connection_id,
+                "rev_reg_id": inviter_cred_ex.details.rev_reg_id,
+                "cred_rev_id": inviter_cred_ex.details.cred_rev_id,
+                "publish": True,
+                "notify": True,
+                "notify_version": "v1_0",
+            },
+        )
+        await invitee.record(topic="revocation-notification")
+    else:
+        await inviter.post(
+            url="/revocation/revoke",  # TODO need to check agent type (askar vs anoncreds)
+            json={
+                "connection_id": inviter_conn.connection_id,
+                "rev_reg_id": inviter_cred_ex.details.rev_reg_id,
+                "cred_rev_id": inviter_cred_ex.details.cred_rev_id,
+                "publish": True,
+                "notify": True,
+                "notify_version": "v1_0",
+            },
+        )
+        await invitee.record(topic="revocation-notification")
 
     # Issue a second credential
     print(">>> issue credential ...")
@@ -85,11 +106,109 @@ async def connect_agents_and_issue_credentials(
         inviter_conn.connection_id,
         invitee_conn.connection_id,
         inviter_cred_def.credential_definition_id,
-        {"firstname": "{fname}2", "lastname": "{lname}2"},
+        {"firstname": f"{fname}2", "lastname": f"{lname}2"},
     )
     print(">>> Done!")
 
     return (inviter_conn, invitee_conn)
+
+
+async def verify_schema_cred_def(issuer, schema_count, cred_def_count):
+    is_issuer_anoncreds = (await issuer.get("/settings", response=Settings)).get(
+        "wallet.type"
+    ) == "askar-anoncreds"
+
+    if is_issuer_anoncreds:
+        schemas = await issuer.get("/anoncreds/schemas")
+        assert schema_count == len(schemas["schema_ids"])
+
+        cred_defs = await issuer.get("/anoncreds/credential-definitions")
+        assert cred_def_count == len(cred_defs["credential_definition_ids"])
+    else:
+        schemas = await issuer.get("/schemas/created")
+        assert schema_count == len(schemas["schema_ids"])
+
+        cred_defs = await issuer.get("/credential-definitions/created")
+        assert cred_def_count == len(cred_defs["credential_definition_ids"])
+
+
+async def verify_issued_credentials(issuer, issued_cred_count, revoked_cred_count):
+    is_issuer_anoncreds = (await issuer.get("/settings", response=Settings)).get(
+        "wallet.type"
+    ) == "askar-anoncreds"
+
+    cred_exch_recs = await issuer.get("/issue-credential-2.0/records")
+    cred_exch_recs = cred_exch_recs["results"]
+    assert len(cred_exch_recs) == issued_cred_count
+    registries = {}
+    active_creds = 0
+    revoked_creds = 0
+    for cred_exch in cred_exch_recs:
+        cred_type = (
+            "indy"
+            if "indy" in cred_exch
+            and cred_exch["indy"]
+            and "rev_reg_id" in cred_exch["indy"]
+            else "anoncreds"
+        )
+        rev_reg_id = cred_exch[cred_type]["rev_reg_id"]
+        cred_rev_id = cred_exch[cred_type]["cred_rev_id"]
+        cred_rev_id = int(cred_rev_id)
+        if not rev_reg_id in registries:
+            if is_issuer_anoncreds:
+                registries[rev_reg_id] = await issuer.get(
+                    f"/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs",
+                )
+            else:
+                registries[rev_reg_id] = await issuer.get(
+                    f"/revocation/registry/{rev_reg_id}/issued/indy_recs",
+                )
+        registry = registries[rev_reg_id]
+        if cred_rev_id in registry["rev_reg_delta"]["value"]["revoked"]:
+            revoked_creds = revoked_creds + 1
+        else:
+            active_creds = active_creds + 1
+    assert revoked_creds == revoked_cred_count
+    assert (revoked_creds + active_creds) == issued_cred_count
+
+
+async def verify_recd_credentials(holder, active_cred_count, revoked_cred_count):
+    is_holder_anoncreds = (await holder.get("/settings", response=Settings)).get(
+        "wallet.type"
+    ) == "askar-anoncreds"
+
+    credentials = await holder.get(f"/credentials")
+    credentials = credentials["results"]
+    assert len(credentials) == (active_cred_count + revoked_cred_count)
+    registries = {}
+    active_creds = 0
+    revoked_creds = 0
+    for credential in credentials:
+        rev_reg_id = credential["rev_reg_id"]
+        cred_rev_id = int(credential["cred_rev_id"])
+        if not rev_reg_id in registries:
+            if is_holder_anoncreds:
+                registries[rev_reg_id] = await holder.get(
+                    f"/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs",
+                )
+            else:
+                registries[rev_reg_id] = await holder.get(
+                    f"/revocation/registry/{rev_reg_id}/issued/indy_recs",
+                )
+        registry = registries[rev_reg_id]
+        if cred_rev_id in registry["rev_reg_delta"]["value"]["revoked"]:
+            revoked_creds = revoked_creds + 1
+        else:
+            active_creds = active_creds + 1
+    assert revoked_creds == revoked_cred_count
+    assert active_creds == active_cred_count
+
+
+async def verify_recd_presentations(verifier, recd_pres_count):
+    presentations = await verifier.get(f"/present-proof-2.0/records")
+    presentations = presentations["results"]
+
+    assert recd_pres_count == len(presentations)
 
 
 async def upgrade_wallet_and_shutdown_container(
@@ -170,9 +289,15 @@ async def main():
             revocation_registry_size=5,
         )
 
+        # confirm alice has 1 schema and 1 cred def
+        await verify_schema_cred_def(alice, 1, 1)
+
     alice_conns = {}
     bob_conns = {}
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ASKAR) as bob:
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ASKAR) as bob,
+    ):
         # connect to Bob (Askar wallet) and issue (and revoke) some credentials
         (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
             alice,
@@ -183,6 +308,7 @@ async def main():
         )
         alice_conns["askar"] = alice_conn
         bob_conns["askar"] = bob_conn
+        await verify_recd_credentials(bob, 1, 1)
 
     async with (
         Controller(base_url=ALICE) as alice,
@@ -198,6 +324,7 @@ async def main():
         )
         alice_conns["anoncreds"] = alice_conn
         bob_conns["anoncreds"] = bob_conn
+        await verify_recd_credentials(bob, 1, 1)
 
     async with (
         Controller(base_url=ALICE) as alice,
@@ -213,8 +340,12 @@ async def main():
         )
         alice_conns["askar-anon"] = alice_conn
         bob_conns["askar-anon"] = bob_conn
+        await verify_recd_credentials(bob, 1, 1)
+        await verify_issued_credentials(alice, 6, 3)
+        await verify_recd_presentations(alice, 3)
 
     # at this point alice has issued 6 credentials (revocation registry size is 5) and revoked 3
+    # TODO verify counts of credentials, revocations etc for each agent
 
     # play with docker - get a list of all our running containers
     client = docker.from_env()
@@ -270,22 +401,14 @@ async def main():
             "bob-askar-anon",
         )
 
-        # run some more tests ...  alice should still be connected to bob for example ...
+        # TODO verify counts of credentials, revocations etc for each upgraded agent
         async with (
             Controller(base_url=ALICE) as alice,
-            Controller(base_url=BOB_ASKAR) as bob,
+            Controller(base_url=BOB_ASKAR_ANON) as bob,
         ):
-            # Present the the credential's attributes
-            print(">>> present proof ... again ...")
-            await anoncreds_present_proof_v2(
-                bob,
-                alice,
-                bob_conns["askar"].connection_id,
-                alice_conns["askar"].connection_id,
-                requested_attributes=[{"name": "firstname"}],
-            )
-            print(">>> Done! (again)")
+            await verify_schema_cred_def(alice, 1, 1)
 
+        # run some more tests ...  alice should still be connected to bob for example ...
         async with (
             Controller(base_url=ALICE) as alice,
             Controller(base_url=BOB_ANONCREDS) as bob,
@@ -299,6 +422,16 @@ async def main():
                 alice_conns["anoncreds"].connection_id,
                 requested_attributes=[{"name": "firstname"}],
             )
+            await connect_agents_and_issue_credentials(
+                alice,
+                bob,
+                cred_def,
+                "Bob",
+                "Anoncreds",
+                inviter_conn=alice_conns["anoncreds"],
+                invitee_conn=bob_conns["anoncreds"],
+            )
+            await verify_recd_credentials(bob, 2, 2)
             print(">>> Done! (again)")
 
         async with (
@@ -314,6 +447,43 @@ async def main():
                 alice_conns["askar-anon"].connection_id,
                 requested_attributes=[{"name": "firstname"}],
             )
+            await connect_agents_and_issue_credentials(
+                alice,
+                bob,
+                cred_def,
+                "Bob",
+                "Askar_Anon",
+                inviter_conn=alice_conns["askar-anon"],
+                invitee_conn=bob_conns["askar-anon"],
+            )
+            await verify_recd_credentials(bob, 2, 2)
+            print(">>> Done! (again)")
+
+        async with (
+            Controller(base_url=ALICE) as alice,
+            Controller(base_url=BOB_ASKAR) as bob,
+        ):
+            # Present the the credential's attributes
+            print(">>> present proof ... again ...")
+            await anoncreds_present_proof_v2(
+                bob,
+                alice,
+                bob_conns["askar"].connection_id,
+                alice_conns["askar"].connection_id,
+                requested_attributes=[{"name": "firstname"}],
+            )
+            await connect_agents_and_issue_credentials(
+                alice,
+                bob,
+                cred_def,
+                "Bob",
+                "Askar",
+                inviter_conn=alice_conns["askar"],
+                invitee_conn=bob_conns["askar"],
+            )
+            await verify_recd_credentials(bob, 2, 2)
+            await verify_issued_credentials(alice, 12, 6)
+            await verify_recd_presentations(alice, 9)
             print(">>> Done! (again)")
 
     finally:
