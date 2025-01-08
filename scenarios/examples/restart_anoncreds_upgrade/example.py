@@ -37,8 +37,8 @@ async def connect_agents_and_issue_credentials(
     inviter_cred_def,
     fname: str,
     lname: str,
-    inviter_conn = None,
-    invitee_conn = None,
+    inviter_conn=None,
+    invitee_conn=None,
 ):
     is_inviter_anoncreds = (await inviter.get("/settings", response=Settings)).get(
         "wallet.type"
@@ -73,7 +73,7 @@ async def connect_agents_and_issue_credentials(
     # Revoke credential
     if is_inviter_anoncreds:
         await inviter.post(
-            url="/anoncreds/revocation/revoke", # TODO need to check agent type (askar vs anoncreds)
+            url="/anoncreds/revocation/revoke",  # TODO need to check agent type (askar vs anoncreds)
             json={
                 "connection_id": inviter_conn.connection_id,
                 "rev_reg_id": inviter_cred_ex.details.rev_reg_id,
@@ -86,7 +86,7 @@ async def connect_agents_and_issue_credentials(
         await invitee.record(topic="revocation-notification")
     else:
         await inviter.post(
-            url="/revocation/revoke", # TODO need to check agent type (askar vs anoncreds)
+            url="/revocation/revoke",  # TODO need to check agent type (askar vs anoncreds)
             json={
                 "connection_id": inviter_conn.connection_id,
                 "rev_reg_id": inviter_cred_ex.details.rev_reg_id,
@@ -144,8 +144,16 @@ async def verify_issued_credentials(issuer, issued_cred_count, revoked_cred_coun
     active_creds = 0
     revoked_creds = 0
     for cred_exch in cred_exch_recs:
-        rev_reg_id = cred_exch["indy"]["rev_reg_id"] if "indy" in cred_exch else cred_exch["anoncreds"]["rev_reg_id"]
-        cred_rev_id = int(cred_exch["indy"]["cred_rev_id"])
+        cred_type = (
+            "indy"
+            if "indy" in cred_exch
+            and cred_exch["indy"]
+            and "rev_reg_id" in cred_exch["indy"]
+            else "anoncreds"
+        )
+        rev_reg_id = cred_exch[cred_type]["rev_reg_id"]
+        cred_rev_id = cred_exch[cred_type]["cred_rev_id"]
+        cred_rev_id = int(cred_rev_id)
         if not rev_reg_id in registries:
             if is_issuer_anoncreds:
                 registries[rev_reg_id] = await issuer.get(
@@ -286,7 +294,10 @@ async def main():
 
     alice_conns = {}
     bob_conns = {}
-    async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB_ASKAR) as bob:
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ASKAR) as bob,
+    ):
         # connect to Bob (Askar wallet) and issue (and revoke) some credentials
         (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
             alice,
@@ -472,7 +483,7 @@ async def main():
             )
             await verify_recd_credentials(bob, 2, 2)
             await verify_issued_credentials(alice, 12, 6)
-            await verify_recd_presentations(alice, 6)
+            await verify_recd_presentations(alice, 9)
             print(">>> Done! (again)")
 
     finally:
