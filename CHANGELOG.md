@@ -1,26 +1,30 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.2.0rc0
+## 1.2.0
 
-### December 24, 2024
+### January 8, 2025
 
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
+
+Release 1.2.x is the new current Long Term Support (LTS) for ACA-Py, as defined in the [LTS Strategy](./LTS-Strategy.md) document. With this release, the "end of life" for the previous "current LTS release" -- [0.12](#0123) -- is set for October 2025.
 
 The first step to full support of [did:webvh](https://identity.foundation/didwebvh/) ("`did:web` + Verifiable History"-- formerly `did:tdw`) has been added to ACA-Py -- a resolver. We're working on improving the new DID Registration mechanism for it, [Cheqd] and other DID Methods, enabling ACA-Py to be used easily with a variety of DID Methods.
 
 [Cheqd]: https://cheqd.io/
 
-The move to the [OpenWallet Foundation](https://openwallet.foundation/) is now complete. For up to date details on what the repo move means for ACA-Py users, including steps for updating deployments, please see latest in [GitHub Issue #3250].
+The move to the [OpenWallet Foundation](https://openwallet.foundation/) is now complete. If you haven't done so already, please update your ACA-Py deployment to use:
+
+- the [ACA-Py OWF repository](https://github.com/openwallet-foundation/acapy),
+- the new [acapy-agent in PyPi](https://pypi.org/project/acapy-agent/), and
+- the container images for ACA-Py hosted by the OpenWallet Foundation GitHub organization within the GitHub Container Repository (GHCR).
 
 A significant testing capability was added in this release -- the ability to run an integration test that includes an ACA-Py upgrade in the middle. This allows us to test, for example starting an agent on one release, doing an upgrade (possibly including running a migration script), and then completing the test on the upgraded release. This is enable by adding a capability to restart Docker containers in the middle of tests. Nice work, @ianco!
 
-[GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
-
-### 1.2.0rc0 Deprecation Notices
+### 1.2.0 Deprecation Notices
 
 The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.0 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
 
-### 1.2.0rc0 Breaking Changes
+### 1.2.0 Breaking Changes
 
 The removal of the "in-memory" wallet implementation might be break some test scripts. Rather than using the in-memory wallet, tests should be updated to use SQLite's special `sqlite://:memory:` database instead. This results in a better alignment between the Askar storage configuration in test environments and what is used in production.
 
@@ -28,7 +32,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
 
 [PR #3391]: https://github.com/openwallet-foundation/acapy/pull/3391
 
-#### 1.2.0rc0 Categorized List of Pull Requests
+#### 1.2.0 Categorized List of Pull Requests
 
 - AnonCreds VC Issuance and Presentation Enhancement / Fixes
   - Fix indy fallback format in presentation from holder [\#3413](https://github.com/openwallet-foundation/acapy/pull/3413) [jamshale](https://github.com/jamshale)
@@ -76,6 +80,8 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
   - :construction_worker: Fix Nightly Publish to not run on forks [\#3333](https://github.com/openwallet-foundation/acapy/pull/3333) [ff137](https://github.com/ff137)
 
 - Internal Improvements / Cleanups / Tech Debt Updates
+  - Fix devcontainer poetry install [\#3428](https://github.com/openwallet-foundation/acapy/pull/3428) [jamshale](https://github.com/jamshale)
+  - Pin poetry to 1.8.3 in dockerfiles [\#3427](https://github.com/openwallet-foundation/acapy/pull/3427) [jamshale](https://github.com/jamshale)
   - Adds the OpenSSF to the readme [\#3412](https://github.com/openwallet-foundation/acapy/pull/3412) [swcurran](https://github.com/swcurran)
   - The latest tag doesn't exist in git, just github [\#3392](https://github.com/openwallet-foundation/acapy/pull/3392) [ryjones](https://github.com/ryjones)
   - :art: Fix model name for consistency [\#3382](https://github.com/openwallet-foundation/acapy/pull/3382) [ff137](https://github.com/ff137)
@@ -94,15 +100,34 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
   - :arrow_up: Update lock file [\#3296](https://github.com/openwallet-foundation/acapy/pull/3296) [ff137](https://github.com/ff137)
 
 - Release management pull requests:
+  - 1.2.0 [\#3430](https://github.com/openwallet-foundation/acapy/pull/3430) [swcurran](https://github.com/swcurran)
   - 1.2.0rc0 [\#3420](https://github.com/openwallet-foundation/acapy/pull/3420) [swcurran](https://github.com/swcurran)
   - 1.1.1rc0 [\#3372](https://github.com/openwallet-foundation/acapy/pull/3372) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2024-12-24+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-10-15..2025-01-08+author%3Aapp%2Fdependabot+)
 
 ## 1.1.1
 
 ACA-Py Release 1.1.1 was a release candidate for 1.2.0. A mistake in the release PR meant the 1.1.1rc0 was tagged published to PyPi as Release 1.1.1. Since that was not intended to be a final release, the release changelog for 1.2.0 includes the Pull Requests that would have been in 1.1.1.
+
+## 0.12.3
+
+### December 17, 2024
+
+A patch release to add address a bug found in the Linked Data Verifiable Credential handling for multi-tenant holders. The bug was fixed in the main branch, [PR 3391 - BREAKING: VCHolder multitenant binding](https://github.com/openwallet-foundation/acapy/pull/3391), and with this release is backported to 0.12 Long Term Support branch. Prior to this release, holder credentials received into a tenant wallet were actually received into the multi-tenant admin wallet.
+
+### 0.12.3 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.3 Categorized List of Pull Requests
+
+- Multitenant LD-VC Holders
+  - Patch PR 3391 - 0.12.lts [\#3396](https://github.com/openwallet-foundation/acapy/pull/3396)
+- Release management pull requests
+  - 0.12.3 [\#3408](https://github.com/hyperledger/aries-cloudagent-python/pull/3408) [swcurran](https://github.com/swcurran)
+  - 0.12.3rc0 [\#3406](https://github.com/hyperledger/aries-cloudagent-python/pull/3406) [swcurran](https://github.com/swcurran)
 
 ## 1.1.0
 

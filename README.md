@@ -1,14 +1,14 @@
 # ACA-Py -- A Cloud Agent - Python  <!-- omit in toc -->
 
-🚨 **ACA-Py is transitioning to the [OpenWallet Foundation] (OWF)!** 🚨
+🚨 **ACA-Py is part of the [OpenWallet Foundation] (OWF)!** 🚨
 
 [OpenWallet Foundation]: https://openwallet.foundation/
 
-We’re excited to announce that the ACA-Py project has moved to the OWF's GitHub organization as the [new "acapy" project](https://github.com/openwallet-foundation/project-proposals/blob/main/projects/aca-py.md).
+The move of ACA-Py to the OWF is now complete. If you haven't done so already, please update your ACA-Py deployment to use:
 
-For details on what this means for ACA-Py users, including steps for updating deployments, please follow the updates in [GitHub Issue #3250]. We'll keep you informed about how to update your deployment to reflect this change. Stay tuned!
-
-[GitHub Issue #3250]: https://github.com/openwallet-foundation/acapy/issues/3250
+- the [ACA-Py OWF repository](https://github.com/openwallet-foundation/acapy),
+- the new [acapy-agent in PyPi](https://pypi.org/project/acapy-agent/), and
+- the container images for ACA-Py hosted by the OpenWallet Foundation GitHub organization within the GitHub Container Repository (GHCR).
 
 <p float="left">
   <a href="https://scorecard.dev/viewer/?uri=github.com/openwallet-foundation/acapy"><img src="https://api.scorecard.dev/projects/github.com/openwallet-foundation/acapy/badge" />
@@ -51,10 +51,14 @@ the active LTS releases. Each LTS release will be supported with patches for **9
 months** following the designation of the **next** LTS Release. For more details see
 the [LTS strategy](./LTS-Strategy.md).
 
-Current LTS releases are:
+Current LTS releases:
 
-- [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.1) **Current LTS Release**
-- [0.11](https://github.com/openwallet-foundation/acapy/releases/tag/0.11.1) **End of Life: January 2025**
+- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.0) **Current LTS Release**
+- Release [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.3) **End of Life: October 2025**
+
+Past LTS releases:
+
+- Release [0.11](https://github.com/openwallet-foundation/acapy/releases/tag/0.11.3) **End of Life: January 2025**
 
 Unless specified in the **Breaking Changes** section of the ACA-Py
 [CHANGELOG](./CHANGELOG.md), all LTS patch releases will be able to be deployed
