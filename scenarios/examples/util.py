@@ -301,7 +301,7 @@ async def anoncreds_issue_credential_v2(
     )
     holder_indy_record = await holder.event_with_values(
         topic="issue_credential_v2_0_anoncreds"
-        if is_holder_anoncreds
+        if (is_holder_anoncreds or is_issuer_anoncreds)
         else "issue_credential_v2_0_indy",
         event_type=V20CredExRecordIndy,
     )
