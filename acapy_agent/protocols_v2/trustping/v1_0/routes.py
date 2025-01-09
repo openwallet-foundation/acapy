@@ -113,7 +113,7 @@ async def get_target(request: web.BaseRequest, to_did: str, from_did: str):
     context: AdminRequestContext = request["context"]
 
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             resolver = session.inject(DMPResolver)
             await resolver.resolve(to_did)
     except Exception as err:
