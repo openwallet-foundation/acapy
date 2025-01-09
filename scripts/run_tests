@@ -15,7 +15,7 @@ for arg in "$@"; do
 done
 
 if [[ $FAST -eq 0 ]]; then
-  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test -f ../docker/Dockerfile.test --build-arg "all_extras=$ALL_EXTRAS" .. || exit 1
+  $CONTAINER_RUNTIME build --platform linux/amd64 -t acapy-agent-test -f ../docker/Dockerfile.test --build-arg "all_extras=$ALL_EXTRAS" .. || exit 1
 fi
 
 DOCKER_ARGS=""
@@ -33,7 +33,7 @@ if [ -n "${ENABLE_PTVSD}" ]; then
 fi
 
 if [[ $FAST -eq 1 ]]; then
-  DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
+  DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../acapy_agent:/usr/src/app/acapy_agent:z"
 fi
 
 if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
@@ -47,7 +47,7 @@ if [ ! -z "$TEST_REDIS_CONFIG" ]; then
   DOCKER_ARGS="$DOCKER_ARGS -e TEST_REDIS_CONFIG=$TEST_REDIS_CONFIG"
 fi
 
-$CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
+$CONTAINER_RUNTIME run --rm -ti --name acapy-agent-runner \
   --platform linux/amd64 \
 	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
-	$DOCKER_ARGS aries-cloudagent-test "$@"
+	$DOCKER_ARGS acapy-agent-test "$@"

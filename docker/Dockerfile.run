@@ -9,7 +9,7 @@ RUN apt-get update -y && \
 
 WORKDIR /usr/src/app
 
-# For consistency with base images, include curl for healthchecks
+# For consistency with base images, include curl for health checks
 RUN apt-get update && apt-get install -y curl && apt-get clean
 
 RUN pip install --no-cache-dir poetry==1.8.3
@@ -21,6 +21,6 @@ RUN mkdir -p log && chmod -R ug+rw log
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --all-extras; else poetry install -E "didcommv2"; fi
 
-COPY . .
+COPY ./acapy_agent ./acapy_agent
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]

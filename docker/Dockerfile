@@ -3,7 +3,8 @@ FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
 
-COPY . .
+COPY ./acapy_agent ./acapy_agent
+COPY ./pyproject.toml ./poetry.lock ./README.md ./
 
 RUN pip install --no-cache-dir poetry==1.8.3
 RUN poetry build
@@ -12,7 +13,7 @@ FROM python:${python_version}-slim-bullseye AS main
 
 ARG uid=1001
 ARG user=aries
-ARG acapy_name="aries-cloudagent"
+ARG acapy_name="acapy-agent"
 ARG acapy_version
 ARG acapy_reqs=[didcommv2]
 
@@ -26,7 +27,7 @@ ENV HOME="/home/$user" \
     RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="$acapy_name image" \
-    DESCRIPTION="$acapy_name provides a base image for running Hyperledger Aries agents in Docker. \
+    DESCRIPTION="$acapy_name provides a base image for running acapy agents in Docker. \
     This image layers the python implementation of $acapy_name $acapy_version. Based on Debian Buster."
 
 LABEL summary="$SUMMARY" \
@@ -100,7 +101,7 @@ RUN acapy_agent_package=$(find ./ -name "acapy_agent*.whl" | head -n 1) && \
     rm acapy_agent*.whl && \
     chmod +rx $(python -m site --user-site) $HOME/.local
 
-# Clean-up unneccessary build dependencies and reduce final image size
+# Clean-up unnecessary build dependencies and reduce final image size
 USER root
 RUN apt-get purge -y --auto-remove build-essential
 
