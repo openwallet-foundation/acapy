@@ -5,7 +5,9 @@ on:
     # These branches represent the LTS releases
     branches:
       - 0.12.lts
+      - 1.2.lts
     paths:
+      - aries_cloudagent/**
       - acapy_agent/**
       - docker/**
 
