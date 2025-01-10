@@ -103,7 +103,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
 
         incorrect_detail = {
             **LD_PROOF_VC_DETAIL,
-            "credential": {**LD_PROOF_VC_DETAIL["credential"], "issuanceDate": None},
+            "credential": {**LD_PROOF_VC_DETAIL["credential"], "credentialSubject": None},
         }
 
         # test incorrect proposal
@@ -121,8 +121,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         # test incorrect cred
         with self.assertRaises(ValidationError):
             incorrect_cred = LD_PROOF_VC.copy()
-            incorrect_cred.pop("issuanceDate")
-
+            incorrect_cred.pop("credentialSubject")
             self.handler.validate_fields(CRED_20_ISSUE, incorrect_cred)
 
     async def test_get_ld_proof_detail_record(self):
