@@ -182,6 +182,7 @@ class VerifiableCredential(BaseModel):
             if not date.tzinfo:
                 date = date.replace(tzinfo=tz.UTC)
             date = date.isoformat()
+            
 
         self._issuance_date = date
 
@@ -288,6 +289,7 @@ class VerifiableCredential(BaseModel):
     def __eq__(self, o: object) -> bool:
         """Check equality."""
         if isinstance(o, VerifiableCredential):
+            
             return (
                 self.context == o.context
                 and self.id == o.id

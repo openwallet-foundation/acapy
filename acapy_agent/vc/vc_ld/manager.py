@@ -1,5 +1,6 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Type, Union, cast
 
 from pyld import jsonld
@@ -14,6 +15,8 @@ from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import BLS12381G2, ED25519, KeyType
 from ..ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    CREDENTIALS_CONTEXT_V2_URL,
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
@@ -271,6 +274,12 @@ class VcLdpManager:
             and SECURITY_CONTEXT_ED25519_2020_URL not in credential.context_urls
         ):
             credential.add_context(SECURITY_CONTEXT_ED25519_2020_URL)
+        # Limit VCDM 2.0 with Ed25519Signature2020
+        elif (
+            options.proof_type == Ed25519Signature2018.signature_type
+            and credential.context_urls[0] == CREDENTIALS_CONTEXT_V2_URL
+        ):
+            raise VcLdpManagerError("Invalid proof type, use Ed25519Signature2020.")
 
         # Permit late binding of credential subject:
         # IFF credential subject doesn't already have an id, add holder_did as
@@ -281,7 +290,15 @@ class VcLdpManager:
         # How should this be handled?
         if isinstance(subject, list):
             subject = subject[0]
-
+            
+        if (
+            not credential.issuance_date 
+            and credential.context_urls[0] == CREDENTIALS_CONTEXT_V1_URL
+        ):
+            credential.issuance_date = str(
+                datetime.now(timezone.utc).isoformat('T', 'seconds')
+            )
+        
         if not subject:
             raise VcLdpManagerError("Credential subject is required")
 
