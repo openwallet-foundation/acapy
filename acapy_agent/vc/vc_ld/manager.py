@@ -290,15 +290,15 @@ class VcLdpManager:
         # How should this be handled?
         if isinstance(subject, list):
             subject = subject[0]
-            
+
         if (
-            not credential.issuance_date 
+            not credential.issuance_date
             and credential.context_urls[0] == CREDENTIALS_CONTEXT_V1_URL
         ):
             credential.issuance_date = str(
-                datetime.now(timezone.utc).isoformat('T', 'seconds')
+                datetime.now(timezone.utc).isoformat("T", "seconds")
             )
-        
+
         if not subject:
             raise VcLdpManagerError("Credential subject is required")
 
