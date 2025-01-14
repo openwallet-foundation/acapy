@@ -7,7 +7,7 @@ This [video](https://youtu.be/yJ6LpAiVNFM) is a presentation of the material cov
 ## Running unit tests in ACA-Py
 
 - `./scripts/run_tests`
-- `./scripts/run_tests aries_cloudagent/protocols/out_of_band/v1_0/tests`
+- `./scripts/run_tests acapy_agent/protocols/out_of_band/v1_0/tests`
 
 Note: The `bbs` library is not installed with ACA-Py by default, therefore unit tests involving BBS Signatures are disabled. To run BBS tests add the `--all-extras` flag:
 
@@ -64,7 +64,7 @@ def test_sub_unsub(event_bus: EventBus, processor):
     assert not event_bus.topic_patterns_to_subscribers
 ```
 
-From aries_cloudagent/core/event_bus.py
+From acapy_agent/core/event_bus.py
 
 ```python
 class EventBus:
