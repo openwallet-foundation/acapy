@@ -1,6 +1,7 @@
 """DID Key class and resolver methods."""
 
-from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
+from typing import List
+from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL, SECURITY_CONTEXT_MULTIKEY_URL
 from ..wallet.crypto import ed25519_pk_to_curve25519
 from ..wallet.key_type import (
     BLS12381G1,
@@ -296,12 +297,13 @@ def construct_did_key_p256(did_key: "DIDKey") -> dict:
             "controller": did_key.did,
             "publicKeyMultibase": did_key.fingerprint,
         },
+        extra_context=[SECURITY_CONTEXT_MULTIKEY_URL]
     )
 
     return did_doc
 
 
-def construct_did_signature_key_base(*, id: str, key_id: str, verification_method: dict):
+def construct_did_signature_key_base(*, id: str, key_id: str, verification_method: dict, extra_context: List[str] = []):
     """Create base did key structure to use for most signature keys.
 
     May not be suitable for all did key types
@@ -309,7 +311,7 @@ def construct_did_signature_key_base(*, id: str, key_id: str, verification_metho
     """
 
     return {
-        "@context": DID_V1_CONTEXT_URL,
+        "@context": [DID_V1_CONTEXT_URL] + (extra_context),
         "id": id,
         "verificationMethod": [verification_method],
         "authentication": [key_id],
