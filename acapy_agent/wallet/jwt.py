@@ -143,7 +143,7 @@ class JWTVerifyResultSchema(BaseModelSchema):
 async def resolve_public_key_by_kid_for_verify(
     profile: Profile, kid: str
 ) -> Tuple[str, KeyType]:
-    """Resolve public key material from a kid."""
+    """Resolve public key verkey (base58 public key) and key type from a kid."""
     resolver = profile.inject(DIDResolver)
     vmethod: Resource = await resolver.dereference(
         profile,
