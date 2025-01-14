@@ -38,6 +38,7 @@ jobs:
               - acapy_agent/**/*
               - poetry.lock
               - pyproject.toml
+              - docker/*
             demo: "demo/**/*"
       - name: Check if demo or src files changed
         id: check-if-demo-or-src-changed

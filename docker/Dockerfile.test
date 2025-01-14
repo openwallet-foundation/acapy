@@ -17,6 +17,7 @@ RUN mkdir acapy_agent && touch acapy_agent/__init__.py
 ARG all_extras=0
 RUN if ! [ -z ${all_extras} ]; then poetry install --no-directory --all-extras --with=dev; else poetry install --no-directory -E "didcommv2" --with=dev; fi
 
-COPY . .
+COPY ./acapy_agent ./acapy_agent
+COPY ./conftest.py ./
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run pytest \"$@\"", "--"]

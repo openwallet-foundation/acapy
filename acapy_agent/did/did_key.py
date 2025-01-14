@@ -1,6 +1,6 @@
 """DID Key class and resolver methods."""
 
-from typing import List
+from typing import List, Optional
 from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL, SECURITY_CONTEXT_MULTIKEY_URL
 from ..wallet.crypto import ed25519_pk_to_curve25519
 from ..wallet.key_type import (
@@ -277,6 +277,7 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
 
     return did_doc
 
+
 def construct_did_key_p256(did_key: "DIDKey") -> dict:
     """Construct P256 did:key.
 
@@ -297,13 +298,19 @@ def construct_did_key_p256(did_key: "DIDKey") -> dict:
             "controller": did_key.did,
             "publicKeyMultibase": did_key.fingerprint,
         },
-        extra_context=[SECURITY_CONTEXT_MULTIKEY_URL]
+        extra_context=[SECURITY_CONTEXT_MULTIKEY_URL],
     )
 
     return did_doc
 
 
-def construct_did_signature_key_base(*, id: str, key_id: str, verification_method: dict, extra_context: List[str] = []):
+def construct_did_signature_key_base(
+    *,
+    id: str,
+    key_id: str,
+    verification_method: dict,
+    extra_context: Optional[List[str]] = None,
+):
     """Create base did key structure to use for most signature keys.
 
     May not be suitable for all did key types
@@ -311,7 +318,7 @@ def construct_did_signature_key_base(*, id: str, key_id: str, verification_metho
     """
 
     return {
-        "@context": [DID_V1_CONTEXT_URL] + (extra_context),
+        "@context": [DID_V1_CONTEXT_URL] + (extra_context or []),
         "id": id,
         "verificationMethod": [verification_method],
         "authentication": [key_id],

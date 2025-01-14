@@ -1114,9 +1114,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     return web.json_response(jws)
 
 
-@docs(
-    tags=["wallet"], summary="Create an sd-jws using did keys with a given payload"
-)
+@docs(tags=["wallet"], summary="Create an sd-jws using did keys with a given payload")
 @request_schema(SDJWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 @tenant_authentication

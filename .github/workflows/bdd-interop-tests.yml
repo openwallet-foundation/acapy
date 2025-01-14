@@ -38,6 +38,7 @@ jobs:
               - acapy_agent/**/*
               - poetry.lock
               - pyproject.toml
+              - docker/*
       - name: Check if src files changed
         id: check-if-src-changed
         run: |
