@@ -15,8 +15,7 @@ from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
 from .error import BaseJSONLDMessagingError
 
-SUPPORTED_VERIFICATION_METHOD_TYPES = (Ed25519VerificationKey2018,)
-
+SUPPORTED_VERIFICATION_METHOD_TYPES = (Ed25519VerificationKey2018)
 
 class SignatureOptionsSchema(Schema):
     """Schema for LD signature options."""

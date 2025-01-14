@@ -328,7 +328,7 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         required=False,
-        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type, P256.key_type]),
         metadata={"example": ED25519.key_type, "description": "Key type to query for."},
     )
 
@@ -1076,7 +1076,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         return web.json_response({"txn": transaction.serialize()})
 
 
-@docs(tags=["wallet"], summary="Create a EdDSA jws using did keys with a given payload")
+@docs(tags=["wallet"], summary="Create a jws using did keys with a given payload")
 @request_schema(JWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 @tenant_authentication
@@ -1115,7 +1115,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 
 
 @docs(
-    tags=["wallet"], summary="Create a EdDSA sd-jws using did keys with a given payload"
+    tags=["wallet"], summary="Create an sd-jws using did keys with a given payload"
 )
 @request_schema(SDJWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
@@ -1158,7 +1158,7 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
     return web.json_response(sd_jws)
 
 
-@docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
+@docs(tags=["wallet"], summary="Verify a jws using did keys with a given JWS")
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
 @tenant_authentication
@@ -1200,7 +1200,7 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 
 @docs(
     tags=["wallet"],
-    summary="Verify a EdDSA sd-jws using did keys with a given SD-JWS with "
+    summary="Verify an sd-jws using did keys with a given SD-JWS with "
     "optional key binding",
 )
 @request_schema(SDJWSVerifySchema())

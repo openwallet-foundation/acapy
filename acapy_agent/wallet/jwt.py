@@ -2,10 +2,13 @@
 
 import json
 import logging
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Tuple
 
 from marshmallow import fields
 from pydid import DIDUrl, Resource, VerificationMethod
+from pydid.verification_method import Ed25519VerificationKey2018, Multikey
+
+from acapy_agent.wallet.keys.manager import key_type_from_multikey, multikey_to_verkey
 
 from ..core.profile import Profile
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
@@ -14,7 +17,7 @@ from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..resolver.did_resolver import DIDResolver
 from .base import BaseWallet
 from .default_verification_key_strategy import BaseVerificationKeyStrategy
-from .key_type import ED25519
+from .key_type import ED25519, KeyType, KeyTypes
 from .util import b64_to_bytes, bytes_to_b64
 
 LOGGER = logging.getLogger(__name__)
@@ -66,12 +69,20 @@ async def jwt_sign(
         did = DIDUrl.parse(verification_method).did
         if not did:
             raise ValueError("DID URL must be absolute")
+    
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did_info = await wallet.get_local_did(did_lookup_name(did))
+    
+    header_alg = did_info.key_type.jws_algorithm
+    if not header_alg:
+        raise ValueError("DID key type cannot be used for JWS")
 
     if not headers.get("typ", None):
         headers["typ"] = "JWT"
     headers = {
         **headers,
-        "alg": "EdDSA",
+        "alg": header_alg,
         "kid": verification_method,
     }
     encoded_headers = dict_to_b64(headers)
@@ -130,7 +141,7 @@ class JWTVerifyResultSchema(BaseModelSchema):
     error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
-async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> str:
+async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> Tuple[str, KeyType]:
     """Resolve public key material from a kid."""
     resolver = profile.inject(DIDResolver)
     vmethod: Resource = await resolver.dereference(
@@ -142,34 +153,42 @@ async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> st
         raise InvalidVerificationMethod(
             "Dereferenced resource is not a verification method"
         )
+        
+    if isinstance(vmethod, Ed25519VerificationKey2018):
+        verkey = vmethod.public_key_base58 
+        ktyp = ED25519
+        return (verkey, ktyp)
+    
+    if isinstance(vmethod, Multikey):
+        multikey = vmethod.public_key_multibase
+        verkey = multikey_to_verkey(multikey)
+        ktyp = key_type_from_multikey(multikey=multikey)
+        return (verkey, ktyp)
 
-    if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
-        raise InvalidVerificationMethod(
-            f"Dereferenced method {type(vmethod).__name__} is not supported"
-        )
-
-    return vmethod.material
-
+    # unsupported
+    raise InvalidVerificationMethod(
+        f"Dereferenced method {type(vmethod).__name__} is not supported"
+    )
 
 async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
     """Verify a JWT and return the headers and payload."""
     encoded_headers, encoded_payload, encoded_signature = jwt.split(".", 3)
     headers = b64_to_dict(encoded_headers)
-    if "alg" not in headers or headers["alg"] != "EdDSA" or "kid" not in headers:
-        raise BadJWSHeaderError("Invalid JWS header parameters for Ed25519Signature2018.")
+    if "alg" not in headers or (headers["alg"] != "EdDSA" and headers["alg"] != "ES256") or "kid" not in headers:
+        raise BadJWSHeaderError("Invalid JWS header parameters")
 
     payload = b64_to_dict(encoded_payload)
     verification_method = headers["kid"]
     decoded_signature = b64_to_bytes(encoded_signature, urlsafe=True)
 
     async with profile.session() as session:
-        verkey = await resolve_public_key_by_kid_for_verify(profile, verification_method)
+        (verkey, ktyp) = await resolve_public_key_by_kid_for_verify(profile, verification_method)
         wallet = session.inject(BaseWallet)
         valid = await wallet.verify_message(
             f"{encoded_headers}.{encoded_payload}".encode(),
             decoded_signature,
-            verkey,
-            ED25519,
+            from_verkey=verkey,
+            key_type=ktyp,
         )
 
     return JWTVerifyResult(headers, payload, valid, verification_method)
