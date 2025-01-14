@@ -97,6 +97,13 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
                 },
                 {},
                 {"schema": {}},
+                {
+                    "schema": {
+                        "attrNames": ["score"],
+                        "name": "Example Schema",
+                        "version": "0.0.1",
+                    }
+                },
             ]
         )
         result = await test_module.schemas_post(self.request)
@@ -105,9 +112,12 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
         assert mock_create_and_register_schema.call_count == 1
 
         with self.assertRaises(web.HTTPBadRequest):
+            # Empty body
             await test_module.schemas_post(self.request)
-
-        await test_module.schemas_post(self.request)
+            # Empty schema
+            await test_module.schemas_post(self.request)
+            # Missing issuerId
+            await test_module.schemas_post(self.request)
 
     async def test_get_schema(self):
         self.request.match_info = {"schema_id": "schema_id"}
