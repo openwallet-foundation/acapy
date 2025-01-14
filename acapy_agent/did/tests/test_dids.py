@@ -1,5 +1,5 @@
 DID_ED25519_z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th = {
-    "@context": "https://www.w3.org/ns/did/v1",
+    "@context": ["https://www.w3.org/ns/did/v1"],
     "id": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
     "verificationMethod": [
         {
@@ -52,7 +52,7 @@ DID_X25519_z6LShLeXRTzevtwcfehaGEzCMyL3bNsAeKCwcqwJxyCo63yE = {
 }
 
 DID_BLS12381G2_zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5F93pSGYYco3gpK9tc53ruWUo2tkBB9bxPCFBUjq2th8FbtT4xih6y6Q1K9EL4Th86NiCGT = {
-    "@context": "https://www.w3.org/ns/did/v1",
+    "@context": ["https://www.w3.org/ns/did/v1"],
     "id": "did:key:zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5F93pSGYYco3gpK9tc53ruWUo2tkBB9bxPCFBUjq2th8FbtT4xih6y6Q1K9EL4Th86NiCGT",
     "verificationMethod": [
         {
@@ -78,7 +78,7 @@ DID_BLS12381G2_zUC71nmwvy83x1UzNKbZbS7N9QZx8rqpQx3Ee3jGfKiEkZngTKzsRoqobX6wZdZF5
 }
 
 DID_BLS12381G1_z3tEFALUKUzzCAvytMHX8X4SnsNsq6T5tC5Zb18oQEt1FqNcJXqJ3AA9umgzA9yoqPBeWA = {
-    "@context": "https://www.w3.org/ns/did/v1",
+    "@context": ["https://www.w3.org/ns/did/v1"],
     "id": "did:key:z3tEFALUKUzzCAvytMHX8X4SnsNsq6T5tC5Zb18oQEt1FqNcJXqJ3AA9umgzA9yoqPBeWA",
     "verificationMethod": [
         {

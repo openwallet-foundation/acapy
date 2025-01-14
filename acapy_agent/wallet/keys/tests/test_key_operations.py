@@ -15,6 +15,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
     seed = "00000000000000000000000000000000"
     multikey = "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i"
     verkey = "2ru5PcgeQzxF7QZYwQgDkG2K13PRqyigVw99zMYg8eML"
+    alg = "ed25519"
     kid = "did:web:example.com#key-01"
 
     async def asyncSetUp(self) -> None:
@@ -45,4 +46,4 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
     async def test_key_transformations(self):
         assert multikey_to_verkey(self.multikey) == self.verkey
-        assert verkey_to_multikey(self.verkey) == self.multikey
+        assert verkey_to_multikey(self.verkey, alg=self.alg) == self.multikey

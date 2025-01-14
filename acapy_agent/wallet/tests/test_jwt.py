@@ -139,6 +139,9 @@ class TestJWT(IsolatedAsyncioTestCase):
             wallet = session.inject(BaseWallet)
             await wallet.create_local_did(KEY, ED25519, self.seed)
         kid = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-        key_material = await resolve_public_key_by_kid_for_verify(self.profile, kid)
+        (key_material, key_type) = await resolve_public_key_by_kid_for_verify(
+            self.profile, kid
+        )
 
         assert key_material == "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+        assert key_type == ED25519
