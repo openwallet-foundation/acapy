@@ -16,7 +16,7 @@ from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..resolver.did_resolver import DIDResolver
 from .base import BaseWallet
 from .default_verification_key_strategy import BaseVerificationKeyStrategy
-from .key_type import ED25519, KeyType, KeyTypes
+from .key_type import ED25519, KeyType
 from .util import b64_to_bytes, bytes_to_b64
 
 LOGGER = logging.getLogger(__name__)
