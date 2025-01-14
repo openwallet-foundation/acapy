@@ -1,0 +1,208 @@
+services:
+  wallet-db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DB_USER"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  alice:
+    image: acapy-test
+    ports:
+      - "3001:3001"
+    environment:
+      RUST_LOG: 'aries-askar::log::target=error'
+    command: >
+      start
+        --label Alice
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://alice:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name alice
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level debug
+        --debug-webhooks
+        --notify-revocation
+        --preserve-exchange-records
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
+
+  bob-askar:
+    image: acapy-test
+    ports:
+      - "3002:3001"
+    environment:
+      RUST_LOG: 'aries-askar::log::target=error'
+    command: >
+      start
+        --label bob-askar
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://bob-askar:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name bob-askar
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level debug
+        --debug-webhooks
+        --monitor-revocation-notification
+        --preserve-exchange-records
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
+
+  bob-anoncreds:
+    image: acapy-test
+    ports:
+      - "3003:3001"
+    environment:
+      RUST_LOG: 'aries-askar::log::target=error'
+    command: >
+      start
+        --label bob-anoncreds
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://bob-anoncreds:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar-anoncreds
+        --wallet-name bob-anoncreds
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level debug
+        --debug-webhooks
+        --monitor-revocation-notification
+        --preserve-exchange-records
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
+
+  bob-askar-anon:
+    image: acapy-test
+    ports:
+      - "3004:3001"
+    environment:
+      RUST_LOG: 'aries-askar::log::target=error'
+    command: >
+      start
+        --label bob-askar-anon
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://bob-askar-anon:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name bob-askar-anon
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level debug
+        --debug-webhooks
+        --monitor-revocation-notification
+        --preserve-exchange-records
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
+
+  tails:
+    image: ghcr.io/bcgov/tails-server:latest
+    ports:
+      - 6543:6543
+    environment:
+      - GENESIS_URL=http://test.bcovrin.vonx.io/genesis
+    command: >
+      tails-server
+      --host 0.0.0.0
+      --port 6543
+      --storage-path /tmp/tails-files
+      --log-level INFO
+
+  example:
+    container_name: controller
+    privileged: true
+    build:
+      context: ../..
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - ALICE=http://alice:3001
+      - BOB_ASKAR=http://bob-askar:3001
+      - BOB_ANONCREDS=http://bob-anoncreds:3001
+      - BOB_ASKAR_ANON=http://bob-askar-anon:3001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./example.py:/usr/src/app/example.py:ro,z
+    command: python -m example
+    depends_on:
+      alice:
+        condition: service_healthy
+      bob-askar:
+        condition: service_healthy
+      bob-anoncreds:
+        condition: service_healthy
+      bob-askar-anon:
+        condition: service_healthy

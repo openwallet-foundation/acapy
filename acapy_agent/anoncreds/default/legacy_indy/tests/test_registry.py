@@ -1210,3 +1210,12 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
                 ),
             )
             assert isinstance(result, RevList)
+
+    async def test_get_schem_info(self):
+        result = await self.registry.get_schema_info_by_id(
+            self.profile,
+            "XduBsoPyEA4szYMy3pZ8De:2:minimal-33279d005748b3cc:1.0",
+        )
+        assert result.issuer_id == "XduBsoPyEA4szYMy3pZ8De"
+        assert result.name == "minimal-33279d005748b3cc"
+        assert result.version == "1.0"

@@ -6,7 +6,7 @@ WORKDIR /src
 COPY ./acapy_agent ./acapy_agent
 COPY ./pyproject.toml ./poetry.lock ./README.md ./
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==1.8.3
 RUN poetry build
 
 FROM python:${python_version}-slim-bullseye AS main
