@@ -277,6 +277,7 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
 
     return did_doc
 
+
 def construct_did_key_p256(did_key: "DIDKey") -> dict:
     """Construct P256 did:key.
 
@@ -297,13 +298,15 @@ def construct_did_key_p256(did_key: "DIDKey") -> dict:
             "controller": did_key.did,
             "publicKeyMultibase": did_key.fingerprint,
         },
-        extra_context=[SECURITY_CONTEXT_MULTIKEY_URL]
+        extra_context=[SECURITY_CONTEXT_MULTIKEY_URL],
     )
 
     return did_doc
 
 
-def construct_did_signature_key_base(*, id: str, key_id: str, verification_method: dict, extra_context: List[str] = []):
+def construct_did_signature_key_base(
+    *, id: str, key_id: str, verification_method: dict, extra_context: List[str] = []
+):
     """Create base did key structure to use for most signature keys.
 
     May not be suitable for all did key types

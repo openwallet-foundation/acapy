@@ -21,7 +21,7 @@ ALG_MAPPINGS = {
         "multikey_prefix": "zDn",
         "prefix_hex": "8024",
         "prefix_length": 2,
-    }
+    },
 }
 
 
@@ -77,7 +77,9 @@ class MultikeyManager:
             multikey = verification_method.public_key_multibase
 
         elif verification_method.type == "Ed25519VerificationKey2018":
-            multikey = verkey_to_multikey(verification_method.public_key_base58, alg="ed25519")
+            multikey = verkey_to_multikey(
+                verification_method.public_key_base58, alg="ed25519"
+            )
 
         elif verification_method.type == "Ed25519VerificationKey2020":
             multikey = verification_method.public_key_multibase
@@ -114,7 +116,9 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey, alg=key_info.key_type.key_type),
+            "multikey": verkey_to_multikey(
+                key_info.verkey, alg=key_info.key_type.key_type
+            ),
         }
 
     async def from_multikey(self, multikey: str):
@@ -124,7 +128,9 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey, alg=key_info.key_type.key_type),
+            "multikey": verkey_to_multikey(
+                key_info.verkey, alg=key_info.key_type.key_type
+            ),
         }
 
     async def create(self, seed: str = None, kid: str = None, alg: str = DEFAULT_ALG):
@@ -158,5 +164,7 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey, alg=key_info.key_type.key_type),
+            "multikey": verkey_to_multikey(
+                key_info.verkey, alg=key_info.key_type.key_type
+            ),
         }

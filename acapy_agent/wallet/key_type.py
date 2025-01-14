@@ -6,7 +6,13 @@ from typing import Optional
 class KeyType:
     """Key Type class."""
 
-    def __init__(self, key_type: str, multicodec_name: str, multicodec_prefix: bytes, jws_alg: Optional[str]):
+    def __init__(
+        self,
+        key_type: str,
+        multicodec_name: str,
+        multicodec_prefix: bytes,
+        jws_alg: Optional[str],
+    ):
         """Construct key type."""
         self._type: str = key_type
         self._name: str = multicodec_name
@@ -27,12 +33,11 @@ class KeyType:
     def multicodec_prefix(self) -> bytes:
         """Get key type multicodec prefix."""
         return self._prefix
-    
+
     @property
     def jws_algorithm(self) -> Optional[str]:
         """Get key type JWS Algorithm (used in the JOSE header)"""
         return self._jws_alg
-        
 
 
 # NOTE: the py_multicodec library is outdated. We use hardcoded prefixes here
@@ -44,6 +49,7 @@ P256: KeyType = KeyType("p256", "p256-pub", b"\x80\x24", "ES256")
 BLS12381G1: KeyType = KeyType("bls12381g1", "bls12_381-g1-pub", b"\xea\x01", None)
 BLS12381G2: KeyType = KeyType("bls12381g2", "bls12_381-g2-pub", b"\xeb\x01", None)
 BLS12381G1G2: KeyType = KeyType("bls12381g1g2", "bls12_381-g1g2-pub", b"\xee\x01", None)
+
 
 class KeyTypes:
     """KeyType class specifying key types with multicodec name."""
