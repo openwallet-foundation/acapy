@@ -20,7 +20,7 @@ from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation
 from .error import WalletDuplicateError, WalletError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, X25519, KeyType, KeyTypes
+from .key_type import BLS12381G2, ED25519, P256, X25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
@@ -185,18 +185,22 @@ class AskarWallet(BaseWallet):
 
         if not verkey:
             raise WalletNotFoundError("No key identifier provided")
-        key = await self._session.handle.fetch_key(verkey)
-        if not key:
+        key_entry = await self._session.handle.fetch_key(verkey)
+        if not key_entry:
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
-        metadata = json.loads(key.metadata or "{}")
+        metadata = json.loads(key_entry.metadata or "{}")
 
         try:
-            kid = key.tags.get("kid")
+            kid = key_entry.tags.get("kid")
         except Exception:
             kid = None
 
-        # FIXME implement key types
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519, kid=kid)
+        key = cast(Key, key_entry.key)
+        key_types = self.session.inject(KeyTypes)
+        key_type = key_types.from_key_type(key.algorithm.value)
+        if not key_type:
+            raise WalletError(f"Unknown key type {key.algorithm.value}")
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """Replace the metadata associated with a signing keypair.
@@ -775,6 +779,12 @@ class AskarWallet(BaseWallet):
                 return pk.verify_signature(message, signature)
             except AskarError as err:
                 raise WalletError("Exception when verifying message signature") from err
+        elif key_type == P256:
+            try:
+                pk = Key.from_public_bytes(KeyAlg.P256, verkey)
+                return pk.verify_signature(message, signature)
+            except AskarError as err:
+                raise WalletError("Exception when verifying message signature") from err
 
         # other key types are currently verified outside of Askar
         return verify_signed_message(
@@ -869,6 +879,8 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
     elif key_type == X25519:
         alg = KeyAlg.X25519
         method = None
+    elif key_type == P256:
+        alg = KeyAlg.P256
     elif key_type == BLS12381G2:
         alg = KeyAlg.BLS12_381_G2
         method = SeedMethod.BlsKeyGen
@@ -878,7 +890,7 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
         raise WalletError(f"Unsupported key algorithm: {key_type}")
     if seed:
         try:
-            if key_type == ED25519:
+            if key_type == ED25519 or key_type == P256:
                 # not a seed - it is the secret key
                 seed = validate_seed(seed)
                 return Key.from_secret_bytes(alg, seed)

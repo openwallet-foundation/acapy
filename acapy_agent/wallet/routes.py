@@ -81,7 +81,7 @@ from .did_method import (
 )
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, KeyTypes
+from .key_type import BLS12381G2, ED25519, P256, KeyTypes
 from .singletons import UpgradeInProgressSingleton
 from .util import EVENT_LISTENER_PATTERN
 
@@ -348,7 +348,7 @@ class DIDCreateOptionsSchema(OpenAPISchema):
 
     key_type = fields.Str(
         required=True,
-        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type, P256.key_type]),
         metadata={
             "example": ED25519.key_type,
             "description": (

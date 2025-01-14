@@ -33,6 +33,7 @@ class KeyType:
 # multicodec is also not used now, but may be used again if py_multicodec is updated
 ED25519: KeyType = KeyType("ed25519", "ed25519-pub", b"\xed\x01")
 X25519: KeyType = KeyType("x25519", "x25519-pub", b"\xec\x01")
+P256: KeyType = KeyType("p256", "p256-pub", b"\x80\x24")
 BLS12381G1: KeyType = KeyType("bls12381g1", "bls12_381-g1-pub", b"\xea\x01")
 BLS12381G2: KeyType = KeyType("bls12381g2", "bls12_381-g2-pub", b"\xeb\x01")
 BLS12381G1G2: KeyType = KeyType("bls12381g1g2", "bls12_381-g1g2-pub", b"\xee\x01")
@@ -46,6 +47,7 @@ class KeyTypes:
         self._type_registry: dict[str, KeyType] = {
             ED25519.key_type: ED25519,
             X25519.key_type: X25519,
+            P256.key_type: P256,
             BLS12381G1.key_type: BLS12381G1,
             BLS12381G2.key_type: BLS12381G2,
             BLS12381G1G2.key_type: BLS12381G1G2,
@@ -53,6 +55,7 @@ class KeyTypes:
         self._name_registry: dict[str, KeyType] = {
             ED25519.multicodec_name: ED25519,
             X25519.multicodec_name: X25519,
+            P256.multicodec_name: P256,
             BLS12381G1.multicodec_name: BLS12381G1,
             BLS12381G2.multicodec_name: BLS12381G2,
             BLS12381G1G2.multicodec_name: BLS12381G1G2,
@@ -60,6 +63,7 @@ class KeyTypes:
         self._prefix_registry: dict[bytes, KeyType] = {
             ED25519.multicodec_prefix: ED25519,
             X25519.multicodec_prefix: X25519,
+            P256.multicodec_prefix: P256,
             BLS12381G1.multicodec_prefix: BLS12381G1,
             BLS12381G2.multicodec_prefix: BLS12381G2,
             BLS12381G1G2.multicodec_prefix: BLS12381G1G2,

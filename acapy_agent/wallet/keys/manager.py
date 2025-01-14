@@ -2,7 +2,7 @@
 
 from ...core.profile import ProfileSession
 from ..base import BaseWallet
-from ..key_type import ED25519
+from ..key_type import ED25519, P256, KeyType
 from ..util import b58_to_bytes, bytes_to_b58
 from ...utils.multiformats import multibase
 from ...wallet.error import WalletNotFoundError
@@ -15,20 +15,27 @@ ALG_MAPPINGS = {
         "multikey_prefix": "z6Mk",
         "prefix_hex": "ed01",
         "prefix_length": 2,
+    },
+    "p256": {
+        "key_type": P256,
+        "multikey_prefix": "zDn",
+        "prefix_hex": "8024",
+        "prefix_length": 2,
     }
 }
 
 
-def multikey_to_verkey(multikey: str, alg: str = DEFAULT_ALG):
+def multikey_to_verkey(multikey: str):
     """Transform multikey to verkey."""
 
+    alg = key_type_from_multikey(multikey).key_type
     prefix_length = ALG_MAPPINGS[alg]["prefix_length"]
     public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_length:])
 
     return bytes_to_b58(public_bytes)
 
 
-def verkey_to_multikey(verkey: str, alg: str = DEFAULT_ALG):
+def verkey_to_multikey(verkey: str, alg: str):
     """Transform verkey to multikey."""
 
     prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
@@ -37,7 +44,7 @@ def verkey_to_multikey(verkey: str, alg: str = DEFAULT_ALG):
     return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
 
 
-def key_type_from_multikey(multikey: str):
+def key_type_from_multikey(multikey: str) -> KeyType:
     """Derive key_type class from multikey prefix."""
     for mapping in ALG_MAPPINGS:
         if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
@@ -70,10 +77,10 @@ class MultikeyManager:
             multikey = verification_method.public_key_multibase
 
         elif verification_method.type == "Ed25519VerificationKey2018":
-            multikey = verkey_to_multikey(verification_method.public_key_base58)
+            multikey = verkey_to_multikey(verification_method.public_key_base58, alg="ed25519")
 
         elif verification_method.type == "Ed25519VerificationKey2020":
-            multikey = verkey_to_multikey(verification_method.public_key_multibase)
+            multikey = verification_method.public_key_multibase
 
         else:
             raise MultikeyManagerError("Unknown verification method type.")
@@ -107,7 +114,7 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey, alg=key_info.key_type.key_type),
         }
 
     async def from_multikey(self, multikey: str):
@@ -117,7 +124,7 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey, alg=key_info.key_type.key_type),
         }
 
     async def create(self, seed: str = None, kid: str = None, alg: str = DEFAULT_ALG):
@@ -136,7 +143,7 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey, alg=alg),
         }
 
     async def update(self, multikey: str, kid: str):
@@ -151,5 +158,5 @@ class MultikeyManager:
 
         return {
             "kid": key_info.kid,
-            "multikey": verkey_to_multikey(key_info.verkey),
+            "multikey": verkey_to_multikey(key_info.verkey, alg=key_info.key_type.key_type),
         }
