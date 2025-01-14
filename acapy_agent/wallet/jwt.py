@@ -12,7 +12,6 @@ from acapy_agent.wallet.keys.manager import key_type_from_multikey, multikey_to_
 
 from ..core.profile import Profile
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
-from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
 from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..resolver.did_resolver import DIDResolver
 from .base import BaseWallet

@@ -36,7 +36,7 @@ class KeyType:
 
     @property
     def jws_algorithm(self) -> Optional[str]:
-        """Get key type JWS Algorithm (used in the JOSE header)"""
+        """Get key type JWS Algorithm (used in the JOSE header)."""
         return self._jws_alg
 
 
