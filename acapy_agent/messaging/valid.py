@@ -319,17 +319,19 @@ class DIDWeb(Regexp):
         )
 
 
-class DIDTdw(Regexp):
-    """Validate value against did:tdw specification."""
+class DIDWebvh(Regexp):
+    """Validate value against did:webvh specification."""
 
-    EXAMPLE = "did:tdw:QmP9VWaTCHcyztDpRj9XSHvZbmYe3m9HZ61KoDtZgWaXVU:example.com%3A5000"
-    PATTERN = re.compile(r"^(did:tdw:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
+    EXAMPLE = (
+        "did:webvh:QmP9VWaTCHcyztDpRj9XSHvZbmYe3m9HZ61KoDtZgWaXVU:example.com%3A5000"
+    )
+    PATTERN = re.compile(r"^(did:webvh:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
 
     def __init__(self):
         """Initialize the instance."""
 
         super().__init__(
-            DIDTdw.PATTERN, error="Value {input} is not in W3C did:tdw format"
+            DIDWebvh.PATTERN, error="Value {input} is not in W3C did:webvh format"
         )
 
 
@@ -363,16 +365,20 @@ class IndyDID(Regexp):
 
 
 class AnoncredsDID(Regexp):
-    """Validate value against indy DID."""
+    """Validate value against anoncreds DID."""
+
+    METHOD = r"([a-zA-Z0-9_]+)"
+    NETWORK = r"(:[a-zA-Z0-9_.%-]+)?"  # Optional network
+    METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
 
     EXAMPLE = "did:(method):WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile("^(did:[a-z]:.+$)?$")
+    PATTERN = re.compile(rf"^did:{METHOD}{NETWORK}:{METHOD_ID}")
 
     def __init__(self):
         """Initialize the instance."""
 
         super().__init__(
-            IndyDID.PATTERN,
+            DIDValidation.PATTERN,
             error="Value {input} is not an decentralized identifier (DID)",
         )
 
@@ -381,6 +387,7 @@ class DIDValidation(Regexp):
     """Validate value against any valid DID spec."""
 
     METHOD = r"([a-zA-Z0-9_]+)"
+    NETWORK = r"(:[a-zA-Z0-9_.%-]+)?"  # Optional network
     METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
     PARAMS = r"((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)"
     PATH = r"(\/[^#?]*)?"
@@ -388,7 +395,9 @@ class DIDValidation(Regexp):
     FRAGMENT = r"(\#.*)?$"
 
     EXAMPLE = "did:peer:WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(rf"^did:{METHOD}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$")
+    PATTERN = re.compile(
+        rf"^did:{METHOD}{NETWORK}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$"
+    )
 
     def __init__(self):
         """Initialize the instance."""
@@ -485,7 +494,7 @@ class AnoncredsCredDefId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndyCredDefId.PATTERN,
+            AnoncredsCredDefId.PATTERN,
             error="Value {input} is not an anoncreds credential definition identifier",
         )
 
@@ -530,7 +539,7 @@ class AnoncredsSchemaId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            IndySchemaId.PATTERN,
+            AnoncredsSchemaId.PATTERN,
             error="Value {input} is not an anoncreds schema identifier",
         )
 
@@ -1013,8 +1022,8 @@ DID_POSTURE_EXAMPLE = DIDPosture.EXAMPLE
 DID_WEB_VALIDATE = DIDWeb()
 DID_WEB_EXAMPLE = DIDWeb.EXAMPLE
 
-DID_TDW_VALIDATE = DIDTdw()
-DID_TDW_EXAMPLE = DIDTdw.EXAMPLE
+DID_WEBVH_VALIDATE = DIDWebvh()
+DID_WEBVH_EXAMPLE = DIDWebvh.EXAMPLE
 
 ROUTING_KEY_VALIDATE = RoutingKey()
 ROUTING_KEY_EXAMPLE = RoutingKey.EXAMPLE

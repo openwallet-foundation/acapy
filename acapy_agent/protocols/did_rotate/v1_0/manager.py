@@ -128,7 +128,7 @@ class DIDRotateManager:
         )
 
         try:
-            await self._ensure_supported_did(rotate.to_did)
+            await self.ensure_supported_did(rotate.to_did)
         except ReportableDIDRotateError as err:
             responder = self.profile.inject(BaseResponder)
             err.message.assign_thread_from(rotate)
@@ -234,7 +234,7 @@ class DIDRotateManager:
         async with self.profile.session() as session:
             await conn.delete_record(session)
 
-    async def _ensure_supported_did(self, did: str):
+    async def ensure_supported_did(self, did: str):
         """Check if the DID is supported."""
         resolver = self.profile.inject(DIDResolver)
         conn_mgr = BaseConnectionManager(self.profile)

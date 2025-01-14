@@ -472,6 +472,7 @@ async def get_rev_reg_def_upgrade_objs(
             key=lambda x: json.loads(x.value)["created_at"],
         )
     found_active = False
+    is_active = False
     for askar_issuer_rev_reg_def in askar_issuer_rev_reg_def_records:
         # active rev reg def is the oldest non-full and active rev reg def
         if (

@@ -624,7 +624,7 @@ class IndyVdrLedger(BaseLedger):
         seq_no = tokens[3]
         return (await self.get_schema(seq_no))["id"]
 
-    async def get_key_for_did(self, did: str) -> str:
+    async def get_key_for_did(self, did: str) -> Optional[str]:
         """Fetch the verkey for a ledger DID.
 
         Args:

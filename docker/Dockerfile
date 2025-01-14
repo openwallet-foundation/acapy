@@ -5,7 +5,7 @@ WORKDIR /src
 
 COPY . .
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==1.8.3
 RUN poetry build
 
 FROM python:${python_version}-slim-bullseye AS main

@@ -12,7 +12,7 @@ WORKDIR /usr/src/app
 # For consistency with base images, include curl for healthchecks
 RUN apt-get update && apt-get install -y curl && apt-get clean
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==1.8.3
 
 RUN mkdir -p acapy_agent && touch acapy_agent/__init__.py
 COPY pyproject.toml poetry.lock README.md ./
