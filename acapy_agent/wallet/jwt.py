@@ -77,7 +77,7 @@ async def jwt_sign(
 
         header_alg = did_info.key_type.jws_algorithm
         if not header_alg:
-            raise ValueError("DID key type cannot be used for JWS")
+            raise ValueError(f"DID key type '{did_info.key_type}' cannot be used for JWS")
 
         if not headers.get("typ", None):
             headers["typ"] = "JWT"
@@ -154,6 +154,11 @@ async def resolve_public_key_by_kid_for_verify(
             "Dereferenced resource is not a verification method"
         )
 
+    if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
+        raise InvalidVerificationMethod(
+            f"Dereferenced method {type(vmethod).__name__} is not supported"
+        )
+
     if isinstance(vmethod, Ed25519VerificationKey2018):
         verkey = vmethod.public_key_base58
         ktyp = ED25519
@@ -164,11 +169,6 @@ async def resolve_public_key_by_kid_for_verify(
         verkey = multikey_to_verkey(multikey)
         ktyp = key_type_from_multikey(multikey=multikey)
         return (verkey, ktyp)
-
-    if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
-        raise InvalidVerificationMethod(
-            f"Dereferenced method {type(vmethod).__name__} is not supported"
-        )
 
     # unimplemented
     raise InvalidVerificationMethod(
