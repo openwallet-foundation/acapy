@@ -15,7 +15,7 @@ from ......vc.ld_proofs import (
     BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    EcdsaSecp256r1Signature2019
+    EcdsaSecp256r1Signature2019,
 )
 from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
@@ -234,7 +234,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
                                 and (
-                                    EcdsaSecp256r1Signature2019.signature_type not in proof_types
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
                                 )
                             ):
                                 raise V20PresFormatHandlerError(
@@ -256,7 +257,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
                                 and (
-                                    EcdsaSecp256r1Signature2019.signature_type not in proof_types
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
                                 )
                             ):
                                 raise V20PresFormatHandlerError(
@@ -279,7 +281,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                         proof_format
                                         == EcdsaSecp256r1Signature2019.signature_type
                                     ):
-                                        proof_type = [EcdsaSecp256r1Signature2019.signature_type]
+                                        proof_type = [
+                                            EcdsaSecp256r1Signature2019.signature_type
+                                        ]
                                         dif_handler_proof_type = (
                                             EcdsaSecp256r1Signature2019.signature_type
                                         )

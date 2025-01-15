@@ -47,7 +47,7 @@ from ....vc.ld_proofs import (
     BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    EcdsaSecp256r1Signature2019
+    EcdsaSecp256r1Signature2019,
 )
 from ....wallet.error import WalletNotFoundError
 from ..dif.pres_exch import ClaimFormat, InputDescriptors, SchemaInputDescriptor
@@ -687,7 +687,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
                                 and (
-                                    EcdsaSecp256r1Signature2019.signature_type not in proof_types
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
                                 )
                             ):
                                 raise web.HTTPBadRequest(
@@ -711,7 +712,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
                                 and (
-                                    EcdsaSecp256r1Signature2019.signature_type not in proof_types
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
                                 )
                             ):
                                 raise web.HTTPBadRequest(
@@ -739,7 +741,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                         proof_format
                                         == EcdsaSecp256r1Signature2019.signature_type
                                     ):
-                                        proof_type = [EcdsaSecp256r1Signature2019.signature_type]
+                                        proof_type = [
+                                            EcdsaSecp256r1Signature2019.signature_type
+                                        ]
                                         break
                                     elif (
                                         proof_format == BbsBlsSignature2020.signature_type
