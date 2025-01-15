@@ -1,6 +1,5 @@
 """Message type identifiers for Trust Pings."""
 
-# from ...didcomm_prefix import DIDCommPrefix
 import logging
 from ....messaging.v2_agent_message import V2AgentMessage
 

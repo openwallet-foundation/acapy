@@ -159,9 +159,8 @@ class Dispatcher:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
 
         session = await profile.session()
-        ctx = session
-        messaging = ctx.inject(DIDCommMessaging)
-        routing_service = ctx.inject(RoutingService)
+        messaging = session.inject(DIDCommMessaging)
+        routing_service = session.inject(RoutingService)
         frm = inbound_message.payload.get("from")
         services = await routing_service._resolve_services(messaging.resolver, frm)
         chain = [
@@ -231,27 +230,6 @@ class Dispatcher:
             if inbound_message.receipt.thread_id:
                 error_result.message["pthid"] = inbound_message.receipt.thread_id
 
-        # # When processing oob attach message we supply the connection id
-        # # associated with the inbound message
-        # if inbound_message.connection_id:
-        #     async with self.profile.session() as session:
-        #         connection = await ConnRecord.retrieve_by_id(
-        #             session, inbound_message.connection_id
-        #         )
-        # else:
-        #     connection_mgr = BaseConnectionManager(profile)
-        #     connection = await connection_mgr.find_inbound_connection(
-        #         inbound_message.receipt
-        #     )
-        #     del connection_mgr
-
-        # if connection:
-        #     inbound_message.connection_id = connection.connection_id
-
-        # context.connection_ready = connection and connection.is_ready
-        # context.connection_record = connection
-        # responder.connection_id = connection and connection.connection_id
-
         if error_result:
             await responder.send_reply(error_result)
         elif context.message:
@@ -290,9 +268,6 @@ class Dispatcher:
 
         registry: V2ProtocolRegistry = self.profile.inject(V2ProtocolRegistry)
         try:
-            # message_cls = registry.resolve_message_class(message_type)
-            # if isinstance(message_cls, DeferLoad):
-            #    message_cls = message_cls.resolved
             message_cls = registry.protocols_matching_query(message_type)
         except ProtocolMinorVersionNotSupported as e:
             raise MessageParseError(f"Problem parsing message type. {e}")
@@ -301,7 +276,6 @@ class Dispatcher:
             raise MessageParseError(f"Unrecognized message type {message_type}")
 
         try:
-            # instance = message_cls[0] #message_cls.deserialize(parsed_msg)
             instance = registry.handlers[message_cls[0]]
             if isinstance(instance, DeferLoad):
                 instance = instance.resolved

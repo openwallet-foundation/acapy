@@ -180,19 +180,10 @@ async def connections_send_ping(request: web.BaseRequest):
 
     """
     request["context"]
-    # connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     body = await request.json()
     to_did = body.get("to_did")
     response_requested = body.get("response_requested")
-
-    # if not connection.is_ready:
-    #    raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
-
-    # msg = Ping(did=did, response_requested=response_requested)
-    # await outbound_handler(msg, connection_id=connection_id)
-
-    # return web.json_response({"results": results})
 
     our_did = await get_mydid(request)
     their_did = to_did
@@ -209,10 +200,8 @@ async def connections_send_ping(request: web.BaseRequest):
     if response_requested:
         msg.message["response_requested"] = True
 
-    ## await responder.send_reply(error_result)
     await outbound_handler(msg, target_list=reply_destination)
 
-    # return web.json_response({"thread_id": msg._thread_id})
     return web.json_response(msg.message)
 
 

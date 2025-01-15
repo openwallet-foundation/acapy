@@ -1,6 +1,5 @@
 """Message type identifiers for Trust Pings."""
 
-# from ...didcomm_prefix import DIDCommPrefix
 import logging
 
 SPEC_URI = "https://identity.foundation/didcomm-messaging/spec/v2.1/#the-empty-message"
