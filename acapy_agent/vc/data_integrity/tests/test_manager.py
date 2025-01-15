@@ -8,6 +8,7 @@ from acapy_agent.resolver.did_resolver import DIDResolver
 from acapy_agent.utils.testing import create_test_profile
 from acapy_agent.vc.data_integrity.manager import DataIntegrityManager
 from acapy_agent.vc.data_integrity.models.options import DataIntegrityProofOptions
+from acapy_agent.wallet.key_type import KeyTypes
 from acapy_agent.wallet.keys.manager import MultikeyManager
 
 
@@ -34,6 +35,7 @@ class TestDiManager(IsolatedAsyncioTestCase):
         self.resolver.register_resolver(WebDIDResolver())
         self.profile = await create_test_profile()
         self.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
         try:
             async with self.profile.session() as session:
                 await MultikeyManager(session=session).create(seed=self.seed)
