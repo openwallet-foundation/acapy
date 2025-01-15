@@ -263,7 +263,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             ):
                                 raise V20PresFormatHandlerError(
                                     "Only BbsBlsSignature2020, Ed25519Signature2018, "
-                                    "Ed25519Signature2020 and EcdsaSecp256r1Signature2019 "
+                                    "Ed25519Signature2020 and "
+                                    "EcdsaSecp256r1Signature2019 "
                                     "signature types are supported"
                                 )
                             else:

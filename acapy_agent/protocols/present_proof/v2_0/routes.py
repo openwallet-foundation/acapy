@@ -719,7 +719,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                 raise web.HTTPBadRequest(
                                     reason=(
                                         "Only BbsBlsSignature2020, Ed25519Signature2018"
-                                        " and Ed25519Signature2020, EcdsaSecp256r1Signature2019"
+                                        " and Ed25519Signature2020,"
+                                        " EcdsaSecp256r1Signature2019"
                                         " signature types are supported"
                                     )
                                 )
