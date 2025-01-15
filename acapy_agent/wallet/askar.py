@@ -890,7 +890,7 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
         raise WalletError(f"Unsupported key algorithm: {key_type}")
     if seed:
         try:
-            if key_type == ED25519 or key_type == P256:
+            if key_type in (ED25519, P256):
                 # not a seed - it is the secret key
                 seed = validate_seed(seed)
                 return Key.from_secret_bytes(alg, seed)
@@ -898,6 +898,9 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
                 return Key.from_seed(alg, seed, method=method)
         except AskarError as err:
             if err.code == AskarErrorCode.INPUT:
-                raise WalletError("Invalid seed for key generation") from None
+                raise WalletError("Invalid seed for key generation") from err
+            else:
+                LOGGER.error(f"Unhandled Askar error code: {err.code}")
+                raise
     else:
         return Key.generate(alg)

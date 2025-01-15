@@ -20,6 +20,7 @@ from .key_type import ED25519, KeyType
 from .util import b64_to_bytes, bytes_to_b64
 
 LOGGER = logging.getLogger(__name__)
+SUPPORTED_JWT_ALGS = ("EdDSA", "ES256")
 
 
 def dict_to_b64(value: Mapping[str, Any]) -> str:
@@ -73,24 +74,21 @@ async def jwt_sign(
         wallet = session.inject(BaseWallet)
         did_info = await wallet.get_local_did(did_lookup_name(did))
 
-    header_alg = did_info.key_type.jws_algorithm
-    if not header_alg:
-        raise ValueError("DID key type cannot be used for JWS")
+        header_alg = did_info.key_type.jws_algorithm
+        if not header_alg:
+            raise ValueError(f"DID key type '{did_info.key_type}' cannot be used for JWS")
 
-    if not headers.get("typ", None):
-        headers["typ"] = "JWT"
-    headers = {
-        **headers,
-        "alg": header_alg,
-        "kid": verification_method,
-    }
-    encoded_headers = dict_to_b64(headers)
-    encoded_payload = dict_to_b64(payload)
+        if not headers.get("typ", None):
+            headers["typ"] = "JWT"
+        headers = {
+            **headers,
+            "alg": header_alg,
+            "kid": verification_method,
+        }
+        encoded_headers = dict_to_b64(headers)
+        encoded_payload = dict_to_b64(payload)
 
-    async with profile.session() as session:
-        wallet = session.inject(BaseWallet)
         LOGGER.info(f"jwt sign: {did}")
-        did_info = await wallet.get_local_did(did_lookup_name(did))
         sig_bytes = await wallet.sign_message(
             f"{encoded_headers}.{encoded_payload}".encode(), did_info.verkey
         )
@@ -176,12 +174,15 @@ async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
     """Verify a JWT and return the headers and payload."""
     encoded_headers, encoded_payload, encoded_signature = jwt.split(".", 3)
     headers = b64_to_dict(encoded_headers)
-    if (
-        "alg" not in headers
-        or (headers["alg"] != "EdDSA" and headers["alg"] != "ES256")
-        or "kid" not in headers
-    ):
-        raise BadJWSHeaderError("Invalid JWS header parameters")
+    if "alg" not in headers:
+        raise BadJWSHeaderError("Missing 'alg' parameter in JWS header")
+    if "kid" not in headers:
+        raise BadJWSHeaderError("Missing 'kid' parameter in JWS header")
+    if headers["alg"] not in SUPPORTED_JWT_ALGS:
+        raise BadJWSHeaderError(
+            f"Unsupported 'alg' value in JWS header: '{headers['alg']}'. "
+            f"Supported algorithms: {', '.join(SUPPORTED_JWT_ALGS)}"
+        )
 
     payload = b64_to_dict(encoded_payload)
     verification_method = headers["kid"]
