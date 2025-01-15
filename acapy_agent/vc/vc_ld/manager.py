@@ -5,7 +5,9 @@ from typing import Dict, List, Optional, Type, Union, cast
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
-from acapy_agent.vc.ld_proofs.suites.ecdsa_secp256r1_signature_2019 import EcdsaSecp256r1Signature2019
+from acapy_agent.vc.ld_proofs.suites.ecdsa_secp256r1_signature_2019 import (
+    EcdsaSecp256r1Signature2019,
+)
 
 from ...core.profile import Profile
 from ...storage.vc_holder.base import VCHolder
