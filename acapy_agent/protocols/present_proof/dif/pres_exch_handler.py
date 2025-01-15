@@ -31,6 +31,7 @@ from ....vc.ld_proofs import (
     DocumentLoader,
     Ed25519Signature2018,
     Ed25519Signature2020,
+    EcdsaSecp256r1Signature2019,
     WalletKeyPair,
 )
 from ....vc.ld_proofs.constants import (
@@ -45,7 +46,7 @@ from ....wallet.default_verification_key_strategy import (
     ProofPurposeStr,
 )
 from ....wallet.error import WalletError, WalletNotFoundError
-from ....wallet.key_type import BLS12381G2, ED25519
+from ....wallet.key_type import BLS12381G2, ED25519, P256
 from .pres_exch import (
     Constraints,
     DIFField,
@@ -79,6 +80,7 @@ class DIFPresExchHandler:
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: ED25519,
         Ed25519Signature2020: ED25519,
+        EcdsaSecp256r1Signature2019: P256,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
@@ -193,6 +195,8 @@ class DIFPresExchHandler:
         filtered_creds_list = []
         if self.proof_type == BbsBlsSignature2020.signature_type:
             reqd_key_type = BLS12381G2
+        elif self.proof_type == EcdsaSecp256r1Signature2019.signature_type:
+            reqd_key_type = P256
         else:
             reqd_key_type = ED25519
         for cred in applicable_creds:

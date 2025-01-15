@@ -128,7 +128,7 @@ class DIDSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         required=True,
-        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type, P256.key_type]),
         metadata={
             "description": "Key type associated with the DID",
             "example": ED25519.key_type,
