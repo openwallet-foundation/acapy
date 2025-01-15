@@ -17,7 +17,7 @@ __all__ = [
     "_JwsLinkedDataSignature",
     "_Ed25519Signature2018",
     "_Ed25519Signature2020",
-    "EcdsaSecp256r1Signature2019",
+    "_EcdsaSecp256r1Signature2019",
     "_BbsBlsSignature2020",
     "_BbsBlsSignatureProof2020",
 ]
