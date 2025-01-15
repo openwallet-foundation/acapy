@@ -898,7 +898,7 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
                 return Key.from_seed(alg, seed, method=method)
         except AskarError as err:
             if err.code == AskarErrorCode.INPUT:
-                raise WalletError("Invalid seed for key generation") from None
+                raise WalletError("Invalid seed for key generation") from err
             else:
                 LOGGER.error(f"Unhandled Askar error code: {err.code}")
                 raise
