@@ -8,7 +8,6 @@ from marshmallow import fields
 from pydid import DIDUrl, Resource, VerificationMethod
 from pydid.verification_method import Ed25519VerificationKey2018, Multikey
 
-from acapy_agent.messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
 from acapy_agent.wallet.keys.manager import key_type_from_multikey, multikey_to_verkey
 
 from ..core.profile import Profile
@@ -154,11 +153,6 @@ async def resolve_public_key_by_kid_for_verify(
             "Dereferenced resource is not a verification method"
         )
 
-    if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
-        raise InvalidVerificationMethod(
-            f"Dereferenced method {type(vmethod).__name__} is not supported"
-        )
-
     if isinstance(vmethod, Ed25519VerificationKey2018):
         verkey = vmethod.public_key_base58
         ktyp = ED25519
@@ -170,9 +164,9 @@ async def resolve_public_key_by_kid_for_verify(
         ktyp = key_type_from_multikey(multikey=multikey)
         return (verkey, ktyp)
 
-    # unimplemented
+    # unsupported
     raise InvalidVerificationMethod(
-        f"Dereferenced method {type(vmethod).__name__} is not implemented"
+        f"Dereferenced method {type(vmethod).__name__} is not supported"
     )
 
 
