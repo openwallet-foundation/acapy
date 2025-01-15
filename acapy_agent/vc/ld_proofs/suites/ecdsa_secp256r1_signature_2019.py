@@ -26,7 +26,7 @@ class EcdsaSecp256r1Signature2019(LinkedDataSignature):
         """Create new EcdsaSecp256r1Signature2019 instance.
 
         Args:
-            key_pair (KeyPair): Key pair to use. Must provide ES256 signatures
+            key_pair (KeyPair): Key pair to use. Must provide ES256 signatures (P256)
             proof (dict, optional): A JSON-LD document with options to use for the
                 `proof` node (e.g. any other custom fields can be provided here
                 using a context different from security-v2).
