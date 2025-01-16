@@ -73,6 +73,14 @@ acapy\_agent.resolver.default.peer4 module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.resolver.default.tdw module
+----------------------------------------
+
+.. automodule:: acapy_agent.resolver.default.tdw
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.resolver.default.universal module
 ----------------------------------------------
 

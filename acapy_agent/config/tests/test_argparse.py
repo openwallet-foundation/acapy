@@ -525,10 +525,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         group.add_arguments(parser)
 
         result = parser.parse_args(
-            [
-                "--wallet-key-derivation-method",
-                key_derivation_method,
-            ]
+            ["--wallet-key-derivation-method", key_derivation_method, "--wallet-test"]
         )
 
         settings = group.get_settings(result)
@@ -545,6 +542,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
             [
                 "--wallet-key",
                 key_value,
+                "--wallet-test",
             ]
         )
 

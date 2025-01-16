@@ -181,18 +181,21 @@ class ClassLoader:
 class DeferLoad:
     """Helper to defer loading of a class definition."""
 
+    _class_cache = {}  # Shared cache for resolved classes
+
     def __init__(self, cls_path: str):
         """Initialize the `DeferLoad` instance with a qualified class path."""
         self._cls_path = cls_path
-        self._inst = None
 
     def __call__(self, *args, **kwargs):
         """Magic method to call the `DeferLoad` as a function."""
-        return (self.resolved)(*args, **kwargs)
+        return self.resolved(*args, **kwargs)
 
     @property
     def resolved(self):
         """Accessor for the resolved class instance."""
-        if not self._inst:
-            self._inst = ClassLoader.load_class(self._cls_path)
-        return self._inst
+        if self._cls_path not in DeferLoad._class_cache:
+            DeferLoad._class_cache[self._cls_path] = ClassLoader.load_class(
+                self._cls_path
+            )
+        return DeferLoad._class_cache[self._cls_path]

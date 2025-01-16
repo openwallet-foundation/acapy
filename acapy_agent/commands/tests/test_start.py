@@ -55,6 +55,7 @@ class TestStart(IsolatedAsyncioTestCase):
                     "0.0.0.0",
                     "80",
                     "--no-ledger",
+                    "--wallet-test",
                 ]
             )
             start_app.assert_called_once()

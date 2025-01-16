@@ -1,17 +1,17 @@
 import pytest
 
 from ....core.profile import Profile
-from ....messaging.valid import DIDTdw
+from ....messaging.valid import DIDWebvh
 from ....utils.testing import create_test_profile
-from ..tdw import TdwDIDResolver
+from ..webvh import WebvhDIDResolver
 
-TEST_DID = "did:tdw:Qma6mc1qZw3NqxwX6SB5GPQYzP4pGN2nXD15Jwi4bcDBKu:domain.example"
+TEST_DID = "did:webvh:Qma6mc1qZw3NqxwX6SB5GPQYzP4pGN2nXD15Jwi4bcDBKu:domain.example"
 
 
 @pytest.fixture
 def resolver():
     """Resolver fixture."""
-    yield TdwDIDResolver()
+    yield WebvhDIDResolver()
 
 
 @pytest.fixture
@@ -21,9 +21,9 @@ async def profile():
 
 
 @pytest.mark.asyncio
-async def test_supported_did_regex(profile, resolver: TdwDIDResolver):
+async def test_supported_did_regex(profile, resolver: WebvhDIDResolver):
     """Test the supported_did_regex."""
-    assert resolver.supported_did_regex == DIDTdw.PATTERN
+    assert resolver.supported_did_regex == DIDWebvh.PATTERN
     assert await resolver.supports(
         profile,
         TEST_DID,
@@ -31,6 +31,6 @@ async def test_supported_did_regex(profile, resolver: TdwDIDResolver):
 
 
 @pytest.mark.asyncio
-async def test_resolve(resolver: TdwDIDResolver, profile: Profile):
+async def test_resolve(resolver: WebvhDIDResolver, profile: Profile):
     """Test resolve method."""
     assert await resolver.resolve(profile, TEST_DID)

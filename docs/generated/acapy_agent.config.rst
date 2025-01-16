@@ -6,6 +6,14 @@ acapy\_agent.config package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   acapy_agent.config.logging
+
 Submodules
 ----------
 
@@ -77,14 +85,6 @@ acapy\_agent.config.ledger module
 ---------------------------------
 
 .. automodule:: acapy_agent.config.ledger
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-acapy\_agent.config.logging module
-----------------------------------
-
-.. automodule:: acapy_agent.config.logging
    :members:
    :undoc-members:
    :show-inheritance:
