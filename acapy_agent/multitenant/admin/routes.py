@@ -314,8 +314,7 @@ class RemoveWalletRequestSchema(OpenAPISchema):
     wallet_key = fields.Str(
         metadata={
             "description": (
-                "Master key used for key derivation. Only required for"
-                " unmanaged wallets."
+                "Master key used for key derivation. Only required for unmanaged wallets."
             ),
             "example": "MySecretKey123",
         }
@@ -328,8 +327,7 @@ class CreateWalletTokenRequestSchema(OpenAPISchema):
     wallet_key = fields.Str(
         metadata={
             "description": (
-                "Master key used for key derivation. Only required for"
-                " unmanaged wallets."
+                "Master key used for key derivation. Only required for unmanaged wallets."
             ),
             "example": "MySecretKey123",
         }

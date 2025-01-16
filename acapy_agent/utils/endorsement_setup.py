@@ -76,8 +76,7 @@ async def attempt_auto_author_with_endorser_setup(profile: Profile):
                 )
             else:
                 raise EndorsementSetupError(
-                    "Failed to establish endorser connection, invalid "
-                    "invitation format."
+                    "Failed to establish endorser connection, invalid invitation format."
                 )
 
         # configure the connection role and info (don't need to wait for the connection)

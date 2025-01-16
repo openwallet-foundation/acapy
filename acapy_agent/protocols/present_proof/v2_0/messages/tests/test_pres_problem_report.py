@@ -23,8 +23,7 @@ class TestV20PresProblemReport(TestCase):
         assert prob._type == DIDCommPrefix.qualify_current(PRES_20_PROBLEM_REPORT)
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.pres_problem_report."
-        "V20PresProblemReportSchema.load"
+        f"{PROTOCOL_PACKAGE}.messages.pres_problem_report.V20PresProblemReportSchema.load"
     )
     def test_deserialize(self, mock_load):
         """Test deserialization."""
@@ -42,8 +41,7 @@ class TestV20PresProblemReport(TestCase):
         assert prob is mock_load.return_value
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.pres_problem_report."
-        "V20PresProblemReportSchema.dump"
+        f"{PROTOCOL_PACKAGE}.messages.pres_problem_report.V20PresProblemReportSchema.dump"
     )
     def test_serialize(self, mock_dump):
         """Test serialization."""

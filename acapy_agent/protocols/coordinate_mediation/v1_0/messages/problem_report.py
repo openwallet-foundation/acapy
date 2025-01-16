@@ -9,7 +9,7 @@ from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers" ".problem_report_handler.CMProblemReportHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.CMProblemReportHandler"
 )
 
 LOGGER = logging.getLogger(__name__)

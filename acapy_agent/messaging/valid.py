@@ -223,9 +223,7 @@ class JSONWebToken(Regexp):
     """Validate JSON Web Token."""
 
     EXAMPLE = (
-        "eyJhbGciOiJFZERTQSJ9."
-        "eyJhIjogIjAifQ."
-        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        "eyJhbGciOiJFZERTQSJ9.eyJhIjogIjAifQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
     )
     PATTERN = r"^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]+$"
 
@@ -926,7 +924,7 @@ class CredentialSubject(Validator):
                     uri_validator(subject["id"])
                 except ValidationError:
                     raise ValidationError(
-                        f'credential subject id {subject["id"]} must be URI'
+                        f"credential subject id {subject['id']} must be URI"
                     ) from None
 
         return value

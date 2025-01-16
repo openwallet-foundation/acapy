@@ -13,7 +13,7 @@ TEST_SIGN_OBJ0 = {
         "issuer": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
         "issuanceDate": "2020-03-10T04:24:12.164Z",
         "credentialSubject": {
-            "id": ("did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
+            "id": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
             "degree": {
                 "type": "BachelorDegree",
                 "name": "Bachelor of Science and Arts",
@@ -244,7 +244,7 @@ TEST_VERIFY_OBJ0 = {
         "issuer": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
         "issuanceDate": "2020-03-10T04:24:12.164Z",
         "credentialSubject": {
-            "id": ("did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
+            "id": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
             "degree": {
                 "type": "BachelorDegree",
                 "name": "Bachelor of Science and Arts",
@@ -365,7 +365,7 @@ TEST_VERIFY_ERROR = {
         "issuer": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
         "issuanceDate": "2020-03-10T04:24:12.164Z",
         "credentialSubject": {
-            "id": ("did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
+            "id": ("did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"),
             "degree": {
                 "type": "BachelorDegree",
                 "name": "Bachelor of Science and Arts",
