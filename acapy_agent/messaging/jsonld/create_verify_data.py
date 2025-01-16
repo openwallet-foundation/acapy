@@ -94,7 +94,7 @@ def create_verify_data(data, signature_options, document_loader=None):
         )
         dropped = set(data.keys()) - set(for_diff.keys())
         raise DroppedAttributeError(
-            f"{dropped} attributes dropped. " "Provide definitions in context to correct."
+            f"{dropped} attributes dropped. Provide definitions in context to correct."
         )
     # Check proof for dropped attributes
     attr = [

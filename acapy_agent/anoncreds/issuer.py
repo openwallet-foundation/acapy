@@ -196,7 +196,7 @@ class AnonCredsIssuer:
             )
             if schemas:
                 raise AnonCredsSchemaAlreadyExists(
-                    f"Schema with {name}: {version} " f"already exists for {issuer_id}",
+                    f"Schema with {name}: {version} already exists for {issuer_id}",
                     schemas[0].name,
                     AnonCredsSchema.deserialize(schemas[0].value_json),
                 )
