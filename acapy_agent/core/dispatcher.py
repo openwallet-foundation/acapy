@@ -165,6 +165,15 @@ class Dispatcher:
         from ..connections.models.conn_peer_record import PeerwiseRecord
         peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
         await peer.save()
+        await context.profile.notify(
+            "acapy::forward::received",
+            {
+                "connection_id": peer.peerwise_id,
+                "status": "connected",
+                "recipient_key": inbound_message.receipt.sender_verkey,
+            },
+        )
+
         services = await routing_service._resolve_services(messaging.resolver, frm)
         chain = [
             {
