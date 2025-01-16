@@ -70,9 +70,10 @@ didcomm-messaging = { version = "^0.1.1a0", optional = true }
 canonicaljson = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = "~3.8.0"
-# Sync with version in .pre-commit-config.yaml
+# Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
 ruff = "0.9.1"
+
+pre-commit = "~3.8.0"
 
 sphinx = "^5.3.0"
 sphinx-rtd-theme = ">=0.4.3"

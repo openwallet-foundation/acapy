@@ -26,7 +26,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         INVITATION: f"{PROTOCOL_PACKAGE}.messages.invitation.Invitation",
         MESSAGE_REUSE: f"{PROTOCOL_PACKAGE}.messages.reuse.HandshakeReuse",
         MESSAGE_REUSE_ACCEPT: (
-            f"{PROTOCOL_PACKAGE}.messages" ".reuse_accept.HandshakeReuseAccept"
+            f"{PROTOCOL_PACKAGE}.messages.reuse_accept.HandshakeReuseAccept"
         ),
         PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.OOBProblemReport",
     }

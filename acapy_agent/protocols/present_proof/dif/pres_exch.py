@@ -595,8 +595,7 @@ class InputDescriptorsSchema(BaseModelSchema):
         data_key="schema",
         metadata={
             "description": (
-                "Accepts a list of schema or a dict containing filters like"
-                " oneof_filter."
+                "Accepts a list of schema or a dict containing filters like oneof_filter."
             ),
             "example": {
                 "oneof_filter": [

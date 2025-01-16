@@ -119,7 +119,7 @@ class TestSDJWT(IsolatedAsyncioTestCase):
 
         for disclosure in signed.split("~")[1:-1]:
             # Decode the disclosures
-            padded = f"{disclosure}{'=' * divmod(len(disclosure),4)[1]}"
+            padded = f"{disclosure}{'=' * divmod(len(disclosure), 4)[1]}"
             decoded = json.loads(urlsafe_b64decode(padded).decode("utf-8"))
             # Add the disclosures associated with the claims to be revealed
             if decoded[1] in revealed:

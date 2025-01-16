@@ -1410,8 +1410,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
         except StorageError as err:
             # log the error, but continue
             LOGGER.exception(
-                "Error accepting endorser invitation/configuring endorser"
-                " connection: %s",
+                "Error accepting endorser invitation/configuring endorser connection: %s",
                 err,
             )
             return

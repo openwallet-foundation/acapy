@@ -700,8 +700,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                 )
                 if schema_info:
                     LOGGER.warning(
-                        "Schema already exists on ledger. Returning details."
-                        " Error: %s",
+                        "Schema already exists on ledger. Returning details. Error: %s",
                         e,
                     )
                     raise LedgerObjectAlreadyExistsError(

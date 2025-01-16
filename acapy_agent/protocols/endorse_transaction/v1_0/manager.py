@@ -316,7 +316,7 @@ class TransactionManager:
                 endorsed_msg = json.dumps(ledger_response)
             else:
                 raise TransactionManagerError(
-                    f"Invalid goal code for transaction record:" f" {txn_goal_code}"
+                    f"Invalid goal code for transaction record: {txn_goal_code}"
                 )
 
         # need to return the endorsed msg or else the ledger will reject the
