@@ -162,6 +162,9 @@ class Dispatcher:
         messaging = session.inject(DIDCommMessaging)
         routing_service = session.inject(RoutingService)
         frm = inbound_message.payload.get("from")
+        from ..connections.models.conn_peer_record import PeerwiseRecord
+        peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
+        await peer.save()
         services = await routing_service._resolve_services(messaging.resolver, frm)
         chain = [
             {
