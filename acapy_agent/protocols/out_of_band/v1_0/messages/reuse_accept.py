@@ -8,8 +8,7 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import DEFAULT_VERSION, MESSAGE_REUSE_ACCEPT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".reuse_accept_handler.HandshakeReuseAcceptMessageHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.reuse_accept_handler.HandshakeReuseAcceptMessageHandler"
 )
 
 

@@ -205,9 +205,7 @@ class AnonCredsVerifier:
                             )
                 elif uuid in unrevealed_attrs:
                     # nothing to do, attribute value is not revealed
-                    msgs.append(
-                        f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::" f"{uuid}"
-                    )
+                    msgs.append(f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::{uuid}")
                 elif uuid not in self_attested:
                     raise ValueError(
                         f"Presentation attributes mismatch requested attribute {uuid}"
@@ -236,8 +234,7 @@ class AnonCredsVerifier:
                         < non_revoc_intervals[uuid].get("to", now)
                     ):
                         msgs.append(
-                            f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::"
-                            f"{uuid}"
+                            f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::{uuid}"
                         )
                         LOGGER.warning(
                             f"Timestamp {timestamp} from ledger for item"
@@ -266,7 +263,7 @@ class AnonCredsVerifier:
                     < non_revoc_intervals[uuid].get("to", now)
                 ):
                     msgs.append(
-                        f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::" f"{uuid}"
+                        f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::{uuid}"
                     )
                     LOGGER.warning(
                         f"Best-effort timestamp {timestamp} "
@@ -333,9 +330,7 @@ class AnonCredsVerifier:
                 elif uuid in unrevealed_attrs:
                     # unrevealed attribute, nothing to do
                     pres_req_attr_spec = {}
-                    msgs.append(
-                        f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::" f"{uuid}"
-                    )
+                    msgs.append(f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::{uuid}")
                 elif uuid in self_attested:
                     if not req_attr.get("restrictions"):
                         continue

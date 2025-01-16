@@ -8,8 +8,7 @@ from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PRES_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers.pres_problem_report_handler."
-    "V20PresProblemReportHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.pres_problem_report_handler.V20PresProblemReportHandler"
 )
 
 
