@@ -34,6 +34,7 @@ from ...ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
 from ...ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 from ...ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ...ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
+from ...ld_proofs.suites.ecdsa_secp256r1_signature_2019 import EcdsaSecp256r1Signature2019
 from ..manager import VcLdpManager, VcLdpManagerError
 from ..models.credential import VerifiableCredential
 from ..models.options import LDProofVCOptions
@@ -309,10 +310,11 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
 
     async def test_get_all_suites(self):
         suites = await self.manager._get_all_proof_suites()
-        assert len(suites) == 4
+        assert len(suites) == 5
         types = (
             Ed25519Signature2018,
             Ed25519Signature2020,
+            EcdsaSecp256r1Signature2019,
             BbsBlsSignature2020,
             BbsBlsSignatureProof2020,
         )

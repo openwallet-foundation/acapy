@@ -24,7 +24,7 @@ from .....wallet.default_verification_key_strategy import (
 )
 from .....wallet.did_method import KEY, SOV, DIDMethods
 from .....wallet.error import WalletNotFoundError
-from .....wallet.key_type import BLS12381G2, ED25519, KeyTypes
+from .....wallet.key_type import BLS12381G2, ED25519, P256, KeyTypes
 from .. import pres_exch_handler as test_module
 from ..pres_exch import (
     Constraints,
@@ -2069,6 +2069,70 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(
                     VC_RECORDS
                 )
+
+    async def test_get_sign_key_credential_subject_id_secp256r1(self):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            self.profile, proof_type="EcdsaSecp256r1Signature2019"
+        )
+
+        VC_RECORDS = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=["did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"],
+                proof_types=["EcdsaSecp256r1Signature2019"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="https://example.edu/issuers/565049",
+                subject_ids=[
+                    "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                ],
+                proof_types=["EcdsaSecp256r1Signature2019"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...": "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+            ),
+        ]
+        with mock.patch.object(
+            DIFPresExchHandler,
+            "_did_info_for_did",
+            mock.CoroutineMock(),
+        ) as mock_did_info:
+            did_info = DIDInfo(
+                did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                verkey="verkey",
+                metadata={},
+                method=KEY,
+                key_type=P256,
+            )
+            mock_did_info.return_value = did_info
+            (
+                issuer_id,
+                filtered_creds,
+            ) = await dif_pres_exch_handler.get_sign_key_credential_subject_id(VC_RECORDS)
+            assert issuer_id == "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            assert len(filtered_creds) == 2
 
     async def test_get_sign_key_credential_subject_id_bbsbls(self):
         dif_pres_exch_handler = DIFPresExchHandler(
