@@ -59,7 +59,6 @@ class TestEcdsaSecp256r1Signature2019(IsolatedAsyncioTestCase):
         )
 
         assert result
-        print(result)
         assert result.verified
 
     async def test_verify_ld_proofs_not_verified_bad_signature(self):
@@ -113,8 +112,6 @@ class TestEcdsaSecp256r1Signature2019(IsolatedAsyncioTestCase):
             document_loader=custom_document_loader,
             purpose=AssertionProofPurpose(),
         )
-
-        print(signed)
 
         assert signed
 
