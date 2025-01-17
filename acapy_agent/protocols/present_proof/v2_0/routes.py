@@ -47,6 +47,7 @@ from ....vc.ld_proofs import (
     BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
+    EcdsaSecp256r1Signature2019,
 )
 from ....wallet.error import WalletNotFoundError
 from ..dif.pres_exch import ClaimFormat, InputDescriptors, SchemaInputDescriptor
@@ -685,12 +686,17 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                 and (
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
+                                and (
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
                                         "Only BbsBlsSignature2020 and/or "
                                         "Ed25519Signature2018 and/or "
-                                        "Ed25519Signature2020 signature types "
+                                        "Ed25519Signature2020 and/or "
+                                        "EcdsaSecp256r1Signature2019 signature types "
                                         "are supported"
                                     )
                                 )
@@ -705,12 +711,17 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                 and (
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
+                                and (
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
                                         "Only BbsBlsSignature2020, Ed25519Signature2018"
-                                        " and Ed25519Signature2020 signature types are"
-                                        " supported"
+                                        " and Ed25519Signature2020,"
+                                        " EcdsaSecp256r1Signature2019"
+                                        " signature types are supported"
                                     )
                                 )
                             else:
@@ -726,6 +737,14 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                         == Ed25519Signature2020.signature_type
                                     ):
                                         proof_type = [Ed25519Signature2020.signature_type]
+                                        break
+                                    elif (
+                                        proof_format
+                                        == EcdsaSecp256r1Signature2019.signature_type
+                                    ):
+                                        proof_type = [
+                                            EcdsaSecp256r1Signature2019.signature_type
+                                        ]
                                         break
                                     elif (
                                         proof_format == BbsBlsSignature2020.signature_type
@@ -746,7 +765,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                             reason=(
                                 "Currently, only ldp_vp with "
                                 "BbsBlsSignature2020, Ed25519Signature2018 and "
-                                "Ed25519Signature2020 signature types are supported"
+                                "Ed25519Signature2020, EcdsaSecp256r1Signature2019"
+                                " signature types are supported"
                             )
                         )
                 if one_of_uri_groups:

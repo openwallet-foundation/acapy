@@ -95,6 +95,8 @@ async def issue_credential_route(request: web.BaseRequest):
                 options["proofType"] = "Ed25519Signature2020"
             elif key_type == "bls12381g2":
                 options["proofType"] = "BbsBlsSignature2020"
+            elif key_type == "p256":
+                options["proofType"] = "EcdsaSecp256r1Signature2019"
 
         credential = VerifiableCredential.deserialize(credential)
         options = LDProofVCOptions.deserialize(options)
@@ -205,6 +207,8 @@ async def prove_presentation_route(request: web.BaseRequest):
                 options["proofType"] = "Ed25519Signature2020"
             elif key_type == "bls12381g2":
                 options["proofType"] = "BbsBlsSignature2020"
+            elif key_type == "p256":
+                options["proofType"] = "EcdsaSecp256r1Signature2019"
 
         presentation = VerifiablePresentation.deserialize(presentation)
         options = LDProofVCOptions.deserialize(options)

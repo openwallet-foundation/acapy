@@ -400,7 +400,7 @@ class IssuerRevRegRecord(BaseRecord):
 
         LOGGER.debug(f"Fixed entry recs count = {rec_count}")
         LOGGER.debug(f"Rev reg entry value: {self.revoc_reg_entry.value}")
-        LOGGER.debug(f'Rev reg delta: {rev_reg_delta.get("value")}')
+        LOGGER.debug(f"Rev reg delta: {rev_reg_delta.get('value')}")
 
         # No update required if no discrepancies
         if rec_count == 0:

@@ -1,4 +1,4 @@
-ARG from_image=ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.12.1
+ARG from_image=ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.0
 FROM ${from_image}
 
 ENV ENABLE_PTVSD 0
@@ -10,7 +10,7 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 	chmod ug+x bin/jq
 
 # Copy and install Aries Agent code
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==1.8.3
 
 COPY README.md pyproject.toml poetry.lock ./
 

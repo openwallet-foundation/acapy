@@ -6,6 +6,7 @@ from ..ld_proofs.constants import (
     SECURITY_CONTEXT_V1_URL,
     SECURITY_CONTEXT_V2_URL,
     SECURITY_CONTEXT_V3_URL,
+    SECURITY_CONTEXT_MULTIKEY_URL,
 )
 from .contexts import (
     BBS_V1,
@@ -14,6 +15,7 @@ from .contexts import (
     DID_V1,
     DIF_PRESENTATION_SUBMISSION_V1,
     ED25519_2020_V1,
+    MULTIKEY_V1,
     EXAMPLES_V1,
     ODRL,
     SCHEMA_ORG,
@@ -26,6 +28,7 @@ from .dids import (
     DID_EXAMPLE_48939859,
     DID_SOV_QqEfJxe752NCmWqR5TssZ5,
     DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL,
+    DID_zDnaehWviigWQQD7bqF3btFquwA5w8DX2sQwkVxnAyJ7oxdjq,
     DID_zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa,
 )
 
@@ -33,6 +36,9 @@ DOCUMENTS = {
     DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL.get(
         "id"
     ): DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL,
+    DID_zDnaehWviigWQQD7bqF3btFquwA5w8DX2sQwkVxnAyJ7oxdjq.get(
+        "id"
+    ): DID_zDnaehWviigWQQD7bqF3btFquwA5w8DX2sQwkVxnAyJ7oxdjq,
     DID_zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa.get(
         "id"
     ): DID_zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa,
@@ -45,6 +51,7 @@ DOCUMENTS = {
     CREDENTIALS_CONTEXT_V1_URL: CREDENTIALS_V1,
     SECURITY_CONTEXT_BBS_URL: BBS_V1,
     SECURITY_CONTEXT_ED25519_2020_URL: ED25519_2020_V1,
+    SECURITY_CONTEXT_MULTIKEY_URL: MULTIKEY_V1,
     "https://www.w3.org/2018/credentials/examples/v1": EXAMPLES_V1,
     "https://w3id.org/citizenship/v1": CITIZENSHIP_V1,
     "https://www.w3.org/ns/odrl.jsonld": ODRL,

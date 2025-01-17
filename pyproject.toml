@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "acapy_agent"
-version = "1.2.0rc0"
+version = "1.2.0"
 description = "(ACA-Py) A Cloud Agent Python is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = []
 license = "Apache-2.0"
@@ -28,7 +28,7 @@ ecdsa = "~0.19.0"
 jsonpath-ng = "1.7.0"
 Markdown = "~3.7"
 markupsafe = "2.1.5"
-marshmallow = "~3.23.2"
+marshmallow = "~3.25.1"
 nest_asyncio = "~1.6.0"
 packaging = "~23.2"
 portalocker = "~2.10.1"
@@ -50,7 +50,7 @@ uuid_utils = "^0.10.0"
 # did libraries
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-did-tdw = "^0.2.1"
+did-webvh = "^0.2.1"
 
 # Verifiable Credentials
 indy-credx = "~1.1.1"
@@ -70,9 +70,10 @@ didcomm-messaging = { version = "^0.1.1a0", optional = true }
 canonicaljson = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
+# Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
+ruff = "0.9.1"
+
 pre-commit = "~3.8.0"
-# Sync with version in .pre-commit-config.yaml
-ruff = "0.8.4"
 
 sphinx = "^5.3.0"
 sphinx-rtd-theme = ">=0.4.3"
@@ -83,7 +84,7 @@ pydevd-pycharm = "~193.7288.30"
 
 # testing
 pytest = "^8.3.4"
-pytest-asyncio = "^0.25.0"
+pytest-asyncio = "^0.25.2"
 pytest-cov = "^5.0.0"
 pytest-ruff = "^0.4.1"
 pytest-xdist = "^3.6.1"
