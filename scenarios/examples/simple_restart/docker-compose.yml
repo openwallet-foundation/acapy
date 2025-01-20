@@ -90,6 +90,43 @@ services:
       wallet-db:
         condition: service_healthy
 
+  agency:
+    image: bcgovimages/aries-cloudagent:py3.12_1.0.1
+    ports:
+      - "3003:3001"
+    command: >
+      start
+        --label Agency
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://agency:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name agency
+        --wallet-key insecure
+        --auto-provision
+        --multitenant
+        --multitenant-admin
+        --jwt-secret insecure
+        --multitenancy-config wallet_type=single-wallet-askar key_derivation_method=RAW
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --log-level info
+        --debug-webhooks
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+
   tails:
     image: ghcr.io/bcgov/tails-server:latest
     ports:
@@ -112,6 +149,7 @@ services:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - ALICE=http://alice:3001
       - BOB=http://bob:3001
+      - AGENCY=http://agency:3001
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./example.py:/usr/src/app/example.py:ro,z
@@ -120,4 +158,6 @@ services:
       alice:
         condition: service_healthy
       bob:
+        condition: service_healthy
+      agency:
         condition: service_healthy
