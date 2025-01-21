@@ -53,6 +53,8 @@ There are no breaking changes in this release, just fixes, new tests and minor u
 
 ### January 8, 2025
 
+> :alert: A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **must** skip Release 1.2.0 and move to Release 1.2.1rc0 or higher.
+
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
 Release 1.2.x is the new current Long Term Support (LTS) for ACA-Py, as defined in the [LTS Strategy](./LTS-Strategy.md) document. With this release, the "end of life" for the previous "current LTS release" -- [0.12](#0123) -- is set for October 2025.
