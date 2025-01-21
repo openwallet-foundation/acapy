@@ -3,9 +3,6 @@
 import json
 from typing import Mapping, Optional, Sequence
 
-from dateutil.parser import ParserError
-from dateutil.parser import parse as dateutil_parser
-
 from ...askar.profile import AskarProfile
 from ..askar import AskarStorage, AskarStorageSearch, AskarStorageSearchSession
 from ..record import StorageRecord

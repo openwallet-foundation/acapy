@@ -882,6 +882,7 @@ class PresentationType(Validator):
 class CredentialContext(Validator):
     """Credential Context."""
 
+    FIRST_CONTEXT = "https://www.w3.org/2018/credentials/v1"
     VALID_CONTEXTS = [
         "https://www.w3.org/2018/credentials/v1",
         "https://www.w3.org/ns/credentials/v2",
