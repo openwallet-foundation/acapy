@@ -164,7 +164,7 @@ class Dispatcher:
         frm = inbound_message.payload.get("from")
         from ..connections.models.conn_peer_record import PeerwiseRecord
         peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
-        await peer.save()
+        await peer.save(session)
         await profile.notify(
             "acapy::webhook::peerwise_did",
             {

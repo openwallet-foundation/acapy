@@ -2,7 +2,7 @@
 
 import json
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, List
 
 from marshmallow import fields, validate
 
@@ -149,20 +149,16 @@ class PeerwiseRecord(BaseRecord):
             return self is ConnRecord.State.get(other)
 
     RECORD_ID_NAME = "peerwise_id"
-    RECORD_TOPIC = "connections"
+    RECORD_TOPIC = "peer_connections"
     LOG_STATE_FLAG = "debug.connections"
     TAG_NAMES = {
         "my_did",
         "their_did",
-        "request_id",
-        "invitation_key",
-        "their_public_did",
+        #"request_id",
         "invitation_msg_id",
-        "state",
-        "their_role",
     }
 
-    RECORD_TYPE = "connection"
+    RECORD_TYPE = "peer_connection"
     RECORD_TYPE_INVITATION = "connection_invitation"
     RECORD_TYPE_REQUEST = "connection_request"
     RECORD_TYPE_METADATA = "connection_metadata"
@@ -184,6 +180,7 @@ class PeerwiseRecord(BaseRecord):
         invitation_msg_id: Optional[str] = None,
         accept: Optional[str] = None,
         alias: Optional[str] = None,
+        aka: Optional[List[str]] = None,
         **kwargs,
     ):
         """Initialize a new ConnRecord."""
@@ -604,7 +601,7 @@ class MaybeStoredConnRecordSchema(BaseRecordSchema):
     class Meta:
         """MaybeStoredConnRecordSchema metadata."""
 
-        model_class = ConnRecord
+        model_class = PeerwiseRecord
 
     pairwise_id = fields.Str(
         required=False,
@@ -640,11 +637,11 @@ class MaybeStoredConnRecordSchema(BaseRecordSchema):
     accept = fields.Str(
         required=False,
         validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("ACCEPT_", walk_mro=False)
+            PeerwiseRecord.get_attributes_by_prefix("ACCEPT_", walk_mro=False)
         ),
         metadata={
             "description": "Connection acceptance: manual or auto",
-            "example": ConnRecord.ACCEPT_AUTO,
+            "example": PeerwiseRecord.ACCEPT_AUTO,
         },
     )
     alias = fields.Str(
@@ -671,7 +668,7 @@ class ConnRecordSchema(MaybeStoredConnRecordSchema):
     class Meta:
         """ConnRecordSchema metadata."""
 
-        model_class = ConnRecord
+        model_class = PeerwiseRecord
 
     peerwise_id = fields.Str(
         required=True,
