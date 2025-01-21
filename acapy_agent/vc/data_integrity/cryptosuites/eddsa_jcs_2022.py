@@ -71,12 +71,12 @@ class EddsaJcs2022:
         https://www.w3.org/TR/vc-di-eddsa/#proof-configuration-eddsa-jcs-2022.
         """
         proof_config = options
-        assert (
-            proof_config.type == "DataIntegrityProof"
-        ), 'Expected proof.type to be "DataIntegrityProof'
-        assert (
-            proof_config.cryptosuite == "eddsa-jcs-2022"
-        ), 'Expected proof.cryptosuite to be "eddsa-jcs-2022'
+        assert proof_config.type == "DataIntegrityProof", (
+            'Expected proof.type to be "DataIntegrityProof'
+        )
+        assert proof_config.cryptosuite == "eddsa-jcs-2022", (
+            'Expected proof.cryptosuite to be "eddsa-jcs-2022'
+        )
 
         if proof_config.created:
             assert datetime.fromisoformat(proof_config.created)
@@ -93,12 +93,12 @@ class EddsaJcs2022:
 
         https://www.w3.org/TR/vc-di-eddsa/#transformation-eddsa-jcs-2022.
         """
-        assert (
-            options.type == "DataIntegrityProof"
-        ), "Expected proof.type to be `DataIntegrityProof`"
-        assert (
-            options.cryptosuite == "eddsa-jcs-2022"
-        ), "Expected proof.cryptosuite to be `eddsa-jcs-2022`"
+        assert options.type == "DataIntegrityProof", (
+            "Expected proof.type to be `DataIntegrityProof`"
+        )
+        assert options.cryptosuite == "eddsa-jcs-2022", (
+            "Expected proof.cryptosuite to be `eddsa-jcs-2022`"
+        )
 
         return self._canonicalize(unsecured_document)
 
