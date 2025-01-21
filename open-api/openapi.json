@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.2.0"
+    "version" : "v1.2.1rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -7171,7 +7171,7 @@
           "in" : "query",
           "name" : "key_type",
           "schema" : {
-            "enum" : [ "ed25519", "bls12381g2" ],
+            "enum" : [ "ed25519", "bls12381g2", "p256" ],
             "type" : "string"
           }
         }, {
@@ -7388,7 +7388,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create a EdDSA jws using did keys with a given payload",
+        "summary" : "Create a jws using did keys with a given payload",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7417,7 +7417,7 @@
             "description" : ""
           }
         },
-        "summary" : "Verify a EdDSA jws using did keys with a given JWS",
+        "summary" : "Verify a jws using did keys with a given JWS",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7528,7 +7528,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create a EdDSA sd-jws using did keys with a given payload",
+        "summary" : "Create an sd-jws using did keys with a given payload",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7557,7 +7557,7 @@
             "description" : ""
           }
         },
-        "summary" : "Verify a EdDSA sd-jws using did keys with a given SD-JWS with optional key binding",
+        "summary" : "Verify an sd-jws using did keys with a given SD-JWS with optional key binding",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -9400,7 +9400,7 @@
           },
           "key_type" : {
             "description" : "Key type associated with the DID",
-            "enum" : [ "ed25519", "bls12381g2" ],
+            "enum" : [ "ed25519", "bls12381g2", "p256" ],
             "example" : "ed25519",
             "type" : "string"
           },
@@ -9462,7 +9462,7 @@
           },
           "key_type" : {
             "description" : "Key type to use for the DID keypair. Validated with the chosen DID method's supported key types.",
-            "enum" : [ "ed25519", "bls12381g2" ],
+            "enum" : [ "ed25519", "bls12381g2", "p256" ],
             "example" : "ed25519",
             "type" : "string"
           }
