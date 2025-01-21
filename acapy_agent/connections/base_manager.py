@@ -1026,8 +1026,7 @@ class BaseConnectionManager:
                     receipt.recipient_did_public = True
             except InjectionError:
                 self._logger.warning(
-                    "Cannot resolve recipient verkey, no wallet defined by "
-                    "context: %s",
+                    "Cannot resolve recipient verkey, no wallet defined by context: %s",
                     receipt.recipient_verkey,
                 )
             except WalletNotFoundError:

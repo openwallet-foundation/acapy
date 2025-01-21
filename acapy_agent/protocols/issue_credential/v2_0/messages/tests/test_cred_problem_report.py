@@ -29,8 +29,7 @@ class TestCredProblemReport(TestCase):
         assert prob._type == DIDCommPrefix.qualify_current(CRED_20_PROBLEM_REPORT)
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.cred_problem_report."
-        "V20CredProblemReportSchema.load"
+        f"{PROTOCOL_PACKAGE}.messages.cred_problem_report.V20CredProblemReportSchema.load"
     )
     def test_deserialize(self, mock_load):
         """Test deserialization."""
@@ -48,8 +47,7 @@ class TestCredProblemReport(TestCase):
         assert prob is mock_load.return_value
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.cred_problem_report."
-        "V20CredProblemReportSchema.dump"
+        f"{PROTOCOL_PACKAGE}.messages.cred_problem_report.V20CredProblemReportSchema.dump"
     )
     def test_serialize(self, mock_dump):
         """Test serialization."""
