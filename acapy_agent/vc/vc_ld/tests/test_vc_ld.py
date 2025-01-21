@@ -23,9 +23,6 @@ from ...vc_ld import (
     verify_presentation,
 )
 from ...vc_ld import issue_vc as issue
-from .test_credential_v2 import (
-    CREDENTIAL_V2_TEMPLATE,
-)
 from .test_credential import (
     CREDENTIAL_ISSUED,
     CREDENTIAL_ISSUED_2020,

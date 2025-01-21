@@ -1,14 +1,11 @@
 from datetime import datetime
 from unittest import IsolatedAsyncioTestCase, mock
 
-import pytest
-
 from ....did.did_key import DIDKey
 from ....utils.testing import create_test_profile
 from ....wallet.base import BaseWallet
 from ....wallet.key_type import ED25519
 from ...ld_proofs import (
-    Ed25519Signature2018,
     Ed25519Signature2020,
     WalletKeyPair,
 )

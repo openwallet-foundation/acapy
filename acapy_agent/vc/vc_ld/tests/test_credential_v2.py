@@ -5,6 +5,7 @@ DID = "did:key:z6MkeqZtEymBvfpKs4RDdkiCKVpwS5Wqt7vQxd7Sp8pCVUJY"
 CREDENTIAL_V2_TEMPLATE = {
     "@context": [
         "https://www.w3.org/ns/credentials/v2",
+        "https://w3id.org/security/suites/ed25519-2020/v1",
     ],
     "type": ["VerifiableCredential"],
     "issuer": {"id": DID},
