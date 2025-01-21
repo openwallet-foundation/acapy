@@ -894,7 +894,7 @@ class CredentialContext(Validator):
 
     def __call__(self, value):
         """Validate input value."""
-        
+
         if not isinstance(value, list):
             raise ValidationError("Value must be a non-empty list.")
 
