@@ -2491,6 +2491,8 @@ and verify the installation on your system.</p>
 </code></pre></div>
 <p>Once generated, go into the <code>docs/_build</code> folder and open <code>index.html</code> in a browser. Note that the <code>_build</code> is
 <code>.gitignore</code>'d and so will not be part of a git push.</p>
+<p>If the script does not run at all, you may need to do a <code>pip install -r
+docs/requirements.txt</code> to update the Sphinx dependencies.</p>
 <h3 id="look-for-errors">Look for Errors<a class="headerlink" href="#look-for-errors" title="Permanent link">&para;</a></h3>
 <p>This is the hard part; looking for errors in docstrings added by devs. Some tips:</p>
 <ul>

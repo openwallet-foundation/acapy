@@ -523,6 +523,48 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#121rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2.1rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.2.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#january-21-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      January 21, 2025
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#121rc0-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2.1rc0 Deprecation Notices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#121rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2.1rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#120" class="md-nav__link">
     <span class="md-ellipsis">
       1.2.0
@@ -2740,6 +2782,48 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#121rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2.1rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.2.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#january-21-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      January 21, 2025
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#121rc0-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2.1rc0 Deprecation Notices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#121rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2.1rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#120" class="md-nav__link">
     <span class="md-ellipsis">
       1.2.0
@@ -3181,8 +3265,78 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="121rc0">1.2.1rc0<a class="headerlink" href="#121rc0" title="Permanent link">&para;</a></h2>
+<h3 id="january-21-2025">January 21, 2025<a class="headerlink" href="#january-21-2025" title="Permanent link">&para;</a></h3>
+<p>Release 1.2.1 is a patch to fix a couple of issues introduced in <a href="#120">Release 1.2.0</a> that prevent the startup of multi-tenant/single database instances of ACA-Py. The release includes the fixes, plus a new test for testing ACA-Py upgrades -- a new test type introduced in <a href="#120">Release 1.2.0</a>. Given that there are no breaking changes in this release, we'll move the <a href="https://github.com/openwallet-foundation/acapy/tree/1.2.lts">1.2.lts branch</a> to be based on this release.</p>
+<p>Enhancements in Release 1.2.1 are the addition of support for the Linked Data proof cryptosuite <code>EcdsaSecp256r1Signature2019</code>, and support for P256 keys generally and in <code>did:key</code> form.</p>
+<h3 id="121rc0-deprecation-notices">1.2.1rc0 Deprecation Notices<a class="headerlink" href="#121rc0-deprecation-notices" title="Permanent link">&para;</a></h3>
+<p>The same <strong><a href="#101-deprecation-notices">deprecation notices</a></strong> from the <a href="#110">1.1.0</a> release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.1 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!</p>
+<h3 id="121rc0-breaking-changes">1.2.1rc0 Breaking Changes<a class="headerlink" href="#121rc0-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>There are no breaking changes in this release, just fixes, new tests and minor updates.</p>
+<h4 id="121rc0-categorized-list-of-pull-requests">1.2.1rc0 Categorized List of Pull Requests<a class="headerlink" href="#121rc0-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>Linked Data Proof and Key Type Additions</p>
+<ul>
+<li>Support EcdsaSecp256r1Signature2019 linked data proof <a href="https://github.com/openwallet-foundation/acapy/pull/3443">#3443</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
+<li>Support P256 keys &amp; did:keys <a href="https://github.com/openwallet-foundation/acapy/pull/3442">#3442</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
+</ul>
+</li>
+<li>
+<p>Startup, Wallet Keys, and Upgrade Fixes</p>
+<ul>
+<li>Check admin wallet anoncreds upgrade on startup <a href="https://github.com/openwallet-foundation/acapy/pull/3458">#3458</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Add Multi-tenancy single wallet upgrade test <a href="https://github.com/openwallet-foundation/acapy/pull/3457">#3457</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Pass the correct key for multitenant single wallets <a href="https://github.com/openwallet-foundation/acapy/pull/3450">#3450</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Prevent dummy profiles on start up <a href="https://github.com/openwallet-foundation/acapy/pull/3449">#3449</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Fixed handling of base wallet routes in auth decorator <a href="https://github.com/openwallet-foundation/acapy/pull/3448">#3448</a> <a href="https://github.com/esune">esune</a></li>
+</ul>
+</li>
+<li>
+<p>DID Registration and Resolution</p>
+<ul>
+<li>Change did:tdw resolver naming to did:webvh <a href="https://github.com/openwallet-foundation/acapy/pull/3429">#3429</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li>
+<p>Test Suite Updates and Artifact Publishing</p>
+<ul>
+<li>Only copy agent code in dockerfiles <a href="https://github.com/openwallet-foundation/acapy/pull/3393">#3393</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li>
+<p>Internal Improvements / Cleanups / Tech Debt Updates</p>
+<ul>
+<li>Update versions.json to correct the version drop down on aca-py.org <a href="https://github.com/openwallet-foundation/acapy/pull/3434">#3434</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Follow up from Release 1.2.0 -- including LTS change <a href="https://github.com/openwallet-foundation/acapy/pull/3432">#3432</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li>
+<p>Consolidate Dependabot updates and other library/dependency updates</p>
+<ul>
+<li><img alt="⬆" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2b06.svg" title=":arrow_up:" /> Upgrade dev dependencies <a href="https://github.com/openwallet-foundation/acapy/pull/3454">#3454</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="♻" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/267b.svg" title=":recycle:" /> Sync ruff version in workflows <a href="https://github.com/openwallet-foundation/acapy/pull/3447">#3447</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
+<li>
+<p>Release management pull requests:</p>
+<ul>
+<li>1.2.1rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3459">#3459</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li>
+<p>Dependabot PRs</p>
+<ul>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-08..2025-01-21+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="120">1.2.0<a class="headerlink" href="#120" title="Permanent link">&para;</a></h2>
 <h3 id="january-8-2025">January 8, 2025<a class="headerlink" href="#january-8-2025" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Multi-tenant, Single Database Deployments</p>
+<p>A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support <strong>must</strong> skip Release 1.2.0 and move to Release 1.2.1rc0 or higher.</p>
+</div>
 <p>Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (<code>sqlite://:memory:</code>), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.</p>
 <p>Release 1.2.x is the new current Long Term Support (LTS) for ACA-Py, as defined in the <a href="../LTS-Strategy/">LTS Strategy</a> document. With this release, the "end of life" for the previous "current LTS release" -- <a href="#0123">0.12</a> -- is set for October 2025.</p>
 <p>The first step to full support of <a href="https://identity.foundation/didwebvh/">did:webvh</a> ("<code>did:web</code> + Verifiable History"-- formerly <code>did:tdw</code>) has been added to ACA-Py -- a resolver. We're working on improving the new DID Registration mechanism for it, <a href="https://cheqd.io/">Cheqd</a> and other DID Methods, enabling ACA-Py to be used easily with a variety of DID Methods.</p>
@@ -3333,7 +3487,7 @@
 <li>the renaming of the source code folder from <code>aries_cloudagent</code> to <code>acapy_agent</code>,</li>
 <li>the publication of the <a href="https://pypi.org">PyPi</a> project under the new <code>acapy_agent</code> name, and</li>
 <li>the use of the OWF organizational GitHub Container Registry (<a href="https://ghcr.io">GHCR</a>) and <code>acapy_agent</code> as the name for release container image artifacts.<ul>
-<li>The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: <a href="docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly">docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly</a>.</li>
+<li>The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: <code>docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly</code>.</li>
 </ul>
 </li>
 </ul>
