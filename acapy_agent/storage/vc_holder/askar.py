@@ -174,14 +174,7 @@ class AskarVCRecordSearch(VCRecordSearch):
         """
         rows = await self._search.fetch(max_count)
         records = [storage_to_vc_record(r) for r in rows]
-        try:
-            records.sort(
-                key=lambda v: dateutil_parser(v.cred_value.get("issuanceDate")),
-                reverse=True,
-            )
-            return records
-        except ParserError:
-            return records
+        return records
 
 
 def storage_to_vc_record(record: StorageRecord) -> VCRecord:
