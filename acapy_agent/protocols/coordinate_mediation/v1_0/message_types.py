@@ -29,8 +29,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         KEYLIST_QUERY: f"{PROTOCOL_PACKAGE}.messages.keylist_query.KeylistQuery",
         KEYLIST_UPDATE: f"{PROTOCOL_PACKAGE}.messages.keylist_update.KeylistUpdate",
         KEYLIST_UPDATE_RESPONSE: (
-            f"{PROTOCOL_PACKAGE}."
-            "messages.keylist_update_response.KeylistUpdateResponse"
+            f"{PROTOCOL_PACKAGE}.messages.keylist_update_response.KeylistUpdateResponse"
         ),
         MEDIATE_DENY: f"{PROTOCOL_PACKAGE}.messages.mediate_deny.MediationDeny",
         MEDIATE_GRANT: f"{PROTOCOL_PACKAGE}.messages.mediate_grant.MediationGrant",

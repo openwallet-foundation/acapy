@@ -120,8 +120,8 @@ class SignatureDecorator(BaseModel):
         """Get a string representation of this class."""
         return (
             f"{self.__class__.__name__}"
-            + f"(signature_type='{self.signature_type,}', "
-            + f"signature='{self.signature,}', "
+            + f"(signature_type='{(self.signature_type,)}', "
+            + f"signature='{(self.signature,)}', "
             + f"sig_data='{self.sig_data}', signer='{self.signer}')"
         )
 

@@ -134,8 +134,25 @@ class TestTenantAuthentication(IsolatedAsyncioTestCase):
         await decor_func(self.request)
         self.decorated_handler.assert_called_once_with(self.request)
 
-    async def test_base_wallet_additional_route_allowed(self):
-        self.profile.settings["multitenant.base_wallet_routes"] = "/extra-route"
+    async def test_base_wallet_additional_route_allowed_string(self):
+        self.profile.settings["multitenant.base_wallet_routes"] = (
+            "/not-this-route /extra-route"
+        )
+        self.request = mock.MagicMock(
+            __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "admin_api_key"},
+            method="POST",
+            path="/extra-route",
+        )
+        decor_func = tenant_authentication(self.decorated_handler)
+        await decor_func(self.request)
+        self.decorated_handler.assert_called_once_with(self.request)
+
+    async def test_base_wallet_additional_route_allowed_list(self):
+        self.profile.settings["multitenant.base_wallet_routes"] = [
+            "/extra-route",
+            "/not-this-route",
+        ]
         self.request = mock.MagicMock(
             __getitem__=lambda _, k: self.request_dict[k],
             headers={"x-api-key": "admin_api_key"},

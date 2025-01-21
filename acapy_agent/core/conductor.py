@@ -857,6 +857,7 @@ class Conductor:
     async def check_for_wallet_upgrades_in_progress(self):
         """Check for upgrade and upgrade if needed."""
         if self.context.settings.get_value("multitenant.enabled"):
+            # Sub-wallets
             subwallet_profiles = await get_subwallet_profiles_from_storage(
                 self.root_profile
             )
@@ -867,5 +868,5 @@ class Conductor:
                 ]
             )
 
-        else:
-            await upgrade_wallet_to_anoncreds_if_requested(self.root_profile)
+        # Stand-alone or admin wallet
+        await upgrade_wallet_to_anoncreds_if_requested(self.root_profile)

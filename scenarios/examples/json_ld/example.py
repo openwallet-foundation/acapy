@@ -83,6 +83,15 @@ async def main():
                         "/wallet/did/public", params=params(did=public_did.did)
                     )
 
+                p256_alice_did_res = (
+                    await alice.post(
+                        "/wallet/did/create",
+                        json={"method": "key", "options": {"key_type": "p256"}},
+                    )
+                )["result"]
+                assert p256_alice_did_res
+                p256_alice_did = p256_alice_did_res["did"]
+
                 bls_alice_did_res = (
                     await alice.post(
                         "/wallet/did/create",
@@ -93,14 +102,22 @@ async def main():
                 bls_alice_did = bls_alice_did_res["did"]
 
             with section("Recipient prepares subject DIDs", character="-"):
-                bob_did = (
+                ed25519_bob_did = (
                     await bob.post(
                         "/wallet/did/create",
                         json={"method": "key", "options": {"key_type": "ed25519"}},
                         response=DIDResult,
                     )
                 ).result
-                assert bob_did
+                assert ed25519_bob_did
+                p256_bob_did_res = (
+                    await bob.post(
+                        "/wallet/did/create",
+                        json={"method": "key", "options": {"key_type": "p256"}},
+                    )
+                )["result"]
+                assert p256_bob_did_res
+                p256_bob_did = p256_bob_did_res["did"]
                 bls_bob_did_res = (
                     await bob.post(
                         "/wallet/did/create",
@@ -112,7 +129,7 @@ async def main():
 
         pause_for_input()
 
-        with section("Issue example credential using ED25519 Signature"):
+        with section("Issue example credential using Public Issuer ED25519 Signature"):
             issuer_cred_ex, holder_cred_ex = await jsonld_issue_credential(
                 alice,
                 bob,
@@ -128,7 +145,7 @@ async def main():
                     "issuanceDate": str(date.today()),
                     "credentialSubject": {
                         "type": ["PermanentResident"],
-                        "id": bob_did.did,
+                        "id": ed25519_bob_did.did,
                         "givenName": "Bob",
                         "familyName": "Builder",
                         "gender": "Male",
@@ -141,7 +158,7 @@ async def main():
 
         pause_for_input()
 
-        with section("Present example credential"):
+        with section("Present example ED25519 credential"):
             alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
                 alice,
                 bob,
@@ -194,7 +211,96 @@ async def main():
 
         pause_for_input()
 
-        with section("Issue Credential with quick context"):
+        with section("Issue example credential using P256 Signature"):
+            issuer_cred_ex, holder_cred_ex = await jsonld_issue_credential(
+                alice,
+                bob,
+                alice_conn.connection_id,
+                bob_conn.connection_id,
+                credential={
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": ["VerifiableCredential", "PermanentResident"],
+                    "issuer": p256_alice_did,
+                    "issuanceDate": str(date.today()),
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        "id": p256_bob_did,
+                        "givenName": "Bob",
+                        "familyName": "Builder",
+                        "gender": "Male",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                options={"proofType": "EcdsaSecp256r1Signature2019"},
+            )
+
+        pause_for_input()
+
+        with section("Present example P256 credential"):
+            alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
+                alice,
+                bob,
+                alice_conn.connection_id,
+                bob_conn.connection_id,
+                presentation_definition={
+                    "input_descriptors": [
+                        {
+                            "id": "citizenship_input_1",
+                            "name": "EU Driver's License",
+                            "schema": [
+                                {
+                                    "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"  # noqa: E501
+                                },
+                                {
+                                    "uri": "https://w3id.org/citizenship#PermanentResident"  # noqa: E501
+                                },
+                            ],
+                            "constraints": {
+                                "is_holder": [
+                                    {
+                                        "directive": "required",
+                                        "field_id": [
+                                            "1f44d55f-f161-4938-a659-f8026467f126"
+                                        ],
+                                    }
+                                ],
+                                "fields": [
+                                    {
+                                        "id": "1f44d55f-f161-4938-a659-f8026467f126",
+                                        "path": ["$.credentialSubject.familyName"],
+                                        "purpose": "The claim must be from one of the specified issuers",  # noqa: E501
+                                        "filter": {"const": "Builder"},
+                                    },
+                                    {
+                                        "path": ["$.issuer"],
+                                        "purpose": "The claim must be from one of the specified issuers",  # noqa: E501
+                                        "filter": {"const": p256_alice_did}
+                                    },
+                                    {
+                                        "path": ["$.credentialSubject.givenName"],
+                                        "purpose": "The claim must be from one of the specified issuers",  # noqa: E501
+                                    },
+                                ],
+                            },
+                        }
+                    ],
+                    "id": str(uuid4()),
+                    "format": {
+                        "ldp_vp": {"proof_type": ["EcdsaSecp256r1Signature2019"]}
+                        },
+                },
+                domain="test-degree",
+            )
+        with section("Presentation summary", character="-"):
+            print(presentation_summary(alice_pres_ex.into(V20PresExRecord)))
+
+        pause_for_input()
+
+        with section("Issue ED25519 Credential with quick context"):
             issuer_cred_ex, holder_cred_ex = await jsonld_issue_credential(
                 alice,
                 bob,
@@ -213,7 +319,7 @@ async def main():
                     "issuer": "did:sov:" + public_did.did,
                     "issuanceDate": str(date.today()),
                     "credentialSubject": {
-                        "id": bob_did.did,
+                        "id": ed25519_bob_did.did,
                         "dateWon": str(date.today()),
                     },
                 },
@@ -222,7 +328,7 @@ async def main():
 
         pause_for_input()
 
-        with section("Present quick context credential"):
+        with section("Present ED25519 quick context credential"):
             alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
                 alice,
                 bob,

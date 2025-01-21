@@ -559,7 +559,7 @@ class ConnectionManager(BaseConnectionManager):
             if not connection:
                 if not self.profile.settings.get("requests_through_public_did"):
                     raise ConnectionManagerError(
-                        "Unsolicited connection requests to " "public DID is not enabled"
+                        "Unsolicited connection requests to public DID is not enabled"
                     )
                 connection = ConnRecord()
             connection.invitation_key = connection_key

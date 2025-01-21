@@ -269,8 +269,7 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_DEBUG_CREDENTIALS",
             help=(
-                "Enable additional logging around credential exchanges. "
-                "Default: false."
+                "Enable additional logging around credential exchanges. Default: false."
             ),
         )
         parser.add_argument(
@@ -278,15 +277,14 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_DEBUG_PRESENTATIONS",
             help=(
-                "Enable additional logging around presentation exchanges. "
-                "Default: false."
+                "Enable additional logging around presentation exchanges. Default: false."
             ),
         )
         parser.add_argument(
             "--debug-webhooks",
             action="store_true",
             env_var="ACAPY_DEBUG_WEBHOOKS",
-            help=("Emit protocol state object as webhook. " "Default: false."),
+            help=("Emit protocol state object as webhook. Default: false."),
         )
         parser.add_argument(
             "--invite",
@@ -416,8 +414,7 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_AUTO_STORE_CREDENTIAL",
             help=(
-                "Automatically store an issued credential upon receipt. "
-                "Default: false."
+                "Automatically store an issued credential upon receipt. Default: false."
             ),
         )
         parser.add_argument(
@@ -425,8 +422,7 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_AUTO_VERIFY_PRESENTATION",
             help=(
-                "Automatically verify a presentation when it is received. "
-                "Default: false."
+                "Automatically verify a presentation when it is received. Default: false."
             ),
         )
 
