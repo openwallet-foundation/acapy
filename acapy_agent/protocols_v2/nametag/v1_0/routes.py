@@ -189,11 +189,19 @@ async def basic_message_send(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    request["context"]
+    context = request["context"]
     outbound_handler = request["outbound_message_router"]
     body = await request.json()
     to_did = body.get("to_did")
     message = body.get("content")
+    await context.profile.notify(
+        "acapy::webhook::nametag",
+        {
+            "to_did": to_did,
+            "name": message,
+        },
+    )
+
 
     our_did = await get_mydid(request)
     their_did = to_did
