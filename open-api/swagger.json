@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.2.0",
+    "version" : "v1.2.1rc0",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -5888,7 +5888,7 @@
           "description" : "Key type to query for.",
           "required" : false,
           "type" : "string",
-          "enum" : [ "ed25519", "bls12381g2" ]
+          "enum" : [ "ed25519", "bls12381g2", "p256" ]
         }, {
           "name" : "method",
           "in" : "query",
@@ -6047,7 +6047,7 @@
     "/wallet/jwt/sign" : {
       "post" : {
         "tags" : [ "wallet" ],
-        "summary" : "Create a EdDSA jws using did keys with a given payload",
+        "summary" : "Create a jws using did keys with a given payload",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -6070,7 +6070,7 @@
     "/wallet/jwt/verify" : {
       "post" : {
         "tags" : [ "wallet" ],
-        "summary" : "Verify a EdDSA jws using did keys with a given JWS",
+        "summary" : "Verify a jws using did keys with a given JWS",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -6158,7 +6158,7 @@
     "/wallet/sd-jwt/sign" : {
       "post" : {
         "tags" : [ "wallet" ],
-        "summary" : "Create a EdDSA sd-jws using did keys with a given payload",
+        "summary" : "Create an sd-jws using did keys with a given payload",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -6181,7 +6181,7 @@
     "/wallet/sd-jwt/verify" : {
       "post" : {
         "tags" : [ "wallet" ],
-        "summary" : "Verify a EdDSA sd-jws using did keys with a given SD-JWS with optional key binding",
+        "summary" : "Verify an sd-jws using did keys with a given SD-JWS with optional key binding",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -7982,7 +7982,7 @@
           "type" : "string",
           "example" : "ed25519",
           "description" : "Key type associated with the DID",
-          "enum" : [ "ed25519", "bls12381g2" ]
+          "enum" : [ "ed25519", "bls12381g2", "p256" ]
         },
         "metadata" : {
           "type" : "object",
@@ -8040,7 +8040,7 @@
           "type" : "string",
           "example" : "ed25519",
           "description" : "Key type to use for the DID keypair. Validated with the chosen DID method's supported key types.",
-          "enum" : [ "ed25519", "bls12381g2" ]
+          "enum" : [ "ed25519", "bls12381g2", "p256" ]
         }
       }
     },

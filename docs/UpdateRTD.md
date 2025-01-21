@@ -35,6 +35,9 @@ cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
 Once generated, go into the `docs/_build` folder and open `index.html` in a browser. Note that the `_build` is
 `.gitignore`'d and so will not be part of a git push.
 
+If the script does not run at all, you may need to do a `pip install -r
+docs/requirements.txt` to update the Sphinx dependencies.
+
 ### Look for Errors
 
 This is the hard part; looking for errors in docstrings added by devs. Some tips:

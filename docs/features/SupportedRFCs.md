@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
-**Last Update**: 2025-01-07, Release 1.2.0
+**Last Update**: 2025-01-21, Release 1.2.1rc0
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -56,7 +56,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Credential Type | Supported | Notes |
 | --- | :--: | -- |
 | [Hyperledger AnonCreds] | :white_check_mark: | Includes full issue VC, present proof, and revoke VC support. |
-| [W3C Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/) | :white_check_mark: | Supports JSON-LD Data Integrity Proof Credentials using the `Ed25519Signature2018`, `BbsBlsSignature2020` and `BbsBlsSignatureProof2020` signature suites.<br><br>Supports the [DIF Presentation Exchange](https://identity.foundation/presentation-exchange/) data format for presentation requests and presentation submissions.<br><br>Work currently underway to add support for [Hyperledger AnonCreds] in W3C VC JSON-LD Format |
+| [W3C Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/) | :white_check_mark: | Supports JSON-LD Data Integrity Proof Credentials using the `Ed25519Signature2018`, `EcdsaSecp256r1Signature2019`, `BbsBlsSignature2020` and `BbsBlsSignatureProof2020` signature suites.<br><br>Supports the [DIF Presentation Exchange](https://identity.foundation/presentation-exchange/) data format for presentation requests and presentation submissions.<br><br>Work currently underway to add support for [Hyperledger AnonCreds] in W3C VC JSON-LD Format |
 
 [Hyperledger AnonCreds]: https://www.hyperledger.org/projects/anoncreds
 

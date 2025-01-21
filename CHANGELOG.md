@@ -1,8 +1,61 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.2.1rc0
+
+### January 21, 2025
+
+Release 1.2.1 is a patch to fix a couple of issues introduced in [Release 1.2.0](#120) that prevent the startup of multi-tenant/single database instances of ACA-Py. The release includes the fixes, plus a new test for testing ACA-Py upgrades -- a new test type introduced in [Release 1.2.0](#120). Given that there are no breaking changes in this release, we'll move the [1.2.lts branch](https://github.com/openwallet-foundation/acapy/tree/1.2.lts) to be based on this release.
+
+Enhancements in Release 1.2.1 are the addition of support for the Linked Data proof cryptosuite `EcdsaSecp256r1Signature2019`, and support for P256 keys generally and in `did:key` form.
+
+### 1.2.1rc0 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.1 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
+
+### 1.2.1rc0 Breaking Changes
+
+There are no breaking changes in this release, just fixes, new tests and minor updates.
+
+#### 1.2.1rc0 Categorized List of Pull Requests
+
+- Linked Data Proof and Key Type Additions
+  - Support EcdsaSecp256r1Signature2019 linked data proof [\#3443](https://github.com/openwallet-foundation/acapy/pull/3443) [gmulhearn](https://github.com/gmulhearn)
+  - Support P256 keys & did:keys [\#3442](https://github.com/openwallet-foundation/acapy/pull/3442) [gmulhearn](https://github.com/gmulhearn)
+
+- Startup, Wallet Keys, and Upgrade Fixes
+  - Check admin wallet anoncreds upgrade on startup [\#3458](https://github.com/openwallet-foundation/acapy/pull/3458) [jamshale](https://github.com/jamshale)
+  - Add Multi-tenancy single wallet upgrade test [\#3457](https://github.com/openwallet-foundation/acapy/pull/3457) [jamshale](https://github.com/jamshale)
+  - Pass the correct key for multitenant single wallets [\#3450](https://github.com/openwallet-foundation/acapy/pull/3450) [jamshale](https://github.com/jamshale)
+  - Prevent dummy profiles on start up [\#3449](https://github.com/openwallet-foundation/acapy/pull/3449) [jamshale](https://github.com/jamshale)
+  - Fixed handling of base wallet routes in auth decorator [\#3448](https://github.com/openwallet-foundation/acapy/pull/3448) [esune](https://github.com/esune)
+
+- DID Registration and Resolution
+  - Change did:tdw resolver naming to did:webvh [\#3429](https://github.com/openwallet-foundation/acapy/pull/3429) [jamshale](https://github.com/jamshale)
+
+- Test Suite Updates and Artifact Publishing
+  - Only copy agent code in dockerfiles [\#3393](https://github.com/openwallet-foundation/acapy/pull/3393) [jamshale](https://github.com/jamshale)
+
+- Internal Improvements / Cleanups / Tech Debt Updates
+  - Update versions.json to correct the version drop down on aca-py.org [\#3434](https://github.com/openwallet-foundation/acapy/pull/3434) [swcurran](https://github.com/swcurran)
+  - Follow up from Release 1.2.0 -- including LTS change [\#3432](https://github.com/openwallet-foundation/acapy/pull/3432) [swcurran](https://github.com/swcurran)
+
+- Consolidate Dependabot updates and other library/dependency updates
+  - :arrow_up: Upgrade dev dependencies [\#3454](https://github.com/openwallet-foundation/acapy/pull/3454) [ff137](https://github.com/ff137)
+  - :recycle: Sync ruff version in workflows [\#3447](https://github.com/openwallet-foundation/acapy/pull/3447) [ff137](https://github.com/ff137)
+
+- Release management pull requests:
+  - 1.2.1rc0 [\#3459](https://github.com/openwallet-foundation/acapy/pull/3459) [swcurran](https://github.com/swcurran)
+
+- Dependabot PRs
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-08..2025-01-21+author%3Aapp%2Fdependabot+)
+
 ## 1.2.0
 
 ### January 8, 2025
+
+!!! warning "Multi-tenant, Single Database Deployments"
+
+    A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **must** skip Release 1.2.0 and move to Release 1.2.1rc0 or higher.
 
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
@@ -154,7 +207,7 @@ The only (but significant) breaking changes in 1.1.0 are related to the GitHub o
 - the renaming of the source code folder from `aries_cloudagent` to `acapy_agent`,
 - the publication of the [PyPi] project under the new `acapy_agent` name, and
 - the use of the OWF organizational GitHub Container Registry ([GHCR]) and `acapy_agent` as the name for release container image artifacts.
-  - The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: [docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly](docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly).
+  - The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: `docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly`.
 
 [PyPi]: https://pypi.org
 [GHCR]: https://ghcr.io
