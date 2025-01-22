@@ -5,9 +5,9 @@ from typing import Optional
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ....connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-    ConnectionInvitationSchema,
+from ....out_of_band.v1_0.messages.invitation import (
+    InvitationMessage,
+    InvitationMessageSchema,
 )
 from ..message_types import INVITATION, PROTOCOL_PACKAGE
 
@@ -27,7 +27,7 @@ class Invitation(AgentMessage):
     def __init__(
         self,
         *,
-        invitation: Optional[ConnectionInvitation] = None,
+        invitation: Optional[InvitationMessage] = None,
         message: Optional[str] = None,
         **kwargs,
     ):
@@ -52,7 +52,7 @@ class InvitationSchema(AgentMessageSchema):
         model_class = Invitation
         unknown = EXCLUDE
 
-    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
+    invitation = fields.Nested(InvitationMessageSchema(), required=True)
     message = fields.Str(
         required=False,
         allow_none=True,
