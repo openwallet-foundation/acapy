@@ -20,7 +20,7 @@ and mkdocs configuration.
 
 When the GitHub Action fires, it runs a container that carries out the following steps:
 
-- Checks out the triggering branch, either `main` or `docs-v<version>` (e.g `docs-v1.2.1rc0`).
+- Checks out the triggering branch, either `main` or `docs-v<version>` (e.g `docs-v1.2.1`).
 - Runs the script [scripts/prepmkdocs.sh], which moves and updates some of the
   markdown files so that they fit into the generated site. See the comments in
   the scripts for details about the copying and editing done via the script. In

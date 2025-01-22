@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.2.1rc0",
+    "version" : "v1.2.1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
