@@ -1,6 +1,6 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.2.1rc0
+## 1.2.1
 
 ### January 21, 2025
 
@@ -8,15 +8,15 @@ Release 1.2.1 is a patch to fix a couple of issues introduced in [Release 1.2.0]
 
 Enhancements in Release 1.2.1 are the addition of support for the Linked Data proof cryptosuite `EcdsaSecp256r1Signature2019`, and support for P256 keys generally and in `did:key` form.
 
-### 1.2.1rc0 Deprecation Notices
+### 1.2.1 Deprecation Notices
 
 The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.1 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
 
-### 1.2.1rc0 Breaking Changes
+### 1.2.1 Breaking Changes
 
 There are no breaking changes in this release, just fixes, new tests and minor updates.
 
-#### 1.2.1rc0 Categorized List of Pull Requests
+#### 1.2.1 Categorized List of Pull Requests
 
 - Linked Data Proof and Key Type Additions
   - Support EcdsaSecp256r1Signature2019 linked data proof [\#3443](https://github.com/openwallet-foundation/acapy/pull/3443) [gmulhearn](https://github.com/gmulhearn)
@@ -44,6 +44,7 @@ There are no breaking changes in this release, just fixes, new tests and minor u
   - :recycle: Sync ruff version in workflows [\#3447](https://github.com/openwallet-foundation/acapy/pull/3447) [ff137](https://github.com/ff137)
 
 - Release management pull requests:
+  - 1.2.1 [\#3460](https://github.com/openwallet-foundation/acapy/pull/3460) [swcurran](https://github.com/swcurran)
   - 1.2.1rc0 [\#3459](https://github.com/openwallet-foundation/acapy/pull/3459) [swcurran](https://github.com/swcurran)
 
 - Dependabot PRs
@@ -55,7 +56,7 @@ There are no breaking changes in this release, just fixes, new tests and minor u
 
 !!! warning "Multi-tenant, Single Database Deployments"
 
-    A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **must** skip Release 1.2.0 and move to Release 1.2.1rc0 or higher.
+    A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **MUST** skip Release 1.2.0 and move to [Release 1.2.1](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.1) or higher.
 
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
