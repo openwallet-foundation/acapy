@@ -15,16 +15,6 @@ from ...messaging.valid import (
     RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
 )
-from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
-from ...protocols.connections.v1_0.message_types import (
-    CONNECTION_INVITATION,
-    CONNECTION_REQUEST,
-)
-from ...protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
-from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
 from ...protocols.didexchange.v1_0.message_types import DIDEX_1_0
 from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
@@ -44,7 +34,7 @@ class ConnRecord(BaseRecord):
 
         schema_class = "MaybeStoredConnRecordSchema"
 
-    SUPPORTED_PROTOCOLS = (CONN_PROTO, DIDEX_1_0, DIDEX_1_1)
+    SUPPORTED_PROTOCOLS = (DIDEX_1_0, DIDEX_1_1)
 
     class Role(Enum):
         """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
@@ -430,7 +420,7 @@ class ConnRecord(BaseRecord):
     async def attach_invitation(
         self,
         session: ProfileSession,
-        invitation: Union[ConnectionInvitation, OOBInvitation],
+        invitation: OOBInvitation,
     ):
         """Persist the related connection invitation to storage.
 
@@ -447,9 +437,7 @@ class ConnRecord(BaseRecord):
         storage = session.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_invitation(
-        self, session: ProfileSession
-    ) -> Union[ConnectionInvitation, OOBInvitation]:
+    async def retrieve_invitation(self, session: ProfileSession) -> OOBInvitation:
         """Retrieve the related connection invitation.
 
         Args:
@@ -462,16 +450,12 @@ class ConnRecord(BaseRecord):
             {"connection_id": self.connection_id},
         )
         ser = json.loads(result.value)
-        return (
-            ConnectionInvitation
-            if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_INVITATION
-            else OOBInvitation
-        ).deserialize(ser)
+        return OOBInvitation.deserialize(ser)
 
     async def attach_request(
         self,
         session: ProfileSession,
-        request: Union[ConnectionRequest, DIDXRequest],
+        request: DIDXRequest,
     ):
         """Persist the related connection request to storage.
 
@@ -491,7 +475,7 @@ class ConnRecord(BaseRecord):
     async def retrieve_request(
         self,
         session: ProfileSession,
-    ) -> Union[ConnectionRequest, DIDXRequest]:
+    ) -> DIDXRequest:
         """Retrieve the related connection invitation.
 
         Args:
@@ -503,11 +487,7 @@ class ConnRecord(BaseRecord):
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         )
         ser = json.loads(result.value)
-        return (
-            ConnectionRequest
-            if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_REQUEST
-            else DIDXRequest
-        ).deserialize(ser)
+        return DIDXRequest.deserialize(ser)
 
     @property
     def is_ready(self) -> str:
@@ -709,7 +689,7 @@ class MaybeStoredConnRecordSchema(BaseRecordSchema):
         validate=validate.OneOf(ConnRecord.SUPPORTED_PROTOCOLS),
         metadata={
             "description": "Connection protocol used",
-            "example": "connections/1.0",
+            "example": "didexchange/1.1",
         },
     )
     rfc23_state = fields.Str(
