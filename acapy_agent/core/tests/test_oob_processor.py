@@ -6,9 +6,6 @@ from ...connections.models.conn_record import ConnRecord
 from ...messaging.decorators.attach_decorator import AttachDecorator
 from ...messaging.decorators.service_decorator import ServiceDecorator
 from ...messaging.request_context import RequestContext
-from ...protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...storage.error import StorageNotFoundError
@@ -40,7 +37,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             save=mock.CoroutineMock(),
         )
         self.context = RequestContext.test_context(self.profile)
-        self.context.message = ConnectionInvitation()
+        self.context.message = InvitationMessage()
 
     async def test_clean_finished_oob_record_no_multi_use_no_request_attach(self):
         test_message = InvitationMessage()
