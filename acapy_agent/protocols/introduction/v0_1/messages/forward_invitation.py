@@ -5,9 +5,9 @@ from typing import Optional
 from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-    ConnectionInvitationSchema,
+from ....out_of_band.v1_0.messages.invitation import (
+    InvitationMessage,
+    InvitationMessageSchema,
 )
 from ..message_types import FORWARD_INVITATION, PROTOCOL_PACKAGE
 
@@ -29,7 +29,7 @@ class ForwardInvitation(AgentMessage):
     def __init__(
         self,
         *,
-        invitation: Optional[ConnectionInvitation] = None,
+        invitation: Optional[InvitationMessage] = None,
         message: Optional[str] = None,
         **kwargs,
     ):
@@ -53,7 +53,7 @@ class ForwardInvitationSchema(AgentMessageSchema):
 
         model_class = ForwardInvitation
 
-    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
+    invitation = fields.Nested(InvitationMessageSchema(), required=True)
     message = fields.Str(
         required=False,
         allow_none=True,
