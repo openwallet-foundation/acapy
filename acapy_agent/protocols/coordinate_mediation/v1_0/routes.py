@@ -17,7 +17,7 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
-from ...connections.v1_0.routes import ConnectionsConnIdMatchInfoSchema
+from ....connections.routes import ConnectionsConnIdMatchInfoSchema
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
 from .manager import MediationManager, MediationManagerError
 from .message_types import SPEC_URI
