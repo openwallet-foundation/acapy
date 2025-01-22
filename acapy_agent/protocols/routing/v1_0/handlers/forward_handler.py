@@ -8,7 +8,7 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-from .....protocols.connections.v1_0.manager import ConnectionManager
+from .....connections.base_manager import BaseConnectionManager
 from ..manager import RoutingManager, RoutingManagerError
 from ..messages.forward import Forward
 
@@ -39,7 +39,7 @@ class ForwardHandler(BaseHandler):
             return
 
         # load connection
-        connection_mgr = ConnectionManager(context.profile)
+        connection_mgr = BaseConnectionManager(context.profile)
         connection_targets = await connection_mgr.get_connection_targets(
             connection_id=recipient.connection_id
         )
