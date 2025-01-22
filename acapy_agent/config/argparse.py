@@ -296,15 +296,6 @@ class DebugGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
-            "--connections-invite",
-            action="store_true",
-            env_var="ACAPY_CONNECTIONS_INVITE",
-            help=(
-                "After startup, generate and print a new connections protocol "
-                "style invitation URL. Default: false."
-            ),
-        )
-        parser.add_argument(
             "--invite-label",
             dest="invite_label",
             type=str,
@@ -441,8 +432,6 @@ class DebugGroup(ArgumentGroup):
             settings["debug.seed"] = args.debug_seed
         if args.invite:
             settings["debug.print_invitation"] = True
-        if args.connections_invite:
-            settings["debug.print_connections_invitation"] = True
         if args.invite_label:
             settings["debug.invite_label"] = args.invite_label
         if args.invite_multi_use:
@@ -1463,24 +1452,12 @@ class MediationInviteGroup(ArgumentGroup):
                 "and send mediation request and set as default mediator."
             ),
         )
-        parser.add_argument(
-            "--mediator-connections-invite",
-            action="store_true",
-            env_var="ACAPY_MEDIATION_CONNECTIONS_INVITE",
-            help=(
-                "Connect to mediator through a connection invitation. "
-                "If not specified, connect using an OOB invitation. "
-                "Default: false."
-            ),
-        )
 
     def get_settings(self, args: Namespace):
         """Extract mediation invitation settings."""
         settings = {}
         if args.mediator_invitation:
             settings["mediation.invite"] = args.mediator_invitation
-        if args.mediator_connections_invite:
-            settings["mediation.connections_invite"] = True
 
         return settings
 
