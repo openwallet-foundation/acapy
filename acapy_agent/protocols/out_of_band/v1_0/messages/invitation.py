@@ -13,7 +13,6 @@ from .....messaging.decorators.attach_decorator import (
 )
 from .....messaging.valid import DIDValidation
 from .....wallet.util import b64_to_bytes, bytes_to_b64
-from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ....didcomm_prefix import DIDCommPrefix
 from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
 from ....didexchange.v1_0.message_types import DIDEX_1_0
@@ -32,7 +31,7 @@ class HSProto(Enum):
     """Handshake protocol enum for invitation message."""
 
     RFC160 = HSProtoSpec(
-        CONN_PROTO,
+        "connections/1.0",
         {"connection", "connections", "conn", "conns", "rfc160", "160", "old"},
     )
     RFC23 = HSProtoSpec(
