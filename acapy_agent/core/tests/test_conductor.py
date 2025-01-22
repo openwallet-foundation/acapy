@@ -1111,7 +1111,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             }
             await conductor.setup()
 
-            mock_mgr.return_value.create_static_connection = mock.CoroutineMock()
+            mock_mgr.return_value.create_static_connection = mock.CoroutineMock(
+                return_value=(None, None, mock.MagicMock())
+            )
             await conductor.start()
             mock_mgr.return_value.create_static_connection.assert_awaited_once()
 
