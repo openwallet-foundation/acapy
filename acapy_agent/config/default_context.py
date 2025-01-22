@@ -142,6 +142,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         plugin_registry.register_plugin("acapy_agent.ledger")
 
+        plugin_registry.register_plugin("acapy_agent.connections")
         plugin_registry.register_plugin("acapy_agent.messaging.jsonld")
         plugin_registry.register_plugin("acapy_agent.resolver")
         plugin_registry.register_plugin("acapy_agent.settings")
