@@ -56,7 +56,7 @@ There are no breaking changes in this release, just fixes, new tests and minor u
 
 !!! warning "Multi-tenant, Single Database Deployments"
 
-    A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **MUS** skip Release 1.2.0 and move to [Release 1.2.1](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.1) or higher.
+    A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **MUST** skip Release 1.2.0 and move to [Release 1.2.1](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.1) or higher.
 
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
