@@ -17,7 +17,7 @@ from logging.config import (
 from typing import Optional
 
 import yaml
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 
 from ...config.settings import Settings
 from ...version import __version__
@@ -221,9 +221,7 @@ class LoggingConfigurator:
             )
             timed_file_handler.addFilter(log_filter)
             # By default this will be set up.
-            timed_file_handler.setFormatter(
-                jsonlogger.JsonFormatter(LOG_FORMAT_FILE_ALIAS_PATTERN)
-            )
+            timed_file_handler.setFormatter(JsonFormatter(LOG_FORMAT_FILE_ALIAS_PATTERN))
             logging.root.handlers.append(timed_file_handler)
 
         else:
@@ -234,7 +232,7 @@ class LoggingConfigurator:
                     # Set Json formatter for rotated file handler which cannot be set with
                     # config file.
                     # By default this will be set up.
-                    handler.setFormatter(jsonlogger.JsonFormatter(log_formater))
+                    handler.setFormatter(JsonFormatter(log_formater))
                 # Add context filter to handlers
                 handler.addFilter(log_filter)
 
