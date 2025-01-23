@@ -124,21 +124,21 @@ speedups = ["Brotli", "aiodns (>=3.2.0)", "brotlicffi"]
 
 [[package]]
 name = "aiohttp-apispec-acapy"
-version = "3.0.2"
+version = "3.0.3"
 description = "Build and document REST APIs with aiohttp and apispec"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "aiohttp-apispec-acapy-3.0.2.tar.gz", hash = "sha256:9e6946a48cb70d3f7097f51e2ce7ba8bee32fce9d654454fe300930bfa8ce542"},
-    {file = "aiohttp_apispec_acapy-3.0.2-py3-none-any.whl", hash = "sha256:93ea532afb3876685d185cc1cfe51d6d08e597cf04f79d16898a23ac4842b742"},
+    {file = "aiohttp_apispec_acapy-3.0.3-py3-none-any.whl", hash = "sha256:9a5d335c22975da1bbde49ddc04c138ee285d7c38354e88b43babef2eec0bc54"},
+    {file = "aiohttp_apispec_acapy-3.0.3.tar.gz", hash = "sha256:8cec5f2601f8c2d7d53dd4aebab3975a596d86ea3a1a362eb3b1adadc11662b3"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.9.4,<4.0"
-apispec = ">=6.6.1,<6.7.0"
-jinja2 = ">=3.1.3,<3.2.0"
-webargs = ">=8.4.0,<8.5.0"
+apispec = ">=6.6.1"
+jinja2 = ">=3.1.3"
+webargs = ">=8.4.0"
 
 [[package]]
 name = "aiohttp-cors"
@@ -210,22 +210,22 @@ files = [
 
 [[package]]
 name = "apispec"
-version = "6.6.1"
+version = "6.8.1"
 description = "A pluggable API specification generator. Currently supports the OpenAPI Specification (f.k.a. the Swagger specification)."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "apispec-6.6.1-py3-none-any.whl", hash = "sha256:6460315cb38ac6a2ff42d9e2b8dc0435c37d4428d3abeda96ff97b5dc8eb6b94"},
-    {file = "apispec-6.6.1.tar.gz", hash = "sha256:f5caa47cee75fe03b9c50b5594048b4c052eeca2c212e0dac12dbb6175d9a659"},
+    {file = "apispec-6.8.1-py3-none-any.whl", hash = "sha256:eacba00df745efc9adb2a45cf992300e87938582077e101fb26b78ecf4320beb"},
+    {file = "apispec-6.8.1.tar.gz", hash = "sha256:f4916cbb7be156963b18f5929a0e42bd2349135834b680a81b12432bcfaa9a39"},
 ]
 
 [package.dependencies]
 packaging = ">=21.3"
 
 [package.extras]
-dev = ["apispec[tests]", "pre-commit (>=3.5,<4.0)", "tox"]
-docs = ["apispec[marshmallow]", "pyyaml (==6.0.1)", "sphinx (==7.3.7)", "sphinx-issues (==4.1.0)", "sphinx-rtd-theme (==2.0.0)"]
+dev = ["apispec[tests]", "pre-commit (>=3.5,<5.0)", "tox"]
+docs = ["apispec[marshmallow]", "pyyaml (==6.0.2)", "sphinx (==8.1.3)", "sphinx-issues (==5.0.0)", "sphinx-rtd-theme (==3.0.2)"]
 marshmallow = ["marshmallow (>=3.18.0)"]
 tests = ["apispec[marshmallow,yaml]", "openapi-spec-validator (==0.7.1)", "pytest"]
 yaml = ["PyYAML (>=3.10)"]
@@ -3099,26 +3099,25 @@ files = [
 
 [[package]]
 name = "webargs"
-version = "8.4.0"
+version = "8.6.0"
 description = "Declarative parsing and validation of HTTP request objects, with built-in support for popular web frameworks, including Flask, Django, Bottle, Tornado, Pyramid, Falcon, and aiohttp."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "webargs-8.4.0-py3-none-any.whl", hash = "sha256:22324305fbca6a2c4cce1235280e8b56372fb3211a8dac2ac8ed1948315a6f53"},
-    {file = "webargs-8.4.0.tar.gz", hash = "sha256:ea99368214a4ce613924be99d71db58c269631e95eff4fa09b7354e52dc006a5"},
+    {file = "webargs-8.6.0-py3-none-any.whl", hash = "sha256:83da4d7105643d0a50499b06d98a6ade1a330ce66d039eaa51f715172c704aba"},
+    {file = "webargs-8.6.0.tar.gz", hash = "sha256:b8d098ab92bd74c659eca705afa31d681475f218cb15c1e57271fa2103c0547a"},
 ]
 
 [package.dependencies]
 marshmallow = ">=3.0.0"
-packaging = "*"
+packaging = ">=17.0"
 
 [package.extras]
-dev = ["Django (>=2.2.0)", "Flask (>=0.12.5)", "aiohttp (>=3.0.8)", "bottle (>=0.12.13)", "falcon (>=2.0.0)", "flake8 (==7.0.0)", "flake8-bugbear (==23.12.2)", "mypy (==1.8.0)", "pre-commit (>=2.4,<4.0)", "pyramid (>=1.9.1)", "pytest", "pytest-aiohttp (>=0.3.0)", "pytest-asyncio", "tornado (>=4.5.2)", "tox", "webtest (==3.0.0)", "webtest-aiohttp (==2.0.0)"]
-docs = ["Django (>=2.2.0)", "Flask (>=0.12.5)", "Sphinx (==7.2.6)", "aiohttp (>=3.0.8)", "bottle (>=0.12.13)", "falcon (>=2.0.0)", "furo (==2023.9.10)", "pyramid (>=1.9.1)", "sphinx-issues (==3.0.1)", "tornado (>=4.5.2)"]
+dev = ["pre-commit (>=3.5,<4.0)", "tox", "webargs[tests]"]
+docs = ["Sphinx (==8.0.2)", "furo (==2024.8.6)", "sphinx-issues (==4.1.0)", "webargs[frameworks]"]
 frameworks = ["Django (>=2.2.0)", "Flask (>=0.12.5)", "aiohttp (>=3.0.8)", "bottle (>=0.12.13)", "falcon (>=2.0.0)", "pyramid (>=1.9.1)", "tornado (>=4.5.2)"]
-lint = ["flake8 (==7.0.0)", "flake8-bugbear (==23.12.2)", "mypy (==1.8.0)", "pre-commit (>=2.4,<4.0)"]
-tests = ["Django (>=2.2.0)", "Flask (>=0.12.5)", "aiohttp (>=3.0.8)", "bottle (>=0.12.13)", "falcon (>=2.0.0)", "pyramid (>=1.9.1)", "pytest", "pytest-aiohttp (>=0.3.0)", "pytest-asyncio", "tornado (>=4.5.2)", "webtest (==3.0.0)", "webtest-aiohttp (==2.0.0)"]
+tests = ["pytest", "pytest-aiohttp (>=0.3.0)", "pytest-asyncio", "webargs[frameworks]", "webtest (==3.0.1)", "webtest-aiohttp (==2.0.0)"]
 
 [[package]]
 name = "yarl"
@@ -3224,4 +3223,4 @@ didcommv2 = ["didcomm-messaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "2c110f4fce0ae360a9502cadc1f2b3c3d6726eb11f1435914f840a06556bc0da"
+content-hash = "8750a3548e20d2056ded50560bacc5271bb10f052a90e23afd11cf9cc781bd51"
