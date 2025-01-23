@@ -79,7 +79,7 @@ sphinx-rtd-theme = "^3.0.2"
 
 pydevd = "~3.2.3"
 
-pydevd-pycharm = "~243.23654.74"
+pydevd-pycharm = "^251.17181.23"
 
 # testing
 pytest = "^8.3.4"
