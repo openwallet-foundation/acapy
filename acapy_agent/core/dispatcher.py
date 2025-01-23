@@ -143,6 +143,20 @@ class Dispatcher:
         error_result = None
         message = None
 
+        session = await profile.session()
+        from ..connections.models.conn_peer_record import PeerwiseRecord
+        peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
+        await peer.save(session)
+        await profile.notify(
+            "acapy::webhook::peerwise_did",
+            {
+                "peerwise_id": peer.peerwise_id,
+                "status": "connected",
+                "recipient_did": inbound_message.receipt.sender_verkey,
+                "message": inbound_message.payload,
+            },
+        )
+
         try:
             message = await self.make_v2_message(profile, inbound_message.payload)
         except ProblemReportParseError:
@@ -158,21 +172,9 @@ class Dispatcher:
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
 
-        session = await profile.session()
         messaging = session.inject(DIDCommMessaging)
         routing_service = session.inject(RoutingService)
         frm = inbound_message.payload.get("from")
-        from ..connections.models.conn_peer_record import PeerwiseRecord
-        peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
-        await peer.save(session)
-        await profile.notify(
-            "acapy::webhook::peerwise_did",
-            {
-                "connection_id": peer.peerwise_id,
-                "status": "connected",
-                "recipient_key": inbound_message.receipt.sender_verkey,
-            },
-        )
 
         services = await routing_service._resolve_services(messaging.resolver, frm)
         chain = [
