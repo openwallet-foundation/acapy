@@ -239,6 +239,8 @@ class Dispatcher:
                         "comment": "No Handlers Found",
                         "code": "e.p.msg.not-found",
                     },
+                    "from": inbound_message.receipt.recipient_verkey,
+                    "to": [inbound_message.receipt.sender_verkey],
                 }
             )
             if inbound_message.receipt.thread_id:
