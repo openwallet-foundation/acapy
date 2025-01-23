@@ -6,7 +6,7 @@ from .....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-from ....connections.v1_0.manager import ConnectionManager, ConnectionManagerError
+from ....out_of_band.v1_0.manager import OutOfBandManager, OutOfBandManagerError
 from ....problem_report.v1_0.message import ProblemReport
 from ..messages.forward_invitation import ForwardInvitation
 
@@ -26,11 +26,12 @@ class ForwardInvitationHandler(BaseHandler):
 
         # Store invitation
         profile = context.profile
-        connection_mgr = ConnectionManager(profile)
+        mgr = OutOfBandManager(profile)
 
+        assert context.message.invitation, "Schema requires invitation in message"
         try:
-            await connection_mgr.receive_invitation(context.message.invitation)
-        except ConnectionManagerError as e:
+            await mgr.receive_invitation(context.message.invitation)
+        except OutOfBandManagerError as e:
             self._logger.exception("Error receiving forward connection invitation")
             await responder.send_reply(
                 ProblemReport(

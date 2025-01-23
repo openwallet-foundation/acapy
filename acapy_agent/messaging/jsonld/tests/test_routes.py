@@ -303,6 +303,10 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
             headers={"x-api-key": "secret-key"},
         )
 
+    async def asyncTearDown(self):
+        # Ensure the event loop is closed
+        await self.profile.close()
+
     async def test_verify_credential(self):
         POSTED_REQUEST = {  # posted json
             "verkey": (

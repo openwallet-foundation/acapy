@@ -6,6 +6,7 @@ For Connection, DIDExchange and OutOfBand Manager.
 import json
 import logging
 from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
+import warnings
 
 import pydid
 from base58 import b58decode
@@ -28,10 +29,7 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
 from ..multitenant.base import BaseMultitenantManager
-from ..protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
-from ..protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
+from ..protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
@@ -301,6 +299,8 @@ class BaseConnectionManager:
     ) -> DIDDoc:
         """Create our DID doc for a given DID.
 
+        This method is deprecated and will be removed.
+
         Args:
             did_info (DIDInfo): The DID information (DID and verkey) used in the
                 connection.
@@ -313,6 +313,7 @@ class BaseConnectionManager:
             DIDDoc: The prepared `DIDDoc` instance.
 
         """
+        warnings.warn("create_did_document is deprecated and will be removed soon")
         did_doc = DIDDoc(did=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
@@ -615,7 +616,7 @@ class BaseConnectionManager:
     async def _fetch_connection_targets_for_invitation(
         self,
         connection: ConnRecord,
-        invitation: Union[ConnectionInvitation, InvitationMessage],
+        invitation: InvitationMessage,
         sender_verkey: str,
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets for an invitation.
@@ -625,7 +626,7 @@ class BaseConnectionManager:
 
         Args:
             connection (ConnRecord): The connection record associated with the invitation.
-            invitation (Union[ConnectionInvitation, InvitationMessage]): The connection
+            invitation (InvitationMessage): The connection
                 or OOB invitation retrieved from the connection record.
             sender_verkey (str): The sender's verification key.
 
@@ -633,40 +634,23 @@ class BaseConnectionManager:
             Sequence[ConnectionTarget]: A list of `ConnectionTarget` objects
                 representing the connection targets for the invitation.
         """
-        if isinstance(invitation, ConnectionInvitation):
-            # conn protocol invitation
-            if invitation.did:
-                did = invitation.did
-                (
-                    endpoint,
-                    recipient_keys,
-                    routing_keys,
-                ) = await self.resolve_invitation(did)
+        assert invitation.services, "Schema requires services in invitation"
+        oob_service_item = invitation.services[0]
+        if isinstance(oob_service_item, str):
+            (
+                endpoint,
+                recipient_keys,
+                routing_keys,
+            ) = await self.resolve_invitation(oob_service_item)
 
-            else:
-                endpoint = invitation.endpoint
-                recipient_keys = invitation.recipient_keys
-                routing_keys = invitation.routing_keys
         else:
-            # out-of-band invitation
-            oob_service_item = invitation.services[0]
-            if isinstance(oob_service_item, str):
-                (
-                    endpoint,
-                    recipient_keys,
-                    routing_keys,
-                ) = await self.resolve_invitation(oob_service_item)
-
-            else:
-                endpoint = oob_service_item.service_endpoint
-                recipient_keys = [
-                    DIDKey.from_did(k).public_key_b58
-                    for k in oob_service_item.recipient_keys
-                ]
-                routing_keys = [
-                    DIDKey.from_did(k).public_key_b58
-                    for k in oob_service_item.routing_keys
-                ]
+            endpoint = oob_service_item.service_endpoint
+            recipient_keys = [
+                DIDKey.from_did(k).public_key_b58 for k in oob_service_item.recipient_keys
+            ]
+            routing_keys = [
+                DIDKey.from_did(k).public_key_b58 for k in oob_service_item.routing_keys
+            ]
 
         return [
             ConnectionTarget(
