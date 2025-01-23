@@ -4,6 +4,7 @@ from typing import Tuple
 
 from aiohttp.web import BaseRequest
 from marshmallow import fields
+from marshmallow.validate import Range
 
 from ...messaging.models.openapi import OpenAPISchema
 from ...storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
@@ -15,21 +16,14 @@ class PaginatedQuerySchema(OpenAPISchema):
     limit = fields.Int(
         required=False,
         load_default=DEFAULT_PAGE_SIZE,
-        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        validate=Range(min=1, max=MAXIMUM_PAGE_SIZE),
         metadata={"description": "Number of results to return", "example": 50},
-        error_messages={
-            "validator_failed": (
-                "Value must be greater than 0 and "
-                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
-            )
-        },
     )
     offset = fields.Int(
         required=False,
         load_default=0,
-        validate=lambda x: x >= 0,
+        validate=Range(min=0),
         metadata={"description": "Offset for pagination", "example": 0},
-        error_messages={"validator_failed": "Value must be 0 or greater"},
     )
 
 

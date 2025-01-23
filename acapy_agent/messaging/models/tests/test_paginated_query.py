@@ -38,7 +38,7 @@ def test_paginated_query_schema_limit_validation():
     with pytest.raises(ValidationError) as exc_info:
         schema.load({"limit": 0})
     assert (
-        f"Value must be greater than 0 and less than or equal to {MAXIMUM_PAGE_SIZE}"
+        f"Must be greater than or equal to 1 and less than or equal to {MAXIMUM_PAGE_SIZE}"
         in str(exc_info.value)
     )
 
@@ -46,7 +46,7 @@ def test_paginated_query_schema_limit_validation():
     with pytest.raises(ValidationError) as exc_info:
         schema.load({"limit": MAXIMUM_PAGE_SIZE + 1})
     assert (
-        f"Value must be greater than 0 and less than or equal to {MAXIMUM_PAGE_SIZE}"
+        f"Must be greater than or equal to 1 and less than or equal to {MAXIMUM_PAGE_SIZE}"
         in str(exc_info.value)
     )
 
@@ -64,4 +64,4 @@ def test_paginated_query_schema_offset_validation():
     # Invalid offset (less than 0)
     with pytest.raises(ValidationError) as exc_info:
         schema.load({"offset": -1})
-    assert "Value must be 0 or greater" in str(exc_info.value)
+    assert "Must be greater than or equal to 0." in str(exc_info.value)
