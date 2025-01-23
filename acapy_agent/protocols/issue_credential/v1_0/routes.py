@@ -477,8 +477,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary=(
-        "Create a credential record without "
-        "sending (generally for use with Out-Of-Band)"
+        "Create a credential record without sending (generally for use with Out-Of-Band)"
     ),
     deprecated=True,
 )

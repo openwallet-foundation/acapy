@@ -15,6 +15,7 @@ from ......vc.ld_proofs import (
     BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
+    EcdsaSecp256r1Signature2019,
 )
 from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
@@ -232,12 +233,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                 and (
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
+                                and (
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise V20PresFormatHandlerError(
                                     "Only BbsBlsSignature2020 and/or "
                                     "Ed25519Signature2018 and/or "
-                                    "Ed25519Signature2018 and/or "
-                                    "Ed25519Signature2020 signature types "
+                                    "Ed25519Signature2020 and/or "
+                                    "EcdsaSecp256r1Signature2019 signature types "
                                     "are supported"
                                 )
                             elif (
@@ -251,11 +256,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                 and (
                                     Ed25519Signature2020.signature_type not in proof_types
                                 )
+                                and (
+                                    EcdsaSecp256r1Signature2019.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise V20PresFormatHandlerError(
-                                    "Only BbsBlsSignature2020, Ed25519Signature2018 and "
-                                    "Ed25519Signature2020 signature types "
-                                    "are supported"
+                                    "Only BbsBlsSignature2020, Ed25519Signature2018, "
+                                    "Ed25519Signature2020 and "
+                                    "EcdsaSecp256r1Signature2019 "
+                                    "signature types are supported"
                                 )
                             else:
                                 for proof_format in proof_types:
@@ -266,6 +276,17 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                         proof_type = [Ed25519Signature2018.signature_type]
                                         dif_handler_proof_type = (
                                             Ed25519Signature2018.signature_type
+                                        )
+                                        break
+                                    if (
+                                        proof_format
+                                        == EcdsaSecp256r1Signature2019.signature_type
+                                    ):
+                                        proof_type = [
+                                            EcdsaSecp256r1Signature2019.signature_type
+                                        ]
+                                        dif_handler_proof_type = (
+                                            EcdsaSecp256r1Signature2019.signature_type
                                         )
                                         break
                                     elif (
@@ -291,9 +312,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         # TODO di_vc allowed ...
                         raise V20PresFormatHandlerError(
                             "Currently, only: ldp_vp with "
-                            "BbsBlsSignature2020, Ed25519Signature2018 and "
-                            "Ed25519Signature2020 signature types; and "
-                            "di_vc with anoncreds-2023 signatures are supported"
+                            "BbsBlsSignature2020, Ed25519Signature2018, "
+                            "Ed25519Signature2020 and EcdsaSecp256r1Signature2019 "
+                            "signature types; and di_vc with anoncreds-2023 "
+                            "signatures are supported"
                         )
 
                 if one_of_uri_groups:

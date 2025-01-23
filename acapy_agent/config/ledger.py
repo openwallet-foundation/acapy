@@ -220,7 +220,7 @@ async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
     num_mechanisms = {}
     for idx, opt in enumerate(found):
         num_mechanisms[str(idx + 1)] = opt
-        opts.append(f" {idx+1}. {allow_opts[opt]}")
+        opts.append(f" {idx + 1}. {allow_opts[opt]}")
     opts.append(" X. Skip the transaction author agreement")
     opts_text = "\nPlease select an option:\n" + "\n".join(opts) + "\n[1]> "
 

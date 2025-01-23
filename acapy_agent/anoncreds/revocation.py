@@ -345,8 +345,7 @@ class AnonCredsRevocation:
             )
             if not entry:
                 raise AnonCredsRevocationError(
-                    f"{CATEGORY_REV_REG_DEF} with id "
-                    f"{rev_reg_def_id} could not be found"
+                    f"{CATEGORY_REV_REG_DEF} with id {rev_reg_def_id} could not be found"
                 )
 
             if entry.tags["active"] == json.dumps(True):

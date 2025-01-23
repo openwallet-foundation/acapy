@@ -71,11 +71,12 @@ class SingleWalletAskarMultitenantManager(BaseMultitenantManager):
                 "multitenant.wallet_name", self.DEFAULT_MULTITENANT_WALLET_NAME
             )
             context = base_context.copy()
+
             sub_wallet_settings = {
                 "wallet.recreate": False,
                 "wallet.seed": None,
-                "wallet.key": "",
-                "wallet.rekey": None,
+                "wallet.key": base_context.settings.get("wallet.key", ""),
+                "wallet.rekey": base_context.settings.get("wallet.rekey"),
                 "wallet.id": None,
                 "wallet.name": multitenant_wallet_name,
                 "wallet.type": "askar",

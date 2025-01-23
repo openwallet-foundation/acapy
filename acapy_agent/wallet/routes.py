@@ -128,7 +128,7 @@ class DIDSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         required=True,
-        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type, P256.key_type]),
         metadata={
             "description": "Key type associated with the DID",
             "example": ED25519.key_type,
@@ -1410,8 +1410,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
         except StorageError as err:
             # log the error, but continue
             LOGGER.exception(
-                "Error accepting endorser invitation/configuring endorser"
-                " connection: %s",
+                "Error accepting endorser invitation/configuring endorser connection: %s",
                 err,
             )
             return

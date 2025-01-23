@@ -50,13 +50,13 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
             if proof.get("challenge") != self.challenge:
                 raise LinkedDataProofException(
                     f"The challenge is not as expected; challenge="
-                    f'{proof.get("challenge")}, expected={self.challenge}'
+                    f"{proof.get('challenge')}, expected={self.challenge}"
                 )
 
             if self.domain and (proof.get("domain") != self.domain):
                 raise LinkedDataProofException(
                     f"The domain is not as expected; "
-                    f'domain={proof.get("domain")}, expected={self.domain}'
+                    f"domain={proof.get('domain')}, expected={self.domain}"
                 )
 
             return super().validate(

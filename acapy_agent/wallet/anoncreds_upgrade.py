@@ -675,7 +675,7 @@ async def finish_upgrade_by_updating_profile_or_shutting_down(
         await upgrade_subwallet(profile)
         await finish_upgrade(profile)
         LOGGER.info(
-            f"""Upgrade of subwallet {profile.settings.get('wallet.name')} has completed. Profile is now askar-anoncreds"""  # noqa: E501
+            f"""Upgrade of subwallet {profile.settings.get("wallet.name")} has completed. Profile is now askar-anoncreds"""  # noqa: E501
         )
     else:
         await finish_upgrade(profile)
@@ -702,7 +702,7 @@ async def check_upgrade_completion_loop(profile: Profile, is_subwallet=False):
                         await upgrade_subwallet(profile)
                         await finish_upgrade(profile)
                         LOGGER.info(
-                            f"""Upgrade of subwallet {profile.settings.get('wallet.name')} has completed. Profile is now askar-anoncreds"""  # noqa: E501
+                            f"""Upgrade of subwallet {profile.settings.get("wallet.name")} has completed. Profile is now askar-anoncreds"""  # noqa: E501
                         )
                         return
                     LOGGER.info(
