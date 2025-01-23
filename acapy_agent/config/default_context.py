@@ -3,10 +3,11 @@
 from ..anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
+from ..connections.base_manager import BaseConnectionManager
 from ..core.event_bus import EventBus
 from ..core.goal_code_registry import GoalCodeRegistry
 from ..core.plugin_registry import PluginRegistry
-from ..core.profile import ProfileManager, ProfileManagerProvider
+from ..core.profile import Profile, ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
@@ -117,6 +118,12 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(BaseMenuService, DriverMenuService(context))
         context.injector.bind_instance(BaseIntroductionService, DemoIntroductionService())
 
+        # Allow BaseConnectionManager to be overridden
+        context.injector.bind_provider(
+            BaseConnectionManager,
+            ClassProvider(BaseConnectionManager, ClassProvider.Inject(Profile)),
+        )
+
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
 
@@ -135,6 +142,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         plugin_registry.register_plugin("acapy_agent.ledger")
 
+        plugin_registry.register_plugin("acapy_agent.connections")
         plugin_registry.register_plugin("acapy_agent.messaging.jsonld")
         plugin_registry.register_plugin("acapy_agent.resolver")
         plugin_registry.register_plugin("acapy_agent.settings")
