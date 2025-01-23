@@ -240,7 +240,7 @@ class BaseModel(ABC):
                 if as_string
                 else schema.dump(self)
             )
-        except (AttributeError, ValidationError) as err:
+        except (AttributeError, ValidationError, TypeError) as err:
             LOGGER.exception(f"{self.__class__.__name__} message serialization error:")
             raise BaseModelError(
                 f"{self.__class__.__name__} schema validation failed"
@@ -321,7 +321,6 @@ class BaseModelSchema(Schema):
 
         model_class = None
         skip_values = [None]
-        ordered = True
 
     def __init__(self, *args, **kwargs):
         """Initialize BaseModelSchema.
