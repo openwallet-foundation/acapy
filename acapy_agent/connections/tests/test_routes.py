@@ -161,7 +161,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
         with (
             mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
+                test_module, "BaseConnectionManager", autospec=True
             ) as mock_conn_mgr_cls,
             mock.patch.object(test_module.web, "json_response") as mock_response,
         ):
@@ -183,7 +183,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
         with (
             mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
+                test_module, "BaseConnectionManager", autospec=True
             ) as mock_conn_mgr_cls,
             mock.patch.object(test_module.web, "json_response"),
         ):
@@ -435,7 +435,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
         with (
             mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
+                test_module, "BaseConnectionManager", autospec=True
             ) as mock_conn_mgr,
             mock.patch.object(test_module.web, "json_response") as mock_response,
         ):
@@ -484,7 +484,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         mock_their_info.verkey = "their_verkey"
 
         with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "BaseConnectionManager", autospec=True
         ) as mock_conn_mgr:
             mock_conn_mgr.return_value.create_static_connection = mock.CoroutineMock(
                 side_effect=test_module.WalletError()
