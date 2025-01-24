@@ -67,8 +67,10 @@ async def _attempt_open_profile(
 
 
 def _log_provision_info(profile: Profile) -> None:
-    print(f"{'Created new profile' if profile.created else 'Opened existing profile'}")
-    print(f"Profile name: {profile.name} Profile backend: {profile.backend}")
+    LOGGER.info(
+        f"{'Created new profile' if profile.created else 'Opened existing profile'}"
+    )
+    LOGGER.info(f"Profile name: {profile.name} Profile backend: {profile.backend}")
 
 
 async def _initialize_with_public_did(
@@ -86,13 +88,13 @@ async def _initialize_with_public_did(
                 + f" public did {public_did}"
             )
 
-        print("Replacing public DID due to --replace-public-did flag")
+        LOGGER.info("Replacing public DID due to --replace-public-did flag")
         replace_did_info = await wallet.create_local_did(
             method=SOV, key_type=ED25519, seed=wallet_seed
         )
         public_did = replace_did_info.did
         await wallet.set_public_did(public_did)
-        print(
+        LOGGER.info(
             f"Created new public DID: {public_did}, with verkey: {replace_did_info.verkey}"  # noqa: E501
         )
 
@@ -125,16 +127,16 @@ async def _initialize_with_seed(
         )
         local_did = local_did_info.did
         if provision:
-            print(f"Created new local DID: {local_did}")
-            print(f"Verkey: {local_did_info.verkey}")
+            LOGGER.info(f"Created new local DID: {local_did}")
+            LOGGER.info(f"Verkey: {local_did_info.verkey}")
     else:
         public_did_info = await wallet.create_public_did(
             method=SOV, key_type=ED25519, seed=seed
         )
         public_did = public_did_info.did
         if provision:
-            print(f"Created new public DID: {public_did}")
-            print(f"Verkey: {public_did_info.verkey}")
+            LOGGER.info(f"Created new public DID: {public_did}")
+            LOGGER.info(f"Verkey: {public_did_info.verkey}")
 
 
 async def wallet_config(
@@ -173,7 +175,7 @@ async def wallet_config(
         )
 
     if provision and not create_local_did and not public_did:
-        print("No public DID")
+        LOGGER.info("No public DID")
 
     await _initialize_with_debug_settings(settings, wallet)
 

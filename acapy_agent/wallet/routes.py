@@ -591,7 +591,7 @@ async def wallet_create_did(request: web.BaseRequest):
 
         # Don't support Indy DID method from this endpoint
         if method.method_name == INDY.method_name:
-            raise web.HTTPForbidden(
+            raise web.HTTPBadRequest(
                 reason="Indy did method is supported from /did/indy/create endpoint."
             )
 

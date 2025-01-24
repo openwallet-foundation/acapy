@@ -586,7 +586,7 @@ class AskarWallet(BaseWallet):
 
         """
         did_info = await self.get_local_did(did)
-        if did_info.method != SOV and did_info.method != INDY:
+        if did_info.method not in (SOV, INDY):
             raise WalletError(
                 "Setting DID endpoint is only allowed for did:sov or did:indy DIDs"
             )

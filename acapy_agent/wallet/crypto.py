@@ -81,7 +81,10 @@ def seed_to_did(seed: str, method: Optional[DIDMethod] = SOV) -> str:
     if method == SOV:
         return bytes_to_b58(verkey[:16])
     if method == INDY:
-        return f"did:indy:{bytes_to_b58(hashlib.sha256(verkey).digest()[:16])}"
+        # Hash the verkey, take the first 16 bytes, and convert to a base58 string
+        hashed_verkey = hashlib.sha256(verkey).digest()
+        did = bytes_to_b58(hashed_verkey[:16])
+        return f"did:indy:{did}"
     raise WalletError(f"Unsupported DID method: {method.method_name}")
 
 
