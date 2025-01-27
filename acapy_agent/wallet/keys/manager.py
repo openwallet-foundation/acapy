@@ -3,11 +3,11 @@
 import logging
 from ...core.profile import ProfileSession
 from ...resolver.did_resolver import DIDResolver
+from ..base import BaseWallet
+from ..key_type import ED25519, P256, BLS12381G1G2, KeyType
+from ..util import b58_to_bytes, bytes_to_b58
 from ...utils.multiformats import multibase
 from ...wallet.error import WalletNotFoundError
-from ..base import BaseWallet
-from ..key_type import BLS12381G2, ED25519, P256, KeyType
-from ..util import b58_to_bytes, bytes_to_b58
 from pydid import VerificationMethod
 
 LOGGER = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ ALG_MAPPINGS = {
         "prefix_length": 2,
     },
     "bls12381g2": {
-        "key_type": BLS12381G2,
+        "key_type": BLS12381G1G2,
         "multikey_prefix": "zUC7",
         "prefix_hex": "eb01",
         "prefix_length": 2,
