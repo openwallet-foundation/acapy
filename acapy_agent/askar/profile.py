@@ -42,7 +42,9 @@ class AskarProfile(Profile):
         profile_id: Optional[str] = None,
     ):
         """Create a new AskarProfile instance."""
-        super().__init__(context=context, name=opened.name, created=opened.created)
+        super().__init__(
+            context=context, name=profile_id or opened.name, created=opened.created
+        )
         self.opened = opened
         self.ledger_pool: Optional[IndyVdrLedgerPool] = None
         self.profile_id = profile_id
@@ -52,7 +54,7 @@ class AskarProfile(Profile):
     @property
     def name(self) -> str:
         """Accessor for the profile name."""
-        return self.opened.name
+        return self.profile_id or self.opened.name
 
     @property
     def store(self) -> Store:
