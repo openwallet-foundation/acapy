@@ -31,7 +31,7 @@ class TestForwardHandler(IsolatedAsyncioTestCase):
         with (
             mock.patch.object(test_module, "RoutingManager", autospec=True) as mock_mgr,
             mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
+                test_module, "BaseConnectionManager", autospec=True
             ) as mock_connection_mgr,
             mock.patch.object(
                 self.context.profile, "notify", autospec=True

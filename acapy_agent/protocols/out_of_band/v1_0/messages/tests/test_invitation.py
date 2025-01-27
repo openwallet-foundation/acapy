@@ -5,7 +5,6 @@ import pytest
 from ......did.did_key import DIDKey
 from ......messaging.models.base import BaseModelError
 from ......wallet.key_type import ED25519
-from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
 from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
 from .....didexchange.v1_0.message_types import DIDEX_1_0
@@ -25,7 +24,10 @@ class TestHSProto(TestCase):
     def test_get(self):
         assert HSProto.get(HSProto.RFC160) is HSProto.RFC160
         assert HSProto.get("Old") is HSProto.RFC160
-        assert HSProto.get(DIDCommPrefix.qualify_current(CONN_PROTO)) is HSProto.RFC160
+        assert (
+            HSProto.get(DIDCommPrefix.qualify_current("connections/1.0"))
+            is HSProto.RFC160
+        )
         assert HSProto.get(DIDEX_1_0) is HSProto.RFC23
         assert HSProto.get("did-exchange") is HSProto.RFC23
         assert HSProto.get("RFC-23") is HSProto.RFC23

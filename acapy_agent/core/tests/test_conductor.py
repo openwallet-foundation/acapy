@@ -1,8 +1,8 @@
-from io import StringIO
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
+from ...connections.base_manager import BaseConnectionManager
 from ...admin.base_server import BaseAdminServer
 from ...askar.profile import AskarProfileManager
 from ...config.base_context import ContextBuilder
@@ -103,6 +103,7 @@ class StubContextBuilder(ContextBuilder):
             InboundTransportManager,
             mock.MagicMock(InboundTransportManager, autospec=True),
         )
+        context.injector.bind_instance(BaseConnectionManager, mock.MagicMock())
         return context
 
 
@@ -667,6 +668,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             }
             await conductor.setup()
 
+            assert conductor.root_profile
             bus = conductor.root_profile.inject(EventBus)
 
             payload = "{}"
@@ -704,15 +706,16 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock.patch.object(
                 test_module, "OutboundTransportManager", autospec=True
             ) as mock_outbound_mgr,
-            mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
-            ) as conn_mgr,
         ):
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
+            conn_mgr = mock.MagicMock(autospec=True)
+            conn_mgr.get_connection_targets = mock.CoroutineMock()
+            conductor.context.injector.bind_instance(BaseConnectionManager, conn_mgr)
 
+            assert conductor.root_profile
             bus = conductor.root_profile.inject(EventBus)
 
             payload = "{}"
@@ -728,13 +731,10 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
 
-            conn_mgr.return_value.get_connection_targets.assert_awaited_once_with(
+            conn_mgr.get_connection_targets.assert_awaited_once_with(
                 connection_id=connection_id
             )
-            assert (
-                message.target_list
-                is conn_mgr.return_value.get_connection_targets.return_value
-            )
+            assert message.target_list is conn_mgr.get_connection_targets.return_value
 
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
                 conductor.root_profile, message
@@ -820,10 +820,12 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             await conductor.setup()
 
+            assert conductor.root_profile
             conductor.handle_not_returned(conductor.root_profile, message)
 
+            mock_conn_mgr = mock.MagicMock()
+            conductor.context.injector.bind_instance(BaseConnectionManager, mock_conn_mgr)
             with (
-                mock.patch.object(test_module, "ConnectionManager") as mock_conn_mgr,
                 mock.patch.object(
                     conductor.dispatcher, "run_task", mock.MagicMock()
                 ) as mock_run_task,
@@ -832,7 +834,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 # is awaited by dispatcher.run_task, which is mocked here. MagicMock
                 # to prevent unawaited coroutine warning.
                 mock_conn_mgr.return_value.get_connection_targets = mock.MagicMock()
-                mock_run_task.side_effect = test_module.ConnectionManagerError()
+                mock_run_task.side_effect = test_module.BaseConnectionManagerError()
                 await conductor.queue_outbound(conductor.root_profile, message)
                 mock_outbound_mgr.return_value.enqueue_message.assert_not_called()
 
@@ -941,10 +943,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             }
             await conductor.setup()
 
+        conn_mgr = mock.MagicMock()
+        conductor.context.injector.bind_instance(BaseConnectionManager, conn_mgr)
         with (
-            mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
-            ) as conn_mgr,
             mock.patch.object(
                 conductor.dispatcher, "run_task", mock.MagicMock()
             ) as mock_dispatch_run,
@@ -955,7 +956,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             # Normally this should be a coroutine mock; however, the coroutine
             # is awaited by dispatcher.run_task, which is mocked here. MagicMock
             # to prevent unawaited coroutine warning.
-            conn_mgr.return_value.get_connection_targets = mock.MagicMock()
+            conn_mgr.get_connection_targets = mock.MagicMock()
             mock_dispatch_run.side_effect = test_module.LedgerConfigError(
                 "No such ledger"
             )
@@ -1046,7 +1047,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock.patch.object(admin, "start", autospec=True) as admin_start,
             mock.patch.object(admin, "stop", autospec=True) as admin_stop,
             mock.patch.object(test_module, "OutOfBandManager") as oob_mgr,
-            mock.patch.object(test_module, "ConnectionManager") as conn_mgr,
+            mock.patch.object(test_module, "BaseConnectionManager") as conn_mgr,
         ):
             admin_start.side_effect = KeyError("trouble")
             oob_mgr.return_value.create_invitation = mock.CoroutineMock(
@@ -1100,7 +1101,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
                 ),
             ),
-            mock.patch.object(test_module, "ConnectionManager") as mock_mgr,
+            mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr,
             mock.patch.object(
                 test_module, "OutboundTransportManager", autospec=True
             ) as mock_outbound_mgr,
@@ -1110,7 +1111,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             }
             await conductor.setup()
 
-            mock_mgr.return_value.create_static_connection = mock.CoroutineMock()
+            mock_mgr.return_value.create_static_connection = mock.CoroutineMock(
+                return_value=(None, None, mock.MagicMock())
+            )
             await conductor.start()
             mock_mgr.return_value.create_static_connection.assert_awaited_once()
 
@@ -1130,7 +1133,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
                 ),
             ),
-            mock.patch.object(test_module, "ConnectionManager") as mock_mgr,
+            mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr,
             mock.patch.object(test_module, "InboundTransportManager") as mock_intx_mgr,
             mock.patch.object(
                 test_module, "OutboundTransportManager", autospec=True
@@ -1164,7 +1167,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
                 ),
             ),
-            mock.patch.object(test_module, "ConnectionManager") as mock_mgr,
+            mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr,
             mock.patch.object(test_module, "OutboundTransportManager") as mock_outx_mgr,
         ):
             mock_outx_mgr.return_value = mock.MagicMock(
@@ -1192,7 +1195,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
                 ),
             ),
-            mock.patch.object(test_module, "ConnectionManager") as mock_mgr,
+            mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr,
             mock.patch.object(test_module, "OutboundTransportManager") as mock_outx_mgr,
         ):
             mock_outx_mgr.return_value = mock.MagicMock(
@@ -1296,48 +1299,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_notify:
             conductor.dispatch_complete(message, mock_task)
             mock_notify.assert_called_once_with()
-
-    @pytest.mark.filterwarnings("ignore:Aries RFC 0160.*:DeprecationWarning")
-    async def test_print_invite_connection(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings(
-            {
-                "debug.print_invitation": True,
-                "debug.print_connections_invitation": True,
-                "invite_base_url": "http://localhost",
-                "wallet.type": "askar",
-                "default_endpoint": "http://localhost",
-                "default_label": "test",
-            }
-        )
-        conductor = test_module.Conductor(builder)
-
-        test_profile = await create_test_profile(None, await builder.build_context())
-
-        with (
-            mock.patch.object(
-                test_module,
-                "wallet_config",
-                return_value=(
-                    test_profile,
-                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
-                ),
-            ),
-            mock.patch("sys.stdout", new=StringIO()) as captured,
-            mock.patch.object(
-                test_module, "OutboundTransportManager", autospec=True
-            ) as mock_outbound_mgr,
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-
-            await conductor.start()
-            await conductor.stop()
-            value = captured.getvalue()
-            assert "http://localhost?oob=" in value
-            assert "http://localhost?c_i=" in value
 
     async def test_clear_default_mediator(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -1587,61 +1548,6 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         "MediationInviteStore",
         return_value=get_invite_store_mock("test-invite"),
     )
-    @mock.patch.object(test_module.ConnectionInvitation, "from_url")
-    async def test_mediator_invitation_0160(self, mock_from_url, _):
-        builder = self.__get_mediator_config("test-invite", True)
-        conductor = test_module.Conductor(builder)
-        test_profile = await create_test_profile(None, await builder.build_context())
-
-        with (
-            mock.patch.object(
-                test_module,
-                "wallet_config",
-                return_value=(
-                    test_profile,
-                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
-                ),
-            ),
-            mock.patch.object(
-                test_module, "OutboundTransportManager", autospec=True
-            ) as mock_outbound_mgr,
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-
-        mock_conn_record = mock.MagicMock()
-
-        with (
-            mock.patch.object(
-                test_module,
-                "ConnectionManager",
-                mock.MagicMock(
-                    return_value=mock.MagicMock(
-                        receive_invitation=mock.CoroutineMock(
-                            return_value=mock_conn_record
-                        )
-                    )
-                ),
-            ) as mock_mgr,
-            mock.patch.object(mock_conn_record, "metadata_set", mock.CoroutineMock()),
-            mock.patch.object(
-                test_module,
-                "upgrade_wallet_to_anoncreds_if_requested",
-                return_value=False,
-            ),
-        ):
-            await conductor.start()
-            await conductor.stop()
-            mock_from_url.assert_called_once_with("test-invite")
-            mock_mgr.return_value.receive_invitation.assert_called_once()
-
-    @mock.patch.object(
-        test_module,
-        "MediationInviteStore",
-        return_value=get_invite_store_mock("test-invite"),
-    )
     @mock.patch.object(test_module.InvitationMessage, "from_url")
     async def test_mediator_invitation_0434(self, mock_from_url, _):
         builder = self.__get_mediator_config("test-invite", True)
@@ -1709,73 +1615,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             mock_mgr.return_value.receive_invitation.assert_called_once()
 
     @mock.patch.object(test_module, "MediationInviteStore")
-    @mock.patch.object(test_module.ConnectionInvitation, "from_url")
-    async def test_mediation_invitation_should_use_stored_invitation(
-        self, patched_from_url, patched_invite_store
-    ):
-        """
-        Conductor should store the mediation invite if it differs from the stored one or
-        if the stored one was not used yet.
-
-        Using a mediation invitation should clear the previously set default mediator.
-        """
-        # given
-        invite_string = "test-invite"
-
-        builder = self.__get_mediator_config("test-invite", True)
-        conductor = test_module.Conductor(builder)
-        test_profile = await create_test_profile(None, await builder.build_context())
-
-        with (
-            mock.patch.object(
-                test_module,
-                "wallet_config",
-                return_value=(
-                    test_profile,
-                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
-                ),
-            ),
-            mock.patch.object(
-                test_module, "OutboundTransportManager", autospec=True
-            ) as mock_outbound_mgr,
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-        mock_conn_record = mock.MagicMock()
-        mocked_store = get_invite_store_mock(invite_string)
-        patched_invite_store.return_value = mocked_store
-
-        connection_manager_mock = mock.MagicMock(
-            receive_invitation=mock.CoroutineMock(return_value=mock_conn_record)
-        )
-        mock_mediation_manager = mock.MagicMock(
-            clear_default_mediator=mock.CoroutineMock()
-        )
-
-        # when
-        with (
-            mock.patch.object(
-                test_module, "ConnectionManager", return_value=connection_manager_mock
-            ),
-            mock.patch.object(mock_conn_record, "metadata_set", mock.CoroutineMock()),
-            mock.patch.object(
-                test_module, "MediationManager", return_value=mock_mediation_manager
-            ),
-        ):
-            await conductor.start()
-            await conductor.stop()
-
-            # then
-            mocked_store.get_mediation_invite_record.assert_called_with(invite_string)
-
-            connection_manager_mock.receive_invitation.assert_called_once()
-            patched_from_url.assert_called_with(invite_string)
-            mock_mediation_manager.clear_default_mediator.assert_called_once()
-
-    @mock.patch.object(test_module, "MediationInviteStore")
-    @mock.patch.object(test_module, "ConnectionManager")
+    @mock.patch.object(test_module, "BaseConnectionManager")
     async def test_mediation_invitation_should_not_create_connection_for_old_invitation(
         self, patched_connection_manager, patched_invite_store
     ):
@@ -1816,47 +1656,6 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         # then
         invite_store_mock.get_mediation_invite_record.assert_called_with(invite_string)
         connection_manager_mock.receive_invitation.assert_not_called()
-
-    @mock.patch.object(
-        test_module,
-        "MediationInviteStore",
-        return_value=get_invite_store_mock("test-invite"),
-    )
-    async def test_mediator_invitation_x(self, _):
-        builder = self.__get_mediator_config("test-invite", True)
-        conductor = test_module.Conductor(builder)
-        test_profile = await create_test_profile(None, await builder.build_context())
-
-        with (
-            mock.patch.object(
-                test_module,
-                "wallet_config",
-                return_value=(
-                    test_profile,
-                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
-                ),
-            ),
-            mock.patch.object(
-                test_module, "OutboundTransportManager", autospec=True
-            ) as mock_outbound_mgr,
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-
-        with (
-            mock.patch.object(
-                test_module.ConnectionInvitation,
-                "from_url",
-                mock.MagicMock(side_effect=Exception()),
-            ) as mock_from_url,
-            mock.patch.object(test_module, "LOGGER") as mock_logger,
-        ):
-            await conductor.start()
-            await conductor.stop()
-            mock_from_url.assert_called_once_with("test-invite")
-            mock_logger.exception.assert_called_once()
 
     async def test_setup_ledger_both_multiple_and_base(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)

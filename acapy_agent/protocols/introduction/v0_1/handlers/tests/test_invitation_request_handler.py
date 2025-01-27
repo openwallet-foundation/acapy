@@ -3,9 +3,8 @@ from unittest import IsolatedAsyncioTestCase
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
+from .....out_of_band.v1_0.messages.invitation import InvitationMessage, Service
+from .....out_of_band.v1_0.models.invitation import InvitationRecord
 from ......tests import mock
 from ......utils.testing import create_test_profile
 from ...messages.invitation import Invitation
@@ -35,33 +34,37 @@ class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
 
-        with mock.patch.object(test_module, "ConnectionManager", autospec=True):
+        with mock.patch.object(test_module, "OutOfBandManager", autospec=True):
             await handler.handle(self.context, responder)
 
     async def test_handle_auto_accept(self):
         handler = test_module.InvitationRequestHandler()
         self.context.update_settings({"auto_accept_intro_invitation_requests": True})
 
-        conn_invitation = ConnectionInvitation(
-            label=TEST_LABEL,
+        service = Service(
             did=TEST_DID,
+            service_endpoint=TEST_ENDPOINT,
             recipient_keys=[TEST_VERKEY],
-            endpoint=TEST_ENDPOINT,
             routing_keys=[TEST_ROUTE_VERKEY],
+        )
+        conn_invitation = InvitationMessage(
+            label=TEST_LABEL,
             image_url=TEST_IMAGE_URL,
+            services=[service],
         )
         mock_conn_rec = mock.MagicMock(connection_id="dummy")
+        invite_rec = InvitationRecord()
 
         responder = MockResponder()
         with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "OutOfBandManager", autospec=True
         ) as mock_mgr:
             mock_mgr.return_value.create_invitation = mock.CoroutineMock(
-                return_value=(mock_conn_rec, conn_invitation)
+                return_value=invite_rec
             )
 
             await handler.handle(self.context, responder)
-            mock_mgr.return_value.create_invitation.assert_called_once_with()
+            mock_mgr.return_value.create_invitation.assert_called_once()
 
             messages = responder.messages
             assert len(messages) == 1

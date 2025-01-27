@@ -33,6 +33,14 @@ acapy\_agent.vc.ld\_proofs.suites.bbs\_bls\_signature\_proof\_2020 module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.vc.ld\_proofs.suites.ecdsa\_secp256r1\_signature\_2019 module
+--------------------------------------------------------------------------
+
+.. automodule:: acapy_agent.vc.ld_proofs.suites.ecdsa_secp256r1_signature_2019
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.vc.ld\_proofs.suites.ed25519\_signature\_2018 module
 -----------------------------------------------------------------
 
