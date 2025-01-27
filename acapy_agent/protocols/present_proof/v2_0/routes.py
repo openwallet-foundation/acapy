@@ -12,6 +12,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
+from marshmallow.validate import Range
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
@@ -45,9 +46,9 @@ from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....vc.ld_proofs import (
     BbsBlsSignature2020,
+    EcdsaSecp256r1Signature2019,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    EcdsaSecp256r1Signature2019,
 )
 from ....wallet.error import WalletNotFoundError
 from ..dif.pres_exch import ClaimFormat, InputDescriptors, SchemaInputDescriptor
@@ -56,7 +57,12 @@ from ..dif.pres_request_schema import DIFPresSpecSchema, DIFProofRequestSchema
 from . import problem_report_for_record, report_problem
 from .formats.handler import V20PresFormatHandlerError
 from .manager import V20PresManager
-from .message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL, PRES_20_REQUEST, SPEC_URI
+from .message_types import (
+    ATTACHMENT_FORMAT,
+    PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
+    SPEC_URI,
+)
 from .messages.pres_format import V20PresFormat
 from .messages.pres_problem_report import ProblemReportReason
 from .messages.pres_proposal import V20PresProposal
@@ -383,20 +389,13 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
     )
     limit = fields.Int(
         required=False,
-        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        validate=Range(min=1, max=MAXIMUM_PAGE_SIZE),
         metadata={"description": "Number of results to return", "example": 50},
-        error_messages={
-            "validator_failed": (
-                "Value must be greater than 0 and "
-                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
-            )
-        },
     )
     offset = fields.Int(
         required=False,
-        validate=lambda x: x >= 0,
+        validate=Range(min=0),
         metadata={"description": "Offset for pagination", "example": 0},
-        error_messages={"validator_failed": "Value must be 0 or greater"},
     )
     extra_query = fields.Str(
         required=False,

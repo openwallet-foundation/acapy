@@ -11,6 +11,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields, validate
+from marshmallow.validate import Range
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
@@ -259,20 +260,13 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
     )
     limit = fields.Int(
         required=False,
-        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        validate=Range(min=1, max=MAXIMUM_PAGE_SIZE),
         metadata={"description": "Number of results to return", "example": 50},
-        error_messages={
-            "validator_failed": (
-                "Value must be greater than 0 and "
-                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
-            )
-        },
     )
     offset = fields.Int(
         required=False,
-        validate=lambda x: x >= 0,
+        validate=Range(min=0),
         metadata={"description": "Offset for pagination", "example": 0},
-        error_messages={"validator_failed": "Value must be 0 or greater"},
     )
     extra_query = fields.Str(
         required=False,
