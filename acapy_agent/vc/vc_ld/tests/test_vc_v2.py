@@ -78,7 +78,7 @@ class TestLinkedDataVerifiableCredentialV2(IsolatedAsyncioTestCase):
             key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
         )
         verification_result = await verify_presentation(
-            presentation=PRESENTATION_V2_UNSIGNED,
+            presentation=PRESENTATION_V2_SIGNED,
             challenge=self.presentation_challenge,
             suites=[suite],
             document_loader=custom_document_loader,
