@@ -20,6 +20,7 @@ from .did_info import INVITATION_REUSE_KEY
 from .did_method import INDY, SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation
 from .error import WalletDuplicateError, WalletError, WalletNotFoundError
+
 # from .keys.manager import verkey_to_multikey
 from .key_type import BLS12381G2, ED25519, P256, X25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
