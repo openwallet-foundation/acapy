@@ -17,6 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 GENERIC_KID_EXAMPLE = "did:web:example.com#key-01"
 
+
 class CreateKeyRequestSchema(OpenAPISchema):
     """Request schema for creating a new key."""
 
@@ -76,6 +77,7 @@ class FetchKeyQueryStringSchema(OpenAPISchema):
         metadata={"description": "KID of interest", "example": GENERIC_KID_EXAMPLE},
     )
 
+
 class DeleteKidQueryStringSchema(OpenAPISchema):
     """Parameters for kid delete request query string."""
 
@@ -83,6 +85,7 @@ class DeleteKidQueryStringSchema(OpenAPISchema):
         required=True,
         metadata={"description": "KID of interest", "example": GENERIC_KID_EXAMPLE},
     )
+
 
 class UpdateKeyRequestSchema(OpenAPISchema):
     """Request schema for updating an existing key pair."""
@@ -260,6 +263,7 @@ async def fetch_key_by_kid(request: web.BaseRequest):
 
     except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
         return web.json_response({"message": str(err)}, status=400)
+
 
 @docs(tags=["wallet"], summary="Fetch key info.")
 @querystring_schema(DeleteKidQueryStringSchema())

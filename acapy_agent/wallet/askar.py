@@ -99,7 +99,7 @@ class AskarWallet(BaseWallet):
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
             multikey = verkey_to_multikey(verkey, alg=key_type.key_type)
-            default_kid = f'did:key:{multikey}#{multikey}'
+            default_kid = f"did:key:{multikey}#{multikey}"
             tags = {"kid": [default_kid, kid]} if kid else [default_kid]
             await self._session.handle.insert_key(
                 verkey,
@@ -137,11 +137,11 @@ class AskarWallet(BaseWallet):
             existing_kid = key_entry.tags.get("kid")
         except Exception:
             existing_kid = []
-            
+
         existing_kid = existing_kid if isinstance(existing_kid, list) else [existing_kid]
         existing_kid.append(kid)
         tags = {"kid": existing_kid}
-        
+
         key = cast(Key, key_entry.key)
         metadata = cast(dict, key_entry.metadata)
         key_types = self.session.inject(KeyTypes)
@@ -181,9 +181,9 @@ class AskarWallet(BaseWallet):
             existing_kid.remove(kid)
         except Exception:
             pass
-        
-        tags = {'kid': existing_kid}
-        
+
+        tags = {"kid": existing_kid}
+
         await self._session.handle.update_key(name=verkey, tags=tags)
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
