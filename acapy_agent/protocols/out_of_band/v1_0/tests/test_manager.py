@@ -1,13 +1,14 @@
 """Test OOB Manager."""
 
 import base64
-import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+import json
 from typing import List
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
+from .. import manager as test_module
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -20,45 +21,6 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import datetime_now, datetime_to_str, str_to_epoch
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
-from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
-from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
-from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from .....protocols.didexchange.v1_0.manager import DIDXManager
-from .....protocols.issue_credential.v1_0.messages.credential_offer import (
-    CredentialOffer as V10CredOffer,
-)
-from .....protocols.issue_credential.v1_0.messages.inner.credential_preview import (
-    CredAttrSpec as V10CredAttrSpec,
-)
-from .....protocols.issue_credential.v1_0.messages.inner.credential_preview import (
-    CredentialPreview as V10CredentialPreview,
-)
-from .....protocols.issue_credential.v1_0.tests import INDY_OFFER
-from .....protocols.issue_credential.v2_0.message_types import (
-    ATTACHMENT_FORMAT as V20_CRED_ATTACH_FORMAT,
-)
-from .....protocols.issue_credential.v2_0.message_types import CRED_20_OFFER
-from .....protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
-from .....protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
-from .....protocols.issue_credential.v2_0.messages.inner.cred_preview import (
-    V20CredAttrSpec,
-    V20CredPreview,
-)
-from .....protocols.present_proof.v1_0.message_types import (
-    ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT,
-)
-from .....protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
-from .....protocols.present_proof.v1_0.messages.presentation_request import (
-    PresentationRequest,
-)
-from .....protocols.present_proof.v2_0.message_types import (
-    ATTACHMENT_FORMAT as V20_PRES_ATTACH_FORMAT,
-)
-from .....protocols.present_proof.v2_0.message_types import PRES_20_REQUEST
-from .....protocols.present_proof.v2_0.messages.pres_format import V20PresFormat
-from .....protocols.present_proof.v2_0.messages.pres_request import V20PresRequest
 from .....storage.error import StorageNotFoundError
 from .....tests import mock
 from .....transport.inbound.receipt import MessageReceipt
@@ -68,16 +30,49 @@ from .....wallet.did_info import DIDInfo, KeyInfo
 from .....wallet.did_method import SOV
 from .....wallet.key_type import ED25519
 from .....wallet.util import pad
-from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ....coordinate_mediation.v1_0.manager import MediationManager
+from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....didcomm_prefix import DIDCommPrefix
+from ....didexchange.v1_0.manager import DIDXManager
 from ....issue_credential.v1_0.message_types import CREDENTIAL_OFFER
+from ....issue_credential.v1_0.messages.credential_offer import (
+    CredentialOffer as V10CredOffer,
+)
+from ....issue_credential.v1_0.messages.inner.credential_preview import (
+    CredAttrSpec as V10CredAttrSpec,
+)
+from ....issue_credential.v1_0.messages.inner.credential_preview import (
+    CredentialPreview as V10CredentialPreview,
+)
 from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from .. import manager as test_module
+from ....issue_credential.v1_0.tests import INDY_OFFER
+from ....issue_credential.v2_0.message_types import (
+    ATTACHMENT_FORMAT as V20_CRED_ATTACH_FORMAT,
+)
+from ....issue_credential.v2_0.message_types import CRED_20_OFFER
+from ....issue_credential.v2_0.messages.cred_format import V20CredFormat
+from ....issue_credential.v2_0.messages.cred_offer import V20CredOffer
+from ....issue_credential.v2_0.messages.inner.cred_preview import (
+    V20CredAttrSpec,
+    V20CredPreview,
+)
+from ....present_proof.v1_0.message_types import (
+    ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT,
+)
+from ....present_proof.v1_0.message_types import PRESENTATION_REQUEST
+from ....present_proof.v1_0.messages.presentation_request import PresentationRequest
+from ....present_proof.v2_0.message_types import (
+    ATTACHMENT_FORMAT as V20_PRES_ATTACH_FORMAT,
+)
+from ....present_proof.v2_0.message_types import PRES_20_REQUEST
+from ....present_proof.v2_0.messages.pres_format import V20PresFormat
+from ....present_proof.v2_0.messages.pres_request import V20PresRequest
 from ..manager import (
-    REUSE_ACCEPTED_WEBHOOK_TOPIC,
-    REUSE_WEBHOOK_TOPIC,
     OutOfBandManager,
     OutOfBandManagerError,
+    REUSE_ACCEPTED_WEBHOOK_TOPIC,
+    REUSE_WEBHOOK_TOPIC,
 )
 from ..messages.invitation import HSProto, InvitationMessage
 from ..messages.invitation import Service as OobService
@@ -1347,64 +1342,6 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             await self.manager.receive_invitation(oob_invitation)
-
-    async def test_receive_invitation_connection_protocol(self):
-        self.profile.context.update_settings({"public_invites": True})
-
-        mock_conn = mock.MagicMock(connection_id="dummy-connection")
-
-        with (
-            mock.patch.object(
-                test_module, "ConnectionManager", autospec=True
-            ) as conn_mgr_cls,
-            mock.patch.object(
-                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
-            ) as mock_conn_retrieve_by_id,
-        ):
-            conn_mgr_cls.return_value = mock.MagicMock(
-                receive_invitation=mock.CoroutineMock(return_value=mock_conn)
-            )
-            mock_conn_retrieve_by_id.return_value = mock_conn
-            oob_invitation = InvitationMessage(
-                handshake_protocols=[
-                    pfx.qualify(HSProto.RFC160.name) for pfx in DIDCommPrefix
-                ],
-                label="test",
-                _id="test123",
-                services=[
-                    OobService(
-                        recipient_keys=[
-                            DIDKey.from_public_key_b58(
-                                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC",
-                                ED25519,
-                            ).did
-                        ],
-                        routing_keys=[],
-                        service_endpoint="http://localhost",
-                    )
-                ],
-                requests_attach=[],
-            )
-            oob_record = await self.manager.receive_invitation(oob_invitation)
-            conn_mgr_cls.return_value.receive_invitation.assert_called_once_with(
-                invitation=ANY,
-                their_public_did=None,
-                auto_accept=None,
-                alias=None,
-                mediation_id=None,
-            )
-            _, kwargs = conn_mgr_cls.return_value.receive_invitation.call_args
-            invitation = kwargs["invitation"]
-            assert isinstance(invitation, ConnectionInvitation)
-
-            assert invitation.endpoint == "http://localhost"
-            assert invitation.recipient_keys == [
-                "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
-            ]
-            assert not invitation.routing_keys
-
-            assert oob_record.state == "deleted"
-            assert oob_record._previous_state == OobRecord.STATE_DONE
 
     async def test_receive_invitation_services_with_neither_service_blocks_nor_dids(
         self,

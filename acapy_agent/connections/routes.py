@@ -1,8 +1,5 @@
 """Connection handling admin routes."""
 
-import json
-from typing import cast
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -11,16 +8,16 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema
+from marshmallow import fields, validate
 
-from ....admin.decorators.auth import tenant_authentication
-from ....admin.request_context import AdminRequestContext
-from ....cache.base import BaseCache
-from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
-from ....messaging.models.base import BaseModelError
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
-from ....messaging.valid import (
+from ..admin.decorators.auth import tenant_authentication
+from ..admin.request_context import AdminRequestContext
+from ..cache.base import BaseCache
+from ..connections.models.conn_record import ConnRecord, ConnRecordSchema
+from ..messaging.models.base import BaseModelError
+from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
+from ..messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
     GENERIC_DID_VALIDATE,
@@ -29,16 +26,10 @@ from ....messaging.valid import (
     RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
     RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
-    UUID4_VALIDATE,
 )
-from ....storage.error import StorageError, StorageNotFoundError
-from ....wallet.error import WalletError
-from .manager import ConnectionManager, ConnectionManagerError
-from .message_types import SPEC_URI
-from .messages.connection_invitation import (
-    ConnectionInvitation,
-    ConnectionInvitationSchema,
-)
+from ..storage.error import StorageError, StorageNotFoundError
+from ..wallet.error import WalletError
+from .base_manager import BaseConnectionManager
 
 
 class ConnectionModuleResponseSchema(OpenAPISchema):
@@ -76,89 +67,6 @@ class ConnectionMetadataQuerySchema(OpenAPISchema):
     """Query schema for metadata."""
 
     key = fields.Str(required=False, metadata={"description": "Key to retrieve."})
-
-
-class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
-    """Request schema for receive invitation request."""
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """Bypass middleware field validation: marshmallow has no data yet."""
-
-
-class CreateInvitationRequestSchema(OpenAPISchema):
-    """Request schema for invitation connection target."""
-
-    recipient_keys = fields.List(
-        fields.Str(
-            validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
-            metadata={
-                "description": "Recipient public key",
-                "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
-            },
-        ),
-        required=False,
-        metadata={"description": "List of recipient keys"},
-    )
-    service_endpoint = fields.Str(
-        required=False,
-        metadata={
-            "description": "Connection endpoint",
-            "example": "http://192.168.56.102:8020",
-        },
-    )
-    routing_keys = fields.List(
-        fields.Str(
-            validate=RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
-            metadata={
-                "description": "Routing key",
-                "example": RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
-            },
-        ),
-        required=False,
-        metadata={"description": "List of routing keys"},
-    )
-    my_label = fields.Str(
-        required=False,
-        metadata={
-            "description": "Optional label for connection invitation",
-            "example": "Bob",
-        },
-    )
-    metadata = fields.Dict(
-        required=False,
-        metadata={
-            "description": (
-                "Optional metadata to attach to the connection created with the"
-                " invitation"
-            )
-        },
-    )
-    mediation_id = fields.Str(
-        required=False,
-        validate=UUID4_VALIDATE,
-        metadata={
-            "description": "Identifier for active mediation record to be used",
-            "example": UUID4_EXAMPLE,
-        },
-    )
-
-
-class InvitationResultSchema(OpenAPISchema):
-    """Result schema for a new connection invitation."""
-
-    connection_id = fields.Str(
-        required=True,
-        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
-    )
-    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
-    invitation_url = fields.Str(
-        required=True,
-        metadata={
-            "description": "Invitation URL",
-            "example": "http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ==",
-        },
-    )
 
 
 class ConnectionStaticRequestSchema(OpenAPISchema):
@@ -297,78 +205,6 @@ class ConnectionsListQueryStringSchema(PaginatedQuerySchema):
             "description": "Identifier of the associated Invitation Message",
             "example": UUID4_EXAMPLE,
         },
-    )
-
-
-class CreateInvitationQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for create invitation request query string."""
-
-    alias = fields.Str(
-        required=False, metadata={"description": "Alias", "example": "Barry"}
-    )
-    auto_accept = fields.Boolean(
-        required=False,
-        metadata={"description": "Auto-accept connection (defaults to configuration)"},
-    )
-    public = fields.Boolean(
-        required=False,
-        metadata={"description": "Create invitation from public DID (default false)"},
-    )
-    multi_use = fields.Boolean(
-        required=False,
-        metadata={"description": "Create invitation for multiple use (default false)"},
-    )
-
-
-class ReceiveInvitationQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for receive invitation request query string."""
-
-    alias = fields.Str(
-        required=False, metadata={"description": "Alias", "example": "Barry"}
-    )
-    auto_accept = fields.Boolean(
-        required=False,
-        metadata={"description": "Auto-accept connection (defaults to configuration)"},
-    )
-    mediation_id = fields.Str(
-        required=False,
-        validate=UUID4_VALIDATE,
-        metadata={
-            "description": "Identifier for active mediation record to be used",
-            "example": UUID4_EXAMPLE,
-        },
-    )
-
-
-class AcceptInvitationQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for accept invitation request query string."""
-
-    my_endpoint = fields.Str(
-        required=False,
-        validate=ENDPOINT_VALIDATE,
-        metadata={"description": "My URL endpoint", "example": ENDPOINT_EXAMPLE},
-    )
-    my_label = fields.Str(
-        required=False,
-        metadata={"description": "Label for connection", "example": "Broker"},
-    )
-    mediation_id = fields.Str(
-        required=False,
-        validate=UUID4_VALIDATE,
-        metadata={
-            "description": "Identifier for active mediation record to be used",
-            "example": UUID4_EXAMPLE,
-        },
-    )
-
-
-class AcceptRequestQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for accept conn-request web-request query string."""
-
-    my_endpoint = fields.Str(
-        required=False,
-        validate=ENDPOINT_VALIDATE,
-        metadata={"description": "My URL endpoint", "example": ENDPOINT_EXAMPLE},
     )
 
 
@@ -538,7 +374,7 @@ async def connections_endpoints(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
 
     profile = context.profile
-    connection_mgr = ConnectionManager(profile)
+    connection_mgr = BaseConnectionManager(profile)
     try:
         endpoints = await connection_mgr.get_endpoints(connection_id)
     except StorageNotFoundError as err:
@@ -602,216 +438,6 @@ async def connections_metadata_set(request: web.BaseRequest):
     return web.json_response({"results": result})
 
 
-@docs(
-    tags=["connection"],
-    summary="Create a new connection invitation",
-    deprecated=True,
-)
-@querystring_schema(CreateInvitationQueryStringSchema())
-@request_schema(CreateInvitationRequestSchema())
-@response_schema(InvitationResultSchema(), 200, description="")
-@tenant_authentication
-async def connections_create_invitation(request: web.BaseRequest):
-    """Request handler for creating a new connection invitation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The connection invitation details
-
-    """
-    context: AdminRequestContext = request["context"]
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    alias = request.query.get("alias")
-    public = json.loads(request.query.get("public", "false"))
-    multi_use = json.loads(request.query.get("multi_use", "false"))
-    body = await request.json() if request.body_exists else {}
-    my_label = body.get("my_label")
-    recipient_keys = body.get("recipient_keys")
-    service_endpoint = body.get("service_endpoint")
-    routing_keys = body.get("routing_keys")
-    metadata = body.get("metadata")
-    mediation_id = body.get("mediation_id")
-
-    if public and not context.settings.get("public_invites"):
-        raise web.HTTPForbidden(
-            reason="Configuration does not include public invitations"
-        )
-    profile = context.profile
-    base_url = profile.settings.get("invite_base_url")
-
-    connection_mgr = ConnectionManager(profile)
-    try:
-        (connection, invitation) = await connection_mgr.create_invitation(
-            my_label=my_label,
-            auto_accept=auto_accept,
-            public=public,
-            multi_use=multi_use,
-            alias=alias,
-            recipient_keys=recipient_keys,
-            my_endpoint=service_endpoint,
-            routing_keys=routing_keys,
-            metadata=metadata,
-            mediation_id=mediation_id,
-        )
-        invitation_url = invitation.to_url(base_url)
-        base_endpoint = service_endpoint or cast(
-            str, profile.settings.get("default_endpoint")
-        )
-        result = {
-            "connection_id": connection and connection.connection_id,
-            "invitation": invitation.serialize(),
-            "invitation_url": (
-                f"{base_endpoint}{invitation_url}"
-                if invitation_url.startswith("?")
-                else invitation_url
-            ),
-        }
-    except (ConnectionManagerError, StorageError, BaseModelError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if connection and connection.alias:
-        result["alias"] = connection.alias
-
-    return web.json_response(result)
-
-
-@docs(
-    tags=["connection"],
-    summary="Receive a new connection invitation",
-    deprecated=True,
-)
-@querystring_schema(ReceiveInvitationQueryStringSchema())
-@request_schema(ReceiveInvitationRequestSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
-@tenant_authentication
-async def connections_receive_invitation(request: web.BaseRequest):
-    """Request handler for receiving a new connection invitation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The resulting connection record details
-
-    """
-    context: AdminRequestContext = request["context"]
-    if context.settings.get("admin.no_receive_invites"):
-        raise web.HTTPForbidden(
-            reason="Configuration does not allow receipt of invitations"
-        )
-    profile = context.profile
-    connection_mgr = ConnectionManager(profile)
-    invitation_json = await request.json()
-
-    try:
-        invitation = ConnectionInvitation.deserialize(invitation_json)
-        auto_accept = json.loads(request.query.get("auto_accept", "null"))
-        alias = request.query.get("alias")
-        mediation_id = request.query.get("mediation_id")
-        connection = await connection_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias, mediation_id=mediation_id
-        )
-        result = connection.serialize()
-    except (ConnectionManagerError, StorageError, BaseModelError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response(result)
-
-
-@docs(
-    tags=["connection"],
-    summary="Accept a stored connection invitation",
-    deprecated=True,
-)
-@match_info_schema(ConnectionsConnIdMatchInfoSchema())
-@querystring_schema(AcceptInvitationQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
-@tenant_authentication
-async def connections_accept_invitation(request: web.BaseRequest):
-    """Request handler for accepting a stored connection invitation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The resulting connection record details
-
-    """
-    context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
-    connection_id = request.match_info["conn_id"]
-    profile = context.profile
-
-    try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
-        my_label = request.query.get("my_label")
-        my_endpoint = request.query.get("my_endpoint")
-        mediation_id = request.query.get("mediation_id")
-
-        try:
-            request = await connection_mgr.create_request(
-                connection, my_label, my_endpoint, mediation_id=mediation_id
-            )
-        except StorageError as err:
-            # Handle storage errors (including not found errors) from
-            # create_request separately as these errors represent a bad request
-            # rather than a bad url
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        result = connection.serialize()
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    await outbound_handler(request, connection_id=connection.connection_id)
-    return web.json_response(result)
-
-
-@docs(
-    tags=["connection"],
-    summary="Accept a stored connection request",
-    deprecated=True,
-)
-@match_info_schema(ConnectionsConnIdMatchInfoSchema())
-@querystring_schema(AcceptRequestQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
-@tenant_authentication
-async def connections_accept_request(request: web.BaseRequest):
-    """Request handler for accepting a stored connection request.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The resulting connection record details
-
-    """
-    context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
-    connection_id = request.match_info["conn_id"]
-
-    profile = context.profile
-    try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
-        my_endpoint = request.query.get("my_endpoint") or None
-        response = await connection_mgr.create_response(connection, my_endpoint)
-        result = connection.serialize()
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    await outbound_handler(response, connection_id=connection.connection_id)
-    return web.json_response(result)
-
-
 @docs(tags=["connection"], summary="Remove an existing connection record")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnectionModuleResponseSchema, 200, description="")
@@ -859,7 +485,7 @@ async def connections_create_static(request: web.BaseRequest):
     body = await request.json()
 
     profile = context.profile
-    connection_mgr = ConnectionManager(profile)
+    connection_mgr = BaseConnectionManager(profile)
     try:
         (
             my_info,
@@ -908,16 +534,6 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post("/connections/create-static", connections_create_static),
-            web.post("/connections/create-invitation", connections_create_invitation),
-            web.post("/connections/receive-invitation", connections_receive_invitation),
-            web.post(
-                "/connections/{conn_id}/accept-invitation",
-                connections_accept_invitation,
-            ),
-            web.post(
-                "/connections/{conn_id}/accept-request",
-                connections_accept_request,
-            ),
             web.delete("/connections/{conn_id}", connections_remove),
         ]
     )
@@ -933,6 +549,5 @@ def post_process_routes(app: web.Application):
         {
             "name": "connection",
             "description": "Connection management",
-            "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

@@ -3,8 +3,6 @@
 import asyncio
 from typing import Optional
 
-import async_timeout
-
 
 class RepeatAttempt:
     """Represents the current iteration in a repeat sequence."""
@@ -47,7 +45,7 @@ class RepeatAttempt:
 
     def timeout(self, interval: Optional[float] = None):
         """Create a context manager for timing out an attempt."""
-        return async_timeout.timeout(self.next_interval if interval is None else interval)
+        return asyncio.timeout(self.next_interval if interval is None else interval)
 
     def __repr__(self) -> str:
         """Format as a string for debugging."""

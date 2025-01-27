@@ -105,6 +105,14 @@ acapy\_agent.anoncreds.models.schema module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.anoncreds.models.schema\_info module
+-------------------------------------------------
+
+.. automodule:: acapy_agent.anoncreds.models.schema_info
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.anoncreds.models.utils module
 ------------------------------------------
 

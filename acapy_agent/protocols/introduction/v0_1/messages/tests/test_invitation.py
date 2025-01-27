@@ -1,6 +1,8 @@
 from unittest import IsolatedAsyncioTestCase, mock
 
-from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ......did.did_key import DIDKey
+from ......wallet.key_type import ED25519
+from .....out_of_band.v1_0.messages.invitation import InvitationMessage, Service
 from ...message_types import PROTOCOL_PACKAGE
 from ..invitation import Invitation as IntroInvitation
 
@@ -13,11 +15,19 @@ class TestInvitation(IsolatedAsyncioTestCase):
         self.endpoint_url = "https://example.com/endpoint"
         self.endpoint_did = "did:sov:A2wBhNYhMrjHiqZDTUYH7u"
         self.key = "8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"
+        self.did_key = DIDKey.from_public_key_b58(self.key, ED25519)
         self.test_message = "test message"
 
-        self.conn_invi_msg = ConnectionInvitation(
+        self.service = Service(
+            _id="asdf",
+            _type="did-communication",
+            recipient_keys=[self.did_key.did],
+            service_endpoint=self.endpoint_url,
+        )
+        self.conn_invi_msg = InvitationMessage(
             label=self.label,
-            did=self.test_did,
+            services=[self.service],
+            handshake_protocols=["didexchange/1.1"],
         )
         self.intro_invitation = IntroInvitation(
             invitation=self.conn_invi_msg,
