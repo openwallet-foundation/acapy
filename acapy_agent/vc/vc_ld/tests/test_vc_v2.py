@@ -50,7 +50,7 @@ class TestLinkedDataVerifiableCredentialV2(IsolatedAsyncioTestCase):
                 key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
-            date=datetime.strptime("2025-01-21T01:35:19+00:00", "%Y-%m-%dT%H:%M:%S+00:00"),
+            date=datetime.strptime("2025-01-27T21:39:18+00:00", "%Y-%m-%dT%H:%M:%S+00:00"),
         )
 
         issued = await issue(
@@ -73,7 +73,7 @@ class TestLinkedDataVerifiableCredentialV2(IsolatedAsyncioTestCase):
 
         assert verified == CREDENTIAL_V2_VERIFIED
 
-    async def test_verify_presentation(self):
+    async def test_v2_verify_presentation(self):
         suite = Ed25519Signature2020(
             key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
         )
