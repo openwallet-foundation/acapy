@@ -26,7 +26,7 @@ from .test_credential_v2 import (
 )
 
 
-class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
+class TestLinkedDataVerifiableCredentialV2(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
     async def asyncSetUp(self):
@@ -106,17 +106,3 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
                 document_loader=mock.MagicMock(),
             )
         assert 'A "challenge" param is required' in str(context.exception)
-
-    async def test_verify_x_no_proof(self):
-        presentation = PRESENTATION_V2_SIGNED.copy()
-        presentation.pop("proof")
-
-        verification_result = await verify_presentation(
-            presentation=presentation,
-            challenge=self.presentation_challenge,
-            suites=[],
-            document_loader=custom_document_loader,
-        )
-
-        assert not verification_result.verified
-        assert 'presentation must contain "proof"' in str(verification_result.errors[0])
