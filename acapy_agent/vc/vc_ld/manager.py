@@ -62,6 +62,10 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
 }
+SUPPORTED_V2_ISSUANCE_PROOF_TYPES = [
+    Ed25519Signature2020.signature_type,
+    BbsBlsSignature2020.signature_type
+]
 SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[SignatureTypes, KeyType] = {
     Ed25519Signature2018: ED25519,
     Ed25519Signature2020: ED25519,
@@ -269,6 +273,14 @@ class VcLdpManager:
         holder_did: Optional[str] = None,
     ) -> VerifiableCredential:
         """Prepare a credential for issuance."""
+        # Limit VCDM 2.0 with Ed25519Signature2020
+        if (
+            credential.context_urls[0] == CREDENTIALS_CONTEXT_V2_URL
+            and options.proof_type not in SUPPORTED_V2_ISSUANCE_PROOF_TYPES
+        ):
+            raise VcLdpManagerError(
+                f"Supported VC 2.0 proof types are: {SUPPORTED_V2_ISSUANCE_PROOF_TYPES}.")
+            
         # Add BBS context if not present yet
         if (
             options.proof_type == BbsBlsSignature2020.signature_type
@@ -281,12 +293,6 @@ class VcLdpManager:
             and SECURITY_CONTEXT_ED25519_2020_URL not in credential.context_urls
         ):
             credential.add_context(SECURITY_CONTEXT_ED25519_2020_URL)
-        # Limit VCDM 2.0 with Ed25519Signature2020
-        elif (
-            options.proof_type == Ed25519Signature2018.signature_type
-            and credential.context_urls[0] == CREDENTIALS_CONTEXT_V2_URL
-        ):
-            raise VcLdpManagerError("Invalid proof type, use Ed25519Signature2020.")
 
         # Permit late binding of credential subject:
         # IFF credential subject doesn't already have an id, add holder_did as
