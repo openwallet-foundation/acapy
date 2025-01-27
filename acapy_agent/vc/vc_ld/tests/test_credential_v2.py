@@ -150,10 +150,10 @@ PRESENTATION_V2_SIGNED = {
     ],
     "proof": {
         "type": "Ed25519Signature2020",
-        "proofPurpose": "assertionMethod",
+        "proofPurpose": "authentication",
         "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        "created": "2025-01-27T21:43:01+00:00",
+        "created": "2025-01-27T21:50:39+00:00",
         "challenge": "2b1bbff6-e608-4368-bf84-67471b27e41c",
-        "proofValue": "z4po35S9XV7sRQsYBCgTKH1ki1XHfuHvCzkdmbJEvg7hiRNBuxtkHt8yDVnc3GpVzQwNFjJeghYH1RdyLU33rLwd2",
+        "proofValue": "z61aNLNSyBVZyYY5xEKYnGDzWbXQhpWa8QXmQMMJpy4zZ71kyxGbRHVwMWdEzU4qwQhLZ7eSfQiX4dENquYGxkbcB",
     },
 }
