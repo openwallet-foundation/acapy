@@ -50,7 +50,7 @@ class TestLinkedDataVerifiableCredentialV2(IsolatedAsyncioTestCase):
                 key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
-            date=datetime.strptime("2025-01-21T01:35:19+00:00", "%Y-%m-%dT%H:%M:%SZ"),
+            date=datetime.strptime("2025-01-21T01:35:19+00:00", "%Y-%m-%dT%H:%M:%S+00:00"),
         )
 
         issued = await issue(
