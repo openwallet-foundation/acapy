@@ -98,9 +98,10 @@ class AskarWallet(BaseWallet):
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
-            multikey = verkey_to_multikey(verkey, alg=key_type.key_type)
-            default_kid = f"did:key:{multikey}#{multikey}"
-            tags = {"kid": [default_kid, kid]} if kid else [default_kid]
+            # multikey = verkey_to_multikey(verkey, alg=key_type.key_type)
+            # default_kid = f"did:key:{multikey}#{multikey}"
+            # tags = {"kid": [default_kid, kid]} if kid else [default_kid]
+            tags = {"kid": [kid]} if kid else None
             await self._session.handle.insert_key(
                 verkey,
                 keypair,
