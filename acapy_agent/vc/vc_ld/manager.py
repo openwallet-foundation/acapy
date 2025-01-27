@@ -64,7 +64,7 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
 }
 SUPPORTED_V2_ISSUANCE_PROOF_TYPES = [
     Ed25519Signature2020.signature_type,
-    BbsBlsSignature2020.signature_type
+    BbsBlsSignature2020.signature_type,
 ]
 SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[SignatureTypes, KeyType] = {
     Ed25519Signature2018: ED25519,
@@ -279,8 +279,9 @@ class VcLdpManager:
             and options.proof_type not in SUPPORTED_V2_ISSUANCE_PROOF_TYPES
         ):
             raise VcLdpManagerError(
-                f"Supported VC 2.0 proof types are: {SUPPORTED_V2_ISSUANCE_PROOF_TYPES}.")
-            
+                f"Supported VC 2.0 proof types are: {SUPPORTED_V2_ISSUANCE_PROOF_TYPES}."
+            )
+
         # Add BBS context if not present yet
         if (
             options.proof_type == BbsBlsSignature2020.signature_type
