@@ -49,14 +49,14 @@ uuid_utils = "^0.10.0"
 # did libraries
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-did-webvh = "^0.2.1"
+did-webvh = ">=0.3.0"
 
 # Verifiable Credentials
 indy-credx = "~1.1.1"
 anoncreds = "~0.2.0"
 
 # askar
-aries-askar = "~0.3.2"
+aries-askar = ">=0.4.2"
 
 # indy 
 indy-vdr = "~0.4.0"
