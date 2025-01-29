@@ -156,14 +156,7 @@ class IndyVdrLedgerPool:
             socks_proxy,
         )
 
-        config_key = (
-            name,
-            keepalive,
-            cache_duration,
-            genesis_transactions,
-            read_only,
-            socks_proxy,
-        )
+        config_key = (name, keepalive, cache_duration, read_only, socks_proxy)
         LOGGER.debug("Generated config key: %s", config_key)
 
         async with cls._lock:
