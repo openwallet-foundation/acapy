@@ -484,7 +484,7 @@ async def connections_list(request: web.BaseRequest):
                 alt=True,
             )
         results = [record.serialize() for record in records]
-        results.sort(key=connection_sort_key)
+        #results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
