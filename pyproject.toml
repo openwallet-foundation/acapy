@@ -56,7 +56,7 @@ indy-credx = "~1.1.1"
 anoncreds = "~0.2.0"
 
 # askar
-aries-askar = ">=0.4.2"
+aries-askar = ">=0.4.3"
 
 # indy 
 indy-vdr = "~0.4.0"
