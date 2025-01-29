@@ -50,7 +50,7 @@ did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
 
 # askar
-aries-askar= { version = "~0.4.2", optional = true }
+aries-askar= { version = "~0.4.3", optional = true }
 indy-credx= { version = "~1.1.1", optional = true }
 indy-vdr= { version = "~0.4.0", optional = true }
 anoncreds= { version = "0.2.0", optional = true }
