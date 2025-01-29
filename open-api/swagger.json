@@ -1718,16 +1718,30 @@
         "parameters" : [ {
           "name" : "count",
           "in" : "query",
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "required" : false,
           "type" : "string",
+          "default" : "10",
           "pattern" : "^[1-9][0-9]*$"
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer"
         }, {
           "name" : "start",
           "in" : "query",
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "required" : false,
           "type" : "string",
+          "default" : "0",
           "pattern" : "^[0-9]*$"
         }, {
           "name" : "wql",
@@ -1759,27 +1773,6 @@
           "schema" : {
             "$ref" : "#/definitions/W3CCredentialsListRequest"
           }
-        }, {
-          "name" : "count",
-          "in" : "query",
-          "description" : "Maximum number to retrieve",
-          "required" : false,
-          "type" : "string",
-          "pattern" : "^[1-9][0-9]*$"
-        }, {
-          "name" : "start",
-          "in" : "query",
-          "description" : "Start index",
-          "required" : false,
-          "type" : "string",
-          "pattern" : "^[0-9]*$"
-        }, {
-          "name" : "wql",
-          "in" : "query",
-          "description" : "(JSON) WQL query",
-          "required" : false,
-          "type" : "string",
-          "pattern" : "^{.*}$"
         } ],
         "responses" : {
           "200" : {
@@ -4050,9 +4043,10 @@
         }, {
           "name" : "count",
           "in" : "query",
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "required" : false,
           "type" : "string",
+          "default" : "10",
           "pattern" : "^[1-9][0-9]*$"
         }, {
           "name" : "extra_query",
@@ -4062,6 +4056,18 @@
           "type" : "string",
           "pattern" : "^{\\s*\".*?\"\\s*:\\s*{.*?}\\s*(,\\s*\".*?\"\\s*:\\s*{.*?}\\s*)*\\s*}$"
         }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer"
+        }, {
           "name" : "referent",
           "in" : "query",
           "description" : "Proof request referents of interest, comma-separated",
@@ -4070,9 +4076,10 @@
         }, {
           "name" : "start",
           "in" : "query",
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "required" : false,
           "type" : "string",
+          "default" : "0",
           "pattern" : "^[0-9]*$"
         } ],
         "responses" : {
@@ -4389,9 +4396,10 @@
         }, {
           "name" : "count",
           "in" : "query",
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "required" : false,
           "type" : "string",
+          "default" : "10",
           "pattern" : "^[1-9][0-9]*$"
         }, {
           "name" : "extra_query",
@@ -4401,6 +4409,18 @@
           "type" : "string",
           "pattern" : "^{\\s*\".*?\"\\s*:\\s*{.*?}\\s*(,\\s*\".*?\"\\s*:\\s*{.*?}\\s*)*\\s*}$"
         }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer"
+        }, {
           "name" : "referent",
           "in" : "query",
           "description" : "Proof request referents of interest, comma-separated",
@@ -4409,9 +4429,10 @@
         }, {
           "name" : "start",
           "in" : "query",
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "required" : false,
           "type" : "string",
+          "default" : "0",
           "pattern" : "^[0-9]*$"
         } ],
         "deprecated" : true,

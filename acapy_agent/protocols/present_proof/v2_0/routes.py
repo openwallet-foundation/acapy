@@ -12,6 +12,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
+from marshmallow.validate import Range
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
@@ -41,16 +42,16 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
-from ....storage.base import BaseStorage
+from ....storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE, BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....vc.ld_proofs import (
     BbsBlsSignature2020,
+    EcdsaSecp256r1Signature2019,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    EcdsaSecp256r1Signature2019,
 )
 from ....wallet.error import WalletNotFoundError
 from ..dif.pres_exch import ClaimFormat, InputDescriptors, SchemaInputDescriptor
@@ -370,20 +371,34 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
     )
     start = fields.Str(
         required=False,
+        load_default="0",
         validate=NUM_STR_WHOLE_VALIDATE,
         metadata={
-            "description": "Start index",
+            "description": "Start index (DEPRECATED - use offset instead)",
             "strict": True,
             "example": NUM_STR_WHOLE_EXAMPLE,
+            "deprecated": True,
         },
     )
     count = fields.Str(
         required=False,
+        load_default="10",
         validate=NUM_STR_NATURAL_VALIDATE,
         metadata={
-            "description": "Maximum number to retrieve",
+            "description": "Maximum number to retrieve (DEPRECATED - use limit instead)",
             "example": NUM_STR_NATURAL_EXAMPLE,
+            "deprecated": True,
         },
+    )
+    limit = fields.Int(
+        required=False,
+        validate=Range(min=1, max=MAXIMUM_PAGE_SIZE),
+        metadata={"description": "Number of results to return", "example": 50},
+    )
+    offset = fields.Int(
+        required=False,
+        validate=Range(min=0),
+        metadata={"description": "Offset for pagination", "example": 0},
     )
     extra_query = fields.Str(
         required=False,
@@ -569,16 +584,20 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    start = request.query.get("start")
-    count = request.query.get("count")
+    # Handle both old style start/count and new limit/offset
+    # TODO: Remove start/count and swap to PaginatedQuerySchema and get_limit_offset
+    if "limit" in request.query or "offset" in request.query:
+        # New style - use limit/offset
+        limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+        offset = int(request.query.get("offset", 0))
+    else:
+        # Old style - use start/count
+        limit = int(request.query.get("count", "10"))
+        offset = int(request.query.get("start", "0"))
 
     # url encoded json extra_query
     encoded_extra_query = request.query.get("extra_query") or "{}"
     extra_query = json.loads(encoded_extra_query)
-
-    # defaults
-    start = int(start) if isinstance(start, str) else 0
-    count = int(count) if isinstance(count, str) else 10
 
     wallet_type = profile.settings.get_value("wallet.type")
     if wallet_type == "askar-anoncreds":
@@ -601,9 +620,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 await holder.get_credentials_for_presentation_request_by_referent(
                     pres_request,
                     pres_referents,
-                    start,
-                    count,
-                    extra_query,
+                    offset=offset,
+                    limit=limit,
+                    extra_query=extra_query,
                 )
             )
 
@@ -781,7 +800,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         search = dif_holder.search_credentials(
                             proof_types=proof_type, pd_uri_list=uri_group
                         )
-                        cred_group = await search.fetch(count)
+                        cred_group = await search.fetch(limit)
                         (
                             cred_group_vcrecord_list,
                             cred_group_vcrecord_ids_set,
@@ -795,7 +814,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         proof_types=proof_type,
                         pd_uri_list=uri_list,
                     )
-                    records = await search.fetch(count)
+                    records = await search.fetch(limit)
                 # Avoiding addition of duplicate records
                 vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
                     records, record_ids

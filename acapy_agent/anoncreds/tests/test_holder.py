@@ -373,7 +373,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     async def test_get_credentials(self, _):
         async with self.profile.session() as session:
             await session.handle.insert(CATEGORY_CREDENTIAL, json.dumps(MOCK_CRED))
-        result = await self.holder.get_credentials(0, 10, {})
+        result = await self.holder.get_credentials(offset=0, limit=10, wql={})
         assert isinstance(result, list)
         assert len(result) == 1
 
@@ -386,9 +386,9 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         )
 
         with self.assertRaises(AnonCredsHolderError):
-            await self.holder.get_credentials(0, 10, {})
+            await self.holder.get_credentials(offset=0, limit=10, wql={})
         with self.assertRaises(AnonCredsHolderError):
-            await self.holder.get_credentials(0, 10, {})
+            await self.holder.get_credentials(offset=0, limit=10, wql={})
 
     async def test_get_credentials_for_presentation_request_by_referent(self):
         self.profile.store.scan = mock.Mock(
@@ -408,13 +408,13 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             "restrictions": [{"schema_name": "MYCO Biomarker"}],
         }
         await self.holder.get_credentials_for_presentation_request_by_referent(
-            mock_pres_req, None, start=0, count=10
+            mock_pres_req, None, offset=0, limit=10
         )
 
         # non-existent referent
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.get_credentials_for_presentation_request_by_referent(
-                mock_pres_req, "not-found-ref", start=0, count=10
+                mock_pres_req, "not-found-ref", offset=0, limit=10
             )
 
     @mock.patch.object(Credential, "load", return_value=MockCredential())
