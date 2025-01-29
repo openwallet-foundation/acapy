@@ -148,9 +148,9 @@ class Dispatcher:
         peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
         await peer.save(session)
         await profile.notify(
-            "acapy::webhook::peerwise_did",
+            "acapy::webhook::pairwise_did",
             {
-                "peerwise_id": peer.peerwise_id,
+                "pairwise_id": peer.pairwise_id,
                 "status": "connected",
                 "recipient_did": inbound_message.receipt.sender_verkey,
                 "message": inbound_message.payload,

@@ -148,7 +148,7 @@ class PeerwiseRecord(BaseRecord):
             """Comparison between states."""
             return self is ConnRecord.State.get(other)
 
-    RECORD_ID_NAME = "peerwise_id"
+    RECORD_ID_NAME = "pairwise_id"
     RECORD_TOPIC = "peer_connections"
     LOG_STATE_FLAG = "debug.connections"
     TAG_NAMES = {
@@ -188,7 +188,6 @@ class PeerwiseRecord(BaseRecord):
             pairwise_id,
             **kwargs,
         )
-        self.pairwise_id = pairwise_id
         self.my_did = my_did
         self.their_did = their_did
         #self.their_label = their_label
@@ -198,7 +197,7 @@ class PeerwiseRecord(BaseRecord):
         self.aka = aka
 
     @property
-    def peerwise_id(self) -> str:
+    def pairwise_id(self) -> str:
         """Accessor for the ID associated with this connection."""
         return self._id
 
@@ -371,11 +370,11 @@ class PeerwiseRecord(BaseRecord):
             session: The active profile session
             invitation: The invitation to relate to this connection record
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         record = StorageRecord(
             self.RECORD_TYPE_INVITATION,  # conn- or oob-invitation, to retrieve easily
             invitation.to_json(),
-            {"peerwise_id": self.peerwise_id},
+            {"pairwise_id": self.pairwise_id},
         )
         storage = session.inject(BaseStorage)
         await storage.add_record(record)
@@ -388,11 +387,11 @@ class PeerwiseRecord(BaseRecord):
         Args:
             session: The active profile session
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         storage = session.inject(BaseStorage)
         result = await storage.find_record(
             self.RECORD_TYPE_INVITATION,
-            {"peerwise_id": self.peerwise_id},
+            {"pairwise_id": self.pairwise_id},
         )
         ser = json.loads(result.value)
         return (
@@ -412,11 +411,11 @@ class PeerwiseRecord(BaseRecord):
             session: The active profile session
             request: The request to relate to this connection record
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         record = StorageRecord(
             self.RECORD_TYPE_REQUEST,  # conn- or didx-request, to retrieve easily
             request.to_json(),
-            {"peerwise_id": self.peerwise_id},
+            {"pairwise_id": self.pairwise_id},
         )
         storage: BaseStorage = session.inject(BaseStorage)
         await storage.add_record(record)
@@ -430,10 +429,10 @@ class PeerwiseRecord(BaseRecord):
         Args:
             session: The active profile session
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         storage: BaseStorage = session.inject(BaseStorage)
         result = await storage.find_record(
-            self.RECORD_TYPE_REQUEST, {"peerwise_id": self.peerwise_id}
+            self.RECORD_TYPE_REQUEST, {"pairwise_id": self.pairwise_id}
         )
         ser = json.loads(result.value)
         return (
@@ -466,7 +465,7 @@ class PeerwiseRecord(BaseRecord):
         await super().post_save(session, *args, **kwargs)
 
         # clear cache key set by connection manager
-        cache_key = f"peerwise_connection::{self.peerwise_id}"
+        cache_key = f"pairwise_connection::{self.pairwise_id}"
         await self.clear_cached_key(session, cache_key)
 
     async def delete_record(self, session: ProfileSession):
@@ -480,20 +479,20 @@ class PeerwiseRecord(BaseRecord):
 
         storage = session.inject(BaseStorage)
         # Delete metadata
-        if self.peerwise_id:
+        if self.pairwise_id:
             await storage.delete_all_records(
                 self.RECORD_TYPE_METADATA,
-                {"peerwise_id": self.peerwise_id},
+                {"pairwise_id": self.pairwise_id},
             )
 
         # Delete attached messages
         await storage.delete_all_records(
             self.RECORD_TYPE_REQUEST,
-            {"peerwise_id": self.peerwise_id},
+            {"pairwise_id": self.pairwise_id},
         )
         await storage.delete_all_records(
             self.RECORD_TYPE_INVITATION,
-            {"peerwise_id": self.peerwise_id},
+            {"pairwise_id": self.pairwise_id},
         )
 
     async def abandon(self, session: ProfileSession, *, reason: Optional[str] = None):
@@ -518,12 +517,12 @@ class PeerwiseRecord(BaseRecord):
             Any: metadata stored by key
 
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         storage: BaseStorage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(
                 self.RECORD_TYPE_METADATA,
-                {"key": key, "peerwise_id": self.peerwise_id},
+                {"key": key, "pairwise_id": self.pairwise_id},
             )
             return json.loads(record.value)
         except StorageNotFoundError:
@@ -537,20 +536,20 @@ class PeerwiseRecord(BaseRecord):
             key (str): key identifying metadata
             value (Any): value to set
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         value = json.dumps(value)
         storage: BaseStorage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(
                 self.RECORD_TYPE_METADATA,
-                {"key": key, "peerwise_id": self.peerwise_id},
+                {"key": key, "pairwise_id": self.pairwise_id},
             )
             await storage.update_record(record, value, record.tags)
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_METADATA,
                 value,
-                {"key": key, "peerwise_id": self.peerwise_id},
+                {"key": key, "pairwise_id": self.pairwise_id},
             )
             await storage.add_record(record)
 
@@ -561,12 +560,12 @@ class PeerwiseRecord(BaseRecord):
             session (ProfileSession): session used for storage
             key (str): key of metadata to delete
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         storage: BaseStorage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(
                 self.RECORD_TYPE_METADATA,
-                {"key": key, "peerwise_id": self.peerwise_id},
+                {"key": key, "pairwise_id": self.pairwise_id},
             )
             await storage.delete_record(record)
         except StorageNotFoundError as err:
@@ -582,11 +581,11 @@ class PeerwiseRecord(BaseRecord):
             dict: dictionary representation of all metadata values
 
         """
-        assert self.peerwise_id
+        assert self.pairwise_id
         storage: BaseStorage = session.inject(BaseStorage)
         records = await storage.find_all_records(
             self.RECORD_TYPE_METADATA,
-            {"peerwise_id": self.peerwise_id},
+            {"pairwise_id": self.pairwise_id},
         )
         return {record.tags["key"]: json.loads(record.value) for record in records}
 
@@ -670,7 +669,7 @@ class PeerwiseRecordSchema(MaybeStoredConnRecordSchema):
 
         model_class = PeerwiseRecord
 
-    peerwise_id = fields.Str(
+    pairwise_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
