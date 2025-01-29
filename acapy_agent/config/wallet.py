@@ -59,18 +59,22 @@ async def _attempt_open_profile(
             profile = await profile_manager.provision(context, profile_config)
             provision = True
         else:
-            raise StartupError(
+            error_msg = (
                 "Profile not found. Use `aca-py start --auto-provision` to create."
             )
+            LOGGER.error(error_msg)
+            raise StartupError(error_msg)
 
     return (profile, provision)
 
 
 def _log_provision_info(profile: Profile) -> None:
     LOGGER.info(
-        f"{'Created new profile' if profile.created else 'Opened existing profile'}"
+        "Created new profile - "
+        if profile.created
+        else "Opened existing profile - "
+        f"Profile name: {profile.name}, backend: {profile.backend}"
     )
-    LOGGER.info(f"Profile name: {profile.name} Profile backend: {profile.backend}")
 
 
 async def _initialize_with_public_did(
@@ -95,7 +99,8 @@ async def _initialize_with_public_did(
         public_did = replace_did_info.did
         await wallet.set_public_did(public_did)
         LOGGER.info(
-            f"Created new public DID: {public_did}, with verkey: {replace_did_info.verkey}"  # noqa: E501
+            f"Created new public DID: {public_did}, "
+            f"with verkey: {replace_did_info.verkey}"
         )
 
 
@@ -115,6 +120,12 @@ async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
 async def _initialize_with_seed(
     settings: dict, wallet: BaseWallet, provision: bool, create_local_did: bool, seed: str
 ):
+    def _log_did_info(did: str, verkey: str, is_public: bool):
+        LOGGER.info(
+            f"Created new {'public' if is_public else 'local'}"
+            f"DID: {did}, Verkey: {verkey}"
+        )
+
     if create_local_did:
         endpoint = settings.get("default_endpoint")
         metadata = {"endpoint": endpoint} if endpoint else None
@@ -126,17 +137,13 @@ async def _initialize_with_seed(
             metadata=metadata,
         )
         local_did = local_did_info.did
-        if provision:
-            LOGGER.info(f"Created new local DID: {local_did}")
-            LOGGER.info(f"Verkey: {local_did_info.verkey}")
+        _log_did_info(local_did, local_did_info.verkey, False)
     else:
         public_did_info = await wallet.create_public_did(
             method=SOV, key_type=ED25519, seed=seed
         )
         public_did = public_did_info.did
-        if provision:
-            LOGGER.info(f"Created new public DID: {public_did}")
-            LOGGER.info(f"Verkey: {public_did_info.verkey}")
+        _log_did_info(public_did, public_did_info.verkey, True)
 
 
 async def wallet_config(
