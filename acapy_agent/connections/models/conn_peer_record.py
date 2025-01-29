@@ -662,7 +662,7 @@ class MaybeStoredConnRecordSchema(BaseRecordSchema):
 
 
 
-class ConnRecordSchema(MaybeStoredConnRecordSchema):
+class PeerwiseRecordSchema(MaybeStoredConnRecordSchema):
     """Schema representing stored ConnRecords."""
 
     class Meta:
