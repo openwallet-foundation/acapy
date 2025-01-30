@@ -55,7 +55,7 @@ class AskarAnoncredsProfile(Profile):
     @property
     def name(self) -> str:
         """Accessor for the profile name."""
-        return self.opened.name
+        return self.profile_id or self.opened.name
 
     @property
     def store(self) -> Store:
