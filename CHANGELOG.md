@@ -17,7 +17,7 @@ There are no breaking changes in this release.
 - Multitenant Single Wallet Configurations
   - 0.12 LTS: Askar upgrade and fix profile unique names [\#3475](https://github.com/openwallet-foundation/acapy/pull/3475)
 - Release management pull requests
-  - 0.12.4 [\#3480](https://github.com/hyperledger/aries-cloudagent-python/pull/3480) [swcurran](https://github.com/swcurran)
+  - 0.12.4 [\#3481](https://github.com/hyperledger/aries-cloudagent-python/pull/3481) [swcurran](https://github.com/swcurran)
 
 ## 0.12.3
 
