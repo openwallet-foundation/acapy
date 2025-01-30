@@ -23,7 +23,7 @@ class AnoncredsCredentialDefinitionProposal(OpenAPISchema):
     """Query string parameters for credential definition searches."""
 
     cred_def_id = fields.Str(
-        required=True,
+        required=False,
         validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition id. This is the only required field.",
