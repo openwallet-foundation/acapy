@@ -19,7 +19,7 @@ There are no breaking changes in this release.
 #### 1.2.2 Categorized List of Pull Requests
 
 - Startup, Wallet, and Upgrade Fixes
-  - 0.12 LTS: Askar upgrade and fix profile unique names [\#3477](https://github.com/openwallet-foundation/acapy/pull/3477) [jamshale](https://github.com/jamshale)
+  - 1.2 LTS: Askar upgrade and fix profile unique names [\#3477](https://github.com/openwallet-foundation/acapy/pull/3477) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
   - 1.2.2 [\#3482](https://github.com/openwallet-foundation/acapy/pull/3482) [swcurran](https://github.com/swcurran)
