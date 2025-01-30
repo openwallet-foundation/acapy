@@ -1,5 +1,24 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.12.4
+
+### January 30, 2025
+
+A patch release to upgrade [Askar](https://github.com/openwallet-foundation/askar) to [0.4.3](https://github.com/openwallet-foundation/askar/releases/tag/v0.4.3) and fixes a problem with wallet names in a multitenant, single-wallet configuration.
+
+Addresses the problem outlined in [#3471](https://github.com/openwallet-foundation/acapy/issues/3471) around profiles in multi-tenant/single wallet deployments. The update to Askar addresses an intermittent hang on startup, and a dependency change that can result in a substantial performance improvement in some cases. See issues: [openwallet-foundation/askar#350](https://github.com/openwallet-foundation/askar/pull/350), [openwallet-foundation/askar#351](https://github.com/openwallet-foundation/askar/pull/351), [openwallet-foundation/askar#354](https://github.com/openwallet-foundation/askar/pull/354). This [comment on one of the PRs](https://github.com/openwallet-foundation/askar/pull/350#issuecomment-2615727109) describes the scenario where a substantial performance improvement was seen as a result of the change in Askar.
+
+### 0.12.4 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.4 Categorized List of Pull Requests
+
+- Multitenant Single Wallet Configurations
+  - 0.12 LTS: Askar upgrade and fix profile unique names [\#3475](https://github.com/openwallet-foundation/acapy/pull/3475)
+- Release management pull requests
+  - 0.12.4 [\#3480](https://github.com/hyperledger/aries-cloudagent-python/pull/3480) [swcurran](https://github.com/swcurran)
+
 ## 0.12.3
 
 ### December 17, 2024
