@@ -1,5 +1,29 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.2.2
+
+### January 30, 2025
+
+A patch release to upgrade [Askar](https://github.com/openwallet-foundation/askar) to [0.4.3](https://github.com/openwallet-foundation/askar/releases/tag/v0.4.3) and fixes a problem with wallet names in a multitenant, single-wallet configuration.
+
+Addresses the problem outlined in [#3471](https://github.com/openwallet-foundation/acapy/issues/3471) around profiles in multi-tenant/single wallet deployments. The update to Askar addresses an intermittent hang on startup, and a dependency change that can result in a substantial performance improvement in some cases. See issues: [openwallet-foundation/askar#350](https://github.com/openwallet-foundation/askar/pull/350), [openwallet-foundation/askar#351](https://github.com/openwallet-foundation/askar/pull/351), [openwallet-foundation/askar#354](https://github.com/openwallet-foundation/askar/pull/354). This [comment on one of the PRs](https://github.com/openwallet-foundation/askar/pull/350#issuecomment-2615727109) describes the scenario where a substantial performance improvement was seen as a result of the change in Askar.
+
+### 1.2.2 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.2 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
+
+### 1.2.2 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.2 Categorized List of Pull Requests
+
+- Startup, Wallet, and Upgrade Fixes
+  - 0.12 LTS: Askar upgrade and fix profile unique names [\#3477](https://github.com/openwallet-foundation/acapy/pull/3477) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.2 [\#3482](https://github.com/openwallet-foundation/acapy/pull/3482) [swcurran](https://github.com/swcurran)
+
 ## 1.2.1
 
 ### January 21, 2025
