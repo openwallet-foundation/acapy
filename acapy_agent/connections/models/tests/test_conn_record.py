@@ -1,15 +1,14 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ....protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ....protocols.connections.v1_0.messages.connection_request import ConnectionRequest
-from ....protocols.connections.v1_0.models.connection_detail import ConnectionDetail
+from ....did.did_key import DIDKey
+from ....protocols.didexchange.v1_0.messages.request import DIDXRequest
+from ....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
+from ....protocols.out_of_band.v1_0.messages.service import Service
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....utils.testing import create_test_profile
+from ....wallet.key_type import ED25519
 from ..conn_record import ConnRecord
-from ..diddoc.diddoc import DIDDoc
 
 
 class TestConnRecord(IsolatedAsyncioTestCase):
@@ -32,6 +31,7 @@ class TestConnRecord(IsolatedAsyncioTestCase):
         self.test_did_peer_4_short_b = (
             "did:peer:4zQmQ4dEtoGcivpiH6gtWwhWJY2ENVWuZifb62uzR76HGPPw"
         )
+        self.test_did_key = DIDKey.from_public_key_b58(self.test_verkey, ED25519)
 
         self.test_conn_record = ConnRecord(
             my_did=self.test_did,
@@ -369,14 +369,20 @@ class TestConnRecord(IsolatedAsyncioTestCase):
             )
             await record.save(session)
 
-            invi = ConnectionInvitation(
+            service = Service(
+                _id="asdf",
+                _type="did-communication",
+                recipient_keys=[self.test_did_key.did],
+                service_endpoint="http://localhost:8999",
+            )
+            invi = InvitationMessage(
+                handshake_protocols=["didexchange/1.1"],
+                services=[service],
                 label="abc123",
-                recipient_keys=[self.test_verkey],
-                endpoint="http://localhost:8999",
             )
             await record.attach_invitation(session, invi)
             retrieved = await record.retrieve_invitation(session)
-            assert isinstance(retrieved, ConnectionInvitation)
+            assert isinstance(retrieved, InvitationMessage)
 
     async def test_attach_retrieve_request(self):
         async with self.profile.session() as session:
@@ -386,15 +392,13 @@ class TestConnRecord(IsolatedAsyncioTestCase):
             )
             await record.save(session)
 
-            req = ConnectionRequest(
-                connection=ConnectionDetail(
-                    did=self.test_did, did_doc=DIDDoc(self.test_did)
-                ),
+            req = DIDXRequest(
+                did=self.test_did,
                 label="abc123",
             )
             await record.attach_request(session, req)
             retrieved = await record.retrieve_request(session)
-            assert isinstance(retrieved, ConnectionRequest)
+            assert isinstance(retrieved, DIDXRequest)
 
     async def test_attach_request_abstain_on_alien_deco(self):
         async with self.profile.session() as session:
@@ -404,23 +408,21 @@ class TestConnRecord(IsolatedAsyncioTestCase):
             )
             await record.save(session)
 
-            req = ConnectionRequest(
-                connection=ConnectionDetail(
-                    did=self.test_did, did_doc=DIDDoc(self.test_did)
-                ),
+            req = DIDXRequest(
+                did=self.test_did,
                 label="abc123",
             )
             ser = req.serialize()
             ser["~alien"] = [
                 {"nickname": "profile-image", "data": {"links": ["face.png"]}}
             ]
-            alien_req = ConnectionRequest.deserialize(ser)
+            alien_req = DIDXRequest.deserialize(ser)
             await record.attach_request(session, alien_req)
             alien_ser = alien_req.serialize()
             assert "~alien" in alien_ser
 
             ser["~alien"] = None
-            alien_req = ConnectionRequest.deserialize(ser)
+            alien_req = DIDXRequest.deserialize(ser)
             await record.attach_request(session, alien_req)
             alien_ser = alien_req.serialize()
             assert "~alien" not in alien_ser
@@ -451,11 +453,11 @@ class TestConnRecord(IsolatedAsyncioTestCase):
             state=ConnRecord.State.INIT,
             my_did=self.test_did,
             their_role=ConnRecord.Role.REQUESTER,
-            connection_protocol="connections/1.0",
+            connection_protocol="didexchange/1.0",
         )
         ser = record.serialize()
         deser = ConnRecord.deserialize(ser)
-        assert deser.connection_protocol == "connections/1.0"
+        assert deser.connection_protocol == "didexchange/1.0"
 
     async def test_metadata_set_get(self):
         async with self.profile.session() as session:

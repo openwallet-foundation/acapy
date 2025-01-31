@@ -70,8 +70,7 @@ class DocumentLoader:
             document = self._load_http_document(url, options)
         else:
             raise LinkedDataProofException(
-                "Unrecognized url format. Must start with "
-                "'did:', 'http://' or 'https://'"
+                "Unrecognized url format. Must start with 'did:', 'http://' or 'https://'"
             )
 
         return document

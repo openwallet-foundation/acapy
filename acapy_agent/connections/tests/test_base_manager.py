@@ -1,9 +1,10 @@
 """Test connections base manager."""
 
+import secrets
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
-import pytest
+import base58
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -12,6 +13,7 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
+import pytest
 
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
@@ -25,17 +27,16 @@ from ...did.did_key import DIDKey
 from ...messaging.responder import BaseResponder, MockResponder
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
-from ...protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ...protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...protocols.coordinate_mediation.v1_0.route_manager import (
     CoordinateMediationV1RouteManager,
     RouteManager,
 )
 from ...protocols.discovery.v2_0.manager import V20DiscoveryMgr
+from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
+from ...protocols.out_of_band.v1_0.messages.service import Service as OOBService
 from ...resolver.default.key import KeyDIDResolver
 from ...resolver.default.legacy_peer import LegacyPeerDIDResolver
+from ...resolver.default.peer4 import PeerDID4Resolver
 from ...resolver.did_resolver import DIDResolver
 from ...storage.error import StorageNotFoundError
 from ...tests import mock
@@ -44,7 +45,7 @@ from ...utils.multiformats import multibase, multicodec
 from ...utils.testing import create_test_profile
 from ...wallet.askar import AskarWallet
 from ...wallet.base import BaseWallet, DIDInfo
-from ...wallet.did_method import SOV, DIDMethods
+from ...wallet.did_method import DIDMethods, SOV
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import ED25519, KeyTypes
 from ...wallet.util import b58_to_bytes, bytes_to_b64
@@ -89,6 +90,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         self.resolver = DIDResolver()
         self.resolver.register_resolver(LegacyPeerDIDResolver())
         self.resolver.register_resolver(KeyDIDResolver())
+        self.resolver.register_resolver(PeerDID4Resolver())
 
         self.profile = await create_test_profile(
             {
@@ -120,114 +122,15 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         self.test_mediator_endpoint = "http://mediator.example.com"
 
         self.manager = BaseConnectionManager(self.profile)
+
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            info = await wallet.create_local_did(method=SOV, key_type=ED25519)
+
+        self.did = info.did
+        self.verkey = info.verkey
+
         assert self.manager._profile
-
-    async def test_create_did_document(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-
-        await self.manager.create_did_document(
-            did_info=did_info,
-            svc_endpoints=[self.test_endpoint],
-        )
-
-    async def test_create_did_document_mediation(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        doc = await self.manager.create_did_document(
-            did_info, mediation_records=[mediation_record]
-        )
-        assert doc.service
-        services = list(doc.service.values())
-        assert len(services) == 1
-        (service,) = services
-        assert service.routing_keys
-        service_routing_key = service.routing_keys[0]
-        assert service_routing_key == mediation_record.routing_keys[0]
-        assert service.endpoint == mediation_record.endpoint
-
-    async def test_create_did_document_multiple_mediators(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-        mediation_record1 = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        mediation_record2 = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id="mediator-conn-id2",
-            routing_keys=[
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDz#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDz"
-            ],
-            endpoint="http://mediatorw.example.com",
-        )
-        doc = await self.manager.create_did_document(
-            did_info, mediation_records=[mediation_record1, mediation_record2]
-        )
-        assert doc.service
-        services = list(doc.service.values())
-        assert len(services) == 1
-        (service,) = services
-        assert service.routing_keys[0] == mediation_record1.routing_keys[0]
-        assert service.routing_keys[1] == mediation_record2.routing_keys[0]
-        assert service.endpoint == mediation_record2.endpoint
-
-    async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-        mediation_record = MediationRecord(
-            role=MediationRecord.ROLE_CLIENT,
-            state=MediationRecord.STATE_GRANTED,
-            connection_id=self.test_mediator_conn_id,
-            routing_keys=self.test_mediator_routing_keys,
-            endpoint=self.test_mediator_endpoint,
-        )
-        self.route_manager.routing_info = mock.CoroutineMock(
-            return_value=(mediation_record.routing_keys, mediation_record.endpoint)
-        )
-        doc = await self.manager.create_did_document(
-            did_info,
-            svc_endpoints=[self.test_endpoint],
-            mediation_records=[mediation_record],
-        )
-        assert doc.service
-        services = list(doc.service.values())
-        assert len(services) == 1
-        (service,) = services
-        service_public_keys = service.routing_keys[0]
-        assert service_public_keys == mediation_record.routing_keys[0]
-        assert service.endpoint == mediation_record.endpoint
 
     async def test_did_key_storage(self):
         await self.manager.add_key_for_did(
@@ -246,164 +149,83 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         mock_conn.my_did = None
         assert await self.manager.fetch_connection_targets(mock_conn) == []
 
-    async def test_fetch_connection_targets_conn_invitation_did_no_resolver(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            self.profile.context.injector.bind_instance(DIDResolver, DIDResolver([]))
+    async def test_fetch_connection_targets_in_progress_conn(self):
+        mock_conn = mock.MagicMock(
+            my_did=self.did,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+        )
+        with mock.patch.object(
+            self.manager,
+            "_fetch_targets_for_connection_in_progress",
+            mock.CoroutineMock(),
+        ) as mock_fetch_in_progress:
+            await self.manager.fetch_connection_targets(mock_conn)
+            mock_fetch_in_progress.assert_called()
 
-            await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=self.test_did,
-                metadata=None,
+    async def test_fetch_targets_for_connection_in_progress_inv(self):
+        mock_conn = mock.MagicMock(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            invitation_msg_id="test-invite-msg-id",
+        )
+        mock_conn.retrieve_invitation = mock.CoroutineMock()
+        with mock.patch.object(
+            self.manager,
+            "_fetch_connection_targets_for_invitation",
+            mock.CoroutineMock(),
+        ) as mock_fetch_connection_targets_for_invitation:
+            await self.manager._fetch_targets_for_connection_in_progress(
+                mock_conn, self.test_did
             )
+            mock_fetch_connection_targets_for_invitation.assert_called()
 
-            conn_invite = ConnectionInvitation(
-                did=self.test_target_did,
-                endpoint=self.test_endpoint,
-                recipient_keys=[self.test_target_verkey],
-                routing_keys=[self.test_verkey],
-                label="label",
+    async def test_fetch_targets_for_connection_in_progress_implicit(self):
+        mock_conn = mock.MagicMock(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            invitation_msg_id=None,
+            invitation_key=None,
+        )
+        with mock.patch.object(
+            self.manager,
+            "resolve_invitation",
+            mock.CoroutineMock(
+                return_value=(mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+            ),
+        ) as mock_resolve_invitation:
+            await self.manager._fetch_targets_for_connection_in_progress(
+                mock_conn, self.test_did
             )
-            mock_conn = mock.MagicMock(
-                my_did=self.test_did,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
+            mock_resolve_invitation.assert_called()
 
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.fetch_connection_targets(mock_conn)
+    async def test_fetch_connection_targets_for_invitation_did_resolver(self):
+        target_did_info = await self.manager.create_did_peer_4()
+        target_did = target_did_info.did
+        invitation = InvitationMessage(services=[OOBService(did=target_did)])
 
-    async def test_fetch_connection_targets_conn_invitation_did_resolver(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            builder = DIDDocumentBuilder("did:sov:" + self.test_target_did)
-            vmethod = builder.verification_method.add(
-                Ed25519VerificationKey2018, public_key_base58=self.test_target_verkey
-            )
-            builder.service.add_didcomm(
-                ident="did-communication",
-                service_endpoint=self.test_endpoint,
-                recipient_keys=[vmethod],
-            )
-            did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
-            self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = mock.CoroutineMock(
-                return_value=did_doc.verification_method[0]
-            )
-            self.context.injector.bind_instance(DIDResolver, self.resolver)
+        mock_conn = mock.MagicMock(
+            my_did=self.test_did,
+            their_did=target_did,
+            connection_id="dummy",
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+        )
 
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=self.test_did,
-                metadata=None,
-            )
-
-            conn_invite = ConnectionInvitation(
-                did=self.test_target_did,
-                endpoint=self.test_endpoint,
-                recipient_keys=[self.test_target_verkey],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=self.test_did,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
-
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == conn_invite.endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == conn_invite.recipient_keys
-            assert target.routing_keys == []
-            assert target.sender_key == local_did.verkey
-
-    async def test_fetch_connection_targets_conn_invitation_btcr_resolver(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
-            vmethod = builder.verification_method.add(
-                Ed25519VerificationKey2018, public_key_base58=self.test_target_verkey
-            )
-            builder.service.add_didcomm(
-                type_="IndyAgent",
-                recipient_keys=[vmethod],
-                routing_keys=[vmethod],
-                service_endpoint=self.test_endpoint,
-                priority=1,
-            )
-
-            builder.service.add_didcomm(
-                recipient_keys=[vmethod],
-                routing_keys=[vmethod],
-                service_endpoint=self.test_endpoint,
-                priority=0,
-            )
-            builder.service.add_didcomm(
-                recipient_keys=[vmethod],
-                routing_keys=[vmethod],
-                service_endpoint="{}/priority2".format(self.test_endpoint),
-                priority=2,
-            )
-            did_doc = builder.build()
-
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
-            self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = mock.CoroutineMock(
-                return_value=did_doc.verification_method[0]
-            )
-            self.context.injector.bind_instance(DIDResolver, self.resolver)
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
-
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=[vmethod.material],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=did_doc.id,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
-
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == self.test_endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == conn_invite.recipient_keys
-            assert target.routing_keys == [vmethod.material]
-            assert target.sender_key == local_did.verkey
+        targets = await self.manager._fetch_connection_targets_for_invitation(
+            mock_conn, invitation, self.test_did
+        )
+        assert len(targets) == 1
+        target = targets[0]
+        assert target.did == mock_conn.their_did
 
     async def test_fetch_connection_targets_conn_invitation_btcr_without_services(self):
         async with self.profile.session() as session:
@@ -430,79 +252,73 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 ],
             }
             did_doc = DIDDocument.deserialize(did_doc_json)
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
             self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
-            await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
-
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=["{}#1".format(did_doc.id)],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
+            invitation = InvitationMessage(services=[did_doc.id])
             mock_conn = mock.MagicMock(
                 my_did=did_doc.id,
                 their_did=self.test_target_did,
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=mock.CoroutineMock(return_value=invitation),
             )
             with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.fetch_connection_targets(mock_conn)
+                await self.manager._fetch_connection_targets_for_invitation(
+                    mock_conn, invitation, self.test_did
+                )
 
     async def test_fetch_connection_targets_conn_invitation_no_didcomm_services(self):
         async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
+            did_doc_json = {
+                "@context": ["https://www.w3.org/ns/did/v1"],
+                "id": "did:btcr:x705-jznz-q3nl-srs",
+                "verificationMethod": [
+                    {
+                        "type": "EcdsaSecp256k1VerificationKey2019",
+                        "id": "did:btcr:x705-jznz-q3nl-srs#key-0",
+                        "publicKeyBase58": "02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+                    },
+                    {
+                        "type": "EcdsaSecp256k1VerificationKey2019",
+                        "id": "did:btcr:x705-jznz-q3nl-srs#key-1",
+                        "publicKeyBase58": "02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+                    },
+                    {
+                        "type": "EcdsaSecp256k1VerificationKey2019",
+                        "id": "did:btcr:x705-jznz-q3nl-srs#satoshi",
+                        "publicKeyBase58": "02e0e01a8c302976e1556e95c54146e8464adac8626a5d29474718a7281133ff49",
+                    },
+                ],
+            }
+
+            did_doc = DIDDocument.deserialize(did_doc_json)
+            builder = DIDDocumentBuilder.from_doc(did_doc)
+
             builder.verification_method.add(
                 Ed25519VerificationKey2018, public_key_base58=self.test_target_verkey
             )
             builder.service.add(type_="LinkedData", service_endpoint=self.test_endpoint)
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
             self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
-            await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
 
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=["{}#1".format(did_doc.id)],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
+            invitation = InvitationMessage(services=[did_doc.id])
             mock_conn = mock.MagicMock(
                 my_did=did_doc.id,
                 their_did=self.test_target_did,
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=mock.CoroutineMock(return_value=invitation),
             )
             with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.fetch_connection_targets(mock_conn)
+                await self.manager._fetch_connection_targets_for_invitation(
+                    mock_conn, invitation, self.test_did
+                )
 
-    async def test_fetch_connection_targets_conn_invitation_supports_Ed25519VerificationKey2018_key_type_no_multicodec(
+    async def test_resolve_invitation_supports_Ed25519VerificationKey2018_key_type_no_multicodec(
         self,
     ):
         async with self.profile.session() as session:
@@ -520,49 +336,19 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
             self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
+            assert did_doc.verification_method
             self.resolver.dereference = mock.CoroutineMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
 
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=[vmethod.public_key_jwk],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=did_doc.id,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
+            endpoint, recips, routes = await self.manager.resolve_invitation(did_doc.id)
+            assert endpoint == self.test_endpoint
+            assert recips == [self.test_target_verkey]
+            assert routes == []
 
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == self.test_endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == [self.test_target_verkey]
-            assert target.routing_keys == []
-            assert target.sender_key == local_did.verkey
-
-    async def test_fetch_connection_targets_conn_invitation_supports_Ed25519VerificationKey2018_key_type_with_multicodec(
+    async def test_resolve_invitation_supports_Ed25519VerificationKey2018_key_type_with_multicodec(
         self,
     ):
         async with self.profile.session() as session:
@@ -581,49 +367,19 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
             self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
+            assert did_doc.verification_method
             self.resolver.dereference = mock.CoroutineMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
 
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=[vmethod.public_key_jwk],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=did_doc.id,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
+            endpoint, recips, routes = await self.manager.resolve_invitation(did_doc.id)
+            assert endpoint == self.test_endpoint
+            assert recips == [self.test_target_verkey]
+            assert routes == []
 
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == self.test_endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == [self.test_target_verkey]
-            assert target.routing_keys == []
-            assert target.sender_key == local_did.verkey
-
-    async def test_fetch_connection_targets_conn_invitation_supported_JsonWebKey2020_key_type(
+    async def test_resolve_invitation_supported_JsonWebKey2020_key_type(
         self,
     ):
         async with self.profile.session() as session:
@@ -644,49 +400,19 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
             self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
+            assert did_doc.verification_method
             self.resolver.dereference = mock.CoroutineMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
 
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=[vmethod.public_key_jwk],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=did_doc.id,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
+            endpoint, recips, routes = await self.manager.resolve_invitation(did_doc.id)
+            assert endpoint == self.test_endpoint
+            assert recips == [self.test_target_verkey]
+            assert routes == []
 
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == self.test_endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == [self.test_target_verkey]
-            assert target.routing_keys == []
-            assert target.sender_key == local_did.verkey
-
-    async def test_fetch_connection_targets_conn_invitation_unsupported_key_type(self):
+    async def test_resolve_invitation_unsupported_key_type(self):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
@@ -706,170 +432,15 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
             self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = mock.CoroutineMock(
-                return_value=did_doc.verification_method[0]
-            )
-            self.context.injector.bind_instance(DIDResolver, self.resolver)
-            await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=did_doc.id,
-                metadata=None,
-            )
-
-            conn_invite = ConnectionInvitation(
-                did=did_doc.id,
-                endpoint=self.test_endpoint,
-                recipient_keys=["{}#1".format(did_doc.id)],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=did_doc.id,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.fetch_connection_targets(mock_conn)
-
-    async def test_fetch_connection_targets_oob_invitation_svc_did_no_resolver(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            self.context.injector.bind_instance(DIDResolver, DIDResolver([]))
-            await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=self.test_did,
-                metadata=None,
-            )
-
-            mock_oob_invite = mock.MagicMock(services=[self.test_did])
-
-            mock_conn = mock.MagicMock(
-                my_did=self.test_did,
-                retrieve_invitation=mock.CoroutineMock(return_value=mock_oob_invite),
-                state=ConnRecord.State.INVITATION.rfc23,
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-            )
-
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.fetch_connection_targets(mock_conn)
-
-    async def test_fetch_connection_targets_oob_invitation_svc_did_resolver(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            builder = DIDDocumentBuilder("did:sov:" + self.test_target_did)
-            vmethod = builder.verification_method.add(
-                Ed25519VerificationKey2018,
-                ident="1",
-                public_key_base58=self.test_target_verkey,
-            )
-            builder.service.add_didcomm(
-                ident="did-communication",
-                service_endpoint=self.test_endpoint,
-                recipient_keys=[vmethod],
-            )
-            did_doc = builder.build()
-
-            self.resolver.resolve = mock.CoroutineMock(return_value=did_doc)
+            assert did_doc.verification_method
             self.resolver.dereference = mock.CoroutineMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=self.test_did,
-                metadata=None,
-            )
-
-            mock_oob_invite = mock.MagicMock(
-                label="a label",
-                their_did=self.test_target_did,
-                services=["dummy"],
-            )
-            mock_conn = mock.MagicMock(
-                my_did=self.test_did,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=mock_oob_invite),
-            )
-
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == self.test_endpoint
-            assert target.label == mock_oob_invite.label
-            assert target.recipient_keys == [vmethod.material]
-            assert target.routing_keys == []
-            assert target.sender_key == local_did.verkey
-
-    async def test_fetch_connection_targets_oob_invitation_svc_block_resolver(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            self.resolver.get_endpoint_for_did = mock.CoroutineMock(
-                return_value=self.test_endpoint
-            )
-            self.resolver.get_key_for_did = mock.CoroutineMock(
-                return_value=self.test_target_verkey
-            )
-            self.context.injector.bind_instance(DIDResolver, self.resolver)
-
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=self.test_did,
-                metadata=None,
-            )
-
-            mock_oob_invite = mock.MagicMock(
-                label="a label",
-                their_did=self.test_target_did,
-                services=[
-                    mock.MagicMock(
-                        service_endpoint=self.test_endpoint,
-                        recipient_keys=[
-                            DIDKey.from_public_key_b58(
-                                self.test_target_verkey, ED25519
-                            ).did
-                        ],
-                        routing_keys=[],
-                    )
-                ],
-            )
-            mock_conn = mock.MagicMock(
-                my_did=self.test_did,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=mock_oob_invite),
-            )
-
-            targets = await self.manager.fetch_connection_targets(mock_conn)
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == self.test_endpoint
-            assert target.label == mock_oob_invite.label
-            assert target.recipient_keys == [self.test_target_verkey]
-            assert target.routing_keys == []
-            assert target.sender_key == local_did.verkey
+            with self.assertRaises(BaseConnectionManagerError):
+                await self.manager.resolve_invitation(did_doc.id)
 
     async def test_fetch_connection_targets_conn_initiator_completed_no_their_did(self):
         async with self.profile.session() as session:
@@ -1255,66 +826,6 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
 
             assert await self.manager.resolve_inbound_connection(receipt)
 
-    async def test_get_connection_targets_conn_invitation_no_did(self):
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            local_did = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=self.test_seed,
-                did=self.test_did,
-                metadata=None,
-            )
-
-            did_doc = self.make_did_doc(
-                did=self.test_target_did, verkey=self.test_target_verkey
-            )
-            await self.manager.store_did_document(did_doc)
-
-            # First pass: not yet in cache
-            conn_invite = ConnectionInvitation(
-                did=None,
-                endpoint=self.test_endpoint,
-                recipient_keys=[self.test_target_verkey],
-                routing_keys=[self.test_verkey],
-                label="label",
-            )
-            mock_conn = mock.MagicMock(
-                my_did=self.test_did,
-                their_did=self.test_target_did,
-                connection_id="dummy",
-                their_role=ConnRecord.Role.RESPONDER.rfc23,
-                state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
-            )
-
-            targets = await self.manager.get_connection_targets(
-                connection_id=None,
-                connection=mock_conn,
-            )
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == conn_invite.endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == conn_invite.recipient_keys
-            assert target.routing_keys == conn_invite.routing_keys
-            assert target.sender_key == local_did.verkey
-
-            # Next pass: exercise cache
-            targets = await self.manager.get_connection_targets(
-                connection_id=None,
-                connection=mock_conn,
-            )
-            assert len(targets) == 1
-            target = targets[0]
-            assert target.did == mock_conn.their_did
-            assert target.endpoint == conn_invite.endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == conn_invite.recipient_keys
-            assert target.routing_keys == conn_invite.routing_keys
-            assert target.sender_key == local_did.verkey
-
     async def test_get_connection_targets_retrieve_connection(self):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -1332,11 +843,15 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             await self.manager.store_did_document(did_doc)
 
             # Connection target not in cache
-            conn_invite = ConnectionInvitation(
+            service = OOBService(
                 did=None,
-                endpoint=self.test_endpoint,
-                recipient_keys=[self.test_target_verkey],
-                routing_keys=[self.test_verkey],
+                recipient_keys=[
+                    DIDKey.from_public_key_b58(self.test_target_verkey, ED25519).did
+                ],
+                routing_keys=[DIDKey.from_public_key_b58(self.test_verkey, ED25519).did],
+            )
+            invitation = InvitationMessage(
+                services=[service],
                 label="label",
             )
             mock_conn = mock.MagicMock(
@@ -1345,7 +860,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=mock.CoroutineMock(return_value=invitation),
             )
 
             with (
@@ -1365,10 +880,10 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 assert len(targets) == 1
                 target = targets[0]
                 assert target.did == mock_conn.their_did
-                assert target.endpoint == conn_invite.endpoint
-                assert target.label == conn_invite.label
-                assert target.recipient_keys == conn_invite.recipient_keys
-                assert target.routing_keys == conn_invite.routing_keys
+                assert target.endpoint == service.service_endpoint
+                assert target.label == invitation.label
+                assert target.recipient_keys == [self.test_target_verkey]
+                assert target.routing_keys == [self.test_verkey]
                 assert target.sender_key == local_did.verkey
 
     async def test_get_connection_targets_from_cache(self):
@@ -1474,7 +989,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await self.manager.get_connection_targets()
 
-    async def test_get_conn_targets_conn_invitation_no_cache(self):
+    async def test_get_conn_targets_invitation_no_cache(self):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             self.context.injector.clear_binding(BaseCache)
@@ -1491,11 +1006,15 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             )
             await self.manager.store_did_document(did_doc)
 
-            conn_invite = ConnectionInvitation(
+            service = OOBService(
                 did=None,
-                endpoint=self.test_endpoint,
-                recipient_keys=[self.test_target_verkey],
-                routing_keys=[self.test_verkey],
+                recipient_keys=[
+                    DIDKey.from_public_key_b58(self.test_target_verkey, ED25519).did
+                ],
+                routing_keys=[DIDKey.from_public_key_b58(self.test_verkey, ED25519).did],
+            )
+            invitation = InvitationMessage(
+                services=[service],
                 label="label",
             )
             mock_conn = mock.MagicMock(
@@ -1504,7 +1023,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=mock.CoroutineMock(return_value=invitation),
             )
 
             targets = await self.manager.get_connection_targets(
@@ -1514,10 +1033,10 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             assert len(targets) == 1
             target = targets[0]
             assert target.did == mock_conn.their_did
-            assert target.endpoint == conn_invite.endpoint
-            assert target.label == conn_invite.label
-            assert target.recipient_keys == conn_invite.recipient_keys
-            assert target.routing_keys == conn_invite.routing_keys
+            assert target.endpoint == service.service_endpoint
+            assert target.label == invitation.label
+            assert target.recipient_keys == [self.test_target_verkey]
+            assert target.routing_keys == [self.test_verkey]
             assert target.sender_key == local_did.verkey
 
     async def test_create_static_connection(self):
@@ -1526,7 +1045,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
         self.context.injector.bind_instance(BaseMultitenantManager, self.multitenant_mgr)
 
         _my, _their, conn_rec = await self.manager.create_static_connection(
-            my_did=self.test_did,
+            my_did=base58.b58encode(secrets.token_bytes(16)).decode(),
             their_did=self.test_target_did,
             their_verkey=self.test_target_verkey,
             their_endpoint=self.test_endpoint,

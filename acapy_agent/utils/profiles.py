@@ -8,6 +8,7 @@ from ..anoncreds.error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.profile import Profile
 from ..multitenant.manager import MultitenantManager
+from ..multitenant.single_wallet_askar_manager import SingleWalletAskarMultitenantManager
 from ..storage.base import BaseStorageSearch
 from ..wallet.models.wallet_record import WalletRecord
 
@@ -41,6 +42,13 @@ async def get_subwallet_profiles_from_storage(root_profile: Profile) -> list[Pro
     search_session = base_storage_search.search_records(
         type_filter=WalletRecord.RECORD_TYPE, page_size=10
     )
+    if (
+        root_profile.context.settings.get("multitenant.wallet_type")
+        == "single-wallet-askar"
+    ):
+        manager = SingleWalletAskarMultitenantManager(root_profile)
+    else:
+        manager = MultitenantManager(root_profile)
     while search_session._done is False:
         wallet_storage_records = await search_session.fetch()
         for wallet_storage_record in wallet_storage_records:
@@ -49,7 +57,7 @@ async def get_subwallet_profiles_from_storage(root_profile: Profile) -> list[Pro
                 json.loads(wallet_storage_record.value),
             )
             subwallet_profiles.append(
-                await MultitenantManager(root_profile).get_wallet_profile(
+                await manager.get_wallet_profile(
                     base_context=root_profile.context,
                     wallet_record=wallet_record,
                 )

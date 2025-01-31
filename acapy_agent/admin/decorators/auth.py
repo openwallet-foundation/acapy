@@ -2,7 +2,7 @@
 
 import functools
 import re
-from typing import Optional, Pattern
+from typing import List, Optional, Pattern
 
 from aiohttp import web
 
@@ -65,8 +65,12 @@ def tenant_authentication(handler):
         )
         insecure_mode = bool(profile.settings.get("admin.admin_insecure_mode"))
         multitenant_enabled = profile.settings.get("multitenant.enabled")
+        base_wallet_routes = profile.settings.get("multitenant.base_wallet_routes")
         base_wallet_allowed_route = _base_wallet_route_access(
-            profile.settings.get("multitenant.base_wallet_routes"), request.path
+            [base_wallet_routes]
+            if isinstance(base_wallet_routes, str)
+            else base_wallet_routes,
+            request.path,
         )
 
         # CORS fix: allow OPTIONS method access to paths without a token
@@ -88,19 +92,22 @@ def tenant_authentication(handler):
     return tenant_auth
 
 
-def _base_wallet_route_access(additional_routes: str, request_path: str) -> bool:
+def _base_wallet_route_access(additional_routes: List[str], request_path: str) -> bool:
     """Check if request path matches additional routes."""
-    additional_routes_pattern = _build_additional_routes_pattern(additional_routes)
+    additional_routes_pattern = (
+        _build_additional_routes_pattern(additional_routes) if additional_routes else None
+    )
     return _matches_additional_routes(additional_routes_pattern, request_path)
 
 
-def _build_additional_routes_pattern(pattern_string: str) -> Optional[Pattern]:
+def _build_additional_routes_pattern(pattern_list: List[str]) -> Optional[Pattern]:
     """Build pattern from space delimited list of paths."""
     # create array and add word boundary to avoid false positives
-    if pattern_string:
-        paths = pattern_string.split(" ")
-        return re.compile("^((?:)" + "|".join(paths) + ")$")
-    return None
+    all_paths = []
+    for pattern in pattern_list:
+        paths = pattern.split(" ")
+        all_paths = all_paths + paths
+    return re.compile("^((?:)" + "|".join(all_paths) + ")$")
 
 
 def _matches_additional_routes(pattern: Pattern, path: str) -> bool:

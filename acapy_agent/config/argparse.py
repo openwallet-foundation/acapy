@@ -269,8 +269,7 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_DEBUG_CREDENTIALS",
             help=(
-                "Enable additional logging around credential exchanges. "
-                "Default: false."
+                "Enable additional logging around credential exchanges. Default: false."
             ),
         )
         parser.add_argument(
@@ -278,15 +277,14 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_DEBUG_PRESENTATIONS",
             help=(
-                "Enable additional logging around presentation exchanges. "
-                "Default: false."
+                "Enable additional logging around presentation exchanges. Default: false."
             ),
         )
         parser.add_argument(
             "--debug-webhooks",
             action="store_true",
             env_var="ACAPY_DEBUG_WEBHOOKS",
-            help=("Emit protocol state object as webhook. " "Default: false."),
+            help=("Emit protocol state object as webhook. Default: false."),
         )
         parser.add_argument(
             "--invite",
@@ -295,15 +293,6 @@ class DebugGroup(ArgumentGroup):
             help=(
                 "After startup, generate and print a new out-of-band connection "
                 "invitation URL. Default: false."
-            ),
-        )
-        parser.add_argument(
-            "--connections-invite",
-            action="store_true",
-            env_var="ACAPY_CONNECTIONS_INVITE",
-            help=(
-                "After startup, generate and print a new connections protocol "
-                "style invitation URL. Default: false."
             ),
         )
         parser.add_argument(
@@ -416,8 +405,7 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_AUTO_STORE_CREDENTIAL",
             help=(
-                "Automatically store an issued credential upon receipt. "
-                "Default: false."
+                "Automatically store an issued credential upon receipt. Default: false."
             ),
         )
         parser.add_argument(
@@ -425,8 +413,7 @@ class DebugGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_AUTO_VERIFY_PRESENTATION",
             help=(
-                "Automatically verify a presentation when it is received. "
-                "Default: false."
+                "Automatically verify a presentation when it is received. Default: false."
             ),
         )
 
@@ -445,8 +432,6 @@ class DebugGroup(ArgumentGroup):
             settings["debug.seed"] = args.debug_seed
         if args.invite:
             settings["debug.print_invitation"] = True
-        if args.connections_invite:
-            settings["debug.print_connections_invitation"] = True
         if args.invite_label:
             settings["debug.invite_label"] = args.invite_label
         if args.invite_multi_use:
@@ -1467,24 +1452,12 @@ class MediationInviteGroup(ArgumentGroup):
                 "and send mediation request and set as default mediator."
             ),
         )
-        parser.add_argument(
-            "--mediator-connections-invite",
-            action="store_true",
-            env_var="ACAPY_MEDIATION_CONNECTIONS_INVITE",
-            help=(
-                "Connect to mediator through a connection invitation. "
-                "If not specified, connect using an OOB invitation. "
-                "Default: false."
-            ),
-        )
 
     def get_settings(self, args: Namespace):
         """Extract mediation invitation settings."""
         settings = {}
         if args.mediator_invitation:
             settings["mediation.invite"] = args.mediator_invitation
-        if args.mediator_connections_invite:
-            settings["mediation.connections_invite"] = True
 
         return settings
 

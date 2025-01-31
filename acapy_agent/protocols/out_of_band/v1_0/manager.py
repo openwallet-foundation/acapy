@@ -7,11 +7,6 @@ from typing import List, Mapping, NamedTuple, Optional, Sequence, Text, Union
 
 from uuid_utils import uuid4
 
-from acapy_agent.protocols.coordinate_mediation.v1_0.route_manager import (
-    RouteManager,
-)
-from acapy_agent.wallet.error import WalletNotFoundError
-
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -26,12 +21,12 @@ from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_info import INVITATION_REUSE_KEY, DIDInfo
+from ....wallet.did_info import DIDInfo, INVITATION_REUSE_KEY
 from ....wallet.did_method import PEER2, PEER4
+from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519
-from ...connections.v1_0.manager import ConnectionManager
-from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ...coordinate_mediation.v1_0.route_manager import RouteManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
@@ -1102,36 +1097,6 @@ class OutOfBandManager(BaseConnectionManager):
                     protocol=protocol.name,
                 )
                 break
-            # 0160 Connection
-            elif protocol is HSProto.RFC160:
-                service.recipient_keys = [
-                    DIDKey.from_did(key).public_key_b58
-                    for key in service.recipient_keys or []
-                ]
-                service.routing_keys = [
-                    DIDKey.from_did(key).public_key_b58 for key in service.routing_keys
-                ] or []
-                msg_type = DIDCommPrefix.qualify_current(protocol.name) + "/invitation"
-                connection_invitation = ConnectionInvitation.deserialize(
-                    {
-                        "@id": invitation._id,
-                        "@type": msg_type,
-                        "label": invitation.label,
-                        "recipientKeys": service.recipient_keys,
-                        "serviceEndpoint": service.service_endpoint,
-                        "routingKeys": service.routing_keys,
-                    }
-                )
-                conn_mgr = ConnectionManager(self.profile)
-                conn_record = await conn_mgr.receive_invitation(
-                    invitation=connection_invitation,
-                    their_public_did=public_did,
-                    auto_accept=auto_accept,
-                    alias=alias,
-                    mediation_id=mediation_id,
-                )
-                break
-
         if not conn_record:
             raise OutOfBandManagerError(
                 f"Unable to create connection. Could not perform handshake using any of "

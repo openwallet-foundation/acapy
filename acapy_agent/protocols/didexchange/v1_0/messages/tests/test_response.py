@@ -76,8 +76,7 @@ class TestDIDXResponse(IsolatedAsyncioTestCase, TestConfig):
         assert self.response._type == DIDCommPrefix.qualify_current(DIDX_RESPONSE)
 
     @mock.patch(
-        "acapy_agent.protocols.didexchange.v1_0.messages."
-        "response.DIDXResponseSchema.load"
+        "acapy_agent.protocols.didexchange.v1_0.messages.response.DIDXResponseSchema.load"
     )
     def test_deserialize(self, mock_response_schema_load):
         """
@@ -91,8 +90,7 @@ class TestDIDXResponse(IsolatedAsyncioTestCase, TestConfig):
         assert response is mock_response_schema_load.return_value
 
     @mock.patch(
-        "acapy_agent.protocols.didexchange.v1_0.messages."
-        "response.DIDXResponseSchema.dump"
+        "acapy_agent.protocols.didexchange.v1_0.messages.response.DIDXResponseSchema.dump"
     )
     def test_serialize(self, mock_response_schema_dump):
         """

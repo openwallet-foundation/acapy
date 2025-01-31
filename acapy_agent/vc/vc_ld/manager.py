@@ -5,6 +5,10 @@ from typing import Dict, List, Optional, Type, Union, cast
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
+from acapy_agent.vc.ld_proofs.suites.ecdsa_secp256r1_signature_2019 import (
+    EcdsaSecp256r1Signature2019,
+)
+
 from ...core.profile import Profile
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
@@ -12,7 +16,7 @@ from ...wallet.base import BaseWallet
 from ...wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
-from ...wallet.key_type import BLS12381G2, ED25519, KeyType
+from ...wallet.key_type import BLS12381G2, ED25519, P256, KeyType
 from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
@@ -41,11 +45,13 @@ from .verify import verify_credential, verify_presentation
 SignatureTypes = Union[
     Type[Ed25519Signature2018],
     Type[Ed25519Signature2020],
+    Type[EcdsaSecp256r1Signature2019],
     Type[BbsBlsSignature2020],
 ]
 ProofTypes = Union[
     Type[Ed25519Signature2018],
     Type[Ed25519Signature2020],
+    Type[EcdsaSecp256r1Signature2019],
     Type[BbsBlsSignature2020],
     Type[BbsBlsSignatureProof2020],
 ]
@@ -56,6 +62,7 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
 SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[SignatureTypes, KeyType] = {
     Ed25519Signature2018: ED25519,
     Ed25519Signature2020: ED25519,
+    EcdsaSecp256r1Signature2019: P256,
 }
 PROOF_KEY_TYPE_MAPPING = cast(Dict[ProofTypes, KeyType], SIGNATURE_SUITE_KEY_TYPE_MAPPING)
 

@@ -293,6 +293,8 @@ class BaseRecord(BaseModel):
         *,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
         post_filter_positive: Optional[dict] = None,
         post_filter_negative: Optional[dict] = None,
         alt: bool = False,
@@ -304,6 +306,8 @@ class BaseRecord(BaseModel):
             tag_filter: An optional dictionary of tag filter clauses
             limit: The maximum number of records to retrieve
             offset: The offset to start retrieving records from
+            order_by: An optional field by which to order the records.
+            descending: Whether to order the records in descending order.
             post_filter_positive: Additional value filters to apply matching positively
             post_filter_negative: Additional value filters to apply matching negatively
             alt: set to match any (positive=True) value or miss all (positive=False)
@@ -327,11 +331,15 @@ class BaseRecord(BaseModel):
                 tag_query=tag_query,
                 limit=limit,
                 offset=offset,
+                order_by=order_by,
+                descending=descending,
             )
         else:
             rows = await storage.find_all_records(
                 type_filter=cls.RECORD_TYPE,
                 tag_query=tag_query,
+                order_by=order_by,
+                descending=descending,
             )
 
         num_results_post_filter = 0  # used if applying pagination post-filter

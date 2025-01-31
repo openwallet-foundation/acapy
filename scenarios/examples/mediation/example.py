@@ -9,7 +9,6 @@ from os import getenv
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
 from acapy_controller.protocols import (
-    connection,
     didexchange,
     request_mediation_v1,
     trustping,
@@ -35,7 +34,7 @@ async def main():
         ab, ba = await didexchange(alice, bob)
         await trustping(alice, ab)
 
-        ab, ba = await connection(alice, bob)
+        ab, ba = await didexchange(alice, bob)
         await trustping(alice, ab)
 
 

@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.2.0"
+    "version" : "v1.2.1"
   },
   "servers" : [ {
     "url" : "/"
@@ -2054,18 +2054,34 @@
     "/credentials" : {
       "get" : {
         "parameters" : [ {
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "in" : "query",
           "name" : "count",
           "schema" : {
+            "default" : "10",
             "pattern" : "^[1-9][0-9]*$",
             "type" : "string"
           }
         }, {
-          "description" : "Start index",
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "in" : "query",
           "name" : "start",
           "schema" : {
+            "default" : "0",
             "pattern" : "^[0-9]*$",
             "type" : "string"
           }
@@ -2096,31 +2112,6 @@
     },
     "/credentials/w3c" : {
       "post" : {
-        "parameters" : [ {
-          "description" : "Maximum number to retrieve",
-          "in" : "query",
-          "name" : "count",
-          "schema" : {
-            "pattern" : "^[1-9][0-9]*$",
-            "type" : "string"
-          }
-        }, {
-          "description" : "Start index",
-          "in" : "query",
-          "name" : "start",
-          "schema" : {
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          }
-        }, {
-          "description" : "(JSON) WQL query",
-          "in" : "query",
-          "name" : "wql",
-          "schema" : {
-            "pattern" : "^{.*}$",
-            "type" : "string"
-          }
-        } ],
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -4923,10 +4914,11 @@
             "type" : "string"
           }
         }, {
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "in" : "query",
           "name" : "count",
           "schema" : {
+            "default" : "10",
             "pattern" : "^[1-9][0-9]*$",
             "type" : "string"
           }
@@ -4939,6 +4931,20 @@
             "type" : "string"
           }
         }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
           "description" : "Proof request referents of interest, comma-separated",
           "in" : "query",
           "name" : "referent",
@@ -4946,10 +4952,11 @@
             "type" : "string"
           }
         }, {
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "in" : "query",
           "name" : "start",
           "schema" : {
+            "default" : "0",
             "pattern" : "^[0-9]*$",
             "type" : "string"
           }
@@ -5341,10 +5348,11 @@
             "type" : "string"
           }
         }, {
-          "description" : "Maximum number to retrieve",
+          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
           "in" : "query",
           "name" : "count",
           "schema" : {
+            "default" : "10",
             "pattern" : "^[1-9][0-9]*$",
             "type" : "string"
           }
@@ -5357,6 +5365,20 @@
             "type" : "string"
           }
         }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
           "description" : "Proof request referents of interest, comma-separated",
           "in" : "query",
           "name" : "referent",
@@ -5364,10 +5386,11 @@
             "type" : "string"
           }
         }, {
-          "description" : "Start index",
+          "description" : "Start index (DEPRECATED - use offset instead)",
           "in" : "query",
           "name" : "start",
           "schema" : {
+            "default" : "0",
             "pattern" : "^[0-9]*$",
             "type" : "string"
           }
@@ -7171,7 +7194,7 @@
           "in" : "query",
           "name" : "key_type",
           "schema" : {
-            "enum" : [ "ed25519", "bls12381g2" ],
+            "enum" : [ "ed25519", "bls12381g2", "p256" ],
             "type" : "string"
           }
         }, {
@@ -7388,7 +7411,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create a EdDSA jws using did keys with a given payload",
+        "summary" : "Create a jws using did keys with a given payload",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7417,7 +7440,7 @@
             "description" : ""
           }
         },
-        "summary" : "Verify a EdDSA jws using did keys with a given JWS",
+        "summary" : "Verify a jws using did keys with a given JWS",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7528,7 +7551,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create a EdDSA sd-jws using did keys with a given payload",
+        "summary" : "Create an sd-jws using did keys with a given payload",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -7557,7 +7580,7 @@
             "description" : ""
           }
         },
-        "summary" : "Verify a EdDSA sd-jws using did keys with a given SD-JWS with optional key binding",
+        "summary" : "Verify an sd-jws using did keys with a given SD-JWS with optional key binding",
         "tags" : [ "wallet" ],
         "x-codegen-request-body-name" : "body"
       }
@@ -9400,7 +9423,7 @@
           },
           "key_type" : {
             "description" : "Key type associated with the DID",
-            "enum" : [ "ed25519", "bls12381g2" ],
+            "enum" : [ "ed25519", "bls12381g2", "p256" ],
             "example" : "ed25519",
             "type" : "string"
           },
@@ -9462,7 +9485,7 @@
           },
           "key_type" : {
             "description" : "Key type to use for the DID keypair. Validated with the chosen DID method's supported key types.",
-            "enum" : [ "ed25519", "bls12381g2" ],
+            "enum" : [ "ed25519", "bls12381g2", "p256" ],
             "example" : "ed25519",
             "type" : "string"
           }

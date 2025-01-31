@@ -4,9 +4,7 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
+from .....out_of_band.v1_0.messages.invitation import InvitationMessage, Service
 from ......tests import mock
 from ......utils.testing import create_test_profile
 from ...messages.forward_invitation import ForwardInvitation
@@ -25,14 +23,17 @@ class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
         self.context = RequestContext.test_context(await create_test_profile())
 
         self.context.connection_ready = True
+        service = Service(
+            did=TEST_DID,
+            recipient_keys=[TEST_VERKEY],
+            service_endpoint=TEST_ENDPOINT,
+            routing_keys=[TEST_ROUTE_VERKEY],
+        )
         self.context.message = ForwardInvitation(
-            invitation=ConnectionInvitation(
+            invitation=InvitationMessage(
                 label=TEST_LABEL,
-                did=TEST_DID,
-                recipient_keys=[TEST_VERKEY],
-                endpoint=TEST_ENDPOINT,
-                routing_keys=[TEST_ROUTE_VERKEY],
                 image_url=TEST_IMAGE_URL,
+                services=[service],
             ),
             message="Hello World",
         )
@@ -42,7 +43,7 @@ class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
         with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "OutOfBandManager", autospec=True
         ) as mock_mgr:
             mock_mgr.return_value.receive_invitation = mock.CoroutineMock(
                 return_value=ConnRecord(connection_id="dummy")
@@ -56,10 +57,10 @@ class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
         with mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "OutOfBandManager", autospec=True
         ) as mock_mgr:
             mock_mgr.return_value.receive_invitation = mock.CoroutineMock(
-                side_effect=test_module.ConnectionManagerError("oops")
+                side_effect=test_module.OutOfBandManagerError("oops")
             )
 
             await handler.handle(self.context, responder)

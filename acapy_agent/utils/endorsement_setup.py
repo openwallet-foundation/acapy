@@ -4,10 +4,6 @@ import logging
 
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
-from ..protocols.connections.v1_0.manager import ConnectionManager
-from ..protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
 from ..protocols.endorse_transaction.v1_0.manager import TransactionManager
 from ..protocols.endorse_transaction.v1_0.transaction_jobs import TransactionJob
 from ..protocols.endorse_transaction.v1_0.util import (
@@ -66,19 +62,7 @@ async def attempt_auto_author_with_endorser_setup(profile: Profile):
                     session, oob_record.connection_id
                 )
         else:
-            invite = ConnectionInvitation.from_url(endorser_invitation)
-            if invite:
-                conn_mgr = ConnectionManager(profile)
-                conn_record = await conn_mgr.receive_invitation(
-                    invitation=invite,
-                    auto_accept=True,
-                    alias=endorser_alias,
-                )
-            else:
-                raise EndorsementSetupError(
-                    "Failed to establish endorser connection, invalid "
-                    "invitation format."
-                )
+            raise EndorsementSetupError("Invalid OOB Invitation URL")
 
         # configure the connection role and info (don't need to wait for the connection)
         transaction_mgr = TransactionManager(profile)

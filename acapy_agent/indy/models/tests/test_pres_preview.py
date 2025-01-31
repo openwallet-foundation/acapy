@@ -88,7 +88,7 @@ INDY_PROOF_REQ = json.loads(
             "name": "player",
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID['score']}"
+                    "cred_def_id": "{CD_ID["score"]}"
                 }}
             ]
         }},
@@ -96,7 +96,7 @@ INDY_PROOF_REQ = json.loads(
             "name": "screenCapture",
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID['score']}"
+                    "cred_def_id": "{CD_ID["score"]}"
                 }}
             ]
         }}
@@ -108,7 +108,7 @@ INDY_PROOF_REQ = json.loads(
             "p_value": 1000000,
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID['score']}"
+                    "cred_def_id": "{CD_ID["score"]}"
                 }}
             ]
         }}
@@ -125,7 +125,7 @@ INDY_PROOF_REQ_ATTR_NAMES = json.loads(
             "names": ["player", "screenCapture"],
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID['score']}"
+                    "cred_def_id": "{CD_ID["score"]}"
                 }}
             ]
         }},
@@ -133,7 +133,7 @@ INDY_PROOF_REQ_ATTR_NAMES = json.loads(
             "names": ["member", "since"],
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID['membership']}"
+                    "cred_def_id": "{CD_ID["membership"]}"
                 }}
             ]
         }}

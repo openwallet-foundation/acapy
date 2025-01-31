@@ -148,7 +148,7 @@ class RevocationManager:
                 )
             except StorageNotFoundError:
                 raise RevocationManagerError(
-                    "No endorser connection record found " f"for id: {endorser_conn_id}"
+                    f"No endorser connection record found for id: {endorser_conn_id}"
                 )
             endorser_info = await connection_record.metadata_get(session, "endorser_info")
         endorser_did = endorser_info["endorser_did"]
