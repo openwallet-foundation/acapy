@@ -209,7 +209,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         if isinstance(self.profile, AskarAnoncredsProfile):
             raise V20CredFormatError(
-                "This issuer is anoncreds capable. Please use the anonreds format."
+                "This issuer is anoncreds capable. Please use the anoncreds format."
             )
 
         issuer = self.profile.inject(IndyIssuer)
