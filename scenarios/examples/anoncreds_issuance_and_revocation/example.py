@@ -97,10 +97,14 @@ async def main():
 
             await issuer.post("/wallet/did/public", params=params(did=public_did.did))
 
-        _, cred_def = await indy_anoncred_credential_artifacts(
+        schema_name = "anoncreds-test-" + token_hex(8)
+        schema_version = "1.0"
+        schema, cred_def = await indy_anoncred_credential_artifacts(
             issuer,
             ["firstname", "lastname"],
             support_revocation=True,
+            schema_name=schema_name,
+            schema_version=schema_version,
         )
 
         # Issue a credential
@@ -111,6 +115,10 @@ async def main():
             holder_anoncreds_conn.connection_id,
             cred_def.credential_definition_id,
             {"firstname": "Anoncreds", "lastname": "Holder"},
+            issuer_id=public_did.did,
+            schema_id=schema.schema_id,
+            schema_issuer_id=public_did.did,
+            schema_name=schema_name,
         )
 
         # Present the the credential's attributes
@@ -156,6 +164,10 @@ async def main():
             holder_indy_conn.connection_id,
             cred_def.credential_definition_id,
             {"firstname": "Indy", "lastname": "Holder"},
+            issuer_id=public_did.did,
+            schema_id=schema.schema_id,
+            schema_issuer_id=public_did.did,
+            schema_name=schema_name,
         )
 
         # Present the the credential's attributes
@@ -230,12 +242,14 @@ async def main():
 
         # Create a new schema and cred def with different attributes on new
         # anoncreds endpoints
+        schema_name = "anoncreds-test-" + token_hex(8)
+        schema_version = "1.0"
         schema = await issuer.post(
             "/anoncreds/schema",
             json={
                 "schema": {
-                    "name": "anoncreds-test-" + token_hex(8),
-                    "version": "1.0",
+                    "name": schema_name,
+                    "version": schema_version,
                     "attrNames": ["middlename"],
                     "issuerId": public_did.did,
                 }
@@ -263,6 +277,10 @@ async def main():
             holder_anoncreds_conn.connection_id,
             cred_def.credential_definition_state["credential_definition_id"],
             {"middlename": "Anoncreds"},
+            issuer_id=public_did.did,
+            schema_id=schema.schema_state["schema_id"],
+            schema_issuer_id=public_did.did,
+            schema_name=schema_name,
         )
         # Presentation for anoncreds capable holder
         await anoncreds_present_proof_v2(
@@ -294,6 +312,10 @@ async def main():
             holder_indy_conn.connection_id,
             cred_def.credential_definition_state["credential_definition_id"],
             {"middlename": "Indy"},
+            issuer_id=public_did.did,
+            schema_id=schema.schema_state["schema_id"],
+            schema_issuer_id=public_did.did,
+            schema_name=schema_name,
         )
         # Presentation for indy holder
         await anoncreds_present_proof_v2(
