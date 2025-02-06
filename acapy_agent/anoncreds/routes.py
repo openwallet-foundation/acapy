@@ -25,7 +25,10 @@ from ..messaging.valid import (
     UUIDFour,
 )
 from ..revocation.error import RevocationNotSupportedError
-from ..revocation_anoncreds.routes import RevocationModuleResponseSchema, RevRegIdMatchInfoSchema
+from ..revocation_anoncreds.routes import (
+    RevocationModuleResponseSchema,
+    RevRegIdMatchInfoSchema,
+)
 from ..storage.error import StorageNotFoundError
 from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from .base import (
