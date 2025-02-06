@@ -40,8 +40,8 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ANONCREDS_CRED_DEF_ID_EXAMPLE,
     ANONCREDS_CRED_DEF_ID_VALIDATE,
-    INDY_CRED_REV_ID_EXAMPLE,
-    INDY_CRED_REV_ID_VALIDATE,
+    ANONCREDS_CRED_REV_ID_EXAMPLE,
+    ANONCREDS_CRED_REV_ID_VALIDATE,
     ANONCREDS_REV_REG_ID_EXAMPLE,
     ANONCREDS_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
@@ -111,10 +111,10 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     )
     cred_rev_id = fields.Str(
         required=False,
-        validate=INDY_CRED_REV_ID_VALIDATE,
+        validate=ANONCREDS_CRED_REV_ID_VALIDATE,
         metadata={
             "description": "Credential revocation identifier",
-            "example": INDY_CRED_REV_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
         },
     )
     cred_ex_id = fields.Str(
@@ -355,10 +355,10 @@ class PublishRevocationsSchemaAnoncreds(OpenAPISchema):
         keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                validate=INDY_CRED_REV_ID_VALIDATE,
+                validate=ANONCREDS_CRED_REV_ID_VALIDATE,
                 metadata={
                     "description": "Credential revocation identifier",
-                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                    "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
                 },
             )
         ),
@@ -375,10 +375,10 @@ class PublishRevocationsResultSchemaAnoncreds(OpenAPISchema):
         keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                validate=INDY_CRED_REV_ID_VALIDATE,
+                validate=ANONCREDS_CRED_REV_ID_VALIDATE,
                 metadata={
                     "description": "Credential revocation identifier",
-                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                    "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
                 },
             )
         ),
