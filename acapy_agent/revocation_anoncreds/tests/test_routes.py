@@ -54,7 +54,9 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                     {"rev_reg_id": test_module.ANONCREDS_REV_REG_ID_EXAMPLE}
                 )
             with self.assertRaises(test_module.ValidationError):
-                req.validate_fields({"cred_rev_id": test_module.ANONCREDS_CRED_REV_ID_EXAMPLE})
+                req.validate_fields(
+                    {"cred_rev_id": test_module.ANONCREDS_CRED_REV_ID_EXAMPLE}
+                )
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields(
                     {
