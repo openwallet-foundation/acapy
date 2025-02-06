@@ -62,7 +62,6 @@ create_transaction_for_endorser_description = (
 )
 
 
-
 class AnonCredsRevocationModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
@@ -78,6 +77,7 @@ class AnonCredsRevRegIdMatchInfoSchema(OpenAPISchema):
             "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
+
 
 class SchemaIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""

@@ -29,7 +29,7 @@ from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ..anoncreds.routes import (
     create_transaction_for_endorser_description,
     endorser_connection_id_description,
-    AnonCredsRevRegIdMatchInfoSchema
+    AnonCredsRevRegIdMatchInfoSchema,
 )
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..indy.issuer import IndyIssuerError
@@ -278,7 +278,6 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
         ),
         metadata={"description": "Revocation registry state to set"},
     )
-
 
 
 class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
