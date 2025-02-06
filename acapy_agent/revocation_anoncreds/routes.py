@@ -68,6 +68,9 @@ LOGGER = logging.getLogger(__name__)
 TAG_TITLE = "anoncreds - revocation"
 
 
+class RevocationModuleResponseSchema(OpenAPISchema):
+    """Response schema for Revocation Module."""
+
 class RevocationAnoncredsModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
