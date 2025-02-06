@@ -30,6 +30,7 @@ from ..anoncreds.routes import (
     create_transaction_for_endorser_description,
     endorser_connection_id_description,
     AnonCredsRevRegIdMatchInfoSchema,
+    AnoncredsRevocationModuleResponseSchema,
 )
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..indy.issuer import IndyIssuerError
@@ -67,10 +68,6 @@ from .models.issuer_cred_rev_record import (
 LOGGER = logging.getLogger(__name__)
 
 TAG_TITLE = "anoncreds - revocation"
-
-
-class RevocationAnoncredsModuleResponseSchema(OpenAPISchema):
-    """Response schema for Revocation Module."""
 
 
 class RevRegResultSchemaAnoncreds(OpenAPISchema):
@@ -443,7 +440,7 @@ class RevokeRequestSchemaAnoncreds(CredRevRecordQueryStringSchema):
     summary="Revoke an issued credential",
 )
 @request_schema(RevokeRequestSchemaAnoncreds())
-@response_schema(RevocationAnoncredsModuleResponseSchema(), description="")
+@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def revoke(request: web.BaseRequest):
     """Request handler for storing a credential revocation.
@@ -981,7 +978,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
     produces=["application/octet-stream"],
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(RevocationAnoncredsModuleResponseSchema, description="tails file")
+@response_schema(AnoncredsRevocationModuleResponseSchema, description="tails file")
 @tenant_authentication
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """Request handler to download tails file for revocation registry.

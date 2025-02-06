@@ -62,7 +62,7 @@ create_transaction_for_endorser_description = (
 )
 
 
-class AnonCredsRevocationModuleResponseSchema(OpenAPISchema):
+class AnoncredsRevocationModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
 
@@ -717,7 +717,7 @@ async def rev_list_post(request: web.BaseRequest):
     summary="Upload local tails file to server",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
+@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def upload_tails_file(request: web.BaseRequest):
     """Request handler to upload local tails file for revocation registry.
@@ -753,7 +753,7 @@ async def upload_tails_file(request: web.BaseRequest):
     summary="Update the active registry",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
+@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def set_active_registry(request: web.BaseRequest):
     """Request handler to set the active registry.
