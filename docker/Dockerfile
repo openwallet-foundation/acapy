@@ -1,5 +1,5 @@
 ARG python_version=3.12
-FROM python:${python_version}-slim-bullseye AS build
+FROM python:${python_version}-slim-bookworm AS build
 
 WORKDIR /src
 
@@ -9,7 +9,7 @@ COPY ./pyproject.toml ./poetry.lock ./README.md ./
 RUN pip install --no-cache-dir poetry==1.8.3
 RUN poetry build
 
-FROM python:${python_version}-slim-bullseye AS main
+FROM python:${python_version}-slim-bookworm AS main
 
 ARG uid=1001
 ARG user=aries
