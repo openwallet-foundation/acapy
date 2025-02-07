@@ -4,12 +4,12 @@ import json
 import logging
 from typing import Mapping, Optional, Tuple
 
-from anoncreds import CredentialDefinition, Schema
+from anoncreds import CredentialDefinition
 from marshmallow import RAISE
 
 from ......anoncreds.base import AnonCredsResolutionError
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ......anoncreds.issuer import CATEGORY_CRED_DEF, CATEGORY_SCHEMA, AnonCredsIssuer
+from ......anoncreds.issuer import CATEGORY_CRED_DEF, AnonCredsIssuer
 from ......anoncreds.models.credential import AnoncredsCredentialSchema
 from ......anoncreds.models.credential_offer import AnoncredsCredentialOfferSchema
 from ......anoncreds.models.credential_proposal import (
@@ -204,15 +204,34 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
-        async with self.profile.session() as session:
-            cred_def_entry = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-            cred_def_dict = CredentialDefinition.load(cred_def_entry.value).to_dict()
-            schema_entry = await session.handle.fetch(
-                CATEGORY_SCHEMA, cred_def_dict["schemaId"]
-            )
-            schema_dict = Schema.load(schema_entry.value).to_dict()
+        async def _get_attr_names(schema_id):
+            try:
+                return (
+                    await registry.get_schema(self.profile, schema_id)
+                ).schema.attr_names
+            except AnonCredsResolutionError as e:
+                LOGGER.error(f"Error getting schema: {e} from schema_id")
+                return None
 
-        schema_attrs = set(schema_dict["attrNames"])
+        attr_names = None
+        registry = self.profile.inject(AnonCredsRegistry)
+        # Attempt to get schema attributes from schema_id
+        if anoncreds_attachment.get("schema_id"):
+            attr_names = await _get_attr_names("schema_id")
+
+        # Attempt to get schema attributes from cred def id
+        if not attr_names and cred_def_id:
+            async with self.profile.session() as session:
+                cred_def_entry = await session.handle.fetch(
+                    CATEGORY_CRED_DEF, cred_def_id
+                )
+                cred_def_dict = CredentialDefinition.load(cred_def_entry.value).to_dict()
+                attr_names = await _get_attr_names(cred_def_dict["schemaId"])
+
+        if not attr_names:
+            raise V20CredFormatError("Could not determine schema attributes")
+
+        schema_attrs = set(attr_names)
         preview_attrs = set(cred_proposal_message.credential_preview.attr_dict())
         if preview_attrs != schema_attrs:
             raise V20CredFormatError(
