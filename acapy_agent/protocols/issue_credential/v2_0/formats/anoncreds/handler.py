@@ -217,7 +217,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         registry = self.profile.inject(AnonCredsRegistry)
         # Attempt to get schema attributes from schema_id
         if anoncreds_attachment.get("schema_id"):
-            attr_names = await _get_attr_names("schema_id")
+            attr_names = await _get_attr_names(anoncreds_attachment.get("schema_id"))
 
         # Attempt to get schema attributes from cred def id
         if not attr_names and cred_def_id:
@@ -229,7 +229,10 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 attr_names = await _get_attr_names(cred_def_dict["schemaId"])
 
         if not attr_names:
-            raise V20CredFormatError("Could not determine schema attributes")
+            raise V20CredFormatError(
+                "Could not determine schema attributes. Are you the issuer that created"
+                "the schema? Or do you need to provide the schema_id"
+            )
 
         schema_attrs = set(attr_names)
         preview_attrs = set(cred_proposal_message.credential_preview.attr_dict())

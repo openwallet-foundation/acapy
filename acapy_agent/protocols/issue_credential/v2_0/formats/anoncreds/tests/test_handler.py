@@ -4,13 +4,22 @@ from time import time
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
+from anoncreds import CredentialDefinition
 from marshmallow import ValidationError
 
 from .......anoncreds.holder import AnonCredsHolder
 from .......anoncreds.issuer import AnonCredsIssuer
+from .......anoncreds.models.credential_definition import (
+    CredDef,
+    CredDefValue,
+    CredDefValuePrimary,
+)
+from .......anoncreds.registry import AnonCredsRegistry
 from .......anoncreds.revocation import AnonCredsRevocationRegistryFullError
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
+from .......config.provider import ClassProvider
+from .......indy.credx.issuer import CATEGORY_CRED_DEF
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
@@ -193,8 +202,37 @@ ANONCREDS_CRED = {
 
 class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = await create_test_profile()
+        self.profile = await create_test_profile(
+            {
+                "wallet.type": "askar-anoncreds",
+            }
+        )
         self.context = self.profile.context
+
+        # Context
+        self.cache = InMemoryCache()
+        self.profile.context.injector.bind_instance(BaseCache, self.cache)
+
+        # Issuer
+        self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
+
+        # Holder
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
+
+        # Anoncreds registry
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry, AnonCredsRegistry()
+        )
+        registry = self.profile.context.inject_or(AnonCredsRegistry)
+        legacy_indy_registry = ClassProvider(
+            "acapy_agent.anoncreds.default.legacy_indy.registry.LegacyIndyRegistry",
+            # supported_identifiers=[],
+            # method_name="",
+        ).provide(self.profile.context.settings, self.profile.context.injector)
+        await legacy_indy_registry.setup(self.profile.context)
+        registry.register(legacy_indy_registry)
 
         # Ledger
         self.ledger = mock.MagicMock(BaseLedger, autospec=True)
@@ -214,18 +252,6 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 )
             ),
         )
-        # Context
-        self.cache = InMemoryCache()
-        self.profile.context.injector.bind_instance(BaseCache, self.cache)
-
-        # Issuer
-        self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
-        self.profile.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
-
-        # Holder
-        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
-        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
-
         self.handler = AnonCredsCredFormatHandler(self.profile)
         assert self.handler.profile
 
@@ -338,68 +364,123 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         # Not much to assert. Receive proposal doesn't do anything
         await self.handler.receive_proposal(cred_ex_record, cred_proposal_message)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
-    async def test_create_offer(self):
-        schema_id_parts = SCHEMA_ID.split(":")
-
-        cred_preview = V20CredPreview(
-            attributes=(
-                V20CredAttrSpec(name="legalName", value="value"),
-                V20CredAttrSpec(name="jurisdictionId", value="value"),
-                V20CredAttrSpec(name="incorporationDate", value="value"),
-            )
-        )
-
-        cred_proposal = V20CredProposal(
-            credential_preview=cred_preview,
-            formats=[
-                V20CredFormat(
-                    attach_id="0",
-                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
-                        V20CredFormat.Format.ANONCREDS.api
+    async def test_create_offer_cant_find_schema_in_wallet_or_data_registry(self):
+        with self.assertRaises(V20CredFormatError):
+            await self.handler.create_offer(
+                V20CredProposal(
+                    formats=[
+                        V20CredFormat(
+                            attach_id="0",
+                            format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                                V20CredFormat.Format.ANONCREDS.api
+                            ],
+                        )
+                    ],
+                    filters_attach=[
+                        AttachDecorator.data_base64(
+                            {"cred_def_id": CRED_DEF_ID}, ident="0"
+                        )
                     ],
                 )
-            ],
-            filters_attach=[
-                AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
-            ],
+            )
+
+    @mock.patch.object(
+        AnonCredsRegistry,
+        "get_schema",
+        mock.CoroutineMock(
+            return_value=mock.MagicMock(schema=mock.MagicMock(attr_names=["score"]))
+        ),
+    )
+    @mock.patch.object(
+        AnonCredsIssuer,
+        "create_credential_offer",
+        mock.CoroutineMock(return_value=json.dumps(ANONCREDS_OFFER)),
+    )
+    @mock.patch.object(
+        CredentialDefinition,
+        "load",
+        mock.MagicMock(to_dict=mock.MagicMock(return_value={"schemaId": SCHEMA_ID})),
+    )
+    async def test_create_offer(self):
+        self.issuer.create_credential_offer = mock.CoroutineMock({})
+        # With a schema_id
+        await self.handler.create_offer(
+            V20CredProposal(
+                credential_preview=V20CredPreview(
+                    attributes=(V20CredAttrSpec(name="score", value="0"),)
+                ),
+                formats=[
+                    V20CredFormat(
+                        attach_id="0",
+                        format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                            V20CredFormat.Format.ANONCREDS.api
+                        ],
+                    )
+                ],
+                filters_attach=[
+                    AttachDecorator.data_base64(
+                        {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}, ident="0"
+                    )
+                ],
+            )
         )
-
-        cred_def_record = StorageRecord(
-            CRED_DEF_SENT_RECORD_TYPE,
-            CRED_DEF_ID,
-            {
-                "schema_id": SCHEMA_ID,
-                "schema_issuer_did": schema_id_parts[0],
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "issuer_did": TEST_DID,
-                "cred_def_id": CRED_DEF_ID,
-                "epoch": str(int(time())),
-            },
+        # Only with cred_def_id
+        async with self.profile.session() as session:
+            await session.handle.insert(
+                CATEGORY_CRED_DEF,
+                CRED_DEF_ID,
+                CredDef(
+                    issuer_id=TEST_DID,
+                    schema_id=SCHEMA_ID,
+                    tag="tag",
+                    type="CL",
+                    value=CredDefValue(
+                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
+                    ),
+                ).to_json(),
+                tags={},
+            )
+        await self.handler.create_offer(
+            V20CredProposal(
+                credential_preview=V20CredPreview(
+                    attributes=(V20CredAttrSpec(name="score", value="0"),)
+                ),
+                formats=[
+                    V20CredFormat(
+                        attach_id="0",
+                        format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                            V20CredFormat.Format.ANONCREDS.api
+                        ],
+                    )
+                ],
+                filters_attach=[
+                    AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
+                ],
+            )
         )
-        await self.session.storage.add_record(cred_def_record)
-
-        self.issuer.create_credential_offer = mock.CoroutineMock(
-            return_value=json.dumps(ANONCREDS_OFFER)
-        )
-
-        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
-
-        self.issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
-
-        # assert identifier match
-        assert cred_format.attach_id == self.handler.format.api == attachment.ident
-
-        # assert content of attachment is proposal data
-        assert attachment.content == ANONCREDS_OFFER
-
-        # assert data is encoded as base64
-        assert attachment.data.base64
-
-        self.issuer.create_credential_offer.reset_mock()
-        await self.handler.create_offer(cred_proposal)
-        self.issuer.create_credential_offer.assert_not_called()
+        # Wrong attribute name
+        with self.assertRaises(V20CredFormatError):
+            await self.handler.create_offer(
+                V20CredProposal(
+                    credential_preview=V20CredPreview(
+                        attributes=(V20CredAttrSpec(name="wrong", value="0"),)
+                    ),
+                    formats=[
+                        V20CredFormat(
+                            attach_id="0",
+                            format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                                V20CredFormat.Format.ANONCREDS.api
+                            ],
+                        )
+                    ],
+                    filters_attach=[
+                        AttachDecorator.data_base64(
+                            {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID},
+                            ident="0",
+                        )
+                    ],
+                )
+            )
 
     @pytest.mark.skip(reason="Anoncreds-break")
     async def test_create_offer_no_cache(self):
