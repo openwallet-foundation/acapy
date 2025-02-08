@@ -229,13 +229,15 @@ async def main():
                 "wallet_name": issuer_name,
             },
         )
+        # Wait for the upgrade to complete
+        await asyncio.sleep(1)
+
         await issuer_without_schema.post(
             "/anoncreds/wallet/upgrade",
             params={
                 "wallet_name": issuer_without_schema_name,
             },
         )
-
         # Wait for the upgrade to complete
         await asyncio.sleep(2)
 
