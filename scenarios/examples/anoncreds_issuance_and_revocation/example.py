@@ -410,7 +410,6 @@ async def main():
             },
             response=CredDefResultAnoncreds,
         )
-        # Issue a new credential to indy holder
         issuer_cred_ex, _ = await anoncreds_issue_credential_v2(
             issuer_without_schema,
             holder_anoncreds,
@@ -420,7 +419,6 @@ async def main():
             cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
             schema_id=schema.schema_state["schema_id"],
         )
-        # Presentation for indy holder
         await anoncreds_present_proof_v2(
             holder_anoncreds,
             issuer_without_schema,
@@ -428,7 +426,6 @@ async def main():
             issuer_conn_with_anoncreds_holder.connection_id,
             requested_attributes=[{"name": "middlename"}],
         )
-        # Revoke credential
         await issuer_without_schema.post(
             url="/anoncreds/revocation/revoke",
             json={
