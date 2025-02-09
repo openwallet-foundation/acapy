@@ -95,7 +95,7 @@ RUN acapy_agent_package=$(find ./ -name "acapy_agent*.whl" | head -n 1) && \
 
 # Clean-up unnecessary build dependencies and reduce final image size
 USER root
-RUN apt-get purge -y --auto-remove build-essential
+RUN apt-get purge -y
 
 USER $user
 
