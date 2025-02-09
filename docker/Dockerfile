@@ -46,6 +46,7 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
+    curl \
     libffi-dev \
     libgmp10 \
     libncurses5 \
