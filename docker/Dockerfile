@@ -46,23 +46,15 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
-    build-essential \
-    bzip2 \
-    curl \
-    git \
-    less \
     libffi-dev \
     libgmp10 \
-    liblzma5 \
     libncurses5 \
     libncursesw5 \
-    libsecp256k1-0 \
-    libzmq5 \
-    net-tools \
     openssl \
     sqlite3 \
     zlib1g && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
+
 
 WORKDIR $HOME
 
