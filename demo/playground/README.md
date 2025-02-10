@@ -26,7 +26,7 @@ These configuration files are provided to the ACA-Py start command via the `AGEN
 
 ### Dockerfile and start.sh
 
-[`Dockerfile.acapy`](./Dockerfile.acapy) assembles the image to run. Currently based on [ACA-Py 1.2.0](ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.1), we need [jq](https://stedolan.github.io/jq/) to setup (or not) the ngrok tunnel and execute the Aca-py start command - see [`start.sh`](./start.sh). You may note that the start command is very sparse, additional configuration is done via environment variables in the [docker compose file](./docker-compose.yml).
+[`Dockerfile.acapy`](./Dockerfile.acapy) assembles the image to run. Currently based on [ACA-Py 1.2.0](ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.2), we need [jq](https://stedolan.github.io/jq/) to setup (or not) the ngrok tunnel and execute the Aca-py start command - see [`start.sh`](./start.sh). You may note that the start command is very sparse, additional configuration is done via environment variables in the [docker compose file](./docker-compose.yml).
 
 ### ngrok
 
