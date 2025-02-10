@@ -6,7 +6,7 @@
         "dockerfile": "Dockerfile",
         "context": "..",
         "args": {
-          "VARIANT": "3.12-bullseye",
+          "VARIANT": "3.12-bookworm",
           "POETRY_VERSION": "1.7.1"
         }
     },
@@ -48,16 +48,16 @@
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
-    
+
     // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
     "remoteUser": "vscode",
-    
+
     "remoteEnv": {
         "RUST_LOG":"aries-askar::log::target=error"
         //"PATH": "${containerEnv:PATH}:${workspaceRoot}/.venv/bin"
     },
-    
+
     "mounts": [],
     "postCreateCommand": "bash ./.devcontainer/post-install.sh"
-    
+
 }
