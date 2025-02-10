@@ -1,5 +1,5 @@
 ARG python_version=3.12
-FROM python:${python_version}-slim-bullseye AS build
+FROM python:${python_version}-slim-bookworm AS build
 
 WORKDIR /src
 
@@ -9,7 +9,7 @@ COPY ./pyproject.toml ./poetry.lock ./README.md ./
 RUN pip install --no-cache-dir poetry==1.8.3
 RUN poetry build
 
-FROM python:${python_version}-slim-bullseye AS main
+FROM python:${python_version}-slim-bookworm AS main
 
 ARG uid=1001
 ARG user=aries
@@ -46,23 +46,16 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
-    build-essential \
-    bzip2 \
     curl \
-    git \
-    less \
     libffi-dev \
     libgmp10 \
-    liblzma5 \
     libncurses5 \
     libncursesw5 \
-    libsecp256k1-0 \
-    libzmq5 \
-    net-tools \
     openssl \
     sqlite3 \
     zlib1g && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
+
 
 WORKDIR $HOME
 
@@ -103,7 +96,7 @@ RUN acapy_agent_package=$(find ./ -name "acapy_agent*.whl" | head -n 1) && \
 
 # Clean-up unnecessary build dependencies and reduce final image size
 USER root
-RUN apt-get purge -y --auto-remove build-essential
+RUN apt-get purge -y
 
 USER $user
 
