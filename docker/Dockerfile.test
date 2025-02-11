@@ -1,5 +1,5 @@
 ARG python_version=3.12.4
-FROM python:${python_version}-slim-bullseye
+FROM python:${python_version}-slim-bookworm
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
