@@ -103,12 +103,15 @@ class UniversalResolver(BaseDIDResolver):
     async def _fetch_resolver_props(self) -> dict:
         """Retrieve universal resolver properties."""
         async with aiohttp.ClientSession(headers=self.__default_headers) as session:
-            async with session.get(f"{self._endpoint}/properties/") as resp:
-                if 200 <= resp.status < 400:
-                    return await resp.json()
-                raise ResolverError(
-                    "Failed to retrieve resolver properties: " + await resp.text()
-                )
+            try:
+                async with session.get(f"{self._endpoint}/properties/") as resp:
+                    if 200 <= resp.status < 400:
+                        return await resp.json()
+                    raise ResolverError(
+                        "Failed to retrieve resolver properties: " + await resp.text()
+                    )
+            except aiohttp.ClientError as err:
+                raise ResolverError(f"Failed to fetch resolver properties: {err}")
 
     async def _get_supported_did_regex(self):
         props = await self._fetch_resolver_props()
