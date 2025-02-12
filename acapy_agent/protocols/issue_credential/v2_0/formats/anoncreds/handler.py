@@ -243,7 +243,9 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         attr_names = None
         registry = self.profile.inject(AnonCredsRegistry)
 
-        attr_names = await _fetch_schema_attr_names(anoncreds_attachment, cred_def_id)
+        attr_names = await _fetch_schema_attr_names(
+            self, anoncreds_attachment, cred_def_id
+        )
 
         if not attr_names:
             raise V20CredFormatError(
