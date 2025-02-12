@@ -219,7 +219,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 return None
 
         async def _fetch_schema_attr_names(
-            self, anoncreds_attachment, cred_def_id
+            anoncreds_attachment, cred_def_id
         ) -> List[str] | None:
             """Determine schema attribute names from schema_id or cred_def_id."""
             schema_id = anoncreds_attachment.get("schema_id")
@@ -243,9 +243,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         attr_names = None
         registry = self.profile.inject(AnonCredsRegistry)
 
-        attr_names = await _fetch_schema_attr_names(
-            self, anoncreds_attachment, cred_def_id
-        )
+        attr_names = await _fetch_schema_attr_names(anoncreds_attachment, cred_def_id)
 
         if not attr_names:
             raise V20CredFormatError(
