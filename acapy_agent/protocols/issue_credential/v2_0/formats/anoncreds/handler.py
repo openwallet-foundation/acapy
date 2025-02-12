@@ -2,12 +2,12 @@
 
 import json
 import logging
-from typing import Mapping, Optional, Tuple
+from typing import List, Mapping, Optional, Tuple
 
 from anoncreds import CredentialDefinition
 from marshmallow import RAISE
 
-from ......anoncreds.base import AnonCredsResolutionError
+from ......anoncreds.base import AnonCredsObjectNotFound, AnonCredsResolutionError
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import CATEGORY_CRED_DEF, AnonCredsIssuer
 from ......anoncreds.models.credential import AnoncredsCredentialSchema
@@ -204,34 +204,51 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
-        async def _get_attr_names(schema_id):
-            try:
-                return (
-                    await registry.get_schema(self.profile, schema_id)
-                ).schema.attr_names
-            except AnonCredsResolutionError as e:
-                LOGGER.error(f"Error getting schema: {e} from schema_id")
+        async def _get_attr_names(schema_id) -> List[str] | None:
+            """Fetch attribute names for a given schema ID from the registry."""
+            if not schema_id:
                 return None
+            try:
+                schema_result = await registry.get_schema(self.profile, schema_id)
+                return schema_result.schema.attr_names
+            except AnonCredsObjectNotFound:
+                LOGGER.info(f"Schema not found for schema_id={schema_id}")
+                return None
+            except AnonCredsResolutionError as e:
+                LOGGER.warning(f"Schema resolution failed for schema_id={schema_id}: {e}")
+                return None
+
+        async def _fetch_schema_attr_names(
+            self, anoncreds_attachment, cred_def_id
+        ) -> List[str] | None:
+            """Determine schema attribute names from schema_id or cred_def_id."""
+            schema_id = anoncreds_attachment.get("schema_id")
+            attr_names = await _get_attr_names(schema_id)
+
+            if attr_names:
+                return attr_names
+
+            if cred_def_id:
+                async with self.profile.session() as session:
+                    cred_def_entry = await session.handle.fetch(
+                        CATEGORY_CRED_DEF, cred_def_id
+                    )
+                    cred_def_dict = CredentialDefinition.load(
+                        cred_def_entry.value
+                    ).to_dict()
+                    return await _get_attr_names(cred_def_dict.get("schemaId"))
+
+            return None
 
         attr_names = None
         registry = self.profile.inject(AnonCredsRegistry)
-        # Attempt to get schema attributes from schema_id
-        if anoncreds_attachment.get("schema_id"):
-            attr_names = await _get_attr_names(anoncreds_attachment.get("schema_id"))
 
-        # Attempt to get schema attributes from cred def id
-        if not attr_names and cred_def_id:
-            async with self.profile.session() as session:
-                cred_def_entry = await session.handle.fetch(
-                    CATEGORY_CRED_DEF, cred_def_id
-                )
-                cred_def_dict = CredentialDefinition.load(cred_def_entry.value).to_dict()
-                attr_names = await _get_attr_names(cred_def_dict["schemaId"])
+        attr_names = await _fetch_schema_attr_names(anoncreds_attachment, cred_def_id)
 
         if not attr_names:
             raise V20CredFormatError(
-                "Could not determine schema attributes. Are you the issuer that created"
-                "the schema? Or do you need to provide the schema_id"
+                "Could not determine schema attributes. If you did not create the "
+                "schema, then you need to provide the schema_id."
             )
 
         schema_attrs = set(attr_names)
