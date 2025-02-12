@@ -244,16 +244,12 @@ class V20PresExRecord(BaseExchangeRecord):
 
     def get_ac_proof_request(self):
         """Retrieve Indy Proof request from record."""
-        proof_request = self.pres_request.attachment(
-            V20PresFormat.Format.INDY
-        )
+        proof_request = self.pres_request.attachment(V20PresFormat.Format.INDY)
         # If indy filter fails try anoncreds filter format. This is for a
         # non-anoncreds agent that gets a anoncreds format proof request and
         # should removed when indy format is fully retired.
         if not proof_request:
-            proof_request = self.pres_request.attachment(
-                V20PresFormat.Format.ANONCREDS
-            )
+            proof_request = self.pres_request.attachment(V20PresFormat.Format.ANONCREDS)
 
         if not proof_request:
             raise ValueError("No AnonCreds proof request on this record")
