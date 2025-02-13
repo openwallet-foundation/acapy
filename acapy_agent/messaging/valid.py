@@ -485,7 +485,7 @@ class IndyCredDefId(Regexp):
 class AnoncredsCredDefId(Regexp):
     """Validate value against anoncreds credential definition identifier specification."""
 
-    EXAMPLE = "did:(method):3:CL:20:tag"
+    EXAMPLE = "did:method:example:3:CL:12:tag1"
     PATTERN = (
         r"^did:(?P<method>[a-zA-Z0-9]+):(?P<did>[a-zA-Z0-9]+):3:"
         r"CL:(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+)$"
@@ -533,7 +533,7 @@ class IndySchemaId(Regexp):
 class AnoncredsSchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
 
-    EXAMPLE = "did:(method):2:schema_name:1.0"
+    EXAMPLE = "did:method:example:2:schema_name:1.0"
     PATTERN = (
         r"^did:(?P<method>[a-zA-Z0-9]+):(?P<did>[a-zA-Z0-9]+):2:"
         r"(?P<schema_name>[a-zA-Z0-9_-]+):(?P<version>[0-9.]+)$"
@@ -571,7 +571,7 @@ class IndyRevRegId(Regexp):
 class AnoncredsRevRegId(Regexp):
     """Validate value against anoncreds revocation registry identifier specification."""
 
-    EXAMPLE = "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0"
+    EXAMPLE = "did:method:example:4:did:method:example:3:CL:20:tag:CL_ACCUM:0"
     PATTERN = (
         r"^did:(?P<method1>[a-zA-Z0-9]+):(?P<did1>[a-zA-Z0-9]+):4:"
         r"did:(?P<method2>[a-zA-Z0-9]+):(?P<did2>[a-zA-Z0-9]+):3:"
