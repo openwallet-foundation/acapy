@@ -486,7 +486,9 @@ class AnoncredsCredDefId(Regexp):
     """Validate value against anoncreds credential definition identifier specification."""
 
     EXAMPLE = "did:(method):3:CL:20:tag"
-    PATTERN = r"^(.+$)"
+    PATTERN = (
+        r"^did:(?P<method>[a-zA-Z0-9]+):3:CL:(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+)$"
+    )
 
     def __init__(self):
         """Initialize the instance."""
@@ -531,7 +533,10 @@ class AnoncredsSchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
 
     EXAMPLE = "did:(method):2:schema_name:1.0"
-    PATTERN = r"^(.+$)"
+    PATTERN = (
+        r"^did:(?P<method>[a-zA-Z0-9]+):2:(?P<schema_name>[a-zA-Z0-9_-]+):"
+        r"(?P<version>[0-9.]+)$"
+    )
 
     def __init__(self):
         """Initialize the instance."""
@@ -566,7 +571,10 @@ class AnoncredsRevRegId(Regexp):
     """Validate value against anoncreds revocation registry identifier specification."""
 
     EXAMPLE = "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0"
-    PATTERN = r"^(.+$)"
+    PATTERN = (
+        r"^did:(?P<method>[a-zA-Z0-9]+):4:did:(?P<method>[a-zA-Z0-9]+):3:CL:"
+        r"(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+):CL_ACCUM:(.+)$"
+    )
 
     def __init__(self):
         """Initialize the instance."""
