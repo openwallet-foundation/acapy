@@ -572,7 +572,7 @@ class AnoncredsRevRegId(Regexp):
 
     EXAMPLE = "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0"
     PATTERN = (
-        r"^did:(?P<method>[a-zA-Z0-9]+):4:did:(?P<method>[a-zA-Z0-9]+):3:CL:"
+        r"^did:(?P<method1>[a-zA-Z0-9]+):4:did:(?P<method2>[a-zA-Z0-9]+):3:CL:"
         r"(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+):CL_ACCUM:(.+)$"
     )
 
