@@ -362,7 +362,6 @@ class IndyVdrLedgerPool:
                 LOGGER.debug("Opening the pool ledger")
                 await self._open()
             self._ref_count += 1
-            self.pending_use_count = max(0, self.pending_use_count - 1)  # Clear pending
             LOGGER.debug(
                 "Incremented reference count to %s for instance %s",
                 self._ref_count,
