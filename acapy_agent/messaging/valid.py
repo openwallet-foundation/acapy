@@ -467,10 +467,10 @@ class IndyCredDefId(Regexp):
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
     PATTERN = (
         rf"^([{B58}]{{21,22}})"  # issuer DID
-        f":3"  # cred def id marker
-        f":CL"  # sig alg
+        ":3"  # cred def id marker
+        ":CL"  # sig alg
         rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
-        f":(.+)?$"  # tag
+        ":(.+)?$"  # tag
     )
 
     def __init__(self):
@@ -555,7 +555,7 @@ class IndyRevRegId(Regexp):
         rf"^([{B58}]{{21,22}}):4:"
         rf"([{B58}]{{21,22}}):3:"
         rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
-        rf"CL_ACCUM:(.+$)"
+        r"CL_ACCUM:(.+$)"
     )
 
     def __init__(self):
