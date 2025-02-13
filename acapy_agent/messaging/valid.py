@@ -487,7 +487,8 @@ class AnoncredsCredDefId(Regexp):
 
     EXAMPLE = "did:(method):3:CL:20:tag"
     PATTERN = (
-        r"^did:(?P<method>[a-zA-Z0-9]+):3:CL:(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+)$"
+        r"^did:(?P<method>[a-zA-Z0-9]+):(?P<did>[a-zA-Z0-9]+):3:"
+        r"CL:(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+)$"
     )
 
     def __init__(self):
@@ -534,8 +535,8 @@ class AnoncredsSchemaId(Regexp):
 
     EXAMPLE = "did:(method):2:schema_name:1.0"
     PATTERN = (
-        r"^did:(?P<method>[a-zA-Z0-9]+):2:(?P<schema_name>[a-zA-Z0-9_-]+):"
-        r"(?P<version>[0-9.]+)$"
+        r"^did:(?P<method>[a-zA-Z0-9]+):(?P<did>[a-zA-Z0-9]+):2:"
+        r"(?P<schema_name>[a-zA-Z0-9_-]+):(?P<version>[0-9.]+)$"
     )
 
     def __init__(self):
@@ -572,8 +573,9 @@ class AnoncredsRevRegId(Regexp):
 
     EXAMPLE = "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0"
     PATTERN = (
-        r"^did:(?P<method1>[a-zA-Z0-9]+):4:did:(?P<method2>[a-zA-Z0-9]+):3:CL:"
-        r"(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+):CL_ACCUM:(.+)$"
+        r"^did:(?P<method1>[a-zA-Z0-9]+):(?P<did1>[a-zA-Z0-9]+):4:"
+        r"did:(?P<method2>[a-zA-Z0-9]+):(?P<did2>[a-zA-Z0-9]+):3:"
+        r"CL:(?P<schema_id>\d+):(?P<tag>[a-zA-Z0-9_-]+):CL_ACCUM:(.+)$"
     )
 
     def __init__(self):
