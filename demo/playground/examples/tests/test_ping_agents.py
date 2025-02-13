@@ -110,8 +110,8 @@ def test_single_tenants(faber, alice, faber_alice_connection, alice_faber_connec
         logger.info(f"alice/faber active?  {alice_faber_connection_active}")
         attempts = attempts + 1
 
-    assert faber_alice_connection_active == True
-    assert alice_faber_connection_active == True
+    assert faber_alice_connection_active is True
+    assert alice_faber_connection_active is True
 
     logger.info("faber alice pinging...")
     pings = 0
@@ -150,8 +150,8 @@ def test_multi_tenants(
         logger.info(f"alice/multi_one active?  {alice_multi_one_connection_active}")
         attempts = attempts + 1
 
-    assert multi_one_alice_connection_active == True
-    assert alice_multi_one_connection_active == True
+    assert multi_one_alice_connection_active is True
+    assert alice_multi_one_connection_active is True
 
     logger.info("multi_one alice pinging...")
     pings = 0
