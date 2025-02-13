@@ -130,7 +130,7 @@ line-length = 90
 testpaths = "acapy_agent"
 addopts = """
     --quiet --junitxml=./test-reports/junit.xml
-    --cov-config .coveragerc --cov=acapy_agent --cov-report term --cov-report xml
+    --cov-config .coveragerc --cov-report term --cov-report xml
     --ruff
 """
 markers = [
@@ -139,7 +139,7 @@ markers = [
     "indy: Tests specifically relating to Hyperledger Indy SDK support",
     "indy_credx: Tests specifically relating to Indy-Credx support",
     "indy_vdr: Tests specifically relating to Indy-VDR support",
-    "ursa_bbs_signatures: Tests specificaly relating to BBS Signatures support",
+    "ursa_bbs_signatures: Tests specifically relating to BBS Signatures support",
     "postgres: Tests relating to the postgres storage plugin for Indy",
 ]
 junit_family = "xunit1"
