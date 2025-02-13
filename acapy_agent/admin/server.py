@@ -176,7 +176,7 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             request.path,
             validation_error_message,
         )
-        raise
+        raise web.HTTPUnprocessableEntity(reason=validation_error_message) from e
     except (LedgerConfigError, LedgerTransactionError) as e:
         # fatal, signal server shutdown
         LOGGER.critical("Shutdown with %s", str(e))
