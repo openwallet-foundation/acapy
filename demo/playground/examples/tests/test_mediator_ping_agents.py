@@ -16,21 +16,21 @@ from . import ALICE, FABER, MULTI, Agent, logger
 logger.info("start testing mediated connections...")
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def faber():
     """faber agent fixture."""
     logger.info(f"faber = {FABER}")
     yield Agent(FABER)
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def alice():
     """resolver agent fixture."""
     logger.info(f"alice = {ALICE}")
     yield Agent(ALICE)
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def multi_one():
     """resolver agent fixture."""
     agent = Agent(MULTI)
@@ -42,7 +42,7 @@ def multi_one():
     yield agent
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def mediation_invite():
     invitation_url = os.getenv("MEDIATOR_INVITATION_URL")
     logger.info(f"MEDIATOR_INVITATION_URL = {invitation_url}")
@@ -97,7 +97,7 @@ def initialize_mediation(agent: Agent, invitation):
     return result
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def faber_mediator(faber, mediation_invite):
     logger.info("faber_mediator...")
     result = initialize_mediation(faber, mediation_invite)
@@ -105,7 +105,7 @@ def faber_mediator(faber, mediation_invite):
     yield result
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def alice_mediator(alice, mediation_invite):
     logger.info("alice_mediator...")
     result = initialize_mediation(alice, mediation_invite)
@@ -113,7 +113,7 @@ def alice_mediator(alice, mediation_invite):
     yield result
 
 
-@pytest.fixture(loop_scope="session")
+@pytest.fixture(scope="session")
 def multi_one_mediator(multi_one, mediation_invite):
     logger.info("multi_one_mediator...")
     result = initialize_mediation(multi_one, mediation_invite)
@@ -128,8 +128,8 @@ def multi_one_mediator(multi_one, mediation_invite):
 def test_mediated_single_tenants(
     faber, alice, faber_mediator, alice_mediator, mediation_invite
 ):
-    assert faber_mediator["mediation_granted"] == True
-    assert alice_mediator["mediation_granted"] == True
+    assert faber_mediator["mediation_granted"] is True
+    assert alice_mediator["mediation_granted"] is True
 
     resp = faber.create_invitation(
         alias="alice",
@@ -171,8 +171,8 @@ def test_mediated_single_tenants(
         logger.info(f"alice/faber active?  {alice_faber_connection_active}")
         attempts = attempts + 1
 
-    assert faber_alice_connection_active == True
-    assert alice_faber_connection_active == True
+    assert faber_alice_connection_active is True
+    assert alice_faber_connection_active is True
 
     logger.info("faber alice pinging...")
     pings = 0
@@ -193,8 +193,8 @@ def test_mediated_single_tenants(
 def test_mediated_multi_tenants(
     multi_one, alice, multi_one_mediator, alice_mediator, mediation_invite
 ):
-    assert multi_one_mediator["mediation_granted"] == True
-    assert alice_mediator["mediation_granted"] == True
+    assert multi_one_mediator["mediation_granted"] is True
+    assert alice_mediator["mediation_granted"] is True
 
     resp = multi_one.create_invitation(
         alias="alice",
@@ -239,8 +239,8 @@ def test_mediated_multi_tenants(
         logger.info(f"alice/multi_one active?  {alice_multi_one_connection_active}")
         attempts = attempts + 1
 
-    assert multi_one_alice_connection_active == True
-    assert alice_multi_one_connection_active == True
+    assert multi_one_alice_connection_active is True
+    assert alice_multi_one_connection_active is True
 
     logger.info("multi_one alice pinging...")
     pings = 0
