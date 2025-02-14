@@ -24,3 +24,11 @@ acapy\_agent.connections.base\_manager module
    :members:
    :undoc-members:
    :show-inheritance:
+
+acapy\_agent.connections.routes module
+--------------------------------------
+
+.. automodule:: acapy_agent.connections.routes
+   :members:
+   :undoc-members:
+   :show-inheritance:
