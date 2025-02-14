@@ -254,9 +254,6 @@ epub_exclude_files = ["search.html", "README.md"]
 
 # -- Extension configuration -------------------------------------------------
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
-
 
 # To supress cross-reference warnings
 # https://github.com/sphinx-doc/sphinx/issues/3866#issuecomment-768167824

@@ -14,7 +14,6 @@ Subpackages
 
    acapy_agent.protocols.actionmenu
    acapy_agent.protocols.basicmessage
-   acapy_agent.protocols.connections
    acapy_agent.protocols.coordinate_mediation
    acapy_agent.protocols.did_rotate
    acapy_agent.protocols.didexchange
