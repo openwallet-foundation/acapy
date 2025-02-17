@@ -89,7 +89,7 @@ When a connection is reused, ACA-Py automatically emits an event notification. T
 ```json
 {
   "thread_id": "096cf986-9211-450c-9cbb-a6d701c4d9ca",
-  "connection_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "connection_id": "28818825-98a3-44c7-b1cc-d429c1583a1d",
   "comment": "Connection 28818825-98a3-44c7-b1cc-d429c1583a1d is being reused for invitation 6f6af313-3735-4ac1-b972-aafebd3731bc"
 }
 ```
