@@ -30,6 +30,7 @@ from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
+from ..storage.error import StorageNotFoundError
 from ..utils.classloader import DeferLoad
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
@@ -145,8 +146,21 @@ class Dispatcher:
 
         session = await profile.session()
         from ..connections.models.conn_peer_record import PeerwiseRecord
-        peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
-        await peer.save(session)
+        try:
+            existing_record = await PeerwiseRecord.retrieve_by_did(
+                session,
+                their_did=inbound_message.receipt.sender_verkey,
+                my_did=inbound_message.receipt.recipient_verkey,
+            )
+        except StorageNotFoundError as err:
+            existing_record = None
+            #raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        if existing_record:
+            peer = existing_record
+        else:
+            peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
+            await peer.save(session)
         await profile.notify(
             "acapy::webhook::pairwise_did",
             {
