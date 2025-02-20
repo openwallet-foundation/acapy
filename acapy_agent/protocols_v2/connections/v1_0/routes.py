@@ -511,7 +511,7 @@ async def connections_retrieve(request: web.BaseRequest):
     profile = context.profile
     try:
         async with profile.session() as session:
-            record = await ConnRecord.retrieve_by_id(session, connection_id)
+            record = await PeerwiseRecord.retrieve_by_id(session, connection_id)
         result = record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -829,7 +829,7 @@ async def connections_remove(request: web.BaseRequest):
 
     try:
         async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
+            connection = await PeerwiseRecord.retrieve_by_id(session, connection_id)
             await connection.delete_record(session)
             cache = session.inject_or(BaseCache)
             if cache:
