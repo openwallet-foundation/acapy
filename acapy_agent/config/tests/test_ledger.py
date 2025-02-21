@@ -1,3 +1,4 @@
+import sys
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
@@ -634,9 +635,8 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             None, self.profile, taa_info, provision=False
         )
 
-    @mock.patch("sys.stdout")
-    async def test_ledger_accept_taa_tty(self, mock_stdout):
-        mock_stdout.isatty = mock.MagicMock(return_value=True)
+    async def test_ledger_accept_taa_tty(self):
+        sys.stdout.isatty = mock.MagicMock(return_value=True)
         self.profile = await create_test_profile()
 
         taa_info = {
