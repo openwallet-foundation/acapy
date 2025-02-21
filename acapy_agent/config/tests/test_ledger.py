@@ -645,7 +645,6 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         }
 
         with (
-            mock.patch.object(test_module, "use_asyncio_event_loop", mock.MagicMock()),
             mock.patch.object(
                 test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
             ) as mock_prompt,
@@ -657,9 +656,6 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
 
         with (
             mock.patch.object(
-                test_module, "use_asyncio_event_loop", mock.MagicMock()
-            ) as mock_use_aio_loop,
-            mock.patch.object(
                 test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
             ) as mock_prompt,
         ):
@@ -669,9 +665,6 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             )
 
         with (
-            mock.patch.object(
-                test_module, "use_asyncio_event_loop", mock.MagicMock()
-            ) as mock_use_aio_loop,
             mock.patch.object(
                 test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
             ) as mock_prompt,
