@@ -36,12 +36,22 @@ HOLDER_INDY = getenv("HOLDER_INDY", "http://holder_indy:3001")
 async def main():
     """Test Controller protocols."""
     issuer_name = "issuer" + token_hex(8)
+    issuer_without_schema_name = "issuer" + token_hex(8)
     async with Controller(base_url=AGENCY) as agency:
         issuer = await agency.post(
             "/multitenancy/wallet",
             json={
                 "label": issuer_name,
                 "wallet_name": issuer_name,
+                "wallet_type": "askar",
+            },
+            response=CreateWalletResponse,
+        )
+        issuer_without_schema = await agency.post(
+            "/multitenancy/wallet",
+            json={
+                "label": issuer_without_schema_name,
+                "wallet_name": issuer_without_schema_name,
                 "wallet_type": "askar",
             },
             response=CreateWalletResponse,
@@ -53,6 +63,11 @@ async def main():
             wallet_id=issuer.wallet_id,
             subwallet_token=issuer.token,
         ) as issuer,
+        Controller(
+            base_url=AGENCY,
+            wallet_id=issuer_without_schema.wallet_id,
+            subwallet_token=issuer_without_schema.token,
+        ) as issuer_without_schema,
         Controller(base_url=HOLDER_ANONCREDS) as holder_anoncreds,
         Controller(base_url=HOLDER_INDY) as holder_indy,
     ):
@@ -113,8 +128,8 @@ async def main():
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            cred_def.credential_definition_id,
             {"firstname": "Anoncreds", "lastname": "Holder"},
+            cred_def_id=cred_def.credential_definition_id,
             issuer_id=public_did.did,
             schema_id=schema.schema_id,
             schema_issuer_id=public_did.did,
@@ -162,8 +177,8 @@ async def main():
             holder_indy,
             issuer_conn_with_indy_holder.connection_id,
             holder_indy_conn.connection_id,
-            cred_def.credential_definition_id,
             {"firstname": "Indy", "lastname": "Holder"},
+            cred_def_id=cred_def.credential_definition_id,
             issuer_id=public_did.did,
             schema_id=schema.schema_id,
             schema_issuer_id=public_did.did,
@@ -214,7 +229,15 @@ async def main():
                 "wallet_name": issuer_name,
             },
         )
+        # Wait for the upgrade to complete
+        await asyncio.sleep(1)
 
+        await issuer_without_schema.post(
+            "/anoncreds/wallet/upgrade",
+            params={
+                "wallet_name": issuer_without_schema_name,
+            },
+        )
         # Wait for the upgrade to complete
         await asyncio.sleep(2)
 
@@ -275,8 +298,8 @@ async def main():
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            cred_def.credential_definition_state["credential_definition_id"],
             {"middlename": "Anoncreds"},
+            cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
             issuer_id=public_did.did,
             schema_id=schema.schema_state["schema_id"],
             schema_issuer_id=public_did.did,
@@ -310,8 +333,8 @@ async def main():
             holder_indy,
             issuer_conn_with_indy_holder.connection_id,
             holder_indy_conn.connection_id,
-            cred_def.credential_definition_state["credential_definition_id"],
             {"middlename": "Indy"},
+            cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
             issuer_id=public_did.did,
             schema_id=schema.schema_state["schema_id"],
             schema_issuer_id=public_did.did,
@@ -339,6 +362,85 @@ async def main():
         )
 
         await holder_indy.record(topic="revocation-notification")
+
+        """
+            This section of the test script demonstrates the issuance, presentation and
+            revocation of a credential where the issuer did not create the schema.
+        """
+        print(
+            "***Begin issuance, presentation and revocation of "
+            "credential without schema***"
+        )
+        issuer_conn_with_anoncreds_holder, holder_anoncreds_conn = await didexchange(
+            issuer_without_schema, holder_anoncreds
+        )
+
+        public_did = (
+            await issuer_without_schema.post(
+                "/wallet/did/create",
+                json={"method": "sov", "options": {"key_type": "ed25519"}},
+                response=DIDResult,
+            )
+        ).result
+        assert public_did
+
+        async with ClientSession() as session:
+            register_url = genesis_url.replace("/genesis", "/register")
+            async with session.post(
+                register_url,
+                json={
+                    "did": public_did.did,
+                    "verkey": public_did.verkey,
+                    "alias": None,
+                    "role": "ENDORSER",
+                },
+            ) as resp:
+                assert resp.ok
+
+        await issuer_without_schema.post(
+            "/wallet/did/public", params=params(did=public_did.did)
+        )
+        cred_def = await issuer_without_schema.post(
+            "/anoncreds/credential-definition",
+            json={
+                "credential_definition": {
+                    "issuerId": public_did.did,
+                    "schemaId": schema.schema_state["schema_id"],
+                    "tag": token_hex(8),
+                },
+                "options": {"support_revocation": True, "revocation_registry_size": 10},
+            },
+            response=CredDefResultAnoncreds,
+        )
+        issuer_cred_ex, _ = await anoncreds_issue_credential_v2(
+            issuer_without_schema,
+            holder_anoncreds,
+            issuer_conn_with_anoncreds_holder.connection_id,
+            holder_anoncreds_conn.connection_id,
+            {"middlename": "Anoncreds"},
+            cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
+            schema_id=schema.schema_state["schema_id"],
+        )
+        await anoncreds_present_proof_v2(
+            holder_anoncreds,
+            issuer_without_schema,
+            holder_anoncreds_conn.connection_id,
+            issuer_conn_with_anoncreds_holder.connection_id,
+            requested_attributes=[{"name": "middlename"}],
+        )
+        await issuer_without_schema.post(
+            url="/anoncreds/revocation/revoke",
+            json={
+                "connection_id": issuer_conn_with_anoncreds_holder.connection_id,
+                "rev_reg_id": issuer_cred_ex.details.rev_reg_id,
+                "cred_rev_id": issuer_cred_ex.details.cred_rev_id,
+                "publish": True,
+                "notify": True,
+                "notify_version": "v1_0",
+            },
+        )
+
+        await holder_anoncreds.record(topic="revocation-notification")
 
 
 if __name__ == "__main__":

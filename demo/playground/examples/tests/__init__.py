@@ -2,7 +2,6 @@
 
 import logging
 import os
-import time
 from functools import wraps
 
 import pytest
@@ -10,10 +9,10 @@ import requests
 
 AUTO_ACCEPT = "false"
 
-FABER = os.getenv("FABER")
-ALICE = os.getenv("ALICE")
-ACME = os.getenv("ACME")
-MULTI = os.getenv("MULTI")
+FABER = os.getenv("FABER", "http://faber-agent:9011")
+ALICE = os.getenv("ALICE", "http://alice-agent:9012")
+ACME = os.getenv("ACME", "http://acme-agent:9013")
+MULTI = os.getenv("MULTI", "http://multi-agent:9014")
 
 # Create a named logger
 logger = logging.getLogger("playground_examples")

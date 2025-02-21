@@ -23,7 +23,7 @@ updates:
       timezone: "Canada/Pacific"
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-patch"]
 
   # Maintain dependencies for Python Packages
   - package-ecosystem: "pip"
@@ -35,7 +35,7 @@ updates:
       timezone: "Canada/Pacific"
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-patch"]
 
   # Maintain dependencies for Python Packages
   - package-ecosystem: "pip"
@@ -47,7 +47,7 @@ updates:
       timezone: "Canada/Pacific"
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-patch"]
 
   # Maintain dependencies for Python Packages
   - package-ecosystem: "pip"
@@ -59,7 +59,7 @@ updates:
       timezone: "Canada/Pacific"
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-patch"]
 
   # Maintain dependencies for docker
   - package-ecosystem: "docker"
