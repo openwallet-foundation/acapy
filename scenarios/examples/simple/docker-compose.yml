@@ -21,12 +21,13 @@
         --auto-provision
         --log-level debug
         --debug-webhooks
+        --universal-resolver
     healthcheck:
       test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
-      start_period: 30s
+      start_period: 50s
       interval: 7s
       timeout: 5s
-      retries: 5
+      retries: 10
     depends_on:
       tails:
         condition: service_started

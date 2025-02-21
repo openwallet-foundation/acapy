@@ -5,6 +5,7 @@ import logging
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..resolver.did_resolver import DIDResolver
+from .base import ResolverError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,11 +57,14 @@ async def setup(context: InjectionContext):
     registry.register_resolver(webvh_resolver)
 
     if context.settings.get("resolver.universal"):
-        universal_resolver = ClassProvider(
-            "acapy_agent.resolver.default.universal.UniversalResolver"
-        ).provide(context.settings, context.injector)
-        await universal_resolver.setup(context)
-        registry.register_resolver(universal_resolver)
+        try:
+            universal_resolver = ClassProvider(
+                "acapy_agent.resolver.default.universal.UniversalResolver"
+            ).provide(context.settings, context.injector)
+            await universal_resolver.setup(context)
+            registry.register_resolver(universal_resolver)
+        except ResolverError as err:
+            LOGGER.warning(f"Universal Resolver setup failed: {err}")
 
     peer_did_1_resolver = ClassProvider(
         "acapy_agent.resolver.default.peer1.PeerDID1Resolver"

@@ -47,6 +47,7 @@ RUN apt-get update -y && \
     apt-transport-https \
     ca-certificates \
     curl \
+    git \
     libffi-dev \
     libgmp10 \
     libncurses5 \
