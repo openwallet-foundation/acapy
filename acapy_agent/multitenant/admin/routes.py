@@ -24,7 +24,6 @@ from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
 from ...utils.endorsement_setup import attempt_auto_author_with_endorser_setup
-from ...utils.profiles import subwallet_type_not_same_as_base_wallet_raise_web_exception
 from ...wallet.error import WalletSettingsError
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
@@ -450,11 +449,6 @@ async def wallet_create(request: web.BaseRequest):
 
     base_wallet_type = context.profile.settings.get("wallet.type")
     sub_wallet_type = body.get("wallet_type", base_wallet_type)
-
-    subwallet_type_not_same_as_base_wallet_raise_web_exception(
-        base_wallet_type, sub_wallet_type
-    )
-
     key_management_mode = body.get("key_management_mode") or WalletRecord.MODE_MANAGED
     wallet_key = body.get("wallet_key")
     wallet_webhook_urls = body.get("wallet_webhook_urls") or []
