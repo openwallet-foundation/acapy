@@ -29,6 +29,8 @@ from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ..anoncreds.routes import (
     create_transaction_for_endorser_description,
     endorser_connection_id_description,
+    AnonCredsRevRegIdMatchInfoSchema,
+    AnoncredsRevocationModuleResponseSchema,
 )
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..indy.issuer import IndyIssuerError
@@ -40,8 +42,8 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ANONCREDS_CRED_DEF_ID_EXAMPLE,
     ANONCREDS_CRED_DEF_ID_VALIDATE,
-    INDY_CRED_REV_ID_EXAMPLE,
-    INDY_CRED_REV_ID_VALIDATE,
+    ANONCREDS_CRED_REV_ID_EXAMPLE,
+    ANONCREDS_CRED_REV_ID_VALIDATE,
     ANONCREDS_REV_REG_ID_EXAMPLE,
     ANONCREDS_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
@@ -66,10 +68,6 @@ from .models.issuer_cred_rev_record import (
 LOGGER = logging.getLogger(__name__)
 
 TAG_TITLE = "anoncreds - revocation"
-
-
-class RevocationAnoncredsModuleResponseSchema(OpenAPISchema):
-    """Response schema for Revocation Module."""
 
 
 class RevRegResultSchemaAnoncreds(OpenAPISchema):
@@ -107,10 +105,10 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     )
     cred_rev_id = fields.Str(
         required=False,
-        validate=INDY_CRED_REV_ID_VALIDATE,
+        validate=ANONCREDS_CRED_REV_ID_VALIDATE,
         metadata={
             "description": "Credential revocation identifier",
-            "example": INDY_CRED_REV_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
         },
     )
     cred_ex_id = fields.Str(
@@ -279,19 +277,6 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
     )
 
 
-class RevRegIdMatchInfoSchema(OpenAPISchema):
-    """Path parameters and validators for request taking rev reg id."""
-
-    rev_reg_id = fields.Str(
-        required=True,
-        validate=ANONCREDS_REV_REG_ID_VALIDATE,
-        metadata={
-            "description": "Revocation Registry identifier",
-            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
-        },
-    )
-
-
 class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
@@ -351,10 +336,10 @@ class PublishRevocationsSchemaAnoncreds(OpenAPISchema):
         keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                validate=INDY_CRED_REV_ID_VALIDATE,
+                validate=ANONCREDS_CRED_REV_ID_VALIDATE,
                 metadata={
                     "description": "Credential revocation identifier",
-                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                    "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
                 },
             )
         ),
@@ -371,10 +356,10 @@ class PublishRevocationsResultSchemaAnoncreds(OpenAPISchema):
         keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                validate=INDY_CRED_REV_ID_VALIDATE,
+                validate=ANONCREDS_CRED_REV_ID_VALIDATE,
                 metadata={
                     "description": "Credential revocation identifier",
-                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                    "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
                 },
             )
         ),
@@ -455,7 +440,7 @@ class RevokeRequestSchemaAnoncreds(CredRevRecordQueryStringSchema):
     summary="Revoke an issued credential",
 )
 @request_schema(RevokeRequestSchemaAnoncreds())
-@response_schema(RevocationAnoncredsModuleResponseSchema(), description="")
+@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def revoke(request: web.BaseRequest):
     """Request handler for storing a credential revocation.
@@ -585,7 +570,7 @@ async def get_rev_regs(request: web.BaseRequest):
     tags=[TAG_TITLE],
     summary="Get revocation registry by revocation registry id",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchemaAnoncreds(), 200, description="")
 @tenant_authentication
 async def get_rev_reg(request: web.BaseRequest):
@@ -723,7 +708,7 @@ async def rotate_rev_reg(request: web.BaseRequest):
     tags=[TAG_TITLE],
     summary="Get number of credentials issued against revocation registry",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @response_schema(RevRegIssuedResultSchemaAnoncreds(), 200, description="")
 @tenant_authentication
 async def get_rev_reg_issued_count(request: web.BaseRequest):
@@ -764,7 +749,7 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
     tags=[TAG_TITLE],
     summary="Get details of credentials issued against revocation registry",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @response_schema(CredRevRecordDetailsResultSchemaAnoncreds(), 200, description="")
 @tenant_authentication
 async def get_rev_reg_issued(request: web.BaseRequest):
@@ -806,7 +791,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
     tags=[TAG_TITLE],
     summary="Get details of revoked credentials from ledger",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchemaAnoncreds(), 200, description="")
 @tenant_authentication
 async def get_rev_reg_indy_recs(request: web.BaseRequest):
@@ -851,7 +836,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
     tags=[TAG_TITLE],
     summary="Fix revocation state in wallet and return number of updated entries",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @querystring_schema(RevRegUpdateRequestMatchInfoSchema())
 @response_schema(RevRegWalletUpdatedResultSchemaAnoncreds(), 200, description="")
 @tenant_authentication
@@ -992,8 +977,8 @@ async def get_cred_rev_record(request: web.BaseRequest):
     summary="Download tails file",
     produces=["application/octet-stream"],
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevocationAnoncredsModuleResponseSchema, description="tails file")
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
+@response_schema(AnoncredsRevocationModuleResponseSchema, description="tails file")
 @tenant_authentication
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """Request handler to download tails file for revocation registry.
@@ -1030,7 +1015,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
 
 @docs(tags=[TAG_TITLE], summary="Set revocation registry state manually")
-@match_info_schema(RevRegIdMatchInfoSchema())
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchemaAnoncreds(), 200, description="")
 @tenant_authentication

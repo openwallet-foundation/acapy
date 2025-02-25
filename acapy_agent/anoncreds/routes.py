@@ -21,11 +21,11 @@ from ..messaging.valid import (
     ANONCREDS_CRED_DEF_ID_EXAMPLE,
     ANONCREDS_DID_EXAMPLE,
     ANONCREDS_REV_REG_ID_EXAMPLE,
+    ANONCREDS_REV_REG_ID_VALIDATE,
     ANONCREDS_SCHEMA_ID_EXAMPLE,
     UUIDFour,
 )
 from ..revocation.error import RevocationNotSupportedError
-from ..revocation.routes import RevocationModuleResponseSchema, RevRegIdMatchInfoSchema
 from ..storage.error import StorageNotFoundError
 from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from .base import (
@@ -60,6 +60,23 @@ create_transaction_for_endorser_description = (
     "Use this for agents who don't specify an author role but want to "
     "create a transaction for an endorser to sign."
 )
+
+
+class AnoncredsRevocationModuleResponseSchema(OpenAPISchema):
+    """Response schema for Revocation Module."""
+
+
+class AnonCredsRevRegIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking rev reg id."""
+
+    rev_reg_id = fields.Str(
+        required=True,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation Registry identifier",
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
+        },
+    )
 
 
 class SchemaIdMatchInfo(OpenAPISchema):
@@ -699,8 +716,8 @@ async def rev_list_post(request: web.BaseRequest):
     tags=["anoncreds - revocation"],
     summary="Upload local tails file to server",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevocationModuleResponseSchema(), description="")
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
+@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def upload_tails_file(request: web.BaseRequest):
     """Request handler to upload local tails file for revocation registry.
@@ -735,8 +752,8 @@ async def upload_tails_file(request: web.BaseRequest):
     tags=["anoncreds - revocation"],
     summary="Update the active registry",
 )
-@match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevocationModuleResponseSchema(), description="")
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
+@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def set_active_registry(request: web.BaseRequest):
     """Request handler to set the active registry.

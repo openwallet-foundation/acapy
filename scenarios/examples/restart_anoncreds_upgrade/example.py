@@ -56,8 +56,8 @@ async def connect_agents_and_issue_credentials(
         invitee,
         inviter_conn.connection_id,
         invitee_conn.connection_id,
-        inviter_cred_def.credential_definition_id,
         {"firstname": fname, "lastname": lname},
+        inviter_cred_def.credential_definition_id,
     )
 
     # Present the the credential's attributes
@@ -105,8 +105,8 @@ async def connect_agents_and_issue_credentials(
         invitee,
         inviter_conn.connection_id,
         invitee_conn.connection_id,
-        inviter_cred_def.credential_definition_id,
         {"firstname": f"{fname}2", "lastname": f"{lname}2"},
+        inviter_cred_def.credential_definition_id,
     )
     print(">>> Done!")
 
@@ -154,7 +154,7 @@ async def verify_issued_credentials(issuer, issued_cred_count, revoked_cred_coun
         rev_reg_id = cred_exch[cred_type]["rev_reg_id"]
         cred_rev_id = cred_exch[cred_type]["cred_rev_id"]
         cred_rev_id = int(cred_rev_id)
-        if not rev_reg_id in registries:
+        if rev_reg_id not in registries:
             if is_issuer_anoncreds:
                 registries[rev_reg_id] = await issuer.get(
                     f"/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs",
@@ -177,7 +177,7 @@ async def verify_recd_credentials(holder, active_cred_count, revoked_cred_count)
         "wallet.type"
     ) == "askar-anoncreds"
 
-    credentials = await holder.get(f"/credentials")
+    credentials = await holder.get("/credentials")
     credentials = credentials["results"]
     assert len(credentials) == (active_cred_count + revoked_cred_count)
     registries = {}
@@ -186,7 +186,7 @@ async def verify_recd_credentials(holder, active_cred_count, revoked_cred_count)
     for credential in credentials:
         rev_reg_id = credential["rev_reg_id"]
         cred_rev_id = int(credential["cred_rev_id"])
-        if not rev_reg_id in registries:
+        if rev_reg_id not in registries:
             if is_holder_anoncreds:
                 registries[rev_reg_id] = await holder.get(
                     f"/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs",
@@ -205,7 +205,7 @@ async def verify_recd_credentials(holder, active_cred_count, revoked_cred_count)
 
 
 async def verify_recd_presentations(verifier, recd_pres_count):
-    presentations = await verifier.get(f"/present-proof-2.0/records")
+    presentations = await verifier.get("/present-proof-2.0/records")
     presentations = presentations["results"]
 
     assert recd_pres_count == len(presentations)

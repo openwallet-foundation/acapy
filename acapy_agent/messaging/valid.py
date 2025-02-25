@@ -350,8 +350,8 @@ class DIDPosture(OneOf):
 class IndyDID(Regexp):
     """Validate value against indy DID."""
 
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(rf"^(did:sov:)?[{B58}]{{21,22}}$")
+    EXAMPLE = "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw"
+    PATTERN = re.compile(rf"^(did:(sov|indy):)?[{B58}]{{21,22}}$")
 
     def __init__(self):
         """Initialize the instance."""
@@ -589,6 +589,21 @@ class IndyCredRevId(Regexp):
         super().__init__(
             IndyCredRevId.PATTERN,
             error="Value {input} is not an indy credential revocation identifier",
+        )
+
+
+class AnonCredsCredRevId(Regexp):
+    """Validate value against anoncreds credential revocation identifier specification."""
+
+    EXAMPLE = "12345"
+    PATTERN = r"^[1-9][0-9]*$"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            AnonCredsCredRevId.PATTERN,
+            error="Value {input} is not an anoncreds credential revocation identifier",
         )
 
 
@@ -1058,6 +1073,9 @@ ANONCREDS_REV_REG_ID_EXAMPLE = AnoncredsRevRegId.EXAMPLE
 
 INDY_CRED_REV_ID_VALIDATE = IndyCredRevId()
 INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
+
+ANONCREDS_CRED_REV_ID_VALIDATE = AnonCredsCredRevId()
+ANONCREDS_CRED_REV_ID_EXAMPLE = AnonCredsCredRevId.EXAMPLE
 
 MAJOR_MINOR_VERSION_VALIDATE = MajorMinorVersion()
 MAJOR_MINOR_VERSION_EXAMPLE = MajorMinorVersion.EXAMPLE
