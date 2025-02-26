@@ -328,6 +328,7 @@ async def invitation_receive(request: web.BaseRequest):
             mediation_id=mediation_id,
         )
     except (DIDXManagerError, StorageError, BaseModelError) as err:
+        LOGGER.exception("Error during receive invitation")
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result.serialize())
