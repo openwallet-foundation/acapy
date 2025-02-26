@@ -195,7 +195,7 @@ async def prove_presentation_route(request: web.BaseRequest):
         options = {} if "options" not in body else body["options"]
 
         # We derive the proofType from the holder DID if not provided in options
-        if not options.get("proofType", None):
+        if not options.get("proofType", None) and presentation.get("holder"):
             holder = presentation["holder"]
             did = holder if isinstance(holder, str) else holder["id"]
             async with context.session() as session:
@@ -209,6 +209,9 @@ async def prove_presentation_route(request: web.BaseRequest):
                 options["proofType"] = "BbsBlsSignature2020"
             elif key_type == "p256":
                 options["proofType"] = "EcdsaSecp256r1Signature2019"
+
+        else:
+            options["proofType"] = options.get("proofType") or "Ed25519Signature2020"
 
         presentation = VerifiablePresentation.deserialize(presentation)
         options = LDProofVCOptions.deserialize(options)
