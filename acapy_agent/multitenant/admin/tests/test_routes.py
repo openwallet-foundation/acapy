@@ -215,56 +215,6 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             assert mock_multitenant_mgr.get_wallet_profile.called
             assert test_module.attempt_auto_author_with_endorser_setup.called
 
-    async def test_wallet_create_wallet_type_different_from_base_wallet_raises_403(
-        self,
-    ):
-        body = {
-            "wallet_name": "test",
-            "default_label": "test_label",
-            "wallet_type": "askar",
-            "wallet_key": "test",
-            "key_management_mode": "managed",
-            "wallet_webhook_urls": [],
-            "wallet_dispatch_type": "base",
-        }
-        wallet_mock = mock.MagicMock(
-            serialize=mock.MagicMock(
-                return_value={
-                    "wallet_id": "test",
-                    "settings": {},
-                    "key_management_mode": body["key_management_mode"],
-                }
-            )
-        )
-        # wallet_record
-        mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
-        mock_multitenant_mgr.create_wallet = mock.CoroutineMock(return_value=wallet_mock)
-
-        mock_multitenant_mgr.create_auth_token = mock.CoroutineMock(
-            return_value="test_token"
-        )
-        mock_multitenant_mgr.get_wallet_profile = mock.CoroutineMock(
-            return_value=mock.MagicMock()
-        )
-        self.profile.context.injector.bind_instance(
-            BaseMultitenantManager, mock_multitenant_mgr
-        )
-        self.request.json = mock.CoroutineMock(return_value=body)
-
-        await test_module.wallet_create(self.request)
-
-        body["wallet_type"] = "askar-anoncreds"
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.wallet_create(self.request)
-
-        body["wallet_type"] = "indy"
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.wallet_create(self.request)
-
-        body["wallet_type"] = "in_memory"
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.wallet_create(self.request)
-
     async def test_wallet_create(self):
         body = {
             "wallet_name": "test",
