@@ -177,6 +177,7 @@ class PeerwiseRecord(BaseRecord):
         my_did: Optional[str] = None,
         their_did: Optional[str] = None,
         #their_label: Optional[str] = None,
+        endpoints: Optional[List[str]] = None,
         invitation_msg_id: Optional[str] = None,
         accept: Optional[str] = None,
         alias: Optional[str] = None,
@@ -193,6 +194,7 @@ class PeerwiseRecord(BaseRecord):
         #self.their_label = their_label
         self.invitation_msg_id = invitation_msg_id
         self.accept = accept or self.ACCEPT_MANUAL
+        self.endpoints = endpoints
         self.alias = alias
         self.aka = aka
 
@@ -620,6 +622,14 @@ class MaybeStoredConnRecordSchema(BaseRecordSchema):
         metadata={
             "description": "Their DID for connection",
             "example": GENERIC_DID_EXAMPLE,
+        },
+    )
+    endpoints = fields.List(
+        fields.Str(),
+        required=False,
+        metadata={
+            "description": "list of endpoints that this peer-wise contact can be reached through",
+            "example": ["did:example:bob", "https://example.com/didcomm"],
         },
     )
     #their_label = fields.Str(

@@ -160,7 +160,7 @@ class Dispatcher:
             peer = existing_record
         else:
             peer = PeerwiseRecord(their_did=inbound_message.receipt.sender_verkey, my_did=inbound_message.receipt.recipient_verkey)
-            await peer.save(session)
+
         await profile.notify(
             "acapy::webhook::pairwise_did",
             {
@@ -186,40 +186,50 @@ class Dispatcher:
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
 
-        messaging = session.inject(DIDCommMessaging)
-        routing_service = session.inject(RoutingService)
-        frm = inbound_message.payload.get("from")
+        if not existing_record:  # or existing_record["updated_at"] # Caching to not hammer did:web
+            messaging = session.inject(DIDCommMessaging)
+            routing_service = session.inject(RoutingService)
+            frm = inbound_message.payload.get("from")
 
-        services = await routing_service._resolve_services(messaging.resolver, frm)
-        chain = [
-            {
-                "did": frm,
-                "service": services,
-            }
-        ]
+            services = await routing_service._resolve_services(messaging.resolver, frm)
+            chain = [
+                {
+                    "did": frm,
+                    "service": services,
+                }
+            ]
 
-        # Loop through service DIDs until we run out of DIDs to forward to
-        to_did = services[0].service_endpoint.uri
-        found_forwardable_service = await routing_service.is_forwardable_service(
-            messaging.resolver, services[0]
-        )
-        while found_forwardable_service:
-            services = await routing_service._resolve_services(messaging.resolver, to_did)
-            if services:
-                chain.append(
-                    {
-                        "did": to_did,
-                        "service": services,
-                    }
-                )
-                to_did = services[0].service_endpoint.uri
-            found_forwardable_service = (
-                await routing_service.is_forwardable_service(
-                    messaging.resolver, services[0]
-                )
-                if services
-                else False
+            # Loop through service DIDs until we run out of DIDs to forward to
+            to_did = services[0].service_endpoint.uri
+            found_forwardable_service = await routing_service.is_forwardable_service(
+                messaging.resolver, services[0]
             )
+            while found_forwardable_service:
+                services = await routing_service._resolve_services(messaging.resolver, to_did)
+                if services:
+                    chain.append(
+                        {
+                            "did": to_did,
+                            "service": services,
+                        }
+                    )
+                    to_did = services[0].service_endpoint.uri
+                found_forwardable_service = (
+                    await routing_service.is_forwardable_service(
+                        messaging.resolver, services[0]
+                    )
+                    if services
+                    else False
+                )
+            peer.endpoints = [
+                service.service_endpoint.uri
+                for service in chain[-1]["service"]
+                if "didcomm/v2" in service.accept
+            ]
+            await peer.save(session)
+        elif not existing_record:
+            await peer.save(session)
+
         reply_destination = [
             ConnectionTarget(
                 did=inbound_message.receipt.sender_verkey,

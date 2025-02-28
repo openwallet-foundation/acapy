@@ -539,15 +539,16 @@ async def connections_endpoints(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
 
     profile = context.profile
-    connection_mgr = ConnectionManager(profile)
     try:
-        endpoints = await connection_mgr.get_endpoints(connection_id)
+        async with profile.session() as session:
+            record = await PeerwiseRecord.retrieve_by_id(session, connection_id)
+        endpoints = record.endpoints
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError, WalletError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(dict(zip(("my_endpoint", "their_endpoint"), endpoints)))
+    return web.json_response(dict("their_endpoints", endpoints))
 
 
 @docs(
