@@ -78,7 +78,7 @@ def tenant_authentication(handler):
             (multitenant_enabled and authorization_header)
             or (not multitenant_enabled and valid_key)
             or (multitenant_enabled and valid_key and base_wallet_allowed_route)
-            or insecure_mode
+            or (insecure_mode and not multitenant_enabled)
             or request.method == "OPTIONS"
         ):
             return await handler(request)
