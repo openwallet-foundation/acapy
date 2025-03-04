@@ -80,20 +80,23 @@ class IndyCredxHolder(IndyHolder):
                     raise IndyHolderError("Error fetching link secret") from err
 
                 if record:
-                    wallet_type = self._profile.settings.get_value("wallet.type")
                     try:
-                        if wallet_type == "askar-anoncreds":
-                            LOGGER.debug("Loading LinkSecret from Anoncreds secret")
+                        LOGGER.debug("Loading LinkSecret")
+                        secret = LinkSecret.load(record.raw_value)
+                        LOGGER.debug("Loaded existing link secret.")
+                    except CredxError as err:
+                        LOGGER.info(
+                            "Attempt fallback method after error loading link secret: %s",
+                            err,
+                        )
+                        try:
                             ms_string = record.value.decode("ascii")
                             link_secret_dict = {"value": {"ms": ms_string}}
                             secret = LinkSecret.load(link_secret_dict)
-                        else:
-                            LOGGER.debug("Loading LinkSecret")
-                            secret = LinkSecret.load(record.raw_value)
-                        LOGGER.debug("Loaded existing link secret.")
-                    except CredxError as err:
-                        LOGGER.error("Error loading link secret: %s", err)
-                        raise IndyHolderError("Error loading link secret") from err
+                            LOGGER.debug("Loaded LinkSecret from Anoncreds secret.")
+                        except CredxError as decode_err:
+                            LOGGER.error("Error loading link secret: %s", decode_err)
+                            raise IndyHolderError("Error loading link secret") from err
                     break
                 else:
                     try:
