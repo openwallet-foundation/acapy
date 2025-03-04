@@ -297,7 +297,16 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             None,
             AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.NOT_FOUND),
             AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.UNEXPECTED),
+            AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.NOT_FOUND),
         ]
+
+        # Indy holder errors
+        mock_indy_holder = mock.MagicMock(IndyHolder, autospec=True)
+        mock_indy_holder.delete_credential.side_effect = [
+            test_module.WalletNotFoundError(),  # Indy not found after anoncreds not found
+            None,  # Indy found after second anoncreds not found side effect
+        ]
+        self.profile.context.injector.bind_instance(IndyHolder, mock_indy_holder)
 
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
@@ -311,6 +320,10 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
                 await test_module.credentials_remove(self.request)
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credentials_remove(self.request)
+
+            # Indy found after anoncreds not found
+            result = await test_module.credentials_remove(self.request)
+            assert result is json_response.return_value
 
     async def test_credentials_remove_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
