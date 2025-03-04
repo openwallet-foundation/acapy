@@ -368,8 +368,20 @@ async def credentials_remove(request: web.BaseRequest):
             except WalletNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
+    async def delete_using_anoncreds_or_indy(profile: Profile):
+        """Try to delete anoncreds credential with fallback to indy if not found."""
+        try:
+            await delete_credential_using_anoncreds(profile)
+        except web.HTTPNotFound as anoncreds_err:
+            # If credential not found in anoncreds, try with indy
+            try:
+                await delete_credential_using_indy(profile)
+            except web.HTTPNotFound:
+                # Raise original anoncreds error if neither found
+                raise web.HTTPNotFound(reason=anoncreds_err.reason) from anoncreds_err
+
     if context.settings.get(wallet_type_config) == "askar-anoncreds":
-        await delete_credential_using_anoncreds(profile)
+        await delete_using_anoncreds_or_indy(profile)
     else:
         await delete_credential_using_indy(profile)
 
