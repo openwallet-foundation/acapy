@@ -1557,6 +1557,10 @@ def register_events(event_bus: EventBus):
         re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_EVENT}.*"),
         on_revocation_entry_event,
     )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}REV_REG_ENTRY_TXN_FAILED.*"),
+        on_rev_reg_entry_txn_failed,
+    )
 
 
 async def on_revocation_registry_init_event(profile: Profile, event: Event):
@@ -1745,6 +1749,12 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
             registry_record.revoc_def_type,
             endorser_connection_id=endorser_connection_id,
         )
+
+
+async def on_rev_reg_entry_txn_failed(profile: Profile, event: Event):
+    """Handle revocation registry entry transaction failed event."""
+    manager = RevocationManager(profile)
+    await manager.fix_and_publish_from_invalid_accum_err(event.payload.get("msg"))
 
 
 class TailsDeleteResponseSchema(OpenAPISchema):
