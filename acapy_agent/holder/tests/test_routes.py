@@ -293,6 +293,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             )
         )
 
+        # Anoncreds holder errors
         mock_delete_credential.side_effect = [
             None,
             AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.NOT_FOUND),
@@ -311,13 +312,17 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.web, "json_response", mock.Mock()
         ) as json_response:
+            # First mock delete has no side effect; delete succeeds
             result = await test_module.credentials_remove(self.request)
             json_response.assert_called_once_with({})
             assert result is json_response.return_value
             assert mock_delete_credential.called
 
+            # Not found after anoncreds not found and indy not found
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.credentials_remove(self.request)
+
+            # Bad request after anoncreds unexpected error
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credentials_remove(self.request)
 
