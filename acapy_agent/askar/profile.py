@@ -178,11 +178,15 @@ class AskarProfile(Profile):
                 ),
             )
 
-    def session(self, context: Optional[InjectionContext] = None) -> ProfileSession:
+    def session(
+        self, context: Optional[InjectionContext] = None
+    ) -> "AskarProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return AskarProfileSession(self, False, context=context)
 
-    def transaction(self, context: Optional[InjectionContext] = None) -> ProfileSession:
+    def transaction(
+        self, context: Optional[InjectionContext] = None
+    ) -> "AskarProfileSession":
         """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit

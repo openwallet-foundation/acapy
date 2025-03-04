@@ -67,6 +67,7 @@ class IndyCredxHolder(IndyHolder):
 
     async def get_link_secret(self) -> LinkSecret:
         """Get or create the default link secret."""
+        LOGGER.debug("Attempting to fetch or create the link secret.")
 
         while True:
             async with self._profile.session() as session:
@@ -75,30 +76,51 @@ class IndyCredxHolder(IndyHolder):
                         CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
                     )
                 except AskarError as err:
+                    LOGGER.error("Error fetching link secret: %s", err)
                     raise IndyHolderError("Error fetching link secret") from err
+
                 if record:
                     try:
+                        LOGGER.debug("Loading LinkSecret")
                         secret = LinkSecret.load(record.raw_value)
+                        LOGGER.debug("Loaded existing link secret.")
                     except CredxError as err:
-                        raise IndyHolderError("Error loading link secret") from err
+                        LOGGER.info(
+                            "Attempt fallback method after error loading link secret: %s",
+                            err,
+                        )
+                        try:
+                            ms_string = record.value.decode("ascii")
+                            link_secret_dict = {"value": {"ms": ms_string}}
+                            secret = LinkSecret.load(link_secret_dict)
+                            LOGGER.debug("Loaded LinkSecret from Anoncreds secret.")
+                        except CredxError as decode_err:
+                            LOGGER.error("Error loading link secret: %s", decode_err)
+                            raise IndyHolderError("Error loading link secret") from err
                     break
                 else:
                     try:
                         secret = LinkSecret.create()
+                        LOGGER.debug("Created new link secret.")
                     except CredxError as err:
+                        LOGGER.error("Error creating link secret: %s", err)
                         raise IndyHolderError("Error creating link secret") from err
+
                     try:
                         await session.handle.insert(
                             CATEGORY_LINK_SECRET,
                             IndyCredxHolder.LINK_SECRET_ID,
                             secret.to_json_buffer(),
                         )
+                        LOGGER.debug("Saved new link secret.")
                     except AskarError as err:
                         if err.code != AskarErrorCode.DUPLICATE:
+                            LOGGER.error("Error saving link secret: %s", err)
                             raise IndyHolderError("Error saving link secret") from err
                         # else: lost race to create record, retry
                     else:
                         break
+        LOGGER.debug("Returning link secret.")
         return secret
 
     async def create_credential_request(

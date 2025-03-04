@@ -36,16 +36,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     """Indy presentation format handler."""
 
     format = V20PresFormat.Format.INDY
-    anoncreds_handler = None
 
     def __init__(self, profile: Profile):
         """Shim initialization to check for new AnonCreds library."""
         super().__init__(profile)
-
-        # Temporary shim while the new anoncreds library integration is in progress
-        wallet_type = profile.settings.get_value("wallet.type")
-        if wallet_type == "askar-anoncreds":
-            self.anoncreds_handler = AnonCredsPresExchangeHandler(profile)
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
@@ -120,12 +114,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_bound_request(
-                pres_ex_record,
-                request_data,
-            )
 
         indy_proof_request = pres_ex_record.pres_proposal.attachment(
             IndyPresExchangeHandler.format
@@ -148,12 +136,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_pres(
-                pres_ex_record,
-                request_data,
-            )
 
         requested_credentials = {}
         if not request_data:
@@ -323,10 +305,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                         f"restrictions {req_restrictions}"
                     )
 
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.receive_pres(message, pres_ex_record)
-
         proof = message.attachment(IndyPresExchangeHandler.format)
         _check_proof_vs_proposal()
 
@@ -341,10 +319,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             presentation exchange record, updated
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.verify_pres(pres_ex_record)
-
         pres_request_msg = pres_ex_record.pres_request
 
         # The `or` anoncreds format is for the indy <--> anoncreds compatibility
