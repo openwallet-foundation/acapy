@@ -76,3 +76,12 @@ async def notify_pending_cleared_event(
     """Send notification of credential revoked as issuer."""
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_CLEAR_PENDING_EVENT}::{rev_reg_id}"
     await profile.notify(topic, {"rev_reg_id": rev_reg_id})
+
+
+async def notify_rev_reg_entry_txn_failed(
+    profile: Profile,
+    msg: str,
+):
+    """Send notification that a revocation registry entry transaction failed."""
+    topic = f"{REVOCATION_EVENT_PREFIX}REV_REG_ENTRY_TXN_FAILED"
+    await profile.notify(topic, {"msg": msg})
