@@ -7,6 +7,7 @@ from typing import Any, Mapping, Type
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from ....askar.profile import AskarProfileSession
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
 from ....core.profile import Profile, ProfileSession
 from ....config.injection_context import InjectionContext
@@ -14,9 +15,7 @@ from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer
-
 from ...error import RevocationError
-
 from .. import issuer_rev_reg_record as test_module
 from ..issuer_rev_reg_record import IssuerRevRegRecord
 from ..revocation_registry import RevocationRegistry
@@ -83,6 +82,10 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             await rec1.save(session, reason="another record")
             assert rec0 < rec1
 
+    @mock.patch(
+        "aries_cloudagent.core.tests.test_profile.TestProfileSession",
+        mock.MagicMock(AskarProfileSession, autospec=True),
+    )
     async def test_fix_ledger_entry(self):
         mock_cred_def = {
             "ver": "1.0",
@@ -188,6 +191,16 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                         )
                     )
 
+        TestProfileSession.handle = mock.MagicMock(
+            fetch=mock.CoroutineMock(
+                side_effect=[
+                    mock.MagicMock(value_json=json.dumps(mock_cred_def)),
+                    mock.MagicMock(value_json=json.dumps(mock_reg_rev_def_private)),
+                    mock.MagicMock(value_json=REV_REG_DEF),
+                ]
+            ),
+            replace=mock.CoroutineMock(),
+        )
         credx_module = importlib.import_module("indy_credx")
         rev_reg_delta_json = json.dumps(
             {
@@ -226,7 +239,15 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         )
         self.ledger.send_revoc_reg_entry = mock.CoroutineMock(
             return_value={
-                "result": {"...": "..."},
+                "result": {
+                    "txn": {
+                        "data": {
+                            "value": {
+                                "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
+                            }
+                        }
+                    }
+                },
             },
         )
         _test_session = TestProfile.test_session(
@@ -265,7 +286,15 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                         "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
                     },
                 },
-                {"...": "..."},
+                {
+                    "txn": {
+                        "data": {
+                            "value": {
+                                "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
+                            },
+                        }
+                    }
+                },
             ) == await rec.fix_ledger_entry(
                 profile=_test_profile,
                 apply_ledger_update=True,
