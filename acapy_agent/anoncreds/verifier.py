@@ -449,11 +449,15 @@ class AnonCredsVerifier:
 
         msgs = []
         try:
+            print(">>> check non-revoc intervals ...")
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
+            print(">>> check timestamp ...")
             msgs += await self.check_timestamps(
                 self.profile, pres_req, pres, rev_reg_defs
             )
+            print(">>> check pre-verify ...")
             msgs += await self.pre_verify(pres_req, pres)
+            print(">>> done pre-checks.")
         except ValueError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
@@ -464,6 +468,9 @@ class AnonCredsVerifier:
             return (False, msgs)
 
         try:
+            print(">>> run presentation.verify() ...")
+            print(">>> rev_reg_defs:", rev_reg_defs)
+            print(">>> rev_lists:", rev_lists)
             presentation = Presentation.load(pres)
             verified = await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -478,6 +485,7 @@ class AnonCredsVerifier:
                     for rev_list in timestamp_to_list.values()
                 ],
             )
+            print(">>> done presentation.verify().", verified)
         except AnoncredsError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
