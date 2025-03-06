@@ -1,5 +1,31 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.2.3
+
+### March 6, 2025
+
+This patch release addresses a bug in the publishing of AnonCreds revocation entries that caused the ledger and issuer wallet to become out of sync. As a result, revoked credentials were not being correctly flagged as revoked when presented. Previously, this issue was mitigated by an automatic “sync-revocation” process, which generally resolved the problem. However, we recently identified scenarios where the presence of an Indy Endorser in the revocation publication flow caused the “sync-revocation” process to fail silently.
+
+This patch resolves that issue. Once applied, if a revocation batch results in an out-of-sync state, the “sync-revocation” process will automatically run to correct it.
+
+For more details, see [Issue 3546](https://github.com/openwallet-foundation/acapy/issues/3546).
+
+### 1.2.3 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in this 1.2.3 release, but the Connections Protocol has been removed from the ACA-Py `main` branch, and is available as a [plugin](https://github.com/openwallet-foundation/acapy-plugins/tree/main/connections). The Issue Credential v1 and Present Proof v1 protocols will soon be changed similarly. Please review these notifications carefully!
+
+### 1.2.3 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.3 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fixes
+  - 1.2.LTS Fix revocation accum sync when endorsement txn fails (#3547) [\#3555](https://github.com/openwallet-foundation/acapy/pull/3555) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.3 [\#3559](https://github.com/openwallet-foundation/acapy/pull/3559) [swcurran](https://github.com/swcurran)
+
 ## 1.2.2
 
 ### January 30, 2025
