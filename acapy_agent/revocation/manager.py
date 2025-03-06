@@ -1,13 +1,25 @@
 """Classes to manage credential revocation."""
 
+import asyncio
 import json
 import logging
 from typing import Mapping, NamedTuple, Optional, Sequence, Text, Tuple
 
+from ..cache.base import BaseCache
 from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
+from ..indy.credx.issuer import CATEGORY_REV_REG
 from ..indy.issuer import IndyIssuer
+from ..ledger.base import BaseLedger
+from ..messaging.responder import BaseResponder
+from ..protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
+from ..protocols.endorse_transaction.v1_0.util import (
+    get_endorser_connection_id,
+)
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
@@ -15,11 +27,13 @@ from ..protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRec
 from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
-from ..storage.error import StorageNotFoundError
+from ..storage.error import StorageError, StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RevocationManagerError(BaseError):
@@ -498,3 +512,140 @@ class RevocationManager:
                         await txn.commit()
                     except StorageNotFoundError:
                         pass
+
+    async def _get_endorser_info(self) -> Tuple[Optional[str], Optional[ConnRecord]]:
+        connection_id = await get_endorser_connection_id(self._profile)
+
+        endorser_did = None
+        async with self._profile.session() as session:
+            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
+            endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        endorser_did = endorser_info.get("endorser_did")
+
+        return endorser_did, connection_record
+
+    async def fix_and_publish_from_invalid_accum_err(self, err_msg: str):
+        """Fix and publish revocation registry entries from invalid accumulator error."""
+        cache = self._profile.inject_or(BaseCache)
+
+        async def check_retry(accum):
+            """Used to manage retries for fixing revocation registry entries."""
+            retry_value = await cache.get(accum)
+            if not retry_value:
+                await cache.set(accum, 5)
+            else:
+                if retry_value > 0:
+                    await cache.set(accum, retry_value - 1)
+                else:
+                    LOGGER.error(
+                        f"Revocation registry entry transaction failed for {accum}"
+                    )
+
+        def get_genesis_transactions():
+            """Get the genesis transactions needed for fixing broken accum."""
+            genesis_transactions = self._profile.context.settings.get(
+                "ledger.genesis_transactions"
+            )
+            if not genesis_transactions:
+                write_ledger = self._profile.context.injector.inject(BaseLedger)
+                pool = write_ledger.pool
+                genesis_transactions = pool.genesis_txns
+            return genesis_transactions
+
+        async def sync_accumulator(session: ProfileSession):
+            """Sync the local accumulator with the ledger and create recovery txn."""
+            rev_reg_record = await IssuerRevRegRecord.retrieve_by_id(
+                session, rev_reg_entry.name
+            )
+
+            # Fix and get the recovery transaction
+            (
+                rev_reg_delta,
+                recovery_txn,
+                applied_txn,
+            ) = await rev_reg_record.fix_ledger_entry(
+                self._profile, False, genesis_transactions
+            )
+
+            # Update locally assuming ledger write will succeed
+            rev_reg = await session.handle.fetch(
+                CATEGORY_REV_REG,
+                rev_reg_entry.value_json["revoc_reg_id"],
+                for_update=True,
+            )
+            new_value_json = rev_reg.value_json
+            new_value_json["value"]["accum"] = recovery_txn["value"]["accum"]
+            await session.handle.replace(
+                CATEGORY_REV_REG,
+                rev_reg.name,
+                json.dumps(new_value_json),
+                rev_reg.tags,
+            )
+
+            return rev_reg_record, recovery_txn
+
+        async def create_and_send_endorser_txn():
+            """Create and send the endorser transaction again."""
+            async with ledger:
+                # Create the revocation registry entry
+                rev_entry_res = await ledger.send_revoc_reg_entry(
+                    rev_reg_entry.value_json["revoc_reg_id"],
+                    "CL_ACCUM",
+                    recovery_txn,
+                    rev_reg_record.issuer_did,
+                    write_ledger=False,
+                    endorser_did=endorser_did,
+                )
+
+            # Send the transaction to the endorser again with recovery txn
+            transaction_manager = TransactionManager(self._profile)
+            try:
+                revo_transaction = await transaction_manager.create_record(
+                    messages_attach=rev_entry_res["result"],
+                    connection_id=connection.connection_id,
+                )
+                (
+                    revo_transaction,
+                    revo_transaction_request,
+                ) = await transaction_manager.create_request(transaction=revo_transaction)
+            except (StorageError, TransactionManagerError) as err:
+                raise RevocationManagerError(err.roll_up) from err
+
+            responder = self._profile.inject_or(BaseResponder)
+            if not responder:
+                raise RevocationManagerError(
+                    "No responder found. Unable to send transaction request"
+                )
+            await responder.send(
+                revo_transaction_request,
+                connection_id=connection.connection_id,
+            )
+
+        async with self._profile.session() as session:
+            rev_reg_records = await session.handle.fetch_all(
+                IssuerRevRegRecord.RECORD_TYPE
+            )
+            # Cycle through all rev_rev_def records to find the offending accumulator
+            for rev_reg_entry in rev_reg_records:
+                ledger = session.inject_or(BaseLedger)
+                # Get the value from the ledger
+                async with ledger:
+                    (accum_response, _) = await ledger.get_revoc_reg_delta(
+                        rev_reg_entry.value_json["revoc_reg_id"]
+                    )
+                    accum = accum_response.get("value", {}).get("accum")
+
+                # If the accum from the ledger matches the error message, fix it
+                if accum and accum in err_msg:
+                    await check_retry(accum)
+
+                    # Get the genesis transactions needed for fix
+                    genesis_transactions = get_genesis_transactions()
+
+                    # We know this needs endorsement
+                    endorser_did, connection = await self._get_endorser_info()
+                    rev_reg_record, recovery_txn = await sync_accumulator(session=session)
+                    await create_and_send_endorser_txn()
+
+                    # Some time in between re-tries
+                    await asyncio.sleep(1)
