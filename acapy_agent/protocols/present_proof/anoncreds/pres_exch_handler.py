@@ -166,7 +166,8 @@ class AnonCredsPresExchHandler:
                     result = await anoncreds_registry.get_revocation_list(
                         self._profile,
                         rev_reg_id,
-                        reft_non_revoc_interval.get("to", epoch_now),
+                        timestamp_from=reft_non_revoc_interval.get("from", 0),
+                        timestamp_to=reft_non_revoc_interval.get("to", epoch_now),
                     )
 
                     rev_lists[key] = (

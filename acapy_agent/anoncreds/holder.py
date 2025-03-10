@@ -1,4 +1,4 @@
-"""Indy holder implementation."""
+"""Anoncreds holder implementation."""
 
 import asyncio
 import json
@@ -598,10 +598,10 @@ class AnonCredsHolder:
 
         Args:
             presentation_request: Valid indy format presentation request
-            requested_credentials: Indy format requested credentials
-            schemas: Indy formatted schemas JSON
-            credential_definitions: Indy formatted credential definitions JSON
-            rev_states: Indy format revocation states JSON
+            requested_credentials: Anoncreds format requested credentials
+            schemas: Anoncreds formatted schemas JSON
+            credential_definitions: Anoncreds formatted credential definitions JSON
+            rev_states: Anoncreds format revocation states JSON
 
         """
 
@@ -691,9 +691,9 @@ class AnonCredsHolder:
             presentation_request: Valid indy format presentation request
             requested_credentials_w3c: W3C format requested credentials
             credentials_w3c_metadata: W3C format credential metadata
-            schemas: Indy formatted schemas JSON
-            credential_definitions: Indy formatted credential definitions JSON
-            rev_states: Indy format revocation states JSON
+            schemas: Anoncreds formatted schemas JSON
+            credential_definitions: Anoncreds formatted credential definitions JSON
+            rev_states: Anoncreds format revocation states JSON
 
         """
         present_creds = PresentCredentials()
