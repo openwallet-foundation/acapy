@@ -351,7 +351,7 @@ async def credentials_remove(request: web.BaseRequest):
     credential_id = request.match_info["credential_id"]
     profile: Profile = context.profile
 
-    async def delete_credential_using_anoncreds(profile: Profile):
+    async def delete_credential_using_anoncreds():
         try:
             holder = AnonCredsHolder(profile)
             await holder.delete_credential(credential_id)
@@ -360,7 +360,7 @@ async def credentials_remove(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=err.roll_up) from err
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    async def delete_credential_using_indy(profile: Profile):
+    async def delete_credential_using_indy():
         async with profile.session() as session:
             try:
                 holder = session.inject(IndyHolder)
@@ -368,10 +368,22 @@ async def credentials_remove(request: web.BaseRequest):
             except WalletNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
+    async def delete_using_anoncreds_or_indy():
+        """Try to delete anoncreds credential with fallback to indy if not found."""
+        try:
+            await delete_credential_using_anoncreds()
+        except web.HTTPNotFound as anoncreds_err:
+            # If credential not found in anoncreds, try with indy
+            try:
+                await delete_credential_using_indy()
+            except web.HTTPNotFound:
+                # Raise original anoncreds error if neither found
+                raise web.HTTPNotFound(reason=anoncreds_err.reason) from anoncreds_err
+
     if context.settings.get(wallet_type_config) == "askar-anoncreds":
-        await delete_credential_using_anoncreds(profile)
+        await delete_using_anoncreds_or_indy()
     else:
-        await delete_credential_using_indy(profile)
+        await delete_credential_using_indy()
 
     # Notify event subscribers
     topic = "acapy::record::credential::delete"

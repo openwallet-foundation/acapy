@@ -10,7 +10,7 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 	chmod ug+x bin/jq
 
 # Copy and install Aries Agent code
-RUN pip install --no-cache-dir poetry==1.8.3
+RUN pip install --no-cache-dir poetry==2.1.1
 
 COPY README.md pyproject.toml poetry.lock ./
 
