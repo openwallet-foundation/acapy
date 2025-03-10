@@ -215,7 +215,6 @@ class AskarStorage(BaseStorage):
         self,
         type_filter: str,
         tag_query: Optional[Mapping] = None,
-        order_by: Optional[str] = None,
         descending: bool = False,
         options: Optional[Mapping] = None,
     ):
@@ -225,8 +224,6 @@ class AskarStorage(BaseStorage):
         for row in await self._session.handle.fetch_all(
             category=type_filter,
             tag_filter=tag_query,
-            order_by=order_by,
-            descending=descending,
             for_update=for_update,
         ):
             results.append(
