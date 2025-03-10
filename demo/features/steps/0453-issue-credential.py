@@ -708,6 +708,9 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
 @given(
     '"{holder}" has another issued {schema_name} credential {credential_data} from "{issuer}"'
 )
+@when(
+    '"{holder}" has another issued {schema_name} credential {credential_data} from "{issuer}"'
+)
 def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(
         # TODO possibly check that the requested schema is "active" (if there are multiple schemas)
