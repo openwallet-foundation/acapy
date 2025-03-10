@@ -773,7 +773,10 @@ async def main(args):
                         raise Exception(
                             "Error invalid credential type:" + faber_agent.cred_type
                         )
-
+                    log_status(
+                        "Send a proof request to X: "
+                        + json.dumps(proof_request_web_request)
+                    )
                     await agent.admin_POST(
                         "/present-proof-2.0/send-request", proof_request_web_request
                     )
