@@ -217,7 +217,6 @@ class InvitationRecordMatchInfoSchema(OpenAPISchema):
     )
 
 
-
 @docs(tags=["out-of-band"], summary="Get an existing Out-of-Band invitation.")
 @match_info_schema(InvitationRecordMatchInfoSchema())
 @response_schema(InvitationRecordResponseSchema(), description="")
@@ -241,6 +240,7 @@ async def invitation_fetch(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(record)
+
 
 @docs(
     tags=["out-of-band"],
@@ -391,9 +391,9 @@ async def register(app: web.Application):
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
             web.get(
-                "/out-of-band/invitations/{invi_msg_id}", 
-                invitation_fetch, 
-                allow_head=False
+                "/out-of-band/invitations/{invi_msg_id}",
+                invitation_fetch,
+                allow_head=False,
             ),
             web.delete("/out-of-band/invitations/{invi_msg_id}", invitation_remove),
         ]
