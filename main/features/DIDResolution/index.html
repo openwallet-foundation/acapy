@@ -2744,7 +2744,7 @@ from ..resolver.did_resolver import DIDResolver</p>
 </code></pre></div>
 <p>The following is a fully functional Dockerfile encapsulating this setup:</p>
 <p>```dockerfile=
-FROM ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.2 <br />
+FROM ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.3 <br />
 RUN pip3 install git+<a href="https://github.com/dbluhm/acapy-resolver-github">https://github.com/dbluhm/acapy-resolver-github</a></p>
 <p>CMD ["aca-py", "start", "-it", "http", "0.0.0.0", "3000", "-ot", "http", "-e", "<a href="http://localhost:3000">http://localhost:3000</a>", "--admin", "0.0.0.0", "3001", "--admin-insecure-mode", "--no-ledger", "--plugin", "acapy_resolver_github"]
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>To use the above dockerfile:
