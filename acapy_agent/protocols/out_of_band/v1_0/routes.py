@@ -105,6 +105,13 @@ class InvitationCreateRequestSchema(OpenAPISchema):
             "example": False,
         },
     )
+    use_key = fields.Str(
+        required=False,
+        metadata={
+            "description": "Multikey to use in invitation",
+            "example": "z6Mkf5rGMoatrSj1f4CyvuHBeXJELe9RPdzo2PKGNCKVtZxP",
+        },
+    )
     use_did = fields.Str(
         required=False,
         metadata={

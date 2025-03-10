@@ -25,6 +25,7 @@ from ....wallet.did_info import DIDInfo, INVITATION_REUSE_KEY
 from ....wallet.did_method import PEER2, PEER4
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519
+from ....wallet.keys.manager import multikey_to_verkey
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...coordinate_mediation.v1_0.route_manager import RouteManager
 from ...didcomm_prefix import DIDCommPrefix
@@ -77,6 +78,7 @@ class InvitationCreator:
         my_endpoint: Optional[str] = None,
         auto_accept: Optional[bool] = None,
         public: bool = False,
+        use_key: Optional[str] = None,
         use_did: Optional[str] = None,
         use_did_method: Optional[str] = None,
         hs_protos: Optional[Sequence[HSProto]] = None,
@@ -178,6 +180,7 @@ class InvitationCreator:
         self.goal = goal
         self.goal_code = goal_code
         self.public = public
+        self.use_key = use_key
         self.use_did = use_did
         self.use_did_method = use_did_method
         self.multi_use = multi_use
@@ -249,6 +252,8 @@ class InvitationCreator:
 
         if self.public:
             result = await self.handle_public(attachments, mediation_record)
+        elif self.use_key:
+            result = await self.handle_use_key(attachments, mediation_record)
         elif self.use_did:
             result = await self.handle_use_did(attachments, mediation_record)
         elif self.use_did_method:
@@ -412,6 +417,80 @@ class InvitationCreator:
             )
 
         return await self.handle_did(public_did, attachments, mediation_record)
+
+    async def handle_use_key(
+        self,
+        attachments: Sequence[AttachDecorator],
+        mediation_record: Optional[MediationRecord],
+    ) -> CreateResult:
+        """Handle use_key invitation creation."""
+        assert self.use_key
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            verkey = multikey_to_verkey(self.use_key)
+            connection_key = await wallet.get_signing_key(verkey)
+
+        routing_keys, routing_endpoint = await self.route_manager.routing_info(
+            self.profile, mediation_record
+        )
+        routing_keys = [
+            (
+                key
+                if len(key.split(":")) == 3
+                else DIDKey.from_public_key_b58(key, ED25519).key_id
+            )
+            for key in routing_keys or []
+        ]
+        recipient_keys = [
+            DIDKey.from_public_key_b58(connection_key.verkey, ED25519).key_id
+        ]
+
+        my_endpoint = routing_endpoint or self.my_endpoint
+
+        invi_msg = InvitationMessage(
+            _id=self.msg_id,
+            label=self.my_label,
+            handshake_protocols=self.handshake_protocols,
+            requests_attach=attachments,
+            accept=self.accept,
+            image_url=self.image_url,
+            version=self.version,
+            services=[
+                ServiceMessage(
+                    _id="#inline",
+                    _type="did-communication",
+                    recipient_keys=recipient_keys,
+                    service_endpoint=my_endpoint,
+                    routing_keys=routing_keys,
+                )
+            ],
+            goal=self.goal,
+            goal_code=self.goal_code,
+        )
+
+        if self.handshake_protocols:
+            conn_rec = await self.handle_handshake_protos(
+                connection_key.verkey, invi_msg, mediation_record
+            )
+            our_service = None
+        else:
+            await self.route_manager.route_verkey(
+                self.profile, connection_key.verkey, mediation_record
+            )
+            conn_rec = None
+            our_service = ServiceDecorator(
+                recipient_keys=self.did_keys_to_keys(recipient_keys),
+                endpoint=my_endpoint,
+                routing_keys=self.did_keys_to_keys(routing_keys),
+            )
+
+        return self.CreateResult(
+            invitation_url=invi_msg.to_url(),
+            invitation=invi_msg,
+            our_recipient_key=connection_key.verkey,
+            connection=conn_rec,
+            service=our_service,
+        )
 
     async def handle_use_did(
         self,
