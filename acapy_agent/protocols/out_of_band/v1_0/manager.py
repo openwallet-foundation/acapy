@@ -653,6 +653,7 @@ class OutOfBandManager(BaseConnectionManager):
         my_endpoint: Optional[str] = None,
         auto_accept: Optional[bool] = None,
         public: bool = False,
+        use_key: Optional[str] = None,
         use_did: Optional[str] = None,
         use_did_method: Optional[str] = None,
         hs_protos: Optional[Sequence[HSProto]] = None,
@@ -680,6 +681,7 @@ class OutOfBandManager(BaseConnectionManager):
             auto_accept (Optional[bool]): Auto-accept a corresponding connection request
                 (None to use config).
             public (bool): Set to True to create an invitation from the public DID.
+            use_key (Optional[str]): Multikey to use for the invitation.
             use_did (Optional[str]): DID to use for the invitation.
             use_did_method (Optional[str]): DID method to use for the invitation.
             hs_protos (Optional[Sequence[HSProto]]): List of handshake protocols to
@@ -713,6 +715,7 @@ class OutOfBandManager(BaseConnectionManager):
             my_endpoint,
             auto_accept,
             public,
+            use_key,
             use_did,
             use_did_method,
             hs_protos,

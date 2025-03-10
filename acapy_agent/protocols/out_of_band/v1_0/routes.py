@@ -250,6 +250,7 @@ async def invitation_create(request: web.BaseRequest):
     service_accept = body.get("accept")
     use_public_did = body.get("use_public_did", False)
     use_did = body.get("use_did")
+    use_key = body.get("use_key")
     use_did_method = body.get("use_did_method")
     metadata = body.get("metadata")
     my_label = body.get("my_label")
@@ -271,6 +272,7 @@ async def invitation_create(request: web.BaseRequest):
             my_label=my_label,
             auto_accept=auto_accept,
             public=use_public_did,
+            use_key=use_key,
             use_did=use_did,
             use_did_method=use_did_method,
             hs_protos=[h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h],
