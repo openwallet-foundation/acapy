@@ -7,10 +7,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.util import datetime_now, datetime_to_str
-from .....messaging.valid import (
-    ISO8601_DATETIME_EXAMPLE,
-    ISO8601_DATETIME_VALIDATE,
-)
+from .....messaging.valid import ISO8601_DATETIME_EXAMPLE, ISO8601_DATETIME_VALIDATE
 from ..message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.basicmessage_handler.BasicMessageHandler"

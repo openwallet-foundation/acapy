@@ -61,12 +61,7 @@ from ..dif.pres_request_schema import DIFPresSpecSchema, DIFProofRequestSchema
 from . import problem_report_for_record, report_problem
 from .formats.handler import V20PresFormatHandlerError
 from .manager import V20PresManager
-from .message_types import (
-    ATTACHMENT_FORMAT,
-    PRES_20_PROPOSAL,
-    PRES_20_REQUEST,
-    SPEC_URI,
-)
+from .message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL, PRES_20_REQUEST, SPEC_URI
 from .messages.pres_format import V20PresFormat
 from .messages.pres_problem_report import ProblemReportReason
 from .messages.pres_proposal import V20PresProposal

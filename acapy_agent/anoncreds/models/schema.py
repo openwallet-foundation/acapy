@@ -7,10 +7,7 @@ from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import (
-    ANONCREDS_DID_EXAMPLE,
-    ANONCREDS_SCHEMA_ID_EXAMPLE,
-)
+from ...messaging.valid import ANONCREDS_DID_EXAMPLE, ANONCREDS_SCHEMA_ID_EXAMPLE
 
 
 class AnonCredsSchema(BaseModel):

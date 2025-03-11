@@ -10,9 +10,7 @@ from secrets import token_hex
 
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
-from acapy_controller.models import (
-    CreateWalletResponse,
-)
+from acapy_controller.models import CreateWalletResponse
 from acapy_controller.protocols import (
     DIDResult,
     didexchange,

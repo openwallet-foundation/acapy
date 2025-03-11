@@ -6,10 +6,7 @@ import pytest
 from anoncreds import Credential, CredentialDefinition, CredentialOffer, W3cCredential
 from aries_askar import AskarError, AskarErrorCode
 
-from ...anoncreds.base import (
-    AnonCredsObjectAlreadyExists,
-    AnonCredsSchemaAlreadyExists,
-)
+from ...anoncreds.base import AnonCredsObjectAlreadyExists, AnonCredsSchemaAlreadyExists
 from ...anoncreds.models.credential_definition import (
     CredDef,
     CredDefResult,
@@ -25,10 +22,7 @@ from ...anoncreds.models.schema import (
     SchemaResult,
     SchemaState,
 )
-from ...askar.profile_anon import (
-    AskarAnonCredsProfile,
-    AskarAnonCredsProfileSession,
-)
+from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ...core.event_bus import Event, MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile

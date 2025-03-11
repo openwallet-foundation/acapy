@@ -6,9 +6,7 @@ from aiohttp import web
 
 from acapy_agent.connections.models.conn_record import ConnRecord
 from acapy_agent.messaging.models.base import BaseModelError
-from acapy_agent.protocols.endorse_transaction.v1_0.util import (
-    get_endorser_connection_id,
-)
+from acapy_agent.protocols.endorse_transaction.v1_0.util import get_endorser_connection_id
 from acapy_agent.storage.error import StorageNotFoundError
 
 

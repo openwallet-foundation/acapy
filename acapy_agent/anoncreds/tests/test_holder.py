@@ -35,10 +35,7 @@ from ...anoncreds.tests.mock_objects import (
     MOCK_W3CPRES,
     SCHEMAS,
 )
-from ...askar.profile_anon import (
-    AskarAnonCredsProfile,
-    AskarAnonCredsProfileSession,
-)
+from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from ...vc.ld_proofs.document_loader import DocumentLoader

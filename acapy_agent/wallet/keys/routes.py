@@ -9,8 +9,8 @@ from marshmallow import fields
 from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
-from .manager import MultikeyManager, MultikeyManagerError, DEFAULT_ALG
 from ...wallet.error import WalletDuplicateError, WalletNotFoundError
+from .manager import DEFAULT_ALG, MultikeyManager, MultikeyManagerError
 
 LOGGER = logging.getLogger(__name__)
 

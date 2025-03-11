@@ -9,14 +9,8 @@ from marshmallow import ValidationError
 
 from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from .......anoncreds.issuer import AnonCredsIssuer
-from .......anoncreds.models.credential_definition import (
-    CredDef,
-    GetCredDefResult,
-)
-from .......anoncreds.models.revocation import (
-    GetRevRegDefResult,
-    RevRegDef,
-)
+from .......anoncreds.models.credential_definition import CredDef, GetCredDefResult
+from .......anoncreds.models.revocation import GetRevRegDefResult, RevRegDef
 from .......anoncreds.registry import AnonCredsRegistry
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
@@ -30,24 +24,16 @@ from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......protocols.issue_credential.v2_0.formats.handler import V20CredFormatError
 from .......protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
-from .......protocols.issue_credential.v2_0.messages.cred_issue import (
-    V20CredIssue,
-)
+from .......protocols.issue_credential.v2_0.messages.cred_issue import V20CredIssue
 from .......protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
-from .......protocols.issue_credential.v2_0.messages.cred_proposal import (
-    V20CredProposal,
-)
+from .......protocols.issue_credential.v2_0.messages.cred_proposal import V20CredProposal
 from .......protocols.issue_credential.v2_0.messages.cred_request import V20CredRequest
 from .......protocols.issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
 )
-from .......protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
-)
-from .......protocols.issue_credential.v2_0.models.detail.indy import (
-    V20CredExRecordIndy,
-)
+from .......protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from .......protocols.issue_credential.v2_0.models.detail.indy import V20CredExRecordIndy
 from .......storage.base import BaseStorage
 from .......storage.record import StorageRecord
 from .......tests import mock

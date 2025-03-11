@@ -6,13 +6,7 @@ Resolution is performed using the peer-did-python library https://github.com/dec
 from re import compile
 from typing import Optional, Pattern, Sequence, Text
 
-from did_peer_4 import (
-    LONG_PATTERN,
-    SHORT_PATTERN,
-    long_to_short,
-    resolve,
-    resolve_short,
-)
+from did_peer_4 import LONG_PATTERN, SHORT_PATTERN, long_to_short, resolve, resolve_short
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile

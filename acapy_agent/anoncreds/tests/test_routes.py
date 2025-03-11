@@ -7,11 +7,7 @@ from aiohttp import web
 from ...admin.request_context import AdminRequestContext
 from ...anoncreds.base import AnonCredsObjectNotFound
 from ...anoncreds.issuer import AnonCredsIssuer
-from ...anoncreds.models.schema import (
-    AnonCredsSchema,
-    SchemaResult,
-    SchemaState,
-)
+from ...anoncreds.models.schema import AnonCredsSchema, SchemaResult, SchemaState
 from ...anoncreds.revocation import AnonCredsRevocation
 from ...anoncreds.revocation_setup import DefaultRevocationSetup
 from ...core.event_bus import MockEventBus

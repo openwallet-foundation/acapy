@@ -16,9 +16,7 @@ from base58 import alphabet
 from .....anoncreds.base import AnonCredsSchemaAlreadyExists
 from .....anoncreds.default.legacy_indy import registry as test_module
 from .....anoncreds.issuer import AnonCredsIssuer
-from .....askar.profile_anon import (
-    AskarAnonCredsProfileSession,
-)
+from .....askar.profile_anon import AskarAnonCredsProfileSession
 from .....connections.models.conn_record import ConnRecord
 from .....core.event_bus import EventBus
 from .....ledger.base import BaseLedger
@@ -31,9 +29,7 @@ from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecord,
 )
-from .....revocation_anoncreds.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-)
+from .....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....models.credential_definition import (
