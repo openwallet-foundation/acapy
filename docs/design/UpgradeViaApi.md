@@ -12,11 +12,11 @@ The diagram below describes the sequence of events for the anoncreds upgrade pro
 sequenceDiagram
     participant A1 as Agent 1
     participant M1 as Middleware
-    participant IAS1 as IsAnoncredsSingleton Set
+    participant IAS1 as IsAnonCredsSingleton Set
     participant UIPS1 as UpgradeInProgressSingleton Set
     participant W as Wallet (DB)
     participant UIPS2 as UpgradeInProgressSingleton Set
-    participant IAS2 as IsAnoncredsSingleton Set
+    participant IAS2 as IsAnonCredsSingleton Set
     participant M2 as Middleware
     participant A2 as Agent 2
 
