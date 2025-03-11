@@ -3,7 +3,13 @@ from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from anoncreds import Credential, CredentialDefinition, CredentialOffer, W3cCredential
+from anoncreds import (
+    AnoncredsError,
+    Credential,
+    CredentialDefinition,
+    CredentialOffer,
+    W3cCredential,
+)
 from aries_askar import AskarError, AskarErrorCode
 
 from ...anoncreds.base import AnonCredsObjectAlreadyExists, AnonCredsSchemaAlreadyExists
@@ -725,7 +731,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
             )
         )
         # Creating fails with bad issuer_id
-        with self.assertRaises(test_module.AnonCredsError):
+        with self.assertRaises(AnoncredsError):
             await self.issuer.create_and_register_credential_definition(
                 issuer_id="issuer-id",
                 schema_id="CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
