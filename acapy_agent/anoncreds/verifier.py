@@ -1,4 +1,4 @@
-"""Anoncreds verifier implementation."""
+"""AnonCreds verifier implementation."""
 
 import asyncio
 import logging

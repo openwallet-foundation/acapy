@@ -30,7 +30,7 @@ from .store import AskarOpenStore, AskarStoreConfig
 LOGGER = logging.getLogger(__name__)
 
 
-class AskarAnoncredsProfile(Profile):
+class AskarAnonCredsProfile(Profile):
     """Provide access to Aries-Askar profile interaction methods."""
 
     BACKEND_NAME = "askar-anoncreds"
@@ -161,19 +161,19 @@ class AskarAnoncredsProfile(Profile):
 
     def session(
         self, context: Optional[InjectionContext] = None
-    ) -> "AskarAnoncredsProfileSession":
+    ) -> "AskarAnonCredsProfileSession":
         """Start a new interactive session with no transaction support requested."""
-        return AskarAnoncredsProfileSession(self, False, context=context)
+        return AskarAnonCredsProfileSession(self, False, context=context)
 
     def transaction(
         self, context: Optional[InjectionContext] = None
-    ) -> "AskarAnoncredsProfileSession":
+    ) -> "AskarAnonCredsProfileSession":
         """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
         """
-        return AskarAnoncredsProfileSession(self, True, context=context)
+        return AskarAnonCredsProfileSession(self, True, context=context)
 
     async def close(self):
         """Close the profile instance."""
@@ -182,18 +182,18 @@ class AskarAnoncredsProfile(Profile):
             self.opened = None
 
 
-class AskarAnoncredsProfileSession(ProfileSession):
+class AskarAnonCredsProfileSession(ProfileSession):
     """An active connection to the profile management backend."""
 
     def __init__(
         self,
-        profile: AskarAnoncredsProfile,
+        profile: AskarAnonCredsProfile,
         is_txn: bool,
         *,
         context: Optional[InjectionContext] = None,
         settings: Mapping[str, Any] = None,
     ):
-        """Create a new AskarAnoncredsProfileSession instance."""
+        """Create a new AskarAnonCredsProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
         if is_txn:
             self._opener = self.profile.store.transaction(profile.profile_id)
@@ -282,7 +282,7 @@ class AskarAnonProfileManager(ProfileManager):
         opened = await store_config.open_store(
             provision=True, in_memory=config.get("test")
         )
-        return AskarAnoncredsProfile(opened, context)
+        return AskarAnonCredsProfile(opened, context)
 
     async def open(
         self, context: InjectionContext, config: Mapping[str, Any] = None
@@ -292,7 +292,7 @@ class AskarAnonProfileManager(ProfileManager):
         opened = await store_config.open_store(
             provision=False, in_memory=config.get("test")
         )
-        return AskarAnoncredsProfile(opened, context)
+        return AskarAnonCredsProfile(opened, context)
 
     @classmethod
     async def generate_store_key(self, seed: Optional[str] = None) -> str:

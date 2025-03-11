@@ -7,7 +7,7 @@ from marshmallow import ValidationError
 
 from .....admin.request_context import AdminRequestContext
 from .....anoncreds.models.presentation_request import (
-    AnoncredsPresentationReqAttrSpecSchema,
+    AnonCredsPresentationReqAttrSpecSchema,
 )
 from .....indy.holder import IndyHolder
 from .....indy.verifier import IndyVerifier
@@ -223,7 +223,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
     async def test_validate_proof_req_attr_spec(self):
-        aspec = AnoncredsPresentationReqAttrSpecSchema()
+        aspec = AnonCredsPresentationReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
         aspec.validate_fields(
             {

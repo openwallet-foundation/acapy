@@ -1,4 +1,4 @@
-"""Anoncreds admin routes."""
+"""AnonCreds admin routes."""
 
 import logging
 from asyncio import shield
@@ -62,7 +62,7 @@ create_transaction_for_endorser_description = (
 )
 
 
-class AnoncredsRevocationModuleResponseSchema(OpenAPISchema):
+class AnonCredsRevocationModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
 
@@ -584,7 +584,7 @@ class RevRegDefOptionsSchema(OpenAPISchema):
     )
 
 
-class RevRegCreateRequestSchemaAnoncreds(OpenAPISchema):
+class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
     """Wrapper for revocation registry creation request."""
 
     revocation_registry_definition = fields.Nested(InnerRevRegDefSchema())
@@ -595,7 +595,7 @@ class RevRegCreateRequestSchemaAnoncreds(OpenAPISchema):
     tags=["anoncreds - revocation"],
     summary="Create and publish a registration revocation on the connected datastore",
 )
-@request_schema(RevRegCreateRequestSchemaAnoncreds())
+@request_schema(RevRegCreateRequestSchemaAnonCreds())
 @response_schema(RevRegDefResultSchema(), 200, description="")
 @tenant_authentication
 async def rev_reg_def_post(request: web.BaseRequest):
@@ -717,7 +717,7 @@ async def rev_list_post(request: web.BaseRequest):
     summary="Upload local tails file to server",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def upload_tails_file(request: web.BaseRequest):
     """Request handler to upload local tails file for revocation registry.
@@ -753,7 +753,7 @@ async def upload_tails_file(request: web.BaseRequest):
     summary="Update the active registry",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def set_active_registry(request: web.BaseRequest):
     """Request handler to set the active registry.
@@ -821,14 +821,14 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "anoncreds - schemas",
-            "description": "Anoncreds schema management",
+            "description": "AnonCreds schema management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "anoncreds - credential definitions",
-            "description": "Anoncreds credential definition management",
+            "description": "AnonCreds credential definition management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

@@ -65,7 +65,7 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::keylist::updated": "keylist",
 }
 
-anoncreds_wallets = singletons.IsAnoncredsSingleton().wallets
+anoncreds_wallets = singletons.IsAnonCredsSingleton().wallets
 in_progress_upgrades = singletons.UpgradeInProgressSingleton()
 
 status_paths = ("/status/live", "/status/ready")

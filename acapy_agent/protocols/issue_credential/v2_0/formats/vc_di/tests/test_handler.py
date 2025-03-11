@@ -460,7 +460,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
             # self.issuer.create_credential_offer.assert_not_called()
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_receive_offer(self):
         cred_ex_record = mock.MagicMock()
         cred_offer_message = mock.MagicMock()
@@ -558,7 +558,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                     cred_ex_record, {"holder_did": holder_did}
                 )
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_receive_request(self):
         cred_ex_record = mock.MagicMock()
         cred_request_message = mock.MagicMock()
@@ -643,7 +643,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             assert attachment.data.base64
             assert attachment.content == {"credential": VCDI_CRED}
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_non_revocable(self):
         CRED_DEF_NR = deepcopy(CRED_DEF)
         CRED_DEF_NR["value"]["revocation"] = None

@@ -22,18 +22,18 @@ from ...messaging.valid import (
 from ...utils.tracing import AdminAPIMessageTracingSchema
 from .predicate import Predicate
 from .requested_credentials import (
-    AnoncredsRequestedCredsRequestedAttrSchema,
-    AnoncredsRequestedCredsRequestedPredSchema,
+    AnonCredsRequestedCredsRequestedAttrSchema,
+    AnonCredsRequestedCredsRequestedPredSchema,
 )
 
 
-class AnoncredsEQProof(BaseModel):
+class AnonCredsEQProof(BaseModel):
     """Equality proof for anoncreds primary proof."""
 
     class Meta:
         """Equality proof metadata."""
 
-        schema_class = "AnoncredsEQProofMeta"
+        schema_class = "AnonCredsEQProofMeta"
 
     def __init__(
         self,
@@ -55,13 +55,13 @@ class AnoncredsEQProof(BaseModel):
         self.m2 = m2
 
 
-class AnoncredsEQProofSchema(BaseModelSchema):
-    """Anoncreds equality proof schema."""
+class AnonCredsEQProofSchema(BaseModelSchema):
+    """AnonCreds equality proof schema."""
 
     class Meta:
-        """Anoncreds equality proof metadata."""
+        """AnonCreds equality proof metadata."""
 
-        model_class = AnoncredsEQProof
+        model_class = AnonCredsEQProof
         unknown = EXCLUDE
 
     revealed_attrs = fields.Dict(
@@ -90,13 +90,13 @@ class AnoncredsEQProofSchema(BaseModelSchema):
     )
 
 
-class AnoncredsGEProofPred(BaseModel):
-    """Anoncreds GE proof predicate."""
+class AnonCredsGEProofPred(BaseModel):
+    """AnonCreds GE proof predicate."""
 
     class Meta:
-        """Anoncreds GE proof predicate metadata."""
+        """AnonCreds GE proof predicate metadata."""
 
-        schema_class = "AnoncredsGEProofPredSchema"
+        schema_class = "AnonCredsGEProofPredSchema"
 
     def __init__(
         self,
@@ -112,13 +112,13 @@ class AnoncredsGEProofPred(BaseModel):
         self.value = value
 
 
-class AnoncredsGEProofPredSchema(BaseModelSchema):
-    """Anoncreds GE proof predicate schema."""
+class AnonCredsGEProofPredSchema(BaseModelSchema):
+    """AnonCreds GE proof predicate schema."""
 
     class Meta:
-        """Anoncreds GE proof predicate metadata."""
+        """AnonCreds GE proof predicate metadata."""
 
-        model_class = AnoncredsGEProofPred
+        model_class = AnonCredsGEProofPred
         unknown = EXCLUDE
 
     attr_name = fields.Str(
@@ -133,13 +133,13 @@ class AnoncredsGEProofPredSchema(BaseModelSchema):
     )
 
 
-class AnoncredsGEProof(BaseModel):
+class AnonCredsGEProof(BaseModel):
     """Greater-than-or-equal-to proof for anoncreds primary proof."""
 
     class Meta:
         """GE proof metadata."""
 
-        schema_class = "AnoncredsGEProofMeta"
+        schema_class = "AnonCredsGEProofMeta"
 
     def __init__(
         self,
@@ -148,7 +148,7 @@ class AnoncredsGEProof(BaseModel):
         mj: Optional[str] = None,
         alpha: Optional[str] = None,
         t: Mapping[str, str] = None,
-        predicate: Optional[AnoncredsGEProofPred] = None,
+        predicate: Optional[AnonCredsGEProofPred] = None,
         **kwargs,
     ):
         """Initialize GE proof object."""
@@ -161,13 +161,13 @@ class AnoncredsGEProof(BaseModel):
         self.predicate = predicate
 
 
-class AnoncredsGEProofSchema(BaseModelSchema):
-    """Anoncreds GE proof schema."""
+class AnonCredsGEProofSchema(BaseModelSchema):
+    """AnonCreds GE proof schema."""
 
     class Meta:
-        """Anoncreds GE proof schema metadata."""
+        """AnonCreds GE proof schema metadata."""
 
-        model_class = AnoncredsGEProof
+        model_class = AnonCredsGEProof
         unknown = EXCLUDE
 
     u = fields.Dict(
@@ -194,21 +194,21 @@ class AnoncredsGEProofSchema(BaseModelSchema):
             validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
         ),
     )
-    predicate = fields.Nested(AnoncredsGEProofPredSchema)
+    predicate = fields.Nested(AnonCredsGEProofPredSchema)
 
 
-class AnoncredsPrimaryProof(BaseModel):
-    """Anoncreds primary proof."""
+class AnonCredsPrimaryProof(BaseModel):
+    """AnonCreds primary proof."""
 
     class Meta:
-        """Anoncreds primary proof metadata."""
+        """AnonCreds primary proof metadata."""
 
-        schema_class = "AnoncredsPrimaryProofSchema"
+        schema_class = "AnonCredsPrimaryProofSchema"
 
     def __init__(
         self,
-        eq_proof: Optional[AnoncredsEQProof] = None,
-        ge_proofs: Sequence[AnoncredsGEProof] = None,
+        eq_proof: Optional[AnonCredsEQProof] = None,
+        ge_proofs: Sequence[AnonCredsGEProof] = None,
         **kwargs,
     ):
         """Initialize anoncreds primary proof."""
@@ -217,35 +217,35 @@ class AnoncredsPrimaryProof(BaseModel):
         self.ge_proofs = ge_proofs
 
 
-class AnoncredsPrimaryProofSchema(BaseModelSchema):
-    """Anoncreds primary proof schema."""
+class AnonCredsPrimaryProofSchema(BaseModelSchema):
+    """AnonCreds primary proof schema."""
 
     class Meta:
-        """Anoncreds primary proof schema metadata."""
+        """AnonCreds primary proof schema metadata."""
 
-        model_class = AnoncredsPrimaryProof
+        model_class = AnonCredsPrimaryProof
         unknown = EXCLUDE
 
     eq_proof = fields.Nested(
-        AnoncredsEQProofSchema,
+        AnonCredsEQProofSchema,
         allow_none=True,
-        metadata={"description": "Anoncreds equality proof"},
+        metadata={"description": "AnonCreds equality proof"},
     )
     ge_proofs = fields.Nested(
-        AnoncredsGEProofSchema,
+        AnonCredsGEProofSchema,
         many=True,
         allow_none=True,
-        metadata={"description": "Anoncreds GE proofs"},
+        metadata={"description": "AnonCreds GE proofs"},
     )
 
 
-class AnoncredsNonRevocProof(BaseModel):
-    """Anoncreds non-revocation proof."""
+class AnonCredsNonRevocProof(BaseModel):
+    """AnonCreds non-revocation proof."""
 
     class Meta:
-        """Anoncreds non-revocation proof metadata."""
+        """AnonCreds non-revocation proof metadata."""
 
-        schema_class = "AnoncredsNonRevocProofSchema"
+        schema_class = "AnonCredsNonRevocProofSchema"
 
     def __init__(
         self,
@@ -259,31 +259,31 @@ class AnoncredsNonRevocProof(BaseModel):
         self.c_list = c_list
 
 
-class AnoncredsNonRevocProofSchema(BaseModelSchema):
-    """Anoncreds non-revocation proof schema."""
+class AnonCredsNonRevocProofSchema(BaseModelSchema):
+    """AnonCreds non-revocation proof schema."""
 
     class Meta:
-        """Anoncreds non-revocation proof schema metadata."""
+        """AnonCreds non-revocation proof schema metadata."""
 
-        model_class = AnoncredsNonRevocProof
+        model_class = AnonCredsNonRevocProof
         unknown = EXCLUDE
 
     x_list = fields.Dict(keys=fields.Str(), values=fields.Str())
     c_list = fields.Dict(keys=fields.Str(), values=fields.Str())
 
 
-class AnoncredsProofProofProofsProof(BaseModel):
-    """Anoncreds proof.proof.proofs constituent proof."""
+class AnonCredsProofProofProofsProof(BaseModel):
+    """AnonCreds proof.proof.proofs constituent proof."""
 
     class Meta:
-        """Anoncreds proof.proof.proofs constituent proof schema."""
+        """AnonCreds proof.proof.proofs constituent proof schema."""
 
-        schema_class = "AnoncredsProofProofProofsProofSchema"
+        schema_class = "AnonCredsProofProofProofsProofSchema"
 
     def __init__(
         self,
-        primary_proof: Optional[AnoncredsPrimaryProof] = None,
-        non_revoc_proof: Optional[AnoncredsNonRevocProof] = None,
+        primary_proof: Optional[AnonCredsPrimaryProof] = None,
+        non_revoc_proof: Optional[AnonCredsNonRevocProof] = None,
         **kwargs,
     ):
         """Initialize proof.proof.proofs constituent proof."""
@@ -292,32 +292,32 @@ class AnoncredsProofProofProofsProof(BaseModel):
         self.non_revoc_proof = non_revoc_proof
 
 
-class AnoncredsProofProofProofsProofSchema(BaseModelSchema):
-    """Anoncreds proof.proof.proofs constituent proof schema."""
+class AnonCredsProofProofProofsProofSchema(BaseModelSchema):
+    """AnonCreds proof.proof.proofs constituent proof schema."""
 
     class Meta:
-        """Anoncreds proof.proof.proofs constituent proof schema metadata."""
+        """AnonCreds proof.proof.proofs constituent proof schema metadata."""
 
-        model_class = AnoncredsProofProofProofsProof
+        model_class = AnonCredsProofProofProofsProof
         unknown = EXCLUDE
 
     primary_proof = fields.Nested(
-        AnoncredsPrimaryProofSchema, metadata={"description": "Anoncreds primary proof"}
+        AnonCredsPrimaryProofSchema, metadata={"description": "AnonCreds primary proof"}
     )
     non_revoc_proof = fields.Nested(
-        AnoncredsNonRevocProofSchema,
+        AnonCredsNonRevocProofSchema,
         allow_none=True,
-        metadata={"description": "Anoncreds non-revocation proof"},
+        metadata={"description": "AnonCreds non-revocation proof"},
     )
 
 
-class AnoncredsProofProofAggregatedProof(BaseModel):
-    """Anoncreds proof.proof aggregated proof."""
+class AnonCredsProofProofAggregatedProof(BaseModel):
+    """AnonCreds proof.proof aggregated proof."""
 
     class Meta:
-        """Anoncreds proof.proof aggregated proof metadata."""
+        """AnonCreds proof.proof aggregated proof metadata."""
 
-        schema_class = "AnoncredsProofProofAggregatedProofSchema"
+        schema_class = "AnonCredsProofProofAggregatedProofSchema"
 
     def __init__(
         self,
@@ -331,13 +331,13 @@ class AnoncredsProofProofAggregatedProof(BaseModel):
         self.c_list = c_list
 
 
-class AnoncredsProofProofAggregatedProofSchema(BaseModelSchema):
-    """Anoncreds proof.proof aggregated proof schema."""
+class AnonCredsProofProofAggregatedProofSchema(BaseModelSchema):
+    """AnonCreds proof.proof aggregated proof schema."""
 
     class Meta:
-        """Anoncreds proof.proof aggregated proof schema metadata."""
+        """AnonCreds proof.proof aggregated proof schema metadata."""
 
-        model_class = AnoncredsProofProofAggregatedProof
+        model_class = AnonCredsProofProofAggregatedProof
         unknown = EXCLUDE
 
     c_hash = fields.Str(metadata={"description": "c_hash value"})
@@ -347,18 +347,18 @@ class AnoncredsProofProofAggregatedProofSchema(BaseModelSchema):
     )
 
 
-class AnoncredsProofProof(BaseModel):
-    """Anoncreds proof.proof content."""
+class AnonCredsProofProof(BaseModel):
+    """AnonCreds proof.proof content."""
 
     class Meta:
-        """Anoncreds proof.proof content metadata."""
+        """AnonCreds proof.proof content metadata."""
 
-        schema_class = "AnoncredsProofProofSchema"
+        schema_class = "AnonCredsProofProofSchema"
 
     def __init__(
         self,
-        proofs: Sequence[AnoncredsProofProofProofsProof] = None,
-        aggregated_proof: Optional[AnoncredsProofProofAggregatedProof] = None,
+        proofs: Sequence[AnonCredsProofProofProofsProof] = None,
+        aggregated_proof: Optional[AnonCredsProofProofAggregatedProof] = None,
         **kwargs,
     ):
         """Initialize anoncreds proof.proof content."""
@@ -367,23 +367,23 @@ class AnoncredsProofProof(BaseModel):
         self.aggregated_proof = aggregated_proof
 
 
-class AnoncredsProofProofSchema(BaseModelSchema):
-    """Anoncreds proof.proof content schema."""
+class AnonCredsProofProofSchema(BaseModelSchema):
+    """AnonCreds proof.proof content schema."""
 
     class Meta:
-        """Anoncreds proof.proof content schema metadata."""
+        """AnonCreds proof.proof content schema metadata."""
 
-        model_class = AnoncredsProofProof
+        model_class = AnonCredsProofProof
         unknown = EXCLUDE
 
     proofs = fields.Nested(
-        AnoncredsProofProofProofsProofSchema,
+        AnonCredsProofProofProofsProofSchema,
         many=True,
-        metadata={"description": "Anoncreds proof proofs"},
+        metadata={"description": "AnonCreds proof proofs"},
     )
     aggregated_proof = fields.Nested(
-        AnoncredsProofProofAggregatedProofSchema,
-        metadata={"description": "Anoncreds proof aggregated proof"},
+        AnonCredsProofProofAggregatedProofSchema,
+        metadata={"description": "AnonCreds proof aggregated proof"},
     )
 
 
@@ -423,13 +423,13 @@ class RawEncodedSchema(BaseModelSchema):
     )
 
 
-class AnoncredsProofRequestedProofRevealedAttr(RawEncoded):
-    """Anoncreds proof requested proof revealed attr."""
+class AnonCredsProofRequestedProofRevealedAttr(RawEncoded):
+    """AnonCreds proof requested proof revealed attr."""
 
     class Meta:
-        """Anoncreds proof requested proof revealed attr metadata."""
+        """AnonCreds proof requested proof revealed attr metadata."""
 
-        schema_class = "AnoncredsProofRequestedProofRevealedAttrSchema"
+        schema_class = "AnonCredsProofRequestedProofRevealedAttrSchema"
 
     def __init__(
         self,
@@ -441,13 +441,13 @@ class AnoncredsProofRequestedProofRevealedAttr(RawEncoded):
         self.sub_proof_index = sub_proof_index
 
 
-class AnoncredsProofRequestedProofRevealedAttrSchema(RawEncodedSchema):
-    """Anoncreds proof requested proof revealed attr schema."""
+class AnonCredsProofRequestedProofRevealedAttrSchema(RawEncodedSchema):
+    """AnonCreds proof requested proof revealed attr schema."""
 
     class Meta:
-        """Anoncreds proof requested proof revealed attr schema metadata."""
+        """AnonCreds proof requested proof revealed attr schema metadata."""
 
-        model_class = AnoncredsProofRequestedProofRevealedAttr
+        model_class = AnonCredsProofRequestedProofRevealedAttr
         unknown = EXCLUDE
 
     sub_proof_index = fields.Int(
@@ -455,13 +455,13 @@ class AnoncredsProofRequestedProofRevealedAttrSchema(RawEncodedSchema):
     )
 
 
-class AnoncredsProofRequestedProofRevealedAttrGroup(BaseModel):
-    """Anoncreds proof requested proof revealed attr group."""
+class AnonCredsProofRequestedProofRevealedAttrGroup(BaseModel):
+    """AnonCreds proof requested proof revealed attr group."""
 
     class Meta:
-        """Anoncreds proof requested proof revealed attr group metadata."""
+        """AnonCreds proof requested proof revealed attr group metadata."""
 
-        schema_class = "AnoncredsProofRequestedProofRevealedAttrGroupSchema"
+        schema_class = "AnonCredsProofRequestedProofRevealedAttrGroupSchema"
 
     def __init__(
         self,
@@ -475,13 +475,13 @@ class AnoncredsProofRequestedProofRevealedAttrGroup(BaseModel):
         self.values = values
 
 
-class AnoncredsProofRequestedProofRevealedAttrGroupSchema(BaseModelSchema):
-    """Anoncreds proof requested proof revealed attr group schema."""
+class AnonCredsProofRequestedProofRevealedAttrGroupSchema(BaseModelSchema):
+    """AnonCreds proof requested proof revealed attr group schema."""
 
     class Meta:
-        """Anoncreds proof requested proof revealed attr group schema metadata."""
+        """AnonCreds proof requested proof revealed attr group schema metadata."""
 
-        model_class = AnoncredsProofRequestedProofRevealedAttrGroup
+        model_class = AnonCredsProofRequestedProofRevealedAttrGroup
         unknown = EXCLUDE
 
     sub_proof_index = fields.Int(
@@ -491,18 +491,18 @@ class AnoncredsProofRequestedProofRevealedAttrGroupSchema(BaseModelSchema):
         keys=fields.Str(),
         values=fields.Nested(RawEncodedSchema),
         metadata={
-            "description": "Anoncreds proof requested proof revealed attr groups group value"  # noqa: E501
+            "description": "AnonCreds proof requested proof revealed attr groups group value"  # noqa: E501
         },
     )
 
 
-class AnoncredsProofRequestedProofPredicate(BaseModel):
-    """Anoncreds proof requested proof predicate."""
+class AnonCredsProofRequestedProofPredicate(BaseModel):
+    """AnonCreds proof requested proof predicate."""
 
     class Meta:
-        """Anoncreds proof requested proof requested proof predicate metadata."""
+        """AnonCreds proof requested proof requested proof predicate metadata."""
 
-        schema_class = "AnoncredsProofRequestedProofPredicateSchema"
+        schema_class = "AnonCredsProofRequestedProofPredicateSchema"
 
     def __init__(
         self,
@@ -514,13 +514,13 @@ class AnoncredsProofRequestedProofPredicate(BaseModel):
         self.sub_proof_index = sub_proof_index
 
 
-class AnoncredsProofRequestedProofPredicateSchema(BaseModelSchema):
-    """Anoncreds proof requested prrof predicate schema."""
+class AnonCredsProofRequestedProofPredicateSchema(BaseModelSchema):
+    """AnonCreds proof requested prrof predicate schema."""
 
     class Meta:
-        """Anoncreds proof requested proof requested proof predicate schema metadata."""
+        """AnonCreds proof requested proof requested proof predicate schema metadata."""
 
-        model_class = AnoncredsProofRequestedProofPredicate
+        model_class = AnonCredsProofRequestedProofPredicate
         unknown = EXCLUDE
 
     sub_proof_index = fields.Int(
@@ -528,24 +528,24 @@ class AnoncredsProofRequestedProofPredicateSchema(BaseModelSchema):
     )
 
 
-class AnoncredsProofRequestedProof(BaseModel):
-    """Anoncreds proof.requested_proof content."""
+class AnonCredsProofRequestedProof(BaseModel):
+    """AnonCreds proof.requested_proof content."""
 
     class Meta:
-        """Anoncreds proof.requested_proof content metadata."""
+        """AnonCreds proof.requested_proof content metadata."""
 
-        schema_class = "AnoncredsProofRequestedProofSchema"
+        schema_class = "AnonCredsProofRequestedProofSchema"
 
     def __init__(
         self,
-        revealed_attrs: Mapping[str, AnoncredsProofRequestedProofRevealedAttr] = None,
+        revealed_attrs: Mapping[str, AnonCredsProofRequestedProofRevealedAttr] = None,
         revealed_attr_groups: Mapping[
             str,
-            AnoncredsProofRequestedProofRevealedAttrGroup,
+            AnonCredsProofRequestedProofRevealedAttrGroup,
         ] = None,
         self_attested_attrs: Optional[Mapping] = None,
         unrevealed_attrs: Optional[Mapping] = None,
-        predicates: Mapping[str, AnoncredsProofRequestedProofPredicate] = None,
+        predicates: Mapping[str, AnonCredsProofRequestedProofPredicate] = None,
         **kwargs,
     ):
         """Initialize anoncreds proof requested proof."""
@@ -557,24 +557,24 @@ class AnoncredsProofRequestedProof(BaseModel):
         self.predicates = predicates
 
 
-class AnoncredsProofRequestedProofSchema(BaseModelSchema):
-    """Anoncreds proof requested proof schema."""
+class AnonCredsProofRequestedProofSchema(BaseModelSchema):
+    """AnonCreds proof requested proof schema."""
 
     class Meta:
-        """Anoncreds proof requested proof schema metadata."""
+        """AnonCreds proof requested proof schema metadata."""
 
-        model_class = AnoncredsProofRequestedProof
+        model_class = AnonCredsProofRequestedProof
         unknown = EXCLUDE
 
     revealed_attrs = fields.Dict(
         keys=fields.Str(),
-        values=fields.Nested(AnoncredsProofRequestedProofRevealedAttrSchema),
+        values=fields.Nested(AnonCredsProofRequestedProofRevealedAttrSchema),
         allow_none=True,
         metadata={"description": "Proof requested proof revealed attributes"},
     )
     revealed_attr_groups = fields.Dict(
         keys=fields.Str(),
-        values=fields.Nested(AnoncredsProofRequestedProofRevealedAttrGroupSchema),
+        values=fields.Nested(AnonCredsProofRequestedProofRevealedAttrGroupSchema),
         allow_none=True,
         metadata={"description": "Proof requested proof revealed attribute groups"},
     )
@@ -584,18 +584,18 @@ class AnoncredsProofRequestedProofSchema(BaseModelSchema):
     unrevealed_attrs = fields.Dict(metadata={"description": "Unrevealed attributes"})
     predicates = fields.Dict(
         keys=fields.Str(),
-        values=fields.Nested(AnoncredsProofRequestedProofPredicateSchema),
+        values=fields.Nested(AnonCredsProofRequestedProofPredicateSchema),
         metadata={"description": "Proof requested proof predicates."},
     )
 
 
-class AnoncredsProofIdentifier(BaseModel):
-    """Anoncreds proof identifier."""
+class AnonCredsProofIdentifier(BaseModel):
+    """AnonCreds proof identifier."""
 
     class Meta:
-        """Anoncreds proof identifier metadata."""
+        """AnonCreds proof identifier metadata."""
 
-        schema_class = "AnoncredsProofIdentifierSchema"
+        schema_class = "AnonCredsProofIdentifierSchema"
 
     def __init__(
         self,
@@ -613,13 +613,13 @@ class AnoncredsProofIdentifier(BaseModel):
         self.timestamp = timestamp
 
 
-class AnoncredsProofIdentifierSchema(BaseModelSchema):
-    """Anoncreds proof identifier schema."""
+class AnonCredsProofIdentifierSchema(BaseModelSchema):
+    """AnonCreds proof identifier schema."""
 
     class Meta:
-        """Anoncreds proof identifier schema metadata."""
+        """AnonCreds proof identifier schema metadata."""
 
-        model_class = AnoncredsProofIdentifier
+        model_class = AnonCredsProofIdentifier
         unknown = EXCLUDE
 
     schema_id = fields.Str(
@@ -655,19 +655,19 @@ class AnoncredsProofIdentifierSchema(BaseModelSchema):
     )
 
 
-class AnoncredsProof(BaseModel):
-    """Anoncreds proof."""
+class AnonCredsProof(BaseModel):
+    """AnonCreds proof."""
 
     class Meta:
-        """Anoncreds proof metadata."""
+        """AnonCreds proof metadata."""
 
-        schema_class = "AnoncredsProofSchema"
+        schema_class = "AnonCredsProofSchema"
 
     def __init__(
         self,
-        proof: Optional[AnoncredsProofProof] = None,
-        requested_proof: Optional[AnoncredsProofRequestedProof] = None,
-        identifiers: Sequence[AnoncredsProofIdentifier] = None,
+        proof: Optional[AnonCredsProofProof] = None,
+        requested_proof: Optional[AnonCredsProofRequestedProof] = None,
+        identifiers: Sequence[AnonCredsProofIdentifier] = None,
         **kwargs,
     ):
         """Initialize anoncreds proof."""
@@ -677,31 +677,31 @@ class AnoncredsProof(BaseModel):
         self.identifiers = identifiers
 
 
-class AnoncredsProofSchema(BaseModelSchema):
-    """Anoncreds proof schema."""
+class AnonCredsProofSchema(BaseModelSchema):
+    """AnonCreds proof schema."""
 
     class Meta:
-        """Anoncreds proof schema metadata."""
+        """AnonCreds proof schema metadata."""
 
-        model_class = AnoncredsProof
+        model_class = AnonCredsProof
         unknown = EXCLUDE
 
     proof = fields.Nested(
-        AnoncredsProofProofSchema,
-        metadata={"description": "Anoncreds proof.proof content"},
+        AnonCredsProofProofSchema,
+        metadata={"description": "AnonCreds proof.proof content"},
     )
     requested_proof = fields.Nested(
-        AnoncredsProofRequestedProofSchema,
-        metadata={"description": "Anoncreds proof.requested_proof content"},
+        AnonCredsProofRequestedProofSchema,
+        metadata={"description": "AnonCreds proof.requested_proof content"},
     )
     identifiers = fields.Nested(
-        AnoncredsProofIdentifierSchema,
+        AnonCredsProofIdentifierSchema,
         many=True,
-        metadata={"description": "Anoncreds proof.identifiers content"},
+        metadata={"description": "AnonCreds proof.identifiers content"},
     )
 
 
-class AnoncredsPresSpecSchema(AdminAPIMessageTracingSchema):
+class AnonCredsPresSpecSchema(AdminAPIMessageTracingSchema):
     """Request schema for anoncreds proof specification to send as presentation."""
 
     self_attested_attributes = fields.Dict(
@@ -721,7 +721,7 @@ class AnoncredsPresSpecSchema(AdminAPIMessageTracingSchema):
     requested_attributes = fields.Dict(
         required=True,
         keys=fields.Str(metadata={"example": "attr_referent"}),
-        values=fields.Nested(AnoncredsRequestedCredsRequestedAttrSchema),
+        values=fields.Nested(AnonCredsRequestedCredsRequestedAttrSchema),
         metadata={
             "description": (
                 "Nested object mapping proof request attribute referents to"
@@ -732,7 +732,7 @@ class AnoncredsPresSpecSchema(AdminAPIMessageTracingSchema):
     requested_predicates = fields.Dict(
         required=True,
         keys=fields.Str(metadata={"example": "pred_referent"}),
-        values=fields.Nested(AnoncredsRequestedCredsRequestedPredSchema),
+        values=fields.Nested(AnonCredsRequestedCredsRequestedPredSchema),
         metadata={
             "description": (
                 "Nested object mapping proof request predicate referents to"
