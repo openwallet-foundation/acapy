@@ -1,13 +1,12 @@
 from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
 from acapy_agent.resolver.did_resolver import DIDResolver
 
 from ...did.did_key import DIDKey
 from ...utils.testing import create_test_profile
-from ...wallet.default_verification_key_strategy import (
-    DefaultVerificationKeyStrategy,
-)
+from ...wallet.default_verification_key_strategy import DefaultVerificationKeyStrategy
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"

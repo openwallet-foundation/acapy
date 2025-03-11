@@ -17,10 +17,7 @@ from ...anoncreds.models.revocation import (
     RevRegDef,
     RevRegDefValue,
 )
-from ...anoncreds.models.schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-)
+from ...anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import verifier as test_module

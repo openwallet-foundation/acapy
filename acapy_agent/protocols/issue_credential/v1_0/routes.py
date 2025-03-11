@@ -48,14 +48,8 @@ from .manager import CredentialManager, CredentialManagerError
 from .message_types import SPEC_URI
 from .messages.credential_problem_report import ProblemReportReason
 from .messages.credential_proposal import CredentialProposal, CredentialProposalSchema
-from .messages.inner.credential_preview import (
-    CredentialPreview,
-    CredentialPreviewSchema,
-)
-from .models.credential_exchange import (
-    V10CredentialExchange,
-    V10CredentialExchangeSchema,
-)
+from .messages.inner.credential_preview import CredentialPreview, CredentialPreviewSchema
+from .models.credential_exchange import V10CredentialExchange, V10CredentialExchangeSchema
 
 
 class IssueCredentialModuleResponseSchema(OpenAPISchema):

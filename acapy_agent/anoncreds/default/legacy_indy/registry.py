@@ -74,13 +74,8 @@ from ...models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...models.schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-    SchemaResult,
-    SchemaState,
-)
-from ...models.schema_info import AnoncredsSchemaInfo
+from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
+from ...models.schema_info import AnonCredsSchemaInfo
 from ...revocation import (
     CATEGORY_REV_LIST,
     CATEGORY_REV_REG_DEF,
@@ -1233,10 +1228,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_schema_info_by_id(
         self, profile: Profile, schema_id: str
-    ) -> AnoncredsSchemaInfo:
+    ) -> AnonCredsSchemaInfo:
         """Get schema info by schema id."""
         schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
-        return AnoncredsSchemaInfo(
+        return AnonCredsSchemaInfo(
             issuer_id=schema_id_parts.group(1),
             name=schema_id_parts.group(2),
             version=schema_id_parts.group(3),

@@ -1,7 +1,6 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
-from .. import routes as test_module
 from ...admin.request_context import AdminRequestContext
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
@@ -9,6 +8,7 @@ from ...connections.models.conn_record import ConnRecord
 from ...storage.error import StorageNotFoundError
 from ...tests import mock
 from ...utils.testing import create_test_profile
+from .. import routes as test_module
 
 
 class TestConnectionRoutes(IsolatedAsyncioTestCase):

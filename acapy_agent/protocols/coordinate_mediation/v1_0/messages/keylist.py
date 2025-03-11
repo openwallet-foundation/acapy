@@ -7,10 +7,7 @@ from marshmallow import fields
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import KEYLIST, PROTOCOL_PACKAGE
 from .inner.keylist_key import KeylistKeySchema
-from .inner.keylist_query_paginate import (
-    KeylistQueryPaginate,
-    KeylistQueryPaginateSchema,
-)
+from .inner.keylist_query_paginate import KeylistQueryPaginate, KeylistQueryPaginateSchema
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.keylist_handler.KeylistHandler"
 

@@ -1,6 +1,7 @@
 """DID Key class and resolver methods."""
 
 from typing import List, Optional
+
 from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL, SECURITY_CONTEXT_MULTIKEY_URL
 from ..wallet.crypto import ed25519_pk_to_curve25519
 from ..wallet.key_type import (

@@ -16,7 +16,7 @@ from ...models.revocation import (
     RevRegDefResult,
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from ...models.schema_info import AnoncredsSchemaInfo
+from ...models.schema_info import AnonCredsSchemaInfo
 
 
 class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
@@ -121,6 +121,6 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_schema_info_by_id(
         self, profile: Profile, schema_id: str
-    ) -> AnoncredsSchemaInfo:
+    ) -> AnonCredsSchemaInfo:
         """Get a schema info from the registry."""
         return await super().get_schema_info_by_id(schema_id)

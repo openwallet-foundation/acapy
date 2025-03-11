@@ -74,7 +74,7 @@ A summary of the possible errors includes:
 - Self-attested attribute provided for a requested attribute with restrictions
 - Encoded value doesn't match raw value
 
-## Anoncreds Verification Exceptions
+## AnonCreds Verification Exceptions
 
 Typically, when you call the anoncreds `verifier_verify_proof()` method, it will return a `True` or `False` based on whether the presentation cryptographically verifies. However, in the case where anoncreds throws an exception, the exception text will be included in a verification message as follows:
 

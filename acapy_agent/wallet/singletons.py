@@ -1,7 +1,7 @@
 """Module that contains singleton classes for wallet operations."""
 
 
-class IsAnoncredsSingleton:
+class IsAnonCredsSingleton:
     """Singleton class used as cache for anoncreds wallet-type queries."""
 
     instance = None

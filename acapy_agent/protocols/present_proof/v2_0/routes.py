@@ -17,7 +17,7 @@ from marshmallow.validate import Range
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ....anoncreds.models.presentation_request import AnoncredsPresentationRequestSchema
+from ....anoncreds.models.presentation_request import AnonCredsPresentationRequestSchema
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.cred_precis import IndyCredPrecisSchema
@@ -60,12 +60,7 @@ from ..dif.pres_request_schema import DIFPresSpecSchema, DIFProofRequestSchema
 from . import problem_report_for_record, report_problem
 from .formats.handler import V20PresFormatHandlerError
 from .manager import V20PresManager
-from .message_types import (
-    ATTACHMENT_FORMAT,
-    PRES_20_PROPOSAL,
-    PRES_20_REQUEST,
-    SPEC_URI,
-)
+from .message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL, PRES_20_REQUEST, SPEC_URI
 from .messages.pres_format import V20PresFormat
 from .messages.pres_problem_report import ProblemReportReason
 from .messages.pres_proposal import V20PresProposal
@@ -125,7 +120,7 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
     """Schema for presentation proposal per format."""
 
     anoncreds = fields.Nested(
-        AnoncredsPresentationRequestSchema,
+        AnonCredsPresentationRequestSchema,
         required=False,
         metadata={"description": "Presentation proposal for anoncreds"},
     )
@@ -204,7 +199,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
     """Presentation request per format."""
 
     anoncreds = fields.Nested(
-        AnoncredsPresentationRequestSchema,
+        AnonCredsPresentationRequestSchema,
         required=False,
         metadata={"description": "Presentation proposal for anoncreds"},
     )

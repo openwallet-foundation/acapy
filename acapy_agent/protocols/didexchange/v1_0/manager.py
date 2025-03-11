@@ -7,10 +7,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 from did_peer_4 import LONG_PATTERN, long_to_short
 
 from ....admin.server import AdminResponder
-from ....connections.base_manager import (
-    BaseConnectionManager,
-    BaseConnectionManagerError,
-)
+from ....connections.base_manager import BaseConnectionManager, BaseConnectionManagerError
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError

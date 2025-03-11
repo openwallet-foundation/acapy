@@ -1,14 +1,13 @@
 """Test OOB Manager."""
 
 import base64
+import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-import json
 from typing import List
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
-from .. import manager as test_module
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -57,9 +56,7 @@ from ....issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
 )
-from ....present_proof.v1_0.message_types import (
-    ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT,
-)
+from ....present_proof.v1_0.message_types import ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT
 from ....present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ....present_proof.v1_0.messages.presentation_request import PresentationRequest
 from ....present_proof.v2_0.message_types import (
@@ -68,11 +65,12 @@ from ....present_proof.v2_0.message_types import (
 from ....present_proof.v2_0.message_types import PRES_20_REQUEST
 from ....present_proof.v2_0.messages.pres_format import V20PresFormat
 from ....present_proof.v2_0.messages.pres_request import V20PresRequest
+from .. import manager as test_module
 from ..manager import (
-    OutOfBandManager,
-    OutOfBandManagerError,
     REUSE_ACCEPTED_WEBHOOK_TOPIC,
     REUSE_WEBHOOK_TOPIC,
+    OutOfBandManager,
+    OutOfBandManagerError,
 )
 from ..messages.invitation import HSProto, InvitationMessage
 from ..messages.invitation import Service as OobService

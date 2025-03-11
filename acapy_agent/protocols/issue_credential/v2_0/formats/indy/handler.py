@@ -7,7 +7,7 @@ from typing import Mapping, Optional, Tuple
 
 from marshmallow import RAISE
 
-from ......askar.profile_anon import AskarAnoncredsProfile
+from ......askar.profile_anon import AskarAnonCredsProfile
 from ......cache.base import BaseCache
 from ......core.profile import Profile
 from ......indy.holder import IndyHolder, IndyHolderError
@@ -207,7 +207,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
-        if isinstance(self.profile, AskarAnoncredsProfile):
+        if isinstance(self.profile, AskarAnonCredsProfile):
             raise V20CredFormatError(
                 "This issuer is anoncreds capable. Please use the anoncreds format."
             )

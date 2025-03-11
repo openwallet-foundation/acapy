@@ -33,10 +33,10 @@ def stub_anoncreds() -> Stub:
         _ = generate_nonce()
         return Stub(None)
     except ImportError:
-        print("Skipping Anoncreds-specific tests: anoncreds module not installed.")
+        print("Skipping AnonCreds-specific tests: anoncreds module not installed.")
     except OSError:
         print(
-            "Skipping Anoncreds-specific tests: anoncreds shared library"
+            "Skipping AnonCreds-specific tests: anoncreds shared library"
             "could not be loaded."
         )
 
@@ -192,7 +192,7 @@ def pytest_runtest_setup(item: pytest.Item):
     global STUBS
 
     if tuple(item.iter_markers(name="anoncreds")) and not STUBS["anoncreds"].found:
-        pytest.skip("test requires Anoncreds support")
+        pytest.skip("test requires AnonCreds support")
 
     if tuple(item.iter_markers(name="askar")) and not STUBS["askar"].found:
         pytest.skip("test requires Askar support")

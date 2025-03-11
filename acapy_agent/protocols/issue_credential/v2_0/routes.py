@@ -138,8 +138,8 @@ class V20CredStoreRequestSchema(OpenAPISchema):
     credential_id = fields.Str(required=False)
 
 
-class V20CredFilterAnoncredsSchema(OpenAPISchema):
-    """Anoncreds credential filtration criteria."""
+class V20CredFilterAnonCredsSchema(OpenAPISchema):
+    """AnonCreds credential filtration criteria."""
 
     schema_issuer_id = fields.Str(
         required=False,
@@ -272,7 +272,7 @@ class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
     anoncreds = fields.Nested(
-        V20CredFilterAnoncredsSchema,
+        V20CredFilterAnonCredsSchema,
         required=False,
         metadata={"description": "Credential filter for anoncreds"},
     )

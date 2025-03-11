@@ -29,9 +29,9 @@ from ....vc.ld_proofs import (
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
     DocumentLoader,
+    EcdsaSecp256r1Signature2019,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    EcdsaSecp256r1Signature2019,
     WalletKeyPair,
 )
 from ....vc.ld_proofs.constants import (

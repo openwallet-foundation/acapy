@@ -93,7 +93,7 @@ class IndyCredxHolder(IndyHolder):
                             ms_string = record.value.decode("ascii")
                             link_secret_dict = {"value": {"ms": ms_string}}
                             secret = LinkSecret.load(link_secret_dict)
-                            LOGGER.debug("Loaded LinkSecret from Anoncreds secret.")
+                            LOGGER.debug("Loaded LinkSecret from AnonCreds secret.")
                         except CredxError as decode_err:
                             LOGGER.error("Error loading link secret: %s", decode_err)
                             raise IndyHolderError("Error loading link secret") from err

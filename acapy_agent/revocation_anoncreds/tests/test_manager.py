@@ -8,9 +8,7 @@ from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ...revocation.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-)
+from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import manager as test_module
@@ -32,7 +30,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         self.profile = await create_test_profile()
         self.manager = RevocationManager(self.profile)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_revoke_credential_publish(self):
         CRED_EX_ID = "dummy-cxid"
         CRED_REV_ID = "1"
@@ -112,7 +110,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_revoke_credential_no_rev_reg_rec(self):
         CRED_REV_ID = "1"
         V10CredentialExchange(
@@ -134,7 +132,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_revoke_credential_pend(self):
         CRED_REV_ID = "1"
         mock_issuer_rev_reg_record = mock.MagicMock(mark_pending=mock.AsyncMock())
@@ -170,7 +168,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
 
         issuer.revoke_credentials.assert_not_awaited()
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_publish_pending_revocations_basic(self):
         deltas = [
             {
@@ -218,7 +216,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             assert result == {REV_REG_ID: ["1", "2"]}
             mock_issuer_rev_reg_record.clear_pending.assert_called_once()
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_publish_pending_revocations_1_rev_reg_all(self):
         deltas = [
             {
@@ -280,7 +278,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
             mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_publish_pending_revocations_1_rev_reg_some(self):
         deltas = [
             {
@@ -342,7 +340,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
             mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_clear_pending(self):
         mock_issuer_rev_reg_records = [
             mock.MagicMock(
@@ -366,7 +364,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             result = await self.manager.clear_pending_revocations()
             assert result == {}
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_clear_pending_1_rev_reg_all(self):
         mock_issuer_rev_reg_records = [
             mock.MagicMock(
@@ -393,7 +391,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2": ["9", "99"],
             }
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_clear_pending_1_rev_reg_some(self):
         mock_issuer_rev_reg_records = [
             mock.MagicMock(
