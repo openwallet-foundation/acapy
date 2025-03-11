@@ -174,15 +174,6 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     )
 
 
-class FetchInvitationQueryStringSchema(OpenAPISchema):
-    """Parameters for fetch invitation request query string."""
-
-    oob_id = fields.Str(
-        required=True,
-        metadata={"description": "Out-of-Band invitation ID"},
-    )
-
-
 class InvitationReceiveQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
@@ -226,8 +217,21 @@ class InvitationRecordMatchInfoSchema(OpenAPISchema):
     )
 
 
+class OobInvitationRecordMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking invitation record."""
+
+    oob_id = fields.Str(
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "OOB Invitation identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
 @docs(tags=["out-of-band"], summary="Fetch an existing Out-of-Band invitation.")
-@querystring_schema(FetchInvitationQueryStringSchema())
+@match_info_schema(OobInvitationRecordMatchInfoSchema())
 @response_schema(InvitationRecordResponseSchema(), description="")
 @tenant_authentication
 async def invitation_fetch(request: web.BaseRequest):
@@ -242,7 +246,7 @@ async def invitation_fetch(request: web.BaseRequest):
     oob_mgr = OutOfBandManager(profile)
     try:
         record = await oob_mgr.fetch_oob_invitation_record_by_id(
-            request.query.get("oob_id", None)
+            request.match_info["oob_id"]
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -401,7 +405,7 @@ async def register(app: web.Application):
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
             web.get(
-                "/out-of-band/invitations",
+                "/out-of-band/invitations/{oob_id}",
                 invitation_fetch,
                 allow_head=False,
             ),
