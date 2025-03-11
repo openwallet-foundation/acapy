@@ -820,14 +820,14 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "anoncreds - schemas",
+            "name": "AnonCreds - Schemas",
             "description": "AnonCreds schema management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "anoncreds - credential definitions",
+            "name": "AnonCreds - Credential Definitions",
             "description": "AnonCreds credential definition management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
