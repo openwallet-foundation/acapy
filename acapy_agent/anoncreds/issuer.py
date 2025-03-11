@@ -230,7 +230,7 @@ class AnonCredsIssuer:
             raise AnonCredsIssuerError(
                 "Schema already exists but was not in wallet; stored in wallet"
             ) from err
-        except (AnonCredsError, BaseAnonCredsError) as err:
+        except (AnoncredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating schema") from err
 
     async def finish_schema(self, job_id: str, schema_id: str):
@@ -359,7 +359,7 @@ class AnonCredsIssuer:
             )
 
             return cred_def_result
-        except (AnonCredsError, BaseAnonCredsError) as err:
+        except (AnoncredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
     async def store_credential_definition(

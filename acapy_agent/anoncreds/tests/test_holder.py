@@ -378,7 +378,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         self.profile.store.scan = mock.Mock(
             side_effect=[
                 AskarError(AskarErrorCode.UNEXPECTED, "test"),
-                AnoncredsError(AnonCredsErrorCode.UNEXPECTED, "test"),
+                AnoncredsError(AnoncredsErrorCode.UNEXPECTED, "test"),
             ]
         )
 
@@ -639,7 +639,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     @mock.patch.object(
         anoncreds.Presentation,
         "create",
-        side_effect=AnonCredsError(AnonCredsErrorCode.UNEXPECTED, "test"),
+        side_effect=AnoncredsError(AnoncredsErrorCode.UNEXPECTED, "test"),
     )
     async def test_create_presentation_create_error(
         self, mock_pres_create, mock_master_secret, mock_handle
@@ -687,7 +687,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     @mock.patch.object(
         anoncreds.W3cPresentation,
         "create",
-        side_effect=AnonCredsError(AnonCredsErrorCode.UNEXPECTED, "test"),
+        side_effect=AnoncredsError(AnoncredsErrorCode.UNEXPECTED, "test"),
     )
     async def test_create_presentation_w3c_create_error(
         self, mock_pres_create, mock_master_secret, mock_handle
@@ -743,7 +743,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         assert mock_create.called
 
         # error
-        mock_create.side_effect = AnoncredsError(AnonCredsErrorCode.UNEXPECTED, "test")
+        mock_create.side_effect = AnoncredsError(AnoncredsErrorCode.UNEXPECTED, "test")
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.create_revocation_state(
                 cred_rev_id="1",
