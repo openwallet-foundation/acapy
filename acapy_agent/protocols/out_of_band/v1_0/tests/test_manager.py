@@ -1907,7 +1907,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             invi_rec = await self.manager.fetch_oob_invitation_record_by_id(
-                oob_id=invi_rec.get("oob_id")
+                oob_id=invi_rec.oob_id
             )
 
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
