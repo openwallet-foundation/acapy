@@ -1887,7 +1887,6 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             mock_connrecord_delete.assert_called_once()
             mock_oobrecord_delete.assert_called_once()
 
-
     async def test_fetch_invitation_succeeds(self):
         self.profile.context.update_settings({"public_invites": True})
 
@@ -1906,11 +1905,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 public=True,
                 hs_protos=[HSProto.RFC23],
             )
-            
+
             invi_rec = await self.manager.fetch_oob_invitation_record_by_id(
-                oob_id=invi_rec.get('oob_id')
+                oob_id=invi_rec.get("oob_id")
             )
-            
+
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
                 self.TEST_INVI_MESSAGE_TYPE
             )
