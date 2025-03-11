@@ -67,7 +67,7 @@ from .models.issuer_cred_rev_record import (
 
 LOGGER = logging.getLogger(__name__)
 
-TAG_TITLE = "anoncreds - revocation"
+TAG_TITLE = "AnonCreds - Revocation"
 
 
 class RevRegResultSchemaAnonCreds(OpenAPISchema):
