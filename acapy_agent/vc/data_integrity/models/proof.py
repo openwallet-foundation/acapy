@@ -5,11 +5,7 @@ from typing import Optional
 from marshmallow import INCLUDE, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.valid import (
-    RFC3339_DATETIME_EXAMPLE,
-    UUID4_EXAMPLE,
-    Uri,
-)
+from ....messaging.valid import RFC3339_DATETIME_EXAMPLE, UUID4_EXAMPLE, Uri
 
 
 class DataIntegrityProof(BaseModel):

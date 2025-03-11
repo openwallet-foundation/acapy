@@ -5,9 +5,7 @@ from ...connections.models.conn_record import ConnRecord
 from ...ledger.base import BaseLedger
 from ...ledger.endpoint_type import EndpointType
 from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ...ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...tests import mock

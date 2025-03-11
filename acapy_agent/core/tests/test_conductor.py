@@ -2,11 +2,11 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from ...connections.base_manager import BaseConnectionManager
 from ...admin.base_server import BaseAdminServer
 from ...askar.profile import AskarProfileManager
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
+from ...connections.base_manager import BaseConnectionManager
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service

@@ -1,7 +1,7 @@
 """Utilities for specifying which verification method is in use for a given DID."""
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
 from pydid import DIDDocument

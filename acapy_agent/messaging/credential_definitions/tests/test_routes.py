@@ -4,9 +4,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....storage.base import BaseStorage

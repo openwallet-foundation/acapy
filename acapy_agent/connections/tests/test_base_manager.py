@@ -5,6 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
 import base58
+import pytest
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -13,7 +14,6 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
-import pytest
 
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
@@ -45,7 +45,7 @@ from ...utils.multiformats import multibase, multicodec
 from ...utils.testing import create_test_profile
 from ...wallet.askar import AskarWallet
 from ...wallet.base import BaseWallet, DIDInfo
-from ...wallet.did_method import DIDMethods, SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import ED25519, KeyTypes
 from ...wallet.util import b58_to_bytes, bytes_to_b64

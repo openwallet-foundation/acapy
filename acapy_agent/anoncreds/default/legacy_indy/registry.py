@@ -74,12 +74,7 @@ from ...models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...models.schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-    SchemaResult,
-    SchemaState,
-)
+from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from ...models.schema_info import AnonCredsSchemaInfo
 from ...revocation import (
     CATEGORY_REV_LIST,

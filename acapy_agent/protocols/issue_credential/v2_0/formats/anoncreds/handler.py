@@ -19,9 +19,7 @@ from ......anoncreds.models.credential_request import AnonCredsCredRequestSchema
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
-from ......messaging.credential_definitions.util import (
-    CRED_DEF_SENT_RECORD_TYPE,
-)
+from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage

@@ -26,10 +26,7 @@ from ...anoncreds.models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...anoncreds.models.schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-)
+from ...anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
 from ...anoncreds.registry import AnonCredsRegistry
 from ...anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
 from ...anoncreds.tests.test_issuer import MockCredDefEntry

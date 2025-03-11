@@ -27,10 +27,10 @@ from ..anoncreds.issuer import AnonCredsIssuerError
 from ..anoncreds.models.revocation import RevRegDefState
 from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ..anoncreds.routes import (
+    AnonCredsRevocationModuleResponseSchema,
+    AnonCredsRevRegIdMatchInfoSchema,
     create_transaction_for_endorser_description,
     endorser_connection_id_description,
-    AnonCredsRevRegIdMatchInfoSchema,
-    AnonCredsRevocationModuleResponseSchema,
 )
 from ..askar.profile_anon import AskarAnonCredsProfile
 from ..indy.issuer import IndyIssuerError

@@ -13,18 +13,15 @@ from marshmallow import fields, validate
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
+from ....connections.routes import ConnectionsConnIdMatchInfoSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
-from ....connections.routes import ConnectionsConnIdMatchInfoSchema
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
 from .manager import MediationManager, MediationManagerError
 from .message_types import SPEC_URI
-from .messages.inner.keylist_update_rule import (
-    KeylistUpdateRule,
-    KeylistUpdateRuleSchema,
-)
+from .messages.inner.keylist_update_rule import KeylistUpdateRule, KeylistUpdateRuleSchema
 from .messages.keylist_query import KeylistQuerySchema
 from .messages.keylist_update import KeylistUpdateSchema
 from .messages.mediate_deny import MediationDenySchema

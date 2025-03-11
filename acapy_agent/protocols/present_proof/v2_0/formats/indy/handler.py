@@ -17,12 +17,7 @@ from ......indy.verifier import IndyVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 from ....indy.pres_exch_handler import IndyPresExchHandler
-from ...message_types import (
-    ATTACHMENT_FORMAT,
-    PRES_20,
-    PRES_20_PROPOSAL,
-    PRES_20_REQUEST,
-)
+from ...message_types import ATTACHMENT_FORMAT, PRES_20, PRES_20_PROPOSAL, PRES_20_REQUEST
 from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord

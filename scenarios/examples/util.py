@@ -7,11 +7,7 @@ from uuid import uuid4
 
 from acapy_controller import Controller
 from acapy_controller.controller import Minimal, MinType
-from acapy_controller.models import (
-    V20CredExRecordIndy,
-    V20PresExRecord,
-)
-
+from acapy_controller.models import V20CredExRecordIndy, V20PresExRecord
 from docker.models.containers import Container
 
 

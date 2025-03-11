@@ -15,14 +15,9 @@ from ...ld_proofs import (
 )
 from ...ld_proofs.error import LinkedDataProofException
 from ...tests.document_loader import custom_document_loader
-from ...vc_ld import (
-    create_presentation,
-    derive_credential,
-    sign_presentation,
-    verify_credential,
-    verify_presentation,
-)
+from ...vc_ld import create_presentation, derive_credential
 from ...vc_ld import issue_vc as issue
+from ...vc_ld import sign_presentation, verify_credential, verify_presentation
 from .test_credential import (
     CREDENTIAL_ISSUED,
     CREDENTIAL_ISSUED_2020,

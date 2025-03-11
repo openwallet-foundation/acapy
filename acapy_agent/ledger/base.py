@@ -622,9 +622,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             LedgerObjectAlreadyExistsError: If the schema already exists on the ledger.
 
         """
-        from acapy_agent.anoncreds.default.legacy_indy.registry import (
-            LegacyIndyRegistry,
-        )
+        from acapy_agent.anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 
         public_info = await self.get_wallet_public_did()
         if not public_info:

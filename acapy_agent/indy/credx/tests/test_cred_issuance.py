@@ -5,9 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from ....ledger.base import BaseLedger
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ....tests import mock
 from ....utils.testing import create_test_profile
 from .. import holder, issuer, verifier

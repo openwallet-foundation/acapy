@@ -2,9 +2,7 @@ from copy import deepcopy
 from time import time
 from unittest import IsolatedAsyncioTestCase
 
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ...ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...tests import mock
