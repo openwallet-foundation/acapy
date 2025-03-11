@@ -126,6 +126,7 @@ line-length = 90
 [tool.pytest.ini_options]
 testpaths = "acapy_agent"
 addopts = """
+    -n auto
     --quiet --junitxml=./test-reports/junit.xml
     --cov-config .coveragerc --cov-report term --cov-report xml
     --ruff
