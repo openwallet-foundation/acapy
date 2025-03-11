@@ -1,4 +1,4 @@
-"""Anoncreds non-revocation interval."""
+"""AnonCreds non-revocation interval."""
 
 from time import time
 from typing import Optional
@@ -9,13 +9,13 @@ from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import INT_EPOCH_EXAMPLE, INT_EPOCH_VALIDATE
 
 
-class AnoncredsNonRevocationInterval(BaseModel):
-    """Anoncreds non-revocation interval."""
+class AnonCredsNonRevocationInterval(BaseModel):
+    """AnonCreds non-revocation interval."""
 
     class Meta:
         """NonRevocationInterval metadata."""
 
-        schema_class = "AnoncredsNonRevocationIntervalSchema"
+        schema_class = "AnonCredsNonRevocationIntervalSchema"
 
     def __init__(self, fro: Optional[int] = None, to: Optional[int] = None, **kwargs):
         """Initialize non-revocation interval.
@@ -48,13 +48,13 @@ class AnoncredsNonRevocationInterval(BaseModel):
         return self.to or self.fro or int(time())
 
 
-class AnoncredsNonRevocationIntervalSchema(BaseModelSchema):
+class AnonCredsNonRevocationIntervalSchema(BaseModelSchema):
     """Schema to allow serialization/deserialization of non-revocation intervals."""
 
     class Meta:
-        """AnoncredsNonRevocationIntervalSchema metadata."""
+        """AnonCredsNonRevocationIntervalSchema metadata."""
 
-        model_class = AnoncredsNonRevocationInterval
+        model_class = AnonCredsNonRevocationInterval
         unknown = EXCLUDE
 
     fro = fields.Int(

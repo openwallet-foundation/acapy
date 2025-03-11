@@ -45,7 +45,7 @@ class MockRovocationRegistryDefinition:
 
 
 @pytest.mark.anoncreds
-class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
+class TestAnonCredsRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.session_inject = {}
         self.profile = await create_test_profile(

@@ -77,14 +77,14 @@ def anoncreds_presentation_summary(presentation: V20PresExRecord) -> str:
 
 
 @dataclass
-class SchemaResultAnoncreds(Minimal):
+class SchemaResultAnonCreds(Minimal):
     """Schema result."""
 
     schema_state: dict
 
 
 @dataclass
-class CredDefResultAnoncreds(Minimal):
+class CredDefResultAnonCreds(Minimal):
     """Credential definition result."""
 
     credential_definition_state: dict

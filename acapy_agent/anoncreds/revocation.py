@@ -26,7 +26,7 @@ from aries_askar.error import AskarError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSession
+from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
@@ -92,9 +92,9 @@ class AnonCredsRevocation:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnoncredsProfile:
+    def profile(self) -> AskarAnonCredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnoncredsProfile):
+        if not isinstance(self._profile, AskarAnonCredsProfile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
@@ -106,7 +106,7 @@ class AnonCredsRevocation:
 
     async def _finish_registration(
         self,
-        txn: AskarAnoncredsProfileSession,
+        txn: AskarAnonCredsProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -477,7 +477,7 @@ class AnonCredsRevocation:
                     identifier,
                     value_json={
                         "rev_list": rev_list.serialize(),
-                        # Anoncreds uses the 0 index internally
+                        # AnonCreds uses the 0 index internally
                         # and can't be used for a credential
                         "next_index": 1,
                         "pending": None,
@@ -1497,7 +1497,7 @@ class AnonCredsRevocation:
         crid_mask: Optional[Sequence[int]] = None,
     ):
         """Clear pending revocations."""
-        if not isinstance(txn, AskarAnoncredsProfileSession):
+        if not isinstance(txn, AskarAnonCredsProfileSession):
             raise ValueError("Askar wallet required")
 
         entry = await txn.handle.fetch(

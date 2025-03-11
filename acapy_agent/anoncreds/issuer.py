@@ -17,7 +17,7 @@ from anoncreds import (
 )
 from aries_askar import AskarError
 
-from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSession
+from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -91,9 +91,9 @@ class AnonCredsIssuer:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnoncredsProfile:
+    def profile(self) -> AskarAnonCredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnoncredsProfile):
+        if not isinstance(self._profile, AskarAnonCredsProfile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
@@ -105,7 +105,7 @@ class AnonCredsIssuer:
 
     async def _finish_registration(
         self,
-        txn: AskarAnoncredsProfileSession,
+        txn: AskarAnonCredsProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -231,7 +231,7 @@ class AnonCredsIssuer:
             raise AnonCredsIssuerError(
                 "Schema already exists but was not in wallet; stored in wallet"
             ) from err
-        except (AnoncredsError, BaseAnonCredsError) as err:
+        except (AnonCredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating schema") from err
 
     async def finish_schema(self, job_id: str, schema_id: str):
@@ -374,7 +374,7 @@ class AnonCredsIssuer:
             )
 
             return cred_def_result
-        except (AnoncredsError, BaseAnonCredsError) as err:
+        except (AnonCredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
     async def store_credential_definition(

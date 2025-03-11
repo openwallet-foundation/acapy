@@ -15,13 +15,13 @@ from .......messaging.valid import (
 from .......vc.vc_ld.models.credential import CredentialSchema, VerifiableCredential
 
 
-class AnoncredsLinkSecret(BaseModel):
-    """Anoncreds Link Secret Model."""
+class AnonCredsLinkSecret(BaseModel):
+    """AnonCreds Link Secret Model."""
 
     class Meta:
-        """AnoncredsLinkSecret metadata."""
+        """AnonCredsLinkSecret metadata."""
 
-        schema_class = "AnoncredsLinkSecretSchema"
+        schema_class = "AnonCredsLinkSecretSchema"
 
     def __init__(
         self,
@@ -30,20 +30,20 @@ class AnoncredsLinkSecret(BaseModel):
         key_correctness_proof: Optional[str] = None,
         **kwargs,
     ):
-        """Initialize values for AnoncredsLinkSecret."""
+        """Initialize values for AnonCredsLinkSecret."""
         super().__init__(**kwargs)
         self.nonce = nonce
         self.cred_def_id = cred_def_id
         self.key_correctness_proof = key_correctness_proof
 
 
-class AnoncredsLinkSecretSchema(BaseModelSchema):
-    """Anoncreds Link Secret Schema."""
+class AnonCredsLinkSecretSchema(BaseModelSchema):
+    """AnonCreds Link Secret Schema."""
 
     class Meta:
-        """AnoncredsLinkSecret schema metadata."""
+        """AnonCredsLinkSecret schema metadata."""
 
-        model_class = AnoncredsLinkSecret
+        model_class = AnonCredsLinkSecret
         unknown = EXCLUDE
 
     nonce = fields.Str(
@@ -126,7 +126,7 @@ class BindingMethod(BaseModel):
 
     def __init__(
         self,
-        anoncreds_link_secret: Union[dict, AnoncredsLinkSecret] = None,
+        anoncreds_link_secret: Union[dict, AnonCredsLinkSecret] = None,
         didcomm_signed_attachment: Union[dict, DidcommSignedAttachment] = None,
         **kwargs,
     ):
@@ -145,7 +145,7 @@ class BindingMethodSchema(BaseModelSchema):
         model_class = BindingMethod
         unknown = EXCLUDE
 
-    anoncreds_link_secret = fields.Nested(AnoncredsLinkSecretSchema, required=False)
+    anoncreds_link_secret = fields.Nested(AnonCredsLinkSecretSchema, required=False)
     didcomm_signed_attachment = fields.Nested(
         DidcommSignedAttachmentSchema, required=True
     )

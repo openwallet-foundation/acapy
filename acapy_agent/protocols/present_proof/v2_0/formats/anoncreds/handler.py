@@ -8,8 +8,8 @@ from marshmallow import RAISE
 
 from ......anoncreds.holder import AnonCredsHolder
 from ......anoncreds.models.predicate import Predicate
-from ......anoncreds.models.presentation_request import AnoncredsPresentationRequestSchema
-from ......anoncreds.models.proof import AnoncredsProofSchema
+from ......anoncreds.models.presentation_request import AnonCredsPresentationRequestSchema
+from ......anoncreds.models.proof import AnonCredsProofSchema
 from ......anoncreds.models.utils import get_requested_creds_from_proof_request_preview
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.util import generate_pr_nonce
@@ -32,7 +32,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsPresExchangeHandler(V20PresFormatHandler):
-    """Anoncreds presentation format handler."""
+    """AnonCreds presentation format handler."""
 
     format = V20PresFormat.Format.ANONCREDS
 
@@ -56,9 +56,9 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
 
         """
         mapping = {
-            PRES_20_REQUEST: AnoncredsPresentationRequestSchema,
-            PRES_20_PROPOSAL: AnoncredsPresentationRequestSchema,
-            PRES_20: AnoncredsProofSchema,
+            PRES_20_REQUEST: AnonCredsPresentationRequestSchema,
+            PRES_20_PROPOSAL: AnonCredsPresentationRequestSchema,
+            PRES_20: AnonCredsProofSchema,
         }
 
         # Get schema class

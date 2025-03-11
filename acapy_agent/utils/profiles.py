@@ -5,7 +5,7 @@ import json
 from aiohttp import web
 
 from ..anoncreds.error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from ..askar.profile_anon import AskarAnoncredsProfile
+from ..askar.profile_anon import AskarAnonCredsProfile
 from ..core.profile import Profile
 from ..multitenant.manager import MultitenantManager
 from ..multitenant.single_wallet_askar_manager import SingleWalletAskarMultitenantManager
@@ -15,13 +15,13 @@ from ..wallet.models.wallet_record import WalletRecord
 
 def is_anoncreds_profile_raise_web_exception(profile: Profile) -> None:
     """Raise a web exception when the supplied profile is anoncreds."""
-    if isinstance(profile, AskarAnoncredsProfile):
+    if isinstance(profile, AskarAnonCredsProfile):
         raise web.HTTPForbidden(reason="Interface not supported for an anoncreds profile")
 
 
 def is_not_anoncreds_profile_raise_web_exception(profile: Profile) -> None:
     """Raise a web exception when the supplied profile is anoncreds."""
-    if not isinstance(profile, AskarAnoncredsProfile):
+    if not isinstance(profile, AskarAnonCredsProfile):
         raise web.HTTPForbidden(reason=ANONCREDS_PROFILE_REQUIRED_MSG)
 
 
