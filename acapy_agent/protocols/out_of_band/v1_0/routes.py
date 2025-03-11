@@ -253,7 +253,7 @@ async def invitation_fetch(request: web.BaseRequest):
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(record.get("invitation"))
+    return web.json_response(record)
 
 
 @docs(
