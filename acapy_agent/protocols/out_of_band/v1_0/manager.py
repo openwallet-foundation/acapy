@@ -1176,12 +1176,13 @@ class OutOfBandManager(BaseConnectionManager):
         """Fetch oob_record associated with an oob_id."""
         async with self.profile.session() as session:
             oob_record = await OobRecord.retrieve_by_id(
-                session, record_id=oob_id,
+                session,
+                record_id=oob_id,
             )
-            
+
         if not oob_record:
             raise StorageNotFoundError(f"No record found with oob_id {oob_id}")
-        
+
         return oob_record.serialize()
 
     async def delete_conn_and_oob_record_invitation(self, invi_msg_id: str):
