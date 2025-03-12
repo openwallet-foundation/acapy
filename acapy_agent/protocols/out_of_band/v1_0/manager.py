@@ -1172,7 +1172,7 @@ class OutOfBandManager(BaseConnectionManager):
             for conn_rec in conn_records:
                 await conn_rec.delete_record(session)
 
-    async def fetch_oob_invitation_record_by_id(self, oob_id: str):
+    async def fetch_oob_invitation_record_by_id(self, oob_id: str) -> OobRecord:
         """Fetch oob_record associated with an oob_id."""
         async with self.profile.session() as session:
             oob_record = await OobRecord.retrieve_by_id(
