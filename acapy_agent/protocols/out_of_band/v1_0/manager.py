@@ -1183,7 +1183,7 @@ class OutOfBandManager(BaseConnectionManager):
         if not oob_record:
             raise StorageNotFoundError(f"No record found with oob_id {oob_id}")
 
-        return oob_record.serialize()
+        return oob_record
 
     async def delete_conn_and_oob_record_invitation(self, invi_msg_id: str):
         """Delete conn_record and oob_record associated with an invi_msg_id."""
