@@ -346,12 +346,12 @@ Feature: RFC 0454 Aries agent present proof
       When "<issuer1>" sends a request for proof presentation <Proof_request> to "Bob"
       Then "<issuer1>" has the proof verified
 
-      @WalletType_Askar
+      @Release @WalletType_Askar
       Examples:
          | issuer1 | Acme1_capabilities        | Bob_cap | Schema_name_1     | Credential_data_1 | Proof_request     |
          | Acme1   | --revocation --public-did |         | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-      @WalletType_Askar_AnonCreds
+      @Release @WalletType_Askar_AnonCreds
       Examples:
          | issuer1 | Acme1_capabilities                                      | Bob_cap                       | Schema_name_1     | Credential_data_1 | Proof_request     |
          | Acme1   | --revocation --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
