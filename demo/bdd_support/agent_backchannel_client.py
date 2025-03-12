@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args_list
@@ -212,6 +213,8 @@ def read_credential_data(schema_name: str, cred_scenario_name: str):
     for attr in cred_data["attributes"]:
         if attr["value"] == "@uuid":
             attr["value"] = str(uuid.uuid4())
+        if attr["name"] == "timestamp":
+            attr["value"] = str(int(time.time()))
     return cred_data["attributes"]
 
 

@@ -6,7 +6,8 @@
          "address",
          "DL_number",
          "expiry",
-         "age"
+         "age",
+         "timestamp"
       ]
    },
    "cred_def_support_revocation":true

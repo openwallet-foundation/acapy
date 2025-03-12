@@ -448,6 +448,7 @@ class AriesAgent(DemoAgent):
                 f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
+            self.last_proof_received = proof
 
         elif state == "abandoned":
             log_status("Presentation exchange abandoned")
@@ -625,8 +626,10 @@ class AriesAgent(DemoAgent):
             proof = await self.admin_POST(
                 f"/present-proof-2.0/records/{pres_ex_id}/verify-presentation"
             )
-            self.log("Proof =", proof["verified"])
+            self.log("Proof 2.0 =", proof["verified"])
             self.last_proof_received = proof
+
+            log_status(f">>> last proof received: {self.last_proof_received}")
 
         elif state == "abandoned":
             log_status("Presentation exchange abandoned")
@@ -1080,6 +1083,8 @@ class AgentContainer:
     ):
         log_status("#20 Request proof of degree from alice")
 
+        self.last_proof_received = None
+
         if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             proof_request = {
                 "name": (
@@ -1160,8 +1165,6 @@ class AgentContainer:
             # no proof received
             print("No proof received")
             return None
-
-        # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
         if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # return verified status
