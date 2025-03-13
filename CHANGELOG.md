@@ -1,5 +1,23 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.12.6
+
+### March 6, 2025
+
+This patch release addresses a bug in the handling connection reuse in multitenancy environments. This is a backport of the PR [fix: connection reuse with multi-tenancy #3543](https://github.com/openwallet-foundation/acapy/pull/3543). This fixes the issue when using multi-tenancy, calls to `POST /out-of-band/receive-invitation?use_existing_connection=true` failing with a record not found error, despite connection reuse actually being completed in the background.
+
+### 0.12.6 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.6 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fixes
+  - fix: cherry-pick fixes from main to 0.12.lts [\#3578](https://github.com/openwallet-foundation/acapy/pull/3578) [thiagoromanos](https://github.com/thiagoromanos)
+
+- Release management pull requests:
+  - 0.12.6 [\#3581](https://github.com/openwallet-foundation/acapy/pull/3581) [swcurran](https://github.com/swcurran)
+
 ## 0.12.5
 
 ### March 6, 2025
