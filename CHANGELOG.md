@@ -1,5 +1,33 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.2.4
+
+### March 13, 2025
+
+This patch release addresses three bugs backported from the `main` branch:
+
+- Fixes a problem in the handling of connection reuse in multitenancy environments. This is a backport of the PR [fix: connection reuse with multi-tenancy #3543](https://github.com/openwallet-foundation/acapy/pull/3543). This fixes the issue when using multi-tenancy, calls to `POST /out-of-band/receive-invitation?use_existing_connection=true` failing with a record not found error, despite connection reuse actually being completed in the background.
+- Fixes a problem when using acapy with multitenant enabled and admin-insecure-mode. Without this fix, tenant endpoints (like [GET] /wallet/did for example) could be accessed without a bearer token. For details see: [fix: tenant access to endpoints leading to access the base wallet #3545](https://github.com/openwallet-foundation/acapy/pull/3545).
+- Fixes the AnonCreds holder revocation list endpoint which was erroneously using the `to` timestamp for the `from`, preventing the creation of valid non-revocation proofs. For details, see: [Repair anoncreds holder revocation list request](https://github.com/openwallet-foundation/acapy/pull/3570)
+
+### 1.2.4 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in this 1.2.4 release, but the Connections Protocol has been removed from the ACA-Py `main` branch, and is available as a [plugin](https://github.com/openwallet-foundation/acapy-plugins/tree/main/connections). The Issue Credential v1 and Present Proof v1 protocols will soon be changed similarly. Please review these notifications carefully!
+
+### 1.2.4 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.4 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fixes
+  - 1.2.LTS Repair anoncreds holder revocation list request [\#3580](https://github.com/openwallet-foundation/acapy/pull/3580) [jamshale](https://github.com/jamshale)
+- Multitenant Fixes
+  - fix: cherry-pick fixes from main to 1.2.lts [\#3577](https://github.com/openwallet-foundation/acapy/pull/3577) [thiagoromanos](https://github.com/thiagoromanos)
+
+- Release management pull requests:
+  - 1.2.4 [\#3582](https://github.com/openwallet-foundation/acapy/pull/3582) [swcurran](https://github.com/swcurran)
+
 ## 1.2.3
 
 ### March 6, 2025
