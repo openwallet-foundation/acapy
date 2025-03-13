@@ -12,7 +12,7 @@ There are no breaking changes in this release.
 
 #### 0.12.6 Categorized List of Pull Requests
 
-- AnonCreds Revocation Fixes
+- Multitenancy Fixes
   - fix: cherry-pick fixes from main to 0.12.lts [\#3578](https://github.com/openwallet-foundation/acapy/pull/3578) [thiagoromanos](https://github.com/thiagoromanos)
 
 - Release management pull requests:
