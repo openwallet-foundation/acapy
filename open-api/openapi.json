@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.12.5"
+    "version" : "v0.12.6"
   },
   "servers" : [ {
     "url" : "/"
