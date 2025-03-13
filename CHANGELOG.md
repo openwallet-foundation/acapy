@@ -16,7 +16,7 @@ There are no breaking changes in this release.
   - fix: cherry-pick fixes from main to 0.12.lts [\#3578](https://github.com/openwallet-foundation/acapy/pull/3578) [thiagoromanos](https://github.com/thiagoromanos)
 
 - Release management pull requests:
-  - 0.12.6 [\#3581](https://github.com/openwallet-foundation/acapy/pull/3581) [swcurran](https://github.com/swcurran)
+  - 0.12.6 [\#3583](https://github.com/openwallet-foundation/acapy/pull/3583) [swcurran](https://github.com/swcurran)
 
 ## 0.12.5
 
