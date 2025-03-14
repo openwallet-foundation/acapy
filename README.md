@@ -1,8 +1,14 @@
 # ACA-Py -- A Cloud Agent - Python  <!-- omit in toc -->
 
-🚨 **ACA-Py is part of the [OpenWallet Foundation] (OWF)!** 🚨
+![Python](https://img.shields.io/badge/python-3.12-blue.svg)
+[![PyPI version](https://img.shields.io/pypi/v/acapy-agent)](https://pypi.org/project/acapy-agent/)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=coverage)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/openwallet-foundation/acapy/badge)](https://scorecard.dev/viewer/?uri=github.com/openwallet-foundation/acapy)
 
-[OpenWallet Foundation]: https://openwallet.foundation/
+> **ACA-Py is now part of the [OpenWallet Foundation](https://openwallet.foundation/) (OWF)!**
 
 The move of ACA-Py to the OWF is now complete. If you haven't done so already, please update your ACA-Py deployment to use:
 
@@ -10,17 +16,9 @@ The move of ACA-Py to the OWF is now complete. If you haven't done so already, p
 - the new [acapy-agent in PyPi](https://pypi.org/project/acapy-agent/), and
 - the container images for ACA-Py hosted by the OpenWallet Foundation GitHub organization within the GitHub Container Repository (GHCR).
 
-<p float="left">
-  <a href="https://scorecard.dev/viewer/?uri=github.com/openwallet-foundation/acapy"><img src="https://api.scorecard.dev/projects/github.com/openwallet-foundation/acapy/badge" />
-  <a href="https://pypi.org/project/acapy-agent/"><img src="https://img.shields.io/pypi/v/acapy-agent" width="100" height="20" />
-  <img src="https://sonarcloud.io/images/project_badges/sonarcloud-white.svg" width="120" height="20" />
-  <img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=coverage" width="120"  height="20" />
-  &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=security_rating" width="100"  height="20" />
-  &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=vulnerabilities" width="120"  height="20" />
-  &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=ncloc" width="120"  height="20" />
-</p>
+___
 
-> An easy to use enterprise wallet for building decentralized trust services using any language that supports sending/receiving HTTP requests.
+ACA-Py is an easy to use enterprise SSI agent for building decentralized trust services using any language that supports sending/receiving HTTP requests.
 
 Full access to an organized set of all of the ACA-Py documents is available at [https://aca-py.org](https://aca-py.org).
 Check it out! It's much easier to navigate than the ACA-Py GitHub repo for reading the documentation.
