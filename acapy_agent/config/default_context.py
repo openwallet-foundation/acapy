@@ -1,5 +1,7 @@
 """Classes for configuring the default injection context."""
 
+import logging
+
 from ..anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
@@ -26,6 +28,8 @@ from ..wallet.key_type import KeyTypes
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
 from .provider import CachedProvider, ClassProvider
+
+LOGGER = logging.getLogger(__name__)
 
 
 class DefaultContextBuilder(ContextBuilder):
@@ -177,14 +181,18 @@ class DefaultContextBuilder(ContextBuilder):
                 plugin_registry.register_plugin(plugin)
 
         if context.settings.get("multitenant.enabled"):
+            LOGGER.info("Registering askar and anoncreds plugins for multitenancy")
             register_askar_plugins()
             register_anoncreds_plugins()
         elif wallet_type == "askar-anoncreds":
+            LOGGER.info("Registering anoncreds plugins")
             register_anoncreds_plugins()
         else:
+            LOGGER.info("Registering askar plugins")
             register_askar_plugins()
 
         if context.settings.get("multitenant.admin_enabled"):
+            LOGGER.info("Registering multitenant admin API plugin")
             plugin_registry.register_plugin("acapy_agent.multitenant.admin")
 
         # Register external plugins
