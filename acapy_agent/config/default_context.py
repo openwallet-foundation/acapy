@@ -137,22 +137,29 @@ class DefaultContextBuilder(ContextBuilder):
         if not self.settings.get("transport.disabled"):
             plugin_registry.register_package("acapy_agent.protocols")
 
-        # Currently providing admin routes only
-        plugin_registry.register_plugin("acapy_agent.holder")
+        # Define core plugins
+        core_plugins = [
+            "acapy_agent.holder",
+            "acapy_agent.ledger",
+            "acapy_agent.connections",
+            "acapy_agent.messaging.jsonld",
+            "acapy_agent.resolver",
+            "acapy_agent.settings",
+            "acapy_agent.vc",
+            "acapy_agent.vc.data_integrity",
+            "acapy_agent.wallet",
+            "acapy_agent.wallet.keys",
+        ]
 
-        plugin_registry.register_plugin("acapy_agent.ledger")
+        did_management_plugins = [
+            "acapy_agent.did.indy",
+        ]
 
-        plugin_registry.register_plugin("acapy_agent.connections")
-        plugin_registry.register_plugin("acapy_agent.messaging.jsonld")
-        plugin_registry.register_plugin("acapy_agent.resolver")
-        plugin_registry.register_plugin("acapy_agent.settings")
-        plugin_registry.register_plugin("acapy_agent.vc")
-        plugin_registry.register_plugin("acapy_agent.vc.data_integrity")
-        plugin_registry.register_plugin("acapy_agent.wallet")
-        plugin_registry.register_plugin("acapy_agent.wallet.keys")
+        default_plugins = core_plugins + did_management_plugins
 
-        # Did management plugins
-        plugin_registry.register_plugin("acapy_agent.did.indy")
+        LOGGER.info("Registering default plugins")
+        for plugin in default_plugins:
+            plugin_registry.register_plugin(plugin)
 
         anoncreds_plugins = [
             "acapy_agent.anoncreds",
@@ -169,22 +176,22 @@ class DefaultContextBuilder(ContextBuilder):
         ]
 
         def register_askar_plugins():
+            LOGGER.info("Registering askar plugins")
             for plugin in askar_plugins:
                 plugin_registry.register_plugin(plugin)
 
         def register_anoncreds_plugins():
+            LOGGER.info("Registering anoncreds plugins")
             for plugin in anoncreds_plugins:
                 plugin_registry.register_plugin(plugin)
 
         if context.settings.get("multitenant.enabled"):
-            LOGGER.info("Registering askar and anoncreds plugins for multitenancy")
+            # Register both askar and anoncreds plugins for multitenancy
             register_askar_plugins()
             register_anoncreds_plugins()
         elif wallet_type == "askar-anoncreds":
-            LOGGER.info("Registering anoncreds plugins")
             register_anoncreds_plugins()
         else:
-            LOGGER.info("Registering askar plugins")
             register_askar_plugins()
 
         if context.settings.get("multitenant.admin_enabled"):
