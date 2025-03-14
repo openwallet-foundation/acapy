@@ -176,15 +176,16 @@ class DefaultContextBuilder(ContextBuilder):
             for plugin in anoncreds_plugins:
                 plugin_registry.register_plugin(plugin)
 
-        if wallet_type == "askar-anoncreds":
+        if context.settings.get("multitenant.enabled"):
+            register_askar_plugins()
+            register_anoncreds_plugins()
+        elif wallet_type == "askar-anoncreds":
             register_anoncreds_plugins()
         else:
             register_askar_plugins()
 
         if context.settings.get("multitenant.admin_enabled"):
             plugin_registry.register_plugin("acapy_agent.multitenant.admin")
-            register_askar_plugins()
-            register_anoncreds_plugins()
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):
