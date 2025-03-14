@@ -270,7 +270,14 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_POSTED
         self.ledger.send_revoc_reg_def.assert_called_once()
 
-        with mock.patch.object(test_module.Path, "is_file", lambda _: True):
+        with (
+            mock.patch.object(test_module.Path, "is_file", lambda _: True),
+            mock.patch.object(
+                test_module,
+                "IndyTailsServer",
+                mock.MagicMock(return_value=self.tails_server),
+            ),
+        ):
             await rec.upload_tails_file(self.profile)
         assert (
             rec.tails_public_uri
