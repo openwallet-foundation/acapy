@@ -68,11 +68,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # DIDComm Messaging
         if context.settings.get("experiment.didcomm_v2"):
-            from didcomm_messaging import (
-                CryptoService,
-                PackagingService,
-                RoutingService,
-            )
+            from didcomm_messaging import CryptoService, PackagingService, RoutingService
             from didcomm_messaging.crypto.backend.askar import AskarCryptoService
 
             context.injector.bind_instance(CryptoService, AskarCryptoService())
