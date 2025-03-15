@@ -217,6 +217,45 @@ class InvitationRecordMatchInfoSchema(OpenAPISchema):
     )
 
 
+class OobInvitationRecordMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking invitation record."""
+
+    oob_id = fields.Str(
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "OOB Invitation identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
+@docs(tags=["out-of-band"], summary="Fetch an existing Out-of-Band invitation.")
+@match_info_schema(OobInvitationRecordMatchInfoSchema())
+@response_schema(InvitationRecordResponseSchema(), description="")
+@tenant_authentication
+async def invitation_fetch(request: web.BaseRequest):
+    """Request handler for fetching an invitation.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+    oob_mgr = OutOfBandManager(profile)
+    try:
+        record = await oob_mgr.fetch_oob_invitation_record_by_id(
+            request.match_info["oob_id"]
+        )
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(record.serialize())
+
+
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
@@ -365,6 +404,11 @@ async def register(app: web.Application):
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
+            web.get(
+                "/out-of-band/invitations/{oob_id}",
+                invitation_fetch,
+                allow_head=False,
+            ),
             web.delete("/out-of-band/invitations/{invi_msg_id}", invitation_remove),
         ]
     )
