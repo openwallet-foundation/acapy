@@ -176,7 +176,7 @@ plugin:
 The following is a fully functional Dockerfile encapsulating this setup:
 
 ```dockerfile=
-FROM ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.3   
+FROM ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.4   
 RUN pip3 install git+https://github.com/dbluhm/acapy-resolver-github
 
 CMD ["aca-py", "start", "-it", "http", "0.0.0.0", "3000", "-ot", "http", "-e", "http://localhost:3000", "--admin", "0.0.0.0", "3001", "--admin-insecure-mode", "--no-ledger", "--plugin", "acapy_resolver_github"]
