@@ -59,6 +59,7 @@ jobs:
         with:
           route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ github.event.number }}
       - name: Prepare Interop Tests
+        if: (steps.check-if-src-changed.outputs.run_tests != 'false' || steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
           # Get AATH 
           git clone https://github.com/openwallet-foundation/owl-agent-test-harness.git
