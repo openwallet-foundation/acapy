@@ -7,7 +7,7 @@
         "context": "..",
         "args": {
           "VARIANT": "3.12-bookworm",
-          "POETRY_VERSION": "1.7.1"
+          "POETRY_VERSION": "2.1.1"
         }
     },
     "customizations": {

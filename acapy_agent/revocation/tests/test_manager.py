@@ -1,8 +1,15 @@
 import json
 from unittest import IsolatedAsyncioTestCase
 
+from uuid_utils import uuid4
+
+from ...cache.base import BaseCache
+from ...cache.in_memory import InMemoryCache
 from ...connections.models.conn_record import ConnRecord
+from ...indy.credx.issuer import CATEGORY_REV_REG
 from ...indy.issuer import IndyIssuer
+from ...ledger.base import BaseLedger
+from ...messaging.responder import BaseResponder
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
@@ -14,6 +21,7 @@ from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import manager as test_module
 from ..manager import RevocationManager, RevocationManagerError
+from ..models.issuer_rev_reg_record import IssuerRevRegRecord
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
@@ -889,3 +897,94 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 session, crev_record.record_id
             )
             assert check_crev_record.state == IssuerCredRevRecord.STATE_REVOKED
+
+    @mock.patch.object(
+        ConnRecord,
+        "retrieve_by_id",
+        mock.CoroutineMock(
+            return_value=mock.MagicMock(
+                connection_id="endorser-id",
+                metadata_get=mock.CoroutineMock(
+                    return_value={"endorser_did": "test_endorser_did"}
+                ),
+            )
+        ),
+    )
+    @mock.patch.object(
+        IssuerRevRegRecord,
+        "fix_ledger_entry",
+        mock.CoroutineMock(
+            return_value=(
+                "1 ...",
+                {
+                    "ver": "1.0",
+                    "value": {
+                        "prevAccum": "1 ...",
+                        "accum": "fixed-accum",
+                        "issued": [1],
+                    },
+                },
+                [1],
+            )
+        ),
+    )
+    async def test_fix_and_publish_from_invalid_accum_err(
+        self,
+    ):
+        # Setup
+        self.profile.context.injector.bind_instance(BaseCache, InMemoryCache())
+        self.profile.context.injector.bind_instance(
+            BaseResponder, mock.MagicMock(BaseResponder, autospec=True)
+        )
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.get_revoc_reg_delta = mock.CoroutineMock(
+            side_effect=[
+                ({"value": {"accum": "other-accum"}}, None),
+                ({"value": {"accum": "invalid-accum"}}, None),
+            ]
+        )
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value={"result": {"txn": "..."}}
+        )
+        self.profile.context.injector.bind_instance(BaseLedger, mock_ledger)
+        self.profile.context.settings.set_value(
+            "ledger.genesis_transactions", {"txn": "..."}
+        )
+        self.profile.context.settings.set_value("endorser.endorser_alias", "endorser")
+
+        async with self.profile.session() as session:
+            # Add an endorser connection
+            await session.handle.insert(
+                ConnRecord.RECORD_TYPE,
+                name="endorser",
+                value_json={"connection_id": "endorser", "alias": "endorser"},
+            )
+            record = ConnRecord(
+                alias="endorser",
+            )
+            await record.save(session)
+
+            # Add a couple rev reg records
+            for _ in range(2):
+                await session.handle.insert(
+                    IssuerRevRegRecord.RECORD_TYPE,
+                    name=str(uuid4()),
+                    value_json={
+                        "revoc_reg_id": "test-rr-id",
+                    },
+                )
+
+            # Need a matching revocation_reg record
+            await session.handle.insert(
+                CATEGORY_REV_REG,
+                name="test-rr-id",
+                value_json={
+                    "value": {
+                        "accum": "invalid-accum",
+                        "revoked": [1],
+                    }
+                },
+            )
+
+        # Execute
+        await self.manager.fix_and_publish_from_invalid_accum_err("invalid-accum")

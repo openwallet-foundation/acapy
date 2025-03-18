@@ -7,7 +7,7 @@ from ....askar.profile import AskarProfileSession
 from ....indy.issuer import IndyIssuer, IndyIssuerError
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
-from ....tails.base import BaseTailsServer
+from ....tails.indy_tails_server import IndyTailsServer
 from ....tests import mock
 from ....utils.testing import create_test_profile
 from ...error import RevocationError
@@ -60,11 +60,10 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         self.ledger.send_revoc_reg_entry = mock.CoroutineMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.tails_server = mock.MagicMock(BaseTailsServer, autospec=True)
+        self.tails_server = mock.MagicMock(IndyTailsServer, autospec=True)
         self.tails_server.upload_tails_file = mock.CoroutineMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
-        self.profile.context.injector.bind_instance(BaseTailsServer, self.tails_server)
 
         self.session = await self.profile.session()
 
@@ -271,7 +270,14 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_POSTED
         self.ledger.send_revoc_reg_def.assert_called_once()
 
-        with mock.patch.object(test_module.Path, "is_file", lambda _: True):
+        with (
+            mock.patch.object(test_module.Path, "is_file", lambda _: True),
+            mock.patch.object(
+                test_module,
+                "IndyTailsServer",
+                mock.MagicMock(return_value=self.tails_server),
+            ),
+        ):
             await rec.upload_tails_file(self.profile)
         assert (
             rec.tails_public_uri

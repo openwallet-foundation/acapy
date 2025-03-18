@@ -4,6 +4,7 @@ This script is for you to use to reproduce a bug or demonstrate a feature.
 """
 
 import asyncio
+from datetime import datetime
 from os import getenv
 from secrets import token_hex
 
@@ -11,7 +12,6 @@ from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
 from acapy_controller.models import (
     CreateWalletResponse,
-    V20PresExRecordList,
 )
 from acapy_controller.protocols import (
     DIDResult,
@@ -25,7 +25,6 @@ from examples.util import (
     SchemaResultAnoncreds,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
-    anoncreds_presentation_summary,
 )
 
 AGENCY = getenv("AGENCY", "http://agency:3001")
@@ -137,13 +136,16 @@ async def main():
         )
 
         # Present the the credential's attributes
-        await anoncreds_present_proof_v2(
+        _, verifier_ex = await anoncreds_present_proof_v2(
             holder_anoncreds,
             issuer,
             holder_anoncreds_conn.connection_id,
             issuer_conn_with_anoncreds_holder.connection_id,
             requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": int(datetime.now().timestamp())},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
         )
+        assert verifier_ex.verified == "true"
 
         # Revoke credential
         await issuer.post(
@@ -160,9 +162,50 @@ async def main():
 
         await holder_anoncreds.record(topic="revocation-notification")
 
+        # Present the the credential's attributes
+        now = int(datetime.now().timestamp())
+        _, verifier_ex = await anoncreds_present_proof_v2(
+            holder_anoncreds,
+            issuer,
+            holder_anoncreds_conn.connection_id,
+            issuer_conn_with_anoncreds_holder.connection_id,
+            requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": now},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
+        )
+        assert verifier_ex.verified == "false"
+
+        # Issue another credential
+        issuer_cred_ex, _ = await anoncreds_issue_credential_v2(
+            issuer,
+            holder_anoncreds,
+            issuer_conn_with_anoncreds_holder.connection_id,
+            holder_anoncreds_conn.connection_id,
+            {"firstname": "Anoncreds", "lastname": "Holder"},
+            cred_def_id=cred_def.credential_definition_id,
+            issuer_id=public_did.did,
+            schema_id=schema.schema_id,
+            schema_issuer_id=public_did.did,
+            schema_name=schema_name,
+        )
+
+        valid_anoncreds_holder_cred_rev_id = issuer_cred_ex.details.cred_rev_id
+
+        # Holder has one revoked and one non-revoked credential
+        _, verifier_ex = await anoncreds_present_proof_v2(
+            holder_anoncreds,
+            issuer,
+            holder_anoncreds_conn.connection_id,
+            issuer_conn_with_anoncreds_holder.connection_id,
+            requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": now},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
+        )
+        assert verifier_ex.verified == "true"
+
         """
-            This section of the test script demonstrates the issuance, presentation and 
-            revocation of a credential where the issuer and holder are not anoncreds 
+            This section of the test script demonstrates the issuance, presentation and
+            revocation of a credential where the issuer and holder are not anoncreds
             capable. Both are askar wallet type.
         """
 
@@ -186,22 +229,16 @@ async def main():
         )
 
         # Present the the credential's attributes
-        await anoncreds_present_proof_v2(
+        _, verifier_ex = await anoncreds_present_proof_v2(
             holder_indy,
             issuer,
             holder_indy_conn.connection_id,
             issuer_conn_with_indy_holder.connection_id,
             requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": int(datetime.now().timestamp())},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
         )
-        # Query presentations
-        presentations = await issuer.get(
-            "/present-proof-2.0/records",
-            response=V20PresExRecordList,
-        )
-
-        # Presentation summary
-        for _, pres in enumerate(presentations.results):
-            print(anoncreds_presentation_summary(pres))
+        assert verifier_ex.verified == "true"
 
         # Revoke credential
         await issuer.post(
@@ -218,9 +255,50 @@ async def main():
 
         await holder_indy.record(topic="revocation-notification")
 
-        """ 
+        # Presentation after revocation should fail
+        now = int(datetime.now().timestamp())
+        _, verifier_ex = await anoncreds_present_proof_v2(
+            holder_indy,
+            issuer,
+            holder_indy_conn.connection_id,
+            issuer_conn_with_indy_holder.connection_id,
+            requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": now},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
+        )
+        assert verifier_ex.verified == "false"
+
+        # Add another credential to the holder and present it
+        issuer_cred_ex, _ = await anoncreds_issue_credential_v2(
+            issuer,
+            holder_indy,
+            issuer_conn_with_indy_holder.connection_id,
+            holder_indy_conn.connection_id,
+            {"firstname": "Indy", "lastname": "Holder"},
+            cred_def_id=cred_def.credential_definition_id,
+            issuer_id=public_did.did,
+            schema_id=schema.schema_id,
+            schema_issuer_id=public_did.did,
+            schema_name=schema_name,
+        )
+
+        valid_indy_holder_cred_rev_id = issuer_cred_ex.details.cred_rev_id
+
+        # Presentation with one revoked and one valid credential
+        _, verifier_ex = await anoncreds_present_proof_v2(
+            holder_indy,
+            issuer,
+            holder_indy_conn.connection_id,
+            issuer_conn_with_indy_holder.connection_id,
+            requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": now},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
+        )
+        assert verifier_ex.verified == "true"
+
+        """
             Upgrade the issuer tenant to anoncreds capable wallet type. When upgrading a
-            tenant the agent doesn't require a restart. That is why the test is done 
+            tenant the agent doesn't require a restart. That is why the test is done
             with multitenancy
         """
         await issuer.post(
@@ -239,29 +317,35 @@ async def main():
             },
         )
         # Wait for the upgrade to complete
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
         """
-            Do issuance and presentation again after the upgrade. This time the issuer is 
+            Do issuance and presentation again after the upgrade. This time the issuer is
             an anoncreds capable wallet (wallet type askar-anoncreds).
         """
         # Presentation for anoncreds capable holder on existing credential
-        await anoncreds_present_proof_v2(
+        _, verifier_ex = await anoncreds_present_proof_v2(
             holder_anoncreds,
             issuer,
             holder_anoncreds_conn.connection_id,
             issuer_conn_with_anoncreds_holder.connection_id,
             requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": now},
+            cred_rev_id=valid_anoncreds_holder_cred_rev_id,
         )
+        assert verifier_ex.verified == "true"
 
         # Presentation for indy capable holder on existing credential
-        await anoncreds_present_proof_v2(
+        _, verifier_ex = await anoncreds_present_proof_v2(
             holder_indy,
             issuer,
             holder_indy_conn.connection_id,
             issuer_conn_with_indy_holder.connection_id,
             requested_attributes=[{"name": "firstname"}],
+            non_revoked={"to": now},
+            cred_rev_id=valid_indy_holder_cred_rev_id,
         )
+        assert verifier_ex.verified == "true"
 
         # Create a new schema and cred def with different attributes on new
         # anoncreds endpoints
@@ -306,13 +390,16 @@ async def main():
             schema_name=schema_name,
         )
         # Presentation for anoncreds capable holder
-        await anoncreds_present_proof_v2(
+        _, verifier_ex = await anoncreds_present_proof_v2(
             holder_anoncreds,
             issuer,
             holder_anoncreds_conn.connection_id,
             issuer_conn_with_anoncreds_holder.connection_id,
             requested_attributes=[{"name": "middlename"}],
+            non_revoked={"to": int(datetime.now().timestamp())},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
         )
+        assert verifier_ex.verified == "true"
         # Revoke credential
         await issuer.post(
             url="/anoncreds/revocation/revoke",
@@ -326,6 +413,17 @@ async def main():
             },
         )
         await holder_anoncreds.record(topic="revocation-notification")
+
+        _, verifier_ex = await anoncreds_present_proof_v2(
+            holder_anoncreds,
+            issuer,
+            holder_anoncreds_conn.connection_id,
+            issuer_conn_with_anoncreds_holder.connection_id,
+            requested_attributes=[{"name": "middlename"}],
+            non_revoked={"to": int(datetime.now().timestamp())},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
+        )
+        assert verifier_ex.verified == "false"
 
         # Issue a new credential to indy holder
         issuer_cred_ex, _ = await anoncreds_issue_credential_v2(
@@ -341,13 +439,16 @@ async def main():
             schema_name=schema_name,
         )
         # Presentation for indy holder
-        await anoncreds_present_proof_v2(
+        _, verifier_ex = await anoncreds_present_proof_v2(
             holder_indy,
             issuer,
             holder_indy_conn.connection_id,
             issuer_conn_with_indy_holder.connection_id,
             requested_attributes=[{"name": "middlename"}],
+            non_revoked={"to": int(datetime.now().timestamp())},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
         )
+        assert verifier_ex.verified == "true"
         # Revoke credential
         await issuer.post(
             url="/anoncreds/revocation/revoke",
@@ -362,6 +463,17 @@ async def main():
         )
 
         await holder_indy.record(topic="revocation-notification")
+
+        _, verifier_ex = await anoncreds_present_proof_v2(
+            holder_indy,
+            issuer,
+            holder_indy_conn.connection_id,
+            issuer_conn_with_indy_holder.connection_id,
+            requested_attributes=[{"name": "middlename"}],
+            non_revoked={"to": int(datetime.now().timestamp())},
+            cred_rev_id=issuer_cred_ex.details.cred_rev_id,
+        )
+        assert verifier_ex.verified == "false"
 
         """
             This section of the test script demonstrates the issuance, presentation and
