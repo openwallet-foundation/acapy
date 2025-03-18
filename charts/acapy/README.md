@@ -225,50 +225,43 @@ NOTE: admin_user must have the CREATEDB role or else initialization will fail.
 | `readinessProbe.successThreshold`    | Success threshold for readinessProbe                                                                                                                                                                              | `1`             |
 | `readinessProbe.httpGet.path`        | Request path for readinessProbe                                                                                                                                                                                   | `/status/ready` |
 | `readinessProbe.httpGet.port`        | Port for readinessProbe                                                                                                                                                                                           | `admin`         |
-| `startupProbe.enabled`               | Enable startupProbe                                                                                                                                                                                               | `false`         |
-| `startupProbe.initialDelaySeconds`   | Initial delay seconds for startupProbe                                                                                                                                                                            | `5`             |
-| `startupProbe.periodSeconds`         | Period seconds for startupProbe                                                                                                                                                                                   | `20`            |
-| `startupProbe.timeoutSeconds`        | Timeout seconds for startupProbe                                                                                                                                                                                  | `10`            |
-| `startupProbe.failureThreshold`      | Failure threshold for startupProbe                                                                                                                                                                                | `30`            |
-| `startupProbe.successThreshold`      | Success threshold for startupProbe                                                                                                                                                                                | `1`             |
-| `customLivenessProbe`                | Override default liveness probe for AcaPy containers                                                                                                                                                              | `{}`            |
-| `customReadinessProbe`               | Override default readiness probe for AcaPy containers                                                                                                                                                             | `{}`            |
-| `customStartupProbe`                 | Override default startup probe for AcaPy containers                                                                                                                                                               | `{}`            |
 | `initContainers`                     | Add additional init containers for the hidden node pod(s)                                                                                                                                                         | `[]`            |
 | `extraEnvVarsCM`                     | Name of existing ConfigMap containing extra env vars                                                                                                                                                              | `""`            |
 | `extraEnvVarsSecret`                 | Name of existing Secret containing extra env vars                                                                                                                                                                 | `""`            |
 | `extraEnvVars`                       | Array containing extra env vars to configure AcaPy                                                                                                                                                                | `[]`            |
-
-### Autoscaling
-
-| Name                                                        | Description                                                                                                           | Value   |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| `autoscaling.enabled`                                       | Enable Horizontal POD autoscaling forthe  controller                                                                  | `false` |
-| `autoscaling.minReplicas`                                   | Minimum number of controller replicas                                                                                 | `1`     |
-| `autoscaling.maxReplicas`                                   | Maximum number of controller replicas                                                                                 | `10`    |
-| `autoscaling.targetCPUUtilizationPercentage`                | Target CPU utilization percentage                                                                                     | `80`    |
-| `autoscaling.targetMemoryUtilizationPercentage`             | Target Memory utilization percentage                                                                                  | `80`    |
-| `autoscaling.behavior.scaleUp.stabilizationWindowSeconds`   | The number of seconds for which past recommendations should be considered while scaling up                            | `60`    |
-| `autoscaling.behavior.scaleUp.selectPolicy`                 | The priority of policies that the autoscaler will apply when scaling up                                               | `Max`   |
-| `autoscaling.behavior.scaleUp.policies`                     | HPA scaling policies when scaling up                                                                                  | `[]`    |
-| `autoscaling.behavior.scaleDown.stabilizationWindowSeconds` | The number of seconds for which past recommendations should be considered while scaling down                          | `120`   |
-| `autoscaling.behavior.scaleDown.selectPolicy`               | The priority of policies that the autoscaler will apply when scaling down                                             | `Max`   |
-| `autoscaling.behavior.scaleDown.policies`                   | HPA scaling policies when scaling down                                                                                | `[]`    |
-| `nodeAffinityPreset.type`                                   | Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                             | `""`    |
-| `nodeAffinityPreset.key`                                    | Node label key to match Ignored if `affinity` is set.                                                                 | `""`    |
-| `nodeAffinityPreset.values`                                 | Node label values to match. Ignored if `affinity` is set.                                                             | `[]`    |
-| `affinity`                                                  | Affinity for pod assignment                                                                                           | `{}`    |
-| `nodeSelector`                                              | Node labels for pod assignment                                                                                        | `{}`    |
-| `tolerations`                                               | Tolerations for pod assignment                                                                                        | `[]`    |
-| `topologySpreadConstraints`                                 | Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in               | `[]`    |
-| `podLabels`                                                 | Pod labels                                                                                                            | `{}`    |
-| `podAnnotations`                                            | Pod annotations                                                                                                       | `{}`    |
-| `extraVolumes`                                              | Array of extra volumes to be added to the deployment (evaluated as template). Requires setting `extraVolumeMounts`    | `[]`    |
-| `extraVolumeMounts`                                         | Array of extra volume mounts to be added to the container (evaluated as template). Normally used with `extraVolumes`. | `[]`    |
-| `extraDeploy`                                               | Array of extra objects to deploy with the release                                                                     | `[]`    |
+| `nodeAffinityPreset.type`            | Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                                                                                                                         | `""`            |
+| `nodeAffinityPreset.key`             | Node label key to match Ignored if `affinity` is set.                                                                                                                                                             | `""`            |
+| `nodeAffinityPreset.values`          | Node label values to match. Ignored if `affinity` is set.                                                                                                                                                         | `[]`            |
+| `affinity`                           | Affinity for pod assignment                                                                                                                                                                                       | `{}`            |
+| `podAffinityPreset`                  | Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                                                                                                                               | `""`            |
+| `podAntiAffinityPreset`              | Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`                                                                                                                          | `soft`          |
+| `nodeSelector`                       | Node labels for pod assignment                                                                                                                                                                                    | `{}`            |
+| `tolerations`                        | Tolerations for pod assignment                                                                                                                                                                                    | `[]`            |
+| `topologySpreadConstraints`          | Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in                                                                                                           | `[]`            |
+| `podLabels`                          | Pod labels                                                                                                                                                                                                        | `{}`            |
+| `podAnnotations`                     | Pod annotations                                                                                                                                                                                                   | `{}`            |
+| `extraVolumes`                       | Array of extra volumes to be added to the deployment (evaluated as template). Requires setting `extraVolumeMounts`                                                                                                | `[]`            |
+| `extraVolumeMounts`                  | Array of extra volume mounts to be added to the container (evaluated as template). Normally used with `extraVolumes`.                                                                                             | `[]`            |
+| `extraDeploy`                        | Array of extra objects to deploy with the release                                                                                                                                                                 | `[]`            |
 
 ### PostgreSQL Parameters
 
+
+### Autoscaling
+
+| Name                                                        | Description                                                                                  | Value   |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------- |
+| `autoscaling.enabled`                                       | Enable Horizontal POD autoscaling forthe  controller                                         | `false` |
+| `autoscaling.minReplicas`                                   | Minimum number of controller replicas                                                        | `1`     |
+| `autoscaling.maxReplicas`                                   | Maximum number of controller replicas                                                        | `10`    |
+| `autoscaling.targetCPUUtilizationPercentage`                | Target CPU utilization percentage                                                            | `80`    |
+| `autoscaling.targetMemoryUtilizationPercentage`             | Target Memory utilization percentage                                                         | `80`    |
+| `autoscaling.behavior.scaleUp.stabilizationWindowSeconds`   | The number of seconds for which past recommendations should be considered while scaling up   | `60`    |
+| `autoscaling.behavior.scaleUp.selectPolicy`                 | The priority of policies that the autoscaler will apply when scaling up                      | `Max`   |
+| `autoscaling.behavior.scaleUp.policies`                     | HPA scaling policies when scaling up                                                         | `[]`    |
+| `autoscaling.behavior.scaleDown.stabilizationWindowSeconds` | The number of seconds for which past recommendations should be considered while scaling down | `120`   |
+| `autoscaling.behavior.scaleDown.selectPolicy`               | The priority of policies that the autoscaler will apply when scaling down                    | `Max`   |
+| `autoscaling.behavior.scaleDown.policies`                   | HPA scaling policies when scaling down                                                       | `[]`    |
 
 ### RBAC and Security settings
 
@@ -277,7 +270,8 @@ NOTE: admin_user must have the CREATEDB role or else initialization will fail.
 | `serviceAccount.create`                             | Enable creation of ServiceAccount for acapy pod           | `true`           |
 | `serviceAccount.name`                               | The name of the ServiceAccount to use.                    | `""`             |
 | `serviceAccount.annotations`                        | Annotations for service account. Evaluated as a template. | `{}`             |
-| `serviceAccount.automountServiceAccountToken`       | Auto-mount the service account token in the pod           | `false`          |
+| `serviceAccount.automountServiceAccountToken`       | Auto-mount token for the Service Account                  | `nil`            |
+| `automountServiceAccountToken`                      | Auto-mount token in pod                                   | `false`          |
 | `podSecurityContext.enabled`                        | Enable securityContext on for AcaPy deployment            | `true`           |
 | `podSecurityContext.fsGroupChangePolicy`            | Set filesystem group change policy                        | `Always`         |
 | `podSecurityContext.sysctls`                        | Set kernel settings using the sysctl interface            | `[]`             |
