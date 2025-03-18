@@ -33,6 +33,15 @@ spec:
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       serviceAccountName: {{ template "acapy.serviceAccountName" . }}
       {{- include "acapy.imagePullSecrets" . | nindent 6 -}}
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 2 }}
+      {{- else }}
+      {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.podLabels .Values.commonLabels ) "context" . ) }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "customLabels" $podLabels "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "customLabels" $podLabels "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
       {{- if .Values.nodeSelector -}}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 -}}
       {{- end -}}
@@ -45,8 +54,9 @@ spec:
       {{- if .Values.podSecurityContext.enabled -}}
       securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
       {{- end -}}
-      {{- if .Values.terminationGracePeriodSeconds }}
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- if .Values.initContainers }}
+      initContainers:      
+      {{ include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -87,10 +97,6 @@ spec:
                 secretKeyRef:
                   name: {{ printf "%s-seed" (include "common.names.fullname" .) }}
                   key: seed
-            - name: ACAPY_WALLET_STORAGE_CONFIG
-              value: {{ include "acapy.walletStorageConfig" . }}
-            - name: ACAPY_WALLET_STORAGE_CREDS
-              value: {{ include "acapy.walletStorageCredentials" . }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -101,6 +107,10 @@ spec:
                 secretKeyRef:
                   name: {{ template "acapy.database.secretName" . }}
                   key: {{ .Values.walletStorageCredentials.secretKeys.adminPasswordKey }}
+            - name: ACAPY_WALLET_STORAGE_CONFIG
+              value: {{ include "acapy.walletStorageConfig" . }}
+            - name: ACAPY_WALLET_STORAGE_CREDS
+              value: {{ include "acapy.walletStorageCredentials" . }}
             {{- if .Values.extraEnvVars }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 6 }}
             {{- end }}
@@ -135,6 +145,10 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            - name: empty-dir
+              mountPath: /tmp
+            - name: empty-dir
+              mountPath: /home/aries/.acapy_agent/vdr
             - name: config
               mountPath: "/home/aries/argfile.yml"
               subPath: "argfile.yml"
@@ -148,10 +162,7 @@ spec:
               subPath: "plugin-config.yml"
               readOnly: true
             - name: tails-data
-              mountPath: {{ .Values.persistence.mountPath }}
-            - name: empty-dir
-              mountPath: /tmp
-              subPath: tmp-dir
+              mountPath: "/home/aries/.indy_client/tails"
             {{- if .Values.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
