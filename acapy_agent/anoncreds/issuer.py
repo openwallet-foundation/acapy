@@ -358,8 +358,8 @@ class AnonCredsIssuer:
         try:
             cred_def_result = await anoncreds_registry.register_credential_definition(
                 profile=self.profile,
-                schema_result=schema_result,
-                cred_def=CredDef.from_native(cred_def),
+                schema=schema_result,
+                credential_definition=CredDef.from_native(cred_def),
                 options=options,
             )
 
