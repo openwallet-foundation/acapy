@@ -167,9 +167,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         mock_session_handle.insert = mock.CoroutineMock(return_value=None)
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
-                register_schema=mock.CoroutineMock(
-                    return_value=get_mock_schema_result()
-                )
+                register_schema=mock.CoroutineMock(return_value=get_mock_schema_result())
             )
         )
         result = await self.issuer.create_and_register_schema(
@@ -269,9 +267,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         )
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
-                register_schema=mock.CoroutineMock(
-                    return_value=get_mock_schema_result()
-                )
+                register_schema=mock.CoroutineMock(return_value=get_mock_schema_result())
             )
         )
 
@@ -628,9 +624,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 )
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_create_and_register_credential_definition_finishes(
-        self, mock_notify
-    ):
+    async def test_create_and_register_credential_definition_finishes(self, mock_notify):
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
                 get_schema=mock.CoroutineMock(
@@ -789,9 +783,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert result == "name4"
 
     @mock.patch.object(AskarAnoncredsProfileSession, "handle")
-    async def test_create_credential_offer_cred_def_not_found(
-        self, mock_session_handle
-    ):
+    async def test_create_credential_offer_cred_def_not_found(self, mock_session_handle):
         """
         None, Valid
         Valid, None
