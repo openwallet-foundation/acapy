@@ -12,8 +12,8 @@ repos:
     hooks:
       # Run the linter
       - id: ruff
-        stages: [commit]
+        stages: [pre-commit]
         args: [--fix, --exit-non-zero-on-fix, "--config", "pyproject.toml"]
       # Run the formatter
       - id: ruff-format
-        stages: [commit]
+        stages: [pre-commit]
