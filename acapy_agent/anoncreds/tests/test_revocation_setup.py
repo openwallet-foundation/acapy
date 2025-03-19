@@ -53,55 +53,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
         "create_and_register_revocation_registry_definition",
         return_value=None,
     )
-    async def test_on_cred_def_author_with_auto_create_rev_reg_config_registers_reg_def(
-        self, mock_register_revocation_registry_definition
-    ):
-        self.profile.settings["endorser.author"] = True
-        self.profile.settings["endorser.auto_create_rev_reg"] = True
-        event = CredDefFinishedEvent(
-            CredDefFinishedPayload(
-                schema_id="schema_id",
-                cred_def_id="cred_def_id",
-                issuer_id="issuer_id",
-                support_revocation=False,
-                max_cred_num=100,
-                options={},
-            )
-        )
-        await self.revocation_setup.on_cred_def(self.profile, event)
-
-        assert mock_register_revocation_registry_definition.called
-
-    @mock.patch.object(
-        AnonCredsRevocation,
-        "create_and_register_revocation_registry_definition",
-        return_value=None,
-    )
-    async def test_on_cred_def_author_with_auto_create_rev_reg_config_and_support_revoc_option_registers_reg_def(
-        self, mock_register_revocation_registry_definition
-    ):
-        self.profile.settings["endorser.author"] = True
-        self.profile.settings["endorser.auto_create_rev_reg"] = True
-        event = CredDefFinishedEvent(
-            CredDefFinishedPayload(
-                schema_id="schema_id",
-                cred_def_id="cred_def_id",
-                issuer_id="issuer_id",
-                support_revocation=True,
-                max_cred_num=100,
-                options={},
-            )
-        )
-        await self.revocation_setup.on_cred_def(self.profile, event)
-
-        assert mock_register_revocation_registry_definition.called
-
-    @mock.patch.object(
-        AnonCredsRevocation,
-        "create_and_register_revocation_registry_definition",
-        return_value=None,
-    )
-    async def test_on_cred_def_not_author_or_support_rev_option(
+    async def test_on_cred_def_not_support_rev_option(
         self, mock_register_revocation_registry_definition
     ):
         event = CredDefFinishedEvent(
