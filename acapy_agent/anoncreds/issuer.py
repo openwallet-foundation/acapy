@@ -21,6 +21,7 @@ from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSes
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
+from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import CredDefFinishedEvent
@@ -306,9 +307,22 @@ class AnonCredsIssuer:
 
         """
         options = options or {}
-        support_revocation = options.get("support_revocation", False)
-        if not isinstance(support_revocation, bool):
-            raise ValueError("support_revocation must be a boolean")
+        support_revocation_option = options.get("support_revocation")
+
+        if support_revocation_option is None:
+            # Support revocation not set - Default to auto-create rev reg if author role
+            is_author = is_author_role(self.profile)
+            auto_create_rev_reg = self.profile.settings.get(
+                "endorser.auto_create_rev_reg", False
+            )
+
+            support_revocation = bool(is_author and auto_create_rev_reg)
+        else:
+            # If support_revocation is explicitly set, use that value
+            if not isinstance(support_revocation_option, bool):
+                raise ValueError("support_revocation must be a boolean")
+
+            support_revocation = support_revocation_option
 
         max_cred_num = options.get("revocation_registry_size", DEFAULT_MAX_CRED_NUM)
         if not isinstance(max_cred_num, int):
