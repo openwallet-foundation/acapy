@@ -415,12 +415,12 @@ class AnonCredsIssuer:
             if cred_def_result.credential_definition_state.state == STATE_FINISHED:
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
-                        schema_result.schema_id,
-                        identifier,
-                        cred_def_result.credential_definition_state.credential_definition.issuer_id,
-                        support_revocation,
-                        max_cred_num,
-                        options,
+                        schema_id=schema_result.schema_id,
+                        cred_def_id=identifier,
+                        issuer_id=cred_def_result.credential_definition_state.credential_definition.issuer_id,
+                        support_revocation=support_revocation,
+                        max_cred_num=max_cred_num,
+                        options=options,
                     )
                 )
         except AskarError as err:
