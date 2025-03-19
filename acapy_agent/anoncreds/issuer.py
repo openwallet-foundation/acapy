@@ -346,31 +346,31 @@ class AnonCredsIssuer:
         ) = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: CredentialDefinition.create(
-                schema_id,
-                schema_result.schema.serialize(),
-                issuer_id,
-                tag or DEFAULT_CRED_DEF_TAG,
-                signature_type or DEFAULT_SIGNATURE_TYPE,
+                schema_id=schema_id,
+                schema=schema_result.schema.serialize(),
+                issuer_id=issuer_id,
+                tag=tag or DEFAULT_CRED_DEF_TAG,
+                signature_type=signature_type or DEFAULT_SIGNATURE_TYPE,
                 support_revocation=support_revocation,
             ),
         )
 
         try:
             cred_def_result = await anoncreds_registry.register_credential_definition(
-                self.profile,
-                schema_result,
-                CredDef.from_native(cred_def),
-                options,
+                profile=self.profile,
+                schema_result=schema_result,
+                cred_def=CredDef.from_native(cred_def),
+                options=options,
             )
 
             await self.store_credential_definition(
-                schema_result,
-                cred_def_result,
-                cred_def_private,
-                key_proof,
-                support_revocation,
-                max_cred_num,
-                options,
+                schema_result=schema_result,
+                cred_def_result=cred_def_result,
+                cred_def_private=cred_def_private,
+                key_proof=key_proof,
+                support_revocation=support_revocation,
+                max_cred_num=max_cred_num,
+                options=options,
             )
 
             return cred_def_result
