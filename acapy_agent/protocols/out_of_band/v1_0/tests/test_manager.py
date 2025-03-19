@@ -1886,3 +1886,36 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             await self.manager.delete_conn_and_oob_record_invitation("test123")
             mock_connrecord_delete.assert_called_once()
             mock_oobrecord_delete.assert_called_once()
+
+    async def test_fetch_invitation_succeeds(self):
+        self.profile.context.update_settings({"public_invites": True})
+
+        with mock.patch.object(
+            AskarWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=SOV,
+                key_type=ED25519,
+            )
+            invi_rec = await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                public=True,
+                hs_protos=[HSProto.RFC23],
+            )
+
+            invi_rec = await self.manager.fetch_oob_invitation_record_by_id(
+                oob_id=invi_rec.oob_id
+            )
+
+            assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
+                self.TEST_INVI_MESSAGE_TYPE
+            )
+            assert not invi_rec.invitation.requests_attach
+            assert (
+                DIDCommPrefix.qualify_current(HSProto.RFC23.name)
+                in invi_rec.invitation.handshake_protocols
+            )
+            assert invi_rec.invitation.services == [f"did:sov:{TestConfig.test_did}"]
