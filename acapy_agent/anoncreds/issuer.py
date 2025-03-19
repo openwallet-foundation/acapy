@@ -331,7 +331,8 @@ class AnonCredsIssuer:
         # Don't allow revocable cred def to be created without tails server base url
         if not self.profile.settings.get("tails_server_base_url") and support_revocation:
             raise AnonCredsIssuerError(
-                "tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
+                "tails_server_base_url not configured. "
+                "Can't create revocable credential definition."
             )
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
