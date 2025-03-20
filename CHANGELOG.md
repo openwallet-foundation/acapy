@@ -26,14 +26,13 @@ Release 1.3.0 is a significant release that adds many updates, fixes and an impo
 
 In this release, the DiDComm [RFC 0160 Connections] is removed, in favour of the newer, more complete [RFC 0434 Out of Band] and [RFC 0023 DID Exchange]. Those still requiring [RFC 0160 Connections] protocol support must update their startup parameters to include the [Connections Protocol Plugin]. See the documentation for details, but once the ACA-Py instance startup options are extended to include the Connections protocol plugin, Controllers using the Connections protocol should continue to work as they had been. That said, we highly recommend implementers move to the [RFC 0434 Out of Band] and [RFC 0023 DID Exchange] Protocols as soon as possible.
 
-In the ACA-Py Controller API and models:
+### 1.3.0 ACA-Py Controller API Changes:
 
-- **BREAKING**: The `properties` field has been renamed to `additionalProperties` in many request/response models.
 - Added: `did:indy` support, including a new `POST /did/indy/create` endpoint
 - Routes that support pagination (such as endpoints for fetching connections or credential/presentation exchange records), now include `descending` as an optional query parameter.
-- `validFrom` and `validUntil` have been added to some models
+- `validFrom` and `validUntil` added to the `Credential` and `VerifiableCredential` objects
 
-Specifics of the majority of the can be found by looking at the diffs for the `swagger.json` and `openapi.json` files that are part of the [1.3.0.rc Release Pull Request](https://github.com/openwallet-foundation/acapy/pull/3604). Later pull requests might have additional changes.
+Specifics of the majority of the can be found by looking at the diffs for the `swagger.json` and `openapi.json` files that are part of the [1.3.0.rc Release Pull Request](https://github.com/openwallet-foundation/acapy/pull/3604). Later pull requests might introduce some additional changes.
 
 ### 1.3.0 Categorized List of Pull Requests
 
