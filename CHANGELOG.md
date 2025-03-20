@@ -2,7 +2,7 @@
 
 ## 1.3.0rc0
 
-### March 19, 2025
+### March 20, 2025
 
 Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for [AIP 1.0] from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the [categorized list of pull requests](#130-categorized-list-of-pull-requests) for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (`askar-anoncreds`), AnonCreds processing in general, and AnonCreds revocation in particular.
 
@@ -25,6 +25,15 @@ Release 1.3.0 is a significant release that adds many updates, fixes and an impo
 ### 1.3.0 Breaking Changes
 
 In this release, the DiDComm [RFC 0160 Connections] is removed, in favour of the newer, more complete [RFC 0434 Out of Band] and [RFC 0023 DID Exchange]. Those still requiring [RFC 0160 Connections] protocol support must update their startup parameters to include the [Connections Protocol Plugin]. See the documentation for details, but once the ACA-Py instance startup options are extended to include the Connections protocol plugin, Controllers using the Connections protocol should continue to work as they had been. That said, we highly recommend implementers move to the [RFC 0434 Out of Band] and [RFC 0023 DID Exchange] Protocols as soon as possible.
+
+In the ACA-Py Controller API and models:
+
+- **BREAKING**: The `properties` field has been renamed to `additionalProperties` in many request/response models.
+- Added: `did:indy` support, including a new `POST /did/indy/create` endpoint
+- Routes that support pagination (such as endpoints for fetching connections or credential/presentation exchange records), now include `descending` as an optional query parameter.
+- `validFrom` and `validUntil` have been added to some models
+
+Specifics of the majority of the can be found by looking at the diffs for the `swagger.json` and `openapi.json` files that are part of the [1.3.0.rc Release Pull Request](https://github.com/openwallet-foundation/acapy/pull/3604). Later pull requests might have additional changes.
 
 ### 1.3.0 Categorized List of Pull Requests
 
