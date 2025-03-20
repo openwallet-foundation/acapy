@@ -78,6 +78,7 @@ Specifics of the majority of the can be found by looking at the diffs for the `s
   - :white_check_mark: Fix demo playground example tests [\#3531](https://github.com/openwallet-foundation/acapy/pull/3531) [ff137](https://github.com/ff137)
   - :arrow_up: Upgrade sphinx versions in docs [\#3530](https://github.com/openwallet-foundation/acapy/pull/3530) [ff137](https://github.com/ff137)
 - ACA-Py Testing Pull Requests:
+  - Repair BDD integration release tests [\#3605](https://github.com/openwallet-foundation/acapy/pull/3605) [jamshale](https://github.com/jamshale)
   - Indicate when interop tests fail [\#3592](https://github.com/openwallet-foundation/acapy/pull/3592) [jamshale](https://github.com/jamshale)
   - :zap: Automatically use pytest-xdist to run tests in parallel [\#3574](https://github.com/openwallet-foundation/acapy/pull/3574) [ff137](https://github.com/ff137)
   - :arrow_up: Upgrade poetry to 2.1 [\#3538](https://github.com/openwallet-foundation/acapy/pull/3538) [ff137](https://github.com/ff137)
