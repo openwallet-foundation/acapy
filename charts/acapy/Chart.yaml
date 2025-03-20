@@ -4,7 +4,7 @@ description: A Helm chart for ACA-Py - A Cloud Agent - Python
 type: application
 
 version: 0.1.0
-appVersion: "1.2.2"
+appVersion: "1.2.4"
 
 dependencies:
   - name: postgresql
