@@ -73,8 +73,17 @@ spec:
               aca-py start
               --inbound-transport http '0.0.0.0' {{ .Values.service.ports.http }}
               --outbound-transport http
+              {{- if .Values.websockets.enabled }}
+              --inbound-transport ws '0.0.0.0' {{ .Values.service.ports.ws }}
+              --outbound-transport ws
+              {{- end }}
               --admin '0.0.0.0' {{ .Values.service.ports.admin }}
               --arg-file '/home/aries/argfile.yml'
+              {{- if .Values.websockets.enabled }}
+              --endpoint {{ include "acapy.agent.url" . }} {{ include "acapy.agent.wsUrl" . }} 
+              {{- else }}
+              --endpoint {{ include "acapy.agent.url" . }}
+              {{- end }}
               {{- if .Values.extraArgs }}
               {{ .Values.extraArgs | join " " }}
               {{- end }}
@@ -132,6 +141,11 @@ spec:
             - name: admin
               containerPort: {{ .Values.service.ports.admin }}
               protocol: TCP
+            {{- if .Values.websockets.enabled }}
+            - name: ws
+              containerPort: {{ .Values.service.ports.ws }}
+              protocol: TCP
+            {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}

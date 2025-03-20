@@ -181,6 +181,11 @@ ledgers.yml: {}
 ##
 plugin-config.yml: {}
 
+## @param websockets.enabled Enable or disable the websocket transport for the agent.
+##
+websockets:
+  enabled: false
+
 ## @section Wallet Storage configuration
 ## @descriptionStart
 ##  Specifies the storage configuration to use for the wallet.
@@ -268,19 +273,23 @@ service:
   type: ClusterIP
   ## @param service.ports.http AcaPy service HTTP port
   ## @param service.ports.admin AcaPy service admin port
+  ## @param service.ports.ws AcaPy service websockets port
   ##
   ports:
     http: 8021
-    admin: 8024
+    admin: 8022
+    ws: 8023
 
   ## Node ports to expose
   ## @param service.nodePorts.http Node port for HTTP
   ## @param service.nodePorts.admin Node port for admin
+  ## @param service.nodePorts.ws Node port for websockets
   ## NOTE: choose port between <30000-32767>
   ##
   nodePorts:
     http: ""
     admin: ""
+    ws: ""
   ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
   ## Values: ClientIP or None
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/
@@ -658,6 +667,13 @@ readinessProbe:
 ##
 initContainers: []
 ##
+## @param extraArgs Array containing extra command line arguments to configure aca-py
+## For example:
+## extraArgs:
+##  - --my-arg=my-value
+##  - --my-flag
+extraArgs: []
+##
 ## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars
 ##
 extraEnvVarsCM: ""
@@ -820,7 +836,7 @@ serviceAccount:
   annotations: {}
   ## @param serviceAccount.automountServiceAccountToken Auto-mount token for the Service Account
   ##
-  automountServiceAccountToken:
+  automountServiceAccountToken: false
 ## @param automountServiceAccountToken Auto-mount token in pod
 ##
 automountServiceAccountToken: false

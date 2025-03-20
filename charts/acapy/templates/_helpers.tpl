@@ -17,6 +17,17 @@ Create URL based on hostname and TLS status
 {{- end }}
 
 {{/*
+Create Websockets URL based on hostname and TLS status
+*/}}
+{{- define "acapy.agent.wsUrl" -}}
+{{- if .Values.ingress.agent.tls -}}
+{{- printf "wss://%s" (include "acapy.host" .) }}
+{{- else -}}
+{{- printf "ws://%s" (include "acapy.host" .) }}
+{{- end -}}
+{{- end }}
+
+{{/*
 generate hosts if not overriden
 */}}
 {{- define "acapy.host" -}}
