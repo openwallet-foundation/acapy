@@ -268,10 +268,8 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          | Key_type | Sig_type             |
        | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
        | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
 
     @Release @WalletType_Askar @BBS

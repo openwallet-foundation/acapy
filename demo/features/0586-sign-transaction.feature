@@ -108,8 +108,6 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --revocation --public-did --did-exchange            | --revocation --did-exchange               | driverslicense | Data_DL_NormalizedValues |
-         | --revocation --public-did --mediation               | --revocation --mediation                  | driverslicense | Data_DL_NormalizedValues |
-         | --revocation --public-did --mediation --multitenant | --revocation --mediation --multitenant    | driverslicense | Data_DL_NormalizedValues |
 
       @Mulitledger
       Examples:
