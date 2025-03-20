@@ -49,7 +49,6 @@ Usage:
 
 {{/*
 Create a default fully qualified postgresql name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 {{- define "acapy.database.secretName" -}}
 {{- if .Values.walletStorageCredentials.existingSecret -}}
