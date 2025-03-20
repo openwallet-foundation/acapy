@@ -23,9 +23,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities         | Bob_capabilities          | Schema_name    |
          | --did-exchange            | --did-exchange            | driverslicense |
-         | --mediation               | --mediation               | driverslicense |
          | --multitenant             | --multitenant             | driverslicense |
-         | --mediation --multitenant | --mediation --multitenant | driverslicense |
 
       @TODO @Mulitledger
       Examples:

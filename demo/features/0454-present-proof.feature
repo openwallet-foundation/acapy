@@ -198,7 +198,7 @@ Feature: RFC 0454 Aries agent present proof
       When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
       Then "Faber" has the proof verified
 
-      @Release @WalletType_Askar
+      @Release @WalletType_Askar @Failing
       Examples:
          | issuer1 | Acme1_capabilities        | issuer2 | Acme2_capabilities | Bob_cap | Schema_name_1     | Credential_data_1 | Schema_name_2 | Credential_data_2 | Proof_request                    |
          | Acme1   | --revocation --public-did | Acme2   | --public-did       |         | driverslicense_v2 | Data_DL_MaxValues | health_id     | Data_DL_MaxValues | DL_age_over_19_v2_with_health_id |

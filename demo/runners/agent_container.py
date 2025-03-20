@@ -23,7 +23,6 @@ from runners.support.agent import (  # noqa:E402
     WALLET_TYPE_INDY,
     DemoAgent,
     connect_wallet_to_endorser,
-    connect_wallet_to_mediator,
     default_genesis_txns,
     start_endorser_agent,
     start_mediator_agent,
@@ -394,7 +393,7 @@ class AriesAgent(DemoAgent):
                 if credentials:
                     for row in sorted(
                         credentials,
-                        key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                        key=lambda c: int(c["cred_info"]["attrs"].get("timestamp", 0)),
                         reverse=True,
                     ):
                         for referent in row["presentation_referents"]:
@@ -500,7 +499,7 @@ class AriesAgent(DemoAgent):
                                 sorted_creds = sorted(
                                     creds,
                                     key=lambda c: int(
-                                        c["cred_info"]["attrs"]["timestamp"]
+                                        c["cred_info"]["attrs"].get("timestamp", 0)
                                     ),
                                     reverse=True,
                                 )
