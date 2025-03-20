@@ -2406,7 +2406,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <p>Once ready to do a release, create a local branch that includes the following updates:</p>
 <ol>
 <li>
-<p>Create a local PR branch from an updated <code>main</code> branch, e.g. "1.2.1".</p>
+<p>Create a local PR branch from an updated <code>main</code> branch, e.g. "1.3.0rc0".</p>
 </li>
 <li>
 <p>See if there are any Document Site <code>mkdocs</code> changes needed. Run the script
@@ -2535,7 +2535,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <ol>
 <li>
 <p>When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.2.1</code>.
+    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.3.0rc0</code>.
     The creation of the branch triggers the execution of the <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml">publish-docs</a>
     GitHub Action which generates the documentation for the new release,
     publishing it at <a href="https://aca-py.org">https://aca-py.org</a>. The GitHub Action also executes when

@@ -2507,7 +2507,7 @@ needed and this document describes those activities.</p>
 and mkdocs configuration.</p>
 <p>When the GitHub Action fires, it runs a container that carries out the following steps:</p>
 <ul>
-<li>Checks out the triggering branch, either <code>main</code> or <code>docs-v&lt;version&gt;</code> (e.g <code>docs-v1.2.1</code>).</li>
+<li>Checks out the triggering branch, either <code>main</code> or <code>docs-v&lt;version&gt;</code> (e.g <code>docs-v1.3.0</code>).</li>
 <li>Runs the script <a href="https://github.com/openwallet-foundation/acapy/blob/main/scripts/prepmkdocs.sh">scripts/prepmkdocs.sh</a>, which moves and updates some of the
   markdown files so that they fit into the generated site. See the comments in
   the scripts for details about the copying and editing done via the script. In
@@ -2578,7 +2578,7 @@ the GitHub Action to do this automatically, but its not there yet.</p>
 <li>Check your <code>git status</code> and make sure there are no changes in the branch --
   e.g., new files that shouldn't be added to the <code>gh-pages</code> branch. If there are
   any -- delete the files so they are not added.</li>
-<li>Remove the folder for the RC.  For example <code>rm -rf 1.2.1rc0</code></li>
+<li>Remove the folder for the RC.  For example <code>rm -rf 1.3.0rc0</code></li>
 <li>Edit the <code>versions.json</code> file and remove the reference to the RC release in
   the file.</li>
 <li>Push the changes via a PR to the ACA-Py <code>gh-pages</code> branch (don't PR them into
