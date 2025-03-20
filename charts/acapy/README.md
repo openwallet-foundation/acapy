@@ -90,6 +90,7 @@ Note: Secure values of the configuration are passed via equivalent environment v
 | `argfile.yml.webhook-url`                         | Send webhooks containing internal state changes to the specified URL. Optional API key to be passed in the request body can be appended using a hash separator [#]. This is useful for a controller to monitor agent events and respond to those events using the admin API. If not specified, webhooks are not published by the agent.                                                             | `{{ include "acapy.host" . }}` |
 | `ledgers.yml`                                     |                                                                                                                                                                                                                                                                                                                                                                                                     | `{}`                           |
 | `plugin-config.yml`                               | Plugin configuration file                                                                                                                                                                                                                                                                                                                                                                           | `{}`                           |
+| `websockets.enabled`                              | Enable or disable the websocket transport for the agent.                                                                                                                                                                                                                                                                                                                                            | `false`                        |
 
 ### Wallet Storage configuration
 
@@ -140,9 +141,11 @@ NOTE: admin_user must have the CREATEDB role or else initialization will fail.
 | ---------------------------------- | ---------------------------------------------------------------- | ----------- |
 | `service.type`                     | AcaPy service type                                               | `ClusterIP` |
 | `service.ports.http`               | AcaPy service HTTP port                                          | `8021`      |
-| `service.ports.admin`              | AcaPy service admin port                                         | `8024`      |
+| `service.ports.admin`              | AcaPy service admin port                                         | `8022`      |
+| `service.ports.ws`                 | AcaPy service websockets port                                    | `8023`      |
 | `service.nodePorts.http`           | Node port for HTTP                                               | `""`        |
 | `service.nodePorts.admin`          | Node port for admin                                              | `""`        |
+| `service.nodePorts.ws`             | Node port for websockets                                         | `""`        |
 | `service.sessionAffinity`          | Control where client requests go, to the same pod or round-robin | `None`      |
 | `service.sessionAffinityConfig`    | Additional settings for the sessionAffinity                      | `{}`        |
 | `service.clusterIP`                | AcaPy service Cluster IP                                         | `""`        |
@@ -270,7 +273,7 @@ NOTE: admin_user must have the CREATEDB role or else initialization will fail.
 | `serviceAccount.create`                             | Enable creation of ServiceAccount for acapy pod           | `true`           |
 | `serviceAccount.name`                               | The name of the ServiceAccount to use.                    | `""`             |
 | `serviceAccount.annotations`                        | Annotations for service account. Evaluated as a template. | `{}`             |
-| `serviceAccount.automountServiceAccountToken`       | Auto-mount token for the Service Account                  | `nil`            |
+| `serviceAccount.automountServiceAccountToken`       | Auto-mount token for the Service Account                  | `false`          |
 | `automountServiceAccountToken`                      | Auto-mount token in pod                                   | `false`          |
 | `podSecurityContext.enabled`                        | Enable securityContext on for AcaPy deployment            | `true`           |
 | `podSecurityContext.fsGroupChangePolicy`            | Set filesystem group change policy                        | `Always`         |
