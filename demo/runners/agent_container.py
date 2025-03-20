@@ -23,6 +23,7 @@ from runners.support.agent import (  # noqa:E402
     WALLET_TYPE_INDY,
     DemoAgent,
     connect_wallet_to_endorser,
+    connect_wallet_to_mediator,
     default_genesis_txns,
     start_endorser_agent,
     start_mediator_agent,
