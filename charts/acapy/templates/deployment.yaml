@@ -1,0 +1,210 @@
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: agent
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.podLabels .Values.commonLabels ) "context" . ) }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 6 }}
+  {{- if .Values.updateStrategy }}
+  strategy: {{ include "common.tplvalues.render" (dict "value" .Values.updateStrategy "context" $) | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      annotations:
+        {{- if not .Values.existingConfigmap }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+        {{- end }}
+      labels: {{- include "common.labels.standard" ( dict "customLabels" $podLabels "context" $ ) | nindent 8 }}
+        app.kubernetes.io/component: agent
+    spec:
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      serviceAccountName: {{ template "acapy.serviceAccountName" . }}
+      {{- include "acapy.imagePullSecrets" . | nindent 6 -}}
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 2 }}
+      {{- else }}
+      {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list .Values.podLabels .Values.commonLabels ) "context" . ) }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "customLabels" $podLabels "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "customLabels" $podLabels "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.nodeSelector -}}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 -}}
+      {{- end -}}
+      {{- if .Values.tolerations -}}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end -}}
+      {{- if .Values.topologySpreadConstraints -}}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" $) | nindent 8 }}
+      {{- end -}}
+      {{- if .Values.podSecurityContext.enabled -}}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
+      {{- end -}}
+      {{- if .Values.initContainers }}
+      initContainers:      
+      {{ include "common.tplvalues.render" (dict "value" .Values.initContainers "context" $) }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+            - '-c'
+          args:
+            - >-
+              aca-py start
+              --inbound-transport http '0.0.0.0' {{ .Values.service.ports.http }}
+              --outbound-transport http
+              {{- if .Values.websockets.enabled }}
+              --inbound-transport ws '0.0.0.0' {{ .Values.service.ports.ws }}
+              --outbound-transport ws
+              {{- end }}
+              --admin '0.0.0.0' {{ .Values.service.ports.admin }}
+              --arg-file '/home/aries/argfile.yml'
+              {{- if .Values.websockets.enabled }}
+              --endpoint {{ include "acapy.agent.url" . }} {{ include "acapy.agent.wsUrl" . }} 
+              {{- else }}
+              --endpoint {{ include "acapy.agent.url" . }}
+              {{- end }}
+              {{- if .Values.extraArgs }}
+              {{ .Values.extraArgs | join " " }}
+              {{- end }}
+          env:
+            - name: ACAPY_ADMIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-api" (include "common.names.fullname" .) }}
+                  key: adminApiKey
+                  optional: true
+            - name: ACAPY_ENDPOINT
+              value: {{ include "acapy.agent.url" . }}
+            - name: ACAPY_WALLET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-api" (include "common.names.fullname" .) }}
+                  key: walletKey
+            - name: ACAPY_WALLET_SEED
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-seed" (include "common.names.fullname" .) }}
+                  key: seed
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "acapy.database.secretName" . }}
+                  key: {{ .Values.walletStorageCredentials.secretKeys.userPasswordKey }}
+            - name: POSTGRES_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "acapy.database.secretName" . }}
+                  key: {{ .Values.walletStorageCredentials.secretKeys.adminPasswordKey }}
+            - name: ACAPY_WALLET_STORAGE_CONFIG
+              value: {{ include "acapy.walletStorageConfig" . }}
+            - name: ACAPY_WALLET_STORAGE_CREDS
+              value: {{ include "acapy.walletStorageCredentials" . }}
+            {{- if .Values.extraEnvVars }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 6 }}
+            {{- end }}
+            {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
+            envFrom:
+              {{- if .Values.extraEnvVarsCM }}
+              - configMapRef:
+                  name: {{ include "common.tplvalues.render" (dict "value" .Values.extraEnvVarsCM "context" $) }}
+              {{- end }}
+              {{- if .Values.extraEnvVarsSecret }}
+              - secretRef:
+                  name: {{ include "common.tplvalues.render" (dict "value" .Values.extraEnvVarsSecret "context" $) }}
+              {{- end }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.ports.http }}
+              protocol: TCP
+            - name: admin
+              containerPort: {{ .Values.service.ports.admin }}
+              protocol: TCP
+            {{- if .Values.websockets.enabled }}
+            - name: ws
+              containerPort: {{ .Values.service.ports.ws }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: empty-dir
+              mountPath: /tmp
+            - name: empty-dir
+              mountPath: /home/aries/.acapy_agent/vdr
+            - name: config
+              mountPath: "/home/aries/argfile.yml"
+              subPath: "argfile.yml"
+              readOnly: true
+            - name: config
+              mountPath: "/tmp/ledgers.yml"
+              subPath: "ledgers.yml"
+              readOnly: true
+            - name: config
+              mountPath: "/home/aries/plugin-config.yml"
+              subPath: "plugin-config.yml"
+              readOnly: true
+            - name: tails-data
+              mountPath: "/home/aries/.indy_client/tails"
+            {{- if .Values.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tails-data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-tails" (include "common.names.fullname" .)) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: empty-dir
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ printf "%s-config" (include "common.names.fullname" .) }}
+        {{- if .Values.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
