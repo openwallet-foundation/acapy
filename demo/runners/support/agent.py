@@ -1004,11 +1004,7 @@ class DemoAgent:
         decorator = {
             "recipientKeys": [agent_public_did["result"]["verkey"]],
             # "routingKeys": [agent_public_did["result"]["verkey"]],
-            "serviceEndpoint": agent_endpoint["endpoint"] or (
-                "http://"
-                + os.getenv("DOCKERHOST").replace(
-                    "{PORT}", str(self.admin_port + 1)
-                )),
+            "serviceEndpoint": agent_endpoint["endpoint"] or self.endpoint,
         }
         return decorator
 
