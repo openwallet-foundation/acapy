@@ -377,7 +377,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         )
 
         if "prover_did" in cred_req_result["request"]:
-            entropy = cred_req_result["request"]["prover_did"] 
+            entropy = cred_req_result["request"]["prover_did"]
         else:
             entropy = cred_req_result["request"]["entropy"]
         anoncreds_link_secret_instance = AnoncredsLinkSecretRequest(
