@@ -731,6 +731,7 @@ class IndyVdrLedger(BaseLedger):
             endorser_did: DID of the endorser to use for the transaction
             routing_keys: List of routing keys
         """
+        routing_keys = routing_keys or []  # Ensure list type if None was passed
         public_info = await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError(
@@ -749,8 +750,13 @@ class IndyVdrLedger(BaseLedger):
         existing_routing_keys = (
             all_exist_endpoints.get("routingKeys") if all_exist_endpoints else None
         )
+        existing_routing_keys = existing_routing_keys or []
 
-        if exist_endpoint_of_type != endpoint or existing_routing_keys != routing_keys:
+        endpoint_changed = exist_endpoint_of_type != endpoint
+        routing_keys_changed = set(existing_routing_keys) != set(routing_keys)
+
+        if endpoint_changed or routing_keys_changed:
+            LOGGER.info("Endpoint or routing keys have changed, updating endpoint")
             if self.read_only:
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
