@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" (include "common.names.fullname" .) }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: agent0
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+data:
+  argfile.yml: |
+    label: '{{ include "common.names.fullname" . }}'
+    {{- include "common.tplvalues.render" ( dict "value" (index .Values "argfile.yml") "context" $) | nindent 4 }}
+  {{- if index .Values "ledgers.yml" }}
+  ledgers.yml: |
+    {{- include "common.tplvalues.render" ( dict "value" (index .Values "ledgers.yml") "context" $) | nindent 4 }}
+  {{- end }}
+  {{- if index .Values "plugin-config.yml" }}
+  plugin-config.yml: |
+    {{- include "common.tplvalues.render" ( dict "value" (index .Values "plugin-config.yml") "context" $) | nindent 4 }}
+  {{- end }}
