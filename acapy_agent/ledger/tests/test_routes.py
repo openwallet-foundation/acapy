@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
@@ -8,6 +9,8 @@ from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from ...ledger.multiple_ledger.ledger_config_schema import ConfigurableWriteLedgersSchema
+
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...tests import mock
@@ -865,3 +868,58 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
     async def test_get_ledger_config_x(self):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.get_ledger_config(self.request)
+
+    # Multiple Ledgers Configured
+    async def test_get_write_ledgers_multiple(self):
+        # Mock the multiple ledger manager
+        mock_manager = mock.MagicMock(BaseMultipleLedgerManager)
+        mock_manager.get_write_ledgers = mock.CoroutineMock(
+            return_value=["ledger1", "ledger2", "ledger3"]
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_manager
+        )
+
+        with mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
+        ) as json_response:
+            result = await test_module.get_write_ledgers(self.request)
+
+            # Assert the response matches the expected structure
+            json_response.assert_called_once_with(
+                {"write_ledgers": ["ledger1", "ledger2", "ledger3"]}
+            )
+            assert result is json_response.return_value
+
+    # Single Ledger (No Multi-Ledger Manager)
+    async def test_get_write_ledgers_single(self):
+        # Ensure no multi-ledger manager is bound
+        self.profile.context.injector.clear_binding(BaseMultipleLedgerManager)
+
+        result = await test_module.get_write_ledgers(self.request)
+
+        # Extract the JSON body from the response
+        response_body = result.text
+        response_body = json.loads(response_body)
+
+        # Assert the response is correct
+        self.assertEqual(response_body, {"write_ledgers": ["default"]})
+
+    # Schema Validation
+    async def test_get_write_ledgers_schema(self):
+        # Mock the multiple ledger manager
+        mock_manager = mock.MagicMock(BaseMultipleLedgerManager)
+        mock_manager.get_write_ledgers = mock.CoroutineMock(
+            return_value=["ledger1", "ledger2"]
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_manager
+        )
+
+        response = await test_module.get_write_ledgers(self.request)
+
+        # Validate against the schema
+        schema = ConfigurableWriteLedgersSchema()
+        data = json.loads(response.body)
+        validated = schema.validate(data)
+        assert validated == {}
