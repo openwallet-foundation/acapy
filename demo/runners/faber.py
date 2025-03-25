@@ -128,10 +128,10 @@ class FaberAgent(AriesAgent):
                         for (n, v) in self.cred_attrs[cred_def_id].items()
                     ],
                 }
-                if cred_type == CRED_FORMAT_ANONCREDS:
-                    _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
-                else:
+                if cred_type == CRED_FORMAT_INDY:
                     _filter = {"indy": {"cred_def_id": cred_def_id}}
+                else:
+                    _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
                 offer_request = {
                     "connection_id": self.connection_id,
                     "comment": f"Offer on cred def id {cred_def_id}",
