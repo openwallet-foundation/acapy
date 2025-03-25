@@ -711,9 +711,9 @@ async def get_write_ledgers(request: web.BaseRequest):
     async with context.profile.session() as session:
         multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
-        return web.json_response(["default"])
+        return web.json_response({"write_ledgers": ["default"]})
     available_write_ledgers = await multiledger_mgr.get_write_ledgers()
-    return web.json_response(available_write_ledgers)
+    return web.json_response({"write_ledgers": available_write_ledgers})
 
 
 @docs(tags=["ledger"], summary="Fetch the current write ledger")
