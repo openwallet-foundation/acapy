@@ -1004,17 +1004,17 @@ class DemoAgent:
         decorator = {
             "recipientKeys": [agent_public_did["result"]["verkey"]],
             # "routingKeys": [agent_public_did["result"]["verkey"]],
-            "serviceEndpoint": agent_endpoint["endpoint"],
+            "serviceEndpoint": agent_endpoint["endpoint"] or self.endpoint,
         }
         return decorator
 
     async def _send_connectionless_proof_req(self, request: ClientRequest):
         pres_req_id = request.match_info["pres_req_id"]
-        url = "/present-proof/records/" + pres_req_id
+        url = "/present-proof-2.0/records/" + pres_req_id
         proof_exch = await self.admin_GET(url)
         if not proof_exch:
             return web.Response(status=404)
-        proof_reg_txn = proof_exch["presentation_request_dict"]
+        proof_reg_txn = proof_exch["pres_request"]
         proof_reg_txn["~service"] = await self.service_decorator()
         if request.headers.get("Accept") == "application/json":
             return web.json_response(proof_reg_txn)

@@ -142,10 +142,8 @@ If you are running in a _local bash shell_, navigate to the `demo` directory in
 your fork/clone of the ACA-Py repository and run:
 
 ```bash
-TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
+TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
-
-(Note that we have to start faber with `--aip 10` for compatibility with mobile clients.)
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
 
@@ -155,7 +153,7 @@ If you are running in _Play with Docker_, navigate to the `demo` folder in the
 clone of ACA-Py and run the following:
 
 ```bash
-PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
+PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
