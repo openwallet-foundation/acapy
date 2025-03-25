@@ -2493,14 +2493,13 @@
 <h4 id="running-locally-in-a-bash-shell_1">Running locally in a bash shell?<a class="headerlink" href="#running-locally-in-a-bash-shell_1" title="Permanent link">&para;</a></h4>
 <p>If you are running in a <em>local bash shell</em>, navigate to the <code>demo</code> directory in
 your fork/clone of the ACA-Py repository and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">TAILS_NETWORK</span><span class="o">=</span>docker_tails-server<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--aip<span class="w"> </span><span class="m">10</span><span class="w"> </span>--revocation<span class="w"> </span>--events
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">TAILS_NETWORK</span><span class="o">=</span>docker_tails-server<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation<span class="w"> </span>--events
 </code></pre></div>
-<p>(Note that we have to start faber with <code>--aip 10</code> for compatibility with mobile clients.)</p>
 <p>The <code>TAILS_NETWORK</code> parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).</p>
 <h4 id="running-in-play-with-docker_2">Running in Play with Docker?<a class="headerlink" href="#running-in-play-with-docker_2" title="Permanent link">&para;</a></h4>
 <p>If you are running in <em>Play with Docker</em>, navigate to the <code>demo</code> folder in the
 clone of ACA-Py and run the following:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">PUBLIC_TAILS_URL</span><span class="o">=</span>https://c4f7fbb85911.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--aip<span class="w"> </span><span class="m">10</span><span class="w"> </span>--revocation<span class="w"> </span>--events
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">PUBLIC_TAILS_URL</span><span class="o">=</span>https://c4f7fbb85911.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation<span class="w"> </span>--events
 </code></pre></div>
 <p>The <code>PUBLIC_TAILS_URL</code> parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.</p>
 <p>Use the ngrok url for the tails server that you noted earlier.</p>
