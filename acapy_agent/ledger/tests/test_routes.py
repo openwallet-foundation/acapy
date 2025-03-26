@@ -1,4 +1,6 @@
+import uuid
 import json
+import pytest
 from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
@@ -9,7 +11,10 @@ from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
-from ...ledger.multiple_ledger.ledger_config_schema import ConfigurableWriteLedgersSchema
+from ...ledger.multiple_ledger.ledger_config_schema import (
+    ConfigurableWriteLedgersSchema,
+    LedgerConfigInstanceSchema,
+)
 
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
@@ -868,6 +873,118 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
     async def test_get_ledger_config_x(self):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.get_ledger_config(self.request)
+
+    async def test_get_ledger_config_structure(self):
+        """Test the structure of the ledger config response."""
+        mock_manager = mock.MagicMock(BaseMultipleLedgerManager, autospec=True)
+        mock_manager.get_prod_ledgers = mock.CoroutineMock(return_value={"test_1": None})
+        mock_manager.get_nonprod_ledgers = mock.CoroutineMock(
+            return_value={"test_2": None}
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_manager
+        )
+
+        self.context.settings["ledger.ledger_config_list"] = [
+            {
+                "id": "test_1",
+                "is_production": True,
+                "is_write": True,
+                "keepalive": 5,
+                "read_only": False,
+                "pool_name": "test_pool",
+                "socks_proxy": None,
+            },
+            {
+                "id": "test_2",
+                "is_production": False,
+                "is_write": False,
+                "keepalive": 10,
+                "read_only": True,
+                "pool_name": "non_prod_pool",
+            },
+        ]
+
+        with mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
+        ) as json_response:
+            await test_module.get_ledger_config(self.request)
+
+            # Verify response structure
+            response_data = json_response.call_args[0][0]
+            assert "production_ledgers" in response_data
+            assert "non_production_ledgers" in response_data
+
+            # Validate first production ledger
+            prod_ledger = response_data["production_ledgers"][0]
+            assert prod_ledger == {
+                "id": "test_1",
+                "is_production": True,
+                "is_write": True,
+                "keepalive": 5,
+                "read_only": False,
+                "pool_name": "test_pool",
+                "socks_proxy": None,
+            }
+
+            # Validate non-production ledger
+            non_prod_ledger = response_data["non_production_ledgers"][0]
+            assert non_prod_ledger == {
+                "id": "test_2",
+                "is_production": False,
+                "is_write": False,
+                "keepalive": 10,
+                "read_only": True,
+                "pool_name": "non_prod_pool",
+            }
+
+    async def test_ledger_config_schema_validation(self):
+        """Test schema validation for required fields."""
+        schema = LedgerConfigInstanceSchema()
+
+        # Test valid data
+        valid_data = {
+            "id": "test",
+            "is_production": True,
+            "is_write": False,
+            "keepalive": 5,
+            "read_only": True,
+            "pool_name": "test_pool",
+        }
+        assert schema.validate(valid_data) == {}
+
+        # Test missing required field
+        invalid_data = {
+            "id": "test",
+            "is_production": True,
+            "is_write": False,
+            # Missing pool_name
+        }
+        errors = schema.validate(invalid_data)
+        assert "pool_name" in errors
+        assert "Missing data for required field" in errors["pool_name"][0]
+
+    async def test_ledger_config_id_generation(self):
+        """Test automatic ID generation when missing."""
+        schema = LedgerConfigInstanceSchema()
+
+        # Test ID generation
+        data_without_id = {
+            "is_production": True,
+            "is_write": True,
+            "keepalive": 5,
+            "read_only": False,
+            "pool_name": "auto_id_pool",
+        }
+
+        loaded = schema.load(data_without_id)
+        assert hasattr(loaded, "id")
+        assert isinstance(loaded.id, str)
+        assert len(loaded.id) == 36
+        try:
+            uuid.UUID(loaded.id, version=4)
+        except ValueError:
+            pytest.fail("Generated ID is not a valid UUID4")
 
     # Multiple Ledgers Configured
     async def test_get_write_ledgers_multiple(self):

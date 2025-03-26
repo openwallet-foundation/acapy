@@ -61,7 +61,7 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
     endorser_alias = fields.Str(
         required=False, metadata={"description": "endorser_alias"}
     )
-    endorser_alias = fields.Str(required=False, metadata={"description": "endorser_did"})
+    endorser_did = fields.Str(required=False, metadata={"description": "endorser_did"})
 
     @pre_load
     def validate_id(self, data, **kwargs):
