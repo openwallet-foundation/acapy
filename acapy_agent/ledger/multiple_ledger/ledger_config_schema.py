@@ -20,18 +20,26 @@ class LedgerConfigInstance(BaseModel):
     def __init__(
         self,
         *,
-        id: Optional[str] = None,
-        is_production: str = True,
-        genesis_transactions: Optional[str] = None,
-        genesis_file: Optional[str] = None,
-        genesis_url: Optional[str] = None,
+        id: str = None,
+        is_production: bool = True,  # Fixed type (was str)
+        is_write: bool = None,
+        keepalive: int = 5,
+        read_only: bool = False,
+        socks_proxy: Optional[str] = None,
+        pool_name: str = None,
+        endorser_alias: Optional[str] = None,
+        endorser_did: Optional[str] = None,
     ):
         """Initialize LedgerConfigInstance."""
         self.id = id
         self.is_production = is_production
-        self.genesis_transactions = genesis_transactions
-        self.genesis_file = genesis_file
-        self.genesis_url = genesis_url
+        self.is_write = is_write
+        self.keepalive = keepalive
+        self.read_only = read_only
+        self.socks_proxy = socks_proxy
+        self.pool_name = pool_name
+        self.endorser_alias = endorser_alias
+        self.endorser_did = endorser_did
 
 
 class LedgerConfigInstanceSchema(BaseModelSchema):
@@ -43,13 +51,17 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
         model_class = LedgerConfigInstance
         unknown = EXCLUDE
 
-    id = fields.Str(required=False, metadata={"description": "ledger_id"})
-    is_production = fields.Bool(required=False, metadata={"description": "is_production"})
-    genesis_transactions = fields.Str(
-        required=False, metadata={"description": "genesis_transactions"}
+    id = fields.Str(required=True, metadata={"description": "ledger_id"})
+    is_production = fields.Bool(required=True, metadata={"description": "is_production"})
+    is_write = fields.Bool(required=True, metadata={"description": "is_write"})
+    keepalive = fields.Int(required=True, metadata={"description": "keepalive"})
+    read_only = fields.Bool(required=True, metadata={"description": "read_only"})
+    socks_proxy = fields.Str(required=False, metadata={"description": "socks_proxy"})
+    pool_name = fields.Str(required=True, metadata={"description": "pool_name"})
+    endorser_alias = fields.Str(
+        required=False, metadata={"description": "endorser_alias"}
     )
-    genesis_file = fields.Str(required=False, metadata={"description": "genesis_file"})
-    genesis_url = fields.Str(required=False, metadata={"description": "genesis_url"})
+    endorser_alias = fields.Str(required=False, metadata={"description": "endorser_did"})
 
     @pre_load
     def validate_id(self, data, **kwargs):
@@ -62,8 +74,15 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
 class LedgerConfigListSchema(OpenAPISchema):
     """Schema for Ledger Config List."""
 
-    ledger_config_list = fields.List(
-        fields.Nested(LedgerConfigInstanceSchema(), required=True), required=True
+    production_ledgers = fields.List(  # Changed from ledger_config_list
+        fields.Nested(LedgerConfigInstanceSchema(), required=True),
+        required=True,
+        metadata={"description": "Production ledgers"},
+    )
+    non_production_ledgers = fields.List(  # Added new field
+        fields.Nested(LedgerConfigInstanceSchema(), required=True),
+        required=True,
+        metadata={"description": "Non-production ledgers"},
     )
 
 
