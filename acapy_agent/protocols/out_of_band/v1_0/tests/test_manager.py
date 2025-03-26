@@ -86,6 +86,7 @@ from ..models.oob_record import OobRecord
 class TestConfig:
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+    test_multikey = "z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
     test_endpoint = "http://localhost"
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
     their_public_did = "55GkHamhTU1ZbTbV2ab9DE"
@@ -775,6 +776,22 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                     ],
                 )
             assert "Unknown attachment type" in str(context.exception)
+
+    async def test_create_invitation_use_key(self):
+        async with self.profile.session() as session:
+            invi_rec = await self.manager.create_invitation(
+                hs_protos=[test_module.HSProto.RFC23],
+                use_key=self.test_multikey,
+            )
+            service = invi_rec._invitation.ser["services"][0]
+            invitation_key = DIDKey.from_did(service["recipientKeys"][0]).public_key_b58
+            record = await ConnRecord.retrieve_by_invitation_key(session, invitation_key)
+            assert await record.metadata_get_all(session) == {"hello": "world"}
+        with self.assertRaises(OutOfBandManagerError) as context:
+            await self.manager.create_invitation(
+                hs_protos=[test_module.HSProto.RFC23],
+                use_key=self.test_multikey[1:],
+            )
 
     async def test_create_invitation_peer_did(self):
         async with self.profile.session() as session:
