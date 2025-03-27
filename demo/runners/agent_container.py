@@ -1376,7 +1376,7 @@ def arg_parser(ident: str = None, port: int = 8020):
         type=str,
         default=20,
         metavar=("<api>"),
-        help="API level (10 or 20 (default))",
+        help="API level (20)",
     )
     parser.add_argument("--timing", action="store_true", help="Enable timing information")
     parser.add_argument(
@@ -1546,11 +1546,10 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
 
     if "aip" in args:
         aip = int(args.aip)
-        if aip not in [
-            10,
-            20,
-        ]:
-            raise Exception("Invalid value for aip, should be 10 or 20")
+        if aip == 10:  # helpful message to flag legacy usage
+            raise Exception("Invalid value for aip, 10 is no longer supported. Use 20 instead.")
+        if aip != 20:
+            raise Exception("Invalid value for aip, should be 20")
     else:
         aip = 20
 
@@ -1582,16 +1581,10 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     )
 
     reuse_connections = "reuse_connections" in args and args.reuse_connections
-    # if reuse_connections and aip != 20:
-    #     raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
     multi_use_invitations = "multi_use_invitations" in args and args.multi_use_invitations
-    if multi_use_invitations and aip != 20:
-        raise Exception("Can only specify `--multi-use-invitations` with AIP 2.0")
     public_did_connections = (
         "public_did_connections" in args and args.public_did_connections
     )
-    if public_did_connections and aip != 20:
-        raise Exception("Can only specify `--public-did-connections` with AIP 2.0")
 
     anoncreds_legacy_revocation = None
     if "anoncreds_legacy_revocation" in args and args.anoncreds_legacy_revocation:
