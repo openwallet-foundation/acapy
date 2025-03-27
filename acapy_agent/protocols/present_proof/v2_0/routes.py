@@ -18,6 +18,7 @@ from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.presentation_request import AnoncredsPresentationRequestSchema
+from ....anoncreds.models.proof import AnoncredsPresSpecSchema
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.cred_precis import IndyCredPrecisSchema
@@ -310,7 +311,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     """Presentation specification schema by format, for send-presentation request."""
 
     anoncreds = fields.Nested(
-        IndyPresSpecSchema,
+        AnoncredsPresSpecSchema,
         required=False,
         metadata={"description": "Presentation specification for anoncreds"},
     )
@@ -1236,7 +1237,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         raise web.HTTPBadRequest(
             reason=(
                 "No presentation format specification provided, "
-                "either dif or indy must be included. "
+                "either dif, anoncreds or indy must be included. "
                 "In case of DIF, if no additional specification "
                 'needs to be provided then include "dif": {}'
             )
