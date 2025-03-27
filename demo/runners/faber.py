@@ -79,13 +79,42 @@ class FaberAgent(AriesAgent):
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
 
-    def generate_credential_offer(self, aip, cred_type, cred_def_id, exchange_tracing):
+    def generate_credential_offer(self, cred_type, cred_def_id, exchange_tracing):
         age = 24
         d = datetime.date.today()
         birth_date = datetime.date(d.year - age, d.month, d.day)
         birth_date_format = "%Y%m%d"
-        if aip == 10:
-            # define attributes to send for credential
+        if cred_type == CRED_FORMAT_ANONCREDS or cred_type == CRED_FORMAT_INDY:
+            self.cred_attrs[cred_def_id] = {
+                "name": "Alice Smith",
+                "date": "2018-05-28",
+                "degree": "Maths",
+                "birthdate_dateint": birth_date.strftime(birth_date_format),
+                "timestamp": str(int(time.time())),
+            }
+
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": [
+                    {"name": n, "value": v}
+                    for (n, v) in self.cred_attrs[cred_def_id].items()
+                ],
+            }
+            if cred_type == CRED_FORMAT_INDY:
+                _filter = {"indy": {"cred_def_id": cred_def_id}}
+            else:
+                _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
+            offer_request = {
+                "connection_id": self.connection_id,
+                "comment": f"Offer on cred def id {cred_def_id}",
+                "auto_remove": False,
+                "credential_preview": cred_preview,
+                "filter": _filter,
+                "trace": exchange_tracing,
+            }
+            return offer_request
+
+        elif cred_type == CRED_FORMAT_VC_DI:
             self.cred_attrs[cred_def_id] = {
                 "name": "Alice Smith",
                 "date": "2018-05-28",
@@ -103,118 +132,58 @@ class FaberAgent(AriesAgent):
             }
             offer_request = {
                 "connection_id": self.connection_id,
-                "cred_def_id": cred_def_id,
                 "comment": f"Offer on cred def id {cred_def_id}",
                 "auto_remove": False,
                 "credential_preview": cred_preview,
+                "filter": {"vc_di": {"cred_def_id": cred_def_id}},
                 "trace": exchange_tracing,
             }
             return offer_request
 
-        elif aip == 20:
-            if cred_type == CRED_FORMAT_ANONCREDS or cred_type == CRED_FORMAT_INDY:
-                self.cred_attrs[cred_def_id] = {
-                    "name": "Alice Smith",
-                    "date": "2018-05-28",
-                    "degree": "Maths",
-                    "birthdate_dateint": birth_date.strftime(birth_date_format),
-                    "timestamp": str(int(time.time())),
-                }
-
-                cred_preview = {
-                    "@type": CRED_PREVIEW_TYPE,
-                    "attributes": [
-                        {"name": n, "value": v}
-                        for (n, v) in self.cred_attrs[cred_def_id].items()
-                    ],
-                }
-                if cred_type == CRED_FORMAT_INDY:
-                    _filter = {"indy": {"cred_def_id": cred_def_id}}
-                else:
-                    _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
-                offer_request = {
-                    "connection_id": self.connection_id,
-                    "comment": f"Offer on cred def id {cred_def_id}",
-                    "auto_remove": False,
-                    "credential_preview": cred_preview,
-                    "filter": _filter,
-                    "trace": exchange_tracing,
-                }
-                return offer_request
-
-            elif cred_type == CRED_FORMAT_VC_DI:
-                self.cred_attrs[cred_def_id] = {
-                    "name": "Alice Smith",
-                    "date": "2018-05-28",
-                    "degree": "Maths",
-                    "birthdate_dateint": birth_date.strftime(birth_date_format),
-                    "timestamp": str(int(time.time())),
-                }
-
-                cred_preview = {
-                    "@type": CRED_PREVIEW_TYPE,
-                    "attributes": [
-                        {"name": n, "value": v}
-                        for (n, v) in self.cred_attrs[cred_def_id].items()
-                    ],
-                }
-                offer_request = {
-                    "connection_id": self.connection_id,
-                    "comment": f"Offer on cred def id {cred_def_id}",
-                    "auto_remove": False,
-                    "credential_preview": cred_preview,
-                    "filter": {"vc_di": {"cred_def_id": cred_def_id}},
-                    "trace": exchange_tracing,
-                }
-                return offer_request
-
-            elif cred_type == CRED_FORMAT_JSON_LD:
-                offer_request = {
-                    "connection_id": self.connection_id,
-                    "filter": {
-                        "ld_proof": {
-                            "credential": {
-                                "@context": [
-                                    "https://www.w3.org/2018/credentials/v1",
-                                    "https://w3id.org/citizenship/v1",
-                                    "https://w3id.org/security/bbs/v1",
-                                ],
-                                "type": [
-                                    "VerifiableCredential",
-                                    "PermanentResident",
-                                ],
-                                "id": "https://credential.example.com/residents/1234567890",
-                                "issuer": self.did,
-                                "issuanceDate": "2020-01-01T12:00:00Z",
-                                "credentialSubject": {
-                                    "type": ["PermanentResident"],
-                                    "givenName": "ALICE",
-                                    "familyName": "SMITH",
-                                    "gender": "Female",
-                                    "birthCountry": "Bahamas",
-                                    "birthDate": "1958-07-17",
-                                },
+        elif cred_type == CRED_FORMAT_JSON_LD:
+            offer_request = {
+                "connection_id": self.connection_id,
+                "filter": {
+                    "ld_proof": {
+                        "credential": {
+                            "@context": [
+                                "https://www.w3.org/2018/credentials/v1",
+                                "https://w3id.org/citizenship/v1",
+                                "https://w3id.org/security/bbs/v1",
+                            ],
+                            "type": [
+                                "VerifiableCredential",
+                                "PermanentResident",
+                            ],
+                            "id": "https://credential.example.com/residents/1234567890",
+                            "issuer": self.did,
+                            "issuanceDate": "2020-01-01T12:00:00Z",
+                            "credentialSubject": {
+                                "type": ["PermanentResident"],
+                                "givenName": "ALICE",
+                                "familyName": "SMITH",
+                                "gender": "Female",
+                                "birthCountry": "Bahamas",
+                                "birthDate": "1958-07-17",
                             },
-                            "options": {"proofType": SIG_TYPE_BLS},
-                        }
-                    },
-                }
-                return offer_request
-
-            else:
-                raise Exception(f"Error invalid credential type: {self.cred_type}")
+                        },
+                        "options": {"proofType": SIG_TYPE_BLS},
+                    }
+                },
+            }
+            return offer_request
 
         else:
-            raise Exception(f"Error invalid AIP level: {self.aip}")
+            raise Exception(f"Error invalid credential type: {self.cred_type}")
 
     def generate_proof_request_web_request(
-        self, aip, cred_type, revocation, exchange_tracing, connectionless=False
+        self, cred_type, revocation, exchange_tracing, connectionless=False
     ):
         age = 18
         d = datetime.date.today()
         birth_date = datetime.date(d.year - age, d.month, d.day)
         birth_date_format = "%Y%m%d"
-        if aip == 10:
+        if cred_type == CRED_FORMAT_ANONCREDS or cred_type == CRED_FORMAT_INDY:
             req_attrs = [
                 {
                     "name": "name",
@@ -261,236 +230,170 @@ class FaberAgent(AriesAgent):
                     f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
                 },
                 "requested_predicates": {
-                    f"0_{req_pred['name']}_GE_uuid": req_pred for req_pred in req_preds
+                    f"0_{req_pred['name']}_GE_uuid": req_pred
+                    for req_pred in req_preds
                 },
             }
 
             if revocation:
                 proof_request["non_revoked"] = {"to": int(time.time())}
 
+            if cred_type == CRED_FORMAT_ANONCREDS:
+                presentation_request = {"anoncreds": proof_request}
+            else:
+                presentation_request = {"indy": proof_request}
             proof_request_web_request = {
-                "proof_request": proof_request,
+                "presentation_request": presentation_request,
                 "trace": exchange_tracing,
+            }
+            if not connectionless:
+                proof_request_web_request["connection_id"] = self.connection_id
+
+            return proof_request_web_request
+
+        elif cred_type == CRED_FORMAT_VC_DI:
+            proof_request_web_request = {
+                "comment": "Test proof request for VC-DI format",
+                "presentation_request": {
+                    "dif": {
+                        "options": {
+                            "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                            "domain": "4jt78h47fh47",
+                        },
+                        "presentation_definition": {
+                            "id": "5591656f-5b5d-40f8-ab5c-9041c8e3a6a0",
+                            "name": "Age Verification",
+                            "purpose": "We need to verify your age before entering a bar",
+                            "input_descriptors": [
+                                {
+                                    "id": "age-verification",
+                                    "name": "A specific type of VC + Issuer",
+                                    "purpose": "We want a VC of this type generated by this issuer",
+                                    "schema": [
+                                        {
+                                            "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                                        }
+                                    ],
+                                    "constraints": {
+                                        "statuses": {
+                                            "active": {"directive": "disallowed"}
+                                        },
+                                        "limit_disclosure": "required",
+                                        "fields": [
+                                            {
+                                                "path": ["$.issuer"],
+                                                "filter": {
+                                                    "type": "string",
+                                                    "const": self.did,
+                                                },
+                                            },
+                                            {"path": ["$.credentialSubject.name"]},
+                                            {"path": ["$.credentialSubject.degree"]},
+                                            {
+                                                "path": [
+                                                    "$.credentialSubject.birthdate_dateint"
+                                                ],
+                                                "predicate": "preferred",
+                                                "filter": {
+                                                    "type": "number",
+                                                    "maximum": int(
+                                                        birth_date.strftime(
+                                                            birth_date_format
+                                                        )
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                }
+                            ],
+                            "format": {
+                                "di_vc": {
+                                    "proof_type": ["DataIntegrityProof"],
+                                    "cryptosuite": [
+                                        "anoncreds-2023",
+                                        "eddsa-rdfc-2022",
+                                    ],
+                                }
+                            },
+                        },
+                    },
+                },
+            }
+
+            if revocation:
+                proof_request_web_request["presentation_request"]["dif"][
+                    "presentation_definition"
+                ]["input_descriptors"][0]["constraints"]["statuses"]["active"][
+                    "directive"
+                ] = "required"
+            if not connectionless:
+                proof_request_web_request["connection_id"] = self.connection_id
+            return proof_request_web_request
+
+        elif cred_type == CRED_FORMAT_JSON_LD:
+            proof_request_web_request = {
+                "comment": "test proof request for json-ld",
+                "presentation_request": {
+                    "dif": {
+                        "options": {
+                            "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                            "domain": "4jt78h47fh47",
+                        },
+                        "presentation_definition": {
+                            "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+                            "format": {"ldp_vp": {"proof_type": [SIG_TYPE_BLS]}},
+                            "input_descriptors": [
+                                {
+                                    "id": "citizenship_input_1",
+                                    "name": "EU Driver's License",
+                                    "schema": [
+                                        {
+                                            "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                                        },
+                                        {
+                                            "uri": "https://w3id.org/citizenship#PermanentResident"
+                                        },
+                                    ],
+                                    "constraints": {
+                                        "limit_disclosure": "required",
+                                        "is_holder": [
+                                            {
+                                                "directive": "required",
+                                                "field_id": [
+                                                    "1f44d55f-f161-4938-a659-f8026467f126"
+                                                ],
+                                            }
+                                        ],
+                                        "fields": [
+                                            {
+                                                "id": "1f44d55f-f161-4938-a659-f8026467f126",
+                                                "path": [
+                                                    "$.credentialSubject.familyName"
+                                                ],
+                                                "purpose": "The claim must be from one of the specified person",
+                                                "filter": {"const": "SMITH"},
+                                            },
+                                            {
+                                                "path": [
+                                                    "$.credentialSubject.givenName"
+                                                ],
+                                                "purpose": "The claim must be from one of the specified person",
+                                            },
+                                        ],
+                                    },
+                                }
+                            ],
+                        },
+                    }
+                },
             }
             if not connectionless:
                 proof_request_web_request["connection_id"] = self.connection_id
             return proof_request_web_request
 
-        elif aip == 20:
-            if cred_type == CRED_FORMAT_ANONCREDS or cred_type == CRED_FORMAT_INDY:
-                req_attrs = [
-                    {
-                        "name": "name",
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    },
-                    {
-                        "name": "date",
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    },
-                ]
-                if revocation:
-                    req_attrs.append(
-                        {
-                            "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
-                            "non_revoked": {"to": int(time.time() - 1)},
-                        },
-                    )
-                else:
-                    req_attrs.append(
-                        {
-                            "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
-                        }
-                    )
-                if SELF_ATTESTED:
-                    # test self-attested claims
-                    req_attrs.append(
-                        {"name": "self_attested_thing"},
-                    )
-                req_preds = [
-                    # test zero-knowledge proofs
-                    {
-                        "name": "birthdate_dateint",
-                        "p_type": "<=",
-                        "p_value": int(birth_date.strftime(birth_date_format)),
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    }
-                ]
-                proof_request = {
-                    "name": "Proof of Education",
-                    "version": "1.0",
-                    "requested_attributes": {
-                        f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
-                    },
-                    "requested_predicates": {
-                        f"0_{req_pred['name']}_GE_uuid": req_pred
-                        for req_pred in req_preds
-                    },
-                }
-
-                if revocation:
-                    proof_request["non_revoked"] = {"to": int(time.time())}
-
-                if cred_type == CRED_FORMAT_ANONCREDS:
-                    presentation_request = {"anoncreds": proof_request}
-                else:
-                    presentation_request = {"indy": proof_request}
-                proof_request_web_request = {
-                    "presentation_request": presentation_request,
-                    "trace": exchange_tracing,
-                }
-                if not connectionless:
-                    proof_request_web_request["connection_id"] = self.connection_id
-
-                return proof_request_web_request
-
-            elif cred_type == CRED_FORMAT_VC_DI:
-                proof_request_web_request = {
-                    "comment": "Test proof request for VC-DI format",
-                    "presentation_request": {
-                        "dif": {
-                            "options": {
-                                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-                                "domain": "4jt78h47fh47",
-                            },
-                            "presentation_definition": {
-                                "id": "5591656f-5b5d-40f8-ab5c-9041c8e3a6a0",
-                                "name": "Age Verification",
-                                "purpose": "We need to verify your age before entering a bar",
-                                "input_descriptors": [
-                                    {
-                                        "id": "age-verification",
-                                        "name": "A specific type of VC + Issuer",
-                                        "purpose": "We want a VC of this type generated by this issuer",
-                                        "schema": [
-                                            {
-                                                "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
-                                            }
-                                        ],
-                                        "constraints": {
-                                            "statuses": {
-                                                "active": {"directive": "disallowed"}
-                                            },
-                                            "limit_disclosure": "required",
-                                            "fields": [
-                                                {
-                                                    "path": ["$.issuer"],
-                                                    "filter": {
-                                                        "type": "string",
-                                                        "const": self.did,
-                                                    },
-                                                },
-                                                {"path": ["$.credentialSubject.name"]},
-                                                {"path": ["$.credentialSubject.degree"]},
-                                                {
-                                                    "path": [
-                                                        "$.credentialSubject.birthdate_dateint"
-                                                    ],
-                                                    "predicate": "preferred",
-                                                    "filter": {
-                                                        "type": "number",
-                                                        "maximum": int(
-                                                            birth_date.strftime(
-                                                                birth_date_format
-                                                            )
-                                                        ),
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                    }
-                                ],
-                                "format": {
-                                    "di_vc": {
-                                        "proof_type": ["DataIntegrityProof"],
-                                        "cryptosuite": [
-                                            "anoncreds-2023",
-                                            "eddsa-rdfc-2022",
-                                        ],
-                                    }
-                                },
-                            },
-                        },
-                    },
-                }
-
-                if revocation:
-                    proof_request_web_request["presentation_request"]["dif"][
-                        "presentation_definition"
-                    ]["input_descriptors"][0]["constraints"]["statuses"]["active"][
-                        "directive"
-                    ] = "required"
-                if not connectionless:
-                    proof_request_web_request["connection_id"] = self.connection_id
-                return proof_request_web_request
-
-            elif cred_type == CRED_FORMAT_JSON_LD:
-                proof_request_web_request = {
-                    "comment": "test proof request for json-ld",
-                    "presentation_request": {
-                        "dif": {
-                            "options": {
-                                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-                                "domain": "4jt78h47fh47",
-                            },
-                            "presentation_definition": {
-                                "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
-                                "format": {"ldp_vp": {"proof_type": [SIG_TYPE_BLS]}},
-                                "input_descriptors": [
-                                    {
-                                        "id": "citizenship_input_1",
-                                        "name": "EU Driver's License",
-                                        "schema": [
-                                            {
-                                                "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
-                                            },
-                                            {
-                                                "uri": "https://w3id.org/citizenship#PermanentResident"
-                                            },
-                                        ],
-                                        "constraints": {
-                                            "limit_disclosure": "required",
-                                            "is_holder": [
-                                                {
-                                                    "directive": "required",
-                                                    "field_id": [
-                                                        "1f44d55f-f161-4938-a659-f8026467f126"
-                                                    ],
-                                                }
-                                            ],
-                                            "fields": [
-                                                {
-                                                    "id": "1f44d55f-f161-4938-a659-f8026467f126",
-                                                    "path": [
-                                                        "$.credentialSubject.familyName"
-                                                    ],
-                                                    "purpose": "The claim must be from one of the specified person",
-                                                    "filter": {"const": "SMITH"},
-                                                },
-                                                {
-                                                    "path": [
-                                                        "$.credentialSubject.givenName"
-                                                    ],
-                                                    "purpose": "The claim must be from one of the specified person",
-                                                },
-                                            ],
-                                        },
-                                    }
-                                ],
-                            },
-                        }
-                    },
-                }
-                if not connectionless:
-                    proof_request_web_request["connection_id"] = self.connection_id
-                return proof_request_web_request
-
-            else:
-                raise Exception(f"Error invalid credential type: {self.cred_type}")
-
         else:
-            raise Exception(f"Error invalid AIP level: {self.aip}")
+            raise Exception(f"Error invalid credential type: {self.cred_type}")
 
 
 async def main(args):
@@ -697,170 +600,101 @@ async def main(args):
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
 
-                if faber_agent.aip == 10:
+                if faber_agent.cred_type in [
+                    CRED_FORMAT_ANONCREDS,
+                    CRED_FORMAT_INDY,
+                    CRED_FORMAT_VC_DI,
+                ]:
                     offer_request = faber_agent.agent.generate_credential_offer(
-                        faber_agent.aip, None, faber_agent.cred_def_id, exchange_tracing
+                        faber_agent.cred_type,
+                        faber_agent.cred_def_id,
+                        exchange_tracing,
                     )
-                    await faber_agent.agent.admin_POST(
-                        "/issue-credential/send-offer", offer_request
-                    )
 
-                elif faber_agent.aip == 20:
-                    if faber_agent.cred_type in [
-                        CRED_FORMAT_ANONCREDS,
-                        CRED_FORMAT_INDY,
-                        CRED_FORMAT_VC_DI,
-                    ]:
-                        offer_request = faber_agent.agent.generate_credential_offer(
-                            faber_agent.aip,
-                            faber_agent.cred_type,
-                            faber_agent.cred_def_id,
-                            exchange_tracing,
-                        )
-
-                    elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
-                        offer_request = faber_agent.agent.generate_credential_offer(
-                            faber_agent.aip,
-                            faber_agent.cred_type,
-                            None,
-                            exchange_tracing,
-                        )
-
-                    else:
-                        raise Exception(
-                            f"Error invalid credential type: {faber_agent.cred_type}"
-                        )
-
-                    await faber_agent.agent.admin_POST(
-                        "/issue-credential-2.0/send-offer", offer_request
+                elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
+                    offer_request = faber_agent.agent.generate_credential_offer(
+                        faber_agent.cred_type,
+                        None,
+                        exchange_tracing,
                     )
 
                 else:
-                    raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
+                    raise Exception(
+                        f"Error invalid credential type: {faber_agent.cred_type}"
+                    )
+
+                await faber_agent.agent.admin_POST(
+                    "/issue-credential-2.0/send-offer", offer_request
+                )
 
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
-                if faber_agent.aip == 10:
+                if faber_agent.cred_type in [
+                    CRED_FORMAT_ANONCREDS,
+                    CRED_FORMAT_INDY,
+                    CRED_FORMAT_VC_DI,
+                    CRED_FORMAT_JSON_LD,
+                ]:
                     proof_request_web_request = (
                         faber_agent.agent.generate_proof_request_web_request(
-                            faber_agent.aip,
                             faber_agent.cred_type,
                             faber_agent.revocation,
                             exchange_tracing,
                         )
                     )
-                    await faber_agent.agent.admin_POST(
-                        "/present-proof/send-request", proof_request_web_request
-                    )
-                    pass
-
-                elif faber_agent.aip == 20:
-                    if faber_agent.cred_type in [
-                        CRED_FORMAT_ANONCREDS,
-                        CRED_FORMAT_INDY,
-                        CRED_FORMAT_VC_DI,
-                        CRED_FORMAT_JSON_LD,
-                    ]:
-                        proof_request_web_request = (
-                            faber_agent.agent.generate_proof_request_web_request(
-                                faber_agent.aip,
-                                faber_agent.cred_type,
-                                faber_agent.revocation,
-                                exchange_tracing,
-                            )
-                        )
-                    else:
-                        raise Exception(
-                            "Error invalid credential type:" + faber_agent.cred_type
-                        )
-                    log_status(
-                        "Send a proof request to X: "
-                        + json.dumps(proof_request_web_request)
-                    )
-                    await agent.admin_POST(
-                        "/present-proof-2.0/send-request", proof_request_web_request
-                    )
-
                 else:
-                    raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
+                    raise Exception(
+                        "Error invalid credential type:" + faber_agent.cred_type
+                    )
+                log_status(
+                    "Send a proof request to X: "
+                    + json.dumps(proof_request_web_request)
+                )
+                await agent.admin_POST(
+                    "/present-proof-2.0/send-request", proof_request_web_request
+                )
 
             elif option == "2a":
                 log_status("#20 Request * Connectionless * proof of degree from alice")
-                if faber_agent.aip == 10:
+                if faber_agent.cred_type in [
+                    CRED_FORMAT_ANONCREDS,
+                    CRED_FORMAT_INDY,
+                    CRED_FORMAT_VC_DI,
+                    CRED_FORMAT_JSON_LD,
+                ]:
                     proof_request_web_request = (
                         faber_agent.agent.generate_proof_request_web_request(
-                            faber_agent.aip,
                             faber_agent.cred_type,
                             faber_agent.revocation,
                             exchange_tracing,
                             connectionless=True,
                         )
                     )
-                    proof_request = await faber_agent.agent.admin_POST(
-                        "/present-proof/create-request", proof_request_web_request
-                    )
-                    pres_req_id = proof_request["presentation_exchange_id"]
-                    url = (
-                        os.getenv("WEBHOOK_TARGET")
-                        or (
-                            "http://"
-                            + os.getenv("DOCKERHOST").replace(
-                                "{PORT}", str(faber_agent.agent.admin_port + 1)
-                            )
-                            + "/webhooks"
-                        )
-                    ) + f"/pres_req/{pres_req_id}/"
-                    log_msg(f"Proof request url: {url}")
-                    qr = QRCode(border=1)
-                    qr.add_data(url)
-                    log_msg(
-                        "Scan the following QR code to accept the proof request from a mobile agent."
-                    )
-                    qr.print_ascii(invert=True)
-
-                elif faber_agent.aip == 20:
-                    if faber_agent.cred_type in [
-                        CRED_FORMAT_ANONCREDS,
-                        CRED_FORMAT_INDY,
-                        CRED_FORMAT_VC_DI,
-                        CRED_FORMAT_JSON_LD,
-                    ]:
-                        proof_request_web_request = (
-                            faber_agent.agent.generate_proof_request_web_request(
-                                faber_agent.aip,
-                                faber_agent.cred_type,
-                                faber_agent.revocation,
-                                exchange_tracing,
-                                connectionless=True,
-                            )
-                        )
-                    else:
-                        raise Exception(
-                            "Error invalid credential type:" + faber_agent.cred_type
-                        )
-
-                    proof_request = await faber_agent.agent.admin_POST(
-                        "/present-proof-2.0/create-request", proof_request_web_request
-                    )
-                    pres_req_id = proof_request["pres_ex_id"]
-                    url = (
-                        "http://"
-                        + os.getenv("DOCKERHOST").replace(
-                            "{PORT}", str(faber_agent.agent.admin_port + 1)
-                        )
-                        + "/webhooks/pres_req/"
-                        + pres_req_id
-                        + "/"
-                    )
-                    log_msg(f"Proof request url: {url}")
-                    qr = QRCode(border=1)
-                    qr.add_data(url)
-                    log_msg(
-                        "Scan the following QR code to accept the proof request from a mobile agent."
-                    )
-                    qr.print_ascii(invert=True)
                 else:
-                    raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
+                    raise Exception(
+                        "Error invalid credential type:" + faber_agent.cred_type
+                    )
+
+                proof_request = await faber_agent.agent.admin_POST(
+                    "/present-proof-2.0/create-request", proof_request_web_request
+                )
+                pres_req_id = proof_request["pres_ex_id"]
+                url = (
+                    "http://"
+                    + os.getenv("DOCKERHOST").replace(
+                        "{PORT}", str(faber_agent.agent.admin_port + 1)
+                    )
+                    + "/webhooks/pres_req/"
+                    + pres_req_id
+                    + "/"
+                )
+                log_msg(f"Proof request url: {url}")
+                qr = QRCode(border=1)
+                qr.add_data(url)
+                log_msg(
+                    "Scan the following QR code to accept the proof request from a mobile agent."
+                )
+                qr.print_ascii(invert=True)
 
             elif option == "3":
                 msg = await prompt("Enter message: ")
