@@ -1,8 +1,10 @@
-import uuid
 import json
 import pytest
+import uuid
+from marshmallow import ValidationError
 from typing import Optional
 from unittest import IsolatedAsyncioTestCase
+from uuid_utils import uuid4
 
 from ...connections.models.conn_record import ConnRecord
 from ...ledger.base import BaseLedger
@@ -14,6 +16,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 from ...ledger.multiple_ledger.ledger_config_schema import (
     ConfigurableWriteLedgersSchema,
     LedgerConfigInstanceSchema,
+    LedgerConfigListSchema,
 )
 
 from ...multitenant.base import BaseMultitenantManager
@@ -902,6 +905,7 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
                 "keepalive": 10,
                 "read_only": True,
                 "pool_name": "non_prod_pool",
+                "socks_proxy": None,
             },
         ]
 
@@ -910,12 +914,10 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
         ) as json_response:
             await test_module.get_ledger_config(self.request)
 
-            # Verify response structure
             response_data = json_response.call_args[0][0]
             assert "production_ledgers" in response_data
             assert "non_production_ledgers" in response_data
 
-            # Validate first production ledger
             prod_ledger = response_data["production_ledgers"][0]
             assert prod_ledger == {
                 "id": "test_1",
@@ -927,7 +929,6 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
                 "socks_proxy": None,
             }
 
-            # Validate non-production ledger
             non_prod_ledger = response_data["non_production_ledgers"][0]
             assert non_prod_ledger == {
                 "id": "test_2",
@@ -936,55 +937,49 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
                 "keepalive": 10,
                 "read_only": True,
                 "pool_name": "non_prod_pool",
+                "socks_proxy": None,
             }
 
     async def test_ledger_config_schema_validation(self):
         """Test schema validation for required fields."""
         schema = LedgerConfigInstanceSchema()
 
-        # Test valid data
-        valid_data = {
-            "id": "test",
+        minimal_data = {
             "is_production": True,
             "is_write": False,
             "keepalive": 5,
-            "read_only": True,
-            "pool_name": "test_pool",
+            "read_only": False,
         }
-        assert schema.validate(valid_data) == {}
+        loaded = schema.load(minimal_data)
+        assert loaded.pool_name == loaded.id
+        assert loaded.is_write is False
 
-        # Test missing required field
-        invalid_data = {
-            "id": "test",
-            "is_production": True,
-            "is_write": False,
-            # Missing pool_name
-        }
-        errors = schema.validate(invalid_data)
-        assert "pool_name" in errors
-        assert "Missing data for required field" in errors["pool_name"][0]
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"is_production": "not_bool"})
+        assert "is_production" in exc.value.messages
 
     async def test_ledger_config_id_generation(self):
         """Test automatic ID generation when missing."""
         schema = LedgerConfigInstanceSchema()
 
-        # Test ID generation
-        data_without_id = {
+        data = {
             "is_production": True,
-            "is_write": True,
+            "is_write": False,  # Add required fields
             "keepalive": 5,
             "read_only": False,
-            "pool_name": "auto_id_pool",
         }
+        loaded = schema.load(data)
+        assert uuid.UUID(loaded.id, version=4)
 
-        loaded = schema.load(data_without_id)
-        assert hasattr(loaded, "id")
-        assert isinstance(loaded.id, str)
-        assert len(loaded.id) == 36
-        try:
-            uuid.UUID(loaded.id, version=4)
-        except ValueError:
-            pytest.fail("Generated ID is not a valid UUID4")
+        explicit_id = str(uuid4())
+        loaded = schema.load({"id": explicit_id, "is_production": True})
+        assert loaded.id == explicit_id
+
+    async def test_empty_ledger_lists(self):
+        schema = LedgerConfigListSchema()
+        empty_data = {"production_ledgers": [], "non_production_ledgers": []}
+        loaded = schema.load(empty_data)
+        assert loaded == empty_data
 
     # Multiple Ledgers Configured
     async def test_get_write_ledgers_multiple(self):
