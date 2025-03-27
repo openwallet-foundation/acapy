@@ -234,7 +234,8 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
         """
         if not any(f.api in data for f in V20PresFormat.Format):
             raise ValidationError(
-                "V20PresRequestByFormatSchema requires indy, dif, or both"
+                "V20PresRequestByFormatSchema requires at least one of: "
+                "anoncreds, indy, dif"
             )
 
 
