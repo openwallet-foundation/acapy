@@ -208,7 +208,7 @@ class FaberAgent(AriesAgent):
             raise Exception(f"Error invalid AIP level: {self.aip}")
 
     def generate_proof_request_web_request(
-        self, aip, cred_type, revocation, exchange_tracing, connectionless=False
+        self, aip, cred_type, revocation, exchange_tracing, connectionless=False, cred_def_id=None
     ):
         age = 18
         d = datetime.date.today()
@@ -288,6 +288,8 @@ class FaberAgent(AriesAgent):
                         "restrictions": [{"schema_name": "degree schema"}],
                     },
                 ]
+                if cred_def_id:
+                    req_attrs[0]["restrictions"][0]["cred_def_id"] = cred_def_id
                 if revocation:
                     req_attrs.append(
                         {
@@ -767,6 +769,7 @@ async def main(args):
                                 faber_agent.cred_type,
                                 faber_agent.revocation,
                                 exchange_tracing,
+                                cred_def_id=faber_agent.cred_def_id
                             )
                         )
                     else:
