@@ -14,7 +14,6 @@ from runners.support.utils import (  # noqa:E402
     check_requires,
     log_msg,
     log_status,
-    log_timer,
     prompt,
     prompt_loop,
 )
