@@ -13,6 +13,7 @@ from ...wallet.default_verification_key_strategy import (
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
+
 class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.profile = await create_test_profile()
@@ -20,7 +21,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
         resolver.register_resolver(
             MockResolver(
                 ["example"],
-                resolved= {
+                resolved={
                     "@context": [
                         "https://www.w3.org/ns/did/v1",
                         "https://w3id.org/security/multikey/v1",
@@ -48,7 +49,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                     ],
                     "authentication": ["did:example:123#key-1"],
                     "assertionMethod": ["did:example:123#key-2", "did:example:123#key-3"],
-                }
+                },
             )
         )
         self.profile.context.injector.bind_instance(DIDResolver, resolver)
@@ -74,7 +75,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                 "did:example:123",
                 self.profile,
                 proof_type="Ed25519Signature2020",
-                proof_purpose="assertionMethod"
+                proof_purpose="assertionMethod",
             )
             == "did:example:123#key-2"
         )
@@ -83,7 +84,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                 "did:example:123",
                 self.profile,
                 proof_type="Ed25519Signature2018",
-                proof_purpose="assertionMethod"
+                proof_purpose="assertionMethod",
             )
             == "did:example:123#key-3"
         )
