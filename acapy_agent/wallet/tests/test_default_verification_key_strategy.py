@@ -66,7 +66,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
             await strategy.get_verification_method_id_for_did(TEST_DID_KEY, self.profile)
             == DIDKey.from_did(TEST_DID_KEY).key_id
         )
-    
+
     async def test_with_did_for_assertion(self):
         strategy = DefaultVerificationKeyStrategy()
         assert (
