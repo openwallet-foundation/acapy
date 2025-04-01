@@ -115,7 +115,7 @@ class AskarWallet(BaseWallet):
                     "Verification key already present in wallet"
                 ) from None
             raise WalletError("Error creating signing key") from err
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=[])
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
         """Assign a KID to a key.
