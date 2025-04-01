@@ -135,11 +135,7 @@ class AskarWallet(BaseWallet):
         if not key_entry:
             raise WalletNotFoundError(f"No key entry found for verkey {verkey}")
 
-        try:
-            existing_kid = key_entry.tags.get("kid")
-        except Exception:
-            existing_kid = []
-
+        existing_kid = key_entry.tags.get("kid", [])
         existing_kid = existing_kid if isinstance(existing_kid, list) else [existing_kid]
         existing_kid.append(kid)
         tags = {"kid": existing_kid}
@@ -171,7 +167,6 @@ class AskarWallet(BaseWallet):
             raise WalletDuplicateError(f"More than one key found by kid {kid}")
 
         entry = key_entries[0]
-        existing_kid = entry.tags.get("kid")
         key = cast(Key, entry.key)
         verkey = bytes_to_b58(key.get_public_bytes())
         metadata = cast(dict, entry.metadata)
@@ -179,9 +174,12 @@ class AskarWallet(BaseWallet):
         key_type = key_types.from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
+        
+        existing_kid = entry.tags.get("kid")
+        existing_kid = existing_kid if isinstance(existing_kid, list) else [existing_kid]
         try:
             existing_kid.remove(kid)
-        except Exception:
+        except ValueError:
             pass
 
         tags = {"kid": existing_kid}
@@ -204,6 +202,8 @@ class AskarWallet(BaseWallet):
         )
         if len(key_entries) > 1:
             raise WalletDuplicateError(f"More than one key found by kid {kid}")
+        elif len(key_entries) < 1:
+            raise WalletError(f"No key found by kid {kid}")
 
         entry = key_entries[0]
         kid = entry.tags.get("kid")
