@@ -394,7 +394,7 @@ class AriesAgent(DemoAgent):
                 if credentials:
                     for row in sorted(
                         credentials,
-                        key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                        key=lambda c: int(c["cred_info"]["attrs"].get("timestamp", 0)),
                         reverse=True,
                     ):
                         for referent in row["presentation_referents"]:
@@ -448,6 +448,7 @@ class AriesAgent(DemoAgent):
                 f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
+            self.last_proof_received = proof
 
         elif state == "abandoned":
             log_status("Presentation exchange abandoned")
@@ -499,7 +500,7 @@ class AriesAgent(DemoAgent):
                                 sorted_creds = sorted(
                                     creds,
                                     key=lambda c: int(
-                                        c["cred_info"]["attrs"]["timestamp"]
+                                        c["cred_info"]["attrs"].get("timestamp", 0)
                                     ),
                                     reverse=True,
                                 )
@@ -625,8 +626,10 @@ class AriesAgent(DemoAgent):
             proof = await self.admin_POST(
                 f"/present-proof-2.0/records/{pres_ex_id}/verify-presentation"
             )
-            self.log("Proof =", proof["verified"])
+            self.log("Proof 2.0 =", proof["verified"])
             self.last_proof_received = proof
+
+            log_status(f">>> last proof received: {self.last_proof_received}")
 
         elif state == "abandoned":
             log_status("Presentation exchange abandoned")
@@ -1080,6 +1083,8 @@ class AgentContainer:
     ):
         log_status("#20 Request proof of degree from alice")
 
+        self.last_proof_received = None
+
         if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             proof_request = {
                 "name": (
@@ -1160,8 +1165,6 @@ class AgentContainer:
             # no proof received
             print("No proof received")
             return None
-
-        # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
         if self.cred_type in [CRED_FORMAT_ANONCREDS, CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # return verified status
@@ -1373,7 +1376,7 @@ def arg_parser(ident: str = None, port: int = 8020):
         type=str,
         default=20,
         metavar=("<api>"),
-        help="API level (10 or 20 (default))",
+        help="API level (20)",
     )
     parser.add_argument("--timing", action="store_true", help="Enable timing information")
     parser.add_argument(
@@ -1543,11 +1546,10 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
 
     if "aip" in args:
         aip = int(args.aip)
-        if aip not in [
-            10,
-            20,
-        ]:
-            raise Exception("Invalid value for aip, should be 10 or 20")
+        if aip == 10:  # helpful message to flag legacy usage
+            raise Exception("Invalid value for aip, 10 is no longer supported. Use 20 instead.")
+        if aip != 20:
+            raise Exception("Invalid value for aip, should be 20")
     else:
         aip = 20
 
@@ -1579,16 +1581,10 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     )
 
     reuse_connections = "reuse_connections" in args and args.reuse_connections
-    # if reuse_connections and aip != 20:
-    #     raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
     multi_use_invitations = "multi_use_invitations" in args and args.multi_use_invitations
-    if multi_use_invitations and aip != 20:
-        raise Exception("Can only specify `--multi-use-invitations` with AIP 2.0")
     public_did_connections = (
         "public_did_connections" in args and args.public_did_connections
     )
-    if public_did_connections and aip != 20:
-        raise Exception("Can only specify `--public-did-connections` with AIP 2.0")
 
     anoncreds_legacy_revocation = None
     if "anoncreds_legacy_revocation" in args and args.anoncreds_legacy_revocation:

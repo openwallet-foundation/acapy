@@ -200,8 +200,13 @@ async def anoncreds_issue_credential_v2(
     holder: Controller,
     issuer_connection_id: str,
     holder_connection_id: str,
-    cred_def_id: str,
     attributes: Mapping[str, str],
+    cred_def_id: str,
+    issuer_id: Optional[str] = None,
+    schema_id: Optional[str] = None,
+    schema_issuer_id: Optional[str] = None,
+    schema_name: Optional[str] = None,
+    schema_version: Optional[str] = None,
 ) -> Tuple[V20CredExRecordDetail, V20CredExRecordDetail]:
     """Issue an credential using issue-credential/2.0.
 
@@ -217,8 +222,30 @@ async def anoncreds_issue_credential_v2(
 
     if is_issuer_anoncreds:
         _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
+        if issuer_id:
+            _filter["anoncreds"]["issuer_id"] = issuer_id
+        if schema_id:
+            _filter["anoncreds"]["schema_id"] = schema_id
+        if schema_issuer_id:
+            _filter["anoncreds"]["schema_issuer_id"] = schema_issuer_id
+        if schema_name:
+            _filter["anoncreds"]["schema_name"] = schema_name
+        if schema_version:
+            _filter["anoncreds"]["schema_version"] = schema_version
+
     else:
         _filter = {"indy": {"cred_def_id": cred_def_id}}
+        if issuer_id:
+            _filter["indy"]["issuer_did"] = issuer_id
+        if schema_id:
+            _filter["indy"]["schema_id"] = schema_id
+        if schema_issuer_id:
+            _filter["indy"]["schema_issuer_did"] = schema_issuer_id
+        if schema_name:
+            _filter["indy"]["schema_name"] = schema_name
+        if schema_version:
+            _filter["indy"]["schema_version"] = schema_version
+
     issuer_cred_ex = await issuer.post(
         "/issue-credential-2.0/send-offer",
         json={
@@ -311,9 +338,7 @@ async def anoncreds_issue_credential_v2(
     )
 
     return (
-        V20CredExRecordDetail(
-            cred_ex_record=issuer_cred_ex, details=issuer_indy_record
-        ),
+        V20CredExRecordDetail(cred_ex_record=issuer_cred_ex, details=issuer_indy_record),
         V20CredExRecordDetail(
             cred_ex_record=holder_cred_ex,
             details=holder_indy_record,
@@ -333,6 +358,7 @@ async def anoncreds_present_proof_v2(
     requested_attributes: Optional[List[Mapping[str, Any]]] = None,
     requested_predicates: Optional[List[Mapping[str, Any]]] = None,
     non_revoked: Optional[Mapping[str, int]] = None,
+    cred_rev_id: Optional[str] = None,
 ):
     """Present an credential using present proof v2."""
 
@@ -387,6 +413,15 @@ async def anoncreds_present_proof_v2(
         f"/present-proof-2.0/records/{holder_pres_ex_id}/credentials",
         response=List[CredPrecis],
     )
+
+    # Filter credentials by revocation id to allow selecting non-revoked
+    if cred_rev_id:
+        relevant_creds = [
+            cred
+            for cred in relevant_creds
+            if cred.cred_info._extra.get("cred_rev_id") == cred_rev_id
+        ]
+
     assert holder_pres_ex.by_format.pres_request
     proof_request = holder_pres_ex.by_format.pres_request.get(
         "anoncreds"

@@ -158,7 +158,7 @@ async def main(args):
         log_status("#9 Input faber.py invitation details")
         await input_invitation(alice_agent)
 
-        options = "    (3) Send Message\n" "    (4) Input New Invitation\n"
+        options = "    (3) Send Message\n    (4) Input New Invitation\n"
         if alice_agent.endorser_role and alice_agent.endorser_role == "author":
             options += "    (D) Set Endorser's DID\n"
         if alice_agent.multitenant:

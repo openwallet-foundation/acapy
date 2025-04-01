@@ -41,7 +41,7 @@ from ...messaging.valid import (
     INDY_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
 )
-from ...tails.base import BaseTailsServer
+from ...tails.indy_tails_server import IndyTailsServer
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
 from .issuer_cred_rev_record import IssuerCredRevRecord
@@ -474,9 +474,7 @@ class IssuerRevRegRecord(BaseRecord):
 
     async def upload_tails_file(self, profile: Profile):
         """Upload the local tails file to the tails server."""
-        tails_server = profile.inject_or(BaseTailsServer)
-        if not tails_server:
-            raise RevocationError("Tails server not configured")
+        tails_server = IndyTailsServer()
         if not self.has_local_tails_file:
             raise RevocationError("Local tails file not found")
 

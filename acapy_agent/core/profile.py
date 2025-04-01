@@ -130,6 +130,21 @@ class Profile(ABC):
             self.__class__.__name__, self.backend, self.name
         )
 
+    def __eq__(self, other) -> bool:
+        """Equality checks for profiles.
+
+        Multiple profile instances can exist at the same time but point to the
+        same profile. This allows us to test equality based on the profile
+        pointed to by the instance rather than by object reference comparison.
+        """
+        if not isinstance(other, Profile):
+            return False
+
+        if type(self) is not type(other):
+            return False
+
+        return self.name == other.name
+
 
 class ProfileManager(ABC):
     """Handle provision and open for profile instances."""

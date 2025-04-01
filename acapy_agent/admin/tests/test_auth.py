@@ -86,11 +86,11 @@ class TestTenantAuthentication(IsolatedAsyncioTestCase):
         await decor_func(self.request)
         self.decorated_handler.assert_called_once_with(self.request)
 
-    async def test_insecure_mode(self):
+    async def test_insecure_mode_witout_token(self):
         self.profile.settings["admin.admin_insecure_mode"] = True
         decor_func = tenant_authentication(self.decorated_handler)
-        await decor_func(self.request)
-        self.decorated_handler.assert_called_once_with(self.request)
+        with self.assertRaises(web.HTTPUnauthorized):
+            await decor_func(self.request)
 
     async def test_single_tenant_invalid_api_key(self):
         self.profile.settings["multitenant.enabled"] = False
