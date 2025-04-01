@@ -5,7 +5,7 @@ from ..base import BaseWallet
 from ..key_type import ED25519, P256, BLS12381G1G2, KeyType
 from ..util import b58_to_bytes, bytes_to_b58
 from ...utils.multiformats import multibase
-from ...wallet.error import WalletNotFoundError
+from ...wallet.error import WalletError, WalletNotFoundError
 from ...resolver.did_resolver import DIDResolver
 
 DEFAULT_ALG = "ed25519"
@@ -109,16 +109,19 @@ class MultikeyManager:
         try:
             key = await self.wallet.get_key_by_kid(kid=kid)
 
-            if key:
-                return True
+            if not key:
+                return False
+            return True
 
-        except (WalletNotFoundError, AttributeError):
+        except (WalletError, WalletNotFoundError, AttributeError):
             return False
 
     async def from_kid(self, kid: str):
         """Fetch a single key."""
 
         key_info = await self.wallet.get_key_by_kid(kid=kid)
+        if not key_info:
+            return None
 
         return {
             "kid": key_info.kid,
@@ -139,7 +142,7 @@ class MultikeyManager:
             ),
         }
 
-    async def create(self, seed: str = None, kid: str = None, alg: str = DEFAULT_ALG):
+    async def create(self, seed: str = None, alg: str = DEFAULT_ALG):
         """Create a new key pair."""
 
         if alg not in ALG_MAPPINGS:
@@ -147,11 +150,8 @@ class MultikeyManager:
                 f"Unknown key algorithm, use one of {list(ALG_MAPPINGS.keys())}."
             )
 
-        if kid and await self.kid_exists(kid=kid):
-            raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
-
         key_type = ALG_MAPPINGS[alg]["key_type"]
-        key_info = await self.wallet.create_key(key_type=key_type, seed=seed, kid=kid)
+        key_info = await self.wallet.create_key(key_type=key_type, seed=seed)
 
         return {
             "kid": key_info.kid,

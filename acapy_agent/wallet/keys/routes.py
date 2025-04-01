@@ -39,16 +39,6 @@ class CreateKeyRequestSchema(OpenAPISchema):
         },
     )
 
-    kid = fields.Str(
-        required=False,
-        metadata={
-            "description": (
-                "Optional kid to bind to the keypair, such as a verificationMethod."
-            ),
-            "example": GENERIC_KID_EXAMPLE,
-        },
-    )
-
 
 class CreateKeyResponseSchema(OpenAPISchema):
     """Response schema from creating a new key."""
@@ -89,19 +79,11 @@ class DeleteKidQueryStringSchema(OpenAPISchema):
 class UpdateKeyRequestSchema(OpenAPISchema):
     """Request schema for updating an existing key pair."""
 
-    multikey = fields.Str(
-        required=True,
-        metadata={
-            "description": "Multikey of the key pair to update",
-            "example": "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
-        },
-    )
-
     kid = fields.Str(
         required=True,
         metadata={
             "description": (
-                "New kid to bind to the key pair, such as a verificationMethod."
+                "New kid to bind or unbind to the key pair, such as a verificationMethod."
             ),
             "example": "did:web:example.com#key-02",
         },
@@ -187,7 +169,6 @@ async def create_key(request: web.BaseRequest):
     body = await request.json()
 
     seed = body.get("seed") or None
-    kid = body.get("kid") or None
     alg = body.get("alg") or DEFAULT_ALG
 
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
@@ -195,7 +176,7 @@ async def create_key(request: web.BaseRequest):
 
     try:
         async with context.session() as session:
-            key_info = await MultikeyManager(session).create(seed=seed, kid=kid, alg=alg)
+            key_info = await MultikeyManager(session).create(seed=seed, alg=alg)
         return web.json_response(
             key_info,
             status=201,
@@ -208,7 +189,7 @@ async def create_key(request: web.BaseRequest):
 @request_schema(UpdateKeyRequestSchema())
 @response_schema(UpdateKeyResponseSchema, 200, description="")
 @tenant_authentication
-async def update_key(request: web.BaseRequest):
+async def bind_kid(request: web.BaseRequest):
     """Request handler for creating a new key pair in the wallet.
 
     Args:
@@ -221,8 +202,8 @@ async def update_key(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    multikey = body.get("multikey")
     kid = body.get("kid")
+    multikey = request.match_info["multikey"]
 
     try:
         async with context.session() as session:
@@ -238,11 +219,10 @@ async def update_key(request: web.BaseRequest):
         return web.json_response({"message": str(err)}, status=400)
 
 
-@docs(tags=["wallet"], summary="Fetch key info.")
-@querystring_schema(FetchKeyQueryStringSchema())
-@response_schema(FetchKeyResponseSchema, 200, description="")
+@docs(tags=["wallet"], summary="Unbind kid from keypair.")
+@request_schema(UpdateKeyRequestSchema())
 @tenant_authentication
-async def fetch_key_by_kid(request: web.BaseRequest):
+async def unbind_kid(request: web.BaseRequest):
     """Request handler for fetching a key.
 
     Args:
@@ -250,36 +230,14 @@ async def fetch_key_by_kid(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    filter_kid = request.query.get("kid")
+    body = await request.json()
+
+    kid = body.get("kid")
+    # multikey = request.match_info["multikey"]
 
     try:
         async with context.session() as session:
-            key_info = await MultikeyManager(session).get_key_by_kid(kid=filter_kid)
-        return web.json_response(
-            key_info,
-            status=200,
-        )
-
-    except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
-        return web.json_response({"message": str(err)}, status=400)
-
-
-@docs(tags=["wallet"], summary="Fetch key info.")
-@querystring_schema(DeleteKidQueryStringSchema())
-@tenant_authentication
-async def remove_kid(request: web.BaseRequest):
-    """Request handler for fetching a key.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    context: AdminRequestContext = request["context"]
-    filter_kid = request.query.get("kid")
-
-    try:
-        async with context.session() as session:
-            key_info = await MultikeyManager(session).get_key_by_kid(kid=filter_kid)
+            key_info = await MultikeyManager(session).unbind(kid=kid)
         return web.json_response(
             key_info,
             status=200,
@@ -295,9 +253,9 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/wallet/keys", create_key),
-            web.put("/wallet/keys", update_key),
+            # web.post("/wallet/keys", update_key),
+            web.post("/wallet/keys/{multikey}/bind", bind_kid),
+            web.post("/wallet/keys/{multikey}/unbind", unbind_kid),
             web.get("/wallet/keys/{multikey}", fetch_key, allow_head=False),
-            web.get("/wallet/keys", fetch_key_by_kid, allow_head=False),
-            web.delete("/wallet/keys", remove_kid, allow_head=False),
         ]
     )

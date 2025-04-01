@@ -21,7 +21,7 @@ from .did_method import INDY, SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation
 from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 
-# from .keys.manager import verkey_to_multikey
+from .keys.manager import verkey_to_multikey
 from .key_type import BLS12381G2, ED25519, P256, X25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
 
@@ -76,7 +76,6 @@ class AskarWallet(BaseWallet):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
-        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -99,10 +98,9 @@ class AskarWallet(BaseWallet):
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
-            # multikey = verkey_to_multikey(verkey, alg=key_type.key_type)
-            # default_kid = f"did:key:{multikey}#{multikey}"
-            # tags = {"kid": [default_kid, kid]} if kid else [default_kid]
-            tags = {"kid": [kid]} if kid else None
+            tags = {
+                "multikey": verkey_to_multikey(verkey, key_type.key_type)
+            }
             await self._session.handle.insert_key(
                 verkey,
                 keypair,
@@ -115,7 +113,7 @@ class AskarWallet(BaseWallet):
                     "Verification key already present in wallet"
                 ) from None
             raise WalletError("Error creating signing key") from err
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=[])
 
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
         """Assign a KID to a key.
@@ -135,20 +133,20 @@ class AskarWallet(BaseWallet):
         if not key_entry:
             raise WalletNotFoundError(f"No key entry found for verkey {verkey}")
 
-        existing_kid = key_entry.tags.get("kid", [])
-        existing_kid = existing_kid if isinstance(existing_kid, list) else [existing_kid]
-        existing_kid.append(kid)
-        tags = {"kid": existing_kid}
+        key_tags = key_entry.tags or {'kid': []}
+        key_kids = key_tags.get("kid", [])
+        key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
+        key_kids.append(kid)
+        key_tags["kid"] = key_kids
 
         key = cast(Key, key_entry.key)
         metadata = cast(dict, key_entry.metadata)
-        key_types = self.session.inject(KeyTypes)
-        key_type = key_types.from_key_type(key.algorithm.value)
+        key_type = self.session.inject(KeyTypes).from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
 
-        await self._session.handle.update_key(name=verkey, tags=tags)
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
+        await self._session.handle.update_key(name=verkey, tags=key_tags)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key_kids)
 
     async def remove_kid_from_key(self, kid: str) -> KeyInfo:
         """Remove a kid association.
@@ -166,26 +164,29 @@ class AskarWallet(BaseWallet):
         if len(key_entries) > 1:
             raise WalletDuplicateError(f"More than one key found by kid {kid}")
 
-        entry = key_entries[0]
-        key = cast(Key, entry.key)
+        key_entry = key_entries[0]
+        key = cast(Key, key_entry.key)
         verkey = bytes_to_b58(key.get_public_bytes())
-        metadata = cast(dict, entry.metadata)
+        metadata = cast(dict, key_entry.metadata)
         key_types = self.session.inject(KeyTypes)
         key_type = key_types.from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
 
-        existing_kid = entry.tags.get("kid")
-        existing_kid = existing_kid if isinstance(existing_kid, list) else [existing_kid]
+
+        key_tags = key_entry.tags or {'kid': []}
+        key_kids = key_tags.get("kid", [])
+        key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
+        
         try:
-            existing_kid.remove(kid)
+            key_kids.remove(kid)
         except ValueError:
             pass
+        
+        key_tags["kid"] = key_kids
 
-        tags = {"kid": existing_kid}
-
-        await self._session.handle.update_key(name=verkey, tags=tags)
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
+        await self._session.handle.update_key(name=verkey, tags=key_tags)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key_kids)
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
         """Fetch a key by looking up its kid.
@@ -203,7 +204,7 @@ class AskarWallet(BaseWallet):
         if len(key_entries) > 1:
             raise WalletDuplicateError(f"More than one key found by kid {kid}")
         elif len(key_entries) < 1:
-            raise WalletError(f"No key found by kid {kid}")
+            return None
 
         entry = key_entries[0]
         kid = entry.tags.get("kid")
@@ -239,10 +240,7 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key_entry.metadata or "{}")
 
-        try:
-            kid = key_entry.tags.get("kid")
-        except Exception:
-            kid = None
+        kid = key_entry.tags.get("kid", []) if key_entry.tags else []
 
         key = cast(Key, key_entry.key)
         key_types = self.session.inject(KeyTypes)
