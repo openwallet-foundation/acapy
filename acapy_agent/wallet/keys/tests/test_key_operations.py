@@ -44,11 +44,11 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
                 key_info = await key_manager.create(seed=self.seed, alg=alg)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] is None
+                assert key_info["kid"] == []
 
                 key_info = await key_manager.from_multikey(multikey=expected_multikey)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] is None
+                assert key_info["kid"] == []
 
                 key_info = await key_manager.update(multikey=expected_multikey, kid=kid)
                 assert key_info["multikey"] == expected_multikey
