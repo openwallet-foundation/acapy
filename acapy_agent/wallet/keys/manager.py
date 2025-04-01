@@ -175,10 +175,10 @@ class MultikeyManager:
             ),
         }
 
-    async def unbind(self, kid: str):
+    async def unbind(self, multikey: str, kid: str):
         """Unbind a kid from key pair."""
 
-        key_info = await self.wallet.remove_kid_from_key(kid=kid)
+        key_info = await self.wallet.remove_kid_from_key(multikey=multikey, kid=kid)
 
         return {
             "kid": key_info.kid,

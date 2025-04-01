@@ -84,6 +84,6 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             await key_manager.update(multikey=multikey, kid=kid_2)
             assert (await key_manager.from_kid(kid_1)).get("multikey") == multikey
             assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey
-            await key_manager.unbind(kid_1)
+            await key_manager.unbind(multikey, kid_1)
             assert await key_manager.from_kid(kid_1) is None
             assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey
