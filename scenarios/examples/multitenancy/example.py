@@ -42,11 +42,14 @@ async def main():
             response=CreateWalletResponse,
         )
 
-    async with Controller(
-        base_url=AGENCY, wallet_id=alice.wallet_id, subwallet_token=alice.token
-    ) as alice, Controller(
-        base_url=AGENCY, wallet_id=bob.wallet_id, subwallet_token=bob.token
-    ) as bob:
+    async with (
+        Controller(
+            base_url=AGENCY, wallet_id=alice.wallet_id, subwallet_token=alice.token
+        ) as alice,
+        Controller(
+            base_url=AGENCY, wallet_id=bob.wallet_id, subwallet_token=bob.token
+        ) as bob,
+    ):
         # Issuance prep
         config = (await alice.get("/status/config"))["config"]
         genesis_url = config.get("ledger.genesis_url")

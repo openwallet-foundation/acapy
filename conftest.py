@@ -147,7 +147,7 @@ def stub_ursa_bbs_signatures() -> Stub:
 def pytest_sessionstart(session):
     global STUBS, POSTGRES_URL, ENABLE_PTVSD
     args = sys.argv
-    
+
     # copied from __main__.py:init_debug
     ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", "").lower()
     ENABLE_PTVSD = ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0")

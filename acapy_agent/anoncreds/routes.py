@@ -187,7 +187,7 @@ async def schemas_post(request: web.BaseRequest):
                 a null value.
                 schema : The schema. If the value of the schema_state.state response field
                 is finished, this field MUST be present and MUST NOT have a null value.
-            registration_metadata : This field contains metadata about hte registration
+            registration_metadata : This field contains metadata about the registration
             process
             schema_metadata : This fields contains metadata about the schema.
 

@@ -329,6 +329,33 @@ Feature: RFC 0454 Aries agent present proof
          | issuer1 | Acme1_capabilities                                      | Bob_cap                       | Schema_name_1     | Credential_data_1 | Proof_request     |
          | Acme1   | --revocation --public-did --wallet-type askar-anoncreds --cred-type vc_di | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
+   @T003-RFC0454.4b
+   Scenario Outline: Present Proof for a credential where multiple credentials are issued and all but one are revoked
+      Given we have "3" agents
+         | name  | role     | capabilities         |
+         | Acme1 | issuer1  | <Acme1_capabilities> |
+         | Bob   | prover   | <Bob_cap>   |
+      And "<issuer1>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name_1> credential <Credential_data_1> from "<issuer1>"
+      When "<issuer1>" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "<issuer1>" has the proof verified
+      And "<issuer1>" revokes the credential
+      When "<issuer1>" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "<issuer1>" has the proof verification fail
+      When "Bob" has another issued <Schema_name_1> credential <Credential_data_1> from "<issuer1>"
+      When "<issuer1>" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "<issuer1>" has the proof verified
+
+      @Release @WalletType_Askar
+      Examples:
+         | issuer1 | Acme1_capabilities        | Bob_cap | Schema_name_1     | Credential_data_1 | Proof_request     |
+         | Acme1   | --revocation --public-did |         | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+      @Release @WalletType_Askar_AnonCreds
+      Examples:
+         | issuer1 | Acme1_capabilities                                      | Bob_cap                       | Schema_name_1     | Credential_data_1 | Proof_request     |
+         | Acme1   | --revocation --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
    @T003-RFC0454.5
    Scenario Outline: Present Proof for a vc_di-issued credential using "legacy" indy proof and the proof validates
       Given we have "2" agents

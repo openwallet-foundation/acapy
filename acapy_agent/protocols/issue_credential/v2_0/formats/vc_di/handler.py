@@ -376,8 +376,12 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             cred_request_metadata=cred_req_result["metadata"],
         )
 
+        if "prover_did" in cred_req_result["request"]:
+            entropy = cred_req_result["request"]["prover_did"]
+        else:
+            entropy = cred_req_result["request"]["entropy"]
         anoncreds_link_secret_instance = AnoncredsLinkSecretRequest(
-            entropy=cred_req_result["request"]["prover_did"],
+            entropy=entropy,
             cred_def_id=cred_req_result["request"]["cred_def_id"],
             blinded_ms=cred_req_result["request"]["blinded_ms"],
             blinded_ms_correctness_proof=cred_req_result["request"][

@@ -278,7 +278,7 @@ async def main():
                                     {
                                         "path": ["$.issuer"],
                                         "purpose": "The claim must be from one of the specified issuers",  # noqa: E501
-                                        "filter": {"const": p256_alice_did}
+                                        "filter": {"const": p256_alice_did},
                                     },
                                     {
                                         "path": ["$.credentialSubject.givenName"],
@@ -289,9 +289,7 @@ async def main():
                         }
                     ],
                     "id": str(uuid4()),
-                    "format": {
-                        "ldp_vp": {"proof_type": ["EcdsaSecp256r1Signature2019"]}
-                        },
+                    "format": {"ldp_vp": {"proof_type": ["EcdsaSecp256r1Signature2019"]}},
                 },
                 domain="test-degree",
             )
