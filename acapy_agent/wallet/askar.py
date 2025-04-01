@@ -76,6 +76,7 @@ class AskarWallet(BaseWallet):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -98,7 +99,10 @@ class AskarWallet(BaseWallet):
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
-            tags = {"multikey": verkey_to_multikey(verkey, key_type.key_type)}
+            tags = {
+                "multikey": verkey_to_multikey(verkey, key_type.key_type),
+                "kid": [kid] if kid else [],
+            }
             await self._session.handle.insert_key(
                 verkey,
                 keypair,
