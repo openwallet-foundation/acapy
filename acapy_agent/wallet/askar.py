@@ -150,11 +150,12 @@ class AskarWallet(BaseWallet):
         await self._session.handle.update_key(name=verkey, tags=key_tags)
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key_kids)
 
-    async def remove_kid_from_key(self, kid: str) -> KeyInfo:
+    async def remove_kid_from_key(self, multikey: str, kid: str) -> KeyInfo:
         """Remove a kid association.
 
         Args:
             kid: the key identifier
+            multikey: the multibase value of the public key
 
         Returns:
             The key identified by kid
@@ -169,6 +170,11 @@ class AskarWallet(BaseWallet):
         key_entry = key_entries[0]
         key = cast(Key, key_entry.key)
         verkey = bytes_to_b58(key.get_public_bytes())
+        if verkey_to_multikey(verkey) != multikey:
+            raise WalletError(
+                f"Multikey mismatch {verkey_to_multikey(verkey)} - {multikey}"
+            )
+
         metadata = cast(dict, key_entry.metadata)
         key_types = self.session.inject(KeyTypes)
         key_type = key_types.from_key_type(key.algorithm.value)

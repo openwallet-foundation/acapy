@@ -40,6 +40,16 @@ class CreateKeyRequestSchema(OpenAPISchema):
         },
     )
 
+    kid = fields.Str(
+        required=False,
+        metadata={
+            "description": (
+                "Optional kid to bind to the keypair, such as a verificationMethod."
+            ),
+            "example": "did:web:example.com#key-01",
+        },
+    )
+
 
 class CreateKeyResponseSchema(OpenAPISchema):
     """Response schema from creating a new key."""
@@ -169,15 +179,16 @@ async def create_key(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    seed = body.get("seed") or None
-    alg = body.get("alg") or DEFAULT_ALG
+    seed = body.get("seed", None)
+    kid = body.get("seed", None)
+    alg = body.get("alg", DEFAULT_ALG)
 
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise MultikeyManagerError("Seed support is not enabled.")
 
     try:
         async with context.session() as session:
-            key_info = await MultikeyManager(session).create(seed=seed, alg=alg)
+            key_info = await MultikeyManager(session).create(seed=seed, kid=kid, alg=alg)
         return web.json_response(
             key_info,
             status=201,
@@ -234,11 +245,11 @@ async def unbind_kid(request: web.BaseRequest):
     body = await request.json()
 
     kid = body.get("kid")
-    # multikey = request.match_info["multikey"]
+    multikey = request.match_info["multikey"]
 
     try:
         async with context.session() as session:
-            key_info = await MultikeyManager(session).unbind(kid=kid)
+            key_info = await MultikeyManager(session).unbind(multikey=multikey, kid=kid)
         return web.json_response(
             key_info,
             status=200,
