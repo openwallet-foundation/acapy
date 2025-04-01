@@ -9,6 +9,7 @@ from acapy_agent.wallet.keys.manager import (
     multikey_to_verkey,
     verkey_to_multikey,
 )
+from acapy_agent.wallet.error import WalletError
 
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
@@ -71,3 +72,35 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         ]:
             assert multikey_to_verkey(multikey) == verkey
             assert verkey_to_multikey(verkey, alg=alg) == multikey
+
+    async def test_multiple_kid_assignments(self):
+        kid_1 = 'did:web:example.com#key-01'
+        kid_2 = 'did:web:example.com#key-02'
+        async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
+            key_info = await key_manager.create(
+                seed=self.seed, alg=self.ed25519_alg
+            )
+            multikey = key_info.get('multikey')
+            await key_manager.update(multikey=multikey, kid=kid_1)
+            await key_manager.update(multikey=multikey, kid=kid_2)
+            assert (await key_manager.from_kid(kid_1)).get('multikey') == multikey
+            assert (await key_manager.from_kid(kid_2)).get('multikey') == multikey
+
+    async def test_unbind_kid_assignment(self):
+        kid_1 = 'did:web:example.com#key-01'
+        kid_2 = 'did:web:example.com#key-02'
+        async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
+            key_info = await key_manager.create(
+                seed=self.seed, alg=self.ed25519_alg
+            )
+            multikey = key_info.get('multikey')
+            await key_manager.update(multikey=multikey, kid=kid_1)
+            await key_manager.update(multikey=multikey, kid=kid_2)
+            assert (await key_manager.from_kid(kid_1)).get('multikey') == multikey
+            assert (await key_manager.from_kid(kid_2)).get('multikey') == multikey
+            await key_manager.unbind(kid_1)
+            with self.assertRaises(WalletError) as context:
+                await key_manager.from_kid(kid_1).get('multikey')
+            assert (await key_manager.from_kid(kid_2)).get('multikey') == multikey
