@@ -33,6 +33,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
     async def test_key_creation(self):
         async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
             for i, (alg, expected_multikey) in enumerate(
                 [
                     (self.ed25519_alg, self.ed25519_multikey),
@@ -42,25 +43,25 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             ):
                 kid = f"did:web:example.com#key-0{i}"
 
-                key_info = await MultikeyManager(session=session).create(
+                key_info = await key_manager.create(
                     seed=self.seed, alg=alg
                 )
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] is None
 
-                key_info = await MultikeyManager(session=session).from_multikey(
+                key_info = await key_manager.from_multikey(
                     multikey=expected_multikey
                 )
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] is None
 
-                key_info = await MultikeyManager(session=session).update(
+                key_info = await key_manager.update(
                     multikey=expected_multikey, kid=kid
                 )
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] == kid
 
-                key_info = await MultikeyManager(session=session).from_kid(kid=kid)
+                key_info = await key_manager.from_kid(kid=kid)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] == kid
 
