@@ -9,7 +9,6 @@ from acapy_agent.wallet.keys.manager import (
     multikey_to_verkey,
     verkey_to_multikey,
 )
-from acapy_agent.wallet.error import WalletError
 
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
@@ -45,11 +44,11 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
                 key_info = await key_manager.create(seed=self.seed, alg=alg)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] == []
+                assert key_info["kid"] is None
 
                 key_info = await key_manager.from_multikey(multikey=expected_multikey)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] == []
+                assert key_info["kid"] is None
 
                 key_info = await key_manager.update(multikey=expected_multikey, kid=kid)
                 assert key_info["multikey"] == expected_multikey

@@ -135,17 +135,17 @@ class AskarWallet(BaseWallet):
         if not key_entry:
             raise WalletNotFoundError(f"No key entry found for verkey {verkey}")
 
-        key_tags = key_entry.tags or {"kid": []}
-        key_kids = key_tags.get("kid", [])
-        key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
-        key_kids.append(kid)
-        key_tags["kid"] = key_kids
-
         key = cast(Key, key_entry.key)
         metadata = cast(dict, key_entry.metadata)
         key_type = self.session.inject(KeyTypes).from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
+
+        key_tags = key_entry.tags or {"kid": []}
+        key_kids = key_tags.get("kid", [])
+        key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
+        key_kids.append(kid)
+        key_tags["kid"] = key_kids
 
         await self._session.handle.update_key(name=verkey, tags=key_tags)
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key_kids)
