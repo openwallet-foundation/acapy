@@ -1,0 +1,18 @@
+apiVersion: v2
+name: acapy
+description: A Helm chart for ACA-Py - A Cloud Agent - Python
+type: application
+
+version: 0.1.0
+appVersion: "1.2.4"
+
+dependencies:
+  - name: postgresql
+    version: 15.5.38
+    repository: https://charts.bitnami.com/bitnami/
+    condition: postgresql.enabled
+  - name: common
+    repository: https://charts.bitnami.com/bitnami/
+    tags:
+      - bitnami-common
+    version: 2.x.x

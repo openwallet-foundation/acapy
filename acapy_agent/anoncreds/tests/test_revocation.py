@@ -26,15 +26,13 @@ from ...anoncreds.models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...anoncreds.models.schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-)
+from ...anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
 from ...anoncreds.registry import AnonCredsRegistry
 from ...anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
 from ...anoncreds.tests.test_issuer import MockCredDefEntry
 from ...askar.profile_anon import AskarAnoncredsProfileSession
 from ...core.event_bus import Event, EventBus, MockEventBus
+from ...tails.anoncreds_tails_server import AnonCredsTailsServer
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import revocation as test_module
@@ -835,48 +833,49 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             self.revocation.generate_public_tails_uri(rev_reg_def)
 
     async def test_upload_tails_file(self):
-        self.profile.inject_or = mock.Mock(
-            side_effect=[
-                None,
-                mock.MagicMock(
-                    upload_tails_file=mock.CoroutineMock(
-                        return_value=(True, "https://tails-server.com")
-                    )
-                ),
-            ]
+        tails_server = mock.MagicMock(AnonCredsTailsServer, autospec=True)
+        tails_server.upload_tails_file = mock.CoroutineMock(
+            return_value=(True, "https://tails-server.com")
         )
+
         # valid
-        await self.revocation.upload_tails_file(rev_reg_def)
-        # upload fails
-        self.profile.inject_or = mock.Mock(
-            side_effect=[
-                None,
-                mock.MagicMock(
-                    upload_tails_file=mock.CoroutineMock(
-                        return_value=(None, "https://tails-server.com"),
-                    )
-                ),
-            ]
-        )
-        with self.assertRaises(test_module.AnonCredsRevocationError):
+        with mock.patch.object(
+            test_module,
+            "AnonCredsTailsServer",
+            mock.MagicMock(return_value=tails_server),
+        ):
             await self.revocation.upload_tails_file(rev_reg_def)
-        self.profile.inject_or = mock.Mock(
-            side_effect=[
-                None,
-                mock.MagicMock(
-                    upload_tails_file=mock.CoroutineMock(
-                        return_value=(True, "not-http://tails-server.com"),
-                    )
-                ),
-            ]
+        tails_server.upload_tails_file.assert_called_once()
+
+        # upload fails
+        tails_server.upload_tails_file.reset_mock()
+        tails_server.upload_tails_file = mock.CoroutineMock(
+            return_value=(None, "https://tails-server.com")
         )
-        # tails location does not match
-        with self.assertRaises(test_module.AnonCredsRevocationError):
+        with (
+            mock.patch.object(
+                test_module,
+                "AnonCredsTailsServer",
+                mock.MagicMock(return_value=tails_server),
+            ),
+            self.assertRaises(test_module.AnonCredsRevocationError),
+        ):
             await self.revocation.upload_tails_file(rev_reg_def)
 
-        # tails server base url setting is missing
-        self.profile.inject_or = mock.Mock(return_value=None)
-        with self.assertRaises(test_module.AnonCredsRevocationError):
+        tails_server.upload_tails_file.reset_mock()
+        tails_server.upload_tails_file = mock.CoroutineMock(
+            return_value=(None, "not-https://tails-server.com")
+        )
+
+        # tails location does not match
+        with (
+            mock.patch.object(
+                test_module,
+                "AnonCredsTailsServer",
+                mock.MagicMock(return_value=tails_server),
+            ),
+            self.assertRaises(test_module.AnonCredsRevocationError),
+        ):
             await self.revocation.upload_tails_file(rev_reg_def)
 
     @mock.patch.object(AskarAnoncredsProfileSession, "handle")

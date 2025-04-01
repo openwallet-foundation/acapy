@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
-**Last Update**: 2025-01-21, Release 1.2.1
+**Last Update**: 2025-03-20, Release 1.3.0rc0
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -21,7 +21,7 @@ ACA-Py and other decentralized trust Frameworks and Agents.
 
 | AIP Version | Supported | Notes |
 |  - | :-------: | -------- |
-| AIP 1.0     | :white_check_mark:  | Fully supported. Deprecation notices published|
+| AIP 1.0     | :white_check_mark:  | Partially supported. Deprecation notices published, Connections protocol moved into an [ACA-Py Plugin](https://plugins.aca-py.org/latest/connections/)|
 | AIP 2.0     | :white_check_mark:  | Fully supported. |
 
 A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can be found [later in this document](#supported-rfcs).
@@ -112,8 +112,8 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 
 ### AIP 1.0
 
-All RFCs listed in [AIP
-1.0](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10)
+Most RFCs listed in [AIP
+1.0](https://identity.foundation/aries-rfcs/latest/concepts/0302-aries-interop-profile/#aries-interop-profile-version-10)
 are fully supported in ACA-Py, but deprecation and removal of some of the
 protocols has begun. The following table provides notes about the implementation
 of specific RFCs.
@@ -121,13 +121,13 @@ of specific RFCs.
 | RFC | Supported | Notes |
 | --- | :--: | -- |
 | [0025-didcomm-transports](https://github.com/hyperledger/aries-rfcs/tree/b490ebe492985e1be9804fc0763119238b2e51ab/features/0025-didcomm-transports)      | :white_check_mark:        | ACA-Py currently supports HTTP and WebSockets for both inbound and outbound messaging. Transports are pluggable and an agent instance can use multiple inbound and outbound transports.|
-| [0160-connection-protocol](https://github.com/hyperledger/aries-rfcs/tree/9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol)    | :white_check_mark:        | **DEPRECATED** In the next release, the protocol will be removed. The protocol will continue to be available as an [ACA-Py plugin], but those upgrading to that pending release and continuing to use this protocol will need to include the plugin in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible. |
+| [0160-connection-protocol](https://github.com/hyperledger/aries-rfcs/tree/9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol)    | :x:        | **MOVED TO PLUGIN** The protocol has been moved into the [ACA-Py plugin] repository. Those upgrading to Release 1.3.0 or later and continuing to use this protocol **MUST** include the [Connections plugin](https://plugins.aca-py.org/latest/connections/) in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible. |
 | [0036-issue-credential-v1.0](https://github.com/hyperledger/aries-rfcs/tree/bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential)    | :white_check_mark:        | **DEPRECATED** In the next release, the protocol will be removed. The protocol will continue to be available as an [ACA-Py plugin], but those upgrading to that pending release and continuing to use this protocol will need to include the plugin in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible.  |
 | [0037-present-proof-v1.0](https://github.com/hyperledger/aries-rfcs/tree/4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof)    | :white_check_mark:        | **DEPRECATED** In the next release, the protocol will be removed. It will continue to be available as an [ACA-Py plugin], but those upgrading to that pending release and continuing to use this protocol will need to include the plugin in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible. |
 
 [ACA-Py plugin]: https://plugins.aca-py.org
 
-[AIP 2.0]: https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20
+[AIP 2.0]: https://identity.foundation/aries-rfcs/latest/concepts/0302-aries-interop-profile/#aries-interop-profile-version-20
 
 ### AIP 2.0
 
