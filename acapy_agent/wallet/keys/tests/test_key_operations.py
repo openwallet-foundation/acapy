@@ -38,21 +38,15 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             ):
                 kid = f"did:web:example.com#key-0{i}"
 
-                key_info = await key_manager.create(
-                    seed=self.seed, alg=alg
-                )
+                key_info = await key_manager.create(seed=self.seed, alg=alg)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] is None
 
-                key_info = await key_manager.from_multikey(
-                    multikey=expected_multikey
-                )
+                key_info = await key_manager.from_multikey(multikey=expected_multikey)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] is None
 
-                key_info = await key_manager.update(
-                    multikey=expected_multikey, kid=kid
-                )
+                key_info = await key_manager.update(multikey=expected_multikey, kid=kid)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] == kid
 
