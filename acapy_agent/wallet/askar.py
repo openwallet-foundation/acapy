@@ -98,9 +98,7 @@ class AskarWallet(BaseWallet):
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
-            tags = {
-                "multikey": verkey_to_multikey(verkey, key_type.key_type)
-            }
+            tags = {"multikey": verkey_to_multikey(verkey, key_type.key_type)}
             await self._session.handle.insert_key(
                 verkey,
                 keypair,
@@ -133,7 +131,7 @@ class AskarWallet(BaseWallet):
         if not key_entry:
             raise WalletNotFoundError(f"No key entry found for verkey {verkey}")
 
-        key_tags = key_entry.tags or {'kid': []}
+        key_tags = key_entry.tags or {"kid": []}
         key_kids = key_tags.get("kid", [])
         key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
         key_kids.append(kid)
@@ -173,16 +171,15 @@ class AskarWallet(BaseWallet):
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
 
-
-        key_tags = key_entry.tags or {'kid': []}
+        key_tags = key_entry.tags or {"kid": []}
         key_kids = key_tags.get("kid", [])
         key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
-        
+
         try:
             key_kids.remove(kid)
         except ValueError:
             pass
-        
+
         key_tags["kid"] = key_kids
 
         await self._session.handle.update_key(name=verkey, tags=key_tags)
