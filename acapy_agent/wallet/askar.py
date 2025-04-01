@@ -170,16 +170,18 @@ class AskarWallet(BaseWallet):
         key_entry = key_entries[0]
         key = cast(Key, key_entry.key)
         verkey = bytes_to_b58(key.get_public_bytes())
-        if verkey_to_multikey(verkey) != multikey:
-            raise WalletError(
-                f"Multikey mismatch {verkey_to_multikey(verkey)} - {multikey}"
-            )
 
         metadata = cast(dict, key_entry.metadata)
         key_types = self.session.inject(KeyTypes)
         key_type = key_types.from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
+
+        fetched_multikey = verkey_to_multikey(verkey, key_type.key_type)
+        if fetched_multikey != multikey:
+            raise WalletError(
+                f"Multikey mismatch: {fetched_multikey} != {multikey}"
+            )
 
         key_tags = key_entry.tags or {"kid": []}
         key_kids = key_tags.get("kid", [])
