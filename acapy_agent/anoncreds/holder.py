@@ -1,4 +1,4 @@
-"""Indy holder implementation."""
+"""Anoncreds holder implementation."""
 
 import asyncio
 import json
@@ -372,12 +372,12 @@ class AnonCredsHolder:
 
         return credential_id
 
-    async def get_credentials(self, start: int, count: int, wql: dict):
+    async def get_credentials(self, *, offset: int, limit: int, wql: dict):
         """Get credentials stored in the wallet.
 
         Args:
-            start: Starting index
-            count: Number of records to return
+            offset: Starting index
+            limit: Number of records to return
             wql: wql query dict
 
         """
@@ -388,8 +388,8 @@ class AnonCredsHolder:
             rows = self.profile.store.scan(
                 category=CATEGORY_CREDENTIAL,
                 tag_filter=wql,
-                offset=start,
-                limit=count,
+                offset=offset,
+                limit=limit,
                 profile=self.profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
@@ -406,8 +406,9 @@ class AnonCredsHolder:
         self,
         presentation_request: dict,
         referents: Sequence[str],
-        start: int,
-        count: int,
+        *,
+        offset: int,
+        limit: int,
         extra_query: Optional[dict] = None,
     ):
         """Get credentials stored in the wallet.
@@ -415,8 +416,8 @@ class AnonCredsHolder:
         Args:
             presentation_request: Valid presentation request from issuer
             referents: Presentation request referents to use to search for creds
-            start: Starting index
-            count: Maximum number of records to return
+            offset: Starting index
+            limit: Maximum number of records to return
             extra_query: wql query dict
 
         """
@@ -459,8 +460,8 @@ class AnonCredsHolder:
             rows = self.profile.store.scan(
                 category=CATEGORY_CREDENTIAL,
                 tag_filter=tag_filter,
-                offset=start,
-                limit=count,
+                offset=offset,
+                limit=limit,
                 profile=self.profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
@@ -597,10 +598,10 @@ class AnonCredsHolder:
 
         Args:
             presentation_request: Valid indy format presentation request
-            requested_credentials: Indy format requested credentials
-            schemas: Indy formatted schemas JSON
-            credential_definitions: Indy formatted credential definitions JSON
-            rev_states: Indy format revocation states JSON
+            requested_credentials: Anoncreds format requested credentials
+            schemas: Anoncreds formatted schemas JSON
+            credential_definitions: Anoncreds formatted credential definitions JSON
+            rev_states: Anoncreds format revocation states JSON
 
         """
 
@@ -690,9 +691,9 @@ class AnonCredsHolder:
             presentation_request: Valid indy format presentation request
             requested_credentials_w3c: W3C format requested credentials
             credentials_w3c_metadata: W3C format credential metadata
-            schemas: Indy formatted schemas JSON
-            credential_definitions: Indy formatted credential definitions JSON
-            rev_states: Indy format revocation states JSON
+            schemas: Anoncreds formatted schemas JSON
+            credential_definitions: Anoncreds formatted credential definitions JSON
+            rev_states: Anoncreds format revocation states JSON
 
         """
         present_creds = PresentCredentials()

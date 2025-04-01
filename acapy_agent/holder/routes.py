@@ -13,6 +13,7 @@ from aiohttp_apispec import (
 )
 from aries_askar import AskarErrorCode
 from marshmallow import fields
+from marshmallow.validate import Range
 
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
@@ -33,6 +34,7 @@ from ..messaging.valid import (
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
 )
+from ..storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecordSchema
@@ -66,16 +68,33 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
 
     start = fields.Str(
         required=False,
+        load_default=0,
         validate=NUM_STR_WHOLE_VALIDATE,
-        metadata={"description": "Start index", "example": NUM_STR_WHOLE_EXAMPLE},
+        metadata={
+            "description": "Start index (DEPRECATED - use offset instead)",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+            "deprecated": True,
+        },
     )
     count = fields.Str(
         required=False,
+        load_default=10,
         validate=NUM_STR_NATURAL_VALIDATE,
         metadata={
-            "description": "Maximum number to retrieve",
+            "description": "Maximum number to retrieve (DEPRECATED - use limit instead)",
             "example": NUM_STR_NATURAL_EXAMPLE,
+            "deprecated": True,
         },
+    )
+    limit = fields.Int(
+        required=False,
+        validate=Range(min=1, max=MAXIMUM_PAGE_SIZE),
+        metadata={"description": "Number of results to return", "example": 50},
+    )
+    offset = fields.Int(
+        required=False,
+        validate=Range(min=0),
+        metadata={"description": "Offset for pagination", "example": 0},
     )
     wql = fields.Str(
         required=False,
@@ -332,7 +351,7 @@ async def credentials_remove(request: web.BaseRequest):
     credential_id = request.match_info["credential_id"]
     profile: Profile = context.profile
 
-    async def delete_credential_using_anoncreds(profile: Profile):
+    async def delete_credential_using_anoncreds():
         try:
             holder = AnonCredsHolder(profile)
             await holder.delete_credential(credential_id)
@@ -341,7 +360,7 @@ async def credentials_remove(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=err.roll_up) from err
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    async def delete_credential_using_indy(profile: Profile):
+    async def delete_credential_using_indy():
         async with profile.session() as session:
             try:
                 holder = session.inject(IndyHolder)
@@ -349,10 +368,22 @@ async def credentials_remove(request: web.BaseRequest):
             except WalletNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
+    async def delete_using_anoncreds_or_indy():
+        """Try to delete anoncreds credential with fallback to indy if not found."""
+        try:
+            await delete_credential_using_anoncreds()
+        except web.HTTPNotFound as anoncreds_err:
+            # If credential not found in anoncreds, try with indy
+            try:
+                await delete_credential_using_indy()
+            except web.HTTPNotFound:
+                # Raise original anoncreds error if neither found
+                raise web.HTTPNotFound(reason=anoncreds_err.reason) from anoncreds_err
+
     if context.settings.get(wallet_type_config) == "askar-anoncreds":
-        await delete_credential_using_anoncreds(profile)
+        await delete_using_anoncreds_or_indy()
     else:
-        await delete_credential_using_indy(profile)
+        await delete_credential_using_indy()
 
     # Notify event subscribers
     topic = "acapy::record::credential::delete"
@@ -379,25 +410,32 @@ async def credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    start = request.query.get("start")
-    count = request.query.get("count")
+
+    # Handle both old style start/count and new limit/offset
+    # TODO: Remove start/count and swap to PaginatedQuerySchema and get_limit_offset
+    if "limit" in request.query or "offset" in request.query:
+        # New style - use limit/offset
+        limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+        offset = int(request.query.get("offset", 0))
+    else:
+        # Old style - use start/count
+        limit = int(request.query.get("count", "10"))
+        offset = int(request.query.get("start", "0"))
 
     # url encoded json wql
     encoded_wql = request.query.get("wql") or "{}"
     wql = json.loads(encoded_wql)
 
-    # defaults
-    start = int(start) if isinstance(start, str) else 0
-    count = int(count) if isinstance(count, str) else 10
-
     if context.settings.get(wallet_type_config) == "askar-anoncreds":
         holder = AnonCredsHolder(context.profile)
-        credentials = await holder.get_credentials(start, count, wql)
+        credentials = await holder.get_credentials(limit=limit, offset=offset, wql=wql)
     else:
         async with context.profile.session() as session:
             holder = session.inject(IndyHolder)
             try:
-                credentials = await holder.get_credentials(start, count, wql)
+                credentials = await holder.get_credentials(
+                    limit=limit, offset=offset, wql=wql
+                )
             except IndyHolderError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -476,7 +514,6 @@ async def w3c_cred_remove(request: web.BaseRequest):
     summary="Fetch W3C credentials from wallet",
 )
 @request_schema(W3CCredentialsListRequestSchema())
-@querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
 @tenant_authentication
 async def w3c_creds_list(request: web.BaseRequest):

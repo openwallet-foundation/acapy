@@ -174,6 +174,8 @@ class AskarStorage(BaseStorage):
         tag_query: Optional[Mapping] = None,
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
+        order_by: Optional[str] = None,
+        descending: bool = False,
     ) -> Sequence[StorageRecord]:
         """Retrieve a page of records matching a particular type filter and tag query.
 
@@ -182,6 +184,11 @@ class AskarStorage(BaseStorage):
             tag_query: An optional dictionary of tag filter clauses
             limit: The maximum number of records to retrieve
             offset: The offset to start retrieving records from
+            order_by: An optional field by which to order the records.
+            descending: Whether to order the records in descending order.
+
+        Returns:
+            A sequence of StorageRecord matching the filter and query parameters.
         """
         results = []
 
@@ -190,6 +197,8 @@ class AskarStorage(BaseStorage):
             tag_filter=tag_query,
             limit=limit,
             offset=offset,
+            order_by=order_by,
+            descending=descending,
             profile=self._session.profile.settings.get("wallet.askar_profile"),
         ):
             results += (
@@ -206,13 +215,19 @@ class AskarStorage(BaseStorage):
         self,
         type_filter: str,
         tag_query: Optional[Mapping] = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
         options: Optional[Mapping] = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
         for_update = bool(options and options.get("forUpdate"))
         results = []
         for row in await self._session.handle.fetch_all(
-            type_filter, tag_query, for_update=for_update
+            category=type_filter,
+            tag_filter=tag_query,
+            order_by=order_by,
+            descending=descending,
+            for_update=for_update,
         ):
             results.append(
                 StorageRecord(

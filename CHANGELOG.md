@@ -1,5 +1,185 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.3.0rc0
+
+### March 20, 2025
+
+Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for [AIP 1.0] from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the [categorized list of pull requests](#130-categorized-list-of-pull-requests) for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (`askar-anoncreds`), AnonCreds processing in general, and AnonCreds revocation in particular.
+
+### 1.3.0 Deprecation Notices
+
+- In the next ACA-Py release, we will be dropping from the core ACA-Py repository the AIP 1.0 [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
+
+[ACA-Py Plugins]: https://plugins.aca-py.org
+[RFC 0160 Connections]: https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/
+[RFC 0037 Issue Credentials v1.0]: https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/
+[RFC 0037 Present Proof v1.0]: https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/
+[AIP 1.0]: https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10
+[AIP 2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/
+[RFC 0434 Out of Band]: https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/
+[RFC 0023 DID Exchange]: https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/
+[RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
+[RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
+[Connections Protocol Plugin]: https://plugins.aca-py.org/latest/connections/
+
+### 1.3.0 Breaking Changes
+
+In this release, the DiDComm [RFC 0160 Connections] is removed, in favour of the newer, more complete [RFC 0434 Out of Band] and [RFC 0023 DID Exchange]. Those still requiring [RFC 0160 Connections] protocol support must update their startup parameters to include the [Connections Protocol Plugin]. See the documentation for details, but once the ACA-Py instance startup options are extended to include the Connections protocol plugin, Controllers using the Connections protocol should continue to work as they had been. That said, we highly recommend implementers move to the [RFC 0434 Out of Band] and [RFC 0023 DID Exchange] Protocols as soon as possible.
+
+### 1.3.0 ACA-Py Controller API Changes:
+
+- Added: `did:indy` support, including a new `POST /did/indy/create` endpoint
+- Routes that support pagination (such as endpoints for fetching connections or credential/presentation exchange records), now include `descending` as an optional query parameter.
+- `validFrom` and `validUntil` added to the `Credential` and `VerifiableCredential` objects
+
+Specifics of the majority of the can be found by looking at the diffs for the `swagger.json` and `openapi.json` files that are part of the [1.3.0.rc Release Pull Request](https://github.com/openwallet-foundation/acapy/pull/3604). Later pull requests might introduce some additional changes.
+
+### 1.3.0 Categorized List of Pull Requests
+
+- Updates/fixes to wallet types -- `askar` and `askar-anoncreds`
+  - fix: Support askar-anoncreds backend in multi-ledger configuration [\#3603](https://github.com/openwallet-foundation/acapy/pull/3603) [MonolithicMonk](https://github.com/MonolithicMonk)
+  - :bug: Fix: allow anoncreds wallet to delete indy credentials [\#3551](https://github.com/openwallet-foundation/acapy/pull/3551) [ff137](https://github.com/ff137)
+  - :bug: Fix: allow multitenant askar-anoncreds wallets to present indy credentials [\#3549](https://github.com/openwallet-foundation/acapy/pull/3549) [ff137](https://github.com/ff137)
+  - fix: ensure profile names are unique [\#3470](https://github.com/openwallet-foundation/acapy/pull/3470) [dbluhm](https://github.com/dbluhm)
+  - feat: add did management design doc [\#3375](https://github.com/openwallet-foundation/acapy/pull/3375) [dbluhm](https://github.com/dbluhm)
+  - Add did:indy transaction version 2 support [\#3253](https://github.com/openwallet-foundation/acapy/pull/3253) [jamshale](https://github.com/jamshale)
+  - :art: Deprecate count/start query params and implement limit/offset [\#3208](https://github.com/openwallet-foundation/acapy/pull/3208) [ff137](https://github.com/ff137)
+  - :sparkles: Add ordering options to askar scan and fetch_all methods [\#3173](https://github.com/openwallet-foundation/acapy/pull/3173) [ff137](https://github.com/ff137)
+- Updates/fixes to AnonCreds Processing
+  - :bug: Fix auto creation of revocation registries [\#3601](https://github.com/openwallet-foundation/acapy/pull/3601) [ff137](https://github.com/ff137)
+  - :sparkles: Refactor TailsServer injection pattern [\#3587](https://github.com/openwallet-foundation/acapy/pull/3587) [ff137](https://github.com/ff137)
+  - :bug: Fix: Register both askar and anoncreds plugins for multitenancy [\#3585](https://github.com/openwallet-foundation/acapy/pull/3585) [ff137](https://github.com/ff137)
+  - Repair anoncreds holder revocation list request [\#3570](https://github.com/openwallet-foundation/acapy/pull/3570) [jamshale](https://github.com/jamshale)
+  - Anoncreds proof validation issue (once credential has been revoked) [\#3557](https://github.com/openwallet-foundation/acapy/pull/3557) [ianco](https://github.com/ianco)
+  - Fix revocation accum sync when endorsement txn fails [\#3547](https://github.com/openwallet-foundation/acapy/pull/3547) [jamshale](https://github.com/jamshale)
+  - Allow schema id to be used during anoncreds issuance [\#3497](https://github.com/openwallet-foundation/acapy/pull/3497) [jamshale](https://github.com/jamshale)
+  - Fix Class import for AnonCreds Registry routes [\#3495](https://github.com/openwallet-foundation/acapy/pull/3495) [PatStLouis](https://github.com/PatStLouis)
+  - fix typo in error message of indy credential offer [\#3485](https://github.com/openwallet-foundation/acapy/pull/3485) [zoblazo](https://github.com/zoblazo)
+  - Fixing BaseAnonCredsResolver get_revocation_list abstract method [\#3484](https://github.com/openwallet-foundation/acapy/pull/3484) [thiagoromanos](https://github.com/thiagoromanos)
+  - Anoncreds Issuance - Extra options. [\#3483](https://github.com/openwallet-foundation/acapy/pull/3483) [jamshale](https://github.com/jamshale)
+- Multi-Tenancy Related Updates and Fixes:
+  - fix: tenant access to endpoints leading to access the base wallet [\#3545](https://github.com/openwallet-foundation/acapy/pull/3545) [thiagoromanos](https://github.com/thiagoromanos)
+  - fix: connection reuse with multi-tenancy [\#3543](https://github.com/openwallet-foundation/acapy/pull/3543) [dbluhm](https://github.com/dbluhm)
+  - Remove base wallet type must be new wallet type restriction [\#3542](https://github.com/openwallet-foundation/acapy/pull/3542) [jamshale](https://github.com/jamshale)
+- Logging and Error Handling Updates and Fixes:
+  - :art: Include the validation error in Unprocessable Entity reason [\#3517](https://github.com/openwallet-foundation/acapy/pull/3517) [ff137](https://github.com/ff137)
+  - Catch and log universal resolver setup error [\#3511](https://github.com/openwallet-foundation/acapy/pull/3511) [jamshale](https://github.com/jamshale)
+- W3C Verifiable Credentials Support Updates and Fixes:
+  - Add vcdm 2.0 model and context [\#3436](https://github.com/openwallet-foundation/acapy/pull/3436) [PatStLouis](https://github.com/PatStLouis)
+- DIDComm Protocol Updates and Fixes:
+  - BREAKING: remove connection protocol [\#3184](https://github.com/openwallet-foundation/acapy/pull/3184) [dbluhm](https://github.com/dbluhm)
+- Documentation and Tutorial Pull Requests:
+  - :memo: Update README [\#3588](https://github.com/openwallet-foundation/acapy/pull/3588) [ff137](https://github.com/ff137)
+  - Fix missing log_timer import in acme.py [\#3562](https://github.com/openwallet-foundation/acapy/pull/3562) [parth5805](https://github.com/parth5805)
+  - Fix prompt for alice/faber demo [\#3553](https://github.com/openwallet-foundation/acapy/pull/3553) [ianco](https://github.com/ianco)
+  - Add reuse document to MkDocs YML to add to doc site [\#3535](https://github.com/openwallet-foundation/acapy/pull/3535) [swcurran](https://github.com/swcurran)
+  - Create ReuseConnection.md [\#3534](https://github.com/openwallet-foundation/acapy/pull/3534) [MonolithicMonk](https://github.com/MonolithicMonk)
+  - :white_check_mark: Fix demo playground example tests [\#3531](https://github.com/openwallet-foundation/acapy/pull/3531) [ff137](https://github.com/ff137)
+  - :arrow_up: Upgrade sphinx versions in docs [\#3530](https://github.com/openwallet-foundation/acapy/pull/3530) [ff137](https://github.com/ff137)
+- ACA-Py Testing Pull Requests:
+  - Repair BDD integration release tests [\#3605](https://github.com/openwallet-foundation/acapy/pull/3605) [jamshale](https://github.com/jamshale)
+  - Indicate when interop tests fail [\#3592](https://github.com/openwallet-foundation/acapy/pull/3592) [jamshale](https://github.com/jamshale)
+  - :zap: Automatically use pytest-xdist to run tests in parallel [\#3574](https://github.com/openwallet-foundation/acapy/pull/3574) [ff137](https://github.com/ff137)
+  - :arrow_up: Upgrade poetry to 2.1 [\#3538](https://github.com/openwallet-foundation/acapy/pull/3538) [ff137](https://github.com/ff137)
+  - :zap: Remove `--cov` from pytest.ini_options [\#3522](https://github.com/openwallet-foundation/acapy/pull/3522) [ff137](https://github.com/ff137)
+  - :heavy_plus_sign: Re-add `git` to Dockerfile [\#3515](https://github.com/openwallet-foundation/acapy/pull/3515) [ff137](https://github.com/ff137)
+  - Restore connection route tests [\#3461](https://github.com/openwallet-foundation/acapy/pull/3461) [dbluhm](https://github.com/dbluhm)
+- Dependency Management pull requests (other than Dependabot):
+  - Upgrade docker images to release 1.2.4 [\#3597](https://github.com/openwallet-foundation/acapy/pull/3597) [jamshale](https://github.com/jamshale)
+  - Update changed-files to non vulnerable version [\#3591](https://github.com/openwallet-foundation/acapy/pull/3591) [ryjones](https://github.com/ryjones)
+  - :arrow_up: Update lock file [\#3590](https://github.com/openwallet-foundation/acapy/pull/3590) [ff137](https://github.com/ff137)
+  - :arrow_up: Upgrade ruff to 0.11 [\#3589](https://github.com/openwallet-foundation/acapy/pull/3589) [ff137](https://github.com/ff137)
+  - Update acapy images to 1.2.3 [\#3571](https://github.com/openwallet-foundation/acapy/pull/3571) [jamshale](https://github.com/jamshale)
+  - :construction_worker: Dependabot: don't ignore major releases [\#3521](https://github.com/openwallet-foundation/acapy/pull/3521) [ff137](https://github.com/ff137)
+  - Grouped upgrades - Week 7, 2025 [\#3508](https://github.com/openwallet-foundation/acapy/pull/3508) [jamshale](https://github.com/jamshale)
+  - Upgrade to bookworm [\#3498](https://github.com/openwallet-foundation/acapy/pull/3498) [jamshale](https://github.com/jamshale)
+  - Update aries-askar / Generate poetry.lock with poetry 2.0 [\#3478](https://github.com/openwallet-foundation/acapy/pull/3478) [jamshale](https://github.com/jamshale)
+  - Upgrade askar and did_webvh [\#3474](https://github.com/openwallet-foundation/acapy/pull/3474) [jamshale](https://github.com/jamshale)
+  - Update dockerfile image after release [\#3469](https://github.com/openwallet-foundation/acapy/pull/3469) [jamshale](https://github.com/jamshale)
+  - :arrow_up: Upgrade dependencies [\#3455](https://github.com/openwallet-foundation/acapy/pull/3455) [ff137](https://github.com/ff137)
+- Release management pull requests:
+  - 1.3.0rc0 [\#3604](https://github.com/openwallet-foundation/acapy/pull/3604) [swcurran](https://github.com/swcurran)
+- Dependabot PRs
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-03-19+author%3Aapp%2Fdependabot+)
+
+## 1.2.4
+
+### March 13, 2025
+
+This patch release addresses three bugs backported from the `main` branch:
+
+- Fixes a problem in the handling of connection reuse in multitenancy environments. This is a backport of the PR [fix: connection reuse with multi-tenancy #3543](https://github.com/openwallet-foundation/acapy/pull/3543). This fixes the issue when using multi-tenancy, calls to `POST /out-of-band/receive-invitation?use_existing_connection=true` failing with a record not found error, despite connection reuse actually being completed in the background.
+- Fixes a problem when using acapy with multitenant enabled and admin-insecure-mode. Without this fix, tenant endpoints (like `GET /wallet/did` for example) could be accessed without a bearer token. For details see: [fix: tenant access to endpoints leading to access the base wallet #3545](https://github.com/openwallet-foundation/acapy/pull/3545).
+- Fixes the AnonCreds holder revocation list endpoint which was erroneously using the `to` timestamp for the `from`, preventing the creation of valid non-revocation proofs. For details, see: [Repair anoncreds holder revocation list request](https://github.com/openwallet-foundation/acapy/pull/3570)
+
+### 1.2.4 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in this 1.2.4 release, but the Connections Protocol has been removed from the ACA-Py `main` branch, and is available as a [plugin](https://github.com/openwallet-foundation/acapy-plugins/tree/main/connections). The Issue Credential v1 and Present Proof v1 protocols will soon be changed similarly. Please review these notifications carefully!
+
+### 1.2.4 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.2.4 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fixes
+  - 1.2.LTS Repair anoncreds holder revocation list request [\#3580](https://github.com/openwallet-foundation/acapy/pull/3580) [jamshale](https://github.com/jamshale)
+- Multitenant Fixes
+  - fix: cherry-pick fixes from main to 1.2.lts [\#3577](https://github.com/openwallet-foundation/acapy/pull/3577) [thiagoromanos](https://github.com/thiagoromanos)
+
+- Release management pull requests:
+  - 1.2.4 [\#3582](https://github.com/openwallet-foundation/acapy/pull/3582) [swcurran](https://github.com/swcurran)
+
+## 1.2.3
+
+### March 6, 2025
+
+This patch release addresses a bug in the publishing of AnonCreds revocation entries that caused the ledger and issuer wallet to become out of sync. As a result, revoked credentials were not being correctly flagged as revoked when presented. Previously, this issue was mitigated by an automatic “sync-revocation” process, which generally resolved the problem. However, we recently identified scenarios where the presence of an Indy Endorser in the revocation publication flow caused the “sync-revocation” process to fail silently.
+
+This patch resolves that issue. Once applied, if a revocation batch results in an out-of-sync state, the “sync-revocation” process will automatically run to correct it.
+
+For more details, see [Issue 3546](https://github.com/openwallet-foundation/acapy/issues/3546).
+
+### 1.2.3 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in this 1.2.3 release, but the Connections Protocol has been removed from the ACA-Py `main` branch, and is available as a [plugin](https://github.com/openwallet-foundation/acapy-plugins/tree/main/connections). The Issue Credential v1 and Present Proof v1 protocols will soon be changed similarly. Please review these notifications carefully!
+
+### 1.2.3 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.2.3 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fixes
+  - 1.2.LTS Fix revocation accum sync when endorsement txn fails (#3547) [\#3555](https://github.com/openwallet-foundation/acapy/pull/3555) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.3 [\#3559](https://github.com/openwallet-foundation/acapy/pull/3559) [swcurran](https://github.com/swcurran)
+
+## 1.2.2
+
+### January 30, 2025
+
+A patch release to upgrade [Askar](https://github.com/openwallet-foundation/askar) to [0.4.3](https://github.com/openwallet-foundation/askar/releases/tag/v0.4.3) and fixes a problem with wallet names in a multitenant, single-wallet configuration.
+
+Addresses the problem outlined in [#3471](https://github.com/openwallet-foundation/acapy/issues/3471) around profiles in multi-tenant/single wallet deployments. The update to Askar addresses an intermittent hang on startup, and a dependency change that can result in a substantial performance improvement in some cases. See issues: [openwallet-foundation/askar#350](https://github.com/openwallet-foundation/askar/pull/350), [openwallet-foundation/askar#351](https://github.com/openwallet-foundation/askar/pull/351), [openwallet-foundation/askar#354](https://github.com/openwallet-foundation/askar/pull/354). This [comment on one of the PRs](https://github.com/openwallet-foundation/askar/pull/350#issuecomment-2615727109) describes the scenario where a substantial performance improvement was seen as a result of the change in Askar.
+
+### 1.2.2 Deprecation Notices
+
+The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#110) release about AIP 1.0 protocols still apply. The protocols remain in the 1.2.2 release, but will be moved out of the core and into plugins soon. Please review these notifications carefully!
+
+### 1.2.2 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.2.2 Categorized List of Pull Requests
+
+- Startup, Wallet, and Upgrade Fixes
+  - 1.2 LTS: Askar upgrade and fix profile unique names [\#3477](https://github.com/openwallet-foundation/acapy/pull/3477) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.2 [\#3482](https://github.com/openwallet-foundation/acapy/pull/3482) [swcurran](https://github.com/swcurran)
+
 ## 1.2.1
 
 ### January 21, 2025
@@ -16,7 +196,7 @@ The same **[deprecation notices](#101-deprecation-notices)** from the [1.1.0](#1
 
 There are no breaking changes in this release, just fixes, new tests and minor updates.
 
-#### 1.2.1 Categorized List of Pull Requests
+### 1.2.1 Categorized List of Pull Requests
 
 - Linked Data Proof and Key Type Additions
   - Support EcdsaSecp256r1Signature2019 linked data proof [\#3443](https://github.com/openwallet-foundation/acapy/pull/3443) [gmulhearn](https://github.com/gmulhearn)
@@ -86,7 +266,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
 
 [PR #3391]: https://github.com/openwallet-foundation/acapy/pull/3391
 
-#### 1.2.0 Categorized List of Pull Requests
+### 1.2.0 Categorized List of Pull Requests
 
 - AnonCreds VC Issuance and Presentation Enhancement / Fixes
   - Fix indy fallback format in presentation from holder [\#3413](https://github.com/openwallet-foundation/acapy/pull/3413) [jamshale](https://github.com/jamshale)
@@ -140,7 +320,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
   - The latest tag doesn't exist in git, just github [\#3392](https://github.com/openwallet-foundation/acapy/pull/3392) [ryjones](https://github.com/ryjones)
   - :art: Fix model name for consistency [\#3382](https://github.com/openwallet-foundation/acapy/pull/3382) [ff137](https://github.com/ff137)
   - Fix for demo initial cred_type override [\#3378](https://github.com/openwallet-foundation/acapy/pull/3378) [ianco](https://github.com/ianco)
-  - :zap: Add class caching to DeferLoad [\#3361](https://github.com/openwallet-foundation/acapy/pull/3361) [ff137](https://github.com/ff137
+  - :zap: Add class caching to DeferLoad [\#3361](https://github.com/openwallet-foundation/acapy/pull/3361) [ff137](https://github.com/ff137)
   - :art: Sync Ruff version in configs and apply formatting [\#3358](https://github.com/openwallet-foundation/acapy/pull/3358) [ff137](https://github.com/ff137)
   - :art: Replace deprecated ABC decorators [\#3357](https://github.com/openwallet-foundation/acapy/pull/3357) [ff137](https://github.com/ff137)
   - :art: Refactor the logging module monolith [\#3319](https://github.com/openwallet-foundation/acapy/pull/3319) [ff137](https://github.com/ff137)
@@ -150,7 +330,7 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
   - Remove in memory wallet [\#3311](https://github.com/openwallet-foundation/acapy/pull/3311) [jamshale](https://github.com/jamshale)
 
 - Consolidate Dependabot updates and other library/dependency updates
-  - Week 49 Library upgrades [\#3368](https://github.com/openwallet-foundation/acapy/pull/3368) [jamshale](https://github.com/jamshale) 
+  - Week 49 Library upgrades [\#3368](https://github.com/openwallet-foundation/acapy/pull/3368) [jamshale](https://github.com/jamshale)
   - :arrow_up: Update lock file [\#3296](https://github.com/openwallet-foundation/acapy/pull/3296) [ff137](https://github.com/ff137)
 
 - Release management pull requests:
@@ -165,37 +345,15 @@ A fix for a multi-tenancy bug in the holding of VC-LD credentials that resulted 
 
 ACA-Py Release 1.1.1 was a release candidate for 1.2.0. A mistake in the release PR meant the 1.1.1rc0 was tagged published to PyPi as Release 1.1.1. Since that was not intended to be a final release, the release changelog for 1.2.0 includes the Pull Requests that would have been in 1.1.1.
 
-## 0.12.3
-
-### December 17, 2024
-
-A patch release to add address a bug found in the Linked Data Verifiable Credential handling for multi-tenant holders. The bug was fixed in the main branch, [PR 3391 - BREAKING: VCHolder multitenant binding](https://github.com/openwallet-foundation/acapy/pull/3391), and with this release is backported to 0.12 Long Term Support branch. Prior to this release, holder credentials received into a tenant wallet were actually received into the multi-tenant admin wallet.
-
-### 0.12.3 Breaking Changes
-
-There are no breaking changes in this release.
-
-#### 0.12.3 Categorized List of Pull Requests
-
-- Multitenant LD-VC Holders
-  - Patch PR 3391 - 0.12.lts [\#3396](https://github.com/openwallet-foundation/acapy/pull/3396)
-- Release management pull requests
-  - 0.12.3 [\#3408](https://github.com/hyperledger/aries-cloudagent-python/pull/3408) [swcurran](https://github.com/swcurran)
-  - 0.12.3rc0 [\#3406](https://github.com/hyperledger/aries-cloudagent-python/pull/3406) [swcurran](https://github.com/swcurran)
-
 ## 1.1.0
 
 ### October 15, 2024
 
 Release 1.1.0 is the first release of ACA-Py from the [OpenWallet Foundation] (OWF). The only reason for the release is to test out all of the release publishing actions now that we have moved the repo to its new home ([https://github.com/openwallet-foundation/acapy](https://github.com/openwallet-foundation/acapy)). Almost all of the changes in the release are related to the move.
 
-[OpenWallet Foundation]: https://openwallet.foundation/
-
-The move triggered some big changes for those with existing ACA-Py deployments resulting from the change in the GitHub organization (from Hyperledger to OWF) and source code name (from `aries_cloudagent` to `acapy_agent`). See the [Release 1.1.0 breaking changes](#110rc0-breaking-changes) for the details.
+The move triggered some big changes for those with existing ACA-Py deployments resulting from the change in the GitHub organization (from Hyperledger to OWF) and source code name (from `aries_cloudagent` to `acapy_agent`). See the [Release 1.1.0 breaking changes](#110-breaking-changes) for the details.
 
 For up to date details on what the repo move means for ACA-Py users, including steps for updating deployments, please follow the updates in [GitHub Issue #3250]. We'll keep you informed about the approach, timeline, and progress of the move. Stay tuned!
-
-[GitHub Issue #3250]: https://github.com/hyperledger/aries-cloudagent-python/issues/3250
 
 ### 1.1.0 Deprecation Notices
 
@@ -210,7 +368,6 @@ The only (but significant) breaking changes in 1.1.0 are related to the GitHub o
 - the use of the OWF organizational GitHub Container Registry ([GHCR]) and `acapy_agent` as the name for release container image artifacts.
   - The patterns for the image tags remain the same as before. So, for example, the new nightly artifact can be found here: `docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly`.
 
-[PyPi]: https://pypi.org
 [GHCR]: https://ghcr.io
 
 Anyone deploying ACA-Py should use this release to update their existing deployments. Since there are no other changes to ACA-Py, any issues found should relate back to those changes.
@@ -266,15 +423,6 @@ In an attempt to shorten the categorized list of PRs in the release, rather than
 [GitHub Container Registry]: https://ghcr.io
 
 - In the next ACA-Py release, we will be dropping from the core ACA-Py repository the AIP 1.0 [RFC 0160 Connections], [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All deployers that use those protocols **SHOULD** update to the [AIP 2.0] versions of those protocols ([RFC 0434 Out of Band]+[RFC 0023 DID Exchange], [RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
-
-[RFC 0160 Connections]: https://hyperledger.github.io/aries-rfcs/latest/features/0160-connection-protocol/
-[RFC 0037 Issue Credentials]: https://hyperledger.github.io/aries-rfcs/latest/features/0036-issue-credential/
-[RFC 0037 Present Proof]: https://hyperledger.github.io/aries-rfcs/latest/features/0037-present-proof/
-[AIP 2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0003-protocols/
-[RFC 0434 Out of Band]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0434-outofband/
-[RFC 0023 DID Exchange]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0023-did-exchange/
-[RFC 0453 Issue Credential v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0453-issue-credential-v2/
-[RFC 0454 Present Proof v2.0]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
 
 ### 1.0.1 Breaking Changes
 
@@ -520,6 +668,84 @@ With the focus of the pull requests for this release on stabilizing the implemen
   - chore(deps): Bump sphinx-rtd-theme from 1.1.1 to 1.3.0 in /docs [\#2970](https://github.com/hyperledger/aries-cloudagent-python/pull/2970) [dependabot bot](https://github.com/dependabot bot)
   - chore(deps): Bump untergeek/curator from 8.0.2 to 8.0.15 in /demo/elk-stack/extensions/curator [\#2969](https://github.com/hyperledger/aries-cloudagent-python/pull/2969) [dependabot bot](https://github.com/dependabot bot)
   - chore(deps): Bump ecdsa from 0.16.1 to 0.19.0 in the pip group across 1 directory [\#2933](https://github.com/hyperledger/aries-cloudagent-python/pull/2933) [dependabot bot](https://github.com/dependabot bot)
+
+## 0.12.6
+
+### March 13, 2025
+
+This patch release addresses a bug in the handling connection reuse in multitenancy environments. This is a backport of the PR [fix: connection reuse with multi-tenancy #3543](https://github.com/openwallet-foundation/acapy/pull/3543). This fixes the issue when using multi-tenancy, calls to `POST /out-of-band/receive-invitation?use_existing_connection=true` failing with a record not found error, despite connection reuse actually being completed in the background.
+
+### 0.12.6 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.6 Categorized List of Pull Requests
+
+- Multitenancy Fixes
+  - fix: cherry-pick fixes from main to 0.12.lts [\#3578](https://github.com/openwallet-foundation/acapy/pull/3578) [thiagoromanos](https://github.com/thiagoromanos)
+
+- Release management pull requests:
+  - 0.12.6 [\#3583](https://github.com/openwallet-foundation/acapy/pull/3583) [swcurran](https://github.com/swcurran)
+
+## 0.12.5
+
+### March 6, 2025
+
+This patch release addresses a bug in the publishing of AnonCreds revocation entries that caused the ledger and issuer wallet to become out of sync. As a result, revoked credentials were not being correctly flagged as revoked when presented. Previously, this issue was mitigated by an automatic “sync-revocation” process, which generally resolved the problem. However, we recently identified scenarios where the presence of an Indy Endorser in the revocation publication flow caused the “sync-revocation” process to fail silently.
+
+This patch resolves that issue. Once applied, if a revocation batch results in an out-of-sync state, the “sync-revocation” process will automatically run to correct it.
+
+For more details, see [Issue 3546](https://github.com/openwallet-foundation/acapy/issues/3546).
+
+### 0.12.5 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.5 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fixes
+  - 0.12.lts Patch the fix_ledger_entry improvements [\#3558](https://github.com/openwallet-foundation/acapy/pull/3558) [jamshale](https://github.com/jamshale)
+  - 0.12.lts Fix revocation accum sync when endorsement txn fails (#3547) [\#3554](https://github.com/openwallet-foundation/acapy/pull/3554) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 0.12.5 [\#3560](https://github.com/openwallet-foundation/acapy/pull/3560) [swcurran](https://github.com/swcurran)
+
+## 0.12.4
+
+### January 30, 2025
+
+A patch release to upgrade [Askar](https://github.com/openwallet-foundation/askar) to [0.4.3](https://github.com/openwallet-foundation/askar/releases/tag/v0.4.3) and fixes a problem with wallet names in a multitenant, single-wallet configuration.
+
+Addresses the problem outlined in [#3471](https://github.com/openwallet-foundation/acapy/issues/3471) around profiles in multi-tenant/single wallet deployments. The update to Askar addresses an intermittent hang on startup, and a dependency change that can result in a substantial performance improvement in some cases. See issues: [openwallet-foundation/askar#350](https://github.com/openwallet-foundation/askar/pull/350), [openwallet-foundation/askar#351](https://github.com/openwallet-foundation/askar/pull/351), [openwallet-foundation/askar#354](https://github.com/openwallet-foundation/askar/pull/354). This [comment on one of the PRs](https://github.com/openwallet-foundation/askar/pull/350#issuecomment-2615727109) describes the scenario where a substantial performance improvement was seen as a result of the change in Askar.
+
+### 0.12.4 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.4 Categorized List of Pull Requests
+
+- Multitenant Single Wallet Configurations
+  - 0.12 LTS: Askar upgrade and fix profile unique names [\#3475](https://github.com/openwallet-foundation/acapy/pull/3475)
+- Release management pull requests
+  - 0.12.4 [\#3481](https://github.com/hyperledger/aries-cloudagent-python/pull/3481) [swcurran](https://github.com/swcurran)
+
+## 0.12.3
+
+### December 17, 2024
+
+A patch release to add address a bug found in the Linked Data Verifiable Credential handling for multi-tenant holders. The bug was fixed in the main branch, [PR 3391 - BREAKING: VCHolder multitenant binding](https://github.com/openwallet-foundation/acapy/pull/3391), and with this release is backported to 0.12 Long Term Support branch. Prior to this release, holder credentials received into a tenant wallet were actually received into the multi-tenant admin wallet.
+
+### 0.12.3 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 0.12.3 Categorized List of Pull Requests
+
+- Multitenant LD-VC Holders
+  - Patch PR 3391 - 0.12.lts [\#3396](https://github.com/openwallet-foundation/acapy/pull/3396)
+- Release management pull requests
+  - 0.12.3 [\#3408](https://github.com/hyperledger/aries-cloudagent-python/pull/3408) [swcurran](https://github.com/swcurran)
+  - 0.12.3rc0 [\#3406](https://github.com/hyperledger/aries-cloudagent-python/pull/3406) [swcurran](https://github.com/swcurran)
 
 ## 0.12.2
 
@@ -809,7 +1035,7 @@ New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagg
 
 A patch release to add a fix that ensures that sufficient webhook information is sent to an ACA-Py controller that is executing the [AIP 2.0 Present Proof 2.0 Protocol].
 
-[AIP 2.0 Present Proof 2.0 Protocol]: https://hyperledger.github.io/aries-rfcs/latest/aip2/0454-present-proof-v2/
+[AIP 2.0 Present Proof 2.0 Protocol]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
 
 ### 0.11.3 Breaking Changes
 

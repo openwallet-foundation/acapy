@@ -30,9 +30,7 @@ from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSes
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
-from ..multitenant.base import BaseMultitenantManager
 from ..tails.anoncreds_tails_server import AnonCredsTailsServer
-from ..tails.base import BaseTailsServer
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import RevListFinishedEvent, RevRegDefFinishedEvent
 from .issuer import (
@@ -694,14 +692,8 @@ class AnonCredsRevocation:
 
     async def upload_tails_file(self, rev_reg_def: RevRegDef):
         """Upload the local tails file to the tails server."""
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            tails_server = AnonCredsTailsServer()
-        else:
-            tails_server = self.profile.inject_or(BaseTailsServer)
+        tails_server = AnonCredsTailsServer()
 
-        if not tails_server:
-            raise AnonCredsRevocationError("Tails server not configured")
         if not Path(self.get_local_tails_path(rev_reg_def)).is_file():
             raise AnonCredsRevocationError("Local tails file not found")
 

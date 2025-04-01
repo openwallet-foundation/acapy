@@ -2,7 +2,7 @@ FROM python:3.10
 
 WORKDIR /usr/src/app/
 
-ENV POETRY_VERSION=1.8.3
+ENV POETRY_VERSION=2.1.1
 ENV POETRY_HOME=/opt/poetry
 RUN curl --proto "=https" --tlsv1.2 -sSf -L https://install.python-poetry.org | python -
 

@@ -53,7 +53,12 @@ class CredDefFinishedEvent(Event):
     ):
         """With payload."""
         payload = CredDefFinishedPayload(
-            schema_id, cred_def_id, issuer_id, support_revocation, max_cred_num, options
+            schema_id=schema_id,
+            cred_def_id=cred_def_id,
+            issuer_id=issuer_id,
+            support_revocation=support_revocation,
+            max_cred_num=max_cred_num,
+            options=options,
         )
         return cls(payload)
 

@@ -350,8 +350,8 @@ class DIDPosture(OneOf):
 class IndyDID(Regexp):
     """Validate value against indy DID."""
 
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(rf"^(did:sov:)?[{B58}]{{21,22}}$")
+    EXAMPLE = "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw"
+    PATTERN = re.compile(rf"^(did:(sov|indy):)?[{B58}]{{21,22}}$")
 
     def __init__(self):
         """Initialize the instance."""
@@ -589,6 +589,21 @@ class IndyCredRevId(Regexp):
         super().__init__(
             IndyCredRevId.PATTERN,
             error="Value {input} is not an indy credential revocation identifier",
+        )
+
+
+class AnonCredsCredRevId(Regexp):
+    """Validate value against anoncreds credential revocation identifier specification."""
+
+    EXAMPLE = "12345"
+    PATTERN = r"^[1-9][0-9]*$"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            AnonCredsCredRevId.PATTERN,
+            error="Value {input} is not an anoncreds credential revocation identifier",
         )
 
 
@@ -883,7 +898,11 @@ class CredentialContext(Validator):
     """Credential Context."""
 
     FIRST_CONTEXT = "https://www.w3.org/2018/credentials/v1"
-    EXAMPLE = [FIRST_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"]
+    VALID_CONTEXTS = [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/ns/credentials/v2",
+    ]
+    EXAMPLE = [VALID_CONTEXTS[0], "https://www.w3.org/2018/credentials/examples/v1"]
 
     def __init__(self) -> None:
         """Initialize the instance."""
@@ -891,11 +910,13 @@ class CredentialContext(Validator):
 
     def __call__(self, value):
         """Validate input value."""
-        length = len(value)
 
-        if length < 1 or value[0] != CredentialContext.FIRST_CONTEXT:
+        if not isinstance(value, list):
+            raise ValidationError("Value must be a non-empty list.")
+
+        if not value or value[0] not in CredentialContext.VALID_CONTEXTS:
             raise ValidationError(
-                f"First context must be {CredentialContext.FIRST_CONTEXT}"
+                f"First context must be one of {CredentialContext.VALID_CONTEXTS}"
             )
 
         return value
@@ -1052,6 +1073,9 @@ ANONCREDS_REV_REG_ID_EXAMPLE = AnoncredsRevRegId.EXAMPLE
 
 INDY_CRED_REV_ID_VALIDATE = IndyCredRevId()
 INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
+
+ANONCREDS_CRED_REV_ID_VALIDATE = AnonCredsCredRevId()
+ANONCREDS_CRED_REV_ID_EXAMPLE = AnonCredsCredRevId.EXAMPLE
 
 MAJOR_MINOR_VERSION_VALIDATE = MajorMinorVersion()
 MAJOR_MINOR_VERSION_EXAMPLE = MajorMinorVersion.EXAMPLE

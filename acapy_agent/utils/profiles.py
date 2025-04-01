@@ -25,16 +25,6 @@ def is_not_anoncreds_profile_raise_web_exception(profile: Profile) -> None:
         raise web.HTTPForbidden(reason=ANONCREDS_PROFILE_REQUIRED_MSG)
 
 
-def subwallet_type_not_same_as_base_wallet_raise_web_exception(
-    base_wallet_type: str, sub_wallet_type: str
-) -> None:
-    """Raise a web exception when the subwallet type is not the same as the base wallet type."""  # noqa: E501
-    if base_wallet_type != sub_wallet_type:
-        raise web.HTTPForbidden(
-            reason="Subwallet type must be the same as the base wallet type"
-        )
-
-
 async def get_subwallet_profiles_from_storage(root_profile: Profile) -> list[Profile]:
     """Get subwallet profiles from storage."""
     subwallet_profiles = []

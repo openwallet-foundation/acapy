@@ -457,7 +457,7 @@ async def main(
         def test_cred(index: int) -> dict:
             return {
                 "name": "Alice Smith",
-                "date": f"{2020+index}-05-28",
+                "date": f"{2020 + index}-05-28",
                 "degree": "Maths",
                 "age": "24",
             }
@@ -579,7 +579,7 @@ async def main(
         avg = recv_timer.duration / issue_count
         item_short = "ping" if action == "ping" else "cred"
         item_long = "ping exchange" if action == "ping" else "credential"
-        faber.log(f"Average time per {item_long}: {avg:.2f}s ({1/avg:.2f}/s)")
+        faber.log(f"Average time per {item_long}: {avg:.2f}s ({1 / avg:.2f}/s)")
 
         if alice.postgres:
             await alice.collect_postgres_stats(f"{issue_count} {item_short}s")
