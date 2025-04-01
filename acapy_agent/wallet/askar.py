@@ -174,7 +174,7 @@ class AskarWallet(BaseWallet):
         key_type = key_types.from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
-        
+
         existing_kid = entry.tags.get("kid")
         existing_kid = existing_kid if isinstance(existing_kid, list) else [existing_kid]
         try:
