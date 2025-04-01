@@ -40,11 +40,11 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
                 key_info = await key_manager.create(seed=self.seed, alg=alg)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] is None
+                assert key_info["kid"] == []
 
                 key_info = await key_manager.from_multikey(multikey=expected_multikey)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] is None
+                assert key_info["kid"] == []
 
                 key_info = await key_manager.update(multikey=expected_multikey, kid=kid)
                 assert key_info["multikey"] == expected_multikey
@@ -87,5 +87,5 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey
             await key_manager.unbind(kid_1)
             with self.assertRaises(WalletError) as context:
-                await key_manager.from_kid(kid_1).get("multikey")
+                (await key_manager.from_kid(kid_1)).get("multikey")
             assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey
