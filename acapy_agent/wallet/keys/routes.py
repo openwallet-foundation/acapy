@@ -3,7 +3,7 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema, querystring_schema
+from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields
 
 from ...admin.decorators.auth import tenant_authentication
@@ -254,7 +254,6 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/wallet/keys", create_key),
-            # web.post("/wallet/keys", update_key),
             web.post("/wallet/keys/{multikey}/bind", bind_kid),
             web.post("/wallet/keys/{multikey}/unbind", unbind_kid),
             web.get("/wallet/keys/{multikey}", fetch_key, allow_head=False),
