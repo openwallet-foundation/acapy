@@ -56,7 +56,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
                 key_info = await key_manager.from_kid(kid=kid)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] == [kid]
+                assert key_info["kid"] == kid
 
     async def test_key_transformations(self):
         for alg, multikey, verkey in [
