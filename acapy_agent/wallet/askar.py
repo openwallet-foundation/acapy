@@ -179,9 +179,7 @@ class AskarWallet(BaseWallet):
 
         fetched_multikey = verkey_to_multikey(verkey, key_type.key_type)
         if fetched_multikey != multikey:
-            raise WalletError(
-                f"Multikey mismatch: {fetched_multikey} != {multikey}"
-            )
+            raise WalletError(f"Multikey mismatch: {fetched_multikey} != {multikey}")
 
         key_tags = key_entry.tags or {"kid": []}
         key_kids = key_tags.get("kid", [])
