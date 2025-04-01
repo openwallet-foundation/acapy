@@ -35,6 +35,16 @@ class OutOfBandModuleResponseSchema(OpenAPISchema):
     """Response schema for Out of Band Module."""
 
 
+class OobIdQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for fetch invitation request query string."""
+
+    oob_id = fields.Str(
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={"description": "The Out of Band id to fetch"},
+    )
+
+
 class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
@@ -231,7 +241,7 @@ class OobInvitationRecordMatchInfoSchema(OpenAPISchema):
 
 
 @docs(tags=["out-of-band"], summary="Fetch an existing Out-of-Band invitation.")
-@match_info_schema(OobInvitationRecordMatchInfoSchema())
+@querystring_schema(OobIdQueryStringSchema())
 @response_schema(InvitationRecordResponseSchema(), description="")
 @tenant_authentication
 async def invitation_fetch(request: web.BaseRequest):
@@ -246,7 +256,7 @@ async def invitation_fetch(request: web.BaseRequest):
     oob_mgr = OutOfBandManager(profile)
     try:
         record = await oob_mgr.fetch_oob_invitation_record_by_id(
-            request.match_info["oob_id"]
+            request.query.get("oob_id")
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -405,7 +415,7 @@ async def register(app: web.Application):
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
             web.get(
-                "/out-of-band/invitations/{oob_id}",
+                "/out-of-band/invitations",
                 invitation_fetch,
                 allow_head=False,
             ),

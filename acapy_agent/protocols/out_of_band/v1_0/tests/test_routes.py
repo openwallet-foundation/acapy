@@ -76,7 +76,7 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
             mock_json_response.assert_called_once_with({"abc": "123"})
 
     async def test_invitation_fetch(self):
-        self.request.match_info = {"oob_id": "dummy"}
+        self.request.query = {"oob_id": "dummy"}
 
         with (
             mock.patch.object(
@@ -87,10 +87,14 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
             ) as mock_json_response,
         ):
             mock_oob_mgr.return_value.fetch_oob_invitation_record_by_id = (
-                mock.CoroutineMock(return_value={"oob_id": "dummy"})
+                mock.CoroutineMock(
+                    return_value=mock.MagicMock(
+                        serialize=mock.MagicMock(return_value={"abc": "123"})
+                    )
+                )
             )
             await test_module.invitation_fetch(self.request)
-            mock_json_response.assert_called_once_with({"oob_id": "dummy"})
+            mock_json_response.assert_called_once_with({"abc": "123"})
 
     async def test_invitation_remove(self):
         self.request.match_info = {"invi_msg_id": "dummy"}
