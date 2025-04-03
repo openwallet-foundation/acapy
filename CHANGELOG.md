@@ -1,10 +1,10 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.0rc0
+## 1.3.0rc1
 
-### March 20, 2025
+### April 3, 2025
 
-Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for [AIP 1.0] from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the [categorized list of pull requests](#130-categorized-list-of-pull-requests) for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (`askar-anoncreds`), AnonCreds processing in general, and AnonCreds revocation in particular.
+Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for [AIP 1.0] from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the [categorized list of pull requests](#130-categorized-list-of-pull-requests) for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (`askar-anoncreds`), AnonCreds processing in general, and AnonCreds revocation in particular. New to this release is a ACA-Py Helm Chart that can be used in deploying ACA-Py.
 
 ### 1.3.0 Deprecation Notices
 
@@ -46,6 +46,10 @@ Specifics of the majority of the can be found by looking at the diffs for the `s
   - :art: Deprecate count/start query params and implement limit/offset [\#3208](https://github.com/openwallet-foundation/acapy/pull/3208) [ff137](https://github.com/ff137)
   - :sparkles: Add ordering options to askar scan and fetch_all methods [\#3173](https://github.com/openwallet-foundation/acapy/pull/3173) [ff137](https://github.com/ff137)
 - Updates/fixes to AnonCreds Processing
+  - :art: Use correct model for sending AnonCreds presentation [\#3618](https://github.com/openwallet-foundation/acapy/pull/3618) [ff137](https://github.com/ff137)
+  - fix: align ledger config schema with API response [\#3615](https://github.com/openwallet-foundation/acapy/pull/3615) [MonolithicMonk](https://github.com/MonolithicMonk)
+  - fix(ledger): correct response format for /ledger/get-write-ledgers endpoint [\#3613](https://github.com/openwallet-foundation/acapy/pull/3613) [MonolithicMonk](https://github.com/MonolithicMonk)
+  - :bug: Fix unchanged endpoint being rewritten to ledger [\#3608](https://github.com/openwallet-foundation/acapy/pull/3608) [ff137](https://github.com/ff137)
   - :bug: Fix auto creation of revocation registries [\#3601](https://github.com/openwallet-foundation/acapy/pull/3601) [ff137](https://github.com/ff137)
   - :sparkles: Refactor TailsServer injection pattern [\#3587](https://github.com/openwallet-foundation/acapy/pull/3587) [ff137](https://github.com/ff137)
   - :bug: Fix: Register both askar and anoncreds plugins for multitenancy [\#3585](https://github.com/openwallet-foundation/acapy/pull/3585) [ff137](https://github.com/ff137)
@@ -66,9 +70,16 @@ Specifics of the majority of the can be found by looking at the diffs for the `s
   - Catch and log universal resolver setup error [\#3511](https://github.com/openwallet-foundation/acapy/pull/3511) [jamshale](https://github.com/jamshale)
 - W3C Verifiable Credentials Support Updates and Fixes:
   - Add vcdm 2.0 model and context [\#3436](https://github.com/openwallet-foundation/acapy/pull/3436) [PatStLouis](https://github.com/PatStLouis)
+- DID Doc Handling Updates
+  - (fix) VM resolution strategy correction [\#3622](https://github.com/openwallet-foundation/acapy/pull/3622) [gmulhearn](https://github.com/gmulhearn)
 - DIDComm Protocol Updates and Fixes:
+  - Fetch existing invitation route [\#3572](https://github.com/openwallet-foundation/acapy/pull/3572) [PatStLouis](https://github.com/PatStLouis)
   - BREAKING: remove connection protocol [\#3184](https://github.com/openwallet-foundation/acapy/pull/3184) [dbluhm](https://github.com/dbluhm)
 - Documentation and Tutorial Pull Requests:
+  - feat(demo): remove broken aip 10 and fix aip 20 [\#3611](https://github.com/openwallet-foundation/acapy/pull/3611) [davidchaiken](https://github.com/davidchaiken)
+  - Fix demo implementation of vc_di cred issue [\#3609](https://github.com/openwallet-foundation/acapy/pull/3609) [ianco](https://github.com/ianco)
+  - chore(demo): remove aip 10 code [\#3619](https://github.com/openwallet-foundation/acapy/pull/3619) [davidchaiken](https://github.com/davidchaiken)
+  - Create Acapy Helm Chart [\#3599](https://github.com/openwallet-foundation/acapy/pull/3599) [i5okie](https://github.com/i5okie)
   - :memo: Update README [\#3588](https://github.com/openwallet-foundation/acapy/pull/3588) [ff137](https://github.com/ff137)
   - Fix missing log_timer import in acme.py [\#3562](https://github.com/openwallet-foundation/acapy/pull/3562) [parth5805](https://github.com/parth5805)
   - Fix prompt for alice/faber demo [\#3553](https://github.com/openwallet-foundation/acapy/pull/3553) [ianco](https://github.com/ianco)
@@ -98,9 +109,10 @@ Specifics of the majority of the can be found by looking at the diffs for the `s
   - Update dockerfile image after release [\#3469](https://github.com/openwallet-foundation/acapy/pull/3469) [jamshale](https://github.com/jamshale)
   - :arrow_up: Upgrade dependencies [\#3455](https://github.com/openwallet-foundation/acapy/pull/3455) [ff137](https://github.com/ff137)
 - Release management pull requests:
+  - 1.3.0rc1 [\#3628](https://github.com/openwallet-foundation/acapy/pull/3628) [swcurran](https://github.com/swcurran)
   - 1.3.0rc0 [\#3604](https://github.com/openwallet-foundation/acapy/pull/3604) [swcurran](https://github.com/swcurran)
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-03-19+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-04-03+author%3Aapp%2Fdependabot+)
 
 ## 1.2.4
 
