@@ -73,6 +73,7 @@ Specifics of the majority of the can be found by looking at the diffs for the `s
 - DID Doc Handling Updates
   - (fix) VM resolution strategy correction [\#3622](https://github.com/openwallet-foundation/acapy/pull/3622) [gmulhearn](https://github.com/gmulhearn)
 - DIDComm Protocol Updates and Fixes:
+  - Fetch existing invitation route [\#3572](https://github.com/openwallet-foundation/acapy/pull/3572) [PatStLouis](https://github.com/PatStLouis)
   - BREAKING: remove connection protocol [\#3184](https://github.com/openwallet-foundation/acapy/pull/3184) [dbluhm](https://github.com/dbluhm)
 - Documentation and Tutorial Pull Requests:
   - feat(demo): remove broken aip 10 and fix aip 20 [\#3611](https://github.com/openwallet-foundation/acapy/pull/3611) [davidchaiken](https://github.com/davidchaiken)
