@@ -1,10 +1,11 @@
 import http
-import json
 import os
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from anoncreds import (
+    AnoncredsError,
+    AnoncredsErrorCode,
     Credential,
     CredentialDefinition,
     RevocationRegistryDefinition,
@@ -1296,6 +1297,120 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert mock_load_rev_reg.called
         assert mock_deserialize_cred_def.called
         assert isinstance(result, test_module.RevokeResult)
+
+    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(RevList, "to_native")
+    @mock.patch.object(RevList, "from_native", return_value=None)
+    @mock.patch.object(RevRegDef, "to_native")
+    @mock.patch.object(CredDef, "deserialize")
+    @mock.patch.object(RevocationRegistryDefinitionPrivate, "load")
+    async def test_revoke_pending_credentials_cred_def_error(
+        self,
+        mock_load_rev_reg,
+        mock_deserialize_cred_def,
+        mock_rev_reg_to_native,
+        mock_rev_list_from_native,
+        mock_rev_list_to_native,
+        mock_handle,
+    ):
+        """Test error handling when fetching credential definition fails."""
+        mock_handle.fetch = mock.CoroutineMock(
+            side_effect=[
+                MockEntry(value_json=MOCK_REV_REG_DEF),
+                MockEntry(
+                    value_json={
+                        "pending": [0, 1, 4, 3],
+                        "next_index": 4,
+                        "rev_list": rev_list.serialize(),
+                    }
+                ),
+                MockEntry(),
+                AskarError(code=AskarErrorCode.UNEXPECTED, message="test error"),
+            ]
+        )
+
+        with self.assertRaises(test_module.AnonCredsRevocationError) as cm:
+            await self.revocation.revoke_pending_credentials(
+                revoc_reg_id="test-rev-reg-id",
+            )
+        assert "Error retrieving cred def" in str(cm.exception)
+
+    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(RevList, "to_native")
+    @mock.patch.object(RevList, "from_native", return_value=None)
+    @mock.patch.object(RevRegDef, "to_native")
+    @mock.patch.object(CredDef, "deserialize")
+    @mock.patch.object(RevocationRegistryDefinitionPrivate, "load")
+    async def test_revoke_pending_credentials_anoncreds_error(
+        self,
+        mock_load_rev_reg,
+        mock_deserialize_cred_def,
+        mock_rev_reg_to_native,
+        mock_rev_list_from_native,
+        mock_rev_list_to_native,
+        mock_handle,
+    ):
+        """Test error handling when loading revocation registry definition fails."""
+        mock_handle.fetch = mock.CoroutineMock(
+            side_effect=[
+                MockEntry(value_json=MOCK_REV_REG_DEF),
+                MockEntry(
+                    value_json={
+                        "pending": [0, 1, 4, 3],
+                        "next_index": 4,
+                        "rev_list": rev_list.serialize(),
+                    }
+                ),
+                MockEntry(),
+                MockEntry(),
+            ]
+        )
+        mock_deserialize_cred_def.side_effect = AnoncredsError(
+            AnoncredsErrorCode.UNEXPECTED, "Failed to load"
+        )
+
+        with self.assertRaises(test_module.AnonCredsRevocationError) as cm:
+            await self.revocation.revoke_pending_credentials(
+                revoc_reg_id="test-rev-reg-id",
+            )
+        assert "Error loading revocation registry definition" in str(cm.exception)
+
+    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(RevList, "to_native")
+    @mock.patch.object(RevList, "from_native", return_value=None)
+    @mock.patch.object(RevRegDef, "to_native")
+    @mock.patch.object(CredDef, "deserialize")
+    @mock.patch.object(RevocationRegistryDefinitionPrivate, "load")
+    async def test_revoke_pending_credentials_no_valid_credentials(
+        self,
+        mock_load_rev_reg,
+        mock_deserialize_cred_def,
+        mock_rev_reg_to_native,
+        mock_rev_list_from_native,
+        mock_rev_list_to_native,
+        mock_handle,
+    ):
+        """Test handling when there are no valid credentials to revoke."""
+        mock_handle.fetch = mock.CoroutineMock(
+            side_effect=[
+                MockEntry(value_json=MOCK_REV_REG_DEF),
+                MockEntry(
+                    value_json={
+                        "pending": [],  # No pending revocations
+                        "next_index": 4,
+                        "rev_list": rev_list.serialize(),
+                    }
+                ),
+                MockEntry(),
+                MockEntry(),
+            ]
+        )
+
+        result = await self.revocation.revoke_pending_credentials(
+            revoc_reg_id="test-rev-reg-id",
+        )
+        assert result.revoked == []  # No credentials were revoked
+        assert result.failed == []  # No failures
 
     @mock.patch.object(AskarAnoncredsProfileSession, "handle")
     async def test_mark_pending_revocations(self, mock_handle):
