@@ -1783,7 +1783,7 @@ async def connect_wallet_to_endorser(agent, endorser_agent):
     # setup endorser meta-data on our connection
     log_msg("Setup author agent meta-data ...")
     await agent.admin_POST(
-        f"/transactions/{agent.endorser_connection_id }/set-endorser-role",
+        f"/transactions/{agent.endorser_connection_id}/set-endorser-role",
         params={"transaction_my_job": "TRANSACTION_AUTHOR"},
     )
     endorser_did = endorser_agent.endorser_public_did
