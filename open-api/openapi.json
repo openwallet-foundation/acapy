@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.0rc0"
+    "version" : "v1.3.0rc1"
   },
   "servers" : [ {
     "url" : "/"
@@ -7781,6 +7781,40 @@
         "required" : [ "attrNames", "issuerId", "name", "version" ],
         "type" : "object"
       },
+      "AnoncredsPresSpec" : {
+        "properties" : {
+          "requested_attributes" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/AnoncredsRequestedCredsRequestedAttr"
+            },
+            "description" : "Nested object mapping proof request attribute referents to requested-attribute specifiers",
+            "type" : "object"
+          },
+          "requested_predicates" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/AnoncredsRequestedCredsRequestedPred"
+            },
+            "description" : "Nested object mapping proof request predicate referents to requested-predicate specifiers",
+            "type" : "object"
+          },
+          "self_attested_attributes" : {
+            "additionalProperties" : {
+              "description" : "Self-attested attribute values to use in requested-credentials structure for proof construction",
+              "example" : "self_attested_value",
+              "type" : "string"
+            },
+            "description" : "Self-attested attributes to build into proof",
+            "type" : "object"
+          },
+          "trace" : {
+            "description" : "Whether to trace event (default false)",
+            "example" : false,
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
+        "type" : "object"
+      },
       "AnoncredsPresentationReqAttrSpec" : {
         "properties" : {
           "name" : {
@@ -7943,6 +7977,39 @@
             "type" : "integer"
           }
         },
+        "type" : "object"
+      },
+      "AnoncredsRequestedCredsRequestedAttr" : {
+        "properties" : {
+          "cred_id" : {
+            "description" : "Wallet credential identifier (typically but not necessarily a UUID)",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "revealed" : {
+            "description" : "Whether to reveal attribute in proof (default true)",
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "cred_id" ],
+        "type" : "object"
+      },
+      "AnoncredsRequestedCredsRequestedPred" : {
+        "properties" : {
+          "cred_id" : {
+            "description" : "Wallet credential identifier (typically but not necessarily a UUID)",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "timestamp" : {
+            "description" : "Epoch timestamp of interest for non-revocation proof",
+            "example" : 1640995199,
+            "maximum" : 18446744073709551615,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "cred_id" ],
         "type" : "object"
       },
       "AnoncredsRevocationModuleResponse" : {
@@ -12030,39 +12097,66 @@
       },
       "LedgerConfigInstance" : {
         "properties" : {
-          "genesis_file" : {
-            "description" : "genesis_file",
+          "endorser_alias" : {
+            "description" : "Endorser service alias (optional)",
             "type" : "string"
           },
-          "genesis_transactions" : {
-            "description" : "genesis_transactions",
-            "type" : "string"
-          },
-          "genesis_url" : {
-            "description" : "genesis_url",
+          "endorser_did" : {
+            "description" : "Endorser DID (optional)",
             "type" : "string"
           },
           "id" : {
-            "description" : "ledger_id",
+            "description" : "Ledger identifier. Auto-generated UUID4 if not provided",
+            "example" : "f47ac10b-58cc-4372-a567-0e02b2c3d479",
             "type" : "string"
           },
           "is_production" : {
-            "description" : "is_production",
+            "description" : "Production-grade ledger (true/false)",
             "type" : "boolean"
+          },
+          "is_write" : {
+            "description" : "Write capability enabled (default: False)",
+            "type" : "boolean"
+          },
+          "keepalive" : {
+            "description" : "Keep-alive timeout in seconds for idle connections",
+            "type" : "integer"
+          },
+          "pool_name" : {
+            "description" : "Ledger pool name (defaults to ledger ID if not specified)",
+            "example" : "bcovrin-test-pool",
+            "type" : "string"
+          },
+          "read_only" : {
+            "description" : "Read-only access (default: False)",
+            "type" : "boolean"
+          },
+          "socks_proxy" : {
+            "description" : "SOCKS proxy URL (optional)",
+            "type" : "string"
           }
         },
+        "required" : [ "id", "is_production" ],
         "type" : "object"
       },
       "LedgerConfigList" : {
         "properties" : {
-          "ledger_config_list" : {
+          "non_production_ledgers" : {
+            "description" : "Non-production ledgers (may be empty)",
+            "items" : {
+              "$ref" : "#/components/schemas/LedgerConfigInstance"
+            },
+            "type" : "array"
+          },
+          "production_ledgers" : {
+            "description" : "Production ledgers (may be empty)",
             "items" : {
               "$ref" : "#/components/schemas/LedgerConfigInstance"
             },
             "type" : "array"
           }
         },
-        "required" : [ "ledger_config_list" ],
+        "required" : [ "non_production_ledgers", "production_ledgers" ],
         "type" : "object"
       },
       "LedgerModulesResult" : {
@@ -16631,7 +16725,7 @@
         "properties" : {
           "anoncreds" : {
             "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyPresSpec"
+              "$ref" : "#/components/schemas/AnoncredsPresSpec"
             } ],
             "description" : "Presentation specification for anoncreds",
             "type" : "object"
