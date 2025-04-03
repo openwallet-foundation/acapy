@@ -528,19 +528,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#130rc0" class="md-nav__link">
+  <a href="#130rc1" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.0rc0
+      1.3.0rc1
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.0rc0">
+    <nav class="md-nav" aria-label="1.3.0rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#march-20-2025" class="md-nav__link">
+  <a href="#april-3-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      March 20, 2025
+      April 3, 2025
     </span>
   </a>
   
@@ -3215,19 +3215,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#130rc0" class="md-nav__link">
+  <a href="#130rc1" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.0rc0
+      1.3.0rc1
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.0rc0">
+    <nav class="md-nav" aria-label="1.3.0rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#march-20-2025" class="md-nav__link">
+  <a href="#april-3-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      March 20, 2025
+      April 3, 2025
     </span>
   </a>
   
@@ -4029,9 +4029,9 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="130rc0">1.3.0rc0<a class="headerlink" href="#130rc0" title="Permanent link">&para;</a></h2>
-<h3 id="march-20-2025">March 20, 2025<a class="headerlink" href="#march-20-2025" title="Permanent link">&para;</a></h3>
-<p>Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10">AIP 1.0</a> from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the <a href="#130-categorized-list-of-pull-requests">categorized list of pull requests</a> for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (<code>askar-anoncreds</code>), AnonCreds processing in general, and AnonCreds revocation in particular.</p>
+<h2 id="130rc1">1.3.0rc1<a class="headerlink" href="#130rc1" title="Permanent link">&para;</a></h2>
+<h3 id="april-3-2025">April 3, 2025<a class="headerlink" href="#april-3-2025" title="Permanent link">&para;</a></h3>
+<p>Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10">AIP 1.0</a> from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the <a href="#130-categorized-list-of-pull-requests">categorized list of pull requests</a> for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (<code>askar-anoncreds</code>), AnonCreds processing in general, and AnonCreds revocation in particular. New to this release is a ACA-Py Helm Chart that can be used in deploying ACA-Py.</p>
 <h3 id="130-deprecation-notices">1.3.0 Deprecation Notices<a class="headerlink" href="#130-deprecation-notices" title="Permanent link">&para;</a></h3>
 <ul>
 <li>In the next ACA-Py release, we will be dropping from the core ACA-Py repository the AIP 1.0 <a href="https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/">RFC 0037 Issue Credentials v1.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/">RFC 0037 Present Proof v1.0</a> DIDComm protocols. Each of the protocols will be moved to the <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> repo. All ACA-Py implementers that use those protocols <strong>SHOULD</strong> update as soon as possible to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/">AIP 2.0</a> versions of those protocols (<a href="https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/">RFC 0453 Issue Credential v2.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/">RFC 0454 Present Proof v2.0</a>, respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins.</li>
@@ -4059,6 +4059,10 @@
 </ul>
 </li>
 <li>Updates/fixes to AnonCreds Processing<ul>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Use correct model for sending AnonCreds presentation <a href="https://github.com/openwallet-foundation/acapy/pull/3618">#3618</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>fix: align ledger config schema with API response <a href="https://github.com/openwallet-foundation/acapy/pull/3615">#3615</a> <a href="https://github.com/MonolithicMonk">MonolithicMonk</a></li>
+<li>fix(ledger): correct response format for /ledger/get-write-ledgers endpoint <a href="https://github.com/openwallet-foundation/acapy/pull/3613">#3613</a> <a href="https://github.com/MonolithicMonk">MonolithicMonk</a></li>
+<li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix unchanged endpoint being rewritten to ledger <a href="https://github.com/openwallet-foundation/acapy/pull/3608">#3608</a> <a href="https://github.com/ff137">ff137</a></li>
 <li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix auto creation of revocation registries <a href="https://github.com/openwallet-foundation/acapy/pull/3601">#3601</a> <a href="https://github.com/ff137">ff137</a></li>
 <li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Refactor TailsServer injection pattern <a href="https://github.com/openwallet-foundation/acapy/pull/3587">#3587</a> <a href="https://github.com/ff137">ff137</a></li>
 <li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix: Register both askar and anoncreds plugins for multitenancy <a href="https://github.com/openwallet-foundation/acapy/pull/3585">#3585</a> <a href="https://github.com/ff137">ff137</a></li>
@@ -4087,11 +4091,20 @@
 <li>Add vcdm 2.0 model and context <a href="https://github.com/openwallet-foundation/acapy/pull/3436">#3436</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 </ul>
 </li>
+<li>DID Doc Handling Updates<ul>
+<li>(fix) VM resolution strategy correction <a href="https://github.com/openwallet-foundation/acapy/pull/3622">#3622</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
+</ul>
+</li>
 <li>DIDComm Protocol Updates and Fixes:<ul>
+<li>Fetch existing invitation route <a href="https://github.com/openwallet-foundation/acapy/pull/3572">#3572</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>BREAKING: remove connection protocol <a href="https://github.com/openwallet-foundation/acapy/pull/3184">#3184</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
 </ul>
 </li>
 <li>Documentation and Tutorial Pull Requests:<ul>
+<li>feat(demo): remove broken aip 10 and fix aip 20 <a href="https://github.com/openwallet-foundation/acapy/pull/3611">#3611</a> <a href="https://github.com/davidchaiken">davidchaiken</a></li>
+<li>Fix demo implementation of vc_di cred issue <a href="https://github.com/openwallet-foundation/acapy/pull/3609">#3609</a> <a href="https://github.com/ianco">ianco</a></li>
+<li>chore(demo): remove aip 10 code <a href="https://github.com/openwallet-foundation/acapy/pull/3619">#3619</a> <a href="https://github.com/davidchaiken">davidchaiken</a></li>
+<li>Create Acapy Helm Chart <a href="https://github.com/openwallet-foundation/acapy/pull/3599">#3599</a> <a href="https://github.com/i5okie">i5okie</a></li>
 <li><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f4dd.svg" title=":memo:" /> Update README <a href="https://github.com/openwallet-foundation/acapy/pull/3588">#3588</a> <a href="https://github.com/ff137">ff137</a></li>
 <li>Fix missing log_timer import in acme.py <a href="https://github.com/openwallet-foundation/acapy/pull/3562">#3562</a> <a href="https://github.com/parth5805">parth5805</a></li>
 <li>Fix prompt for alice/faber demo <a href="https://github.com/openwallet-foundation/acapy/pull/3553">#3553</a> <a href="https://github.com/ianco">ianco</a></li>
@@ -4127,11 +4140,12 @@
 </ul>
 </li>
 <li>Release management pull requests:<ul>
+<li>1.3.0rc1 <a href="https://github.com/openwallet-foundation/acapy/pull/3628">#3628</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.3.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3604">#3604</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
 <li>Dependabot PRs<ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-03-19+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-04-03+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 </ul>
