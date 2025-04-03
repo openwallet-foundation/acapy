@@ -1359,7 +1359,7 @@ class AnonCredsRevocation:
                 )
                 break
 
-            if limit_crids is None:
+            if limit_crids is None or limit_crids == []:
                 skipped_crids = set()
             else:
                 skipped_crids = rev_crids - set(limit_crids)
