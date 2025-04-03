@@ -1220,15 +1220,15 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 AskarError(code=AskarErrorCode.UNEXPECTED, message="test"),
                 # missing rev reg def
                 None,
-                MockEntry(value_json=json.dumps({})),
-                MockEntry(value_json=json.dumps({})),
+                MockEntry(value_json="{}"),
+                MockEntry(value_json="{}"),
                 # missing rev list
-                MockEntry(value_json=json.dumps({})),
+                MockEntry(value_json="{}"),
                 None,
-                MockEntry(value_json=json.dumps({})),
+                MockEntry(value_json="{}"),
                 # missing rev private
-                MockEntry(value_json=json.dumps({})),
-                MockEntry(value_json=json.dumps({})),
+                MockEntry(value_json="{}"),
+                MockEntry(value_json="{}"),
                 None,
             ]
         )
