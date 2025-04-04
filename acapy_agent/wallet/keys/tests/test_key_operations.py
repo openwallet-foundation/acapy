@@ -28,6 +28,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
     async def test_key_creation(self):
         async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
             for i, (alg, expected_multikey) in enumerate(
                 [
                     (self.ed25519_alg, self.ed25519_multikey),
@@ -36,25 +37,19 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             ):
                 kid = f"did:web:example.com#key-0{i}"
 
-                key_info = await MultikeyManager(session=session).create(
-                    seed=self.seed, alg=alg
-                )
+                key_info = await key_manager.create(seed=self.seed, alg=alg)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] is None
 
-                key_info = await MultikeyManager(session=session).from_multikey(
-                    multikey=expected_multikey
-                )
+                key_info = await key_manager.from_multikey(multikey=expected_multikey)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] is None
+                assert key_info["kid"] == []
 
-                key_info = await MultikeyManager(session=session).update(
-                    multikey=expected_multikey, kid=kid
-                )
+                key_info = await key_manager.update(multikey=expected_multikey, kid=kid)
                 assert key_info["multikey"] == expected_multikey
-                assert key_info["kid"] == kid
+                assert key_info["kid"] == [kid]
 
-                key_info = await MultikeyManager(session=session).from_kid(kid=kid)
+                key_info = await key_manager.from_kid(kid=kid)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] == kid
 
@@ -65,3 +60,30 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         ]:
             assert multikey_to_verkey(multikey) == verkey
             assert verkey_to_multikey(verkey, alg=alg) == multikey
+
+    async def test_multiple_kid_assignments(self):
+        kid_1 = "did:web:example.com#key-01"
+        kid_2 = "did:web:example.com#key-02"
+        async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
+            key_info = await key_manager.create(seed=self.seed, alg=self.ed25519_alg)
+            multikey = key_info.get("multikey")
+            await key_manager.update(multikey=multikey, kid=kid_1)
+            await key_manager.update(multikey=multikey, kid=kid_2)
+            assert (await key_manager.from_kid(kid_1)).get("multikey") == multikey
+            assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey
+
+    async def test_unbind_kid_assignment(self):
+        kid_1 = "did:web:example.com#key-01"
+        kid_2 = "did:web:example.com#key-02"
+        async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
+            key_info = await key_manager.create(seed=self.seed, alg=self.ed25519_alg)
+            multikey = key_info.get("multikey")
+            await key_manager.update(multikey=multikey, kid=kid_1)
+            await key_manager.update(multikey=multikey, kid=kid_2)
+            assert (await key_manager.from_kid(kid_1)).get("multikey") == multikey
+            assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey
+            await key_manager.unbind(multikey, kid_1)
+            assert await key_manager.from_kid(kid_1) is None
+            assert (await key_manager.from_kid(kid_2)).get("multikey") == multikey

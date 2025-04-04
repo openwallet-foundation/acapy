@@ -14,6 +14,8 @@ from ...wallet.error import WalletDuplicateError, WalletNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 
+GENERIC_KID_EXAMPLE = "did:web:example.com#key-01"
+
 
 class CreateKeyRequestSchema(OpenAPISchema):
     """Request schema for creating a new key."""
@@ -61,27 +63,37 @@ class CreateKeyResponseSchema(OpenAPISchema):
     kid = fields.Str(
         metadata={
             "description": "The associated kid",
-            "example": "did:web:example.com#key-01",
+            "example": GENERIC_KID_EXAMPLE,
         },
+    )
+
+
+class FetchKeyQueryStringSchema(OpenAPISchema):
+    """Parameters for key request query string."""
+
+    kid = fields.Str(
+        required=True,
+        metadata={"description": "KID of interest", "example": GENERIC_KID_EXAMPLE},
+    )
+
+
+class DeleteKidQueryStringSchema(OpenAPISchema):
+    """Parameters for kid delete request query string."""
+
+    kid = fields.Str(
+        required=True,
+        metadata={"description": "KID of interest", "example": GENERIC_KID_EXAMPLE},
     )
 
 
 class UpdateKeyRequestSchema(OpenAPISchema):
     """Request schema for updating an existing key pair."""
 
-    multikey = fields.Str(
-        required=True,
-        metadata={
-            "description": "Multikey of the key pair to update",
-            "example": "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
-        },
-    )
-
     kid = fields.Str(
         required=True,
         metadata={
             "description": (
-                "New kid to bind to the key pair, such as a verificationMethod."
+                "New kid to bind or unbind to the key pair, such as a verificationMethod."
             ),
             "example": "did:web:example.com#key-02",
         },
@@ -166,9 +178,9 @@ async def create_key(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    seed = body.get("seed") or None
-    kid = body.get("kid") or None
-    alg = body.get("alg") or DEFAULT_ALG
+    seed = body.get("seed", None)
+    kid = body.get("seed", None)
+    alg = body.get("alg", DEFAULT_ALG)
 
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise MultikeyManagerError("Seed support is not enabled.")
@@ -188,7 +200,7 @@ async def create_key(request: web.BaseRequest):
 @request_schema(UpdateKeyRequestSchema())
 @response_schema(UpdateKeyResponseSchema, 200, description="")
 @tenant_authentication
-async def update_key(request: web.BaseRequest):
+async def bind_kid(request: web.BaseRequest):
     """Request handler for creating a new key pair in the wallet.
 
     Args:
@@ -201,8 +213,8 @@ async def update_key(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
-    multikey = body.get("multikey")
     kid = body.get("kid")
+    multikey = request.match_info["multikey"]
 
     try:
         async with context.session() as session:
@@ -218,13 +230,42 @@ async def update_key(request: web.BaseRequest):
         return web.json_response({"message": str(err)}, status=400)
 
 
+@docs(tags=["wallet"], summary="Unbind kid from keypair.")
+@request_schema(UpdateKeyRequestSchema())
+@tenant_authentication
+async def unbind_kid(request: web.BaseRequest):
+    """Request handler for fetching a key.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+
+    kid = body.get("kid")
+    multikey = request.match_info["multikey"]
+
+    try:
+        async with context.session() as session:
+            key_info = await MultikeyManager(session).unbind(multikey=multikey, kid=kid)
+        return web.json_response(
+            key_info,
+            status=200,
+        )
+
+    except (MultikeyManagerError, WalletDuplicateError, WalletNotFoundError) as err:
+        return web.json_response({"message": str(err)}, status=400)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes(
         [
-            web.get("/wallet/keys/{multikey}", fetch_key, allow_head=False),
             web.post("/wallet/keys", create_key),
-            web.put("/wallet/keys", update_key),
+            web.post("/wallet/keys/{multikey}/bind", bind_kid),
+            web.post("/wallet/keys/{multikey}/unbind", unbind_kid),
+            web.get("/wallet/keys/{multikey}", fetch_key, allow_head=False),
         ]
     )
