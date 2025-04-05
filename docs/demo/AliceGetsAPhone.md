@@ -115,6 +115,7 @@ git clone https://github.com/bcgov/indy-tails-server.git
 cd indy-tails-server/docker
 ./manage build
 ./manage start
+./manage logs
 ```
 
 This will run the required components for the tails server to function and make a tails server available on port 6543.
@@ -128,11 +129,34 @@ ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel"
 
 Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server. Make sure you use the `https` url!
 
+If you see an "authentication failed" error in the logs like this:
+```bash
+ngrok-tails-server-1  | ERROR:  authentication failed: Usage of ngrok requires a verified account and authtoken.
+ngrok-tails-server-1  | ERROR:
+ngrok-tails-server-1  | ERROR:  Sign up for an account: https://dashboard.ngrok.com/signup
+ngrok-tails-server-1  | ERROR:  Install your authtoken: https://dashboard.ngrok.com/get-started/your-authtoken
+```
+then you'll need to follow the links to set up a ngrok account and get an authentication token.
+When you have the authtoken, hit CTRL-C to exit from the logs and run the following commands,
+replacing `<YOUR AUTHTOKEN>` with the authtoken from ngrok.
+```bash
+./manage logs # run above
+^C
+./manage stop
+cat >>ngrok.yml
+authtoken: <YOUR AUTHTOKEN>
+^D
+./manage start
+./manage logs
+```
+
 #### Running in Play with Docker?
 
 Run the same steps on _PWD_ as you would run locally (see above).  Open a new shell (click on "ADD NEW INSTANCE") to run the tails server.
 
 Note that with _Play with Docker_ it can be challenging to capture the information you need from the log file as it scrolls by, you can try leaving off the `--events` option when you run the Faber agent to reduce the quantity of information logged to the screen.
+
+Also note that _PWD_ enviroments are insecure. If you enter a ngrok authtoken into a _PWD_ session, you should invalidate (reset) the authtoken as soon as you are done using the environment.
 
 ### Run `faber` With Extra Parameters
 
@@ -217,6 +241,12 @@ http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-docker.com?c_i=ey
 ```
 
 Note that this will use the ngrok endpoint if you are running locally, or your PWD endpoint if you are running on PWD.
+
+When running locally, use the `AGENT_ENDPOINT` environment variable to run the demo so that it puts the public hostname in the QR code:
+```bash
+AGENT_ENDPOINT=https://abc123.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber
+```
+See the Connectionless Proof Request section below for a more complete ngrok configuration that also supports the revocation option.
 
 ## Issue a Credential
 
@@ -320,6 +350,28 @@ If you have gone through the above steps, you can delete the Faber connection in
 Then in the faber demo, select option `2a` - Faber will display a QR code which you can scan with your mobile agent.  You will see the same proof request displayed in your mobile agent, which you can respond to.
 
 Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the `faber.py` code in the repository.
+
+If you want to use a connectionless proof request with docker running locally, you need to set up ngrok to forward both the agent port (8020) and the webhooks port (8022). If you have a free ngrok account, you need to run a single ngrok agent that forwards all of the necessary ports. Here is an ngrok configuration file that works for this purpose:
+```yaml
+version: "3"
+agent:
+    authtoken: <YOUR AUTHTOKEN>
+tunnels:
+    acapy-agent:
+       proto: http
+       addr: 8020
+    acapy-webhooks:
+       proto: http
+       addr: 8022
+    tails-server:
+       addr: 6543
+       inspect: false
+       proto: http
+```
+When using this approach, leave your ngrok authtoken out of the tails-server ngrok.yml file to prevent the tails-server from starting its own ngrok agent. This trick avoids the following error from ngrok:
+```bash
+ERROR:  authentication failed: Your account is limited to 1 simultaneous ngrok agent sessions.
+```
 
 ## Conclusion
 

@@ -221,17 +221,47 @@ else
   export RUNMODE="pwd"
 fi
 
-# check if ngrok is running on our $AGENT_PORT (don't override if AGENT_ENDPOINT is already set)
-if [ -z "$AGENT_ENDPOINT" ] && [ "$RUNMODE" == "docker" ]; then
-  echo "Trying to detect ngrok service endpoint"
+if [ "$RUNMODE" == "docker" ]; then
+  echo "Checking ngrok service endpoints"
   JQ=${JQ:-`which jq`}
   if [ -x "$JQ" ]; then
-    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | $JQ -r '.tunnels[0].public_url')
-    if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
-      echo "ngrok not detected for agent endpoint"
-    else
-      export AGENT_ENDPOINT=$NGROK_ENDPOINT
-      echo "Detected ngrok agent endpoint [$AGENT_ENDPOINT]"
+    NGROK_CURL="curl --silent localhost:4040/api/tunnels"
+    # check if ngrok is running on our $AGENT_PORT (don't override if AGENT_ENDPOINT is already set)
+    if [ -z "$AGENT_ENDPOINT" ]; then
+      # default behavior is to use the first tunnel as the agent endpoint
+      NGROK_ENDPOINT=$($NGROK_CURL | $JQ -r '.tunnels[0].public_url')
+      # ngrok does not guarantee the order that the API returns the tunnels,
+      # so use the named endpoint if it exists.
+      NAMED_ENDPOINT=$($NGROK_CURL | $JQ -r '.tunnels[] | select(.name=="acapy-agent") | .public_url')
+      if ! [ -z "$NAMED_ENDPOINT" ]; then
+        NGROK_ENDPOINT=$NAMED_ENDPOINT  # use the endpoint specified by name
+      fi
+      if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
+        echo "ngrok not detected for agent endpoint"
+      else
+        export AGENT_ENDPOINT=$NGROK_ENDPOINT
+        echo "Detected ngrok agent endpoint [$AGENT_ENDPOINT]"
+      fi
+    fi
+    # check if ngrok is running for webhooks (don't override if WEBHOOK_TARGET is already set)
+    if [ -z "$WEBHOOK_TARGET"]; then  # webhook target not specified, see if ngrok lists it by name
+      NAMED_ENDPOINT=$($NGROK_CURL | $JQ -r '.tunnels[] | select(.name=="acapy-webhooks") | .public_url')
+      if [ -z "$NAMED_ENDPOINT" ]; then
+        echo "ngrok not detected for webhooks endpoint"
+      else
+        export WEBHOOK_TARGET=${NAMED_ENDPOINT}/webhooks
+        echo "Detected ngrok webhooks endpoint [$WEBHOOK_TARGET]"
+      fi
+    fi
+    # check if ngrok is running for tails-server (don't override if TAILS_NETWORK or PUBLIC_TAILS_URL is already set)
+    if [ -z "$TAILS_NETWORK" ] && [ -z "$PUBLIC_TAILS_URL" ]; then # tails-server not specified, see if ngrok lists it by name
+      NAMED_ENDPOINT=$($NGROK_CURL | $JQ -r '.tunnels[] | select(.name=="tails-server") | .public_url')
+      if [ -z "$NAMED_ENDPOINT" ]; then
+        echo "ngrok not detected for tails-server endpoint"
+      else
+        export PUBLIC_TAILS_URL=${NAMED_ENDPOINT}
+        echo "Detected ngrok tails-server endpoint [$PUBLIC_TAILS_URL]"
+      fi
     fi
   else
     echo "jq not found"

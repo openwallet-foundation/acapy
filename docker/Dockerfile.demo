@@ -5,9 +5,12 @@ ENV ENABLE_PTVSD 0
 ENV ENABLE_PYDEVD_PYCHARM 0
 ENV PYDEVD_PYCHARM_HOST "host.docker.internal"
 
+# jq is required for the ngrok-wait.sh script
 RUN mkdir -p bin && curl -L -o bin/jq \
 	https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
 	chmod ug+x bin/jq
+# some versions of docker put .local/bin in the PATH instead of bin
+RUN mkdir -p .local/bin && ln -s ../../bin/jq .local/bin/jq
 
 # Copy and install Aries Agent code
 RUN pip install --no-cache-dir poetry==2.1.1
