@@ -3608,7 +3608,7 @@
 </ul>
 <h2 id="step-2-trigger-the-upgrade-via-the-upgrade-endpoint">Step 2 - Trigger the upgrade via the upgrade endpoint<a class="headerlink" href="#step-2-trigger-the-upgrade-via-the-upgrade-endpoint" title="Permanent link">&para;</a></h2>
 <p>The upgrade endpoint is at <strong>POST /anoncreds/wallet/upgrade</strong>.</p>
-<p>You need to be careful doing this, as there is no way to downgrade the wallet. It is recommended highly recommended to back-up any wallets and to test the upgrade in a development environment before upgrading a production wallet.</p>
+<p>You need to be careful doing this, as there is no way to downgrade the wallet. It is highly recommended to back-up any wallets and to test the upgrade in a development environment before upgrading a production wallet.</p>
 <p>Params: <code>wallet_name</code> is the name of the wallet to upgrade. Used to prevent accidental upgrades.</p>
 <p>The behavior for a base wallet (standalone) or admin wallet in multitenant mode is slightly different from the behavior of a subwallet (or tenant) in multitenancy mode. However, the upgrade process is the same.</p>
 <ol>
@@ -3620,8 +3620,9 @@
 <h3 id="base-wallet-standalone-or-admin-wallet-in-multitenant-mode">Base wallet (standalone) or admin wallet in multitenant mode<a class="headerlink" href="#base-wallet-standalone-or-admin-wallet-in-multitenant-mode" title="Permanent link">&para;</a></h3>
 <p>The agent will get a 503 error during the upgrade process. Any agent instance will shut down when the upgrade is complete. It is up to the aca-py agent to start up again. After the upgrade is complete the old endpoints will no longer be available and result in a 400 error.</p>
 <p>The aca-py agent will work after the restart. However, it will receive a warning for having the wrong wallet type configured. It is recommended to change the <code>wallet-type</code> to <code>askar-anoncreds</code> in the agent configuration file or start-up command.</p>
+<p><strong>Note:</strong> when in a multitenant mode, it is recommended to upgrade the admin wallet <em>before</em> the sub-wallets, as this will ensire new sub-wallets will be created using the <code>askar-anoncreds</code> wallet type. In order to invoke the upgrade endpoint for the admin wallet, the path <code>/anoncreds/wallet/upgrade</code> muse be "enabled" by adding it to the <code>base-wallet-paths</code> setting.</p>
 <h3 id="subwallet-tenant-in-multitenancy-mode">Subwallet (tenant) in multitenancy mode<a class="headerlink" href="#subwallet-tenant-in-multitenancy-mode" title="Permanent link">&para;</a></h3>
-<p>The sub-tenant which is in the process of being upgraded will get a 503 error during the upgrade process. All other sub-tenants will continue to operate normally. After the upgrade is complete the sub-tenant will be able to use the new endpoints. The old endpoints will no longer be available and result in a 403 error. Any aca-py agents will remain running after the upgrade and it's not required that the aca-py agent restarts. </p>
+<p>The sub-tenant which is in the process of being upgraded will get a 503 error during the upgrade process. All other sub-tenants will continue to operate normally. After the upgrade is complete the sub-tenant will be able to use the new endpoints. The old endpoints will no longer be available and result in a 403 error. Any aca-py agents will remain running after the upgrade and it's not required that the aca-py agent restarts.</p>
 
 
 
