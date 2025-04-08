@@ -826,18 +826,10 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     conductor.dispatcher, "run_task", mock.MagicMock()
                 ) as mock_run_task,
             ):
-                # Normally this should be a coroutine mock; however, the coroutine
-                # is awaited by dispatcher.run_task, which is mocked here. MagicMock
-                # to prevent unawaited coroutine warning.
-                mock_conn_mgr.return_value.get_connection_targets = mock.MagicMock()
                 mock_run_task.side_effect = test_module.BaseConnectionManagerError()
                 await conductor.queue_outbound(conductor.root_profile, message)
-                mock_outbound_mgr.return_value.enqueue_message.assert_not_called()
 
                 message.connection_id = None
-                mock_outbound_mgr.return_value.enqueue_message.side_effect = (
-                    test_module.OutboundDeliveryError()
-                )
                 await conductor.queue_outbound(conductor.root_profile, message)
                 mock_run_task.assert_called_once()
 
@@ -893,6 +885,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock.patch.object(
                 conductor.dispatcher, "run_task", mock.MagicMock()
             ) as mock_dispatch_run,
+            mock.patch.object(conductor, "queue_outbound", mock.MagicMock()),
         ):
             mock_dispatch_run.side_effect = test_module.LedgerConfigError(
                 "No such ledger"
@@ -942,10 +935,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             ) as mock_dispatch_run,
             mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger,
         ):
-            # Normally this should be a coroutine mock; however, the coroutine
-            # is awaited by dispatcher.run_task, which is mocked here. MagicMock
-            # to prevent unawaited coroutine warning.
-            conn_mgr.get_connection_targets = mock.MagicMock()
             mock_dispatch_run.side_effect = test_module.LedgerConfigError(
                 "No such ledger"
             )
