@@ -587,9 +587,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock.patch.object(
                 conductor.dispatcher, "queue_message", autospec=True
             ) as mock_dispatch_q,
-            mock.patch.object(
-                conductor.admin_server, "notify_fatal_error", mock.MagicMock()
-            ) as mock_notify,
+            mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger,
         ):
             mock_dispatch_q.side_effect = test_module.LedgerConfigError("ledger down")
 
@@ -603,7 +601,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 )
 
             mock_dispatch_q.assert_called_once()
-            mock_notify.assert_called_once()
+            mock_logger.error.assert_called_once()
 
     async def test_outbound_message_handler_return_route(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -898,9 +896,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock.patch.object(
                 conductor.dispatcher, "run_task", mock.MagicMock()
             ) as mock_dispatch_run,
-            mock.patch.object(
-                conductor.admin_server, "notify_fatal_error", mock.MagicMock()
-            ) as mock_notify,
         ):
             mock_dispatch_run.side_effect = test_module.LedgerConfigError(
                 "No such ledger"
@@ -917,7 +912,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 conductor.handle_not_returned(conductor.root_profile, message)
 
             mock_dispatch_run.assert_called_once()
-            mock_notify.assert_called_once()
 
     async def test_queue_outbound_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
@@ -949,9 +943,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             mock.patch.object(
                 conductor.dispatcher, "run_task", mock.MagicMock()
             ) as mock_dispatch_run,
-            mock.patch.object(
-                conductor.admin_server, "notify_fatal_error", mock.MagicMock()
-            ) as mock_notify,
+            mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger,
         ):
             # Normally this should be a coroutine mock; however, the coroutine
             # is awaited by dispatcher.run_task, which is mocked here. MagicMock
@@ -972,7 +964,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 await conductor.queue_outbound(conductor.root_profile, message)
 
             mock_dispatch_run.assert_called_once()
-            mock_notify.assert_called_once()
+            mock_logger.error.assert_called_once()
 
     async def test_admin(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -1255,7 +1247,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             conductor.dispatch_complete(message, mock_task)
             mock_notify.assert_not_called()
 
-    async def test_dispatch_complete_fatal_x(self):
+    async def test_dispatch_complete_ledger_error_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
         conductor = test_module.Conductor(builder)
 
@@ -1294,11 +1286,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             }
             await conductor.setup()
 
-        with mock.patch.object(
-            conductor.admin_server, "notify_fatal_error", mock.MagicMock()
-        ) as mock_notify:
+        with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
             conductor.dispatch_complete(message, mock_task)
-            mock_notify.assert_called_once_with()
+            mock_logger.error.assert_called_once()
 
     async def test_clear_default_mediator(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
