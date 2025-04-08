@@ -1,12 +1,10 @@
 from unittest import IsolatedAsyncioTestCase
 
-import pytest
-
-from ...connections.base_manager import BaseConnectionManager
 from ...admin.base_server import BaseAdminServer
 from ...askar.profile import AskarProfileManager
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
+from ...connections.base_manager import BaseConnectionManager
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -868,7 +866,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         await conductor.queue_outbound(conductor.root_profile, message)
 
-    @pytest.mark.skip("This test has a bad mock that isn't awaited")
     async def test_handle_not_returned_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
         conductor = test_module.Conductor(builder)
