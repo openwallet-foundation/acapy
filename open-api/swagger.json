@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.3.0rc0",
+    "version" : "v1.3.0rc1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -6410,6 +6410,40 @@
         }
       }
     },
+    "AnoncredsPresSpec" : {
+      "type" : "object",
+      "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
+      "properties" : {
+        "requested_attributes" : {
+          "type" : "object",
+          "description" : "Nested object mapping proof request attribute referents to requested-attribute specifiers",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/AnoncredsRequestedCredsRequestedAttr"
+          }
+        },
+        "requested_predicates" : {
+          "type" : "object",
+          "description" : "Nested object mapping proof request predicate referents to requested-predicate specifiers",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/AnoncredsRequestedCredsRequestedPred"
+          }
+        },
+        "self_attested_attributes" : {
+          "type" : "object",
+          "description" : "Self-attested attributes to build into proof",
+          "additionalProperties" : {
+            "type" : "string",
+            "example" : "self_attested_value",
+            "description" : "Self-attested attribute values to use in requested-credentials structure for proof construction"
+          }
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
+    },
     "AnoncredsPresentationReqAttrSpec" : {
       "type" : "object",
       "properties" : {
@@ -6569,6 +6603,39 @@
           "type" : "integer",
           "example" : 1640995199,
           "description" : "Latest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        }
+      }
+    },
+    "AnoncredsRequestedCredsRequestedAttr" : {
+      "type" : "object",
+      "required" : [ "cred_id" ],
+      "properties" : {
+        "cred_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Wallet credential identifier (typically but not necessarily a UUID)"
+        },
+        "revealed" : {
+          "type" : "boolean",
+          "description" : "Whether to reveal attribute in proof (default true)"
+        }
+      }
+    },
+    "AnoncredsRequestedCredsRequestedPred" : {
+      "type" : "object",
+      "required" : [ "cred_id" ],
+      "properties" : {
+        "cred_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Wallet credential identifier (typically but not necessarily a UUID)"
+        },
+        "timestamp" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Epoch timestamp of interest for non-revocation proof",
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
@@ -10389,35 +10456,62 @@
     },
     "LedgerConfigInstance" : {
       "type" : "object",
+      "required" : [ "id", "is_production" ],
       "properties" : {
-        "genesis_file" : {
+        "endorser_alias" : {
           "type" : "string",
-          "description" : "genesis_file"
+          "description" : "Endorser service alias (optional)"
         },
-        "genesis_transactions" : {
+        "endorser_did" : {
           "type" : "string",
-          "description" : "genesis_transactions"
-        },
-        "genesis_url" : {
-          "type" : "string",
-          "description" : "genesis_url"
+          "description" : "Endorser DID (optional)"
         },
         "id" : {
           "type" : "string",
-          "description" : "ledger_id"
+          "example" : "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+          "description" : "Ledger identifier. Auto-generated UUID4 if not provided"
         },
         "is_production" : {
           "type" : "boolean",
-          "description" : "is_production"
+          "description" : "Production-grade ledger (true/false)"
+        },
+        "is_write" : {
+          "type" : "boolean",
+          "description" : "Write capability enabled (default: False)"
+        },
+        "keepalive" : {
+          "type" : "integer",
+          "description" : "Keep-alive timeout in seconds for idle connections"
+        },
+        "pool_name" : {
+          "type" : "string",
+          "example" : "bcovrin-test-pool",
+          "description" : "Ledger pool name (defaults to ledger ID if not specified)"
+        },
+        "read_only" : {
+          "type" : "boolean",
+          "description" : "Read-only access (default: False)"
+        },
+        "socks_proxy" : {
+          "type" : "string",
+          "description" : "SOCKS proxy URL (optional)"
         }
       }
     },
     "LedgerConfigList" : {
       "type" : "object",
-      "required" : [ "ledger_config_list" ],
+      "required" : [ "non_production_ledgers", "production_ledgers" ],
       "properties" : {
-        "ledger_config_list" : {
+        "non_production_ledgers" : {
           "type" : "array",
+          "description" : "Non-production ledgers (may be empty)",
+          "items" : {
+            "$ref" : "#/definitions/LedgerConfigInstance"
+          }
+        },
+        "production_ledgers" : {
+          "type" : "array",
+          "description" : "Production ledgers (may be empty)",
           "items" : {
             "$ref" : "#/definitions/LedgerConfigInstance"
           }
