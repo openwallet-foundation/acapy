@@ -21,6 +21,7 @@ from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSes
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
+from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import CredDefFinishedEvent
@@ -306,9 +307,22 @@ class AnonCredsIssuer:
 
         """
         options = options or {}
-        support_revocation = options.get("support_revocation", False)
-        if not isinstance(support_revocation, bool):
-            raise ValueError("support_revocation must be a boolean")
+        support_revocation_option = options.get("support_revocation")
+
+        if support_revocation_option is None:
+            # Support revocation not set - Default to auto-create rev reg if author role
+            is_author = is_author_role(self.profile)
+            auto_create_rev_reg = self.profile.settings.get(
+                "endorser.auto_create_rev_reg", False
+            )
+
+            support_revocation = bool(is_author and auto_create_rev_reg)
+        else:
+            # If support_revocation is explicitly set, use that value
+            if not isinstance(support_revocation_option, bool):
+                raise ValueError("support_revocation must be a boolean")
+
+            support_revocation = support_revocation_option
 
         max_cred_num = options.get("revocation_registry_size", DEFAULT_MAX_CRED_NUM)
         if not isinstance(max_cred_num, int):
@@ -317,7 +331,8 @@ class AnonCredsIssuer:
         # Don't allow revocable cred def to be created without tails server base url
         if not self.profile.settings.get("tails_server_base_url") and support_revocation:
             raise AnonCredsIssuerError(
-                "tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
+                "tails_server_base_url not configured. "
+                "Can't create revocable credential definition."
             )
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -331,31 +346,31 @@ class AnonCredsIssuer:
         ) = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: CredentialDefinition.create(
-                schema_id,
-                schema_result.schema.serialize(),
-                issuer_id,
-                tag or DEFAULT_CRED_DEF_TAG,
-                signature_type or DEFAULT_SIGNATURE_TYPE,
+                schema_id=schema_id,
+                schema=schema_result.schema.serialize(),
+                issuer_id=issuer_id,
+                tag=tag or DEFAULT_CRED_DEF_TAG,
+                signature_type=signature_type or DEFAULT_SIGNATURE_TYPE,
                 support_revocation=support_revocation,
             ),
         )
 
         try:
             cred_def_result = await anoncreds_registry.register_credential_definition(
-                self.profile,
-                schema_result,
-                CredDef.from_native(cred_def),
-                options,
+                profile=self.profile,
+                schema=schema_result,
+                credential_definition=CredDef.from_native(cred_def),
+                options=options,
             )
 
             await self.store_credential_definition(
-                schema_result,
-                cred_def_result,
-                cred_def_private,
-                key_proof,
-                support_revocation,
-                max_cred_num,
-                options,
+                schema_result=schema_result,
+                cred_def_result=cred_def_result,
+                cred_def_private=cred_def_private,
+                key_proof=key_proof,
+                support_revocation=support_revocation,
+                max_cred_num=max_cred_num,
+                options=options,
             )
 
             return cred_def_result
@@ -415,12 +430,12 @@ class AnonCredsIssuer:
             if cred_def_result.credential_definition_state.state == STATE_FINISHED:
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
-                        schema_result.schema_id,
-                        identifier,
-                        cred_def_result.credential_definition_state.credential_definition.issuer_id,
-                        support_revocation,
-                        max_cred_num,
-                        options,
+                        schema_id=schema_result.schema_id,
+                        cred_def_id=identifier,
+                        issuer_id=cred_def_result.credential_definition_state.credential_definition.issuer_id,
+                        support_revocation=support_revocation,
+                        max_cred_num=max_cred_num,
+                        options=options,
                     )
                 )
         except AskarError as err:

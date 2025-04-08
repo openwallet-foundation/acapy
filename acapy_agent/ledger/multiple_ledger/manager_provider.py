@@ -18,7 +18,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
     """Multiple Indy ledger support manager provider."""
 
     MANAGER_TYPES = {
-        "askar-profile": (
+        "single-wallet-askar": (
             DeferLoad(
                 "acapy_agent.ledger.multiple_ledger."
                 "indy_vdr_manager.MultiIndyVDRLedgerManager"
@@ -26,7 +26,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
         ),
     }
     LEDGER_TYPES = {
-        "askar-profile": {
+        "single-wallet-askar": {
             "pool": DeferLoad("acapy_agent.ledger.indy_vdr.IndyVdrLedgerPool"),
             "ledger": DeferLoad("acapy_agent.ledger.indy_vdr.IndyVdrLedger"),
         },
@@ -40,12 +40,11 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the multiple Indy ledger manager instance."""
 
-        if self.root_profile.BACKEND_NAME == "askar":
-            manager_type = "askar-profile"
+        backend_name = self.root_profile.BACKEND_NAME
+        if backend_name in ("askar", "askar-anoncreds"):
+            manager_type = "single-wallet-askar"
         else:
-            raise MultipleLedgerManagerError(
-                f"Unexpected wallet backend: {self.root_profile.BACKEND_NAME}"
-            )
+            raise MultipleLedgerManagerError(f"Unexpected wallet backend: {backend_name}")
 
         if manager_type not in self._inst:
             manager_class = self.MANAGER_TYPES.get(manager_type)

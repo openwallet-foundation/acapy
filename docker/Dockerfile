@@ -6,7 +6,7 @@ WORKDIR /src
 COPY ./acapy_agent ./acapy_agent
 COPY ./pyproject.toml ./poetry.lock ./README.md ./
 
-RUN pip install --no-cache-dir poetry==1.8.3
+RUN pip install --no-cache-dir poetry==2.1.1
 RUN poetry build
 
 FROM python:${python_version}-slim-bookworm AS main

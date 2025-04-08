@@ -60,6 +60,8 @@ autodoc_mock_imports = [
     "unflatten",
     "yaml",
     "uuid_utils",
+    "did_webvh",
+    "canonicaljson",
 ]
 
 #    "acapy_agent.tests.test_conductor",
@@ -72,7 +74,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "ACA-Py"
-copyright = "2024, Province of British Columbia"
+copyright = "2025, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -226,7 +228,6 @@ texinfo_documents = [
         "ACA-Py",
         "ACA-Py Documentation",
         author,
-        "ACA-Py",
         "A Decentralized Trust Agent implemented in Python and\
         suitable for use in (almost) any non-mobile environment.",
         "Miscellaneous",

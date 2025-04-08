@@ -104,7 +104,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         doc_raw = await resolver.resolve(profile=profile, did=did)
         doc = DIDDocument.deserialize(doc_raw)
 
-        methods_or_refs = getattr(doc, proof_purpose, [])
+        methods_or_refs = doc_raw.get(proof_purpose, [])
         # Dereference any refs in the verification relationship
         methods = [
             await resolver.dereference_verification_method(profile, method, document=doc)

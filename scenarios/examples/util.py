@@ -358,6 +358,7 @@ async def anoncreds_present_proof_v2(
     requested_attributes: Optional[List[Mapping[str, Any]]] = None,
     requested_predicates: Optional[List[Mapping[str, Any]]] = None,
     non_revoked: Optional[Mapping[str, int]] = None,
+    cred_rev_id: Optional[str] = None,
 ):
     """Present an credential using present proof v2."""
 
@@ -412,6 +413,15 @@ async def anoncreds_present_proof_v2(
         f"/present-proof-2.0/records/{holder_pres_ex_id}/credentials",
         response=List[CredPrecis],
     )
+
+    # Filter credentials by revocation id to allow selecting non-revoked
+    if cred_rev_id:
+        relevant_creds = [
+            cred
+            for cred in relevant_creds
+            if cred.cred_info._extra.get("cred_rev_id") == cred_rev_id
+        ]
+
     assert holder_pres_ex.by_format.pres_request
     proof_request = holder_pres_ex.by_format.pres_request.get(
         "anoncreds"

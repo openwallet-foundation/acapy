@@ -17,13 +17,6 @@ Feature: RFC 0453 Aries agent issue credential
        | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
        | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |            |           |
 
-    @Release @WalletType_Askar @AltTests
-    Examples:
-       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
-       | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |            |           |
-       | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |            |           |
-       | --public-did --multitenant             | --multitenant --log-file  | driverslicense | Data_DL_NormalizedValues |            |           |
-
     @Release @WalletType_Askar_AnonCreds @BasicTest @cred_type_vc_di
     Examples:
        | Acme_capabilities                                            | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
@@ -208,10 +201,8 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                                         | Bob_capabilities          | Schema_name    | Credential_data          | Key_type | Sig_type             |
        | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 | 
-       | --public-did --cred-type json-ld --mediation              | --mediation               | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
        | --public-did --cred-type json-ld --multitenant --log-file | --multitenant             | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
        | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
-       | --public-did --cred-type json-ld --mediation              | --mediation               | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
        | --public-did --cred-type json-ld --multitenant --log-file | --multitenant             | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
 
     @Release @WalletType_Askar @BBS
@@ -277,10 +268,8 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          | Key_type | Sig_type             |
        | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2018 |
        | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues | ed25519  | Ed25519Signature2020 |
 
     @Release @WalletType_Askar @BBS
