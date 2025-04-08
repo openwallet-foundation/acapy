@@ -175,6 +175,8 @@ class PluginRegistry:
 
         # Check for 'definition' module with 'versions' attribute
         definition = ClassLoader.load_module("definition", module_name)
+
+        # definition.py must exist in protocol
         if not definition:
             LOGGER.error(
                 "Protocol does not include 'definition.py' for module: %s",
@@ -182,6 +184,7 @@ class PluginRegistry:
             )
             return False
 
+        # definition.py must include versions attribute
         if not hasattr(definition, "versions"):
             LOGGER.error(
                 "Protocol definition does not include versions attribute for module: %s",

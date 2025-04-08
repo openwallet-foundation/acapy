@@ -65,6 +65,7 @@ class ClassLoader:
                 mod_path = f".{mod_name}"
 
         # Load the module spec first
+        # this means that a later ModuleNotFoundError indicates a code issue
         spec = find_spec(mod_path, package)
         if not spec:
             return None
@@ -116,7 +117,7 @@ class ClassLoader:
             LOGGER.warning(
                 "Module %s not found when loading class %s", mod_path, class_name
             )
-            raise ClassNotFoundError(f"Module {mod_path} not found")
+            raise ClassNotFoundError(f"Module '{mod_path}' not found")
 
         resolved = getattr(mod, class_name, None)
         if not resolved:
