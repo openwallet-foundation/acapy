@@ -1206,7 +1206,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         message_body = "{}"
         receipt = MessageReceipt(direct_response_mode="snail mail")
         message = InboundMessage(message_body, receipt)
-        exc = KeyError("sample exception")
+        exc = StorageNotFoundError("sample exception")
         mock_task = mock.MagicMock(
             exc_info=(type(exc), exc, exc.__traceback__),
             ident="abc",
