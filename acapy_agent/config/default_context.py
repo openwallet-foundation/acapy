@@ -36,11 +36,14 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def build_context(self) -> InjectionContext:
         """Build the base injection context; set DIDComm prefix to emit."""
+        LOGGER.debug("Building new injection context")
+
         context = InjectionContext(settings=self.settings)
         context.settings.set_default("default_label", "Aries Cloud Agent")
 
         if context.settings.get("timing.enabled"):
             timing_log = context.settings.get("timing.log_file")
+            LOGGER.debug("Enabling timing collector with log file: %s", timing_log)
             collector = Collector(log_path=timing_log)
             context.injector.bind_instance(Collector, collector)
 
@@ -67,6 +70,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # DIDComm Messaging
         if context.settings.get("experiment.didcomm_v2"):
+            LOGGER.info("DIDComm v2 experimental mode enabled")
             from didcomm_messaging import CryptoService, PackagingService, RoutingService
             from didcomm_messaging.crypto.backend.askar import AskarCryptoService
 
@@ -81,6 +85,7 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
+        LOGGER.debug("Begin binding providers to context")
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
 
@@ -88,12 +93,7 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_provider(
             BaseWireFormat,
             CachedProvider(
-                # StatsProvider(
                 ClassProvider("acapy_agent.transport.pack_format.PackWireFormat"),
-                #    (
-                #        "encode_message", "parse_message"
-                #    ),
-                # )
             ),
         )
 
@@ -110,6 +110,7 @@ class DefaultContextBuilder(ContextBuilder):
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
 
+        LOGGER.debug("Initializing plugin registry")
         plugin_registry = PluginRegistry(
             blocklist=self.settings.get("blocked_plugins", [])
         )
@@ -183,6 +184,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):
+            LOGGER.debug("Registering external plugin: %s", plugin_path)
             plugin_registry.register_plugin(plugin_path)
 
         # Register message protocols
