@@ -21,8 +21,13 @@ if ! [ -z "$TAILS_NGROK_NAME" ]; then
     else
         echo "    not found"
     fi
-    export PUBLIC_TAILS_URL=$NGROK_ENDPOINT
-    echo "Fetched ngrok tails server endpoint [$PUBLIC_TAILS_URL]"
+    if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
+        # setting PUBLIC_TAILS_URL to null confuses the agent because "null" is a truthy value in Python
+        echo "PUBLIC_TAILS_URL not set and ngrok not available"
+    else
+        export PUBLIC_TAILS_URL=$NGROK_ENDPOINT
+        echo "Fetched ngrok tails server endpoint [$PUBLIC_TAILS_URL]"
+    fi
 fi
 
 export AGENT_NAME=$1
