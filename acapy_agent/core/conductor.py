@@ -74,7 +74,7 @@ from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.anoncreds_upgrade import upgrade_wallet_to_anoncreds_if_requested
 from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
-from .error import StartupError
+from .error import ProfileError, StartupError
 from .oob_processor import OobMessageProcessor
 from .util import SHUTDOWN_EVENT_TOPIC, STARTUP_EVENT_TOPIC
 
@@ -559,31 +559,31 @@ class Conductor:
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown on ledger error %s", str(e))
-            if self.admin_server:
-                self.admin_server.notify_fatal_error()
+            LOGGER.error("Ledger error occurred in message handler: %s", str(e))
             raise
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
         """Handle completion of message dispatch."""
         if completed.exc_info:
-            LOGGER.exception("Exception in message handler:", exc_info=completed.exc_info)
-            if isinstance(completed.exc_info[1], LedgerConfigError) or isinstance(
-                completed.exc_info[1], LedgerTransactionError
-            ):
+            exc_class, exc, _ = completed.exc_info
+            if isinstance(exc, (LedgerConfigError, LedgerTransactionError)):
                 LOGGER.error(
-                    "%shutdown on ledger error %s",
-                    "S" if self.admin_server else "No admin server to s",
-                    str(completed.exc_info[1]),
+                    "Ledger error occurred in message handler: %s",
+                    str(exc),
+                    exc_info=completed.exc_info,
                 )
-                if self.admin_server:
-                    self.admin_server.notify_fatal_error()
+            elif isinstance(exc, (ProfileError, StorageNotFoundError)):
+                LOGGER.error(
+                    "Storage error occurred in message handler: %s: %s",
+                    exc_class.__name__,
+                    str(exc),
+                    exc_info=completed.exc_info,
+                )
             else:
-                LOGGER.error(
-                    "DON'T shutdown on %s %s",
-                    completed.exc_info[0].__name__,
-                    str(completed.exc_info[1]),
+                LOGGER.exception(
+                    "Exception in message handler:", exc_info=completed.exc_info
                 )
+
         self.inbound_transport_manager.dispatch_complete(message, completed)
 
     async def get_stats(self) -> dict:
@@ -656,9 +656,9 @@ class Conductor:
         try:
             self.dispatcher.run_task(self.queue_outbound(profile, outbound))
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown on ledger error %s", str(e))
-            if self.admin_server:
-                self.admin_server.notify_fatal_error()
+            LOGGER.error(
+                "Ledger error occurred while handling failed delivery: %s", str(e)
+            )
             raise
 
     async def queue_outbound(
@@ -688,9 +688,9 @@ class Conductor:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
-                LOGGER.error("Shutdown on ledger error %s", str(e))
-                if self.admin_server:
-                    self.admin_server.notify_fatal_error()
+                LOGGER.error(
+                    "Ledger error occurred while preparing outbound message: %s", str(e)
+                )
                 raise
             del conn_mgr
         # Find oob/connectionless target we can send the message to
