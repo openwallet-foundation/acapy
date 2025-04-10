@@ -66,16 +66,17 @@ class _Banner:
         for line in lines:
             if len(line) < self.length:
                 if alignment == self.align.LEFT:
-                    # Left alignment - no padding needed
-                    formatted_line = line
+                    # Left alignment
+                    formatted_line = f"{line:<{self.length}}"
                 elif alignment == self.align.CENTER:
                     # Center alignment
-                    padding = (self.length - len(line)) // 2
-                    formatted_line = f"{' ' * padding}{line}"
+                    total_padding = self.length - len(line)
+                    left_padding = total_padding // 2
+                    right_padding = total_padding - left_padding
+                    formatted_line = f"{' ' * left_padding}{line}{' ' * right_padding}"
                 elif alignment == self.align.RIGHT:
                     # Right alignment
-                    padding = self.length - len(line)
-                    formatted_line = f"{' ' * padding}{line}"
+                    formatted_line = f"{line:>{self.length}}"
                 else:
                     raise ValueError(f"Invalid alignment: {alignment}")
             else:
