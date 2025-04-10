@@ -179,7 +179,7 @@ async def main():
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            {"firstname": "Anoncreds", "lastname": "Holder"},
+            {"firstname": "AnonCreds", "lastname": "Holder"},
             cred_def_id=cred_def.credential_definition_id,
             issuer_id=public_did.did,
             schema_id=schema.schema_id,
