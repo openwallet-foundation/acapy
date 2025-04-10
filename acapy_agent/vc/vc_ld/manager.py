@@ -204,11 +204,8 @@ class VcLdpManager:
         
         async with self.profile.session() as session:
             key_manager = MultikeyManager(session)
-            if (await key_manager.kid_exists(verification_method)):
-                key_info = await key_manager.from_kid(verification_method)
-                multikey = key_info["multikey"]
-            else:
-                multikey = await key_manager.resolve_multikey_from_verification_method(verification_method)
+            key_info = await key_manager.idempotent_resolve_and_store_from_kid(verification_method)
+            multikey = key_info["multikey"]
 
         # Get signature class based on proof type
         SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
