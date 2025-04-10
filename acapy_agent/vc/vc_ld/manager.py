@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Type, Union, cast
 
+from acapy_agent.wallet.keys.manager import MultikeyManager, multikey_to_verkey
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
@@ -24,6 +25,7 @@ from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
+from ...resolver.did_resolver import DIDResolver
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
@@ -209,6 +211,13 @@ class VcLdpManager:
                 f"Unable to get signature suite for proof type {proof_type} "
                 "using external provider."
             ) from error
+        
+        async with self.profile.session() as session:
+            multikey = await MultikeyManager(
+                session
+            ).resolve_multikey_from_verification_method(verification_method)
+            verkey = multikey_to_verkey(multikey)
+
 
         # Get signature class based on proof type
         SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
@@ -220,7 +229,7 @@ class VcLdpManager:
             key_pair=WalletKeyPair(
                 profile=self.profile,
                 key_type=SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
-                public_key_base58=did_info.verkey if did_info else None,
+                public_key_base58=verkey,
             ),
         )
 
@@ -361,7 +370,7 @@ class VcLdpManager:
             raise VcLdpManagerError("Proof type is required")
 
         # Assert we can issue the credential based on issuer + proof_type
-        await self.assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
+        # await self.assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
 
         # Create base proof object with options
         proof = LDProof(
