@@ -5,7 +5,6 @@ import io
 import logging
 import logging.config
 import os
-import sys
 from importlib import resources
 from logging.config import (
     _clearExistingHandlers,
@@ -286,7 +285,6 @@ class LoggingConfigurator:
             border_character: (Default value = ":") Character to use in banner
             border
         """
-        print()
         with Banner(border=border_character, length=banner_length) as banner:
             # Title
             banner.title(agent_label or "ACA")
@@ -348,14 +346,12 @@ class LoggingConfigurator:
 
             banner.version(__version__)
 
-        print()
-        print("Listening...")
-        print()
+        LOGGER.info("Listening...")
 
     @classmethod
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
-        with Banner(border=":", length=80, file=sys.stderr) as banner:
+        with Banner(border=":", length=80) as banner:
             if settings.get("wallet.type", "in_memory").lower() == "indy":
                 banner.centered("⚠ DEPRECATION NOTICE: ⚠")
                 banner.hr()
@@ -392,4 +388,3 @@ class LoggingConfigurator:
                     "and support will be removed in a future release; "
                     "use RFC 0454: Present Proof 2.0 instead."
                 )
-        print()
