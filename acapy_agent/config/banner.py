@@ -19,6 +19,7 @@ def Banner(border: str, length: int, file: Optional[TextIO] = None):
 
     # Join all lines with newlines and log them
     banner_text = "\n".join(banner.lines)
+    banner_text = f"\n{banner_text.strip()}\n"  # Start/end with a newline
     if file:
         print(banner_text, file=file)
     else:
