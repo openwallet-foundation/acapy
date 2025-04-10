@@ -36,7 +36,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
                 [
                     (self.ed25519_alg, self.ed25519_multikey),
                     (self.p256_alg, self.p256_multikey),
-                    (self.bls12381g2_alg, self.bls12381g2_multikey)
+                    (self.bls12381g2_alg, self.bls12381g2_multikey),
                 ]
             ):
                 kid = f"did:web:example.com#key-0{i}"

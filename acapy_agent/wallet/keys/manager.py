@@ -26,8 +26,8 @@ ALG_MAPPINGS = {
         "key_type": BLS12381G2,
         "multikey_prefix": "zUC7",
         "prefix_hex": "eb01",
-        "prefix_length": 2
-    }
+        "prefix_length": 2,
+    },
 }
 
 
@@ -89,7 +89,7 @@ class MultikeyManager:
 
         elif verification_method.type == "Ed25519VerificationKey2020":
             multikey = verification_method.public_key_multibase
-        
+
         elif verification_method.type == "Bls12381G2Key2020":
             multikey = verkey_to_multikey(
                 verification_method.public_key_base58, alg="bls12381g2"
