@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "acapy_agent"
-version = "1.3.0rc0"
+version = "1.3.0rc1"
 description = "(ACA-Py) A Cloud Agent Python is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = []
 license = "Apache-2.0"
@@ -16,7 +16,7 @@ repository = "https://github.com/openwallet-foundation/acapy"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-aiohttp = "~3.11.12"
+aiohttp = "~3.11.16"
 aiohttp-apispec-acapy = "~3.0.3"
 aiohttp-cors = ">=0.7,<0.9"
 apispec = "^6.6.0"
@@ -39,7 +39,7 @@ pynacl = "~1.5.0"
 python-dateutil = "^2.9.0"
 python-json-logger = "^3.2.1"
 pyyaml = "~6.0.2"
-qrcode = { version = "^8.0", extras = ["pil"] }
+qrcode = { version = "^8.1", extras = ["pil"] }
 requests = "~2.32.3"
 rlp = "^4.1.0"
 unflatten = "~0.2"
@@ -70,7 +70,7 @@ canonicaljson = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
-ruff = "~0.11.0"
+ruff = "~0.11.4"
 
 pre-commit = ">=4.1,<4.3"
 

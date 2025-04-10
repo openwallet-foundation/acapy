@@ -8,8 +8,8 @@ WORKSPACE_DIR=$(pwd)
 python -m pip install --upgrade pip
 pip3 install -r demo/requirements.txt -r demo/requirements.behave.txt
 
-# install a version of acapy-agent so the pytests can pick up a version
-pip3 install acapy-agent
+# install current version of acapy-agent so the pytests can pick up a version
+pip3 install .
 
 # hack/workaround to allow `pytest .` and `poetry run pytest` work.
 # need to not run ruff...
