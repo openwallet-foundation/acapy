@@ -1,5 +1,4 @@
-import contextlib
-from io import BufferedReader, StringIO, TextIOWrapper
+from io import BufferedReader, TextIOWrapper
 from tempfile import NamedTemporaryFile
 from unittest import IsolatedAsyncioTestCase, mock
 
@@ -87,13 +86,13 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             )
 
     def test_banner_did(self):
-        stdout = StringIO()
         mock_http = mock.MagicMock(scheme="http", host="1.2.3.4", port=8081)
         mock_https = mock.MagicMock(schemes=["https", "archie"])
         mock_admin_server = mock.MagicMock(host="1.2.3.4", port=8091)
-        with contextlib.redirect_stdout(stdout):
-            test_label = "Aries Cloud Agent"
-            test_did = "55GkHamhTU1ZbTbV2ab9DE"
+        test_label = "Aries Cloud Agent"
+        test_did = "55GkHamhTU1ZbTbV2ab9DE"
+
+        with self.assertLogs(level="INFO") as log:
             test_module.LoggingConfigurator.print_banner(
                 test_label,
                 {"in": mock_http},
@@ -104,7 +103,9 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             test_module.LoggingConfigurator.print_banner(
                 test_label, {"in": mock_http}, {"out": mock_https}, test_did
             )
-        output = stdout.getvalue()
+
+        # Join all log records and check if DID is present
+        output = "\n".join(log.output)
         assert test_did in output
 
     def test_load_resource(self):
