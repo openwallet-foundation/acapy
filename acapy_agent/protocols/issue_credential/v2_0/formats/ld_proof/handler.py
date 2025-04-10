@@ -184,14 +184,14 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
         # Make sure we can issue with the did and proof type
-        # try:
-        #     await manager.assert_can_issue_with_id_and_proof_type(
-        #         detail.credential.issuer_id, detail.options.proof_type
-        #     )
-        # except VcLdpManagerError as err:
-        #     raise V20CredFormatError(
-        #         "Checking whether issuance is possible failed"
-        #     ) from err
+        try:
+            await manager.assert_can_issue_with_id_and_proof_type(
+                detail.credential.issuer_id, detail.options.proof_type
+            )
+        except VcLdpManagerError as err:
+            raise V20CredFormatError(
+                "Checking whether issuance is possible failed"
+            ) from err
 
         return self.get_format_data(CRED_20_OFFER, detail.serialize())
 

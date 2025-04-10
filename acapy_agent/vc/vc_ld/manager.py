@@ -149,7 +149,6 @@ class VcLdpManager:
                 - If the proof type is not supported
                 - If the issuer id is not a did
                 - If the did is not found in th wallet
-                - If the did does not support to create signatures for the proof type
 
         """
         if not issuer_id or not proof_type:
@@ -172,16 +171,7 @@ class VcLdpManager:
                 )
 
             # Retrieve did from wallet. Will throw if not found
-            did = await self._did_info_for_did(issuer_id)
-
-            # Raise error if we cannot issue a credential with this proof type
-            # using this DID from
-            did_proof_types = KEY_TYPE_SIGNATURE_TYPE_MAPPING[did.key_type]
-            if proof_type not in did_proof_types:
-                raise VcLdpManagerError(
-                    f"Unable to issue credential with issuer id {issuer_id} and proof "
-                    f"type {proof_type}. DID only supports proof types {did_proof_types}"
-                )
+            _ = await self._did_info_for_did(issuer_id)
 
         except WalletNotFoundError:
             raise VcLdpManagerError(
@@ -370,7 +360,7 @@ class VcLdpManager:
             raise VcLdpManagerError("Proof type is required")
 
         # Assert we can issue the credential based on issuer + proof_type
-        # await self.assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
+        await self.assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
 
         # Create base proof object with options
         proof = LDProof(
