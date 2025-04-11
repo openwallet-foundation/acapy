@@ -592,6 +592,8 @@ class Conductor:
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
         LOGGER.debug("Startup notification sent.")
 
+        LOGGER.info("Listening...")
+
     async def stop(self, timeout=1.0):
         """Stop the agent."""
         LOGGER.info("Stopping the Conductor agent.")
