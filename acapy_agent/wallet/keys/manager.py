@@ -5,7 +5,7 @@ from ...resolver.did_resolver import DIDResolver
 from ...utils.multiformats import multibase
 from ...wallet.error import WalletNotFoundError
 from ..base import BaseWallet
-from ..key_type import ED25519, P256, KeyType
+from ..key_type import BLS12381G2, ED25519, P256, KeyType
 from ..util import b58_to_bytes, bytes_to_b58
 
 DEFAULT_ALG = "ed25519"
@@ -20,6 +20,12 @@ ALG_MAPPINGS = {
         "key_type": P256,
         "multikey_prefix": "zDn",
         "prefix_hex": "8024",
+        "prefix_length": 2,
+    },
+    "bls12381g2": {
+        "key_type": BLS12381G2,
+        "multikey_prefix": "zUC7",
+        "prefix_hex": "eb01",
         "prefix_length": 2,
     },
 }
@@ -83,6 +89,11 @@ class MultikeyManager:
 
         elif verification_method.type == "Ed25519VerificationKey2020":
             multikey = verification_method.public_key_multibase
+
+        elif verification_method.type == "Bls12381G2Key2020":
+            multikey = verkey_to_multikey(
+                verification_method.public_key_base58, alg="bls12381g2"
+            )
 
         else:
             raise MultikeyManagerError("Unknown verification method type.")
