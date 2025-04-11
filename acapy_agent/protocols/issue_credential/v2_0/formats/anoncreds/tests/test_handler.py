@@ -45,7 +45,7 @@ from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_request import V20CredRequest
 from ....messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from ....models.cred_ex_record import V20CredExRecord
-from ....models.detail.anoncreds import V20CredExRecordAnoncreds
+from ....models.detail.anoncreds import V20CredExRecordAnonCreds
 from ...handler import V20CredFormatError
 from .. import handler as test_module
 from ..handler import LOGGER as ANONCREDS_LOGGER
@@ -221,7 +221,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
-        # Anoncreds registry
+        # AnonCreds registry
         self.profile.context.injector.bind_instance(
             AnonCredsRegistry, AnonCredsRegistry()
         )
@@ -289,12 +289,12 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
     async def test_get_indy_detail_record(self):
         cred_ex_id = "dummy"
         details_indy = [
-            V20CredExRecordAnoncreds(
+            V20CredExRecordAnonCreds(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
                 cred_rev_id="0",
             ),
-            V20CredExRecordAnoncreds(
+            V20CredExRecordAnonCreds(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
                 cred_rev_id="1",
@@ -482,7 +482,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 )
             )
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_create_offer_no_cache(self):
         schema_id_parts = SCHEMA_ID.split(":")
 
@@ -545,7 +545,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         # assert data is encoded as base64
         assert attachment.data.base64
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_create_offer_attr_mismatch(self):
         schema_id_parts = SCHEMA_ID.split(":")
 
@@ -602,7 +602,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             with self.assertRaises(V20CredFormatError):
                 await self.handler.create_offer(cred_proposal)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_create_offer_no_matching_sent_cred_def(self):
         cred_proposal = V20CredProposal(
             formats=[
@@ -631,7 +631,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         # Not much to assert. Receive offer doesn't do anything
         await self.handler.receive_offer(cred_ex_record, cred_offer_message)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_create_request(self):
         holder_did = "did"
 
@@ -701,7 +701,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.create_request(cred_ex_record)
         assert (
-            "Anoncreds issue credential format cannot start from credential request"
+            "AnonCreds issue credential format cannot start from credential request"
             in str(context.exception)
         )
 
@@ -710,7 +710,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         with self.assertRaises(V20CredFormatError) as context:
             await self.handler.create_request(cred_ex_record)
         assert (
-            "Anoncreds issue credential format cannot start from credential request"
+            "AnonCreds issue credential format cannot start from credential request"
             in str(context.exception)
         )
 
@@ -744,11 +744,11 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             await self.handler.receive_request(cred_ex_record, cred_request_message)
 
         assert (
-            "Anoncreds issue credential format cannot start from credential request"
+            "AnonCreds issue credential format cannot start from credential request"
             in str(context.exception)
         )
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_revocable(self):
         attr_values = {
             "legalName": "value",
@@ -834,7 +834,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             # assert data is encoded as base64
             assert attachment.data.base64
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_non_revocable(self):
         CRED_DEF_NR = deepcopy(CRED_DEF)
         CRED_DEF_NR["value"]["revocation"] = None
@@ -933,7 +933,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
 
             assert "indy detail record already exists" in str(context.exception)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_no_active_rr_no_retries(self):
         attr_values = {
             "legalName": "value",
@@ -992,7 +992,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 await self.handler.issue_credential(cred_ex_record, retries=0)
             assert "has no active revocation registry" in str(context.exception)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_no_active_rr_retry(self):
         attr_values = {
             "legalName": "value",
@@ -1064,7 +1064,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 await self.handler.issue_credential(cred_ex_record, retries=1)
             assert "has no active revocation registry" in str(context.exception)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_rr_full(self):
         attr_values = {
             "legalName": "value",
@@ -1137,7 +1137,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         # Not much to assert. Receive credential doesn't do anything
         await self.handler.receive_credential(cred_ex_record, cred_issue_message)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_store_credential(self):
         connection_id = "test_conn_id"
         attr_values = {
@@ -1264,7 +1264,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
                 rev_reg_def=REV_REG_DEF,
             )
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_store_credential_holder_store_indy_error(self):
         connection_id = "test_conn_id"
         attr_values = {

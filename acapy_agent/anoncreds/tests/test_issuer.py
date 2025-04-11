@@ -3,13 +3,16 @@ from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from anoncreds import Credential, CredentialDefinition, CredentialOffer, W3cCredential
+from anoncreds import (
+    AnoncredsError,
+    Credential,
+    CredentialDefinition,
+    CredentialOffer,
+    W3cCredential,
+)
 from aries_askar import AskarError, AskarErrorCode
 
-from ...anoncreds.base import (
-    AnonCredsObjectAlreadyExists,
-    AnonCredsSchemaAlreadyExists,
-)
+from ...anoncreds.base import AnonCredsObjectAlreadyExists, AnonCredsSchemaAlreadyExists
 from ...anoncreds.models.credential_definition import (
     CredDef,
     CredDefResult,
@@ -25,10 +28,7 @@ from ...anoncreds.models.schema import (
     SchemaResult,
     SchemaState,
 )
-from ...askar.profile_anon import (
-    AskarAnoncredsProfile,
-    AskarAnoncredsProfileSession,
-)
+from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ...core.event_bus import Event, MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile
@@ -127,7 +127,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
 
     async def test_init(self):
         assert isinstance(self.issuer, test_module.AnonCredsIssuer)
-        assert isinstance(self.issuer.profile, AskarAnoncredsProfile)
+        assert isinstance(self.issuer.profile, AskarAnonCredsProfile)
 
     async def test_init_wrong_profile_type(self):
         self.issuer._profile = await create_test_profile(
@@ -140,7 +140,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         self.profile.inject = mock.Mock(return_value=MockEventBus())
         await self.issuer.notify(Event(topic="test-topic"))
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(AnonCredsSchema, "deserialize", return_value="test")
     async def test_create_and_register_schema_finds_schema_raises_x(
         self, _, mock_session_handle
@@ -161,7 +161,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 attr_names=["attr1", "attr2"],
             )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema(self, mock_session_handle):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
         mock_session_handle.insert = mock.CoroutineMock(return_value=None)
@@ -181,7 +181,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         mock_session_handle.fetch_all.assert_called_once()
         mock_session_handle.insert.assert_called_once()
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_missing_schema_id_or_job_id(
         self, mock_session_handle
     ):
@@ -259,7 +259,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
             attr_names=["attr1", "attr2"],
         )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_fail_insert(self, mock_session_handle):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
         mock_session_handle.insert = mock.CoroutineMock(
@@ -283,7 +283,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
             mock_session_handle.fetch_all.assert_called_once()
             mock_session_handle.insert.assert_called_once()
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_already_exists_but_not_in_wallet(
         self, mock_session_handle
     ):
@@ -313,7 +313,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 attr_names=["attr1", "attr2"],
             )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_without_job_id_or_schema_id_raises_x(
         self, mock_session_handle
     ):
@@ -350,7 +350,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
             attr_names=["attr1", "attr2"],
         )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(test_module.AnonCredsIssuer, "store_schema")
     async def test_create_and_register_schema_with_endorsed_transaction_response_does_not_store_schema(
         self, mock_store_schema, mock_session_handle
@@ -394,7 +394,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         )
         await self.issuer.finish_schema(job_id="job-id", schema_id="schema-id")
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_created_schemas(self, mock_session_handle):
         mock_session_handle.fetch_all = mock.CoroutineMock(
             return_value=[MockSchemaEntry("name-test")]
@@ -413,7 +413,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         mock_session_handle.fetch_all.assert_called_once()
         assert result == ["schema1", "schema2"]
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_credential_definition_in_wallet(self, mock_session_handle):
         mock_session_handle.fetch = mock.CoroutineMock(
             side_effect=[
@@ -731,7 +731,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
             )
         )
         # Creating fails with bad issuer_id
-        with self.assertRaises(test_module.AnoncredsError):
+        with self.assertRaises(AnoncredsError):
             await self.issuer.create_and_register_credential_definition(
                 issuer_id="issuer-id",
                 schema_id="CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
@@ -747,7 +747,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 options={},
             )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_created_cred_defs(self, mock_session_handle):
         mock_session_handle.fetch_all = mock.CoroutineMock(
             return_value=[MockCredDefEntry()]
@@ -769,7 +769,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         mock_session_handle.fetch_all.assert_called_once()
         assert result == ["cred_def1", "cred_def2"]
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_match_created_cred_defs(self, mock_session_handle):
         mock_session_handle.fetch_all = mock.CoroutineMock(
             return_value=[
@@ -782,7 +782,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         result = await self.issuer.match_created_credential_definitions()
         assert result == "name4"
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_credential_offer_cred_def_not_found(self, mock_session_handle):
         """
         None, Valid
@@ -859,7 +859,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         result = await self.issuer.cred_def_supports_revocation("cred-def-id")
         assert result is True
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(CredentialDefinition, "load", return_value=MockCredDefEntry())
     async def test_create_credential_offer_create_fail(
         self, mock_load, mock_session_handle
@@ -872,7 +872,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_session_handle.fetch.called
         assert mock_load.called
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(CredentialDefinition, "load", return_value=MockCredDefEntry())
     @mock.patch.object(CredentialOffer, "create", return_value=MockCredOffer())
     async def test_create_credential_offer_create(
@@ -887,7 +887,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_create.called
         assert result is not None
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=MockCredential())
     async def test_create_credential(self, mock_create, mock_session_handle):
         self.profile.inject = mock.Mock(
@@ -906,7 +906,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_session_handle.fetch.called
         assert mock_create.called
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(W3cCredential, "create", return_value=MockCredential())
     async def test_create_credential_vcdi(self, mock_create, mock_session_handle):
         self.profile.inject = mock.Mock(

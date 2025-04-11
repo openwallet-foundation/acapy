@@ -4,14 +4,14 @@ from typing import Optional
 from uuid import uuid4
 
 from ..askar.profile import AskarProfile
-from ..askar.profile_anon import AskarAnoncredsProfile
+from ..askar.profile_anon import AskarAnonCredsProfile
 from ..askar.store import AskarStoreConfig
 from ..config.injection_context import InjectionContext
 
 
 async def create_test_profile(
     settings: Optional[dict] = None, context: Optional[InjectionContext] = None
-) -> AskarProfile | AskarAnoncredsProfile:
+) -> AskarProfile | AskarAnonCredsProfile:
     """Create a profile for testing."""
     if not settings:
         settings = {
@@ -38,7 +38,7 @@ async def create_test_profile(
     opened = await store_config.open_store(provision=True, in_memory=True)
 
     if settings.get("wallet.type") == "askar-anoncreds":
-        return AskarAnoncredsProfile(
+        return AskarAnonCredsProfile(
             opened=opened,
             context=context,
         )

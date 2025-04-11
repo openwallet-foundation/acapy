@@ -4,9 +4,7 @@ from ...askar.profile import AskarProfile, AskarProfileSession
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import EventBus
 from ...core.protocol_registry import ProtocolRegistry
-from ...protocols.coordinate_mediation.v1_0.route_manager import (
-    RouteManager,
-)
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...resolver.base import BaseDIDResolver
 from ...resolver.did_resolver import DIDResolver
 from ...tests.mock import AsyncMock, MagicMock

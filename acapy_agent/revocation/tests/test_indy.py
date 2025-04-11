@@ -1,9 +1,7 @@
 from unittest import IsolatedAsyncioTestCase
 
 from ...ledger.base import BaseLedger
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ...ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...storage.error import StorageNotFoundError

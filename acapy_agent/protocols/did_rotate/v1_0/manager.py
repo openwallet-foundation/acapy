@@ -3,10 +3,7 @@
 Manages and tracks the state of the DID Rotate protocol.
 """
 
-from ....connections.base_manager import (
-    BaseConnectionManager,
-    BaseConnectionManagerError,
-)
+from ....connections.base_manager import BaseConnectionManager, BaseConnectionManagerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder

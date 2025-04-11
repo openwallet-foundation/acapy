@@ -67,7 +67,7 @@ are a few files listed below that we don't generate into the documentation site,
 and they can be ignored.
 
 - `assets/README.md`
-- `design/AnoncredsW3CCompatibility.md`
+- `design/AnonCredsW3CCompatibility.md`
 - `design/UpgradeViaApi.md`
 - `features/W3cCredentials.md`
 

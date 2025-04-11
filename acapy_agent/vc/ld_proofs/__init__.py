@@ -12,9 +12,9 @@ from .purposes import _CredentialIssuancePurpose as CredentialIssuancePurpose
 from .purposes import _ProofPurpose as ProofPurpose
 from .suites import _BbsBlsSignature2020 as BbsBlsSignature2020
 from .suites import _BbsBlsSignatureProof2020 as BbsBlsSignatureProof2020
+from .suites import _EcdsaSecp256r1Signature2019 as EcdsaSecp256r1Signature2019
 from .suites import _Ed25519Signature2018 as Ed25519Signature2018
 from .suites import _Ed25519Signature2020 as Ed25519Signature2020
-from .suites import _EcdsaSecp256r1Signature2019 as EcdsaSecp256r1Signature2019
 from .suites import _JwsLinkedDataSignature as JwsLinkedDataSignature
 from .suites import _LinkedDataProof as LinkedDataProof
 from .suites import _LinkedDataSignature as LinkedDataSignature

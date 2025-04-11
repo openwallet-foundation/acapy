@@ -10,18 +10,16 @@ from marshmallow import RAISE
 from ......anoncreds.base import AnonCredsObjectNotFound, AnonCredsResolutionError
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import CATEGORY_CRED_DEF, AnonCredsIssuer
-from ......anoncreds.models.credential import AnoncredsCredentialSchema
-from ......anoncreds.models.credential_offer import AnoncredsCredentialOfferSchema
+from ......anoncreds.models.credential import AnonCredsCredentialSchema
+from ......anoncreds.models.credential_offer import AnonCredsCredentialOfferSchema
 from ......anoncreds.models.credential_proposal import (
-    AnoncredsCredentialDefinitionProposal,
+    AnonCredsCredentialDefinitionProposal,
 )
-from ......anoncreds.models.credential_request import AnoncredsCredRequestSchema
+from ......anoncreds.models.credential_request import AnonCredsCredRequestSchema
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
-from ......messaging.credential_definitions.util import (
-    CRED_DEF_SENT_RECORD_TYPE,
-)
+from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
@@ -38,14 +36,14 @@ from ...messages.cred_offer import V20CredOffer
 from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
-from ...models.detail.anoncreds import V20CredExRecordAnoncreds
+from ...models.detail.anoncreds import V20CredExRecordAnonCreds
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
 LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsCredFormatHandler(V20CredFormatHandler):
-    """Anoncreds credential format handler."""
+    """AnonCreds credential format handler."""
 
     format = V20CredFormat.Format.ANONCREDS
 
@@ -69,10 +67,10 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
 
         """
         mapping = {
-            CRED_20_PROPOSAL: AnoncredsCredentialDefinitionProposal,
-            CRED_20_OFFER: AnoncredsCredentialOfferSchema,
-            CRED_20_REQUEST: AnoncredsCredRequestSchema,
-            CRED_20_ISSUE: AnoncredsCredentialSchema,
+            CRED_20_PROPOSAL: AnonCredsCredentialDefinitionProposal,
+            CRED_20_OFFER: AnonCredsCredentialOfferSchema,
+            CRED_20_REQUEST: AnonCredsCredRequestSchema,
+            CRED_20_ISSUE: AnonCredsCredentialSchema,
         }
 
         # Get schema class
@@ -81,7 +79,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
 
-    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordAnoncreds:
+    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordAnonCreds:
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
@@ -285,7 +283,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Create anoncreds credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
-                "Anoncreds issue credential format cannot start from credential request"
+                "AnonCreds issue credential format cannot start from credential request"
             )
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
@@ -339,7 +337,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         if not cred_req_result:
             cred_req_result = await _create()
 
-        detail_record = V20CredExRecordAnoncreds(
+        detail_record = V20CredExRecordAnonCreds(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
         )
@@ -355,7 +353,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Receive anoncreds credential request."""
         if not cred_ex_record.cred_offer:
             raise V20CredFormatError(
-                "Anoncreds issue credential format cannot start from credential request"
+                "AnonCreds issue credential format cannot start from credential request"
             )
 
     async def issue_credential(
@@ -396,7 +394,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
         async with self._profile.transaction() as txn:
-            detail_record = V20CredExRecordAnoncreds(
+            detail_record = V20CredExRecordAnonCreds(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_def_id,
                 cred_rev_id=cred_rev_id,

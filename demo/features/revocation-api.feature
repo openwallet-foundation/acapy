@@ -44,7 +44,7 @@ Feature: ACA-Py Revocation API
          | Acme   | --revocation --public-did --multitenant | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
          | Acme   | --revocation --public-did --multitenant --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @Revoc-api.x @PR-Anoncreds-break
+   @Revoc-api.x @PR-AnonCreds-break
    Scenario Outline: Without endorser: issue, revoke credentials, manually create revocation registries
       Given we have "3" agents
          | name  | role     | capabilities        |

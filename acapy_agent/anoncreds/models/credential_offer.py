@@ -1,4 +1,4 @@
-"""Anoncreds Credential Offer format for v2.0 of the issue-credential protocol."""
+"""AnonCreds Credential Offer format for v2.0 of the issue-credential protocol."""
 
 from typing import Optional, Sequence
 
@@ -15,13 +15,13 @@ from ...messaging.valid import (
 )
 
 
-class AnoncredsKeyCorrectnessProof(BaseModel):
-    """Anoncreds key correctness proof."""
+class AnonCredsKeyCorrectnessProof(BaseModel):
+    """AnonCreds key correctness proof."""
 
     class Meta:
-        """AnoncredsKeyCorrectnessProof metadata."""
+        """AnonCredsKeyCorrectnessProof metadata."""
 
-        schema_class = "AnoncredsKeyCorrectnessProofSchema"
+        schema_class = "AnonCredsKeyCorrectnessProofSchema"
 
     def __init__(
         self,
@@ -38,13 +38,13 @@ class AnoncredsKeyCorrectnessProof(BaseModel):
         self.xr_cap = xr_cap
 
 
-class AnoncredsCorrectnessProofSchema(BaseModelSchema):
-    """Anoncreds key correctness proof schema."""
+class AnonCredsCorrectnessProofSchema(BaseModelSchema):
+    """AnonCreds key correctness proof schema."""
 
     class Meta:
-        """Anoncreds key correctness proof schema metadata."""
+        """AnonCreds key correctness proof schema metadata."""
 
-        model_class = AnoncredsKeyCorrectnessProof
+        model_class = AnonCredsKeyCorrectnessProof
         unknown = EXCLUDE
 
     c = fields.Str(
@@ -82,13 +82,13 @@ class AnoncredsCorrectnessProofSchema(BaseModelSchema):
     )
 
 
-class AnoncredsCredentialOffer(BaseModel):
-    """Anoncreds Credential Offer."""
+class AnonCredsCredentialOffer(BaseModel):
+    """AnonCreds Credential Offer."""
 
     class Meta:
-        """AnoncredsCredentialOffer metadata."""
+        """AnonCredsCredentialOffer metadata."""
 
-        schema_class = "AnoncredsCredentialOfferSchema"
+        schema_class = "AnonCredsCredentialOfferSchema"
 
     def __init__(
         self,
@@ -106,13 +106,13 @@ class AnoncredsCredentialOffer(BaseModel):
         self.key_correctness_proof = key_correctness_proof
 
 
-class AnoncredsCredentialOfferSchema(BaseModelSchema):
-    """Anoncreds Credential Offer Schema."""
+class AnonCredsCredentialOfferSchema(BaseModelSchema):
+    """AnonCreds Credential Offer Schema."""
 
     class Meta:
-        """AnoncredsCredentialOffer schema metadata."""
+        """AnonCredsCredentialOffer schema metadata."""
 
-        model_class = AnoncredsCredentialOffer
+        model_class = AnonCredsCredentialOffer
         unknown = EXCLUDE
 
     schema_id = fields.Str(
@@ -143,7 +143,7 @@ class AnoncredsCredentialOfferSchema(BaseModelSchema):
     )
 
     key_correctness_proof = fields.Nested(
-        AnoncredsCorrectnessProofSchema(),
+        AnonCredsCorrectnessProofSchema(),
         required=True,
         metadata={"description": "Key correctness proof"},
     )

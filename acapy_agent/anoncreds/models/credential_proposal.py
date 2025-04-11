@@ -1,4 +1,4 @@
-"""Anoncreds credential definition proposal."""
+"""AnonCreds credential definition proposal."""
 
 import re
 
@@ -19,7 +19,7 @@ from ...messaging.valid import (
 )
 
 
-class AnoncredsCredentialDefinitionProposal(OpenAPISchema):
+class AnonCredsCredentialDefinitionProposal(OpenAPISchema):
     """Query string parameters for credential definition searches."""
 
     cred_def_id = fields.Str(
@@ -69,7 +69,7 @@ class AnoncredsCredentialDefinitionProposal(OpenAPISchema):
 
 
 CRED_DEF_TAGS = list(
-    vars(AnoncredsCredentialDefinitionProposal).get("_declared_fields", [])
+    vars(AnonCredsCredentialDefinitionProposal).get("_declared_fields", [])
 )
 
 CRED_DEF_EVENT_PREFIX = "acapy::CRED_DEF::"

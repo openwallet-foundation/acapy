@@ -1,4 +1,4 @@
-"""Anoncreds specific credential exchange information with non-secrets storage."""
+"""AnonCreds specific credential exchange information with non-secrets storage."""
 
 from typing import Any, Mapping, Optional, Sequence
 
@@ -14,13 +14,13 @@ from ......messaging.valid import (
 from .. import UNENCRYPTED_TAGS
 
 
-class V20CredExRecordAnoncreds(BaseRecord):
+class V20CredExRecordAnonCreds(BaseRecord):
     """Credential exchange anoncreds detail record."""
 
     class Meta:
-        """V20CredExRecordAnoncreds metadata."""
+        """V20CredExRecordAnonCreds metadata."""
 
-        schema_class = "V20CredExRecordAnoncredsSchema"
+        schema_class = "V20CredExRecordAnonCredsSchema"
 
     RECORD_ID_NAME = "cred_ex_anoncreds_id"
     RECORD_TYPE = "anoncreds_cred_ex_v20"
@@ -70,7 +70,7 @@ class V20CredExRecordAnoncreds(BaseRecord):
         cls,
         session: ProfileSession,
         cred_ex_id: str,
-    ) -> Sequence["V20CredExRecordAnoncreds"]:
+    ) -> Sequence["V20CredExRecordAnonCreds"]:
         """Retrieve credential exchange anoncreds detail record(s) by its cred ex id."""
         return await cls.query(
             session=session,
@@ -82,13 +82,13 @@ class V20CredExRecordAnoncreds(BaseRecord):
         return super().__eq__(other)
 
 
-class V20CredExRecordAnoncredsSchema(BaseRecordSchema):
+class V20CredExRecordAnonCredsSchema(BaseRecordSchema):
     """Credential exchange anoncreds detail record detail schema."""
 
     class Meta:
         """Credential exchange anoncreds detail record schema metadata."""
 
-        model_class = V20CredExRecordAnoncreds
+        model_class = V20CredExRecordAnonCreds
         unknown = EXCLUDE
 
     cred_ex_anoncreds_id = fields.Str(

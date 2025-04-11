@@ -2,13 +2,13 @@
 
 import json
 
+from .....connections.base_manager import BaseConnectionManager
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
     RequestContext,
 )
-from .....connections.base_manager import BaseConnectionManager
 from ..manager import RoutingManager, RoutingManagerError
 from ..messages.forward import Forward
 

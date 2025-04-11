@@ -38,7 +38,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
     async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (
             test_module.CredRevRecordQueryStringSchema(),
-            test_module.RevokeRequestSchemaAnoncreds(),
+            test_module.RevokeRequestSchemaAnonCreds(),
         ):
             req.validate_fields(
                 {

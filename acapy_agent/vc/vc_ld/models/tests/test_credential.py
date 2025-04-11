@@ -3,10 +3,7 @@ from unittest import TestCase
 
 from marshmallow.utils import INCLUDE
 
-from ....ld_proofs.constants import (
-    CREDENTIALS_CONTEXT_V1_URL,
-    VERIFIABLE_CREDENTIAL_TYPE,
-)
+from ....ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL, VERIFIABLE_CREDENTIAL_TYPE
 from ...models.credential import VerifiableCredential
 from ...models.linked_data_proof import LDProof
 

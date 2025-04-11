@@ -26,15 +26,13 @@ from ...ld_proofs.constants import (
 )
 from ...ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ...ld_proofs.document_loader import DocumentLoader
-from ...ld_proofs.purposes.authentication_proof_purpose import (
-    AuthenticationProofPurpose,
-)
+from ...ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ...ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ...ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
 from ...ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
+from ...ld_proofs.suites.ecdsa_secp256r1_signature_2019 import EcdsaSecp256r1Signature2019
 from ...ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ...ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
-from ...ld_proofs.suites.ecdsa_secp256r1_signature_2019 import EcdsaSecp256r1Signature2019
 from ..manager import VcLdpManager, VcLdpManagerError
 from ..models.credential import VerifiableCredential
 from ..models.options import LDProofVCOptions

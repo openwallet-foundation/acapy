@@ -35,10 +35,7 @@ from ...anoncreds.tests.mock_objects import (
     MOCK_W3CPRES,
     SCHEMAS,
 )
-from ...askar.profile_anon import (
-    AskarAnoncredsProfile,
-    AskarAnoncredsProfileSession,
-)
+from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from ...vc.ld_proofs.document_loader import DocumentLoader
@@ -148,15 +145,15 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
 
     async def test_init(self):
         assert isinstance(self.holder, AnonCredsHolder)
-        assert isinstance(self.holder.profile, AskarAnoncredsProfile)
+        assert isinstance(self.holder.profile, AskarAnonCredsProfile)
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_master_secret(self, mock_session_handle):
         mock_session_handle.fetch = mock.CoroutineMock(return_value=MockMasterSecret())
         secret = await self.holder.get_master_secret()
         assert secret is not None
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_master_secret_errors(self, mock_session_handle):
         # Not found
         mock_session_handle.fetch = mock.CoroutineMock(
@@ -165,7 +162,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.get_master_secret()
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_master_secret_does_not_return_master_secret(
         self, mock_session_handle
     ):
@@ -418,7 +415,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             )
 
     @mock.patch.object(Credential, "load", return_value=MockCredential())
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_credential(self, mock_handle, _):
         mock_handle.fetch = mock.CoroutineMock(side_effect=[MockCredEntry(), None])
         result = await self.holder.get_credential("cred-id")
@@ -428,7 +425,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             await self.holder.get_credential("cred-id")
 
     @mock.patch.object(Credential, "load", return_value=MockCredential())
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_credential_revoked(self, mock_handle, _):
         mock_registry = mock.MagicMock(AnonCredsRegistry, autospec=True)
         mock_registry.get_revocation_list = mock.CoroutineMock(
@@ -460,7 +457,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             is False
         )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_delete_credential(self, mock_handle):
         mock_handle.remove = mock.CoroutineMock(
             side_effect=[
@@ -479,7 +476,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         with self.assertRaises(AnonCredsHolderError):
             await self.holder.delete_credential("cred-id")
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_mime_type(self, mock_handle):
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
@@ -495,7 +492,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
             await self.holder.get_mime_type("cred-id", "mime-type")
 
     @mock.patch.object(Credential, "load", return_value=MockCredential())
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.Presentation, "create", return_value=Presentation.load(MOCK_PRES)
@@ -544,7 +541,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         )
 
     @mock.patch.object(Credential, "load", return_value=MockCredential())
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.Presentation, "create", return_value=Presentation.load(MOCK_PRES)
@@ -637,7 +634,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         assert mock_master_secret.called
         assert mock_handle.fetch.called
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.Presentation,
@@ -662,7 +659,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
                 rev_states={},
             )
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.W3cPresentation,
@@ -685,7 +682,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
         assert mock_master_secret.called
         mock_handle.fetch.assert_called
 
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(AnonCredsHolder, "get_master_secret", return_value="master-secret")
     @mock.patch.object(
         anoncreds.W3cPresentation,

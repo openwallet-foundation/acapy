@@ -5,24 +5,17 @@ from ....did.did_key import DIDKey
 from ....utils.testing import create_test_profile
 from ....wallet.base import BaseWallet
 from ....wallet.key_type import ED25519
-from ...ld_proofs import (
-    Ed25519Signature2020,
-    WalletKeyPair,
-)
+from ...ld_proofs import Ed25519Signature2020, WalletKeyPair
 from ...ld_proofs.error import LinkedDataProofException
 from ...tests.document_loader import custom_document_loader
-from ...vc_ld import (
-    sign_presentation,
-    verify_credential,
-    verify_presentation,
-)
 from ...vc_ld import issue_vc as issue
+from ...vc_ld import sign_presentation, verify_credential, verify_presentation
 from .test_credential_v2 import (
     CREDENTIAL_V2_ISSUED,
     CREDENTIAL_V2_TEMPLATE,
     CREDENTIAL_V2_VERIFIED,
-    PRESENTATION_V2_UNSIGNED,
     PRESENTATION_V2_SIGNED,
+    PRESENTATION_V2_UNSIGNED,
 )
 
 

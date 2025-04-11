@@ -14,7 +14,7 @@ from .......messaging.valid import (
 )
 
 
-class AnoncredsLinkSecretRequest(BaseModel):
+class AnonCredsLinkSecretRequest(BaseModel):
     """Binding proof model."""
 
     class Meta:
@@ -40,13 +40,13 @@ class AnoncredsLinkSecretRequest(BaseModel):
         self.nonce = nonce
 
 
-class AnoncredsLinkSecretSchema(BaseModelSchema):
+class AnonCredsLinkSecretSchema(BaseModelSchema):
     """VCDI credential request schema."""
 
     class Meta:
         """VCDI credential request schema metadata."""
 
-        model_class = AnoncredsLinkSecretRequest
+        model_class = AnonCredsLinkSecretRequest
         unknown = EXCLUDE
 
     entropy = fields.Str(
@@ -135,7 +135,7 @@ class BindingProofSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     anoncreds_link_secret = fields.Nested(
-        AnoncredsLinkSecretSchema(),
+        AnonCredsLinkSecretSchema(),
         required=True,
         metadata={"description": "", "example": ""},
     )

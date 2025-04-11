@@ -44,10 +44,10 @@ from ..handler import LOGGER as LD_PROOF_LOGGER
 from ..handler import LDProofCredFormatHandler
 from ..models.cred_detail import LDProofVCDetail
 from .fixtures import (
+    LD_PROOF_VC,
     LD_PROOF_VC_DETAIL,
     LD_PROOF_VC_DETAIL_BBS,
     LD_PROOF_VC_DETAIL_ED25519_2020,
-    LD_PROOF_VC,
 )
 
 
