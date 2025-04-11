@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Type, Union, cast
 
+from acapy_agent.wallet.keys.manager import MultikeyManager, multikey_to_verkey
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
@@ -24,6 +25,7 @@ from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
+from ...resolver.did_resolver import DIDResolver
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
@@ -147,7 +149,6 @@ class VcLdpManager:
                 - If the proof type is not supported
                 - If the issuer id is not a did
                 - If the did is not found in th wallet
-                - If the did does not support to create signatures for the proof type
 
         """
         if not issuer_id or not proof_type:
@@ -170,16 +171,7 @@ class VcLdpManager:
                 )
 
             # Retrieve did from wallet. Will throw if not found
-            did = await self._did_info_for_did(issuer_id)
-
-            # Raise error if we cannot issue a credential with this proof type
-            # using this DID from
-            did_proof_types = KEY_TYPE_SIGNATURE_TYPE_MAPPING[did.key_type]
-            if proof_type not in did_proof_types:
-                raise VcLdpManagerError(
-                    f"Unable to issue credential with issuer id {issuer_id} and proof "
-                    f"type {proof_type}. DID only supports proof types {did_proof_types}"
-                )
+            _ = await self._did_info_for_did(issuer_id)
 
         except WalletNotFoundError:
             raise VcLdpManagerError(
@@ -209,6 +201,11 @@ class VcLdpManager:
                 f"Unable to get signature suite for proof type {proof_type} "
                 "using external provider."
             ) from error
+        
+        async with self.profile.session() as session:
+            key_manager = MultikeyManager(session)
+            key_info = await key_manager.idempotent_resolve_and_store_from_kid(verification_method)
+            multikey = key_info["multikey"]
 
         # Get signature class based on proof type
         SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
@@ -220,7 +217,7 @@ class VcLdpManager:
             key_pair=WalletKeyPair(
                 profile=self.profile,
                 key_type=SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
-                public_key_base58=did_info.verkey if did_info else None,
+                public_key_base58=multikey_to_verkey(multikey),
             ),
         )
 
