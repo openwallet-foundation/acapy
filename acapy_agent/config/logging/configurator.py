@@ -346,8 +346,6 @@ class LoggingConfigurator:
 
             banner.version(__version__)
 
-        LOGGER.info("Listening...")
-
     @classmethod
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
