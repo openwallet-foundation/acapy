@@ -22,6 +22,10 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
     p256_verkey = "demmi97mhJ7JQu31git4hQz8a1PD1dETJH9TVKaynNQv"
     p256_alg = "p256"
 
+    bls12381g2_multikey = "zUC71fcKNvfU5d4NT3vurh8wdBqD2VSaVz7RdHmsfFBiYqfLDFkJTVK3m3hLb7yYDZq1C95HyssoX5BCr4ZatwP7jEh3UnwW7AMnx5fxdrhNkGVknbVY5QmjJ6S2CmtztCCffFL"
+    bls12381g2_verkey = "mq4SKF1Ej1CA37G4gkSjKtUHnD8NU1ZVkuC4BPiuoxJXoenfkputxbjfS8dHhGHN3vfQwU1z9BdEuBqTjg3PuHAKgT3Q9XEJgRyZje4WGKMtRh9vzUbd8J23jbA7Je3oAe2"
+    bls12381g2_alg = "bls12381g2"
+
     async def asyncSetUp(self) -> None:
         self.profile = await create_test_profile()
         self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
@@ -32,6 +36,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
                 [
                     (self.ed25519_alg, self.ed25519_multikey),
                     (self.p256_alg, self.p256_multikey),
+                    (self.bls12381g2_alg, self.bls12381g2_multikey),
                 ]
             ):
                 kid = f"did:web:example.com#key-0{i}"
@@ -62,6 +67,7 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         for alg, multikey, verkey in [
             (self.ed25519_alg, self.ed25519_multikey, self.ed25519_verkey),
             (self.p256_alg, self.p256_multikey, self.p256_verkey),
+            (self.bls12381g2_alg, self.bls12381g2_multikey, self.bls12381g2_verkey),
         ]:
             assert multikey_to_verkey(multikey) == verkey
             assert verkey_to_multikey(verkey, alg=alg) == multikey
