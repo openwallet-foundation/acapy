@@ -26,7 +26,7 @@ from ...utils.testing import create_test_profile
 from .. import anoncreds_upgrade
 
 
-class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
+class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.profile = await create_test_profile(settings={"wallet.type": "askar"})
         self.profile.context.injector.bind_instance(

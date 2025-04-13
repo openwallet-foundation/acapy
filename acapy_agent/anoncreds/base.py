@@ -16,7 +16,7 @@ from .models.revocation import (
     RevRegDefResult,
 )
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from .models.schema_info import AnoncredsSchemaInfo
+from .models.schema_info import AnonCredsSchemaInfo
 
 T = TypeVar("T")
 
@@ -138,12 +138,12 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
     async def get_schema_info_by_id(
         self, profile: Profile, schema_id: str
-    ) -> AnoncredsSchemaInfo:
+    ) -> AnonCredsSchemaInfo:
         """Get a schema info from the registry."""
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
-    """Base Anoncreds Registrar."""
+    """Base AnonCreds Registrar."""
 
     @abstractmethod
     async def register_schema(

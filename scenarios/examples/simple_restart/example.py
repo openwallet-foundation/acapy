@@ -16,9 +16,7 @@ from acapy_controller.protocols import (
     indy_issue_credential_v2,
     indy_present_proof_v2,
 )
-from examples.util import (
-    wait_until_healthy,
-)
+from examples.util import wait_until_healthy
 
 import docker
 

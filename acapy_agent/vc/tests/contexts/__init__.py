@@ -5,8 +5,8 @@ from .credentials_v2 import CREDENTIALS_V2
 from .did_v1 import DID_V1
 from .dif_presentation_submission_v1 import DIF_PRESENTATION_SUBMISSION_V1
 from .ed25519_2020_v1 import ED25519_2020_V1
-from .multikey_v1 import MULTIKEY_V1
 from .examples_v1 import EXAMPLES_V1
+from .multikey_v1 import MULTIKEY_V1
 from .odrl import ODRL
 from .schema_org import SCHEMA_ORG
 from .security_v1 import SECURITY_V1

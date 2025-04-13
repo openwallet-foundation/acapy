@@ -362,7 +362,7 @@ class IndyDID(Regexp):
         )
 
 
-class AnoncredsDID(Regexp):
+class AnonCredsDID(Regexp):
     """Validate value against anoncreds DID."""
 
     METHOD = r"([a-zA-Z0-9_]+)"
@@ -482,7 +482,7 @@ class IndyCredDefId(Regexp):
         )
 
 
-class AnoncredsCredDefId(Regexp):
+class AnonCredsCredDefId(Regexp):
     """Validate value against anoncreds credential definition identifier specification."""
 
     EXAMPLE = "did:(method):3:CL:20:tag"
@@ -492,7 +492,7 @@ class AnoncredsCredDefId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            AnoncredsCredDefId.PATTERN,
+            AnonCredsCredDefId.PATTERN,
             error="Value {input} is not an anoncreds credential definition identifier",
         )
 
@@ -527,7 +527,7 @@ class IndySchemaId(Regexp):
         )
 
 
-class AnoncredsSchemaId(Regexp):
+class AnonCredsSchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
 
     EXAMPLE = "did:(method):2:schema_name:1.0"
@@ -537,7 +537,7 @@ class AnoncredsSchemaId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            AnoncredsSchemaId.PATTERN,
+            AnonCredsSchemaId.PATTERN,
             error="Value {input} is not an anoncreds schema identifier",
         )
 
@@ -562,7 +562,7 @@ class IndyRevRegId(Regexp):
         )
 
 
-class AnoncredsRevRegId(Regexp):
+class AnonCredsRevRegId(Regexp):
     """Validate value against anoncreds revocation registry identifier specification."""
 
     EXAMPLE = "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0"
@@ -572,7 +572,7 @@ class AnoncredsRevRegId(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            AnoncredsRevRegId.PATTERN,
+            AnonCredsRevRegId.PATTERN,
             error="Value {input} is not an anoncreds revocation registry identifier",
         )
 
@@ -1056,20 +1056,20 @@ RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE = RawPublicEd25519VerificationKey2018.EXAMPL
 INDY_SCHEMA_ID_VALIDATE = IndySchemaId()
 INDY_SCHEMA_ID_EXAMPLE = IndySchemaId.EXAMPLE
 
-ANONCREDS_SCHEMA_ID_VALIDATE = AnoncredsSchemaId()
-ANONCREDS_SCHEMA_ID_EXAMPLE = AnoncredsSchemaId.EXAMPLE
+ANONCREDS_SCHEMA_ID_VALIDATE = AnonCredsSchemaId()
+ANONCREDS_SCHEMA_ID_EXAMPLE = AnonCredsSchemaId.EXAMPLE
 
 INDY_CRED_DEF_ID_VALIDATE = IndyCredDefId()
 INDY_CRED_DEF_ID_EXAMPLE = IndyCredDefId.EXAMPLE
 
-ANONCREDS_CRED_DEF_ID_VALIDATE = AnoncredsCredDefId()
-ANONCREDS_CRED_DEF_ID_EXAMPLE = AnoncredsCredDefId.EXAMPLE
+ANONCREDS_CRED_DEF_ID_VALIDATE = AnonCredsCredDefId()
+ANONCREDS_CRED_DEF_ID_EXAMPLE = AnonCredsCredDefId.EXAMPLE
 
 INDY_REV_REG_ID_VALIDATE = IndyRevRegId()
 INDY_REV_REG_ID_EXAMPLE = IndyRevRegId.EXAMPLE
 
-ANONCREDS_REV_REG_ID_VALIDATE = AnoncredsRevRegId()
-ANONCREDS_REV_REG_ID_EXAMPLE = AnoncredsRevRegId.EXAMPLE
+ANONCREDS_REV_REG_ID_VALIDATE = AnonCredsRevRegId()
+ANONCREDS_REV_REG_ID_EXAMPLE = AnonCredsRevRegId.EXAMPLE
 
 INDY_CRED_REV_ID_VALIDATE = IndyCredRevId()
 INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
@@ -1140,5 +1140,5 @@ PRESENTATION_TYPE_EXAMPLE = PresentationType.EXAMPLE
 INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
 INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
 
-ANONCREDS_DID_VALIDATE = AnoncredsDID()
-ANONCREDS_DID_EXAMPLE = AnoncredsDID.EXAMPLE
+ANONCREDS_DID_VALIDATE = AnonCredsDID()
+ANONCREDS_DID_EXAMPLE = AnonCredsDID.EXAMPLE

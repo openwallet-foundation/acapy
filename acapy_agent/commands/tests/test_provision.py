@@ -4,9 +4,7 @@ from acapy_agent.tests import mock
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError
-from ...protocols.coordinate_mediation.mediation_invite_store import (
-    MediationInviteRecord,
-)
+from ...protocols.coordinate_mediation.mediation_invite_store import MediationInviteRecord
 from ...utils.testing import create_test_profile
 from .. import provision as test_module
 

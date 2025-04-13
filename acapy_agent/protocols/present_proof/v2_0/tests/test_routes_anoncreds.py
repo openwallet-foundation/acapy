@@ -9,7 +9,7 @@ from marshmallow import ValidationError
 from .....admin.request_context import AdminRequestContext
 from .....anoncreds.holder import AnonCredsHolder
 from .....anoncreds.models.presentation_request import (
-    AnoncredsPresentationReqAttrSpecSchema,
+    AnonCredsPresentationReqAttrSpecSchema,
 )
 from .....anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
@@ -225,7 +225,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
             schema.validate_fields({"veres-one": {"no": "support"}})
 
     async def test_validate_proof_req_attr_spec(self):
-        aspec = AnoncredsPresentationReqAttrSpecSchema()
+        aspec = AnonCredsPresentationReqAttrSpecSchema()
         aspec.validate_fields({"name": "attr0"})
         aspec.validate_fields(
             {
@@ -307,7 +307,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.present_proof_credentials_list(self.request)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_present_proof_credentials_x(self):
         self.request.match_info = {
             "pres_ex_id": "123-456-789",
@@ -334,7 +334,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.present_proof_credentials_list(self.request)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_present_proof_credentials_list_single_referent(self):
         self.request.match_info = {
             "pres_ex_id": "123-456-789",
@@ -367,7 +367,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(returned_credentials)
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_present_proof_credentials_list_multiple_referents(self):
         self.request.match_info = {
             "pres_ex_id": "123-456-789",

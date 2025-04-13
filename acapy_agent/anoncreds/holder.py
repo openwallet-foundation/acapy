@@ -1,4 +1,4 @@
-"""Anoncreds holder implementation."""
+"""AnonCreds holder implementation."""
 
 import asyncio
 import json
@@ -22,7 +22,7 @@ from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnoncredsProfile
+from ..askar.profile_anon import AskarAnonCredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..storage.vc_holder.base import VCHolder
@@ -78,9 +78,9 @@ class AnonCredsHolder:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnoncredsProfile:
+    def profile(self) -> AskarAnonCredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnoncredsProfile):
+        if not isinstance(self._profile, AskarAnonCredsProfile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
@@ -598,10 +598,10 @@ class AnonCredsHolder:
 
         Args:
             presentation_request: Valid indy format presentation request
-            requested_credentials: Anoncreds format requested credentials
-            schemas: Anoncreds formatted schemas JSON
-            credential_definitions: Anoncreds formatted credential definitions JSON
-            rev_states: Anoncreds format revocation states JSON
+            requested_credentials: AnonCreds format requested credentials
+            schemas: AnonCreds formatted schemas JSON
+            credential_definitions: AnonCreds formatted credential definitions JSON
+            rev_states: AnonCreds format revocation states JSON
 
         """
 
@@ -691,9 +691,9 @@ class AnonCredsHolder:
             presentation_request: Valid indy format presentation request
             requested_credentials_w3c: W3C format requested credentials
             credentials_w3c_metadata: W3C format credential metadata
-            schemas: Anoncreds formatted schemas JSON
-            credential_definitions: Anoncreds formatted credential definitions JSON
-            rev_states: Anoncreds format revocation states JSON
+            schemas: AnonCreds formatted schemas JSON
+            credential_definitions: AnonCreds formatted credential definitions JSON
+            rev_states: AnonCreds format revocation states JSON
 
         """
         present_creds = PresentCredentials()

@@ -16,9 +16,7 @@ from base58 import alphabet
 from .....anoncreds.base import AnonCredsSchemaAlreadyExists
 from .....anoncreds.default.legacy_indy import registry as test_module
 from .....anoncreds.issuer import AnonCredsIssuer
-from .....askar.profile_anon import (
-    AskarAnoncredsProfileSession,
-)
+from .....askar.profile_anon import AskarAnonCredsProfileSession
 from .....connections.models.conn_record import ConnRecord
 from .....core.event_bus import EventBus
 from .....ledger.base import BaseLedger
@@ -31,9 +29,7 @@ from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecord,
 )
-from .....revocation_anoncreds.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-)
+from .....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....models.credential_definition import (
@@ -800,7 +796,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             ),
         ),
     )
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_register_revocation_list_no_endorsement(
         self, mock_handle, mock_send_revoc_reg_entry
     ):
@@ -1165,7 +1161,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             update=mock.MagicMock(return_value=MockRevListEntry())
         ),
     )
-    @mock.patch.object(AskarAnoncredsProfileSession, "handle")
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_sync_wallet_rev_list_with_issuer_cred_rev_records(
         self, mock_handle, *_
     ):

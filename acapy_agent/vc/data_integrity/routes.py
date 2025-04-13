@@ -6,13 +6,12 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields
 
-
 from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
-from .manager import DataIntegrityManager, DataIntegrityManagerError
-from .models import DataIntegrityProofOptionsSchema, DataIntegrityProofOptions
 from ...wallet.error import WalletError
+from .manager import DataIntegrityManager, DataIntegrityManagerError
+from .models import DataIntegrityProofOptions, DataIntegrityProofOptionsSchema
 
 LOGGER = logging.getLogger(__name__)
 

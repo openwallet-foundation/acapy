@@ -12,9 +12,7 @@ from .bbs_signed_vc_mattr import BBS_SIGNED_VC_MATTR
 from .bbs_vc_mattr import BBS_VC_MATTR
 from .bbs_vc_reveal_document_mattr import BBS_VC_REVEAL_DOCUMENT_MATTR
 from .test_ld_document import TEST_LD_DOCUMENT
-from .test_ld_document_bad_partial_proof_bbs import (
-    TEST_LD_DOCUMENT_BAD_PARTIAL_PROOF_BBS,
-)
+from .test_ld_document_bad_partial_proof_bbs import TEST_LD_DOCUMENT_BAD_PARTIAL_PROOF_BBS
 from .test_ld_document_bad_signed_bbs import TEST_LD_DOCUMENT_BAD_SIGNED_BBS
 from .test_ld_document_bad_signed_ed25519 import TEST_LD_DOCUMENT_BAD_SIGNED_ED25519
 from .test_ld_document_bad_signed_ed25519_2020 import (

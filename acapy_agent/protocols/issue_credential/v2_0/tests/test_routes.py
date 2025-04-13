@@ -2,9 +2,7 @@ from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
-from .....protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
-)
+from .....protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from .....vc.ld_proofs.error import LinkedDataProofException

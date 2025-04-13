@@ -1,15 +1,16 @@
 """Key pair based on base wallet interface."""
 
 from typing import List, Optional, Union
+
 from base58 import b58encode
 
 from ....core.profile import Profile
+from ....utils.multiformats import multibase, multicodec
 from ....wallet.base import BaseWallet
 from ....wallet.key_type import KeyType
 from ....wallet.util import b58_to_bytes
 from ..error import LinkedDataProofException
 from .key_pair import KeyPair
-from ....utils.multiformats import multibase, multicodec
 
 
 class WalletKeyPair(KeyPair):
