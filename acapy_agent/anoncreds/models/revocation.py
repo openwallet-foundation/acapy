@@ -1,4 +1,4 @@
-"""Anoncreds cred def OpenAPI validators."""
+"""AnonCreds cred def OpenAPI validators."""
 
 from typing import Any, Dict, List, Optional
 

@@ -293,7 +293,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             )
         )
 
-        # Anoncreds holder errors
+        # AnonCreds holder errors
         mock_delete_credential.side_effect = [
             None,
             AnonCredsHolderError("anoncreds error", error_code=AskarErrorCode.NOT_FOUND),

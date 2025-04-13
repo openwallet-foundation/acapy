@@ -14,13 +14,13 @@ from ...messaging.valid import (
 )
 
 
-class AnoncredsCredRequest(BaseModel):
-    """Anoncreds credential request."""
+class AnonCredsCredRequest(BaseModel):
+    """AnonCreds credential request."""
 
     class Meta:
-        """Anoncreds credential request metadata."""
+        """AnonCreds credential request metadata."""
 
-        schema_class = "AnoncredsCredRequestSchema"
+        schema_class = "AnonCredsCredRequestSchema"
 
     def __init__(
         self,
@@ -43,13 +43,13 @@ class AnoncredsCredRequest(BaseModel):
         self.nonce = nonce
 
 
-class AnoncredsCredRequestSchema(BaseModelSchema):
-    """Anoncreds credential request schema."""
+class AnonCredsCredRequestSchema(BaseModelSchema):
+    """AnonCreds credential request schema."""
 
     class Meta:
-        """Anoncreds credential request schema metadata."""
+        """AnonCreds credential request schema metadata."""
 
-        model_class = AnoncredsCredRequest
+        model_class = AnonCredsCredRequest
         unknown = EXCLUDE
 
     entropy = fields.Str(

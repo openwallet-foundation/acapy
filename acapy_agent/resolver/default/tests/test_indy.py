@@ -5,9 +5,7 @@ import pytest
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ....messaging.valid import IndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager

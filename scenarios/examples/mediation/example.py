@@ -8,11 +8,7 @@ from os import getenv
 
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
-from acapy_controller.protocols import (
-    didexchange,
-    request_mediation_v1,
-    trustping,
-)
+from acapy_controller.protocols import didexchange, request_mediation_v1, trustping
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")

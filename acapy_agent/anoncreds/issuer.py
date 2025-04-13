@@ -17,7 +17,7 @@ from anoncreds import (
 )
 from aries_askar import AskarError
 
-from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSession
+from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -91,9 +91,9 @@ class AnonCredsIssuer:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnoncredsProfile:
+    def profile(self) -> AskarAnonCredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnoncredsProfile):
+        if not isinstance(self._profile, AskarAnonCredsProfile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
@@ -105,7 +105,7 @@ class AnonCredsIssuer:
 
     async def _finish_registration(
         self,
-        txn: AskarAnoncredsProfileSession,
+        txn: AskarAnonCredsProfileSession,
         category: str,
         job_id: str,
         registered_id: str,

@@ -3,7 +3,7 @@
 from typing import Optional
 
 
-class AnoncredsSchemaInfo:
+class AnonCredsSchemaInfo:
     """Represents the schema information for anonymous credentials.
 
     Attributes:

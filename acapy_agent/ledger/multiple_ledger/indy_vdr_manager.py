@@ -13,10 +13,7 @@ from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
 from ..indy_vdr import IndyVdrLedger
-from ..merkel_validation.domain_txn_handler import (
-    get_proof_nodes,
-    prepare_for_state_read,
-)
+from ..merkel_validation.domain_txn_handler import get_proof_nodes, prepare_for_state_read
 from ..merkel_validation.trie import SubTrie
 from .base_manager import BaseMultipleLedgerManager, MultipleLedgerManagerError
 

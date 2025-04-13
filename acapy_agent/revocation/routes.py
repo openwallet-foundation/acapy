@@ -62,10 +62,7 @@ from ..utils.profiles import is_anoncreds_profile_raise_web_exception
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .manager import RevocationManager, RevocationManagerError
-from .models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-    IssuerCredRevRecordSchema,
-)
+from .models.issuer_cred_rev_record import IssuerCredRevRecord, IssuerCredRevRecordSchema
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
     REVOCATION_ENTRY_EVENT,

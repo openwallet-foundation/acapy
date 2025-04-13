@@ -15,10 +15,7 @@ from ..messages.presentation_proposal import (
     PresentationProposal,
     PresentationProposalSchema,
 )
-from ..messages.presentation_request import (
-    PresentationRequest,
-    PresentationRequestSchema,
-)
+from ..messages.presentation_request import PresentationRequest, PresentationRequestSchema
 from ..messages.presentation_webhook import V10PresentationExchangeWebhook
 from . import UNENCRYPTED_TAGS
 

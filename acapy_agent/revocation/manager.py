@@ -17,9 +17,7 @@ from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
 )
-from ..protocols.endorse_transaction.v1_0.util import (
-    get_endorser_connection_id,
-)
+from ..protocols.endorse_transaction.v1_0.util import get_endorser_connection_id
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )

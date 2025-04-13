@@ -4,10 +4,7 @@ from enum import Enum
 
 from marshmallow import EXCLUDE, ValidationError, pre_dump, validates_schema
 
-from .....protocols.problem_report.v1_0.message import (
-    ProblemReport,
-    ProblemReportSchema,
-)
+from .....protocols.problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.ProblemReportHandler"

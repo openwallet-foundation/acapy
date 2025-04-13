@@ -567,7 +567,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             await storage.delete_record(upgrading_record)
 
             # Upgrade in progress with cache
-            singletons.IsAnoncredsSingleton().set_wallet(profile.name)
+            singletons.IsAnonCredsSingleton().set_wallet(profile.name)
             await test_module.upgrade_middleware(request, handler)
 
 

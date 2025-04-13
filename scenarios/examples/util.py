@@ -7,11 +7,7 @@ from uuid import uuid4
 
 from acapy_controller import Controller
 from acapy_controller.controller import Minimal, MinType
-from acapy_controller.models import (
-    V20CredExRecordIndy,
-    V20PresExRecord,
-)
-
+from acapy_controller.models import V20CredExRecordIndy, V20PresExRecord
 from docker.models.containers import Container
 
 
@@ -77,14 +73,14 @@ def anoncreds_presentation_summary(presentation: V20PresExRecord) -> str:
 
 
 @dataclass
-class SchemaResultAnoncreds(Minimal):
+class SchemaResultAnonCreds(Minimal):
     """Schema result."""
 
     schema_state: dict
 
 
 @dataclass
-class CredDefResultAnoncreds(Minimal):
+class CredDefResultAnonCreds(Minimal):
     """Credential definition result."""
 
     credential_definition_state: dict

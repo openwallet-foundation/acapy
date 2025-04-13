@@ -7,9 +7,7 @@ from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.responder import BaseResponder
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
-from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
+from ..protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ..protocols.coordinate_mediation.v1_0.normalization import (
     normalize_from_did_key,
     normalize_to_did_key,

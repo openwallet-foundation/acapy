@@ -1,8 +1,6 @@
 from unittest.mock import Mock
 
-from acapy_agent.vc.ld_proofs.document_downloader import (
-    StaticCacheJsonLdDownloader,
-)
+from acapy_agent.vc.ld_proofs.document_downloader import StaticCacheJsonLdDownloader
 
 
 def test_load_cache_hit():

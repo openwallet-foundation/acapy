@@ -5,8 +5,8 @@ For Connection, DIDExchange and OutOfBand Manager.
 
 import json
 import logging
-from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
 import warnings
+from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
 
 import pydid
 from base58 import b58decode
@@ -29,11 +29,9 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
 from ..multitenant.base import BaseMultitenantManager
-from ..protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
-from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
+from ..protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ..protocols.discovery.v2_0.manager import V20DiscoveryMgr
 from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..resolver.base import ResolverError

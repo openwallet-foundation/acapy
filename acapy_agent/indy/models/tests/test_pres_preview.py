@@ -5,9 +5,7 @@ from unittest import TestCase
 
 import pytest
 
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ....messaging.util import canon
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
