@@ -199,8 +199,9 @@ async def wallet_config(
             settings, wallet, create_local_did, wallet_seed
         )
 
-    if provision and not create_local_did and not public_did_info.did:
-        LOGGER.info("No public DID")
+    public_did = public_did_info.did if public_did_info else None
+    if provision and not create_local_did and not public_did:
+        LOGGER.info("No public DID created")
 
     await _initialize_with_debug_settings(settings, wallet)
 
