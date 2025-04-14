@@ -94,6 +94,7 @@ async def _initialize_with_public_did(
             public_did,
             replace_did_info.verkey,
         )
+    return public_did
 
 
 async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
