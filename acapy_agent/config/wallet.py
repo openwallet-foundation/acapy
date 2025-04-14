@@ -129,7 +129,7 @@ async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
 
 async def _initialize_with_seed(
     settings: dict, wallet: BaseWallet, create_local_did: bool, seed: str
-):
+) -> DIDInfo:
     if create_local_did:
         endpoint = settings.get("default_endpoint")
         metadata = {"endpoint": endpoint} if endpoint else None
@@ -149,6 +149,7 @@ async def _initialize_with_seed(
         did_info.did,
         did_info.verkey,
     )
+    return did_info
 
 
 async def wallet_config(
