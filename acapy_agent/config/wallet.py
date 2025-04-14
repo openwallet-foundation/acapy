@@ -130,32 +130,25 @@ async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
 async def _initialize_with_seed(
     settings: dict, wallet: BaseWallet, create_local_did: bool, seed: str
 ):
-    def _log_did_info(did: str, verkey: str, is_public: bool):
-        LOGGER.info(
-            "Created new %s DID: %s, Verkey: %s",
-            "public" if is_public else "local",
-            did,
-            verkey,
-        )
-
     if create_local_did:
         endpoint = settings.get("default_endpoint")
         metadata = {"endpoint": endpoint} if endpoint else None
 
-        local_did_info = await wallet.create_local_did(
+        did_info = await wallet.create_local_did(
             method=SOV,
             key_type=ED25519,
             seed=seed,
             metadata=metadata,
         )
-        local_did = local_did_info.did
-        _log_did_info(local_did, local_did_info.verkey, False)
     else:
-        public_did_info = await wallet.create_public_did(
-            method=SOV, key_type=ED25519, seed=seed
-        )
-        public_did = public_did_info.did
-        _log_did_info(public_did, public_did_info.verkey, True)
+        did_info = await wallet.create_public_did(method=SOV, key_type=ED25519, seed=seed)
+
+    LOGGER.info(
+        "Created new %s DID: %s, Verkey: %s",
+        "local" if create_local_did else "public",
+        did_info.did,
+        did_info.verkey,
+    )
 
 
 async def wallet_config(
