@@ -88,8 +88,8 @@ async def _initialize_with_public_did(
     if wallet_seed and (seed_to_did(wallet_seed) != public_did):
         if not settings.get("wallet.replace_public_did"):
             raise ConfigError(
-                "New seed provided which doesn't match the registered"
-                + f" public did {public_did}"
+                "New seed provided which doesn't match the registered "
+                f"public did {public_did}"
             )
 
         LOGGER.info("Replacing public DID due to --replace-public-did flag")
@@ -122,7 +122,7 @@ async def _initialize_with_seed(
 ):
     def _log_did_info(did: str, verkey: str, is_public: bool):
         LOGGER.info(
-            f"Created new {'public' if is_public else 'local'}"
+            f"Created new {'public' if is_public else 'local'} "
             f"DID: {did}, Verkey: {verkey}"
         )
 
