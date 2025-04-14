@@ -68,38 +68,50 @@ async def _attempt_open_profile(
     return (profile, provision)
 
 
-async def _initialize_with_public_did(
+async def _replace_public_did_if_seed_mismatch(
     public_did_info: DIDInfo,
     wallet: BaseWallet,
     settings: dict,
     wallet_seed: str,
 ) -> DIDInfo:
+    """Replace the public DID if a seed is provided and doesn't match the current DID.
+
+    Args:
+        public_did_info: Current public DID info
+        wallet: Wallet instance
+        settings: Configuration settings
+        wallet_seed: Optional seed to check against current DID
+
+    Returns:
+        DIDInfo: Either the original DID info or a new one if replaced
+    """
+    if not wallet_seed:
+        return public_did_info
+
     public_did = public_did_info.did
-    # Check did:sov seed matches public DID
-    if wallet_seed and (seed_to_did(wallet_seed) != public_did):
-        if not settings.get("wallet.replace_public_did"):
-            raise ConfigError(
-                "New seed provided which doesn't match the registered "
-                f"public did {public_did}"
-            )
+    if seed_to_did(wallet_seed) == public_did:
+        return public_did_info
 
-        LOGGER.info(
-            "Replacing public DID which doesn't match the seed "
-            "(as configured by --replace-public-did)"
+    if not settings.get("wallet.replace_public_did"):
+        raise ConfigError(
+            "New seed provided which doesn't match the registered "
+            f"public did {public_did}"
         )
-        replace_did_info = await wallet.create_local_did(
-            method=SOV, key_type=ED25519, seed=wallet_seed
-        )
-        public_did = replace_did_info.did
-        await wallet.set_public_did(public_did)
-        LOGGER.info(
-            "Created new public DID: %s, with verkey: %s",
-            public_did,
-            replace_did_info.verkey,
-        )
-        return replace_did_info  # Return the new DID info
 
-    return public_did_info
+    LOGGER.info(
+        "Replacing public DID which doesn't match the seed "
+        "(as configured by --replace-public-did)"
+    )
+    replace_did_info = await wallet.create_local_did(
+        method=SOV, key_type=ED25519, seed=wallet_seed
+    )
+    await wallet.set_public_did(replace_did_info.did)
+    LOGGER.info(
+        "Created new public DID: %s, with verkey: %s",
+        replace_did_info.did,
+        replace_did_info.verkey,
+    )
+    return replace_did_info
 
 
 async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
@@ -177,10 +189,12 @@ async def wallet_config(
     public_did_info = await wallet.get_public_did()
 
     if public_did_info:
-        public_did_info = await _initialize_with_public_did(  # Potentially updated
+        # Check if we need to replace the public DID due to seed mismatch
+        public_did_info = await _replace_public_did_if_seed_mismatch(
             public_did_info, wallet, settings, wallet_seed
         )
     elif wallet_seed:
+        # Create new public DID from seed if none exists
         public_did_info = await _initialize_with_seed(
             settings, wallet, create_local_did, wallet_seed
         )
