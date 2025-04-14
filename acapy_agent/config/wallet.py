@@ -73,7 +73,7 @@ async def _initialize_with_public_did(
     wallet: BaseWallet,
     settings: dict,
     wallet_seed: str,
-) -> str:
+) -> DIDInfo:
     public_did = public_did_info.did
     # Check did:sov seed matches public DID
     if wallet_seed and (seed_to_did(wallet_seed) != public_did):
@@ -97,7 +97,9 @@ async def _initialize_with_public_did(
             public_did,
             replace_did_info.verkey,
         )
-    return public_did
+        return replace_did_info  # Return the new DID info
+
+    return public_did_info
 
 
 async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
@@ -173,16 +175,17 @@ async def wallet_config(
     txn = await profile.transaction()
     wallet = txn.inject(BaseWallet)
     public_did_info = await wallet.get_public_did()
-    public_did = None
 
     if public_did_info:
-        public_did = await _initialize_with_public_did(
+        public_did_info = await _initialize_with_public_did(  # Potentially updated
             public_did_info, wallet, settings, wallet_seed
         )
     elif wallet_seed:
-        await _initialize_with_seed(settings, wallet, create_local_did, wallet_seed)
+        public_did_info = await _initialize_with_seed(
+            settings, wallet, create_local_did, wallet_seed
+        )
 
-    if provision and not create_local_did and not public_did:
+    if provision and not create_local_did and not public_did_info.did:
         LOGGER.info("No public DID")
 
     await _initialize_with_debug_settings(settings, wallet)
