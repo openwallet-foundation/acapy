@@ -109,7 +109,7 @@ async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
 
 
 async def _initialize_with_seed(
-    settings: dict, wallet: BaseWallet, provision: bool, create_local_did: bool, seed: str
+    settings: dict, wallet: BaseWallet, create_local_did: bool, seed: str
 ):
     def _log_did_info(did: str, verkey: str, is_public: bool):
         LOGGER.info(
@@ -173,9 +173,7 @@ async def wallet_config(
             public_did_info, wallet, settings, wallet_seed
         )
     elif wallet_seed:
-        await _initialize_with_seed(
-            settings, wallet, provision, create_local_did, wallet_seed
-        )
+        await _initialize_with_seed(settings, wallet, create_local_did, wallet_seed)
 
     if provision and not create_local_did and not public_did:
         LOGGER.info("No public DID")
