@@ -179,7 +179,7 @@ async def wallet_config(
 
     LOGGER.info(
         "%s Profile name: %s, backend: %s",
-        "Created new profile - " if profile.created else "Opened existing profile - ",
+        "Created new profile -" if profile.created else "Opened existing profile -",
         profile.name,
         profile.backend,
     )
