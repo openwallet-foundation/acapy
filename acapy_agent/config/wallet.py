@@ -83,7 +83,10 @@ async def _initialize_with_public_did(
                 f"public did {public_did}"
             )
 
-        LOGGER.info("Replacing public DID due to --replace-public-did flag")
+        LOGGER.info(
+            "Replacing public DID which doesn't match the seed "
+            "(as configured by --replace-public-did)"
+        )
         replace_did_info = await wallet.create_local_did(
             method=SOV, key_type=ED25519, seed=wallet_seed
         )
