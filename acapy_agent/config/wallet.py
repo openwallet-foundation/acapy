@@ -68,15 +68,6 @@ async def _attempt_open_profile(
     return (profile, provision)
 
 
-def _log_provision_info(profile: Profile) -> None:
-    LOGGER.info(
-        "Created new profile - "
-        if profile.created
-        else "Opened existing profile - "
-        f"Profile name: {profile.name}, backend: {profile.backend}"
-    )
-
-
 async def _initialize_with_public_did(
     public_did_info: DIDInfo,
     wallet: BaseWallet,
@@ -165,7 +156,12 @@ async def wallet_config(
             profile_manager, context, profile_config, settings
         )
 
-    _log_provision_info(profile)
+    LOGGER.info(
+        "Created new profile - "
+        if profile.created
+        else "Opened existing profile - "
+        f"Profile name: {profile.name}, backend: {profile.backend}"
+    )
 
     txn = await profile.transaction()
     wallet = txn.inject(BaseWallet)
