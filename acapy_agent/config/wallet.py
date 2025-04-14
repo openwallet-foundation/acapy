@@ -90,8 +90,9 @@ async def _initialize_with_public_did(
         public_did = replace_did_info.did
         await wallet.set_public_did(public_did)
         LOGGER.info(
-            f"Created new public DID: {public_did}, "
-            f"with verkey: {replace_did_info.verkey}"
+            "Created new public DID: %s, with verkey: %s",
+            public_did,
+            replace_did_info.verkey,
         )
 
 
@@ -113,8 +114,10 @@ async def _initialize_with_seed(
 ):
     def _log_did_info(did: str, verkey: str, is_public: bool):
         LOGGER.info(
-            f"Created new {'public' if is_public else 'local'} "
-            f"DID: {did}, Verkey: {verkey}"
+            "Created new %s DID: %s, Verkey: %s",
+            "public" if is_public else "local",
+            did,
+            verkey,
         )
 
     if create_local_did:
@@ -157,10 +160,10 @@ async def wallet_config(
         )
 
     LOGGER.info(
-        "Created new profile - "
-        if profile.created
-        else "Opened existing profile - "
-        f"Profile name: {profile.name}, backend: {profile.backend}"
+        "%s Profile name: %s, backend: %s",
+        "Created new profile - " if profile.created else "Opened existing profile - ",
+        profile.name,
+        profile.backend,
     )
 
     txn = await profile.transaction()
