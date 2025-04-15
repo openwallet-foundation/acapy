@@ -372,7 +372,7 @@ class AnonCredsHolder:
 
         return credential_id
 
-    async def get_credentials(self, *, offset: int, limit: int, wql: dict):
+    async def get_credentials(self, *, offset: int, limit: int, wql: dict) -> list[dict]:
         """Get credentials stored in the wallet.
 
         Args:
@@ -410,7 +410,7 @@ class AnonCredsHolder:
         offset: int,
         limit: int,
         extra_query: Optional[dict] = None,
-    ):
+    ) -> list:
         """Get credentials stored in the wallet.
 
         Args:
@@ -543,7 +543,7 @@ class AnonCredsHolder:
 
         return cred.rev_reg_index in set_revoked
 
-    async def delete_credential(self, credential_id: str):
+    async def delete_credential(self, credential_id: str) -> None:
         """Remove a credential stored in the wallet.
 
         Args:

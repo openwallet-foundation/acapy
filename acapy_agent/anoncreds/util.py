@@ -45,7 +45,7 @@ def indy_client_dir(subpath: Optional[str] = None, create: bool = False) -> str:
     return target_dir
 
 
-def handle_value_error(e: ValueError):
+def handle_value_error(e: ValueError) -> None:
     """Handle ValueError message as web response type."""
     if ANONCREDS_PROFILE_REQUIRED_MSG in str(e):
         raise web.HTTPForbidden(reason=str(e)) from e

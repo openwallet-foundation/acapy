@@ -41,7 +41,7 @@ class AnonCredsSchema(BaseModel):
         """Convert from native object."""
         return cls.deserialize(schema.to_dict())
 
-    def to_native(self):
+    def to_native(self) -> Schema:
         """Convert to native object."""
         return Schema.load(self.serialize())
 

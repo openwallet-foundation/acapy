@@ -42,7 +42,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         return self._supported_identifiers_regex
         # TODO: fix regex (too general)
 
-    async def setup(self, context: InjectionContext):
+    async def setup(self, context: InjectionContext) -> None:
         """Setup."""
         LOGGER.info("Successfully registered DIDWebRegistry")
 

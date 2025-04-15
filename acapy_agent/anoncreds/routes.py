@@ -778,14 +778,14 @@ async def set_active_registry(request: web.BaseRequest):
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
 
-def register_events(event_bus: EventBus):
+def register_events(event_bus: EventBus) -> None:
     """Register events."""
     # TODO Make this pluggable?
     setup_manager = DefaultRevocationSetup()
     setup_manager.register_events(event_bus)
 
 
-async def register(app: web.Application):
+async def register(app: web.Application) -> None:
     """Register routes."""
 
     app.add_routes(
@@ -812,7 +812,7 @@ async def register(app: web.Application):
     )
 
 
-def post_process_routes(app: web.Application):
+def post_process_routes(app: web.Application) -> None:
     """Amend swagger API."""
 
     # Add top-level tags description
