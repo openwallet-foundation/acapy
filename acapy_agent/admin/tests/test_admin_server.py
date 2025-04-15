@@ -47,6 +47,12 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             cookie_jar=DummyCookieJar(), connector=self.connector
         )
 
+    async def asyncTearDown(self):
+        if self.client_session:
+            await self.client_session.close()
+        if self.connector:
+            await self.connector.close()
+
     async def test_debug_middleware(self):
         with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
             mock_logger.isEnabledFor = mock.MagicMock(return_value=True)
