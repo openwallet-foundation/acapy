@@ -68,12 +68,17 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Ensure the repo owner is lowercase for the image name
+      - name: Lowercase Repo Owner
+        id: lower
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+
       - name: Setup Image Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/acapy-agent
+            ghcr.io/${{ steps.lower.outputs.owner }}/acapy-agent
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 
@@ -98,7 +103,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/acapy-agent-bbs
+            ghcr.io/${{ steps.lower.outputs.owner }}/acapy-agent-bbs
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 
