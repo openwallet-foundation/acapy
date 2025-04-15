@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
+import pytest_asyncio
 
 from ...admin.request_context import AdminRequestContext
 from ...multitenant.base import BaseMultitenantManager
@@ -21,13 +22,13 @@ def mock_response():
     test_module.web.json_response = temp_value
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     profile = await create_test_profile()
     yield profile
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def admin_profile():
     profile = await create_test_profile(
         settings={

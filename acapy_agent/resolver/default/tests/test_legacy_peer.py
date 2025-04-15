@@ -2,6 +2,7 @@
 
 import pydid
 import pytest
+import pytest_asyncio
 
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
@@ -24,7 +25,7 @@ def resolver():
     yield LegacyPeerDIDResolver()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     """Profile fixture."""
     profile = await create_test_profile()

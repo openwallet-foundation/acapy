@@ -3,6 +3,7 @@
 from typing import AsyncIterable, Iterable
 
 import pytest
+import pytest_asyncio
 
 from .....core.event_bus import EventBus
 from .....core.profile import Profile, ProfileSession
@@ -38,7 +39,7 @@ TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya#z6
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     """Fixture for profile used in tests."""
     profile = await create_test_profile()
@@ -52,7 +53,7 @@ def mock_event_bus(profile: Profile):
     yield profile.inject(EventBus)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def session(profile) -> AsyncIterable[ProfileSession]:  # pylint: disable=W0621
     """Fixture for profile session used in tests."""
     async with profile.session() as session:

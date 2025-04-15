@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from unittest import TestCase
 
 import pytest
+import pytest_asyncio
 from uuid_utils import uuid4
 
 from ....messaging.models.base import BaseModelError
@@ -76,7 +77,7 @@ def seed():
     return [f"TestWalletSignVerifyAttachDeco0{i}" for i in [0, 1]]
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def wallet():
     profile = await create_test_profile()
     profile.context.injector.bind_instance(DIDMethods, DIDMethods())

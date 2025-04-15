@@ -5,6 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 
 import jwt
 import pytest
+import pytest_asyncio
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 from marshmallow import ValidationError
@@ -577,7 +578,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             await test_module.upgrade_middleware(request, handler)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def server():
     test_class = TestAdminServer()
     await test_class.asyncSetUp()
