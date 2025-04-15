@@ -83,6 +83,8 @@ jobs:
             acapy-reqs: ""
           - image-type: bbs
             image-name: acapy-agent-bbs
+            # Because of BBS, only linux/amd64 is supported for the extended image
+            # https://github.com/openwallet-foundation/acapy/issues/2124#issuecomment-2293569659
             platforms: linux/amd64
             acapy-reqs: "[askar,bbs,didcommv2]"
 
