@@ -166,11 +166,11 @@ async def create_rev_states(
 
 
 async def prepare_data_for_presentation(
-    presentation,
-    w3c_creds,
-    pres_definition,
-    profile,
-    challenge,
+    presentation: dict,
+    w3c_creds: list,
+    pres_definition: dict,
+    profile: Profile,
+    challenge: str,
 ) -> tuple[dict[str, Any], list, list]:
     """prepare_data_for_presentation.
 

@@ -163,7 +163,7 @@ class AnonCredsPresentationReqAttrSpecSchema(OpenAPISchema):
     )
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields.
 
         Data must have exactly one of name or names; if names then restrictions are

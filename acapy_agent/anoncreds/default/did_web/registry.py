@@ -46,7 +46,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Setup."""
         LOGGER.info("Successfully registered DIDWebRegistry")
 
-    async def get_schema(self, profile, schema_id: str) -> GetSchemaResult:
+    async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
         raise NotImplementedError()
 

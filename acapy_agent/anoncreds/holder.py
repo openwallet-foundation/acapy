@@ -41,7 +41,7 @@ CATEGORY_CREDENTIAL = "credential"
 CATEGORY_MASTER_SECRET = "master_secret"
 
 
-def _make_cred_info(cred_id, cred: Credential):
+def _make_cred_info(cred_id: str, cred: Credential) -> dict:
     cred_info = cred.to_dict()  # not secure!
     rev_info = cred_info["signature"]["r_credential"]
     return {

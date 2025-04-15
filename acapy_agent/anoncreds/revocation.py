@@ -667,7 +667,7 @@ class AnonCredsRevocation:
 
         return str(tails_file_path)
 
-    def _check_url(self, url) -> None:
+    def _check_url(self, url: str) -> None:
         parsed = urlparse(url)
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise AnonCredsRevocationError("URI {} is not a valid URL".format(url))
@@ -1526,10 +1526,10 @@ class AnonCredsRevocation:
             tags=tags,
         )
 
-    async def set_tails_file_public_uri(self, rev_reg_id, tails_public_uri):
+    async def set_tails_file_public_uri(self, rev_reg_id: str, tails_public_uri: str):
         """Update Revocation Registry tails file public uri."""
         pass
 
-    async def set_rev_reg_state(self, rev_reg_id, state):
+    async def set_rev_reg_state(self, rev_reg_id: str, state: str):
         """Update Revocation Registry state."""
         pass
