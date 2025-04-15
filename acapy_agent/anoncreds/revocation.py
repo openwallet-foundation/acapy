@@ -1528,8 +1528,10 @@ class AnonCredsRevocation:
 
     async def set_tails_file_public_uri(self, rev_reg_id: str, tails_public_uri: str):
         """Update Revocation Registry tails file public uri."""
+        # TODO: Implement or remove
         pass
 
     async def set_rev_reg_state(self, rev_reg_id: str, state: str):
         """Update Revocation Registry state."""
+        # TODO: Implement or remove
         pass
