@@ -312,6 +312,7 @@ class IndyVdrLedger(BaseLedger):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
+        profile: Optional[Profile] = None,
     ) -> dict:
         """Sign and submit request to ledger.
 
@@ -321,9 +322,10 @@ class IndyVdrLedger(BaseLedger):
             taa_accept: whether to apply TAA acceptance to the (signed, write) request
             sign_did: override the signing DID
             write_ledger: whether to write the request to the ledger
-
+            profile: The profile context used for the request
         """
 
+        current_profile = profile or self.profile
         if not self.pool_handle:
             raise ClosedPoolError(
                 f"Cannot sign and submit request to closed pool '{self.pool_name}'"
@@ -336,7 +338,7 @@ class IndyVdrLedger(BaseLedger):
 
         if sign is None or sign:
             if sign_did is sentinel:
-                sign_did = await self.get_wallet_public_did()
+                sign_did = await self.get_wallet_public_did(profile=current_profile)
             if sign is None:
                 sign = bool(sign_did)
 
@@ -345,7 +347,9 @@ class IndyVdrLedger(BaseLedger):
                 raise BadLedgerRequestError("Cannot sign request without a public DID")
 
             if taa_accept or taa_accept is None:
-                acceptance = await self.get_latest_txn_author_acceptance()
+                acceptance = await self.get_latest_txn_author_acceptance(
+                    profile=current_profile
+                )
                 if acceptance:
                     acceptance = {
                         "taaDigest": acceptance["digest"],
@@ -354,12 +358,16 @@ class IndyVdrLedger(BaseLedger):
                     }
                     request.set_txn_author_agreement_acceptance(acceptance)
 
-            async with self.profile.session() as session:
+            async with current_profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                request.set_signature(
-                    await wallet.sign_message(request.signature_input, sign_did.verkey)
-                )
-                del wallet
+                try:
+                    signature = await wallet.sign_message(
+                        message=request.signature_input,
+                        from_verkey=sign_did.verkey,
+                    )
+                    request.set_signature(signature)
+                except WalletNotFoundError as e:
+                    raise WalletNotFoundError("Missing key for sign operation") from e
 
         if not write_ledger:
             return json.loads(request.body)
@@ -368,6 +376,10 @@ class IndyVdrLedger(BaseLedger):
             request_result = await self.pool.handle.submit_request(request)
         except VdrError as err:
             raise LedgerTransactionError("Ledger request error") from err
+        except Exception as e:
+            raise LedgerTransactionError(
+                "Unexpected error during ledger submission"
+            ) from e
 
         return request_result
 
@@ -1003,15 +1015,18 @@ class IndyVdrLedger(BaseLedger):
             cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.profile.name
             await cache.set(cache_key, acceptance, self.pool.cache_duration)
 
-    async def get_latest_txn_author_acceptance(self) -> dict:
+    async def get_latest_txn_author_acceptance(
+        self, profile: Optional[Profile] = None
+    ) -> dict:
         """Look up the latest TAA acceptance."""
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.profile.name
+        current_profile = profile or self.profile
+        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + current_profile.name
         acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
         if not acceptance:
             tag_filter = {"pool_name": self.pool_name}
-            async with self.profile.session() as session:
+            async with current_profile.session() as session:
                 storage = session.inject(BaseStorage)
-                cache = self.profile.inject_or(BaseCache)
+                cache = current_profile.inject_or(BaseCache)
                 found = await storage.find_all_records(
                     TAA_ACCEPTED_RECORD_TYPE, tag_filter
                 )
@@ -1155,7 +1170,6 @@ class IndyVdrLedger(BaseLedger):
                 did_info = await wallet.get_local_did(issuer_did)
             else:
                 did_info = await wallet.get_public_did()
-            del wallet
         if not did_info:
             raise LedgerTransactionError(
                 "No issuer DID found for revocation registry definition"
@@ -1226,21 +1240,27 @@ class IndyVdrLedger(BaseLedger):
         issuer_did: Optional[str] = None,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
+        profile: Optional[Profile] = None,
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
-        async with self.profile.session() as session:
+
+        current_profile = profile or self.profile
+        async with current_profile.session() as session:
             wallet = session.inject(BaseWallet)
-            if issuer_did:
-                did_info = await wallet.get_local_did(issuer_did)
-            else:
+            try:
                 did_info = await wallet.get_public_did()
-            del wallet
+            except Exception:
+                raise
+            finally:
+                del wallet
+
         if not did_info:
             raise LedgerTransactionError(
                 "No issuer DID found for revocation registry entry"
             )
 
-        if self.profile.context.settings.get("wallet.type") == "askar-anoncreds":
+        wallet_type = current_profile.context.settings.get("wallet.type")
+        if wallet_type == "askar-anoncreds":
             from acapy_agent.anoncreds.default.legacy_indy.registry import (
                 LegacyIndyRegistry,
             )
@@ -1253,6 +1273,7 @@ class IndyVdrLedger(BaseLedger):
                 write_ledger=write_ledger,
                 endorser_did=endorser_did,
             )
+
             if endorser_did and not write_ledger:
                 revoc_reg_entry_req.set_endorser(endorser_did)
 
@@ -1263,6 +1284,7 @@ class IndyVdrLedger(BaseLedger):
                 sign=True,
                 sign_did=did_info,
                 write_ledger=write_ledger,
+                profile=current_profile,
             )
 
             if not write_ledger:
@@ -1284,22 +1306,36 @@ class IndyVdrLedger(BaseLedger):
                     revoc_def_type,
                     json.dumps(revoc_reg_entry),
                 )
+
                 if endorser_did and not write_ledger:
                     request.set_endorser(endorser_did)
+
             except VdrError as err:
                 raise LedgerError(
                     "Exception when sending revocation registry entry"
                 ) from err
-            resp = await self._submit(
-                request, True, sign_did=did_info, write_ledger=write_ledger
-            )
-            return {"result": resp}
 
-    async def get_wallet_public_did(self) -> DIDInfo:
+            try:
+                resp = await self._submit(
+                    request,
+                    True,
+                    sign_did=did_info,
+                    write_ledger=write_ledger,
+                    profile=current_profile,
+                )
+                return {"result": resp}
+            except Exception as err:
+                raise LedgerError(
+                    "Exception when sending revocation registry entry"
+                ) from err
+
+    async def get_wallet_public_did(self, profile: Optional[Profile] = None) -> DIDInfo:
         """Fetch the public DID from the wallet."""
-        async with self.profile.session() as session:
+        current_profile = profile or self.profile
+        async with current_profile.session() as session:
             wallet = session.inject(BaseWallet)
-            return await wallet.get_public_did()
+            public_did = await wallet.get_public_did()
+            return public_did
 
     async def txn_endorse(
         self,
@@ -1334,15 +1370,21 @@ class IndyVdrLedger(BaseLedger):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
+        profile: Optional[Profile] = None,
     ) -> str:
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
-        resp = await self._submit(
-            request_json,
-            sign=sign,
-            taa_accept=taa_accept,
-            sign_did=sign_did,
-            write_ledger=write_ledger,
-        )
+        kwargs = {
+            "sign": sign,
+            "taa_accept": taa_accept,
+            "sign_did": sign_did,
+            "write_ledger": write_ledger,
+        }
+
+        if profile:
+            kwargs["profile"] = profile
+
+        resp = await self._submit(request_json, **kwargs)
+
         if write_ledger:
             # match the format returned by indy sdk
             resp = {"op": "REPLY", "result": resp}

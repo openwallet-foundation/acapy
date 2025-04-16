@@ -7,6 +7,7 @@ from enum import Enum
 from hashlib import sha256
 from typing import List, Optional, Sequence, Tuple, Union
 
+from ..core.profile import Profile
 from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..messaging.valid import IndyDID
 from ..utils import sentinel
@@ -175,7 +176,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_wallet_public_did(self) -> DIDInfo:
+    async def get_wallet_public_did(self, profile: Optional[Profile] = None) -> DIDInfo:
         """Fetch the public DID from the wallet."""
 
     @abstractmethod
@@ -193,7 +194,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Save a new record recording the acceptance of the TAA."""
 
     @abstractmethod
-    async def get_latest_txn_author_acceptance(self):
+    async def get_latest_txn_author_acceptance(self, profile: Optional[Profile] = None):
         """Look up the latest TAA acceptance."""
 
     def taa_digest(self, version: str, text: str):
@@ -219,6 +220,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
+        profile: Optional[Profile] = None,
     ) -> str:
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
 
@@ -414,6 +416,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         issuer_did: Optional[str] = None,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
+        profile: Optional[Profile] = None,
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
 

@@ -823,6 +823,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     rev_list.issuer_id,
                     write_ledger=write_ledger,
                     endorser_did=endorser_did,
+                    profile=profile,
                 )
         except LedgerTransactionError as err:
             if "InvalidClientRequest" in err.roll_up:
@@ -1209,20 +1210,23 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
+        profile: Optional[Profile] = None,
     ) -> str:
         """Submit a transaction to the ledger."""
 
         try:
             async with ledger:
-                return await shield(
-                    ledger.txn_submit(
-                        ledger_transaction,
-                        sign=sign,
-                        taa_accept=taa_accept,
-                        sign_did=sign_did,
-                        write_ledger=write_ledger,
-                    )
-                )
+                kwargs = {
+                    "sign": sign,
+                    "taa_accept": taa_accept,
+                    "sign_did": sign_did,
+                    "write_ledger": write_ledger,
+                }
+
+                if profile is not None:
+                    kwargs["profile"] = profile
+
+                return await shield(ledger.txn_submit(ledger_transaction, **kwargs))
         except LedgerError as err:
             raise AnonCredsRegistrationError(err.roll_up) from err
 
