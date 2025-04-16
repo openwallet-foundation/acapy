@@ -1,6 +1,7 @@
 """Test Problem Report Handler."""
 
 import pytest
+import pytest_asyncio
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.request_context import RequestContext
@@ -11,14 +12,14 @@ from ...handlers import problem_report_handler as test_module
 from ...messages.problem_report import CMProblemReport, ProblemReportReason
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def connection_record(request_context, session):
     record = ConnRecord()
     request_context.connection_record = record
@@ -26,7 +27,7 @@ async def connection_record(request_context, session):
     yield record
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def session(request_context):
     yield await request_context.session()
 

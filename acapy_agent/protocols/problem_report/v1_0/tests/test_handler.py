@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from .....core.event_bus import EventBus, MockEventBus
 from .....messaging.request_context import RequestContext
@@ -9,7 +10,7 @@ from ..handler import ProblemReportHandler
 from ..message import ProblemReport
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     yield RequestContext.test_context(await create_test_profile())
 

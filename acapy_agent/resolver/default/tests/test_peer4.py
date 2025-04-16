@@ -1,6 +1,7 @@
 """Test PeerDIDResolver."""
 
 import pytest
+import pytest_asyncio
 
 from ....core.event_bus import EventBus
 from ....core.profile import Profile
@@ -18,7 +19,7 @@ def event_bus():
     yield EventBus()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(event_bus: EventBus):
     """Profile fixture."""
     profile = await create_test_profile()
@@ -26,7 +27,7 @@ async def profile(event_bus: EventBus):
     yield profile
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def resolver(profile):
     """Resolver fixture."""
     instance = PeerDID4Resolver()
