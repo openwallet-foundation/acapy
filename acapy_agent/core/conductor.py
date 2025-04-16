@@ -395,8 +395,8 @@ class Conductor:
                 )
                 from_version_storage = record.value
                 LOGGER.info(
-                    "Existing acapy_version storage record found, "
-                    f"version set to {from_version_storage}"
+                    "Existing acapy_version storage record found, version set to %s",
+                    from_version_storage,
                 )
             except StorageNotFoundError:
                 LOGGER.warning("Wallet version storage record not found.")
@@ -432,8 +432,8 @@ class Conductor:
             LOGGER.warning(
                 (
                     "No upgrade from version was found from wallet or via"
-                    " --from-version startup argument. Defaulting to "
-                    f"{DEFAULT_ACAPY_VERSION}."
+                    " --from-version startup argument. Defaulting to %s.",
+                    DEFAULT_ACAPY_VERSION,
                 )
             )
             from_version = DEFAULT_ACAPY_VERSION
@@ -469,9 +469,12 @@ class Conductor:
             )
             LOGGER.info(
                 "Created static connection for test suite\n"
-                f" - My DID: {test_conn.my_did}\n"
-                f" - Their DID: {test_conn.their_did}\n"
-                f" - Their endpoint: {their_endpoint}\n"
+                " - My DID: %s\n"
+                " - Their DID: %s\n"
+                " - Their endpoint: %s\n",
+                test_conn.my_did,
+                test_conn.their_did,
+                their_endpoint,
             )
             del mgr
             LOGGER.debug("Static connection for test suite created and manager deleted.")
@@ -490,7 +493,7 @@ class Conductor:
             mediation_mgr = MediationManager(self.root_profile)
             try:
                 await mediation_mgr.set_default_mediator_by_id(default_mediator_id)
-                LOGGER.info(f"Default mediator set to {default_mediator_id}")
+                LOGGER.info("Default mediator set to %s", default_mediator_id)
             except Exception:
                 LOGGER.exception("Error updating default mediator.")
 
@@ -512,7 +515,7 @@ class Conductor:
                 )
                 base_url = context.settings.get("invite_base_url")
                 invite_url = invi_rec.invitation.to_url(base_url)
-                LOGGER.info(f"Invitation URL:\n{invite_url}")
+                LOGGER.info("Invitation URL:\n%s", invite_url)
                 qr = QRCode(border=1)
                 qr.add_data(invite_url)
                 qr.print_ascii(invert=True)
@@ -880,7 +883,8 @@ class Conductor:
                 if acapy_version:
                     storage_type_from_storage = STORAGE_TYPE_VALUE_ASKAR
                     LOGGER.info(
-                        f"Existing agent found. Setting wallet type to {storage_type_from_storage}."  # noqa: E501
+                        "Existing agent found. Setting wallet type to %s.",
+                        storage_type_from_storage,
                     )
                     await storage.add_record(
                         StorageRecord(
@@ -891,7 +895,7 @@ class Conductor:
                 else:
                     storage_type_from_storage = storage_type_from_config
                     LOGGER.info(
-                        f"New agent. Setting wallet type to {storage_type_from_config}."
+                        "New agent. Setting wallet type to %s.", storage_type_from_config
                     )
                     await storage.add_record(
                         StorageRecord(

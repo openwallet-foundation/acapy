@@ -99,7 +99,7 @@ class AnonCredsRevocation:
 
         return self._profile
 
-    async def notify(self, event: Event):
+    async def notify(self, event: Event) -> None:
         """Emit an event on the event bus."""
         event_bus = self.profile.inject(EventBus)
         await event_bus.notify(self.profile, event)
@@ -216,7 +216,7 @@ class AnonCredsRevocation:
         result: RevRegDefResult,
         rev_reg_def_private: RevocationRegistryDefinitionPrivate,
         options: Optional[dict] = None,
-    ):
+    ) -> None:
         """Store a revocation registry definition."""
         options = options or {}
         identifier = result.job_id or result.rev_reg_def_id
@@ -259,7 +259,7 @@ class AnonCredsRevocation:
 
     async def finish_revocation_registry_definition(
         self, job_id: str, rev_reg_def_id: str, options: Optional[dict] = None
-    ):
+    ) -> None:
         """Mark a rev reg def as finished."""
         options = options or {}
         async with self.profile.transaction() as txn:
@@ -333,7 +333,7 @@ class AnonCredsRevocation:
 
         return None
 
-    async def set_active_registry(self, rev_reg_def_id: str):
+    async def set_active_registry(self, rev_reg_def_id: str) -> None:
         """Mark a registry as active."""
         async with self.profile.transaction() as txn:
             entry = await txn.handle.fetch(
@@ -391,7 +391,7 @@ class AnonCredsRevocation:
 
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
-    ):
+    ) -> RevListResult:
         """Create and register a revocation list."""
         options = options or {}
         try:
@@ -460,7 +460,7 @@ class AnonCredsRevocation:
 
         return result
 
-    async def store_revocation_registry_list(self, result: RevListResult):
+    async def store_revocation_registry_list(self, result: RevListResult) -> None:
         """Store a revocation registry list."""
 
         identifier = result.job_id or result.rev_reg_def_id
@@ -502,7 +502,7 @@ class AnonCredsRevocation:
 
     async def finish_revocation_list(
         self, job_id: str, rev_reg_def_id: str, revoked: list
-    ):
+    ) -> None:
         """Mark a revocation list as finished."""
         async with self.profile.transaction() as txn:
             # Finish the registration if the list is new, otherwise already updated
@@ -529,7 +529,7 @@ class AnonCredsRevocation:
         curr: RevList,
         revoked: Sequence[int],
         options: Optional[dict] = None,
-    ):
+    ) -> RevListResult:
         """Publish and update to a revocation list."""
         options = options or {}
         try:
@@ -667,12 +667,12 @@ class AnonCredsRevocation:
 
         return str(tails_file_path)
 
-    def _check_url(self, url) -> None:
+    def _check_url(self, url: str) -> None:
         parsed = urlparse(url)
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise AnonCredsRevocationError("URI {} is not a valid URL".format(url))
 
-    def generate_public_tails_uri(self, rev_reg_def: RevRegDef):
+    def generate_public_tails_uri(self, rev_reg_def: RevRegDef) -> str:
         """Construct tails uri from rev_reg_def."""
         tails_base_url = self.profile.settings.get("tails_server_base_url")
         if not tails_base_url:
@@ -690,7 +690,7 @@ class AnonCredsRevocation:
         tails_dir = indy_client_dir("tails", create=False)
         return os.path.join(tails_dir, rev_reg_def.value.tails_hash)
 
-    async def upload_tails_file(self, rev_reg_def: RevRegDef):
+    async def upload_tails_file(self, rev_reg_def: RevRegDef) -> None:
         """Upload the local tails file to the tails server."""
         tails_server = AnonCredsTailsServer()
 
@@ -730,7 +730,7 @@ class AnonCredsRevocation:
 
     # Registry Management
 
-    async def handle_full_registry(self, rev_reg_def_id: str):
+    async def handle_full_registry(self, rev_reg_def_id: str) -> None:
         """Update the registry status and start the next registry generation."""
         async with self.profile.session() as session:
             active_rev_reg_def = await session.handle.fetch(
@@ -791,7 +791,7 @@ class AnonCredsRevocation:
             LOGGER.info(f"Current rev_reg_def_id = {backup_rev_reg_def_id}")
             LOGGER.info(f"Backup reg = {backup_reg.rev_reg_def_id}")
 
-    async def decommission_registry(self, cred_def_id: str):
+    async def decommission_registry(self, cred_def_id: str) -> list:
         """Decommission post-init registries and start the next registry generation."""
         active_reg = await self.get_or_create_active_registry(cred_def_id)
 
@@ -1449,7 +1449,7 @@ class AnonCredsRevocation:
         )
         return result
 
-    async def mark_pending_revocations(self, rev_reg_def_id: str, *crids: int):
+    async def mark_pending_revocations(self, rev_reg_def_id: str, *crids: int) -> None:
         """Cred rev ids stored to publish later."""
         async with self.profile.transaction() as txn:
             entry = await txn.handle.fetch(
@@ -1495,7 +1495,7 @@ class AnonCredsRevocation:
         txn: ProfileSession,
         rev_reg_def_id: str,
         crid_mask: Optional[Sequence[int]] = None,
-    ):
+    ) -> None:
         """Clear pending revocations."""
         if not isinstance(txn, AskarAnonCredsProfileSession):
             raise ValueError("Askar wallet required")
@@ -1526,10 +1526,12 @@ class AnonCredsRevocation:
             tags=tags,
         )
 
-    async def set_tails_file_public_uri(self, rev_reg_id, tails_public_uri):
+    async def set_tails_file_public_uri(self, rev_reg_id: str, tails_public_uri: str):
         """Update Revocation Registry tails file public uri."""
+        # TODO: Implement or remove
         pass
 
-    async def set_rev_reg_state(self, rev_reg_id, state):
+    async def set_rev_reg_state(self, rev_reg_id: str, state: str):
         """Update Revocation Registry state."""
+        # TODO: Implement or remove
         pass

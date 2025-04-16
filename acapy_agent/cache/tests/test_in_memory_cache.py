@@ -1,12 +1,13 @@
 from asyncio import sleep, wait_for
 
 import pytest
+import pytest_asyncio
 
 from ..base import CacheError
 from ..in_memory import InMemoryCache
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def cache():
     cache = InMemoryCache()
     await cache.set("valid key", "value")

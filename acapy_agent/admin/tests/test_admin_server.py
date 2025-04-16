@@ -5,6 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 
 import jwt
 import pytest
+import pytest_asyncio
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 from marshmallow import ValidationError
@@ -46,6 +47,12 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         self.client_session = ClientSession(
             cookie_jar=DummyCookieJar(), connector=self.connector
         )
+
+    async def asyncTearDown(self):
+        if self.client_session:
+            await self.client_session.close()
+        if self.connector:
+            await self.connector.close()
 
     async def test_debug_middleware(self):
         with mock.patch.object(test_module, "LOGGER", mock.MagicMock()) as mock_logger:
@@ -571,7 +578,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             await test_module.upgrade_middleware(request, handler)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def server():
     test_class = TestAdminServer()
     await test_class.asyncSetUp()

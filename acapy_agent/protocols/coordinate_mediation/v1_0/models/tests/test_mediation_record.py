@@ -3,6 +3,7 @@
 import json
 
 import pytest
+import pytest_asyncio
 
 from ......core.profile import ProfileSession
 from ......storage.base import BaseStorage
@@ -11,7 +12,7 @@ from ......utils.testing import create_test_profile
 from ..mediation_record import MediationRecord
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def session():
     profile = await create_test_profile()
     async with profile.session() as session:

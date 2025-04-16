@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+import pytest_asyncio
 
 from ......core.event_bus import Event, EventBus, MockEventBus
 from ......messaging.decorators.localization_decorator import LocalizationDecorator
@@ -11,7 +12,7 @@ from ...handlers.basicmessage_handler import BasicMessageHandler
 from ...messages.basicmessage import BasicMessage
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     yield RequestContext.test_context(await create_test_profile())
 

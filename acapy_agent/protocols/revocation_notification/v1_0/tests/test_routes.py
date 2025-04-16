@@ -1,6 +1,7 @@
 """Test routes.py"""
 
 import pytest
+import pytest_asyncio
 
 from .....config.settings import Settings
 from .....core.event_bus import Event, MockEventBus
@@ -25,7 +26,7 @@ def responder():
     yield MockResponder()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(responder):
     profile = await create_test_profile()
     profile.context.injector.bind_instance(BaseResponder, responder)

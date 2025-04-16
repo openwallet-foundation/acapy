@@ -3,6 +3,7 @@
 import logging
 
 import pytest
+import pytest_asyncio
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -17,7 +18,7 @@ TEST_CONN_ID = "conn-id"
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def context():
     """Fixture for context used in tests."""
     # pylint: disable=W0621
@@ -28,7 +29,7 @@ async def context():
     yield context
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def session(context):  # pylint: disable=W0621
     """Fixture for session used in tests"""
     yield await context.session()

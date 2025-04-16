@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from acapy_agent.tests import mock
 
@@ -13,7 +14,7 @@ from ...messages.problem_report import ProblemReportReason
 from .. import complete_handler as test_module
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     ctx = RequestContext.test_context(await create_test_profile())
     ctx.injector.bind_instance(DIDMethods, DIDMethods())

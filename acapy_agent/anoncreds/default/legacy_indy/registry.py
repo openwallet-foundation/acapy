@@ -138,7 +138,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Supported Identifiers Regular Expression."""
         return self._supported_identifiers_regex
 
-    async def setup(self, context: InjectionContext):
+    async def setup(self, context: InjectionContext) -> None:
         """Setup."""
         LOGGER.info("Successfully registered LegacyIndyRegistry")
 

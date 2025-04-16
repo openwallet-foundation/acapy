@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -10,7 +11,7 @@ from ...handlers.invitation_handler import InvitationHandler
 from ...messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     ctx = RequestContext.test_context(await create_test_profile())
     ctx.injector.bind_instance(DIDMethods, DIDMethods())
