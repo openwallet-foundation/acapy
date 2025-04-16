@@ -25,6 +25,7 @@ from ....wallet.did_info import INVITATION_REUSE_KEY, DIDInfo
 from ....wallet.did_method import PEER2, PEER4
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519
+from ....wallet.keys.manager import multikey_to_verkey
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...coordinate_mediation.v1_0.route_manager import RouteManager
 from ...didcomm_prefix import DIDCommPrefix
@@ -77,6 +78,7 @@ class InvitationCreator:
         my_endpoint: Optional[str] = None,
         auto_accept: Optional[bool] = None,
         public: bool = False,
+        use_key: Optional[str] = None,
         use_did: Optional[str] = None,
         use_did_method: Optional[str] = None,
         hs_protos: Optional[Sequence[HSProto]] = None,
@@ -178,6 +180,7 @@ class InvitationCreator:
         self.goal = goal
         self.goal_code = goal_code
         self.public = public
+        self.use_key = use_key
         self.use_did = use_did
         self.use_did_method = use_did_method
         self.multi_use = multi_use
@@ -481,7 +484,11 @@ class InvitationCreator:
         """Create an invitation using legacy bare public key and inline service."""
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            connection_key = await wallet.create_signing_key(ED25519)
+            if self.use_key:
+                verkey = multikey_to_verkey(self.use_key)
+                connection_key = await wallet.get_signing_key(verkey)
+            else:
+                connection_key = await wallet.create_signing_key(ED25519)
 
         routing_keys, routing_endpoint = await self.route_manager.routing_info(
             self.profile, mediation_record
@@ -574,6 +581,7 @@ class OutOfBandManager(BaseConnectionManager):
         my_endpoint: Optional[str] = None,
         auto_accept: Optional[bool] = None,
         public: bool = False,
+        use_key: Optional[str] = None,
         use_did: Optional[str] = None,
         use_did_method: Optional[str] = None,
         hs_protos: Optional[Sequence[HSProto]] = None,
@@ -601,6 +609,7 @@ class OutOfBandManager(BaseConnectionManager):
             auto_accept (Optional[bool]): Auto-accept a corresponding connection request
                 (None to use config).
             public (bool): Set to True to create an invitation from the public DID.
+            use_key (Optional[str]): Multikey to use for the invitation.
             use_did (Optional[str]): DID to use for the invitation.
             use_did_method (Optional[str]): DID method to use for the invitation.
             hs_protos (Optional[Sequence[HSProto]]): List of handshake protocols to
@@ -634,6 +643,7 @@ class OutOfBandManager(BaseConnectionManager):
             my_endpoint,
             auto_accept,
             public,
+            use_key,
             use_did,
             use_did_method,
             hs_protos,
