@@ -26,7 +26,6 @@ from ..messaging.valid import (
     UUIDFour,
 )
 from ..revocation.error import RevocationNotSupportedError
-from ..revocation_anoncreds.routes import TAG_TITLE as REVOCATION_TAG_TITLE
 from ..storage.error import StorageNotFoundError
 from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from .base import (
@@ -51,6 +50,7 @@ LOGGER = logging.getLogger(__name__)
 
 CRED_DEF_TAG_TITLE = "AnonCreds - Credential Definitions"
 SCHEMAS_TAG_TITLE = "AnonCreds - Schemas"
+REVOCATION_TAG_TITLE = "AnonCreds - Revocation"
 
 SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
 
