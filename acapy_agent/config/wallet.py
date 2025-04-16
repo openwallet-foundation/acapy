@@ -68,40 +68,50 @@ async def _attempt_open_profile(
     return (profile, provision)
 
 
-def _log_provision_info(profile: Profile) -> None:
-    LOGGER.info(
-        "Created new profile - "
-        if profile.created
-        else "Opened existing profile - "
-        f"Profile name: {profile.name}, backend: {profile.backend}"
-    )
-
-
-async def _initialize_with_public_did(
+async def _replace_public_did_if_seed_mismatch(
     public_did_info: DIDInfo,
     wallet: BaseWallet,
     settings: dict,
     wallet_seed: str,
-) -> str:
-    public_did = public_did_info.did
-    # Check did:sov seed matches public DID
-    if wallet_seed and (seed_to_did(wallet_seed) != public_did):
-        if not settings.get("wallet.replace_public_did"):
-            raise ConfigError(
-                "New seed provided which doesn't match the registered"
-                + f" public did {public_did}"
-            )
+) -> DIDInfo:
+    """Replace the public DID if a seed is provided and doesn't match the current DID.
 
-        LOGGER.info("Replacing public DID due to --replace-public-did flag")
-        replace_did_info = await wallet.create_local_did(
-            method=SOV, key_type=ED25519, seed=wallet_seed
+    Args:
+        public_did_info: Current public DID info
+        wallet: Wallet instance
+        settings: Configuration settings
+        wallet_seed: Optional seed to check against current DID
+
+    Returns:
+        DIDInfo: Either the original DID info or a new one if replaced
+    """
+    if not wallet_seed:
+        return public_did_info
+
+    public_did = public_did_info.did
+    if seed_to_did(wallet_seed) == public_did:
+        return public_did_info
+
+    if not settings.get("wallet.replace_public_did"):
+        raise ConfigError(
+            "New seed provided which doesn't match the registered "
+            f"public did {public_did}"
         )
-        public_did = replace_did_info.did
-        await wallet.set_public_did(public_did)
-        LOGGER.info(
-            f"Created new public DID: {public_did}, "
-            f"with verkey: {replace_did_info.verkey}"
-        )
+
+    LOGGER.info(
+        "Replacing public DID which doesn't match the seed "
+        "(as configured by --replace-public-did)"
+    )
+    replace_did_info = await wallet.create_local_did(
+        method=SOV, key_type=ED25519, seed=wallet_seed
+    )
+    await wallet.set_public_did(replace_did_info.did)
+    LOGGER.info(
+        "Created new public DID: %s, with verkey: %s",
+        replace_did_info.did,
+        replace_did_info.verkey,
+    )
+    return replace_did_info
 
 
 async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
@@ -118,32 +128,28 @@ async def _initialize_with_debug_settings(settings: dict, wallet: BaseWallet):
 
 
 async def _initialize_with_seed(
-    settings: dict, wallet: BaseWallet, provision: bool, create_local_did: bool, seed: str
-):
-    def _log_did_info(did: str, verkey: str, is_public: bool):
-        LOGGER.info(
-            f"Created new {'public' if is_public else 'local'}"
-            f"DID: {did}, Verkey: {verkey}"
-        )
-
+    settings: dict, wallet: BaseWallet, create_local_did: bool, seed: str
+) -> DIDInfo:
     if create_local_did:
         endpoint = settings.get("default_endpoint")
         metadata = {"endpoint": endpoint} if endpoint else None
 
-        local_did_info = await wallet.create_local_did(
+        did_info = await wallet.create_local_did(
             method=SOV,
             key_type=ED25519,
             seed=seed,
             metadata=metadata,
         )
-        local_did = local_did_info.did
-        _log_did_info(local_did, local_did_info.verkey, False)
     else:
-        public_did_info = await wallet.create_public_did(
-            method=SOV, key_type=ED25519, seed=seed
-        )
-        public_did = public_did_info.did
-        _log_did_info(public_did, public_did_info.verkey, True)
+        did_info = await wallet.create_public_did(method=SOV, key_type=ED25519, seed=seed)
+
+    LOGGER.info(
+        "Created new %s DID: %s, Verkey: %s",
+        "local" if create_local_did else "public",
+        did_info.did,
+        did_info.verkey,
+    )
+    return did_info
 
 
 async def wallet_config(
@@ -165,24 +171,31 @@ async def wallet_config(
             profile_manager, context, profile_config, settings
         )
 
-    _log_provision_info(profile)
+    LOGGER.info(
+        "%s Profile name: %s, backend: %s",
+        "Created new profile -" if profile.created else "Opened existing profile -",
+        profile.name,
+        profile.backend,
+    )
 
     txn = await profile.transaction()
     wallet = txn.inject(BaseWallet)
     public_did_info = await wallet.get_public_did()
-    public_did = None
 
     if public_did_info:
-        public_did = await _initialize_with_public_did(
+        # Check if we need to replace the public DID due to seed mismatch
+        public_did_info = await _replace_public_did_if_seed_mismatch(
             public_did_info, wallet, settings, wallet_seed
         )
     elif wallet_seed:
-        await _initialize_with_seed(
-            settings, wallet, provision, create_local_did, wallet_seed
+        # Create new public DID from seed if none exists
+        public_did_info = await _initialize_with_seed(
+            settings, wallet, create_local_did, wallet_seed
         )
 
+    public_did = public_did_info.did if public_did_info else None
     if provision and not create_local_did and not public_did:
-        LOGGER.info("No public DID")
+        LOGGER.info("No public DID created")
 
     await _initialize_with_debug_settings(settings, wallet)
 
