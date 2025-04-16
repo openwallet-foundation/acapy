@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from acapy_agent.tests import mock
 
@@ -11,7 +12,7 @@ from ...messages.problem_report import DIDXProblemReport
 from .. import problem_report_handler as test_module
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     yield RequestContext.test_context(await create_test_profile())
 

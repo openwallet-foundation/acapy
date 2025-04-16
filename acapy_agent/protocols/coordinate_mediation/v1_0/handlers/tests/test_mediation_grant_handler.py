@@ -1,6 +1,7 @@
 """Test mediate grant message handler."""
 
 import pytest
+import pytest_asyncio
 
 from acapy_agent.core.profile import ProfileSession
 from acapy_agent.tests import mock
@@ -23,7 +24,7 @@ TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg34
 TEST_ENDPOINT = "https://example.com"
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def context():
     context = RequestContext.test_context(await create_test_profile())
     context.message = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_VERKEY])
@@ -32,7 +33,7 @@ async def context():
     yield context
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def session(context: RequestContext):
     yield await context.session()
 

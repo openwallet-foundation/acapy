@@ -66,7 +66,7 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         self.obj = obj
 
     @property
-    def message(self):
+    def message(self) -> str:
         """Message."""
         return f"{self._message}: {self.obj_id}, {self.obj}"
 
@@ -75,12 +75,12 @@ class AnonCredsSchemaAlreadyExists(AnonCredsObjectAlreadyExists[AnonCredsSchema]
     """Raised when a schema already exists."""
 
     @property
-    def schema_id(self):
+    def schema_id(self) -> str:
         """Get Schema Id."""
         return self.obj_id
 
     @property
-    def schema(self):
+    def schema(self) -> AnonCredsSchema:
         """Get Schema."""
         return self.obj
 

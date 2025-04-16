@@ -239,7 +239,7 @@ class CredDef(BaseModel):
         """Convert a native credential definition to a CredDef object."""
         return cls.deserialize(cred_def.to_json())
 
-    def to_native(self):
+    def to_native(self) -> CredentialDefinition:
         """Convert to native anoncreds credential definition."""
         return CredentialDefinition.load(self.serialize())
 

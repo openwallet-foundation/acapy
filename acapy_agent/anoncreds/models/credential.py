@@ -65,7 +65,7 @@ class DictWithAnonCredsAttrValueSchema(fields.Dict):
             **kwargs,
         )
 
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserialize(self, value: dict, attr: str, data: dict, **kwargs) -> dict:
         """Deserialize dict with anoncreds attribute value."""
         if not isinstance(value, dict):
             raise ValidationError("Value must be a dict.")

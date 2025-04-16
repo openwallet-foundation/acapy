@@ -3,6 +3,7 @@
 from typing import Generator
 
 import pytest
+import pytest_asyncio
 
 from ......core.event_bus import EventBus, MockEventBus
 from ......core.profile import Profile
@@ -23,7 +24,7 @@ def responder():
     yield MockResponder()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(event_bus):
     profile = await create_test_profile()
     profile.context.injector.bind_instance(EventBus, event_bus)

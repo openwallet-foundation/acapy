@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from ....storage.error import StorageDuplicateError, StorageNotFoundError
 from ....utils.testing import create_test_profile
@@ -14,7 +15,7 @@ VC_SCHEMA_ID = "https://example.org/examples/degree.json"
 VC_GIVEN_ID = "http://example.edu/credentials/3732"
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def holder():
     profile = await create_test_profile(settings={"wallet.type": "askar"})
     yield profile.inject(VCHolder)

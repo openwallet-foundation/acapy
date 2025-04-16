@@ -16,7 +16,7 @@ async def get_requested_creds_from_proof_request_preview(
     proof_request: dict,
     *,
     holder: AnonCredsHolder,
-):
+) -> dict[str, dict]:
     """Build anoncreds requested-credentials structure.
 
     Given input proof request and presentation preview, use credentials in
@@ -81,7 +81,7 @@ async def get_requested_creds_from_proof_request_preview(
     return req_creds
 
 
-def extract_non_revocation_intervals_from_proof_request(proof_req: dict):
+def extract_non_revocation_intervals_from_proof_request(proof_req: dict) -> dict:
     """Return non-revocation intervals by requested item referent in proof request."""
     non_revoc_intervals = {}
     for req_item_type in ("requested_attributes", "requested_predicates"):
