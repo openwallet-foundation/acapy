@@ -394,7 +394,7 @@
           }
         },
         "summary" : "Create a credential definition on the connected datastore",
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "x-codegen-request-body-name" : "body"
       }
     },
@@ -422,7 +422,7 @@
           }
         },
         "summary" : "Retrieve an individual credential definition details",
-        "tags" : [ "anoncreds - credential definitions" ]
+        "tags" : [ "AnonCreds - Credential Definitions" ]
       }
     },
     "/anoncreds/credential-definitions" : {
@@ -469,7 +469,7 @@
           }
         },
         "summary" : "Retrieve all credential definition ids",
-        "tags" : [ "anoncreds - credential definitions" ]
+        "tags" : [ "AnonCreds - Credential Definitions" ]
       }
     },
     "/anoncreds/registry/{rev_reg_id}/active" : {
@@ -497,7 +497,7 @@
           }
         },
         "summary" : "Update the active registry",
-        "tags" : [ "anoncreds - revocation" ]
+        "tags" : [ "AnonCreds - Revocation" ]
       }
     },
     "/anoncreds/registry/{rev_reg_id}/tails-file" : {
@@ -525,7 +525,7 @@
           }
         },
         "summary" : "Upload local tails file to server",
-        "tags" : [ "anoncreds - revocation" ]
+        "tags" : [ "AnonCreds - Revocation" ]
       }
     },
     "/anoncreds/revocation-list" : {
@@ -553,7 +553,7 @@
           }
         },
         "summary" : "Create and publish a revocation status list on the connected datastore",
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "x-codegen-request-body-name" : "body"
       }
     },
@@ -582,7 +582,7 @@
           }
         },
         "summary" : "Create and publish a registration revocation on the connected datastore",
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "x-codegen-request-body-name" : "body"
       }
     },
@@ -1016,7 +1016,7 @@
           }
         },
         "summary" : "Create a schema on the connected datastore",
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "x-codegen-request-body-name" : "body"
       }
     },
@@ -1044,7 +1044,7 @@
           }
         },
         "summary" : "Retrieve an individual schemas details",
-        "tags" : [ "anoncreds - schemas" ]
+        "tags" : [ "AnonCreds - Schemas" ]
       }
     },
     "/anoncreds/schemas" : {
@@ -1084,7 +1084,7 @@
           }
         },
         "summary" : "Retrieve all schema ids",
-        "tags" : [ "anoncreds - schemas" ]
+        "tags" : [ "AnonCreds - Schemas" ]
       }
     },
     "/anoncreds/wallet/upgrade" : {
@@ -1110,8 +1110,8 @@
             "description" : ""
           }
         },
-        "summary" : "\n        Upgrade the wallet from askar to anoncreds - Be very careful with this! You \n        cannot go back! See migration guide for more information.\n    ",
-        "tags" : [ "anoncreds - wallet upgrade" ]
+        "summary" : "Upgrade the wallet from askar to askar-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
+        "tags" : [ "AnonCreds - Wallet Upgrade" ]
       }
     },
     "/connections" : {
