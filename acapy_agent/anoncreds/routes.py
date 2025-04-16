@@ -26,6 +26,7 @@ from ..messaging.valid import (
     UUIDFour,
 )
 from ..revocation.error import RevocationNotSupportedError
+from ..revocation_anoncreds.routes import TAG_TITLE as REVOCATION_TAG_TITLE
 from ..storage.error import StorageNotFoundError
 from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from .base import (
@@ -592,7 +593,7 @@ class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Create and publish a registration revocation on the connected datastore",
 )
 @request_schema(RevRegCreateRequestSchemaAnonCreds())
@@ -677,7 +678,7 @@ class RevListCreateRequestSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Create and publish a revocation status list on the connected datastore",
 )
 @request_schema(RevListCreateRequestSchema())
@@ -713,7 +714,7 @@ async def rev_list_post(request: web.BaseRequest):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Upload local tails file to server",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -749,7 +750,7 @@ async def upload_tails_file(request: web.BaseRequest):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Update the active registry",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
