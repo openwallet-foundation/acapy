@@ -1341,8 +1341,8 @@ class UpgradeResultSchema(OpenAPISchema):
 
 @docs(
     tags=[UPGRADE_TAG_TITLE],
-    summary="Upgrade the wallet from askar to anoncreds - Be very careful with this! "
-    "You cannot go back! See migration guide for more information.",
+    summary="Upgrade the wallet from askar to askar-anoncreds. Be very careful with this!"
+    " You cannot go back! See migration guide for more information.",
 )
 @querystring_schema(UpgradeVerificationSchema())
 @response_schema(UpgradeResultSchema(), description="")

@@ -925,7 +925,7 @@
     "/anoncreds/wallet/upgrade" : {
       "post" : {
         "tags" : [ "AnonCreds - Wallet Upgrade" ],
-        "summary" : "Upgrade the wallet from askar to anoncreds - Be very careful with this! You cannot go back! See migration guide for more information.",
+        "summary" : "Upgrade the wallet from askar to askar-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "wallet_name",
