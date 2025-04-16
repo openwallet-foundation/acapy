@@ -42,11 +42,11 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         return self._supported_identifiers_regex
         # TODO: fix regex (too general)
 
-    async def setup(self, context: InjectionContext):
+    async def setup(self, context: InjectionContext) -> None:
         """Setup."""
         LOGGER.info("Successfully registered DIDWebRegistry")
 
-    async def get_schema(self, profile, schema_id: str) -> GetSchemaResult:
+    async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
         raise NotImplementedError()
 

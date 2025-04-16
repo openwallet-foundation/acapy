@@ -37,7 +37,7 @@ class AnonCredsRegistry:
             for registry in registries:
                 self.register(registry)
 
-    def register(self, registry: BaseAnonCredsHandler):
+    def register(self, registry: BaseAnonCredsHandler) -> None:
         """Register a new registry."""
         if isinstance(registry, BaseAnonCredsResolver):
             self.resolvers.append(registry)

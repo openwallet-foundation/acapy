@@ -90,7 +90,7 @@ async def fetch_txns(
     return registry_from_ledger, revoked
 
 
-async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList):
+async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList) -> dict:
     """Generate a new ledger accum entry, using the wallet value if revocations ahead of ledger."""  # noqa: E501
 
     registry_from_ledger, prev_revoked = await fetch_txns(

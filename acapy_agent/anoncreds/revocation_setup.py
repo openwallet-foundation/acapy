@@ -58,13 +58,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     def __init__(self):
         """Init manager."""
 
-    def register_events(self, event_bus: EventBus):
+    def register_events(self, event_bus: EventBus) -> None:
         """Register event listeners."""
         event_bus.subscribe(CRED_DEF_FINISHED_PATTERN, self.on_cred_def)
         event_bus.subscribe(REV_REG_DEF_FINISHED_PATTERN, self.on_rev_reg_def)
         event_bus.subscribe(REV_LIST_FINISHED_PATTERN, self.on_rev_list)
 
-    async def on_cred_def(self, profile: Profile, event: CredDefFinishedEvent):
+    async def on_cred_def(self, profile: Profile, event: CredDefFinishedEvent) -> None:
         """Handle cred def finished."""
         payload = event.payload
 
@@ -80,7 +80,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=payload.options,
                 )
 
-    async def on_rev_reg_def(self, profile: Profile, event: RevRegDefFinishedEvent):
+    async def on_rev_reg_def(
+        self, profile: Profile, event: RevRegDefFinishedEvent
+    ) -> None:
         """Handle rev reg def finished."""
         payload = event.payload
 
@@ -110,7 +112,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 # Mark the first registry as active
                 await revoc.set_active_registry(payload.rev_reg_def_id)
 
-    async def on_rev_list(self, profile: Profile, event: RevListFinishedEvent):
+    async def on_rev_list(self, profile: Profile, event: RevListFinishedEvent) -> None:
         """Handle rev list finished."""
         await notify_revocation_published_event(
             profile, event.payload.rev_reg_id, event.payload.revoked
