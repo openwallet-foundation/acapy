@@ -3,6 +3,7 @@
 from typing import AsyncGenerator
 
 import pytest
+import pytest_asyncio
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
@@ -17,14 +18,14 @@ from ...messages.reuse import HandshakeReuse
 from ...messages.reuse_accept import HandshakeReuseAccept
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     ctx = RequestContext.test_context(await create_test_profile())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def session(request_context) -> AsyncGenerator[ProfileSession, None]:
     yield await request_context.session()
 

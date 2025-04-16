@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
+import pytest_asyncio
 from pydid import DIDDocument
 
 from ...admin.request_context import AdminRequestContext
@@ -56,7 +57,7 @@ def mock_resolver(resolution_result):
     yield did_resolver
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     profile = await create_test_profile(
         settings={

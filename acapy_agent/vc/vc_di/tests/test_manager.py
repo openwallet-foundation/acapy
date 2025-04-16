@@ -1,6 +1,7 @@
 """Test VCDIManager."""
 
 import pytest
+import pytest_asyncio
 from anoncreds import W3cPresentation
 
 from ....anoncreds.registry import AnonCredsRegistry
@@ -145,7 +146,7 @@ VP = {
 }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     profile = await create_test_profile()
     profile.context.injector.bind_instance(DIDResolver, DIDResolver([KeyDIDResolver()]))

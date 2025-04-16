@@ -1,6 +1,7 @@
 """Test IndyDIDResolver."""
 
 import pytest
+import pytest_asyncio
 
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
@@ -38,7 +39,7 @@ def ledger():
     yield ledger
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(ledger):
     """Profile fixture."""
     profile = await create_test_profile()

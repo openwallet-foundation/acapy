@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from ......core.goal_code_registry import GoalCodeRegistry
 from ......core.protocol_registry import ProtocolRegistry
@@ -25,7 +26,7 @@ TEST_MESSAGE_FAMILY = "doc/proto/1.0"
 TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     ctx = RequestContext.test_context(await create_test_profile())
     protocol_registry = ProtocolRegistry()

@@ -3,6 +3,7 @@ import os
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
+import pytest_asyncio
 
 from ...askar.profile import AskarProfileManager
 from ...config.injection_context import InjectionContext
@@ -15,7 +16,7 @@ from ..error import StorageError, StorageSearchError
 from ..record import StorageRecord
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def store():
     context = InjectionContext()
     profile = await AskarProfileManager().provision(

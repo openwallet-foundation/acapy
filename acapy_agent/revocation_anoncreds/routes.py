@@ -313,7 +313,7 @@ class PublishRevocationsOptions(OpenAPISchema):
 
     endorser_connection_id = fields.Str(
         metadata={
-            "description": endorser_connection_id_description,  # noqa: F821
+            "description": endorser_connection_id_description,
             "required": False,
             "example": UUIDFour.EXAMPLE,
         }

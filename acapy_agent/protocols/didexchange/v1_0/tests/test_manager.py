@@ -1,6 +1,7 @@
 import json
 from unittest import IsolatedAsyncioTestCase
 
+import pytest
 from pydid import DIDDocument
 
 from .....admin.server import AdminResponder
@@ -162,6 +163,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             with self.assertRaises(DIDXManagerError):
                 await self.manager.verify_diddoc(wallet, did_doc_attach)
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_receive_invitation(self):
         async with self.profile.session() as session:
             self.profile.context.update_settings({"public_invites": True})
@@ -198,6 +200,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
                 assert mock_send_reply.called
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_receive_invitation_oob_public_did(self):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -1547,6 +1550,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_create_response_mediation_id(self):
         async with self.profile.session() as session:
             mediation_record = MediationRecord(

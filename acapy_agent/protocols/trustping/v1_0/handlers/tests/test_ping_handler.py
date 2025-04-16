@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,7 +10,7 @@ from ...messages.ping import Ping
 from ...messages.ping_response import PingResponse
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def request_context():
     yield RequestContext.test_context(await create_test_profile())
 
