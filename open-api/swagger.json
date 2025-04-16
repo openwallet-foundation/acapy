@@ -335,7 +335,7 @@
     },
     "/anoncreds/credential-definition" : {
       "post" : {
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "summary" : "Create a credential definition on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -358,7 +358,7 @@
     },
     "/anoncreds/credential-definition/{cred_def_id}" : {
       "get" : {
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "summary" : "Retrieve an individual credential definition details",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -380,7 +380,7 @@
     },
     "/anoncreds/credential-definitions" : {
       "get" : {
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "summary" : "Retrieve all credential definition ids",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -420,7 +420,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/active" : {
       "put" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Update the active registry",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -443,7 +443,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/tails-file" : {
       "put" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Upload local tails file to server",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -466,7 +466,7 @@
     },
     "/anoncreds/revocation-list" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Create and publish a revocation status list on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -489,7 +489,7 @@
     },
     "/anoncreds/revocation-registry-definition" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Create and publish a registration revocation on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -845,7 +845,7 @@
     },
     "/anoncreds/schema" : {
       "post" : {
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "summary" : "Create a schema on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -868,7 +868,7 @@
     },
     "/anoncreds/schema/{schema_id}" : {
       "get" : {
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "summary" : "Retrieve an individual schemas details",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -890,7 +890,7 @@
     },
     "/anoncreds/schemas" : {
       "get" : {
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "summary" : "Retrieve all schema ids",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -924,8 +924,8 @@
     },
     "/anoncreds/wallet/upgrade" : {
       "post" : {
-        "tags" : [ "anoncreds - wallet upgrade" ],
-        "summary" : "\n        Upgrade the wallet from askar to anoncreds - Be very careful with this! You \n        cannot go back! See migration guide for more information.\n    ",
+        "tags" : [ "AnonCreds - Wallet Upgrade" ],
+        "summary" : "Upgrade the wallet from askar to anoncreds - Be very careful with this! You cannot go back! See migration guide for more information.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "wallet_name",
