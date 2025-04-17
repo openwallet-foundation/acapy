@@ -19,7 +19,11 @@ class CreateDidIndyRequestSchema(OpenAPISchema):
     options = fields.Dict(
         required=False,
         metadata={
-            "description": "Additional configuration options",
+            "description": (
+                "Additional configuration options. "
+                "Supported options: did, seed, key_type. "
+                "Default key_type is ed25519."
+            ),
             "example": {
                 "did": "did:indy:WRfXPg8dantKVubE3HX8pw",
                 "seed": "000000000000000000000000Trustee1",
