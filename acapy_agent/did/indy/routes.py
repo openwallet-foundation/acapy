@@ -13,8 +13,8 @@ from ...messaging.models.openapi import OpenAPISchema
 from ...wallet.error import WalletError
 
 
-class CreateRequestSchema(OpenAPISchema):
-    """Parameters and validators for create DID endpoint."""
+class CreateDidIndyRequestSchema(OpenAPISchema):
+    """Parameters and validators for create DID Indy endpoint."""
 
     options = fields.Dict(
         required=False,
@@ -36,8 +36,8 @@ class CreateRequestSchema(OpenAPISchema):
     )
 
 
-class CreateResponseSchema(OpenAPISchema):
-    """Response schema for create DID endpoint."""
+class CreateDidIndyResponseSchema(OpenAPISchema):
+    """Response schema for create DID Indy endpoint."""
 
     did = fields.Str(
         metadata={
@@ -54,8 +54,8 @@ class CreateResponseSchema(OpenAPISchema):
 
 
 @docs(tags=["did"], summary="Create a did:indy")
-@request_schema(CreateRequestSchema())
-@response_schema(CreateResponseSchema, HTTPStatus.OK)
+@request_schema(CreateDidIndyRequestSchema())
+@response_schema(CreateDidIndyResponseSchema, HTTPStatus.OK)
 @tenant_authentication
 async def create_indy_did(request: web.BaseRequest):
     """Create a INDY DID."""
