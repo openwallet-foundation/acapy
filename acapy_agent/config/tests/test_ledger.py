@@ -498,7 +498,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             )
             with self.assertRaises(test_module.ConfigError) as cm:
                 await test_module.load_multiple_genesis_transactions_from_config(settings)
-            assert "No is_write ledger set" in str(cm.exception)
+            assert "No writable ledger configured" in str(cm.exception)
 
     async def test_load_multiple_genesis_transactions_multiple_write(self):
         TEST_GENESIS_TXNS = {
