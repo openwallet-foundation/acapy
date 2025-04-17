@@ -70,6 +70,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings) -> 
 
     ledger_config_list = settings.get("ledger.ledger_config_list")
     ledger_txns_list = []
+    write_ledger_set = False
 
     LOGGER.debug("Processing %d ledger configs", len(ledger_config_list))
     for config in ledger_config_list:
@@ -93,8 +94,10 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings) -> 
                     raise ConfigError("Error reading ledger genesis transactions") from e
 
         is_write_ledger = config.get("is_write", False)
-        ledger_id = config.get("id", str(uuid4()))  # Default to UUID if no ID provided
+        if is_write_ledger:
+            write_ledger_set = True
 
+        ledger_id = config.get("id", str(uuid4()))  # Default to UUID if no ID provided
         config_item = {
             "id": ledger_id,
             "is_production": config.get("is_production", True),
@@ -121,7 +124,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings) -> 
     )
 
     # Raise error if we have neither a writable ledger nor genesis info (unless read-only)
-    if not is_write_ledger and not is_read_only and not has_genesis_info:
+    if not write_ledger_set and not is_read_only and not has_genesis_info:
         raise ConfigError(
             "No writable ledger configured and no genesis information provided. "
             "Please set is_write=True for a ledger or provide genesis_url, "
