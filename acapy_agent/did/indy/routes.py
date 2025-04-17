@@ -65,10 +65,10 @@ async def create_indy_did(request: web.BaseRequest):
     """Create a INDY DID."""
     context: AdminRequestContext = request["context"]
     body = await request.json()
+    options = body.get("options", {})
     try:
-        return web.json_response(
-            (await DidIndyManager(context.profile).register(body.get("options"))),
-        )
+        result = await DidIndyManager(context.profile).register(options)
+        return web.json_response(result)
     except WalletError as e:
         raise web.HTTPBadRequest(reason=str(e))
 
