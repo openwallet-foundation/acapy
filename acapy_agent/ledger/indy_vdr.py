@@ -1247,12 +1247,7 @@ class IndyVdrLedger(BaseLedger):
         current_profile = profile or self.profile
         async with current_profile.session() as session:
             wallet = session.inject(BaseWallet)
-            try:
-                did_info = await wallet.get_public_did()
-            except Exception:
-                raise
-            finally:
-                del wallet
+            did_info = await wallet.get_public_did()
 
         if not did_info:
             raise LedgerTransactionError(
