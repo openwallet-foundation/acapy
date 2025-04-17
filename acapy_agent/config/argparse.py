@@ -923,29 +923,43 @@ class LedgerGroup(ArgumentGroup):
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
                 single_configured = True
+
             if args.genesis_transactions_list:
                 with open(args.genesis_transactions_list, "r") as stream:
+                    # Load YAML configuration for multiple ledgers
                     txn_config_list = yaml.safe_load(stream)
                     ledger_config_list = []
+
+                    # Process each ledger configuration
                     for txn_config in txn_config_list:
-                        if "is_write" in txn_config and txn_config["is_write"]:
+                        # Check if this is a write ledger
+                        if txn_config.get("is_write", False):
                             write_ledger_specified = True
-                        if (
-                            "genesis_url" not in txn_config
-                            and "genesis_file" not in txn_config
-                            and "genesis_transactions" not in txn_config
-                        ):
+
+                        # Ensure genesis information is provided
+                        has_genesis_info = (
+                            "genesis_url" in txn_config
+                            or "genesis_file" in txn_config
+                            or "genesis_transactions" in txn_config
+                        )
+                        if not has_genesis_info:
                             raise ArgsParseError(
                                 "No genesis information provided for write ledger"
                             )
+
+                        # Use ID as pool_name if pool_name not specified
                         if "id" in txn_config and "pool_name" not in txn_config:
                             txn_config["pool_name"] = txn_config["id"]
+
                         update_pool_name = True
                         ledger_config_list.append(txn_config)
+
+                    # Ensure write ledger is specified unless in read-only mode
                     if not write_ledger_specified and not args.read_only_ledger:
                         raise ArgsParseError(
                             "No write ledger genesis provided in multi-ledger config"
                         )
+
                     settings["ledger.ledger_config_list"] = ledger_config_list
                     multi_configured = True
             if not (single_configured or multi_configured):
@@ -957,6 +971,7 @@ class LedgerGroup(ArgumentGroup):
                 )
             if single_configured and multi_configured:
                 raise ArgsParseError("Cannot configure both single- and multi-ledger.")
+
             if args.ledger_pool_name and not update_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
             if args.ledger_keepalive:
