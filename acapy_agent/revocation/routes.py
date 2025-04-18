@@ -1007,16 +1007,12 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
-
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
     LOGGER.debug(
-        f"/revocation/registry/{rev_reg_id}/fix-revocation-entry-state request = {apply_ledger_update}"  # noqa: E501
+        "Fix revocation state request for rev_reg_id = %s, apply_ledger_update = %s",
+        rev_reg_id,
+        apply_ledger_update,
     )
-
-    def _log_ledger_info(available_write_ledgers, write_ledger, pool):
-        LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
-        LOGGER.debug(f"write_ledger = {write_ledger}")
-        LOGGER.debug(f"write_ledger pool = {pool}")
 
     rev_reg_record = None
     genesis_transactions = None
@@ -1035,7 +1031,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             available_write_ledgers = await ledger_manager.get_write_ledgers()
             pool = write_ledger.pool
             genesis_transactions = pool.genesis_txns
-            _log_ledger_info(available_write_ledgers, write_ledger, pool)
+            LOGGER.debug("available write_ledgers = %s", available_write_ledgers)
+            LOGGER.debug("write_ledger = %s", write_ledger)
+            LOGGER.debug("write_ledger pool = %s", pool)
 
         if not genesis_transactions:
             raise web.HTTPInternalServerError(

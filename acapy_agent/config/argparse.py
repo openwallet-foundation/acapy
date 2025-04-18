@@ -972,13 +972,15 @@ class LedgerGroup(ArgumentGroup):
                     LOGGER.debug("Setting ledger.ledger_config_list")
                     settings["ledger.ledger_config_list"] = ledger_config_list
                     multi_configured = True
+
             if not (single_configured or multi_configured):
                 raise ArgsParseError(
-                    "One of --genesis-url --genesis-file, --genesis-transactions "
+                    "One of --genesis-url, --genesis-file, --genesis-transactions, "
                     "or --genesis-transactions-list must be specified (unless "
-                    "--no-ledger is specified to explicitly configure aca-py to"
-                    " run with no ledger)."
+                    "--no-ledger is specified to explicitly configure aca-py to "
+                    "run with no ledger)."
                 )
+
             if single_configured and multi_configured:
                 raise ArgsParseError("Cannot configure both single- and multi-ledger.")
 
