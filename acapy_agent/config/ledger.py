@@ -37,6 +37,26 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
         raise ConfigError("Error retrieving ledger genesis transactions") from e
 
 
+async def fetch_genesis_from_url_or_file(
+    genesis_url: Optional[str], genesis_path: Optional[str]
+) -> str:
+    """Fetch genesis transactions from URL or file."""
+    txns = ""
+    if genesis_url:
+        txns = await fetch_genesis_transactions(genesis_url)
+    elif genesis_path:
+        try:
+            LOGGER.info("Reading ledger genesis transactions from: %s", genesis_path)
+            with open(genesis_path, "r") as genesis_file:
+                txns = genesis_file.read()
+        except IOError as e:
+            LOGGER.error("Failed to read genesis file: %s", str(e))
+            raise ConfigError("Error reading ledger genesis transactions") from e
+    else:
+        LOGGER.warning("No genesis url or path found in settings")
+    return txns
+
+
 async def get_genesis_transactions(settings: Settings) -> str:
     """Fetch genesis transactions if necessary."""
 
@@ -48,20 +68,11 @@ async def get_genesis_transactions(settings: Settings) -> str:
         genesis_url = settings.get("ledger.genesis_url")
         genesis_path = settings.get("ledger.genesis_file")
 
-        if genesis_url:
-            txns = await fetch_genesis_transactions(genesis_url)
-        elif genesis_path:
-            try:
-                LOGGER.info("Reading ledger genesis transactions from: %s", genesis_path)
-                with open(genesis_path, "r") as genesis_file:
-                    txns = genesis_file.read()
-            except IOError as e:
-                LOGGER.error("Failed to read genesis file: %s", str(e))
-                raise ConfigError("Error reading ledger genesis transactions") from e
-
+        txns = await fetch_genesis_from_url_or_file(genesis_url, genesis_path)
         if txns:
             LOGGER.debug("Storing genesis transactions in settings")
             settings["ledger.genesis_transactions"] = txns
+
     return txns
 
 
@@ -79,19 +90,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings) -> 
         if not txns:
             genesis_url = config.get("genesis_url")
             genesis_path = config.get("genesis_file")
-
-            if genesis_url:
-                txns = await fetch_genesis_transactions(genesis_url)
-            elif genesis_path:
-                try:
-                    LOGGER.info(
-                        "Reading ledger genesis transactions from file: %s", genesis_path
-                    )
-                    with open(genesis_path, "r") as genesis_file:
-                        txns = genesis_file.read()
-                except IOError as e:
-                    LOGGER.error("Failed to read genesis file: %s", str(e))
-                    raise ConfigError("Error reading ledger genesis transactions") from e
+            txns = await fetch_genesis_from_url_or_file(genesis_url, genesis_path)
 
         is_write_ledger = config.get("is_write", False)
         if is_write_ledger:
