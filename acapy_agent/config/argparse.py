@@ -910,8 +910,6 @@ class LedgerGroup(ArgumentGroup):
         if args.no_ledger:
             settings["ledger.disabled"] = True
         else:
-            single_configured = False
-            multi_configured = False
             update_pool_name = False
             write_ledger_specified = False
 
@@ -919,20 +917,21 @@ class LedgerGroup(ArgumentGroup):
                 LOGGER.debug("Setting read-only ledger")
                 settings["read_only_ledger"] = True
 
+            single_configured = True
             if args.genesis_url:
                 LOGGER.debug("Setting ledger.genesis_url = %s", args.genesis_url)
                 settings["ledger.genesis_url"] = args.genesis_url
-                single_configured = True
             elif args.genesis_file:
                 LOGGER.debug("Setting ledger.genesis_file = %s", args.genesis_file)
                 settings["ledger.genesis_file"] = args.genesis_file
-                single_configured = True
             elif args.genesis_transactions:
                 LOGGER.debug("Setting ledger.genesis_transactions")
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
             else:
                 LOGGER.debug("No genesis url, file, or transactions provided")
+                single_configured = False
 
+            multi_configured = False
             if args.genesis_transactions_list:
                 LOGGER.debug("Processing genesis_transactions_list")
                 with open(args.genesis_transactions_list, "r") as stream:
