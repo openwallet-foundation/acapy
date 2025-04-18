@@ -2,6 +2,7 @@
 
 import abc
 import json
+import logging
 from functools import reduce
 from itertools import chain
 from os import environ
@@ -15,6 +16,8 @@ from ..utils.tracing import trace_event
 from .error import ArgsParseError
 from .plugin_settings import PLUGIN_CONFIG_KEY
 from .util import BoundedInt, ByteSize
+
+LOGGER = logging.getLogger(__name__)
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -913,18 +916,25 @@ class LedgerGroup(ArgumentGroup):
             write_ledger_specified = False
 
             if args.read_only_ledger:
+                LOGGER.debug("Setting read-only ledger")
                 settings["read_only_ledger"] = True
+
             if args.genesis_url:
+                LOGGER.debug("Setting ledger.genesis_url = %s", args.genesis_url)
                 settings["ledger.genesis_url"] = args.genesis_url
                 single_configured = True
             elif args.genesis_file:
+                LOGGER.debug("Setting ledger.genesis_file = %s", args.genesis_file)
                 settings["ledger.genesis_file"] = args.genesis_file
                 single_configured = True
             elif args.genesis_transactions:
+                LOGGER.debug("Setting ledger.genesis_transactions")
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
-                single_configured = True
+            else:
+                LOGGER.debug("No genesis url, file, or transactions provided")
 
             if args.genesis_transactions_list:
+                LOGGER.debug("Processing genesis_transactions_list")
                 with open(args.genesis_transactions_list, "r") as stream:
                     # Load YAML configuration for multiple ledgers
                     txn_config_list = yaml.safe_load(stream)
@@ -960,6 +970,7 @@ class LedgerGroup(ArgumentGroup):
                             "No write ledger genesis provided in multi-ledger config"
                         )
 
+                    LOGGER.debug("Setting ledger.ledger_config_list")
                     settings["ledger.ledger_config_list"] = ledger_config_list
                     multi_configured = True
             if not (single_configured or multi_configured):
