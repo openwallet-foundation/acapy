@@ -856,10 +856,12 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
-
-    apply_ledger_update_json = request.query.get("apply_ledger_update", "false")
-    LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
+    LOGGER.debug(
+        "Update revocation state request for rev_reg_id = %s, apply_ledger_update = %s",
+        rev_reg_id,
+        apply_ledger_update,
+    )
 
     genesis_transactions = None
     recovery_txn = {}

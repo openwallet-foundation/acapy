@@ -1009,7 +1009,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
     LOGGER.debug(
-        "Fix revocation state request for rev_reg_id = %s, apply_ledger_update = %s",
+        "Update revocation state request for rev_reg_id = %s, apply_ledger_update = %s",
         rev_reg_id,
         apply_ledger_update,
     )
