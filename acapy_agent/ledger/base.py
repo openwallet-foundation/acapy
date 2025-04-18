@@ -176,8 +176,17 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_wallet_public_did(self, profile: Optional[Profile] = None) -> DIDInfo:
-        """Fetch the public DID from the wallet."""
+    async def get_wallet_public_did(
+        # Added profile (#3624 / #3649)
+        self,
+        profile: Optional[Profile] = None,
+    ) -> DIDInfo:
+        """Fetch the public DID from the wallet.
+
+        Args:
+            profile: The profile instance to use for this operation.
+                     Temporary fix for #3624. Ideally obtained via context.
+        """
 
     @abstractmethod
     async def get_txn_author_agreement(self, reload: bool = False):
@@ -194,8 +203,17 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Save a new record recording the acceptance of the TAA."""
 
     @abstractmethod
-    async def get_latest_txn_author_acceptance(self, profile: Optional[Profile] = None):
-        """Look up the latest TAA acceptance."""
+    async def get_latest_txn_author_acceptance(
+        # Added profile (#3624 / #3649)
+        self,
+        profile: Optional[Profile] = None,
+    ):
+        """Look up the latest TAA acceptance.
+
+        Args:
+            profile: The profile instance to use for this operation.
+                     Temporary fix for #3624. Ideally obtained via context.
+        """
 
     def taa_digest(self, version: str, text: str):
         """Generate the digest of a TAA record."""
@@ -220,9 +238,22 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> str:
-        """Write the provided (signed and possibly endorsed) transaction to the ledger."""
+        """Write the provided (signed and possibly endorsed) transaction to the ledger.
+
+        Args:
+            request_json: Anoncreds-style ledger transaction as a JSON string.
+            sign: Whether to sign the transaction using using `sign_did`.
+            taa_accept: Accept the Transaction Author Agreement, if required.
+            sign_did: DID to sign with. Required if `sign` is True.
+            write_ledger: whether to write the request to the ledger
+            profile: The profile instance to use for this operation.
+                     Temporary fix for #3624. Ideally obtained via context.
+
+        Returns:
+            str: JSON response from the ledger.
+        """
 
     @abstractmethod
     async def fetch_schema_by_id(self, schema_id: str) -> dict:
@@ -416,9 +447,20 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         issuer_did: Optional[str] = None,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> dict:
-        """Publish a revocation registry entry to the ledger."""
+        """Publish a revocation registry entry to the ledger.
+
+        Args:
+            revoc_reg_id: ID of the revocation registry.
+            revoc_def_type: Type of revocation registry (e.g. CL_ACCUM).
+            revoc_reg_entry: Entry data to publish.
+            issuer_did: DID of the issuer writing the entry.
+            write_ledger: If False, prepare but don't submit the entry.
+            endorser_did: DID of the endorser if endorsement is required.
+            profile: The profile instance to use for this operation.
+                     Temporary fix for #3624. Ideally obtained via context.
+        """
 
     async def create_and_send_credential_definition(
         self,

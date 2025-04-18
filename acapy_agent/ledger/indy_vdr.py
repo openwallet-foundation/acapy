@@ -312,7 +312,7 @@ class IndyVdrLedger(BaseLedger):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> dict:
         """Sign and submit request to ledger.
 
@@ -323,8 +323,11 @@ class IndyVdrLedger(BaseLedger):
             sign_did: override the signing DID
             write_ledger: whether to write the request to the ledger
             profile: The profile context used for the request
+                     Temporary fix for #3624 to ensure correct wallet/TAA context,
+                     bypassing potentially incorrect self.profile from manager.
         """
 
+        # Temporary fix to use profile if provided, otherwise fallback
         current_profile = profile or self.profile
         if not self.pool_handle:
             raise ClosedPoolError(
@@ -1016,9 +1019,12 @@ class IndyVdrLedger(BaseLedger):
             await cache.set(cache_key, acceptance, self.pool.cache_duration)
 
     async def get_latest_txn_author_acceptance(
-        self, profile: Optional[Profile] = None
+        self,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> dict:
         """Look up the latest TAA acceptance."""
+
+        # Temporary fix to use profile if provided, otherwise fallback
         current_profile = profile or self.profile
         cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + current_profile.name
         acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
@@ -1240,10 +1246,11 @@ class IndyVdrLedger(BaseLedger):
         issuer_did: Optional[str] = None,
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
 
+        # Temporary fix to use profile if provided, otherwise fallback
         current_profile = profile or self.profile
         async with current_profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -1324,8 +1331,14 @@ class IndyVdrLedger(BaseLedger):
                     "Exception when sending revocation registry entry"
                 ) from err
 
-    async def get_wallet_public_did(self, profile: Optional[Profile] = None) -> DIDInfo:
+    async def get_wallet_public_did(
+        # Added profile (#3624 / #3649)
+        self,
+        profile: Optional[Profile] = None,
+    ) -> DIDInfo:
         """Fetch the public DID from the wallet."""
+
+        # Temporary fix to use profile if provided, otherwise fallback
         current_profile = profile or self.profile
         async with current_profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -1365,7 +1378,7 @@ class IndyVdrLedger(BaseLedger):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> str:
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
         kwargs = {
@@ -1375,6 +1388,7 @@ class IndyVdrLedger(BaseLedger):
             "write_ledger": write_ledger,
         }
 
+        # Temporary fix to include profile in _submit to resolve error
         if profile:
             kwargs["profile"] = profile
 

@@ -823,7 +823,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     rev_list.issuer_id,
                     write_ledger=write_ledger,
                     endorser_did=endorser_did,
-                    profile=profile,
+                    # Temporary fix for #3624 / #3649
+                    profile=profile,  # Added profile (#3624 / #3649)
                 )
         except LedgerTransactionError as err:
             if "InvalidClientRequest" in err.roll_up:
@@ -1210,7 +1211,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         taa_accept: Optional[bool] = None,
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile] = None,  # Added profile (#3624 / #3649)
     ) -> str:
         """Submit a transaction to the ledger."""
 
@@ -1223,6 +1224,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     "write_ledger": write_ledger,
                 }
 
+                # Temporary fix to include profile to resolve #3624 / #3649
                 if profile is not None:
                     kwargs["profile"] = profile
 
