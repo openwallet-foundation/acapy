@@ -47,6 +47,8 @@ from ....models.revocation import (
     RevRegDefValue,
 )
 from ....models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .....core.profile import Profile
+from .....wallet.did_info import DIDInfo
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"
@@ -1215,3 +1217,92 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         assert result.issuer_id == "XduBsoPyEA4szYMy3pZ8De"
         assert result.name == "minimal-33279d005748b3cc"
         assert result.version == "1.0"
+
+    @mock.patch.object(
+        IndyLedgerRequestsExecutor,
+        "get_ledger_for_identifier",
+        return_value=(
+            "mock_ledger_id",
+            mock.MagicMock(
+                spec=BaseLedger,
+                send_revoc_reg_entry=mock.CoroutineMock(return_value="mock_seq_no"),
+                __aenter__=mock.CoroutineMock(return_value=mock.MagicMock()),
+                __aexit__=mock.CoroutineMock(return_value=None),
+                profile=mock.MagicMock(spec=Profile),
+            ),
+        ),
+    )
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_register_revocation_list_passes_profile(
+        self, mock_askar_handle, mock_get_ledger_for_id
+    ):
+        """Test register_revocation_list passes profile kwarg via helper."""
+        self.profile.inject_or = mock.MagicMock()
+
+        test_profile = self.profile
+
+        test_rev_reg_def = RevRegDef(
+            tag="tag",
+            cred_def_id="IssuerDID:3:CL:1:tag",
+            value=RevRegDefValue(
+                max_cred_num=100, public_keys={}, tails_hash="", tails_location=""
+            ),
+            issuer_id="IssuerDID",
+            type="CL_ACCUM",
+        )
+        test_rev_list = RevList(
+            issuer_id="IssuerDID",
+            current_accumulator="dummy_accum_value",
+            revocation_list=[0],
+            timestamp=1234567890,
+            rev_reg_def_id="IssuerDID:4:IssuerDID:3:CL:1:tag:CL_ACCUM:tag",
+        )
+
+        await self.registry.register_revocation_list(
+            test_profile,
+            test_rev_reg_def,
+            test_rev_list,
+            {},
+        )
+
+        mock_ledger_instance = mock_get_ledger_for_id.return_value[1]
+
+        mock_ledger_instance.send_revoc_reg_entry.assert_called_once()
+
+        _call_args, call_kwargs = mock_ledger_instance.send_revoc_reg_entry.call_args
+
+        assert "profile" in call_kwargs
+        assert call_kwargs["profile"] is test_profile
+        assert call_kwargs["write_ledger"] is True
+
+    async def test_registry_txn_submit_passes_profile(self):
+        """Test registry txn_submit passes profile kwarg to ledger txn_submit."""
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.txn_submit = mock.CoroutineMock(return_value="mock_ledger_response")
+        mock_ledger.__aenter__ = mock.CoroutineMock(return_value=mock_ledger)
+        mock_ledger.__aexit__ = mock.CoroutineMock(return_value=None)
+
+        test_profile = self.profile
+        test_txn_data = '{"a": 1}'
+        test_sign_did = mock.MagicMock(spec=DIDInfo)
+
+        await self.registry.txn_submit(
+            ledger=mock_ledger,
+            ledger_transaction=test_txn_data,
+            sign=True,
+            taa_accept=True,
+            sign_did=test_sign_did,
+            write_ledger=True,
+            profile=test_profile,
+        )
+
+        mock_ledger.txn_submit.assert_called_once()
+
+        _call_args, call_kwargs = mock_ledger.txn_submit.call_args
+
+        assert "profile" in call_kwargs
+        assert call_kwargs["profile"] is test_profile
+        assert call_kwargs["sign"] is True
+        assert call_kwargs["taa_accept"] is True
+        assert call_kwargs["sign_did"] is test_sign_did
+        assert call_kwargs["write_ledger"] is True
