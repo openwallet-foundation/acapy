@@ -24,16 +24,17 @@ class DidIndyManager:
         async with self.profile.session() as session:
             did_methods = session.inject(DIDMethods)
             indy_method = did_methods.from_method(INDY.method_name)
+            did = options.get("did")
 
-            if indy_method.holder_defined_did() and options.get("did"):
-                return strip_did_prefix(options.get("did"))
+            if indy_method.holder_defined_did() and did:
+                return strip_did_prefix(did)
 
         return None
 
-    async def _get_key_type(self, key_type: str) -> KeyType:
+    async def _get_key_type(self, key_type: str, default: KeyType = ED25519) -> KeyType:
         async with self.profile.session() as session:
             key_types = session.inject(KeyTypes)
-            return key_types.from_key_type(key_type) or ED25519
+            return key_types.from_key_type(key_type) or default
 
     def _create_key_pair(self, options: dict, key_type: KeyType) -> Key:
         seed = options.get("seed")
@@ -45,8 +46,9 @@ class DidIndyManager:
     async def register(self, options: dict) -> dict:
         """Register a DID Indy."""
         options = options or {}
+        key_type = options.get("key_type", "")
 
-        key_type = await self._get_key_type(options.get("key_type") or ED25519)
+        key_type = await self._get_key_type(key_type)
         did_validation = DIDParametersValidation(self.profile.inject(DIDMethods))
         did_validation.validate_key_type(INDY, key_type)
 
