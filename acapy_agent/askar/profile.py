@@ -128,33 +128,37 @@ class AskarProfile(Profile):
                 ClassProvider.Inject(Profile),
             ),
         )
-        if (
-            self.settings.get("ledger.ledger_config_list")
-            and len(self.settings.get("ledger.ledger_config_list")) >= 1
-        ):
+
+        ledger_config_list = self.settings.get("ledger.ledger_config_list")
+        if ledger_config_list:
             write_ledger_config = get_write_ledger_config_for_profile(
                 settings=self.settings
             )
             cache = self.context.injector.inject_or(BaseCache)
+
+            pool_name = write_ledger_config.get("pool_name")
+            pool_id = write_ledger_config.get("id")
+            ledger_name = pool_name or pool_id
+            keepalive = write_ledger_config.get("keepalive")
+            read_only = write_ledger_config.get("read_only")
+            socks_proxy = write_ledger_config.get("socks_proxy")
+            genesis_transactions = write_ledger_config.get("genesis_transactions")
+
+            ledger_pool = IndyVdrLedgerPool(
+                name=ledger_name,
+                keepalive=keepalive,
+                cache=cache,
+                genesis_transactions=genesis_transactions,
+                read_only=read_only,
+                socks_proxy=socks_proxy,
+            )
+
             injector.bind_provider(
                 BaseLedger,
-                ClassProvider(
-                    IndyVdrLedger,
-                    IndyVdrLedgerPool(
-                        write_ledger_config.get("pool_name")
-                        or write_ledger_config.get("id"),
-                        keepalive=write_ledger_config.get("keepalive"),
-                        cache=cache,
-                        genesis_transactions=write_ledger_config.get(
-                            "genesis_transactions"
-                        ),
-                        read_only=write_ledger_config.get("read_only"),
-                        socks_proxy=write_ledger_config.get("socks_proxy"),
-                    ),
-                    ref(self),
-                ),
+                ClassProvider(IndyVdrLedger, ledger_pool, ref(self)),
             )
-            self.settings["ledger.write_ledger"] = write_ledger_config.get("id")
+            self.settings["ledger.write_ledger"] = pool_id
+
             if (
                 "endorser_alias" in write_ledger_config
                 and "endorser_did" in write_ledger_config
@@ -169,6 +173,7 @@ class AskarProfile(Profile):
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )
+
         if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(
                 IndyVerifier,
