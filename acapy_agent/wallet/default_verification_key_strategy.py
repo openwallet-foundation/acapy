@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
-from pydid import DIDDocument
+from pydid import DIDDocument, VerificationMethod
 
 from ..core.error import BaseError
 from ..core.profile import Profile
@@ -68,6 +68,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         self.key_types_mapping = {
             "Ed25519Signature2018": ["Ed25519VerificationKey2018"],
             "Ed25519Signature2020": ["Ed25519VerificationKey2020", "Multikey"],
+            "BbsBlsSignature2020": ["Bls12381G2Key2020"],
         }
 
     async def get_verification_method_id_for_did(
@@ -109,7 +110,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         methods = [
             await resolver.dereference_verification_method(profile, method, document=doc)
             if isinstance(method, str)
-            else method
+            else VerificationMethod.deserialize(method)
             for method in methods_or_refs
         ]
 

@@ -47,7 +47,16 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                         },
                     ],
                     "authentication": ["did:example:123#key-1"],
-                    "assertionMethod": ["did:example:123#key-2", "did:example:123#key-3"],
+                    "assertionMethod": [
+                        "did:example:123#key-2",
+                        "did:example:123#key-3",
+                        {
+                            "id": "did:example:123#key-4",
+                            "type": "Bls12381G2Key2020",
+                            "controller": "did:example:123",
+                            "publicKeyBase58": "25EEkQtcLKsEzQ6JTo9cg4W7NHpaurn4Wg6LaNPFq6JQXnrP91SDviUz7KrJVMJd76CtAZFsRLYzvgX2JGxo2ccUHtuHk7ELCWwrkBDfrXCFVfqJKDootee9iVaF6NpdJtBE",
+                        },
+                    ],
                 },
             )
         )
@@ -86,6 +95,15 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                 proof_purpose="assertionMethod",
             )
             == "did:example:123#key-3"
+        )
+        assert (
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
+                proof_type="BbsBlsSignature2020",
+                proof_purpose="assertionMethod",
+            )
+            == "did:example:123#key-4"
         )
 
     async def test_unsupported_did_method(self):
