@@ -856,10 +856,12 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
-
-    apply_ledger_update_json = request.query.get("apply_ledger_update", "false")
-    LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
+    LOGGER.debug(
+        "Update revocation state request for rev_reg_id = %s, apply_ledger_update = %s",
+        rev_reg_id,
+        apply_ledger_update,
+    )
 
     genesis_transactions = None
     recovery_txn = {}
@@ -879,10 +881,10 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
             write_ledger = context.injector.inject(BaseLedger)
             available_write_ledgers = await ledger_manager.get_write_ledgers()
-            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
-            LOGGER.debug(f"write_ledger = {write_ledger}")
+            LOGGER.debug("available write_ledgers = %s", available_write_ledgers)
+            LOGGER.debug("write_ledger = %s", write_ledger)
             pool = write_ledger.pool
-            LOGGER.debug(f"write_ledger pool = {pool}")
+            LOGGER.debug("write_ledger pool = %s", pool)
 
             genesis_transactions = pool.genesis_txns
 
