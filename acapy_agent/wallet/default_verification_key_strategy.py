@@ -133,7 +133,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                 (
                     "More than 1 verification method matched for did %s with proof "
                     "type %s and purpose %s; returning the first: %s"
-                ), 
+                ),
                 did,
                 proof_type,
                 proof_purpose,
