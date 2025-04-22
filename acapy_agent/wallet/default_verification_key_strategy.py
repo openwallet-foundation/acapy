@@ -95,13 +95,18 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         verification_method_id: Optional[str] = None,
     ) -> str:
         """Find suitable VerificationMethod."""
-        proof_type = proof_type or "Ed25519Signature2018"
         proof_purpose = proof_purpose or "assertionMethod"
 
         if proof_purpose not in PROOF_PURPOSES:
             raise ValueError("Invalid proof purpose")
 
-        suitable_key_types = self.key_types_mapping.get(proof_type)
+        if proof_type is not None:
+            suitable_key_types = self.key_types_mapping.get(proof_type)
+        else:
+            # any key is suitable if no proof type requirement set
+            suitable_key_types = list(
+                {val for values in self.key_types_mapping.values() for val in values}
+            )
         if not suitable_key_types:
             raise VerificationKeyStrategyError(
                 f"proof type {proof_type} is not supported"
