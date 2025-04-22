@@ -152,7 +152,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                     continue
 
                 # filter methods for keys actually owned by the wallet
-                if not key_manager.multikey_exists(
+                if not await key_manager.multikey_exists(
                     multikey_from_verification_method(method)
                 ):
                     continue

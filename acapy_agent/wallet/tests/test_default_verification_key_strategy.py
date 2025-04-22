@@ -3,6 +3,8 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from acapy_agent.resolver.did_resolver import DIDResolver
+from acapy_agent.wallet.key_type import KeyTypes
+from acapy_agent.wallet.keys.manager import MultikeyManager
 
 from ...did.did_key import DIDKey
 from ...resolver.tests.test_did_resolver import MockResolver
@@ -10,8 +12,12 @@ from ...utils.testing import create_test_profile
 from ...wallet.default_verification_key_strategy import DefaultVerificationKeyStrategy
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
-TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-
+TEST_SEED = "testseed000000000000000000000001"
+TEST_ED25519_MULTIKEY = "z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_ED25519_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_BLS_G2_MULTIKEY = "zUC74E9UD2W6Q1MgPexCEdpstiCsY1Vbnyqepygk7McZVce38L1tGX7qZ2SgY4Zz2m9FUB4Xb5cEHSujks9XeKDzqe4QzW3CyyJ1cv8iBLNqU61EfkBoW2yEkg6VgqHTDtANYRS"
+TEST_BLS_G2_VERKEY="pPbb9Lqs3PVTyiHM4h8fbQqxHjBPm1Hixb6vdW9kkjHEij4FZrigkaV1P5DjWTbcKxeeYfkQuZMmozRQV3tH1gXhCA972LAXMGSKH7jxz8sNJqrCR6o8asgXDeYZeL1W3p8"
+TEST_DID_KEY = f"did:key:{TEST_ED25519_MULTIKEY}"
 
 class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
@@ -31,19 +37,19 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                             "id": "did:example:123#key-1",
                             "type": "Multikey",
                             "controller": "did:example:123",
-                            "publicKeyMultibase": "z6MkjYXizfaAXTriV3h2Vc9uxJ9AMQpfG7mE1WKMnn1KJvFE",
+                            "publicKeyMultibase": TEST_ED25519_MULTIKEY,
                         },
                         {
                             "id": "did:example:123#key-2",
                             "type": "Multikey",
                             "controller": "did:example:123",
-                            "publicKeyMultibase": "z6MkjYXizfaAXTriV3h2Vc9uxJ9AMQpfG7mE1WKMnn1KJvFE",
+                            "publicKeyMultibase": TEST_ED25519_MULTIKEY,
                         },
                         {
                             "id": "did:example:123#key-3",
                             "type": "Ed25519VerificationKey2018",
                             "controller": "did:example:123",
-                            "publicKeyBase58": "66GgQRKjBvNFNYrKp3C57CbAXqYorEWsKVQRxW3JPhTr",
+                            "publicKeyBase58": TEST_ED25519_VERKEY,
                         },
                     ],
                     "authentication": ["did:example:123#key-1"],
@@ -54,13 +60,21 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                             "id": "did:example:123#key-4",
                             "type": "Bls12381G2Key2020",
                             "controller": "did:example:123",
-                            "publicKeyBase58": "25EEkQtcLKsEzQ6JTo9cg4W7NHpaurn4Wg6LaNPFq6JQXnrP91SDviUz7KrJVMJd76CtAZFsRLYzvgX2JGxo2ccUHtuHk7ELCWwrkBDfrXCFVfqJKDootee9iVaF6NpdJtBE",
+                            "publicKeyBase58": TEST_BLS_G2_VERKEY,
                         },
                     ],
                 },
             )
         )
         self.profile.context.injector.bind_instance(DIDResolver, resolver)
+        self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
+        async with self.profile.session() as session:
+            await MultikeyManager(session=session).create(
+                seed=TEST_SEED, alg="ed25519"
+            )
+            await MultikeyManager(session=session).create(
+                seed=TEST_SEED, alg="bls12381g2"
+            )
 
     async def test_with_did_sov(self):
         strategy = DefaultVerificationKeyStrategy()
