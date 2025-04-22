@@ -34,6 +34,13 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                     ],
                     "id": "did:example:123",
                     "verificationMethod": [
+                        # VM has a key not owned by this acapy agent
+                        {
+                            "id": "did:example:123#not-owned",
+                            "type": "Multikey",
+                            "controller": "did:example:123",
+                            "publicKeyMultibase": "z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDHHyGo38EefXmgDL",
+                        },
                         {
                             "id": "did:example:123#key-1",
                             "type": "Multikey",
@@ -55,6 +62,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                     ],
                     "authentication": ["did:example:123#key-1"],
                     "assertionMethod": [
+                        "did:example:123#not-owned",
                         "did:example:123#key-2",
                         "did:example:123#key-3",
                         {
@@ -81,6 +89,18 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
             await strategy.get_verification_method_id_for_did(TEST_DID_SOV, self.profile)
             == TEST_DID_SOV + "#key-1"
         )
+        with pytest.raises(Exception):
+            await strategy.get_verification_method_id_for_did(
+                did=TEST_DID_SOV,
+                profile=self.profile,
+                proof_type="BbsBlsSignature2020",
+            )
+        with pytest.raises(Exception):
+            await strategy.get_verification_method_id_for_did(
+                did=TEST_DID_SOV,
+                profile=self.profile,
+                verification_method_id=f"{TEST_DID_KEY}#key-2",
+            )
 
     async def test_with_did_key(self):
         strategy = DefaultVerificationKeyStrategy()
@@ -88,6 +108,18 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
             await strategy.get_verification_method_id_for_did(TEST_DID_KEY, self.profile)
             == DIDKey.from_did(TEST_DID_KEY).key_id
         )
+        with pytest.raises(Exception):
+            await strategy.get_verification_method_id_for_did(
+                did=TEST_DID_KEY,
+                profile=self.profile,
+                proof_type="BbsBlsSignature2020",
+            )
+        with pytest.raises(Exception):
+            await strategy.get_verification_method_id_for_did(
+                did=TEST_DID_KEY,
+                profile=self.profile,
+                verification_method_id=f"{TEST_DID_KEY}#abc",
+            )
 
     async def test_with_did_for_assertion(self):
         strategy = DefaultVerificationKeyStrategy()
@@ -113,11 +145,60 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
             await strategy.get_verification_method_id_for_did(
                 "did:example:123",
                 self.profile,
+                proof_type="Ed25519Signature2018",
+                proof_purpose="assertionMethod",
+                verification_method_id="did:example:123#key-3",
+            )
+            == "did:example:123#key-3"
+        )
+        assert (
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
                 proof_type="BbsBlsSignature2020",
                 proof_purpose="assertionMethod",
             )
             == "did:example:123#key-4"
         )
+
+    async def test_fail_cases(self):
+        strategy = DefaultVerificationKeyStrategy()
+        # base case
+        assert (
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
+                proof_type="Ed25519Signature2020",
+                proof_purpose="assertionMethod",
+                verification_method_id="did:example:123#key-2",
+            )
+            == "did:example:123#key-2"
+        )
+        with pytest.raises(Exception):
+            # nothing suitable for purpose
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
+                proof_type="Ed25519Signature2020",
+                proof_purpose="capabilityInvocation",
+            )
+        with pytest.raises(Exception):
+            # nothing suitable for proof type
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
+                proof_type="EcdsaSecp256r1Signature2019",
+                proof_purpose="assertionMethod",
+            )
+        with pytest.raises(Exception):
+            # suitable, but key not owned by acapy
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
+                proof_type="Ed25519Signature2020",
+                proof_purpose="assertionMethod",
+                verification_method_id="did:example:123#not-owned",
+            )
 
     async def test_unsupported_did_method(self):
         strategy = DefaultVerificationKeyStrategy()

@@ -101,18 +101,39 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         if proof_purpose not in PROOF_PURPOSES:
             raise ValueError("Invalid proof purpose")
 
-        # handle default hardcoded cases
-        if did.startswith("did:key:"):
-            return DIDKey.from_did(did).key_id
-        elif did.startswith("did:sov:"):
-            # key-1 is what uniresolver uses for key id
-            return did + "#key-1"
-
         suitable_key_types = self.key_types_mapping.get(proof_type)
         if not suitable_key_types:
             raise VerificationKeyStrategyError(
                 f"proof type {proof_type} is not supported"
             )
+
+        # handle default hardcoded cases
+        if did.startswith("did:key:"):
+            didkey = DIDKey.from_did(did)
+            vm_id = didkey.key_id
+            if didkey.key_type not in suitable_key_types:
+                raise VerificationKeyStrategyError(
+                    f"DID {did} has wrong key type for proof type {proof_type}"
+                )
+            if verification_method_id is not None and vm_id != verification_method_id:
+                raise VerificationKeyStrategyError(
+                    f"Verification method ID {verification_method_id} \
+                        cannot be used with DID {did}"
+                )
+            return vm_id
+        elif did.startswith("did:sov:"):
+            # key-1 is what uniresolver uses for key id
+            vm_id = did + "#key-1"
+            if ED25519 not in suitable_key_types:
+                raise VerificationKeyStrategyError(
+                    "did:sov only capable of ED25519 based proof types"
+                )
+            if verification_method_id is not None and vm_id != verification_method_id:
+                raise VerificationKeyStrategyError(
+                    f"Verification method ID {verification_method_id} \
+                        cannot be used with DID {did}"
+                )
+            return vm_id
 
         # TODO - if the local representation of the DID contains all this information,
         #   DID resolution cost could be avoided. However, for now there is not adequate
@@ -133,18 +154,18 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
             for method_or_ref in methods_or_refs:
                 # Dereference any refs in the verification relationship
                 if isinstance(method_or_ref, str):
-                    method = await resolver.dereference_verification_method(
+                    vm_id = await resolver.dereference_verification_method(
                         profile, method_or_ref, document=doc
                     )
                 else:
-                    method = VerificationMethod.deserialize(method_or_ref)
+                    vm_id = VerificationMethod.deserialize(method_or_ref)
 
                     # filter for a specific verification method ID if one was specified
                 if verification_method_id is not None:
-                    if method.id != verification_method_id:
+                    if vm_id.id != verification_method_id:
                         continue
 
-                vm_multikey = multikey_from_verification_method(method)
+                vm_multikey = multikey_from_verification_method(vm_id)
 
                 # filter methods by key type expected for proof_type
                 vm_key_type = key_type_from_multikey(vm_multikey)
@@ -153,12 +174,12 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
 
                 # filter methods for keys actually owned by the wallet
                 if not await key_manager.multikey_exists(
-                    multikey_from_verification_method(method)
+                    multikey_from_verification_method(vm_id)
                 ):
                     continue
 
                 # survived all filters
-                suitable_methods.append(method)
+                suitable_methods.append(vm_id)
 
         if not suitable_methods:
             raise VerificationKeyStrategyError(
