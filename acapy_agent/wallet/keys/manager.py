@@ -8,6 +8,7 @@ from ...wallet.error import WalletNotFoundError
 from ..base import BaseWallet
 from ..key_type import BLS12381G2, ED25519, P256, KeyType
 from ..util import b58_to_bytes, bytes_to_b58
+from pydid import VerificationMethod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -62,6 +63,29 @@ def key_type_from_multikey(multikey: str) -> KeyType:
     raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
 
 
+def multikey_from_verification_method(verification_method: VerificationMethod) -> str:
+    if verification_method.type == "Multikey":
+        multikey = verification_method.public_key_multibase
+
+    elif verification_method.type == "Ed25519VerificationKey2018":
+        multikey = verkey_to_multikey(
+            verification_method.public_key_base58, alg="ed25519"
+        )
+
+    elif verification_method.type == "Ed25519VerificationKey2020":
+        multikey = verification_method.public_key_multibase
+
+    elif verification_method.type == "Bls12381G2Key2020":
+        multikey = verkey_to_multikey(
+            verification_method.public_key_base58, alg="bls12381g2"
+        )
+
+    else:
+        raise MultikeyManagerError("Unknown verification method type.")
+
+    return multikey
+
+
 class MultikeyManagerError(Exception):
     """Generic MultikeyManager Error."""
 
@@ -81,41 +105,22 @@ class MultikeyManager:
             LOGGER.debug(f"kid {kid} already bound in storage, will not resolve.")
             return await self.from_kid(kid)
         else:
-            multikey = await self.resolve_multikey_from_verification_method(kid)
+            multikey = await self.resolve_multikey_from_verification_method_id(kid)
             LOGGER.debug(
                 f"kid {kid} binding not found in storage, binding to resolved multikey {multikey}."
             )
             return await self.update(multikey, kid)
 
-    async def resolve_multikey_from_verification_method(self, kid: str):
+    async def resolve_multikey_from_verification_method_id(self, kid: str):
         """Derive a multikey from the verification method."""
         resolver = self.session.inject(DIDResolver)
         verification_method = await resolver.dereference(
             profile=self.session.profile, did_url=kid
         )
 
-        if verification_method.type == "Multikey":
-            multikey = verification_method.public_key_multibase
+        return multikey_from_verification_method(verification_method)
 
-        elif verification_method.type == "Ed25519VerificationKey2018":
-            multikey = verkey_to_multikey(
-                verification_method.public_key_base58, alg="ed25519"
-            )
-
-        elif verification_method.type == "Ed25519VerificationKey2020":
-            multikey = verification_method.public_key_multibase
-
-        elif verification_method.type == "Bls12381G2Key2020":
-            multikey = verkey_to_multikey(
-                verification_method.public_key_base58, alg="bls12381g2"
-            )
-
-        else:
-            raise MultikeyManagerError("Unknown verification method type.")
-
-        return multikey
-
-    def key_type_from_multikey(self, multikey: str):
+    def key_type_from_multikey(self, multikey: str) -> KeyType:
         """Derive key_type class from multikey prefix."""
         for mapping in ALG_MAPPINGS:
             if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
@@ -131,6 +136,20 @@ class MultikeyManager:
 
             if key:
                 return True
+            return False
+
+        except (WalletNotFoundError, AttributeError):
+            return False
+
+    async def multikey_exists(self, multikey: str):
+        """Check if a multikey exists in the wallet."""
+
+        try:
+            key_info = await self.wallet.get_signing_key(verkey=multikey_to_verkey(multikey))
+
+            if key_info:
+                return True
+            return False
 
         except (WalletNotFoundError, AttributeError):
             return False

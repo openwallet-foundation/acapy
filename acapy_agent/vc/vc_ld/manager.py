@@ -135,50 +135,6 @@ class VcLdpManager:
             # All other methods we can just query
             return await wallet.get_local_did(did)
 
-    async def assert_can_issue_with_id_and_proof_type(
-        self, issuer_id: Optional[str], proof_type: Optional[str]
-    ):
-        """Assert that it is possible to issue using the specified id and proof type.
-
-        Args:
-            issuer_id (str): The issuer id
-            proof_type (str): the signature suite proof type
-
-        Raises:
-            VcLdpManagerError:
-                - If the proof type is not supported
-                - If the issuer id is not a did
-                - If the did is not found in th wallet
-
-        """
-        if not issuer_id or not proof_type:
-            raise VcLdpManagerError(
-                "Issuer id and proof type are required to issue a credential."
-            )
-
-        try:
-            # Check if it is a proof type we can issue with
-            if proof_type not in PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys():
-                raise VcLdpManagerError(
-                    f"Unable to sign credential with unsupported proof type {proof_type}."
-                    f" Supported proof types: {PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys()}"
-                )
-
-            if not issuer_id.startswith("did:"):
-                raise VcLdpManagerError(
-                    f"Unable to issue credential with issuer id: {issuer_id}."
-                    " Only issuance with DIDs is supported"
-                )
-
-            # Retrieve did from wallet. Will throw if not found
-            _ = await self._did_info_for_did(issuer_id)
-
-        except WalletNotFoundError:
-            raise VcLdpManagerError(
-                f"Issuer did {issuer_id} not found."
-                " Unable to issue credential with this DID."
-            )
-
     async def _get_suite(
         self,
         *,
@@ -357,9 +313,6 @@ class VcLdpManager:
         if not proof_type:
             raise VcLdpManagerError("Proof type is required")
 
-        # Assert we can issue the credential based on issuer + proof_type
-        await self.assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
-
         # Create base proof object with options
         proof = LDProof(
             created=options.created,
@@ -368,20 +321,20 @@ class VcLdpManager:
         )
 
         did_info = await self._did_info_for_did(issuer_id)
+        
+        # Determine/check suitable verification method for signing (fails if none suitable)
         verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
-        verification_method = (
-            options.verification_method
-            or await verkey_id_strategy.get_verification_method_id_for_did(
-                issuer_id,
-                self.profile,
-                proof_type=proof_type,
-                proof_purpose="assertionMethod",
-            )
+        verification_method_id = await verkey_id_strategy.get_verification_method_id_for_did(
+            issuer_id,
+            self.profile,
+            proof_type=proof_type,
+            proof_purpose="assertionMethod",
+            verification_method_id=options.verification_method
         )
 
         suite = await self._get_suite(
             proof_type=proof_type,
-            verification_method=verification_method,
+            verification_method=verification_method_id,
             proof=proof.serialize(),
             did_info=did_info,
         )
