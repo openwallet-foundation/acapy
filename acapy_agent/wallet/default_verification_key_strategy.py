@@ -146,9 +146,10 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         #   DID resolution cost could be avoided. However, for now there is not adequate
         #   information locally to determine if a DID/VM is suitable.
 
-        # shortcut path: if a VM ID is specified, fetch it with multikey and perform basic check
-        #   NOTE: this skips the proofPurpose check, as that is not currently possible without
-        #   resolving the DID (expensive)
+        # shortcut path: if a VM ID is specified, fetch it with multikey and perform 
+        # basic checks of VM suitability.
+        # NOTE: this skips the proofPurpose check, as that is not currently possible
+        #   without resolving the DID (expensive)
         if verification_method_id is not None:
             async with profile.session() as session:
                 key_manager = MultikeyManager(session=session)
