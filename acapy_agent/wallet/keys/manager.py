@@ -145,7 +145,9 @@ class MultikeyManager:
         """Check if a multikey exists in the wallet."""
 
         try:
-            key_info = await self.wallet.get_signing_key(verkey=multikey_to_verkey(multikey))
+            key_info = await self.wallet.get_signing_key(
+                verkey=multikey_to_verkey(multikey)
+            )
 
             if key_info:
                 return True

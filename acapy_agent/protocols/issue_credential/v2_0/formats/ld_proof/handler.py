@@ -7,7 +7,10 @@ from marshmallow import EXCLUDE, INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
-from acapy_agent.wallet.default_verification_key_strategy import BaseVerificationKeyStrategy, VerificationKeyStrategyError
+from acapy_agent.wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+    VerificationKeyStrategyError,
+)
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
@@ -194,7 +197,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 self.profile,
                 proof_type=detail.options.proof_type,
                 proof_purpose="assertionMethod",
-                verification_method_id=detail.options.verification_method
+                verification_method_id=detail.options.verification_method,
             )
         except VerificationKeyStrategyError as err:
             raise V20CredFormatError(

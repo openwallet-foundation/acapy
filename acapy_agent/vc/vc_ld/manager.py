@@ -157,7 +157,7 @@ class VcLdpManager:
                 f"Unable to get signature suite for proof type {proof_type} "
                 "using external provider."
             ) from error
-        
+
         async with self.profile.session() as session:
             key_manager = MultikeyManager(session)
             key_info = await key_manager.resolve_and_bind_kid(verification_method)
@@ -321,15 +321,17 @@ class VcLdpManager:
         )
 
         did_info = await self._did_info_for_did(issuer_id)
-        
+
         # Determine/check suitable verification method for signing (fails if none suitable)
         verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
-        verification_method_id = await verkey_id_strategy.get_verification_method_id_for_did(
-            issuer_id,
-            self.profile,
-            proof_type=proof_type,
-            proof_purpose="assertionMethod",
-            verification_method_id=options.verification_method
+        verification_method_id = (
+            await verkey_id_strategy.get_verification_method_id_for_did(
+                issuer_id,
+                self.profile,
+                proof_type=proof_type,
+                proof_purpose="assertionMethod",
+                verification_method_id=options.verification_method,
+            )
         )
 
         suite = await self._get_suite(
