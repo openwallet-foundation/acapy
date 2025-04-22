@@ -140,11 +140,27 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                 )
             return vm_id
 
+        # else, handle generically for any DID
+
         # TODO - if the local representation of the DID contains all this information,
         #   DID resolution cost could be avoided. However, for now there is not adequate
         #   information locally to determine if a DID/VM is suitable.
 
-        # else, handle generically for any DID
+        # shortcut path: if a VM ID is specified, fetch it with multikey and perform basic check
+        #   NOTE: this skips the proofPurpose check, as that is not currently possible without
+        #   resolving the DID (expensive)
+        if verification_method_id is not None:
+            async with profile.session() as session:
+                key_manager = MultikeyManager(session=session)
+                key_info = await key_manager.resolve_and_bind_kid(verification_method_id)
+                key_type = key_type_from_multikey(multikey=key_info["multikey"])
+                if key_type not in suitable_key_types:
+                    raise VerificationKeyStrategyError(
+                        f"VerificationMethod {verification_method_id} has wrong key type \
+                        for proof type {proof_type}"
+                    )
+                return verification_method_id
+
         resolver = profile.inject(DIDResolver)
         doc_raw = await resolver.resolve(profile=profile, did=did)
         doc = DIDDocument.deserialize(doc_raw)
@@ -164,11 +180,6 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                     )
                 else:
                     vm_id = VerificationMethod.deserialize(method_or_ref)
-
-                    # filter for a specific verification method ID if one was specified
-                if verification_method_id is not None:
-                    if vm_id.id != verification_method_id:
-                        continue
 
                 vm_multikey = multikey_from_verification_method(vm_id)
 
