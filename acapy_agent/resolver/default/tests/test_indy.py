@@ -1,13 +1,12 @@
 """Test IndyDIDResolver."""
 
 import pytest
+import pytest_asyncio
 
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ....messaging.valid import IndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
@@ -40,7 +39,7 @@ def ledger():
     yield ledger
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(ledger):
     """Profile fixture."""
     profile = await create_test_profile()

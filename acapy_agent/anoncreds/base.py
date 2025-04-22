@@ -16,7 +16,7 @@ from .models.revocation import (
     RevRegDefResult,
 )
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from .models.schema_info import AnoncredsSchemaInfo
+from .models.schema_info import AnonCredsSchemaInfo
 
 T = TypeVar("T")
 
@@ -66,7 +66,7 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         self.obj = obj
 
     @property
-    def message(self):
+    def message(self) -> str:
         """Message."""
         return f"{self._message}: {self.obj_id}, {self.obj}"
 
@@ -75,12 +75,12 @@ class AnonCredsSchemaAlreadyExists(AnonCredsObjectAlreadyExists[AnonCredsSchema]
     """Raised when a schema already exists."""
 
     @property
-    def schema_id(self):
+    def schema_id(self) -> str:
         """Get Schema Id."""
         return self.obj_id
 
     @property
-    def schema(self):
+    def schema(self) -> AnonCredsSchema:
         """Get Schema."""
         return self.obj
 
@@ -138,12 +138,12 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
     async def get_schema_info_by_id(
         self, profile: Profile, schema_id: str
-    ) -> AnoncredsSchemaInfo:
+    ) -> AnonCredsSchemaInfo:
         """Get a schema info from the registry."""
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
-    """Base Anoncreds Registrar."""
+    """Base AnonCreds Registrar."""
 
     @abstractmethod
     async def register_schema(

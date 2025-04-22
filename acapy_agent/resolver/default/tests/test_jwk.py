@@ -1,6 +1,7 @@
 """Test JwkDIDResolver."""
 
 import pytest
+import pytest_asyncio
 
 from ....core.profile import Profile
 from ....utils.testing import create_test_profile
@@ -22,7 +23,7 @@ def resolver():
     yield JwkDIDResolver()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     """Profile fixture."""
     profile = await create_test_profile()

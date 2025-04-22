@@ -5,36 +5,36 @@
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
-    "name" : "action-menu",
-    "description" : "Menu interaction over connection"
-  }, {
-    "name" : "anoncreds - credential definitions",
-    "description" : "Anoncreds credential definition management",
+    "name" : "AnonCreds - Credential Definitions",
+    "description" : "AnonCreds credential definition management",
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://hyperledger.github.io/anoncreds-spec"
     }
   }, {
-    "name" : "anoncreds - revocation",
+    "name" : "AnonCreds - Revocation",
     "description" : "Revocation registry management",
     "externalDocs" : {
       "description" : "Overview",
       "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
     }
   }, {
-    "name" : "anoncreds - schemas",
-    "description" : "Anoncreds schema management",
+    "name" : "AnonCreds - Schemas",
+    "description" : "AnonCreds schema management",
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://hyperledger.github.io/anoncreds-spec"
     }
   }, {
-    "name" : "anoncreds - wallet upgrade",
-    "description" : "Anoncreds wallet upgrade",
+    "name" : "AnonCreds - Wallet Upgrade",
+    "description" : "AnonCreds wallet upgrade",
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://hyperledger.github.io/anoncreds-spec"
     }
+  }, {
+    "name" : "action-menu",
+    "description" : "Menu interaction over connection"
   }, {
     "name" : "basicmessage",
     "description" : "Simple messaging",
@@ -335,7 +335,7 @@
     },
     "/anoncreds/credential-definition" : {
       "post" : {
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "summary" : "Create a credential definition on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -358,7 +358,7 @@
     },
     "/anoncreds/credential-definition/{cred_def_id}" : {
       "get" : {
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "summary" : "Retrieve an individual credential definition details",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -380,7 +380,7 @@
     },
     "/anoncreds/credential-definitions" : {
       "get" : {
-        "tags" : [ "anoncreds - credential definitions" ],
+        "tags" : [ "AnonCreds - Credential Definitions" ],
         "summary" : "Retrieve all credential definition ids",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -420,7 +420,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/active" : {
       "put" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Update the active registry",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -435,7 +435,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/AnoncredsRevocationModuleResponse"
+              "$ref" : "#/definitions/AnonCredsRevocationModuleResponse"
             }
           }
         }
@@ -443,7 +443,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/tails-file" : {
       "put" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Upload local tails file to server",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -458,7 +458,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/AnoncredsRevocationModuleResponse"
+              "$ref" : "#/definitions/AnonCredsRevocationModuleResponse"
             }
           }
         }
@@ -466,7 +466,7 @@
     },
     "/anoncreds/revocation-list" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Create and publish a revocation status list on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -489,7 +489,7 @@
     },
     "/anoncreds/revocation-registry-definition" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Create and publish a registration revocation on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -497,7 +497,7 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/RevRegCreateRequestSchemaAnoncreds"
+            "$ref" : "#/definitions/RevRegCreateRequestSchemaAnonCreds"
           }
         } ],
         "responses" : {
@@ -512,7 +512,7 @@
     },
     "/anoncreds/revocation/active-registry/{cred_def_id}" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Get current active revocation registry by credential definition id",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -527,7 +527,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegResultSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegResultSchemaAnonCreds"
             }
           }
         }
@@ -535,7 +535,7 @@
     },
     "/anoncreds/revocation/active-registry/{cred_def_id}/rotate" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Rotate revocation registry",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -550,7 +550,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegsCreatedSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegsCreatedSchemaAnonCreds"
             }
           }
         }
@@ -558,7 +558,7 @@
     },
     "/anoncreds/revocation/credential-record" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Get credential revocation status",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -587,7 +587,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/CredRevRecordResultSchemaAnoncreds"
+              "$ref" : "#/definitions/CredRevRecordResultSchemaAnonCreds"
             }
           }
         }
@@ -595,7 +595,7 @@
     },
     "/anoncreds/revocation/publish-revocations" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Publish pending revocations to ledger",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -603,14 +603,14 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/PublishRevocationsSchemaAnoncreds"
+            "$ref" : "#/definitions/PublishRevocationsSchemaAnonCreds"
           }
         } ],
         "responses" : {
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/PublishRevocationsResultSchemaAnoncreds"
+              "$ref" : "#/definitions/PublishRevocationsResultSchemaAnonCreds"
             }
           }
         }
@@ -618,7 +618,7 @@
     },
     "/anoncreds/revocation/registries" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Search for matching revocation registries that current agent created",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -640,7 +640,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegsCreatedSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegsCreatedSchemaAnonCreds"
             }
           }
         }
@@ -648,7 +648,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Get revocation registry by revocation registry id",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -663,7 +663,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegResultSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegResultSchemaAnonCreds"
             }
           }
         }
@@ -671,7 +671,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}/fix-revocation-entry-state" : {
       "put" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Fix revocation state in wallet and return number of updated entries",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -692,7 +692,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegWalletUpdatedResultSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegWalletUpdatedResultSchemaAnonCreds"
             }
           }
         }
@@ -700,7 +700,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}/issued" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Get number of credentials issued against revocation registry",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -715,7 +715,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegIssuedResultSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegIssuedResultSchemaAnonCreds"
             }
           }
         }
@@ -723,7 +723,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}/issued/details" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Get details of credentials issued against revocation registry",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -738,7 +738,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/CredRevRecordDetailsResultSchemaAnoncreds"
+              "$ref" : "#/definitions/CredRevRecordDetailsResultSchemaAnonCreds"
             }
           }
         }
@@ -746,7 +746,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Get details of revoked credentials from ledger",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -761,7 +761,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/CredRevIndyRecordsResultSchemaAnoncreds"
+              "$ref" : "#/definitions/CredRevIndyRecordsResultSchemaAnonCreds"
             }
           }
         }
@@ -769,7 +769,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}/set-state" : {
       "patch" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Set revocation registry state manually",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -791,7 +791,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RevRegResultSchemaAnoncreds"
+              "$ref" : "#/definitions/RevRegResultSchemaAnonCreds"
             }
           }
         }
@@ -799,7 +799,7 @@
     },
     "/anoncreds/revocation/registry/{rev_reg_id}/tails-file" : {
       "get" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Download tails file",
         "produces" : [ "application/octet-stream" ],
         "parameters" : [ {
@@ -814,7 +814,7 @@
           "200" : {
             "description" : "tails file",
             "schema" : {
-              "$ref" : "#/definitions/AnoncredsRevocationModuleResponse"
+              "$ref" : "#/definitions/AnonCredsRevocationModuleResponse"
             }
           }
         }
@@ -822,7 +822,7 @@
     },
     "/anoncreds/revocation/revoke" : {
       "post" : {
-        "tags" : [ "anoncreds - revocation" ],
+        "tags" : [ "AnonCreds - Revocation" ],
         "summary" : "Revoke an issued credential",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -830,14 +830,14 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/RevokeRequestSchemaAnoncreds"
+            "$ref" : "#/definitions/RevokeRequestSchemaAnonCreds"
           }
         } ],
         "responses" : {
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/AnoncredsRevocationModuleResponse"
+              "$ref" : "#/definitions/AnonCredsRevocationModuleResponse"
             }
           }
         }
@@ -845,7 +845,7 @@
     },
     "/anoncreds/schema" : {
       "post" : {
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "summary" : "Create a schema on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -868,7 +868,7 @@
     },
     "/anoncreds/schema/{schema_id}" : {
       "get" : {
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "summary" : "Retrieve an individual schemas details",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -890,7 +890,7 @@
     },
     "/anoncreds/schemas" : {
       "get" : {
-        "tags" : [ "anoncreds - schemas" ],
+        "tags" : [ "AnonCreds - Schemas" ],
         "summary" : "Retrieve all schema ids",
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -924,8 +924,8 @@
     },
     "/anoncreds/wallet/upgrade" : {
       "post" : {
-        "tags" : [ "anoncreds - wallet upgrade" ],
-        "summary" : "\n        Upgrade the wallet from askar to anoncreds - Be very careful with this! You \n        cannot go back! See migration guide for more information.\n    ",
+        "tags" : [ "AnonCreds - Wallet Upgrade" ],
+        "summary" : "Upgrade the wallet from askar to askar-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "wallet_name",
@@ -3755,6 +3755,29 @@
         }
       }
     },
+    "/out-of-band/invitations" : {
+      "get" : {
+        "tags" : [ "out-of-band" ],
+        "summary" : "Fetch an existing Out-of-Band invitation.",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "oob_id",
+          "in" : "query",
+          "description" : "The Out of Band id to fetch",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/InvitationRecordResponse"
+            }
+          }
+        }
+      }
+    },
     "/out-of-band/invitations/{invi_msg_id}" : {
       "delete" : {
         "tags" : [ "out-of-band" ],
@@ -6380,6 +6403,240 @@
         }
       }
     },
+    "AnonCredsPresSpec" : {
+      "type" : "object",
+      "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
+      "properties" : {
+        "requested_attributes" : {
+          "type" : "object",
+          "description" : "Nested object mapping proof request attribute referents to requested-attribute specifiers",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/AnonCredsRequestedCredsRequestedAttr"
+          }
+        },
+        "requested_predicates" : {
+          "type" : "object",
+          "description" : "Nested object mapping proof request predicate referents to requested-predicate specifiers",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/AnonCredsRequestedCredsRequestedPred"
+          }
+        },
+        "self_attested_attributes" : {
+          "type" : "object",
+          "description" : "Self-attested attributes to build into proof",
+          "additionalProperties" : {
+            "type" : "string",
+            "example" : "self_attested_value",
+            "description" : "Self-attested attribute values to use in requested-credentials structure for proof construction"
+          }
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
+    },
+    "AnonCredsPresentationReqAttrSpec" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "example" : "favouriteDrink",
+          "description" : "Attribute name"
+        },
+        "names" : {
+          "type" : "array",
+          "description" : "Attribute name group",
+          "items" : {
+            "type" : "string",
+            "example" : "age"
+          }
+        },
+        "non_revoked" : {
+          "$ref" : "#/definitions/AnonCredsPresentationReqAttrSpecNonRevoked"
+        },
+        "restrictions" : {
+          "type" : "array",
+          "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
+          "items" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "example" : "did:(method):3:CL:20:tag"
+            }
+          }
+        }
+      }
+    },
+    "AnonCredsPresentationReqAttrSpecNonRevoked" : {
+      "type" : "object",
+      "properties" : {
+        "from" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Earliest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        },
+        "to" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Latest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        }
+      }
+    },
+    "AnonCredsPresentationReqPredSpec" : {
+      "type" : "object",
+      "required" : [ "name", "p_type", "p_value" ],
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "example" : "index",
+          "description" : "Attribute name"
+        },
+        "non_revoked" : {
+          "$ref" : "#/definitions/AnonCredsPresentationReqPredSpecNonRevoked"
+        },
+        "p_type" : {
+          "type" : "string",
+          "example" : ">=",
+          "description" : "Predicate type ('<', '<=', '>=', or '>')",
+          "enum" : [ "<", "<=", ">=", ">" ]
+        },
+        "p_value" : {
+          "type" : "integer",
+          "description" : "Threshold value"
+        },
+        "restrictions" : {
+          "type" : "array",
+          "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
+          "items" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "example" : "did:(method):3:CL:20:tag"
+            }
+          }
+        }
+      }
+    },
+    "AnonCredsPresentationReqPredSpecNonRevoked" : {
+      "type" : "object",
+      "properties" : {
+        "from" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Earliest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        },
+        "to" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Latest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        }
+      }
+    },
+    "AnonCredsPresentationRequest" : {
+      "type" : "object",
+      "required" : [ "requested_attributes", "requested_predicates" ],
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "example" : "Proof request",
+          "description" : "Proof request name"
+        },
+        "non_revoked" : {
+          "$ref" : "#/definitions/AnonCredsPresentationRequestNonRevoked"
+        },
+        "nonce" : {
+          "type" : "string",
+          "example" : "1",
+          "description" : "Nonce",
+          "pattern" : "^[1-9][0-9]*$"
+        },
+        "requested_attributes" : {
+          "type" : "object",
+          "description" : "Requested attribute specifications of proof request",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/AnonCredsPresentationReqAttrSpec"
+          }
+        },
+        "requested_predicates" : {
+          "type" : "object",
+          "description" : "Requested predicate specifications of proof request",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/AnonCredsPresentationReqPredSpec"
+          }
+        },
+        "version" : {
+          "type" : "string",
+          "example" : "1.0",
+          "description" : "Proof request version",
+          "pattern" : "^[0-9.]+$"
+        }
+      }
+    },
+    "AnonCredsPresentationRequestNonRevoked" : {
+      "type" : "object",
+      "properties" : {
+        "from" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Earliest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        },
+        "to" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Latest time of interest in non-revocation interval",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        }
+      }
+    },
+    "AnonCredsRequestedCredsRequestedAttr" : {
+      "type" : "object",
+      "required" : [ "cred_id" ],
+      "properties" : {
+        "cred_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Wallet credential identifier (typically but not necessarily a UUID)"
+        },
+        "revealed" : {
+          "type" : "boolean",
+          "description" : "Whether to reveal attribute in proof (default true)"
+        }
+      }
+    },
+    "AnonCredsRequestedCredsRequestedPred" : {
+      "type" : "object",
+      "required" : [ "cred_id" ],
+      "properties" : {
+        "cred_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Wallet credential identifier (typically but not necessarily a UUID)"
+        },
+        "timestamp" : {
+          "type" : "integer",
+          "example" : 1640995199,
+          "description" : "Epoch timestamp of interest for non-revocation proof",
+          "minimum" : 0,
+          "maximum" : 18446744073709551615
+        }
+      }
+    },
+    "AnonCredsRevocationModuleResponse" : {
+      "type" : "object"
+    },
     "AnonCredsSchema" : {
       "type" : "object",
       "required" : [ "attrNames", "issuerId", "name", "version" ],
@@ -6409,240 +6666,6 @@
           "description" : "Schema version"
         }
       }
-    },
-    "AnoncredsPresSpec" : {
-      "type" : "object",
-      "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
-      "properties" : {
-        "requested_attributes" : {
-          "type" : "object",
-          "description" : "Nested object mapping proof request attribute referents to requested-attribute specifiers",
-          "additionalProperties" : {
-            "$ref" : "#/definitions/AnoncredsRequestedCredsRequestedAttr"
-          }
-        },
-        "requested_predicates" : {
-          "type" : "object",
-          "description" : "Nested object mapping proof request predicate referents to requested-predicate specifiers",
-          "additionalProperties" : {
-            "$ref" : "#/definitions/AnoncredsRequestedCredsRequestedPred"
-          }
-        },
-        "self_attested_attributes" : {
-          "type" : "object",
-          "description" : "Self-attested attributes to build into proof",
-          "additionalProperties" : {
-            "type" : "string",
-            "example" : "self_attested_value",
-            "description" : "Self-attested attribute values to use in requested-credentials structure for proof construction"
-          }
-        },
-        "trace" : {
-          "type" : "boolean",
-          "example" : false,
-          "description" : "Whether to trace event (default false)"
-        }
-      }
-    },
-    "AnoncredsPresentationReqAttrSpec" : {
-      "type" : "object",
-      "properties" : {
-        "name" : {
-          "type" : "string",
-          "example" : "favouriteDrink",
-          "description" : "Attribute name"
-        },
-        "names" : {
-          "type" : "array",
-          "description" : "Attribute name group",
-          "items" : {
-            "type" : "string",
-            "example" : "age"
-          }
-        },
-        "non_revoked" : {
-          "$ref" : "#/definitions/AnoncredsPresentationReqAttrSpecNonRevoked"
-        },
-        "restrictions" : {
-          "type" : "array",
-          "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
-          "items" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string",
-              "example" : "did:(method):3:CL:20:tag"
-            }
-          }
-        }
-      }
-    },
-    "AnoncredsPresentationReqAttrSpecNonRevoked" : {
-      "type" : "object",
-      "properties" : {
-        "from" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Earliest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        },
-        "to" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Latest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        }
-      }
-    },
-    "AnoncredsPresentationReqPredSpec" : {
-      "type" : "object",
-      "required" : [ "name", "p_type", "p_value" ],
-      "properties" : {
-        "name" : {
-          "type" : "string",
-          "example" : "index",
-          "description" : "Attribute name"
-        },
-        "non_revoked" : {
-          "$ref" : "#/definitions/AnoncredsPresentationReqPredSpecNonRevoked"
-        },
-        "p_type" : {
-          "type" : "string",
-          "example" : ">=",
-          "description" : "Predicate type ('<', '<=', '>=', or '>')",
-          "enum" : [ "<", "<=", ">=", ">" ]
-        },
-        "p_value" : {
-          "type" : "integer",
-          "description" : "Threshold value"
-        },
-        "restrictions" : {
-          "type" : "array",
-          "description" : "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name",
-          "items" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string",
-              "example" : "did:(method):3:CL:20:tag"
-            }
-          }
-        }
-      }
-    },
-    "AnoncredsPresentationReqPredSpecNonRevoked" : {
-      "type" : "object",
-      "properties" : {
-        "from" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Earliest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        },
-        "to" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Latest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        }
-      }
-    },
-    "AnoncredsPresentationRequest" : {
-      "type" : "object",
-      "required" : [ "requested_attributes", "requested_predicates" ],
-      "properties" : {
-        "name" : {
-          "type" : "string",
-          "example" : "Proof request",
-          "description" : "Proof request name"
-        },
-        "non_revoked" : {
-          "$ref" : "#/definitions/AnoncredsPresentationRequestNonRevoked"
-        },
-        "nonce" : {
-          "type" : "string",
-          "example" : "1",
-          "description" : "Nonce",
-          "pattern" : "^[1-9][0-9]*$"
-        },
-        "requested_attributes" : {
-          "type" : "object",
-          "description" : "Requested attribute specifications of proof request",
-          "additionalProperties" : {
-            "$ref" : "#/definitions/AnoncredsPresentationReqAttrSpec"
-          }
-        },
-        "requested_predicates" : {
-          "type" : "object",
-          "description" : "Requested predicate specifications of proof request",
-          "additionalProperties" : {
-            "$ref" : "#/definitions/AnoncredsPresentationReqPredSpec"
-          }
-        },
-        "version" : {
-          "type" : "string",
-          "example" : "1.0",
-          "description" : "Proof request version",
-          "pattern" : "^[0-9.]+$"
-        }
-      }
-    },
-    "AnoncredsPresentationRequestNonRevoked" : {
-      "type" : "object",
-      "properties" : {
-        "from" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Earliest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        },
-        "to" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Latest time of interest in non-revocation interval",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        }
-      }
-    },
-    "AnoncredsRequestedCredsRequestedAttr" : {
-      "type" : "object",
-      "required" : [ "cred_id" ],
-      "properties" : {
-        "cred_id" : {
-          "type" : "string",
-          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "Wallet credential identifier (typically but not necessarily a UUID)"
-        },
-        "revealed" : {
-          "type" : "boolean",
-          "description" : "Whether to reveal attribute in proof (default true)"
-        }
-      }
-    },
-    "AnoncredsRequestedCredsRequestedPred" : {
-      "type" : "object",
-      "required" : [ "cred_id" ],
-      "properties" : {
-        "cred_id" : {
-          "type" : "string",
-          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "Wallet credential identifier (typically but not necessarily a UUID)"
-        },
-        "timestamp" : {
-          "type" : "integer",
-          "example" : 1640995199,
-          "description" : "Epoch timestamp of interest for non-revocation proof",
-          "minimum" : 0,
-          "maximum" : 18446744073709551615
-        }
-      }
-    },
-    "AnoncredsRevocationModuleResponse" : {
-      "type" : "object"
     },
     "AttachDecorator" : {
       "type" : "object",
@@ -7382,7 +7405,7 @@
           "enum" : [ "CL" ]
         },
         "value" : {
-          "$ref" : "#/definitions/CredDefValueSchemaAnoncreds"
+          "$ref" : "#/definitions/CredDefValueSchemaAnonCreds"
         }
       }
     },
@@ -7497,7 +7520,7 @@
         }
       }
     },
-    "CredDefValuePrimarySchemaAnoncreds" : {
+    "CredDefValuePrimarySchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "n" : {
@@ -7575,7 +7598,7 @@
         }
       }
     },
-    "CredDefValueRevocationSchemaAnoncreds" : {
+    "CredDefValueRevocationSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "g" : {
@@ -7624,7 +7647,7 @@
         }
       }
     },
-    "CredDefValueSchemaAnoncreds" : {
+    "CredDefValueSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "primary" : {
@@ -7656,7 +7679,7 @@
         }
       }
     },
-    "CredRevIndyRecordsResultSchemaAnoncreds" : {
+    "CredRevIndyRecordsResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "rev_reg_delta" : {
@@ -7677,13 +7700,13 @@
         }
       }
     },
-    "CredRevRecordDetailsResultSchemaAnoncreds" : {
+    "CredRevRecordDetailsResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "results" : {
           "type" : "array",
           "items" : {
-            "$ref" : "#/definitions/IssuerCredRevRecordSchemaAnoncreds"
+            "$ref" : "#/definitions/IssuerCredRevRecordSchemaAnonCreds"
           }
         }
       }
@@ -7696,11 +7719,11 @@
         }
       }
     },
-    "CredRevRecordResultSchemaAnoncreds" : {
+    "CredRevRecordResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "result" : {
-          "$ref" : "#/definitions/IssuerCredRevRecordSchemaAnoncreds"
+          "$ref" : "#/definitions/IssuerCredRevRecordSchemaAnonCreds"
         }
       }
     },
@@ -10083,7 +10106,7 @@
         }
       }
     },
-    "IssuerCredRevRecordSchemaAnoncreds" : {
+    "IssuerCredRevRecordSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "created_at" : {
@@ -11232,7 +11255,7 @@
         }
       }
     },
-    "PublishRevocationsResultSchemaAnoncreds" : {
+    "PublishRevocationsResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "rrid2crid" : {
@@ -11250,7 +11273,7 @@
         }
       }
     },
-    "PublishRevocationsSchemaAnoncreds" : {
+    "PublishRevocationsSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "options" : {
@@ -11497,7 +11520,7 @@
         }
       }
     },
-    "RevRegCreateRequestSchemaAnoncreds" : {
+    "RevRegCreateRequestSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "options" : {
@@ -11618,7 +11641,7 @@
         }
       }
     },
-    "RevRegIssuedResultSchemaAnoncreds" : {
+    "RevRegIssuedResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "result" : {
@@ -11637,7 +11660,7 @@
         }
       }
     },
-    "RevRegResultSchemaAnoncreds" : {
+    "RevRegResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "result" : {
@@ -11677,7 +11700,7 @@
         }
       }
     },
-    "RevRegWalletUpdatedResultSchemaAnoncreds" : {
+    "RevRegWalletUpdatedResultSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "accum_calculated" : {
@@ -11711,7 +11734,7 @@
         }
       }
     },
-    "RevRegsCreatedSchemaAnoncreds" : {
+    "RevRegsCreatedSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "rev_reg_ids" : {
@@ -11778,7 +11801,7 @@
         }
       }
     },
-    "RevokeRequestSchemaAnoncreds" : {
+    "RevokeRequestSchemaAnonCreds" : {
       "type" : "object",
       "properties" : {
         "comment" : {
@@ -13813,7 +13836,7 @@
         }
       }
     },
-    "V20CredFilterAnoncreds" : {
+    "V20CredFilterAnonCreds" : {
       "type" : "object",
       "properties" : {
         "cred_def_id" : {

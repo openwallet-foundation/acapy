@@ -56,7 +56,7 @@ from ..storage.type import (
     RECORD_TYPE_ACAPY_UPGRADING,
     STORAGE_TYPE_VALUE_ANONCREDS,
 )
-from .singletons import IsAnoncredsSingleton, UpgradeInProgressSingleton
+from .singletons import IsAnonCredsSingleton, UpgradeInProgressSingleton
 
 LOGGER = logging.getLogger(__name__)
 
@@ -603,7 +603,7 @@ async def upgrade_wallet_to_anoncreds_if_requested(
         try:
             upgrading_record = await storage.find_record(RECORD_TYPE_ACAPY_UPGRADING, {})
             if upgrading_record.value == UPGRADING_RECORD_FINISHED:
-                IsAnoncredsSingleton().set_wallet(profile.name)
+                IsAnonCredsSingleton().set_wallet(profile.name)
                 return
         except StorageNotFoundError:
             return
@@ -639,7 +639,7 @@ async def finish_upgrade(profile: Profile):
                 )
             )
     await finish_upgrading_record(profile)
-    IsAnoncredsSingleton().set_wallet(profile.name)
+    IsAnonCredsSingleton().set_wallet(profile.name)
     UpgradeInProgressSingleton().remove_wallet(profile.name)
 
 
@@ -696,7 +696,7 @@ async def check_upgrade_completion_loop(profile: Profile, is_subwallet=False):
                     RECORD_TYPE_ACAPY_UPGRADING, tag_query={}
                 )
                 if upgrading_record.value == UPGRADING_RECORD_FINISHED:
-                    IsAnoncredsSingleton().set_wallet(profile.name)
+                    IsAnonCredsSingleton().set_wallet(profile.name)
                     UpgradeInProgressSingleton().remove_wallet(profile.name)
                     if is_subwallet:
                         await upgrade_subwallet(profile)

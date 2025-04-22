@@ -1,4 +1,4 @@
-Feature: ACA-Py Anoncreds Upgrade
+Feature: ACA-Py AnonCreds Upgrade
 
    @PR @Release
    Scenario Outline: Using revocation api, issue, revoke credentials and publish

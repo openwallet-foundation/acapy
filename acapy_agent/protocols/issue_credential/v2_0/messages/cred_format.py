@@ -11,7 +11,7 @@ from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from .....utils.classloader import DeferLoad
-from ..models.detail.anoncreds import V20CredExRecordAnoncreds
+from ..models.detail.anoncreds import V20CredExRecordAnonCreds
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
 
@@ -34,7 +34,7 @@ class V20CredFormat(BaseModel):
 
         ANONCREDS = FormatSpec(
             "anoncreds/",
-            V20CredExRecordAnoncreds,
+            V20CredExRecordAnonCreds,
             DeferLoad(
                 "acapy_agent.protocols.issue_credential.v2_0"
                 ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
@@ -91,7 +91,7 @@ class V20CredFormat(BaseModel):
         @property
         def detail(
             self,
-        ) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof, V20CredExRecordAnoncreds]:
+        ) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof, V20CredExRecordAnonCreds]:
             """Accessor for credential exchange detail class."""
             return self.value.detail
 

@@ -1,4 +1,4 @@
-"""Anoncreds verifier implementation."""
+"""AnonCreds verifier implementation."""
 
 import asyncio
 import logging
@@ -428,12 +428,12 @@ class AnonCredsVerifier:
 
     async def verify_presentation(
         self,
-        pres_req,
-        pres,
-        schemas,
-        credential_definitions,
-        rev_reg_defs,
-        rev_lists,
+        pres_req: dict,
+        pres: dict,
+        schemas: dict,
+        credential_definitions: dict,
+        rev_reg_defs: dict,
+        rev_lists: dict,
     ) -> Tuple[bool, list]:
         """Verify a presentation.
 
@@ -490,7 +490,7 @@ class AnonCredsVerifier:
         return (verified, msgs)
 
     async def verify_presentation_w3c(
-        self, pres_req, pres, cred_metadata
+        self, pres_req: dict, pres: dict, cred_metadata: list
     ) -> PresentationVerificationResult:
         """Verify a W3C presentation.
 

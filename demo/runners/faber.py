@@ -522,7 +522,7 @@ async def main(args):
             if option is not None:
                 option = option.strip()
 
-            # Anoncreds has different endpoints for revocation
+            # AnonCreds has different endpoints for revocation
             is_anoncreds = False
             if (
                 faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds"

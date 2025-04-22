@@ -1,4 +1,4 @@
-"""Anoncreds cred def OpenAPI validators."""
+"""AnonCreds cred def OpenAPI validators."""
 
 from typing import Any, Dict, List, Optional
 
@@ -113,7 +113,7 @@ class RevRegDef(BaseModel):
         """Convert a native revocation registry definition to a RevRegDef object."""
         return cls.deserialize(rev_reg_def.to_json())
 
-    def to_native(self):
+    def to_native(self) -> RevocationRegistryDefinition:
         """Convert to native anoncreds revocation registry definition."""
         return RevocationRegistryDefinition.load(self.serialize())
 
@@ -250,12 +250,12 @@ class RevRegDefResult(BaseModel):
         )
 
     @property
-    def rev_reg_def_id(self):
+    def rev_reg_def_id(self) -> str:
         """Revocation Registry Definition ID."""
         return self.revocation_registry_definition_state.revocation_registry_definition_id
 
     @property
-    def rev_reg_def(self):
+    def rev_reg_def(self) -> RevRegDef:
         """Revocation Registry Definition."""
         return self.revocation_registry_definition_state.revocation_registry_definition
 
@@ -362,7 +362,7 @@ class RevList(BaseModel):
         """Convert from native revocation list."""
         return cls.deserialize(rev_list.to_json())
 
-    def to_native(self):
+    def to_native(self) -> RevocationStatusList:
         """Convert to native revocation list."""
         return RevocationStatusList.load(self.serialize())
 
@@ -498,7 +498,7 @@ class RevListResult(BaseModel):
         self.revocation_list_metadata = revocation_list_metadata
 
     @property
-    def rev_reg_def_id(self):
+    def rev_reg_def_id(self) -> str:
         """Rev reg def id."""
         return self.revocation_list_state.revocation_list.rev_reg_def_id
 

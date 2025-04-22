@@ -9,14 +9,8 @@ from marshmallow import ValidationError
 
 from .......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from .......anoncreds.issuer import AnonCredsIssuer
-from .......anoncreds.models.credential_definition import (
-    CredDef,
-    GetCredDefResult,
-)
-from .......anoncreds.models.revocation import (
-    GetRevRegDefResult,
-    RevRegDef,
-)
+from .......anoncreds.models.credential_definition import CredDef, GetCredDefResult
+from .......anoncreds.models.revocation import GetRevRegDefResult, RevRegDef
 from .......anoncreds.registry import AnonCredsRegistry
 from .......cache.base import BaseCache
 from .......cache.in_memory import InMemoryCache
@@ -30,24 +24,16 @@ from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......protocols.issue_credential.v2_0.formats.handler import V20CredFormatError
 from .......protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
-from .......protocols.issue_credential.v2_0.messages.cred_issue import (
-    V20CredIssue,
-)
+from .......protocols.issue_credential.v2_0.messages.cred_issue import V20CredIssue
 from .......protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
-from .......protocols.issue_credential.v2_0.messages.cred_proposal import (
-    V20CredProposal,
-)
+from .......protocols.issue_credential.v2_0.messages.cred_proposal import V20CredProposal
 from .......protocols.issue_credential.v2_0.messages.cred_request import V20CredRequest
 from .......protocols.issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
 )
-from .......protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
-)
-from .......protocols.issue_credential.v2_0.models.detail.indy import (
-    V20CredExRecordIndy,
-)
+from .......protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from .......protocols.issue_credential.v2_0.models.detail.indy import V20CredExRecordIndy
 from .......storage.base import BaseStorage
 from .......storage.record import StorageRecord
 from .......tests import mock
@@ -460,7 +446,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
             # self.issuer.create_credential_offer.assert_not_called()
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_receive_offer(self):
         cred_ex_record = mock.MagicMock()
         cred_offer_message = mock.MagicMock()
@@ -558,7 +544,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                     cred_ex_record, {"holder_did": holder_did}
                 )
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_receive_request(self):
         cred_ex_record = mock.MagicMock()
         cred_request_message = mock.MagicMock()
@@ -643,7 +629,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             assert attachment.data.base64
             assert attachment.content == {"credential": VCDI_CRED}
 
-    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.skip(reason="AnonCreds-break")
     async def test_issue_credential_non_revocable(self):
         CRED_DEF_NR = deepcopy(CRED_DEF)
         CRED_DEF_NR["value"]["revocation"] = None

@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
       - name: Check changed files
         id: check-changed-files
-        uses: tj-actions/changed-files@v46.0.4
+        uses: tj-actions/changed-files@v46.0.5
         with:
           files_yaml: |
             src: 
@@ -84,7 +84,7 @@ jobs:
         run: |
           cd owl-agent-test-harness
           NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Anoncreds >> output.txt
-      - name: Run Release or Nightly Interop Tests Anoncreds
+      - name: Run Release or Nightly Interop Tests AnonCreds
         if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd owl-agent-test-harness

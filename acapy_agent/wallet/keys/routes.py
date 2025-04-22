@@ -9,8 +9,9 @@ from marshmallow import fields
 from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
-from .manager import MultikeyManager, MultikeyManagerError, DEFAULT_ALG
 from ...wallet.error import WalletDuplicateError, WalletNotFoundError
+from ..routes import WALLET_TAG_TITLE
+from .manager import DEFAULT_ALG, MultikeyManager, MultikeyManagerError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -124,7 +125,7 @@ class FetchKeyResponseSchema(OpenAPISchema):
     )
 
 
-@docs(tags=["wallet"], summary="Fetch key info.")
+@docs(tags=[WALLET_TAG_TITLE], summary="Fetch key info.")
 @response_schema(FetchKeyResponseSchema, 200, description="")
 @tenant_authentication
 async def fetch_key(request: web.BaseRequest):
@@ -149,7 +150,7 @@ async def fetch_key(request: web.BaseRequest):
         return web.json_response({"message": str(err)}, status=400)
 
 
-@docs(tags=["wallet"], summary="Create a key pair")
+@docs(tags=[WALLET_TAG_TITLE], summary="Create a key pair")
 @request_schema(CreateKeyRequestSchema())
 @response_schema(CreateKeyResponseSchema, 200, description="")
 @tenant_authentication
@@ -184,7 +185,7 @@ async def create_key(request: web.BaseRequest):
         return web.json_response({"message": str(err)}, status=400)
 
 
-@docs(tags=["wallet"], summary="Update a key pair's kid")
+@docs(tags=[WALLET_TAG_TITLE], summary="Update a key pair's kid")
 @request_schema(UpdateKeyRequestSchema())
 @response_schema(UpdateKeyResponseSchema, 200, description="")
 @tenant_authentication

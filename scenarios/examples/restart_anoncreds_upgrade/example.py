@@ -314,13 +314,13 @@ async def main():
         Controller(base_url=ALICE) as alice,
         Controller(base_url=BOB_ANONCREDS) as bob,
     ):
-        # connect to Bob (Anoncreds wallet) and issue (and revoke) some credentials
+        # connect to Bob (AnonCreds wallet) and issue (and revoke) some credentials
         (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
             alice,
             bob,
             cred_def,
             "Bob",
-            "Anoncreds",
+            "AnonCreds",
         )
         alice_conns["anoncreds"] = alice_conn
         bob_conns["anoncreds"] = bob_conn
@@ -427,7 +427,7 @@ async def main():
                 bob,
                 cred_def,
                 "Bob",
-                "Anoncreds",
+                "AnonCreds",
                 inviter_conn=alice_conns["anoncreds"],
                 invitee_conn=bob_conns["anoncreds"],
             )

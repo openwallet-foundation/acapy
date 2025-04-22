@@ -5,6 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
 import base58
+import pytest
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -13,7 +14,6 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
-import pytest
 
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
@@ -45,7 +45,7 @@ from ...utils.multiformats import multibase, multicodec
 from ...utils.testing import create_test_profile
 from ...wallet.askar import AskarWallet
 from ...wallet.base import BaseWallet, DIDInfo
-from ...wallet.did_method import DIDMethods, SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import ED25519, KeyTypes
 from ...wallet.util import b58_to_bytes, bytes_to_b64
@@ -1039,6 +1039,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
             assert target.routing_keys == [self.test_verkey]
             assert target.sender_key == local_did.verkey
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_create_static_connection(self):
         self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
         self.multitenant_mgr.get_default_mediator = mock.CoroutineMock(return_value=None)
@@ -1053,6 +1054,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
 
         assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_create_static_connection_multitenant(self):
         self.context.update_settings(
             {"wallet.id": "test_wallet", "multitenant.enabled": True}
@@ -1084,6 +1086,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
 
             self.route_manager.route_static.assert_called_once()
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_create_static_connection_multitenant_auto_disclose_features(self):
         self.context.update_settings(
             {
@@ -1193,6 +1196,7 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                     their_endpoint=self.test_endpoint,
                 )
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")  # create_did_document deprecation
     async def test_create_static_connection_their_seed_only(self):
         self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
         self.multitenant_mgr.get_default_mediator = mock.CoroutineMock(return_value=None)

@@ -33,12 +33,7 @@ from ..formats.dif.tests.test_handler import DIF_PRES_REQUEST_B as DIF_PRES_REQ
 from ..formats.handler import V20PresFormatHandlerError
 from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError
-from ..message_types import (
-    ATTACHMENT_FORMAT,
-    PRES_20,
-    PRES_20_PROPOSAL,
-    PRES_20_REQUEST,
-)
+from ..message_types import ATTACHMENT_FORMAT, PRES_20, PRES_20_PROPOSAL, PRES_20_REQUEST
 from ..messages.pres import V20Pres
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_problem_report import V20PresProblemReport

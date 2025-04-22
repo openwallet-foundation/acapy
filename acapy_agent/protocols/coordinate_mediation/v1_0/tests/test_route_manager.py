@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 
 from .....connections.models.conn_record import ConnRecord
 from .....core.profile import Profile
@@ -42,7 +43,7 @@ def mock_responder():
     yield MockResponder()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(mock_responder: MockResponder):
     profile = await create_test_profile()
     profile.context.injector.bind_instance(BaseResponder, mock_responder)

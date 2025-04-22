@@ -1,6 +1,7 @@
 """Test RevNotificationRecord."""
 
 import pytest
+import pytest_asyncio
 
 from ......storage.error import StorageDuplicateError, StorageNotFoundError
 from ......utils.testing import create_test_profile
@@ -8,7 +9,7 @@ from ...messages.revoke import Revoke
 from ..rev_notification_record import RevNotificationRecord
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     profile = await create_test_profile()
     yield profile

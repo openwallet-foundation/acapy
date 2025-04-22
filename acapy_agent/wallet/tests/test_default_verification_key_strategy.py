@@ -1,14 +1,13 @@
 from unittest import IsolatedAsyncioTestCase
+
 import pytest
 
 from acapy_agent.resolver.did_resolver import DIDResolver
-from ...resolver.tests.test_did_resolver import MockResolver
 
 from ...did.did_key import DIDKey
+from ...resolver.tests.test_did_resolver import MockResolver
 from ...utils.testing import create_test_profile
-from ...wallet.default_verification_key_strategy import (
-    DefaultVerificationKeyStrategy,
-)
+from ...wallet.default_verification_key_strategy import DefaultVerificationKeyStrategy
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -48,7 +47,16 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                         },
                     ],
                     "authentication": ["did:example:123#key-1"],
-                    "assertionMethod": ["did:example:123#key-2", "did:example:123#key-3"],
+                    "assertionMethod": [
+                        "did:example:123#key-2",
+                        "did:example:123#key-3",
+                        {
+                            "id": "did:example:123#key-4",
+                            "type": "Bls12381G2Key2020",
+                            "controller": "did:example:123",
+                            "publicKeyBase58": "25EEkQtcLKsEzQ6JTo9cg4W7NHpaurn4Wg6LaNPFq6JQXnrP91SDviUz7KrJVMJd76CtAZFsRLYzvgX2JGxo2ccUHtuHk7ELCWwrkBDfrXCFVfqJKDootee9iVaF6NpdJtBE",
+                        },
+                    ],
                 },
             )
         )
@@ -87,6 +95,15 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                 proof_purpose="assertionMethod",
             )
             == "did:example:123#key-3"
+        )
+        assert (
+            await strategy.get_verification_method_id_for_did(
+                "did:example:123",
+                self.profile,
+                proof_type="BbsBlsSignature2020",
+                proof_purpose="assertionMethod",
+            )
+            == "did:example:123#key-4"
         )
 
     async def test_unsupported_did_method(self):

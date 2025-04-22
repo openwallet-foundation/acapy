@@ -88,6 +88,9 @@ from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
 
+WALLET_TAG_TITLE = "wallet"
+UPGRADE_TAG_TITLE = "AnonCreds - Wallet Upgrade"
+
 
 class WalletModuleResponseSchema(OpenAPISchema):
     """Response schema for Wallet Module."""
@@ -447,7 +450,7 @@ def format_did_info(info: DIDInfo):
         }
 
 
-@docs(tags=["wallet"], summary="List wallet DIDs")
+@docs(tags=[WALLET_TAG_TITLE], summary="List wallet DIDs")
 @querystring_schema(DIDListQueryStringSchema())
 @response_schema(DIDListSchema, 200, description="")
 @tenant_authentication
@@ -553,7 +556,7 @@ async def wallet_did_list(request: web.BaseRequest):
     return web.json_response({"results": results})
 
 
-@docs(tags=["wallet"], summary="Create a local DID")
+@docs(tags=[WALLET_TAG_TITLE], summary="Create a local DID")
 @request_schema(DIDCreateSchema())
 @response_schema(DIDResultSchema, 200, description="")
 @tenant_authentication
@@ -680,7 +683,7 @@ async def wallet_create_did(request: web.BaseRequest):
     return web.json_response({"result": format_did_info(info)})
 
 
-@docs(tags=["wallet"], summary="Fetch the current public DID")
+@docs(tags=[WALLET_TAG_TITLE], summary="Fetch the current public DID")
 @response_schema(DIDResultSchema, 200, description="")
 @tenant_authentication
 async def wallet_get_public_did(request: web.BaseRequest):
@@ -707,7 +710,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
     return web.json_response({"result": format_did_info(info)})
 
 
-@docs(tags=["wallet"], summary="Assign the current public DID")
+@docs(tags=[WALLET_TAG_TITLE], summary="Assign the current public DID")
 @querystring_schema(DIDQueryStringSchema())
 @querystring_schema(CreateAttribTxnForEndorserOptionSchema())
 @querystring_schema(AttribConnIdMatchInfoSchema())
@@ -952,7 +955,10 @@ async def promote_wallet_public_did(
     return info, attrib_def
 
 
-@docs(tags=["wallet"], summary="Update endpoint in wallet and on ledger if posted to it")
+@docs(
+    tags=[WALLET_TAG_TITLE],
+    summary="Update endpoint in wallet and on ledger if posted to it",
+)
 @request_schema(DIDEndpointWithTypeSchema)
 @querystring_schema(CreateAttribTxnForEndorserOptionSchema())
 @querystring_schema(AttribConnIdMatchInfoSchema())
@@ -1083,7 +1089,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         return web.json_response({"txn": transaction.serialize()})
 
 
-@docs(tags=["wallet"], summary="Create a jws using did keys with a given payload")
+@docs(tags=[WALLET_TAG_TITLE], summary="Create a jws using did keys with a given payload")
 @request_schema(JWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 @tenant_authentication
@@ -1121,7 +1127,10 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     return web.json_response(jws)
 
 
-@docs(tags=["wallet"], summary="Create an sd-jws using did keys with a given payload")
+@docs(
+    tags=[WALLET_TAG_TITLE],
+    summary="Create an sd-jws using did keys with a given payload",
+)
 @request_schema(SDJWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 @tenant_authentication
@@ -1163,7 +1172,7 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
     return web.json_response(sd_jws)
 
 
-@docs(tags=["wallet"], summary="Verify a jws using did keys with a given JWS")
+@docs(tags=[WALLET_TAG_TITLE], summary="Verify a jws using did keys with a given JWS")
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
 @tenant_authentication
@@ -1204,7 +1213,7 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 
 
 @docs(
-    tags=["wallet"],
+    tags=[WALLET_TAG_TITLE],
     summary="Verify an sd-jws using did keys with a given SD-JWS with "
     "optional key binding",
 )
@@ -1239,7 +1248,7 @@ async def wallet_sd_jwt_verify(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
-@docs(tags=["wallet"], summary="Query DID endpoint in wallet")
+@docs(tags=[WALLET_TAG_TITLE], summary="Query DID endpoint in wallet")
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(DIDEndpointSchema, 200, description="")
 @tenant_authentication
@@ -1273,7 +1282,9 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
     return web.json_response({"did": did, "endpoint": endpoint})
 
 
-@docs(tags=["wallet"], summary="Rotate keypair for a DID not posted to the ledger")
+@docs(
+    tags=[WALLET_TAG_TITLE], summary="Rotate keypair for a DID not posted to the ledger"
+)
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(WalletModuleResponseSchema(), description="")
 @tenant_authentication
@@ -1329,11 +1340,9 @@ class UpgradeResultSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - wallet upgrade"],
-    summary="""
-        Upgrade the wallet from askar to anoncreds - Be very careful with this! You 
-        cannot go back! See migration guide for more information.
-    """,
+    tags=[UPGRADE_TAG_TITLE],
+    summary="Upgrade the wallet from askar to askar-anoncreds. Be very careful with this!"
+    " You cannot go back! See migration guide for more information.",
 )
 @querystring_schema(UpgradeVerificationSchema())
 @response_schema(UpgradeResultSchema(), description="")
@@ -1484,7 +1493,7 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "wallet",
+            "name": WALLET_TAG_TITLE,
             "description": "DID and tag policy management",
             "externalDocs": {
                 "description": "Design",
@@ -1497,8 +1506,8 @@ def post_process_routes(app: web.Application):
     )
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "anoncreds - wallet upgrade",
-            "description": "Anoncreds wallet upgrade",
+            "name": UPGRADE_TAG_TITLE,
+            "description": "AnonCreds wallet upgrade",
             "externalDocs": {
                 "description": "Specification",
                 "url": "https://hyperledger.github.io/anoncreds-spec",

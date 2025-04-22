@@ -1,10 +1,9 @@
 import pytest
+import pytest_asyncio
 
 from ...core.profile import Profile
 from ...messaging.responder import BaseResponder, MockResponder
-from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
@@ -27,14 +26,14 @@ def mock_responder():
     yield MockResponder()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def root_profile(mock_responder: MockResponder):
     profile = await create_test_profile()
     profile.context.injector.bind_instance(BaseResponder, mock_responder)
     yield profile
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def sub_profile(mock_responder: MockResponder):
     profile = await create_test_profile()
     profile.context.injector.bind_instance(BaseResponder, mock_responder)

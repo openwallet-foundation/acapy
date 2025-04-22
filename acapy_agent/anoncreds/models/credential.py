@@ -17,13 +17,13 @@ from ...messaging.valid import (
 )
 
 
-class AnoncredsAttrValue(BaseModel):
-    """Anoncreds attribute value."""
+class AnonCredsAttrValue(BaseModel):
+    """AnonCreds attribute value."""
 
     class Meta:
-        """Anoncreds attribute value."""
+        """AnonCreds attribute value."""
 
-        schema_class = "AnoncredsAttrValueSchema"
+        schema_class = "AnonCredsAttrValueSchema"
 
     def __init__(
         self, raw: Optional[str] = None, encoded: Optional[str] = None, **kwargs
@@ -34,13 +34,13 @@ class AnoncredsAttrValue(BaseModel):
         self.encoded = encoded
 
 
-class AnoncredsAttrValueSchema(BaseModelSchema):
-    """Anoncreds attribute value schema."""
+class AnonCredsAttrValueSchema(BaseModelSchema):
+    """AnonCreds attribute value schema."""
 
     class Meta:
-        """Anoncreds attribute value schema metadata."""
+        """AnonCreds attribute value schema metadata."""
 
-        model_class = AnoncredsAttrValue
+        model_class = AnonCredsAttrValue
         unknown = EXCLUDE
 
     raw = fields.Str(required=True, metadata={"description": "Attribute raw value"})
@@ -54,24 +54,24 @@ class AnoncredsAttrValueSchema(BaseModelSchema):
     )
 
 
-class DictWithAnoncredsAttrValueSchema(fields.Dict):
+class DictWithAnonCredsAttrValueSchema(fields.Dict):
     """Dict with anoncreds attribute value schema."""
 
     def __init__(self, **kwargs):
-        """Initialize the custom schema for a dictionary with AnoncredsAttrValue."""
+        """Initialize the custom schema for a dictionary with AnonCredsAttrValue."""
         super().__init__(
             keys=fields.Str(metadata={"description": "Attribute name"}),
-            values=fields.Nested(AnoncredsAttrValueSchema()),
+            values=fields.Nested(AnonCredsAttrValueSchema()),
             **kwargs,
         )
 
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserialize(self, value: dict, attr: str, data: dict, **kwargs) -> dict:
         """Deserialize dict with anoncreds attribute value."""
         if not isinstance(value, dict):
             raise ValidationError("Value must be a dict.")
 
         errors = {}
-        anoncreds_attr_value_schema = AnoncredsAttrValueSchema()
+        anoncreds_attr_value_schema = AnonCredsAttrValueSchema()
 
         for k, v in value.items():
             if isinstance(v, dict):
@@ -85,20 +85,20 @@ class DictWithAnoncredsAttrValueSchema(fields.Dict):
         return value
 
 
-class AnoncredsCredential(BaseModel):
-    """Anoncreds credential."""
+class AnonCredsCredential(BaseModel):
+    """AnonCreds credential."""
 
     class Meta:
-        """Anoncreds credential metadata."""
+        """AnonCreds credential metadata."""
 
-        schema_class = "AnoncredsCredentialSchema"
+        schema_class = "AnonCredsCredentialSchema"
 
     def __init__(
         self,
         schema_id: Optional[str] = None,
         cred_def_id: Optional[str] = None,
         rev_reg_id: Optional[str] = None,
-        values: Mapping[str, AnoncredsAttrValue] = None,
+        values: Mapping[str, AnonCredsAttrValue] = None,
         signature: Optional[Mapping] = None,
         signature_correctness_proof: Optional[Mapping] = None,
         rev_reg: Optional[Mapping] = None,
@@ -115,13 +115,13 @@ class AnoncredsCredential(BaseModel):
         self.witness = witness
 
 
-class AnoncredsCredentialSchema(BaseModelSchema):
-    """Anoncreds credential schema."""
+class AnonCredsCredentialSchema(BaseModelSchema):
+    """AnonCreds credential schema."""
 
     class Meta:
-        """Anoncreds credential schemametadata."""
+        """AnonCreds credential schemametadata."""
 
-        model_class = AnoncredsCredential
+        model_class = AnonCredsCredential
         unknown = EXCLUDE
 
     schema_id = fields.Str(
@@ -148,7 +148,7 @@ class AnoncredsCredentialSchema(BaseModelSchema):
             "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
-    values = DictWithAnoncredsAttrValueSchema(
+    values = DictWithAnonCredsAttrValueSchema(
         required=True,
         metadata={"description": "Credential attributes"},
     )

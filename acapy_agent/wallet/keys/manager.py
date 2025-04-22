@@ -2,12 +2,12 @@
 
 import logging
 from ...core.profile import ProfileSession
+from ...resolver.did_resolver import DIDResolver
+from ...utils.multiformats import multibase
+from ...wallet.error import WalletNotFoundError
 from ..base import BaseWallet
 from ..key_type import BLS12381G2, ED25519, P256, KeyType
 from ..util import b58_to_bytes, bytes_to_b58
-from ...utils.multiformats import multibase
-from ...wallet.error import WalletNotFoundError
-from ...resolver.did_resolver import DIDResolver
 
 LOGGER = logging.getLogger(__name__)
 

@@ -21,7 +21,7 @@ from .models.revocation import (
     RevRegDefResult,
 )
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from .models.schema_info import AnoncredsSchemaInfo
+from .models.schema_info import AnonCredsSchemaInfo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class AnonCredsRegistry:
             for registry in registries:
                 self.register(registry)
 
-    def register(self, registry: BaseAnonCredsHandler):
+    def register(self, registry: BaseAnonCredsHandler) -> None:
         """Register a new registry."""
         if isinstance(registry, BaseAnonCredsResolver):
             self.resolvers.append(registry)
@@ -102,7 +102,7 @@ class AnonCredsRegistry:
 
     async def get_schema_info_by_id(
         self, profile: Profile, schema_id: str
-    ) -> AnoncredsSchemaInfo:
+    ) -> AnonCredsSchemaInfo:
         """Get a schema info from the registry."""
         resolver = await self._resolver_for_identifier(schema_id)
         return await resolver.get_schema_info_by_id(profile, schema_id)

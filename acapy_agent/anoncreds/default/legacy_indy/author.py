@@ -5,14 +5,15 @@ from typing import Optional
 from aiohttp import web
 
 from acapy_agent.connections.models.conn_record import ConnRecord
+from acapy_agent.core.profile import Profile
 from acapy_agent.messaging.models.base import BaseModelError
-from acapy_agent.protocols.endorse_transaction.v1_0.util import (
-    get_endorser_connection_id,
-)
+from acapy_agent.protocols.endorse_transaction.v1_0.util import get_endorser_connection_id
 from acapy_agent.storage.error import StorageNotFoundError
 
 
-async def get_endorser_info(profile, options: Optional[dict] = None):
+async def get_endorser_info(
+    profile: Profile, options: Optional[dict] = None
+) -> tuple[str, str]:
     """Gets the endorser did for the current transaction."""
     options = options or {}
     endorser_connection_id = options.get("endorser_connection_id", None)
@@ -45,8 +46,8 @@ async def get_endorser_info(profile, options: Optional[dict] = None):
     if "endorser_did" not in endorser_info.keys():
         raise web.HTTPForbidden(
             reason=(
-                ' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                '"endorser_did" is not set in "endorser_info" '
+                "in connection metadata for this connection record"
             )
         )
 

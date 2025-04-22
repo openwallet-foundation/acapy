@@ -21,7 +21,7 @@ from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_info import DIDInfo, INVITATION_REUSE_KEY
+from ....wallet.did_info import INVITATION_REUSE_KEY, DIDInfo
 from ....wallet.did_method import PEER2, PEER4
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519

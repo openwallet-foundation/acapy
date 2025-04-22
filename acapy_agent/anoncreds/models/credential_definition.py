@@ -1,4 +1,4 @@
-"""Anoncreds cred def OpenAPI validators."""
+"""AnonCreds cred def OpenAPI validators."""
 
 from typing import Optional
 
@@ -28,7 +28,7 @@ class CredDefValuePrimary(BaseModel):
     class Meta:
         """PrimarySchema metadata."""
 
-        schema_class = "CredDefValuePrimarySchemaAnoncreds"
+        schema_class = "CredDefValuePrimarySchemaAnonCreds"
 
     def __init__(self, n: str, s: str, r: dict, rctxt: str, z: str, **kwargs):
         """Initialize an instance.
@@ -53,7 +53,7 @@ class CredDefValuePrimary(BaseModel):
         self.z = z
 
 
-class CredDefValuePrimarySchemaAnoncreds(BaseModelSchema):
+class CredDefValuePrimarySchemaAnonCreds(BaseModelSchema):
     """Cred def value primary schema."""
 
     class Meta:
@@ -75,7 +75,7 @@ class CredDefValueRevocation(BaseModel):
     class Meta:
         """CredDefValueRevocation metadata."""
 
-        schema_class = "CredDefValueRevocationSchemaAnoncreds"
+        schema_class = "CredDefValueRevocationSchemaAnonCreds"
 
     def __init__(
         self,
@@ -122,7 +122,7 @@ class CredDefValueRevocation(BaseModel):
         self.y = y
 
 
-class CredDefValueRevocationSchemaAnoncreds(BaseModelSchema):
+class CredDefValueRevocationSchemaAnonCreds(BaseModelSchema):
     """Cred def value revocation schema."""
 
     class Meta:
@@ -160,7 +160,7 @@ class CredDefValue(BaseModel):
     class Meta:
         """CredDefValue metadata."""
 
-        schema_class = "CredDefValueSchemaAnoncreds"
+        schema_class = "CredDefValueSchemaAnonCreds"
 
     def __init__(
         self,
@@ -180,7 +180,7 @@ class CredDefValue(BaseModel):
         self.revocation = revocation
 
 
-class CredDefValueSchemaAnoncreds(BaseModelSchema):
+class CredDefValueSchemaAnonCreds(BaseModelSchema):
     """Cred def value schema."""
 
     class Meta:
@@ -190,11 +190,11 @@ class CredDefValueSchemaAnoncreds(BaseModelSchema):
         unknown = EXCLUDE
 
     primary = fields.Nested(
-        CredDefValuePrimarySchemaAnoncreds(),
+        CredDefValuePrimarySchemaAnonCreds(),
         metadata={"description": "Primary value for credential definition"},
     )
     revocation = fields.Nested(
-        CredDefValueRevocationSchemaAnoncreds(),
+        CredDefValueRevocationSchemaAnonCreds(),
         metadata={"description": "Revocation value for credential definition"},
         required=False,
     )
@@ -239,7 +239,7 @@ class CredDef(BaseModel):
         """Convert a native credential definition to a CredDef object."""
         return cls.deserialize(cred_def.to_json())
 
-    def to_native(self):
+    def to_native(self) -> CredentialDefinition:
         """Convert to native anoncreds credential definition."""
         return CredentialDefinition.load(self.serialize())
 
@@ -277,7 +277,7 @@ class CredDefSchema(BaseModelSchema):
             "example": "default",
         }
     )
-    value = fields.Nested(CredDefValueSchemaAnoncreds())
+    value = fields.Nested(CredDefValueSchemaAnonCreds())
 
 
 class CredDefState(BaseModel):
