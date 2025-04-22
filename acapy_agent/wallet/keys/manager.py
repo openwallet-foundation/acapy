@@ -102,7 +102,7 @@ class MultikeyManager:
 
     async def resolve_and_bind_kid(self, kid: str):
         """Fetch key if exists, otherwise resolve and bind it.
-        
+
         This function is idempotent.
         """
         if await self.kid_exists(kid):

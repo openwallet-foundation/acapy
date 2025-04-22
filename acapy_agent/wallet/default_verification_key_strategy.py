@@ -53,14 +53,14 @@ class BaseVerificationKeyStrategy(ABC):
         verification_method_id: Optional[str] = None,
     ) -> str:
         """Find suitable VerificationMethod.
-        
+
         Given a DID and other verification method requirements,
         find and return the first suitable verification method ID.
         Throws if no suitable verification method
 
         :params did: the did
         :params profile: context of the call
-        :params proof_type: the JSON-LD proof type which the verification method 
+        :params proof_type: the JSON-LD proof type which the verification method
             should be able to produce.
         :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :params verification_method_id: the verification method ID which must match.
@@ -74,7 +74,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
 
     def __init__(self):
         """Initialize the key types mapping.
-        
+
         Map of LDP signature suite (proofType) to suitable key types
         """
         self.key_types_mapping = {
