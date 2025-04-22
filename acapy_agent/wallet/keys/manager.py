@@ -75,17 +75,15 @@ class MultikeyManager:
         self.session: ProfileSession = session
         self.wallet: BaseWallet = session.inject(BaseWallet)
 
-    async def idempotent_resolve_and_store_from_kid(self, kid: str):
-        """Fetch key if exists, otherwise resolve and store it"""
+    async def resolve_and_bind_kid(self, kid: str):
+        """Fetch key if exists, otherwise resolve and bind it. This function is idempotent."""
         if await self.kid_exists(kid):
-            LOGGER.debug(
-                f"Key for kid {kid} already exists in storage, will not resolve from ledger."
-            )
+            LOGGER.debug(f"kid {kid} already bound in storage, will not resolve.")
             return await self.from_kid(kid)
         else:
             multikey = await self.resolve_multikey_from_verification_method(kid)
             LOGGER.debug(
-                f"Key for kid {kid} did not exists in storage, storing resolved multikey {multikey}."
+                f"kid {kid} binding not found in storage, binding to resolved multikey {multikey}."
             )
             return await self.update(multikey, kid)
 

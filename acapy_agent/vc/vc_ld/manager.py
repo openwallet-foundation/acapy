@@ -204,7 +204,7 @@ class VcLdpManager:
         
         async with self.profile.session() as session:
             key_manager = MultikeyManager(session)
-            key_info = await key_manager.idempotent_resolve_and_store_from_kid(verification_method)
+            key_info = await key_manager.resolve_and_bind_kid(verification_method)
             multikey = key_info["multikey"]
 
         # Get signature class based on proof type
