@@ -143,8 +143,6 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                 if verification_method_id is not None:
                     if method.id != verification_method_id:
                         continue
-                    suitable_methods = [method]
-                    break
 
                 vm_multikey = multikey_from_verification_method(method)
 

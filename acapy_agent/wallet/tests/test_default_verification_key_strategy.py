@@ -94,7 +94,7 @@ class TestDefaultVerificationKeyStrategy(IsolatedAsyncioTestCase):
                 proof_type="Ed25519Signature2018",
                 proof_purpose="assertionMethod",
             )
-            == "did:example:123#key-3"
+            == "did:example:123#key-2"
         )
         assert (
             await strategy.get_verification_method_id_for_did(
