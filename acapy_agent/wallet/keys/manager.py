@@ -64,6 +64,7 @@ def key_type_from_multikey(multikey: str) -> KeyType:
 
 
 def multikey_from_verification_method(verification_method: VerificationMethod) -> str:
+    """Derive a multikey from a VerificationMethod."""
     if verification_method.type == "Multikey":
         multikey = verification_method.public_key_multibase
 
@@ -100,19 +101,23 @@ class MultikeyManager:
         self.wallet: BaseWallet = session.inject(BaseWallet)
 
     async def resolve_and_bind_kid(self, kid: str):
-        """Fetch key if exists, otherwise resolve and bind it. This function is idempotent."""
+        """Fetch key if exists, otherwise resolve and bind it.
+        
+        This function is idempotent.
+        """
         if await self.kid_exists(kid):
             LOGGER.debug(f"kid {kid} already bound in storage, will not resolve.")
             return await self.from_kid(kid)
         else:
             multikey = await self.resolve_multikey_from_verification_method_id(kid)
             LOGGER.debug(
-                f"kid {kid} binding not found in storage, binding to resolved multikey {multikey}."
+                f"kid {kid} binding not found in storage, \
+                binding to resolved multikey {multikey}."
             )
             return await self.update(multikey, kid)
 
     async def resolve_multikey_from_verification_method_id(self, kid: str):
-        """Derive a multikey from the verification method."""
+        """Derive a multikey from the verification method ID."""
         resolver = self.session.inject(DIDResolver)
         verification_method = await resolver.dereference(
             profile=self.session.profile, did_url=kid

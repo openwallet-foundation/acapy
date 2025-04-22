@@ -17,7 +17,6 @@ from ...storage.vc_holder.vc_record import VCRecord
 from ...wallet.base import BaseWallet
 from ...wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ...wallet.did_info import DIDInfo
-from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import BLS12381G2, ED25519, P256, KeyType
 from ..ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
@@ -25,7 +24,6 @@ from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
-from ...resolver.did_resolver import DIDResolver
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
@@ -322,7 +320,7 @@ class VcLdpManager:
 
         did_info = await self._did_info_for_did(issuer_id)
 
-        # Determine/check suitable verification method for signing (fails if none suitable)
+        # Determine/check suitable verification method for signing. fails if none suitable
         verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
         verification_method_id = (
             await verkey_id_strategy.get_verification_method_id_for_did(

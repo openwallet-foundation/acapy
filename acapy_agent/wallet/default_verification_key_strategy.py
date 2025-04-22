@@ -6,7 +6,6 @@ from typing import Literal, Optional
 
 from pydid import DIDDocument, VerificationMethod
 
-from acapy_agent.wallet.base import BaseWallet
 from acapy_agent.wallet.key_type import BLS12381G2, ED25519, P256
 from acapy_agent.wallet.keys.manager import (
     MultikeyManager,
@@ -53,14 +52,16 @@ class BaseVerificationKeyStrategy(ABC):
         proof_purpose: Optional[ProofPurposeStr] = None,
         verification_method_id: Optional[str] = None,
     ) -> str:
-        """Given a DID and other verification method requirements,
+        """Find suitable VerificationMethod.
+        
+        Given a DID and other verification method requirements,
         find and return the first suitable verification method ID.
-
         Throws if no suitable verification method
 
         :params did: the did
         :params profile: context of the call
-        :params proof_type: the JSON-LD proof type which the verification method should be produce.
+        :params proof_type: the JSON-LD proof type which the verification method 
+            should be able to produce.
         :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :params verification_method_id: the verification method ID which must match.
         :returns str: the first suitable verification method
@@ -72,7 +73,10 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     """A basic implementation for verkey strategy."""
 
     def __init__(self):
-        """Initialize the key types mapping. Map of LDP signature suite (proofType) to suitable key types"""
+        """Initialize the key types mapping.
+        
+        Map of LDP signature suite (proofType) to suitable key types
+        """
         self.key_types_mapping = {
             "Ed25519Signature2018": [ED25519],
             "Ed25519Signature2020": [ED25519],
@@ -90,6 +94,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         proof_purpose: Optional[ProofPurposeStr] = None,
         verification_method_id: Optional[str] = None,
     ) -> str:
+        """Find suitable VerificationMethod."""
         proof_type = proof_type or "Ed25519Signature2018"
         proof_purpose = proof_purpose or "assertionMethod"
 
@@ -109,8 +114,9 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                 f"proof type {proof_type} is not supported"
             )
 
-        # TODO - if the local representation of the DID contains all this information, DID resolution cost could be avoided.
-        #   however, for now there is not adequate information locally to determine if a DID/VM is suitable.
+        # TODO - if the local representation of the DID contains all this information,
+        #   DID resolution cost could be avoided. However, for now there is not adequate
+        #   information locally to determine if a DID/VM is suitable.
 
         # else, handle generically for any DID
         resolver = profile.inject(DIDResolver)
@@ -128,10 +134,10 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
                 # Dereference any refs in the verification relationship
                 if isinstance(method_or_ref, str):
                     method = await resolver.dereference_verification_method(
-                        profile, method, document=doc
+                        profile, method_or_ref, document=doc
                     )
                 else:
-                    method = VerificationMethod.deserialize(method)
+                    method = VerificationMethod.deserialize(method_or_ref)
 
                     # filter for a specific verification method ID if one was specified
                 if verification_method_id is not None:
