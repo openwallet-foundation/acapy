@@ -5,6 +5,11 @@ name: Ruff Code Formatter and Linting Check
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 jobs:
   lint:
     name: lint

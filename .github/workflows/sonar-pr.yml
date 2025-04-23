@@ -6,6 +6,11 @@ on:
     types: 
       - completed
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 jobs:
   SonarCloud:
     runs-on: ubuntu-latest
