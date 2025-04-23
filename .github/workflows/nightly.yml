@@ -9,7 +9,6 @@ permissions:
   contents: read
   pull-requests: read
   checks: write
-  packages: write
 
 jobs:
   tests:
@@ -60,5 +59,7 @@ jobs:
     strategy:
       matrix:
         tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
+    permissions:
+      packages: write
     with:
       tag: ${{ matrix.tag }}
