@@ -5,6 +5,11 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 jobs:
   tests:
     if: github.repository_owner == 'openwallet-foundation' || github.event_name == 'workflow_dispatch'
@@ -54,5 +59,7 @@ jobs:
     strategy:
       matrix:
         tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
+    permissions:
+      packages: write
     with:
       tag: ${{ matrix.tag }}
