@@ -6,6 +6,9 @@ name: "Code scanning - action"
   schedule:
     - cron: "0 19 * * 0"
 
+permissions:
+  contents: read
+
 jobs:
   CodeQL-Build:
     # CodeQL runs on ubuntu-latest and windows-latest
