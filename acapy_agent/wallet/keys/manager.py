@@ -80,6 +80,7 @@ def multikey_from_verification_method(verification_method: VerificationMethod) -
         multikey = verkey_to_multikey(
             verification_method.public_key_base58, alg="bls12381g2"
         )
+    # TODO address JsonWebKey based verification methods
 
     else:
         raise MultikeyManagerError("Unknown verification method type.")
