@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.0rc1"
+    "version" : "v1.3.0rc2"
   },
   "servers" : [ {
     "url" : "/"
@@ -2037,7 +2037,7 @@
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/CreateRequest"
+                "$ref" : "#/components/schemas/CreateDidIndyRequest"
               }
             }
           },
@@ -2048,7 +2048,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/CreateResponse"
+                  "$ref" : "#/components/schemas/CreateDidIndyResponse"
                 }
               }
             },
@@ -8562,6 +8562,46 @@
         },
         "type" : "object"
       },
+      "CreateDidIndyRequest" : {
+        "properties" : {
+          "features" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Additional features to enable for the did.",
+            "example" : "{}",
+            "type" : "object"
+          },
+          "options" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Additional configuration options. Supported options: did, seed, key_type. Default key_type is ed25519.",
+            "example" : {
+              "did" : "did:indy:WRfXPg8dantKVubE3HX8pw",
+              "key_type" : "ed25519",
+              "seed" : "000000000000000000000000Trustee1"
+            },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "CreateDidIndyResponse" : {
+        "properties" : {
+          "did" : {
+            "description" : "DID created",
+            "example" : "did:indy:DFZgMggBEXcZFVQ2ZBTwdr",
+            "type" : "string"
+          },
+          "verkey" : {
+            "description" : "Verification key",
+            "example" : "BnSWTUQmdYCewSGFrRUhT6LmKdcCcSzRGqWXMPnEP168",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "CreateKeyRequest" : {
         "properties" : {
           "alg" : {
@@ -8592,46 +8632,6 @@
           "multikey" : {
             "description" : "The Public Key Multibase format (multikey)",
             "example" : "z6MkgKA7yrw5kYSiDuQFcye4bMaJpcfHFry3Bx45pdWh3s8i",
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "CreateRequest" : {
-        "properties" : {
-          "features" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Additional features to enable for the did.",
-            "example" : "{}",
-            "type" : "object"
-          },
-          "options" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Additional configuration options",
-            "example" : {
-              "did" : "did:indy:WRfXPg8dantKVubE3HX8pw",
-              "key_type" : "ed25519",
-              "seed" : "000000000000000000000000Trustee1"
-            },
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
-      "CreateResponse" : {
-        "properties" : {
-          "did" : {
-            "description" : "DID created",
-            "example" : "did:indy:DFZgMggBEXcZFVQ2ZBTwdr",
-            "type" : "string"
-          },
-          "verkey" : {
-            "description" : "Verification key",
-            "example" : "BnSWTUQmdYCewSGFrRUhT6LmKdcCcSzRGqWXMPnEP168",
             "type" : "string"
           }
         },
