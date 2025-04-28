@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event_name == 'pull_request' && github.repository == 'openwallet-foundation/acapy') || (github.event_name != 'pull_request')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: install
         run: |
           python -m venv env/
           source env/bin/activate
           python -m pip install --upgrade pip
           python -m pip install .
-      - uses: pypa/gh-action-pip-audit@v1.1.0
+      - uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266 # v1.1.0
         with:
           virtual-environment: env/
           local: true

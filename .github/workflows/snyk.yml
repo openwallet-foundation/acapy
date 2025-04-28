@@ -7,12 +7,18 @@ on:
       - acapy_agent/**
       - docker/**
 
+permissions:
+  contents: read
+
 jobs:
   snyk:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+      security-events: write  # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'openwallet-foundation' }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Build a Docker image
       run: docker build  -t acapy-agent -f docker/Dockerfile .
@@ -21,7 +27,7 @@ jobs:
       # Snyk can be used to break the build when it detects vulnerabilities.
       # In this case we want to upload the issues to GitHub Code Scanning
       continue-on-error: true
-      uses: snyk/actions/docker@0.4.0
+      uses: snyk/actions/docker@b98d498629f1c368650224d6d212bf7dfa89e4bf # 0.4.0
       env:
         # In order to use the Snyk Action you will need to have a Snyk API token.
         # More details in https://github.com/snyk/actions#getting-your-snyk-token
@@ -39,6 +45,6 @@ jobs:
         sed -i 's/"security-severity": "null"/"security-severity": "0"/g' snyk.sarif
     
     - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@28deaeda66b76a05916b6923827895f2b14ab387 # v3.28.16
       with:
         sarif_file: snyk.sarif

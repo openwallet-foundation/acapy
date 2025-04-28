@@ -6,33 +6,38 @@ on:
     types: 
       - completed
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 jobs:
   SonarCloud:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success' && github.repository == 'openwallet-foundation/acapy'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
             fetch-depth: 0
       - name: Download PR number artifact
-        uses: dawidd6/action-download-artifact@v9
+        uses: dawidd6/action-download-artifact@07ab29fd4a977ae4d2b275087cf67563dfdf0295 # v9
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
           name: PR_NUMBER
       - name: Read PR_NUMBER
         id: pr_number
-        uses: juliangruber/read-file-action@v1
+        uses: juliangruber/read-file-action@b549046febe0fe86f8cb4f93c24e284433f9ab58 # v1.1.7
         with:
           path: ./PR_NUMBER
       - name: Download Test Coverage
-        uses: dawidd6/action-download-artifact@v9
+        uses: dawidd6/action-download-artifact@07ab29fd4a977ae4d2b275087cf67563dfdf0295 # v9
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
           name: TEST_COV
       - name: Request GitHub API for PR data
-        uses: octokit/request-action@v2.x
+        uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         id: get_pr_data
         with:
           route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ steps.pr_number.outputs.content }}
@@ -52,7 +57,7 @@ jobs:
 
           git checkout -B temp-branch-for-scanning upstream/${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@master
+        uses: SonarSource/sonarqube-scan-action@aa494459d7c39c106cc77b166de8b4250a32bb97 # master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
