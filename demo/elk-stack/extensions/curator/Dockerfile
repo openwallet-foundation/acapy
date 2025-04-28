@@ -1,4 +1,4 @@
-FROM untergeek/curator:8.0.16@sha256:8ab15516eb320bddb042c6da3c81b57e4e69a7aac04efc32190db979fe0bfb5b
+FROM untergeek/curator:8.0.21@sha256:eca135f7f6e1781cfbca9e7cb3fa8237a481cfd815aa7ef52b38adb268ab6f97
 
 USER root
 
