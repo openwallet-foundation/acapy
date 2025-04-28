@@ -528,19 +528,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#130rc1" class="md-nav__link">
+  <a href="#130rc2" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.0rc1
+      1.3.0rc2
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.0rc1">
+    <nav class="md-nav" aria-label="1.3.0rc2">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#april-3-2025" class="md-nav__link">
+  <a href="#april-28-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      April 3, 2025
+      April 28, 2025
     </span>
   </a>
   
@@ -567,7 +567,7 @@
           <li class="md-nav__item">
   <a href="#130-aca-py-controller-api-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.0 ACA-Py Controller API Changes:
+      1.3.0 ACA-Py Controller API Changes
     </span>
   </a>
   
@@ -2674,11 +2674,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../deploying/AnonCredsControllerMigration.md" class="md-nav__link">
+      <a href="../deploying/AnonCredsControllerMigration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Controller Migration to use AnonCreds Rust
+    Controller Migration to use the askar-anoncreds Wallet Type
     
   </span>
   
@@ -3215,19 +3215,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#130rc1" class="md-nav__link">
+  <a href="#130rc2" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.0rc1
+      1.3.0rc2
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.0rc1">
+    <nav class="md-nav" aria-label="1.3.0rc2">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#april-3-2025" class="md-nav__link">
+  <a href="#april-28-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      April 3, 2025
+      April 28, 2025
     </span>
   </a>
   
@@ -3254,7 +3254,7 @@
           <li class="md-nav__item">
   <a href="#130-aca-py-controller-api-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.0 ACA-Py Controller API Changes:
+      1.3.0 ACA-Py Controller API Changes
     </span>
   </a>
   
@@ -4029,22 +4029,34 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="130rc1">1.3.0rc1<a class="headerlink" href="#130rc1" title="Permanent link">&para;</a></h2>
-<h3 id="april-3-2025">April 3, 2025<a class="headerlink" href="#april-3-2025" title="Permanent link">&para;</a></h3>
-<p>Release 1.3.0 is a significant release that adds many updates, fixes and an important breaking change (starting to remove support for <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10">AIP 1.0</a> from ACA-Py) from the 1.2.LTS branch of ACA-Py. The full list of changes are in in the <a href="#130-categorized-list-of-pull-requests">categorized list of pull requests</a> for the release. As always, ACA-Py remains fully up to date with its dependencies. Fixes and improvements focused around the latest wallet type (<code>askar-anoncreds</code>), AnonCreds processing in general, and AnonCreds revocation in particular. New to this release is a ACA-Py Helm Chart that can be used in deploying ACA-Py.</p>
+<h2 id="130rc2">1.3.0rc2<a class="headerlink" href="#130rc2" title="Permanent link">&para;</a></h2>
+<h3 id="april-28-2025">April 28, 2025<a class="headerlink" href="#april-28-2025" title="Permanent link">&para;</a></h3>
+<p>ACA-Py 1.3.0 introduces significant improvements across wallet types, AnonCreds support, multi-tenancy, DIDComm interoperability, developer experience, and software supply chain management. This release strengthens stability, modernizes protocol support, and delivers important updates for AnonCreds credential handling. A small number of breaking changes are included and are detailed below.</p>
+<p>Updates were made to to the <code>askar-anoncreds</code> wallet type (<a href="https://github.com/openwallet-foundation/askar">Askar</a> plus the latest <a href="https://github.com/hyperledger/anoncreds-rs">AnonCreds Rust</a> library), addressing issues with multi-ledger configurations, multitenant deployments, and credential handling across different wallet types. Wallet profile management was strengthened by enforcing unique names to avoid conflicts in multitenant environments.</p>
+<p>AnonCreds handling saw extensive refinements, including fixes to credential issuance, revocation management, and proof presentation workflows. The release also introduces support for <code>did:indy</code> Transaction Version 2 and brings better alignment between the ledger API responses and the expected schemas. Several API documentation updates and improvements to type hints further enhance the developer experience when working with AnonCreds features.</p>
+<p>Support for multi-tenancy continues to mature, with fixes that better isolate tenant wallets from the base wallet and improved connection reuse across tenants.</p>
+<p>Logging across ACA-Py has been significantly improved to deliver clearer, more actionable logs, while error handling was enhanced to provide better diagnostics for validation failures and resolver setup issues.</p>
+<p>Work toward broader interoperability continued, with the introduction of support for the <a href="https://www.w3.org/TR/vc-data-model-2.0/">Verifiable Credentials Data Model (VCDM) 2.0</a>, as well as enhancements to DIDDoc handling, including support for BLS12381G2 key types. A new DIDComm route for fetching existing invitations was added, and a number of minor protocol-level improvements were made to strengthen reliability.</p>
+<p>The release also includes many improvements for developers, including a new ACA-Py Helm Chart to simplify Kubernetes deployments, updated tutorials, and more updates to demos (such as <a href="https://aca-py.org/latest/demo/AliceGetsAPhone/">AliceGetsAPhone</a>). Dependency upgrades across the project further solidify the platform for long-term use.</p>
+<p>Significant work was also done in this release to improve the security and integrity of ACA-Py's software supply chain. Updates to the CI/CD pipelines hardened GitHub Actions workflows, introduced pinned dependencies and digests for builds, optimized Dockerfile construction, and improved dependency management practices. These changes directly contribute to a stronger security posture and have improved <a href="https://scorecard.dev/viewer/?uri=github.com/openwallet-foundation/acapy">ACA-Py's OpenSSF Scorecard evaluation</a>, ensuring higher levels of trust and verifiability for those deploying ACA-Py in production environments.</p>
 <h3 id="130-deprecation-notices">1.3.0 Deprecation Notices<a class="headerlink" href="#130-deprecation-notices" title="Permanent link">&para;</a></h3>
 <ul>
-<li>In the next ACA-Py release, we will be dropping from the core ACA-Py repository the AIP 1.0 <a href="https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/">RFC 0037 Issue Credentials v1.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/">RFC 0037 Present Proof v1.0</a> DIDComm protocols. Each of the protocols will be moved to the <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> repo. All ACA-Py implementers that use those protocols <strong>SHOULD</strong> update as soon as possible to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/">AIP 2.0</a> versions of those protocols (<a href="https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/">RFC 0453 Issue Credential v2.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/">RFC 0454 Present Proof v2.0</a>, respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins.</li>
+<li>In the next ACA-Py release, we will be dropping from the core ACA-Py repository the <a href="https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/">AIP 1.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/">RFC 0037 Present Proof v1.0</a> DIDComm protocols. Each of the protocols will be moved to the <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> repo. All ACA-Py implementers that use those protocols <strong>SHOULD</strong> update as soon as possible to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/">AIP 2.0</a> versions of those protocols (<a href="https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/">RFC 0453 Issue Credential v2.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/">RFC 0454 Present Proof v2.0</a>, respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins.</li>
 </ul>
 <h3 id="130-breaking-changes">1.3.0 Breaking Changes<a class="headerlink" href="#130-breaking-changes" title="Permanent link">&para;</a></h3>
-<p>In this release, the DiDComm <a href="https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/">RFC 0160 Connections</a> is removed, in favour of the newer, more complete <a href="https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/">RFC 0434 Out of Band</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/">RFC 0023 DID Exchange</a>. Those still requiring <a href="https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/">RFC 0160 Connections</a> protocol support must update their startup parameters to include the <a href="https://plugins.aca-py.org/latest/connections/">Connections Protocol Plugin</a>. See the documentation for details, but once the ACA-Py instance startup options are extended to include the Connections protocol plugin, Controllers using the Connections protocol should continue to work as they had been. That said, we highly recommend implementers move to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/">RFC 0434 Out of Band</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/">RFC 0023 DID Exchange</a> Protocols as soon as possible.</p>
-<h3 id="130-aca-py-controller-api-changes">1.3.0 ACA-Py Controller API Changes:<a class="headerlink" href="#130-aca-py-controller-api-changes" title="Permanent link">&para;</a></h3>
+<p>This release includes a small number of breaking changes:</p>
 <ul>
-<li>Added: <code>did:indy</code> support, including a new <code>POST /did/indy/create</code> endpoint</li>
-<li>Routes that support pagination (such as endpoints for fetching connections or credential/presentation exchange records), now include <code>descending</code> as an optional query parameter.</li>
-<li><code>validFrom</code> and <code>validUntil</code> added to the <code>Credential</code> and <code>VerifiableCredential</code> objects</li>
+<li>The DIDComm <a href="https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/">RFC 0160 Connections</a> protocol is removed, in favour of the newer, more complete <a href="https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/">RFC 0434 Out of Band</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/">RFC 0023 DID Exchange</a>. Those still requiring <a href="https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/">RFC 0160 Connections</a> protocol support must update their startup parameters to include the <a href="https://plugins.aca-py.org/latest/connections/">Connections Protocol Plugin</a>. See the documentation for details, but once the ACA-Py instance startup options are extended to include the Connections protocol plugin, Controllers using the Connections protocol should continue to work as they had been. That said, we highly recommend implementers seeking interoperability move to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/">RFC 0434 Out of Band</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/">RFC 0023 DID Exchange</a> Protocols as soon as possible.</li>
+<li>Schema objects related to <code>did:indy</code> operations have been renamed to improve clarity and consistency. Clients interacting with <code>did:indy</code> endpoints should review and adjust any schema validations or mappings in their applications.</li>
 </ul>
-<p>Specifics of the majority of the can be found by looking at the diffs for the <code>swagger.json</code> and <code>openapi.json</code> files that are part of the <a href="https://github.com/openwallet-foundation/acapy/pull/3604">1.3.0.rc Release Pull Request</a>. Later pull requests might introduce some additional changes.</p>
+<h3 id="130-aca-py-controller-api-changes">1.3.0 ACA-Py Controller API Changes<a class="headerlink" href="#130-aca-py-controller-api-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>did:indy</code> support added, including a new <code>POST /did/indy/create</code> endpoint.</li>
+<li>Routes that support pagination (such as endpoints for fetching connections or credential/presentation exchange records), now include <code>descending</code> as an optional query parameter and have deprecated the <code>count</code> and <code>start</code> query parameters in favor of the more standard <code>limit</code> and <code>offset</code> parameters.</li>
+<li><code>validFrom</code> and <code>validUntil</code> added to the <code>Credential</code> and <code>VerifiableCredential</code> objects.</li>
+<li>For consistency (and developer sanity), all <code>Anoncreds</code> references in the ACA-Py codebase have been changed to the more common <code>AnonCreds</code> (see <a href="https://github.com/openwallet-foundation/acapy/pull/3573">PR #3573</a>). Controller references may have to be updated to reflect the update.</li>
+</ul>
+<p>Specifics of the majority of the changes can be found by looking at the diffs for the <code>swagger.json</code> and <code>openapi.json</code> files that are part of the <a href="https://github.com/openwallet-foundation/acapy/pull/3604">1.3.0 Release Pull Request</a>. Later pull requests might introduce some additional changes.</p>
 <h3 id="130-categorized-list-of-pull-requests">1.3.0 Categorized List of Pull Requests<a class="headerlink" href="#130-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Updates/fixes to wallet types -- <code>askar</code> and <code>askar-anoncreds</code><ul>
@@ -4059,6 +4071,10 @@
 </ul>
 </li>
 <li>Updates/fixes to AnonCreds Processing<ul>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Fix swagger tag names for AnonCreds endpoints <a href="https://github.com/openwallet-foundation/acapy/pull/3661">#3661</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Add type hints to anoncreds module <a href="https://github.com/openwallet-foundation/acapy/pull/3652">#3652</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix publishing all pending AnonCreds revocations <a href="https://github.com/openwallet-foundation/acapy/pull/3626">#3626</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Rename Anoncreds to AnonCreds <a href="https://github.com/openwallet-foundation/acapy/pull/3573">#3573</a> <a href="https://github.com/ff137">ff137</a></li>
 <li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Use correct model for sending AnonCreds presentation <a href="https://github.com/openwallet-foundation/acapy/pull/3618">#3618</a> <a href="https://github.com/ff137">ff137</a></li>
 <li>fix: align ledger config schema with API response <a href="https://github.com/openwallet-foundation/acapy/pull/3615">#3615</a> <a href="https://github.com/MonolithicMonk">MonolithicMonk</a></li>
 <li>fix(ledger): correct response format for /ledger/get-write-ledgers endpoint <a href="https://github.com/openwallet-foundation/acapy/pull/3613">#3613</a> <a href="https://github.com/MonolithicMonk">MonolithicMonk</a></li>
@@ -4083,6 +4099,8 @@
 </ul>
 </li>
 <li>Logging and Error Handling Updates and Fixes:<ul>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Replace print statements in Banner with info log <a href="https://github.com/openwallet-foundation/acapy/pull/3643">#3643</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Improve logging in core components <a href="https://github.com/openwallet-foundation/acapy/pull/3332">#3332</a> <a href="https://github.com/ff137">ff137</a></li>
 <li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Include the validation error in Unprocessable Entity reason <a href="https://github.com/openwallet-foundation/acapy/pull/3517">#3517</a> <a href="https://github.com/ff137">ff137</a></li>
 <li>Catch and log universal resolver setup error <a href="https://github.com/openwallet-foundation/acapy/pull/3511">#3511</a> <a href="https://github.com/jamshale">jamshale</a></li>
 </ul>
@@ -4092,6 +4110,10 @@
 </ul>
 </li>
 <li>DID Doc Handling Updates<ul>
+<li>(fix) VM resolution strategy correction for embedded VMs <a href="https://github.com/openwallet-foundation/acapy/pull/3665">#3665</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
+<li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix public did no longer being correctly configured <a href="https://github.com/openwallet-foundation/acapy/pull/3646">#3646</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Add type hints to <code>messaging/jsonld</code> <a href="https://github.com/openwallet-foundation/acapy/pull/3650">#3650</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>Add BLS12381G2 keys to multikey manager <a href="https://github.com/openwallet-foundation/acapy/pull/3640">#3640</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
 <li>(fix) VM resolution strategy correction <a href="https://github.com/openwallet-foundation/acapy/pull/3622">#3622</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
 </ul>
 </li>
@@ -4100,7 +4122,16 @@
 <li>BREAKING: remove connection protocol <a href="https://github.com/openwallet-foundation/acapy/pull/3184">#3184</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
 </ul>
 </li>
+<li>Indy Ledger Handling Updates/Fixes<ul>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Make ledger config more readable <a href="https://github.com/openwallet-foundation/acapy/pull/3664">#3664</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Rename did:indy create/response schema objects <a href="https://github.com/openwallet-foundation/acapy/pull/3663">#3663</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Don't shutdown on ledger error <a href="https://github.com/openwallet-foundation/acapy/pull/3636">#3636</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
 <li>Documentation and Tutorial Pull Requests:<ul>
+<li>Use current version of aca-py in devcontainer <a href="https://github.com/openwallet-foundation/acapy/pull/3638">#3638</a> <a href="https://github.com/esune">esune</a></li>
+<li>Devcointainer and docs update <a href="https://github.com/openwallet-foundation/acapy/pull/3629">#3629</a> <a href="https://github.com/esune">esune</a></li>
+<li>AliceGetsAPhone demo works in local docker environment <a href="https://github.com/openwallet-foundation/acapy/pull/3623">#3623</a> <a href="https://github.com/davidchaiken">davidchaiken</a></li>
 <li>feat(demo): remove broken aip 10 and fix aip 20 <a href="https://github.com/openwallet-foundation/acapy/pull/3611">#3611</a> <a href="https://github.com/davidchaiken">davidchaiken</a></li>
 <li>Fix demo implementation of vc_di cred issue <a href="https://github.com/openwallet-foundation/acapy/pull/3609">#3609</a> <a href="https://github.com/ianco">ianco</a></li>
 <li>chore(demo): remove aip 10 code <a href="https://github.com/openwallet-foundation/acapy/pull/3619">#3619</a> <a href="https://github.com/davidchaiken">davidchaiken</a></li>
@@ -4114,7 +4145,16 @@
 <li><img alt="⬆" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2b06.svg" title=":arrow_up:" /> Upgrade sphinx versions in docs <a href="https://github.com/openwallet-foundation/acapy/pull/3530">#3530</a> <a href="https://github.com/ff137">ff137</a></li>
 </ul>
 </li>
-<li>ACA-Py Testing Pull Requests:<ul>
+<li>ACA-Py Testing and CI/CD Pull Requests:<ul>
+<li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix permissions in nightly publish job <a href="https://github.com/openwallet-foundation/acapy/pull/3682">#3682</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🔒" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f512.svg" title=":lock:" /> Update Token Permissions in GitHub Actions <a href="https://github.com/openwallet-foundation/acapy/pull/3678">#3678</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🔒" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f512.svg" title=":lock:" /> ci: Harden GitHub Actions <a href="https://github.com/openwallet-foundation/acapy/pull/3670">#3670</a> <a href="https://github.com/step-security-bot">step-security-bot</a></li>
+<li><img alt="👷" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f477.svg" title=":construction_worker:" /> Update dependabot file <a href="https://github.com/openwallet-foundation/acapy/pull/3669">#3669</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="📌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f4cc.svg" title=":pushpin:" /> Pin Actions to a full length commit SHA and image tags to digests <a href="https://github.com/openwallet-foundation/acapy/pull/3668">#3668</a> <a href="https://github.com/step-security-bot">step-security-bot</a></li>
+<li><img alt="🧪" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f9ea.svg" title=":test_tube:" /> Fix test warnings <a href="https://github.com/openwallet-foundation/acapy/pull/3656">#3656</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="👷" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f477.svg" title=":construction_worker:" /> <img alt="🧑‍💻" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f9d1-200d-1f4bb.svg" title=":technologist:" /> Optimize Docker build to reduce cache invalidation <a href="https://github.com/openwallet-foundation/acapy/pull/3655">#3655</a> <a href="https://github.com/rblaine95">rblaine95</a></li>
+<li>👷 Split Docker Builds <a href="https://github.com/openwallet-foundation/acapy/pull/3654">#3654</a> <a href="https://github.com/rblaine95">rblaine95</a></li>
+<li><img alt="👷" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f477.svg" title=":construction_worker:" /> Fix Docker Caching <a href="https://github.com/openwallet-foundation/acapy/pull/3653">#3653</a> <a href="https://github.com/rblaine95">rblaine95</a></li>
 <li>Repair BDD integration release tests <a href="https://github.com/openwallet-foundation/acapy/pull/3605">#3605</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Indicate when interop tests fail <a href="https://github.com/openwallet-foundation/acapy/pull/3592">#3592</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li><img alt="⚡" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/26a1.svg" title=":zap:" /> Automatically use pytest-xdist to run tests in parallel <a href="https://github.com/openwallet-foundation/acapy/pull/3574">#3574</a> <a href="https://github.com/ff137">ff137</a></li>
@@ -4125,6 +4165,7 @@
 </ul>
 </li>
 <li>Dependency Management pull requests (other than Dependabot):<ul>
+<li><img alt="⬆" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2b06.svg" title=":arrow_up:" /> Weekly dependency updates <a href="https://github.com/openwallet-foundation/acapy/pull/3634">#3634</a> <a href="https://github.com/ff137">ff137</a></li>
 <li>Upgrade docker images to release 1.2.4 <a href="https://github.com/openwallet-foundation/acapy/pull/3597">#3597</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Update changed-files to non vulnerable version <a href="https://github.com/openwallet-foundation/acapy/pull/3591">#3591</a> <a href="https://github.com/ryjones">ryjones</a></li>
 <li><img alt="⬆" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2b06.svg" title=":arrow_up:" /> Update lock file <a href="https://github.com/openwallet-foundation/acapy/pull/3590">#3590</a> <a href="https://github.com/ff137">ff137</a></li>
@@ -4140,12 +4181,13 @@
 </ul>
 </li>
 <li>Release management pull requests:<ul>
+<li>1.3.0rc2 <a href="https://github.com/openwallet-foundation/acapy/pull/3687">#3687</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.3.0rc1 <a href="https://github.com/openwallet-foundation/acapy/pull/3628">#3628</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.3.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3604">#3604</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
 <li>Dependabot PRs<ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-04-03+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-04-28+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 </ul>
