@@ -60,6 +60,7 @@ jobs:
       matrix:
         tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
     permissions:
+      contents: read
       packages: write
     with:
       tag: ${{ matrix.tag }}
