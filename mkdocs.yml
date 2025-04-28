@@ -138,7 +138,7 @@ nav:
     - Upgrading ACA-Py: deploying/UpgradingACA-Py.md
     - Enabling BBS Signatures support: deploying/BBSSignatures.md
     - Indy SDK to Askar Migration: deploying/IndySDKtoAskarMigration.md
-    - Controller Migration to use AnonCreds Rust: deploying/AnonCredsControllerMigration.md
+    - Controller Migration to use the askar-anoncreds Wallet Type: deploying/AnonCredsControllerMigration.md
     - The Use of Poetry in ACA-Py: deploying/Poetry.md
     - ACA-Py Container Images: deploying/ContainerImagesAndGithubActions.md
     - Databases: deploying/Databases.md
