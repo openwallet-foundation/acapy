@@ -94,33 +94,39 @@ class EventBus:
             event (Event): event to emit
 
         """
-        # TODO don't block notifier until subscribers have all been called?
-        # TODO trigger each processor but don't await?
-        # TODO log errors but otherwise ignore?
+        partials = [
+            partial(
+                subscriber,
+                profile,
+                event.with_metadata(EventMetadata(pattern, match)),
+            )
+            for pattern, subscribers in self.topic_patterns_to_subscribers.items()
+            if (match := pattern.match(event.topic))
+            for subscriber in subscribers
+        ]
 
-        LOGGER.debug("Notifying subscribers: %s", event)
+        if not partials:
+            LOGGER.info("No subscribers for %s event", event.topic)
+            return
 
-        partials = []
-        for pattern, subscribers in self.topic_patterns_to_subscribers.items():
-            match = pattern.match(event.topic)
-
-            if not match:
-                continue
-
-            for subscriber in subscribers:
-                partials.append(
-                    partial(
-                        subscriber,
-                        profile,
-                        event.with_metadata(EventMetadata(pattern, match)),
-                    )
+        LOGGER.debug("Notifying %d subscribers for %s event", len(partials), event.topic)
+        for coro in partials:
+            try:
+                task = asyncio.create_task(coro)
+                task.add_done_callback(self._log_task_exception)
+            except Exception:
+                LOGGER.exception(
+                    "Error occurred while scheduling %s event notification: %s",
+                    event.topic,
+                    coro,
                 )
 
-        for processor in partials:
-            try:
-                await processor()
-            except Exception:
-                LOGGER.exception("Error occurred while processing event")
+    def _log_task_exception(self, task: asyncio.Task):
+        """Log exceptions in background notification tasks."""
+        try:
+            task.result()
+        except Exception:
+            LOGGER.exception("Exception in notification background task")
 
     def subscribe(self, pattern: Pattern, processor: Callable):
         """Subscribe to an event.
