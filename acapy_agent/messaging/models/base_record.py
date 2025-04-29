@@ -48,23 +48,24 @@ def match_post_filter(
         return True
 
     if alt:
-        return (
-            positive
-            and all(
+        if positive:
+            # Check if all record values exist and are in the allowed alternatives
+            return all(
                 record.get(k) and record.get(k) in alts for k, alts in post_filter.items()
             )
-        ) or (
-            (not positive)
-            and all(
+        else:
+            # Check if all record values exist and are not in the excluded alternatives
+            return all(
                 record.get(k) and record.get(k) not in alts
                 for k, alts in post_filter.items()
             )
-        )
 
     for k, v in post_filter.items():
         if record.get(k) != v:
+            # If the record value does not match the post_filter value
             return not positive
 
+    # Otherwise, the record value matches the post_filter value
     return positive
 
 
