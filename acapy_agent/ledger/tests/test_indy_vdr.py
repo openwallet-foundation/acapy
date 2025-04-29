@@ -14,6 +14,7 @@ from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.did_posture import DIDPosture
+from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import ED25519, KeyTypes
 from ..endpoint_type import EndpointType
 from ..indy_vdr import (
@@ -27,12 +28,22 @@ from ..indy_vdr import (
     VdrError,
 )
 
+from ...core.profile import Profile
+from ...storage.askar import AskarStorage
+from ..util import TAA_ACCEPTED_RECORD_TYPE
+
 WEB = DIDMethod(
     name="web",
     key_types=[ED25519],
     rotation=True,
     holder_defined_did=HolderDefinedDid.REQUIRED,
 )
+
+TEST_TENANT_DID = "WgWxqztrNooG92RXvxSTWv"
+TEST_SCHEMA_SEQ_NO = 4935
+TEST_CRED_DEF_TAG = "tenant_tag"
+
+TEST_CRED_DEF_ID = f"{TEST_TENANT_DID}:3:CL:{TEST_SCHEMA_SEQ_NO}:{TEST_CRED_DEF_TAG}"
 
 
 @pytest_asyncio.fixture
@@ -1266,3 +1277,245 @@ class TestIndyVdrLedger:
             ):
                 ledger.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
                 await ledger.rotate_public_did_keypair()
+
+    async def _create_tenant_profile(
+        self, main_profile: Profile, name: str = "tenant"
+    ) -> Profile:
+        """Helper to create a secondary profile instance for testing."""
+        tenant_settings = {
+            "wallet.type": main_profile.settings.get("wallet.type", "askar-anoncreds"),
+            "auto_provision": True,
+            "wallet.name": f"{name}_wallet",
+            "wallet.key": f"test_tenant_key_for_{name}",
+            "wallet.key_derivation_method": "RAW",
+            "default_label": name,
+        }
+        tenant_profile = await create_test_profile(settings=tenant_settings)
+        tenant_profile.context.injector.bind_instance(
+            DIDMethods, main_profile.context.injector.inject(DIDMethods)
+        )
+        tenant_profile.context.injector.bind_instance(BaseCache, InMemoryCache())
+        tenant_profile.context.injector.bind_instance(
+            KeyTypes, main_profile.context.injector.inject(KeyTypes)
+        )
+        await tenant_profile.session()
+        return tenant_profile
+
+    @pytest.mark.asyncio
+    async def test_submit_signing_uses_passed_profile_context(
+        self, ledger: IndyVdrLedger
+    ):
+        """Test _submit calls sign_message using the passed profile context."""
+
+        tenant_profile = await self._create_tenant_profile(
+            ledger.profile, "submit_tenant"
+        )
+
+        mock_signing_did = DIDInfo("tenant_signer", "tenant_signer_vk", {}, SOV, ED25519)
+
+        mock_request_obj = mock.MagicMock(spec=indy_vdr.Request)
+        mock_request_obj.signature_input = b"data_to_be_signed"
+        mock_request_obj.body = json.dumps({"req": "data"})
+        mock_request_obj.set_signature = mock.Mock()
+        mock_request_obj.set_txn_author_agreement_acceptance = mock.Mock()
+
+        with mock.patch(
+            "acapy_agent.wallet.askar.AskarWallet.sign_message",
+            new_callable=mock.CoroutineMock,
+            return_value=b"mock_signature_from_patch",
+        ) as mock_sign_message_patch:
+            ledger.get_wallet_public_did = mock.CoroutineMock(
+                return_value=mock_signing_did
+            )
+            ledger.get_latest_txn_author_acceptance = mock.CoroutineMock(return_value={})
+
+            async with ledger:
+                await ledger._submit(
+                    mock_request_obj,
+                    sign=True,
+                    sign_did=mock_signing_did,
+                    taa_accept=False,
+                    write_ledger=False,
+                    profile=tenant_profile,
+                )
+
+        mock_sign_message_patch.assert_awaited_once_with(
+            message=b"data_to_be_signed", from_verkey=mock_signing_did.verkey
+        )
+        mock_request_obj.set_signature.assert_called_once_with(
+            b"mock_signature_from_patch"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_wallet_public_did_uses_passed_profile(self, ledger: IndyVdrLedger):
+        """Test get_wallet_public_did uses the explicitly passed profile."""
+        tenant_profile = await self._create_tenant_profile(
+            ledger.profile, "get_did_tenant"
+        )
+        mock_tenant_did = DIDInfo("did:sov:tenant_pub", "vk_pub", {}, SOV, ED25519)
+
+        with mock.patch(
+            "acapy_agent.wallet.askar.AskarWallet.get_public_did",
+            new_callable=mock.CoroutineMock,
+            return_value=mock_tenant_did,
+        ) as mock_get_public_patch:
+            result_did = await ledger.get_wallet_public_did(profile=tenant_profile)
+
+        assert result_did is mock_tenant_did
+        mock_get_public_patch.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_get_latest_taa_uses_passed_profile(self, ledger: IndyVdrLedger):
+        """Test get_latest_txn_author_acceptance uses the explicitly passed profile."""
+        tenant_profile = await self._create_tenant_profile(
+            ledger.profile, "get_taa_tenant"
+        )
+        tenant_profile.context.injector.bind_instance(BaseCache, InMemoryCache())
+
+        with mock.patch.object(
+            AskarStorage, "find_all_records", return_value=[]
+        ) as mock_find_records_patch:
+            result_taa = await ledger.get_latest_txn_author_acceptance(
+                profile=tenant_profile
+            )
+
+        mock_find_records_patch.assert_awaited_once()
+        call_args, _call_kwargs = mock_find_records_patch.call_args
+        assert call_args[0] == TAA_ACCEPTED_RECORD_TYPE
+        assert call_args[1] == {"pool_name": ledger.pool_name}
+
+        assert result_taa == {}
+
+    @pytest.mark.asyncio
+    async def test_send_revoc_reg_entry_uses_passed_profile(self, ledger: IndyVdrLedger):
+        """Test send_revoc_reg_entry passes the correct profile to _submit."""
+        tenant_profile = await self._create_tenant_profile(
+            ledger.profile, "rev_entry_tenant"
+        )
+
+        async with tenant_profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            tenant_did = await wallet.create_public_did(SOV, ED25519)
+
+        test_rev_reg_id = f"{tenant_did.did}:4:{TEST_CRED_DEF_ID}:CL_ACCUM:0"
+        test_reg_entry = {"ver": "1.0", "value": {"accum": "test_accum"}}
+
+        with (
+            mock.patch.object(
+                IndyVdrLedger,
+                "get_revoc_reg_def",
+                new=mock.CoroutineMock(
+                    return_value={"txn": {"data": {"revocDefType": "CL_ACCUM"}}}
+                ),
+            ),
+            mock.patch.object(
+                IndyVdrLedger,
+                "_create_revoc_reg_entry_request",
+                new=mock.CoroutineMock(
+                    return_value=mock.MagicMock(spec=indy_vdr.Request)
+                ),
+            ),
+            mock.patch.object(
+                IndyVdrLedger,
+                "_submit",
+                new=mock.CoroutineMock(return_value={"result": "mock_ok"}),
+            ) as mock_submit,
+        ):
+            async with ledger:
+                await ledger.send_revoc_reg_entry(
+                    revoc_reg_id=test_rev_reg_id,
+                    revoc_def_type="CL_ACCUM",
+                    revoc_reg_entry=test_reg_entry,
+                    write_ledger=True,
+                    profile=tenant_profile,
+                )
+
+        mock_submit.assert_awaited_once()
+        _, submit_kwargs = mock_submit.call_args
+        assert submit_kwargs.get("profile") is tenant_profile
+        assert submit_kwargs.get("sign_did").did == tenant_did.did
+
+    @pytest.mark.asyncio
+    async def test_ledger_txn_submit_uses_passed_profile(self, ledger: IndyVdrLedger):
+        """Test ledger txn_submit passes profile kwarg to _submit."""
+        tenant_profile = await self._create_tenant_profile(
+            ledger.profile, "txn_submit_tenant"
+        )
+
+        ledger._submit = mock.CoroutineMock(
+            return_value={"op": "REPLY", "result": {"status": "ok"}}
+        )
+
+        test_txn_data = '{"req": "data"}'
+        test_sign_did = mock.MagicMock(spec=DIDInfo)
+
+        await ledger.txn_submit(
+            test_txn_data,
+            sign=True,
+            sign_did=test_sign_did,
+            write_ledger=True,
+            profile=tenant_profile,
+        )
+
+        ledger._submit.assert_awaited_once()
+        _submit_args, submit_kwargs = ledger._submit.call_args
+        assert "profile" in submit_kwargs
+        assert submit_kwargs["profile"] is tenant_profile
+        assert _submit_args[0] == test_txn_data
+        assert submit_kwargs["sign"] is True
+        assert submit_kwargs["sign_did"] is test_sign_did
+        assert submit_kwargs["write_ledger"] is True
+
+    @pytest.mark.asyncio
+    async def test_submit_wallet_not_found_error(self, ledger: IndyVdrLedger):
+        async with ledger.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            test_did = await wallet.create_public_did(SOV, ED25519)
+            # Create a DID not present in the wallet
+            invalid_did = DIDInfo(
+                did="did:sov:invalid",
+                verkey="invalid_verkey",
+                metadata={},
+                method=SOV,
+                key_type=ED25519,
+            )
+        async with ledger:
+            test_msg = indy_vdr.ledger.build_get_txn_request(test_did.did, 1, 1)
+            with pytest.raises(WalletNotFoundError):
+                await ledger._submit(
+                    test_msg, sign=True, sign_did=invalid_did, write_ledger=False
+                )
+
+    @pytest.mark.asyncio
+    async def test_submit_unexpected_error(self, ledger: IndyVdrLedger):
+        async with ledger.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            test_did = await wallet.create_public_did(SOV, ED25519)
+        async with ledger:
+            test_msg = indy_vdr.ledger.build_get_txn_request(test_did.did, 1, 1)
+            ledger.pool_handle.submit_request.side_effect = ValueError("Unexpected error")
+            with pytest.raises(LedgerTransactionError) as exc_info:
+                await ledger._submit(test_msg)
+            assert "Unexpected error during ledger submission" in str(exc_info.value)
+            assert isinstance(exc_info.value.__cause__, ValueError)
+
+    @pytest.mark.asyncio
+    async def test_txn_submit_passes_profile(self, ledger: IndyVdrLedger):
+        tenant_profile = await self._create_tenant_profile(
+            ledger.profile, "submit_tenant"
+        )
+        test_txn_data = '{"req": "data"}'
+        mock_sign_did = mock.MagicMock(spec=DIDInfo)
+        ledger._submit = mock.CoroutineMock(return_value={"result": "ok"})
+
+        await ledger.txn_submit(
+            test_txn_data,
+            sign=True,
+            sign_did=mock_sign_did,
+            write_ledger=True,
+            profile=tenant_profile,
+        )
+
+        ledger._submit.assert_awaited_once()
+        _, kwargs = ledger._submit.call_args
+        assert kwargs.get("profile") == tenant_profile
