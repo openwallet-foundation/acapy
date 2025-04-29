@@ -47,6 +47,7 @@ class AskarStorage(BaseStorage):
             record: `StorageRecord` to be stored
 
         """
+        LOGGER.debug("Adding record %s", record.id)
         validate_record(record)
         try:
             await self._session.handle.insert(
@@ -86,6 +87,8 @@ class AskarStorage(BaseStorage):
             raise StorageError("Record type not provided")
         if not record_id:
             raise StorageError("Record ID not provided")
+
+        LOGGER.debug("Fetching record %s", record_id)
         for_update = bool(options and options.get("forUpdate"))
         try:
             item = await self._session.handle.fetch(
@@ -119,6 +122,7 @@ class AskarStorage(BaseStorage):
             StorageError: If a libindy error occurs
 
         """
+        LOGGER.debug("Updating record %s", record.id)
         validate_record(record)
         try:
             await self._session.handle.replace(record.type, record.id, value, tags)
@@ -141,6 +145,7 @@ class AskarStorage(BaseStorage):
             StorageError: If a libindy error occurs
 
         """
+        LOGGER.debug("Deleting record %s", record.id)
         validate_record(record, delete=True)
         try:
             await self._session.handle.remove(record.type, record.id)
@@ -164,6 +169,7 @@ class AskarStorage(BaseStorage):
             tag_query: Tags to query
             options: Dictionary of backend-specific options
         """
+        LOGGER.debug("Finding record %s with tag query %s", type_filter, tag_query)
         for_update = bool(options and options.get("forUpdate"))
         try:
             results = await self._session.handle.fetch_all(
@@ -213,6 +219,13 @@ class AskarStorage(BaseStorage):
         """
         results = []
 
+        LOGGER.debug(
+            "Scanning records (paginated: limit=%d, offset=%d) for %s with tag query %s",
+            limit,
+            offset,
+            type_filter,
+            tag_query,
+        )
         async for row in self._session.store.scan(
             category=type_filter,
             tag_filter=tag_query,
@@ -241,6 +254,9 @@ class AskarStorage(BaseStorage):
         options: Optional[Mapping] = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
+        LOGGER.debug(
+            "Fetching all records for %s with tag query %s", type_filter, tag_query
+        )
         for_update = bool(options and options.get("forUpdate"))
         results = []
         for row in await self._session.handle.fetch_all(
@@ -266,6 +282,9 @@ class AskarStorage(BaseStorage):
         tag_query: Optional[Mapping] = None,
     ):
         """Remove all records matching a particular type filter and tag query."""
+        LOGGER.debug(
+            "Deleting all records for %s with tag query %s", type_filter, tag_query
+        )
         await self._session.handle.remove_all(type_filter, tag_query)
 
 
@@ -397,6 +416,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             raise StorageSearchError("Search query is complete")
 
         limit = max_count or self.page_size
+        LOGGER.debug("Fetching records (limit=%d, offset=%d)", limit, offset)
         await self._open(limit=limit, offset=offset)
 
         count = 0
@@ -420,6 +440,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             )
             count += 1
 
+        LOGGER.debug("Fetched %d records", len(ret))
         if not ret:
             self._done = True
             self._scan = None
