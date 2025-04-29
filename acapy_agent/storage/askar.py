@@ -1,5 +1,6 @@
 """Aries-Askar implementation of BaseStorage interface."""
 
+import logging
 from typing import Mapping, Optional, Sequence
 
 from aries_askar import AskarError, AskarErrorCode, Session
@@ -19,6 +20,8 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AskarStorage(BaseStorage):
@@ -54,6 +57,8 @@ class AskarStorage(BaseStorage):
                 raise StorageDuplicateError(
                     f"Duplicate record: {record.type}/{record.id}"
                 ) from None
+
+            LOGGER.error("Error when adding storage record: %s", err)
             raise StorageError("Error when adding storage record") from err
 
     async def get_record(
@@ -86,7 +91,9 @@ class AskarStorage(BaseStorage):
                 record_type, record_id, for_update=for_update
             )
         except AskarError as err:
+            LOGGER.error("Error when fetching storage record: %s", err)
             raise StorageError("Error when fetching storage record") from err
+
         if not item:
             raise StorageNotFoundError(f"Record not found: {record_type}/{record_id}")
         return StorageRecord(
@@ -115,6 +122,8 @@ class AskarStorage(BaseStorage):
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
                 raise StorageNotFoundError("Record not found") from None
+
+            LOGGER.error("Error when updating storage record: %s", err)
             raise StorageError("Error when updating storage record value") from err
 
     async def delete_record(self, record: StorageRecord):
@@ -136,8 +145,9 @@ class AskarStorage(BaseStorage):
                 raise StorageNotFoundError(
                     f"Record not found: {record.type}/{record.id}"
                 ) from None
-            else:
-                raise StorageError("Error when removing storage record") from err
+
+            LOGGER.error("Error when deleting storage record: %s", err)
+            raise StorageError("Error when removing storage record") from err
 
     async def find_record(
         self, type_filter: str, tag_query: Mapping, options: Optional[Mapping] = None

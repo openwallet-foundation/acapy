@@ -117,6 +117,7 @@ class BaseRecord(BaseModel):
         """
         record_id_name = cls.RECORD_ID_NAME
         if record_id_name in record:
+            LOGGER.error("Duplicate %s inputs; %s", record_id_name, record)
             raise ValueError(f"Duplicate {record_id_name} inputs; {record}")
         params = dict(**record)
         params[record_id_name] = record_id
@@ -373,6 +374,7 @@ class BaseRecord(BaseModel):
 
                     num_results_post_filter += 1
             except (BaseModelError, json.JSONDecodeError, TypeError) as err:
+                LOGGER.error("Error decoding record %s: %s", record.id, err)
                 raise BaseModelError(f"{err}, for record id {record.id}")
         return result
 
@@ -471,6 +473,10 @@ class BaseRecord(BaseModel):
         """
 
         if not self.RECORD_TOPIC:
+            LOGGER.warning(
+                "Emit event called but RECORD_TOPIC is not set for %s",
+                self.RECORD_TYPE,
+            )
             return
 
         if self.state:
