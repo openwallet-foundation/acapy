@@ -54,6 +54,7 @@ class AskarStorage(BaseStorage):
             )
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
+                LOGGER.info("Duplicate record: %s/%s", record.type, record.id)
                 raise StorageDuplicateError(
                     f"Duplicate record: {record.type}/{record.id}"
                 ) from None
@@ -95,7 +96,9 @@ class AskarStorage(BaseStorage):
             raise StorageError("Error when fetching storage record") from err
 
         if not item:
+            LOGGER.info("Record not found: %s/%s", record_type, record_id)
             raise StorageNotFoundError(f"Record not found: {record_type}/{record_id}")
+
         return StorageRecord(
             type=item.category,
             id=item.name,
@@ -121,6 +124,7 @@ class AskarStorage(BaseStorage):
             await self._session.handle.replace(record.type, record.id, value, tags)
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
+                LOGGER.info("Record not found: %s/%s", record.type, record.id)
                 raise StorageNotFoundError("Record not found") from None
 
             LOGGER.error("Error when updating storage record: %s", err)
@@ -142,6 +146,7 @@ class AskarStorage(BaseStorage):
             await self._session.handle.remove(record.type, record.id)
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
+                LOGGER.info("Record not found: %s/%s", record.type, record.id)
                 raise StorageNotFoundError(
                     f"Record not found: {record.type}/{record.id}"
                 ) from None
@@ -165,11 +170,17 @@ class AskarStorage(BaseStorage):
                 type_filter, tag_query, limit=2, for_update=for_update
             )
         except AskarError as err:
+            LOGGER.info("Error when finding storage record: %s", err)
             raise StorageError("Error when finding storage record") from err
+
         if len(results) > 1:
+            LOGGER.info("Duplicate records found: %s", results)
             raise StorageDuplicateError("Duplicate records found")
+
         if not results:
+            LOGGER.info("Record not found: %s", type_filter)
             raise StorageNotFoundError("Record not found")
+
         row = results[0]
         return StorageRecord(
             type=row.category,
