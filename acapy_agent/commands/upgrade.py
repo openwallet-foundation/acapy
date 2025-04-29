@@ -19,7 +19,7 @@ from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..core.profile import Profile, ProfileSession
 from ..messaging.models.base import BaseModelError
-from ..messaging.models.base_record import BaseRecord, RecordType
+from ..messaging.models.base_record import BaseRecord
 from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.error import StorageNotFoundError
@@ -569,7 +569,7 @@ async def update_existing_records(profile: Profile):
 
 async def find_affected_issue_rev_reg_records(
     session: ProfileSession,
-) -> Sequence[RecordType]:
+) -> Sequence[IssuerRevRegRecord]:
     """Get IssuerRevRegRecord records with issuance_type for re-saving.
 
     Args:
