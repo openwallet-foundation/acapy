@@ -271,6 +271,12 @@ class BaseRecord(BaseModel):
             vals = json.loads(record.value)
             if match_post_filter(vals, post_filter, alt=False):
                 if found:
+                    LOGGER.info(
+                        "Multiple %s records located for %s%s",
+                        cls.__name__,
+                        tag_filter,
+                        f", {post_filter}" if post_filter else "",
+                    )
                     raise StorageDuplicateError(
                         "Multiple {} records located for {}{}".format(
                             cls.__name__,
@@ -280,6 +286,12 @@ class BaseRecord(BaseModel):
                     )
                 found = cls.from_storage(record.id, vals)
         if not found:
+            LOGGER.info(
+                "%s record not found for %s%s",
+                cls.__name__,
+                tag_filter,
+                f", {post_filter}" if post_filter else "",
+            )
             raise StorageNotFoundError(
                 "{} record not found for {}{}".format(
                     cls.__name__, tag_filter, f", {post_filter}" if post_filter else ""
