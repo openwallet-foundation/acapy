@@ -432,6 +432,8 @@ class BaseRecord(BaseModel):
                 new_record = True
                 self._new_with_id = False
         finally:
+            # TODO: serialize is called here, even if `log_state` does not log anything
+            # And then serialize is called again in `post_save`
             params = {self.RECORD_TYPE: self.serialize()}
             if log_params:
                 params.update(log_params)
