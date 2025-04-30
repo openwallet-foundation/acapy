@@ -99,7 +99,7 @@ class AskarStorage(BaseStorage):
             raise StorageError("Error when fetching storage record") from err
 
         if not item:
-            LOGGER.info("Record not found: %s/%s", record_type, record_id)
+            LOGGER.debug("Record not found for type/id: %s/%s", record_type, record_id)
             raise StorageNotFoundError(f"Record not found: {record_type}/{record_id}")
 
         return StorageRecord(
@@ -128,7 +128,7 @@ class AskarStorage(BaseStorage):
             await self._session.handle.replace(record.type, record.id, value, tags)
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
-                LOGGER.info("Record not found: %s/%s", record.type, record.id)
+                LOGGER.info("Record not found for update: %s/%s", record.type, record.id)
                 raise StorageNotFoundError("Record not found") from None
 
             LOGGER.error("Error when updating storage record: %s", err)
@@ -151,7 +151,9 @@ class AskarStorage(BaseStorage):
             await self._session.handle.remove(record.type, record.id)
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
-                LOGGER.info("Record not found: %s/%s", record.type, record.id)
+                LOGGER.info(
+                    "Record not found for deletion: %s/%s", record.type, record.id
+                )
                 raise StorageNotFoundError(
                     f"Record not found: {record.type}/{record.id}"
                 ) from None
@@ -184,7 +186,11 @@ class AskarStorage(BaseStorage):
             raise StorageDuplicateError("Duplicate records found")
 
         if not results:
-            LOGGER.info("Record not found: %s", type_filter)
+            LOGGER.debug(
+                "Record not found with filter / tag query: %s / %s",
+                type_filter,
+                tag_query,
+            )
             raise StorageNotFoundError("Record not found")
 
         row = results[0]
