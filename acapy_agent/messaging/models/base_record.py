@@ -507,8 +507,6 @@ class BaseRecord(BaseModel):
         else:
             topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
-        LOGGER.debug("Emitting event with topic %s", topic)
-
         if not payload:
             LOGGER.debug("Serializing payload for %s record", self.RECORD_TYPE)
             payload = self.serialize()
