@@ -413,7 +413,7 @@ class BaseRecord(BaseModel):
             log_override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
         """
-        LOGGER.debug("Saving record %s", self._id)
+        LOGGER.debug("Saving record %s", self._id or "(new)")
 
         new_record = None
         log_reason = reason or ("Updated record" if self._id else "Created record")
