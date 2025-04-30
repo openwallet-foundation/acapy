@@ -416,7 +416,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             raise StorageSearchError("Search query is complete")
 
         limit = max_count or self.page_size
-        LOGGER.debug("Fetching records (limit=%d, offset=%d)", limit, offset)
+        LOGGER.debug("Fetching records (limit=%d, offset=%d)", limit, offset or 0)
         await self._open(limit=limit, offset=offset)
 
         count = 0
