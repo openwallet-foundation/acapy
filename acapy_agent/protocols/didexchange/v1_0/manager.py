@@ -756,6 +756,7 @@ class DIDXManager(BaseConnectionManager):
         """
         new_conn_rec = ConnRecord(
             invitation_key=conn_rec.invitation_key,
+            invitation_msg_id=conn_rec.invitation_msg_id,
             state=ConnRecord.State.INIT.rfc160,
             accept=conn_rec.accept,
             their_role=conn_rec.their_role,
