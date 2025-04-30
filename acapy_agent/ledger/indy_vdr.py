@@ -101,7 +101,7 @@ class IndyVdrLedgerPool:
         self.genesis_hash_cache: Optional[str] = None
         self.genesis_txns_cache = genesis_transactions
         self.init_config = bool(genesis_transactions)
-        self.taa_cache: Optional[str] = None
+        self.taa_cache: Optional[dict] = None
         self.read_only: bool = read_only
         self.socks_proxy: str = socks_proxy
 
