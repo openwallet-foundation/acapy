@@ -5,6 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from acapy_agent.tests import mock
+from acapy_agent.wallet.keys.manager import MultikeyManager
 
 from ....did.did_key import DIDKey
 from ....resolver.default.key import KeyDIDResolver
@@ -16,9 +17,7 @@ from ....wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
 )
-from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import KEY, SOV, DIDMethod, DIDMethods
-from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519, KeyTypes
 from ...ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
@@ -39,6 +38,9 @@ from ..models.options import LDProofVCOptions
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_DID_KEY_SEED = "testseed000000000000000000000001"
+TEST_DID_KEY_VM = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_DID_KEY_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_UUID = "urn:uuid:dc86e95c-dc85-4f91-b563-82657d095c44"
 VC = {
     "credential": {
@@ -85,63 +87,10 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
         self.vc = VerifiableCredential.deserialize(VC["credential"])
         self.options = LDProofVCOptions.deserialize(VC["options"])
 
-    async def test_assert_can_issue_with_id_and_proof_type(self):
-        with pytest.raises(VcLdpManagerError) as context:
-            await self.manager.assert_can_issue_with_id_and_proof_type(
-                "issuer_id", "random_proof_type"
+        async with self.profile.session() as session:
+            await MultikeyManager(session=session).create(
+                seed=TEST_DID_KEY_SEED, alg="ed25519"
             )
-
-        assert (
-            "Unable to sign credential with unsupported proof type random_proof_type"
-            in str(context.value)
-        )
-
-        with pytest.raises(VcLdpManagerError) as context:
-            await self.manager.assert_can_issue_with_id_and_proof_type(
-                "not_did", Ed25519Signature2018.signature_type
-            )
-        assert "Unable to issue credential with issuer id: not_did" in str(context.value)
-
-        with mock.patch.object(
-            self.manager,
-            "_did_info_for_did",
-            mock.CoroutineMock(),
-        ) as mock_did_info:
-            did_info = DIDInfo(
-                did=TEST_DID_SOV,
-                verkey="verkey",
-                metadata={},
-                method=SOV,
-                key_type=ED25519,
-            )
-            mock_did_info.return_value = did_info
-            await self.manager.assert_can_issue_with_id_and_proof_type(
-                "did:key:found", Ed25519Signature2018.signature_type
-            )
-            await self.manager.assert_can_issue_with_id_and_proof_type(
-                "did:key:found", Ed25519Signature2020.signature_type
-            )
-
-            invalid_did_info = DIDInfo(
-                did=TEST_DID_SOV,
-                verkey="verkey",
-                metadata={},
-                method=SOV,
-                key_type=BLS12381G2,
-            )
-            mock_did_info.return_value = invalid_did_info
-            with pytest.raises(VcLdpManagerError) as context:
-                await self.manager.assert_can_issue_with_id_and_proof_type(
-                    "did:key:found", Ed25519Signature2018.signature_type
-                )
-            assert "Unable to issue credential with issuer id" in str(context.value)
-
-            mock_did_info.side_effect = (WalletNotFoundError,)
-            with pytest.raises(VcLdpManagerError) as context:
-                await self.manager.assert_can_issue_with_id_and_proof_type(
-                    "did:key:notfound", Ed25519Signature2018.signature_type
-                )
-            assert "Issuer did did:key:notfound not found" in str(context.value)
 
     methods: list[DIDMethod] = [SOV, KEY]
 
@@ -160,11 +109,6 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
         with (
             mock.patch.object(
                 self.manager,
-                "assert_can_issue_with_id_and_proof_type",
-                mock.CoroutineMock(),
-            ) as mock_can_issue,
-            mock.patch.object(
-                self.manager,
                 "_did_info_for_did",
                 mock.CoroutineMock(),
             ) as mock_did_info,
@@ -177,9 +121,8 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
             assert suite.proof == {"created": VC["options"]["created"]}
             assert isinstance(suite.key_pair, WalletKeyPair)
             assert suite.key_pair.key_type == ED25519
-            assert suite.key_pair.public_key_base58 == mock_did_info.return_value.verkey
+            assert suite.key_pair.public_key_base58 == TEST_DID_KEY_VERKEY
 
-            mock_can_issue.assert_called()
             mock_did_info.assert_awaited_once_with(self.vc.issuer)
 
     async def test_get_suite(self):
@@ -188,45 +131,45 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
 
         suite = await self.manager._get_suite(
             proof_type=BbsBlsSignature2020.signature_type,
-            verification_method="verification_method",
+            verification_method=TEST_DID_KEY_VM,
             proof=proof,
             did_info=did_info,
         )
 
         assert isinstance(suite, BbsBlsSignature2020)
-        assert suite.verification_method == "verification_method"
+        assert suite.verification_method == TEST_DID_KEY_VM
         assert suite.proof == proof
         assert isinstance(suite.key_pair, WalletKeyPair)
         assert suite.key_pair.key_type == BLS12381G2
-        assert suite.key_pair.public_key_base58 == did_info.verkey
+        assert suite.key_pair.public_key_base58 == TEST_DID_KEY_VERKEY
 
         suite = await self.manager._get_suite(
             proof_type=Ed25519Signature2018.signature_type,
-            verification_method="verification_method",
+            verification_method=TEST_DID_KEY_VM,
             proof=proof,
             did_info=did_info,
         )
 
         assert isinstance(suite, Ed25519Signature2018)
-        assert suite.verification_method == "verification_method"
+        assert suite.verification_method == TEST_DID_KEY_VM
         assert suite.proof == proof
         assert isinstance(suite.key_pair, WalletKeyPair)
         assert suite.key_pair.key_type == ED25519
-        assert suite.key_pair.public_key_base58 == did_info.verkey
+        assert suite.key_pair.public_key_base58 == TEST_DID_KEY_VERKEY
 
         suite = await self.manager._get_suite(
             proof_type=Ed25519Signature2020.signature_type,
-            verification_method="verification_method",
+            verification_method=TEST_DID_KEY_VM,
             proof=proof,
             did_info=did_info,
         )
 
         assert isinstance(suite, Ed25519Signature2020)
-        assert suite.verification_method == "verification_method"
+        assert suite.verification_method == TEST_DID_KEY_VM
         assert suite.proof == proof
         assert isinstance(suite.key_pair, WalletKeyPair)
         assert suite.key_pair.key_type == ED25519
-        assert suite.key_pair.public_key_base58 == did_info.verkey
+        assert suite.key_pair.public_key_base58 == TEST_DID_KEY_VERKEY
 
     async def test_get_proof_purpose(self):
         purpose = self.manager._get_proof_purpose()

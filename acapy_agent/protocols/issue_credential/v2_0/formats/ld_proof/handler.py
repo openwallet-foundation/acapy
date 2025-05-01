@@ -7,6 +7,11 @@ from marshmallow import EXCLUDE, INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
+from acapy_agent.wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+    VerificationKeyStrategyError,
+)
+
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
@@ -185,10 +190,16 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Make sure we can issue with the did and proof type
         try:
-            await manager.assert_can_issue_with_id_and_proof_type(
-                detail.credential.issuer_id, detail.options.proof_type
+            # Check suitable verification method for signing (fails if none suitable)
+            verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
+            _ = await verkey_id_strategy.get_verification_method_id_for_did(
+                detail.credential.issuer_id,
+                self.profile,
+                proof_type=detail.options.proof_type,
+                proof_purpose="assertionMethod",
+                verification_method_id=detail.options.verification_method,
             )
-        except VcLdpManagerError as err:
+        except VerificationKeyStrategyError as err:
             raise V20CredFormatError(
                 "Checking whether issuance is possible failed"
             ) from err

@@ -194,7 +194,7 @@ class EddsaJcs2022:
         """
         multikey = await MultikeyManager(
             self.session
-        ).resolve_multikey_from_verification_method(options.verification_method)
+        ).resolve_multikey_from_verification_method_id(options.verification_method)
         verkey = multikey_to_verkey(multikey)
         key_type = key_type_from_multikey(multikey)
         return await self.wallet.verify_message(

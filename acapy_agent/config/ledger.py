@@ -158,7 +158,11 @@ async def ledger_config(
             if taa_info["taa_required"] and public_did:
                 LOGGER.debug("TAA acceptance required")
                 taa_accepted = await ledger.get_latest_txn_author_acceptance()
-                digest_match = taa_info["taa_record"]["digest"] == taa_accepted["digest"]
+
+                taa_record_digest = taa_info["taa_record"]["digest"]  # keys exist
+                taa_accepted_digest = taa_accepted.get("digest")  # key might not exist
+
+                digest_match = taa_record_digest == taa_accepted_digest
                 if not taa_accepted or not digest_match:
                     LOGGER.info("TAA acceptance needed - performing acceptance")
                     if not await accept_taa(ledger, profile, taa_info, provision):
