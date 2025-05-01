@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.0rc2
+## 1.3.0
 
-### April 28, 2025
+### May 1, 2025
 
 ACA-Py 1.3.0 introduces significant improvements across wallet types, AnonCreds support, multi-tenancy, DIDComm interoperability, developer experience, and software supply chain management. This release strengthens stability, modernizes protocol support, and delivers important updates for AnonCreds credential handling. A small number of breaking changes are included and are detailed below.
 
@@ -14,7 +14,7 @@ Support for multi-tenancy continues to mature, with fixes that better isolate te
 
 Logging across ACA-Py has been significantly improved to deliver clearer, more actionable logs, while error handling was enhanced to provide better diagnostics for validation failures and resolver setup issues.
 
-Work toward broader interoperability continued, with the introduction of support for the [Verifiable Credentials Data Model (VCDM) 2.0](https://www.w3.org/TR/vc-data-model-2.0/), as well as enhancements to DIDDoc handling, including support for BLS12381G2 key types. A new DIDComm route for fetching existing invitations was added, and a number of minor protocol-level improvements were made to strengthen reliability.
+Work toward broader interoperability continued, with the introduction of support for the [Verifiable Credentials Data Model (VCDM) 2.0](https://www.w3.org/TR/vc-data-model-2.0/), as well as enhancements to DIDDoc handling, including support for BLS12381G2 key types. A new DIDComm route for fetching existing invitations was added, and a number of minor protocol-level and invitation flow improvements were made to strengthen reliability.
 
 The release also includes many improvements for developers, including a new ACA-Py Helm Chart to simplify Kubernetes deployments, updated tutorials, and more updates to demos (such as [AliceGetsAPhone](https://aca-py.org/latest/demo/AliceGetsAPhone/)). Dependency upgrades across the project further solidify the platform for long-term use.
 
@@ -93,6 +93,7 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - :art: Include the validation error in Unprocessable Entity reason [\#3517](https://github.com/openwallet-foundation/acapy/pull/3517) [ff137](https://github.com/ff137)
   - Catch and log universal resolver setup error [\#3511](https://github.com/openwallet-foundation/acapy/pull/3511) [jamshale](https://github.com/jamshale)
 - W3C Verifiable Credentials Support Updates and Fixes:
+  - (fix) W3C LDP Fixes for alternative VMs [\#3641](https://github.com/openwallet-foundation/acapy/pull/3641) [gmulhearn](https://github.com/gmulhearn)
   - Add vcdm 2.0 model and context [\#3436](https://github.com/openwallet-foundation/acapy/pull/3436) [PatStLouis](https://github.com/PatStLouis)
 - DID Doc Handling Updates
   - (fix) VM resolution strategy correction for embedded VMs [\#3665](https://github.com/openwallet-foundation/acapy/pull/3665) [gmulhearn](https://github.com/gmulhearn)
@@ -101,9 +102,11 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - Add BLS12381G2 keys to multikey manager [\#3640](https://github.com/openwallet-foundation/acapy/pull/3640) [gmulhearn](https://github.com/gmulhearn)
   - (fix) VM resolution strategy correction [\#3622](https://github.com/openwallet-foundation/acapy/pull/3622) [gmulhearn](https://github.com/gmulhearn)
 - DIDComm Protocol Updates and Fixes:
+  - fix: multiuse invite derived conns should have msg id [\#3692](https://github.com/openwallet-foundation/acapy/pull/3692) [dbluhm](https://github.com/dbluhm)
   - Fetch existing invitation route [\#3572](https://github.com/openwallet-foundation/acapy/pull/3572) [PatStLouis](https://github.com/PatStLouis)
   - BREAKING: remove connection protocol [\#3184](https://github.com/openwallet-foundation/acapy/pull/3184) [dbluhm](https://github.com/dbluhm)
 - Indy Ledger Handling Updates/Fixes
+  - :bug: Fix reading expected key in TAA [\#3693](https://github.com/openwallet-foundation/acapy/pull/3693) [ff137](https://github.com/ff137)
   - :art: Make ledger config more readable [\#3664](https://github.com/openwallet-foundation/acapy/pull/3664) [ff137](https://github.com/ff137)
   - :art: Rename did:indy create/response schema objects [\#3663](https://github.com/openwallet-foundation/acapy/pull/3663) [ff137](https://github.com/ff137)
   - :sparkles: Don't shutdown on ledger error [\#3636](https://github.com/openwallet-foundation/acapy/pull/3636) [ff137](https://github.com/ff137)
@@ -123,6 +126,7 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - :white_check_mark: Fix demo playground example tests [\#3531](https://github.com/openwallet-foundation/acapy/pull/3531) [ff137](https://github.com/ff137)
   - :arrow_up: Upgrade sphinx versions in docs [\#3530](https://github.com/openwallet-foundation/acapy/pull/3530) [ff137](https://github.com/ff137)
 - ACA-Py Testing and CI/CD Pull Requests:
+  - :construction_worker: Skip sonar-merge-main workflow if github actor is dependabot [\#3691](https://github.com/openwallet-foundation/acapy/pull/3691) [ff137](https://github.com/ff137)
   - :bug: Fix permissions in nightly publish job [\#3682](https://github.com/openwallet-foundation/acapy/pull/3682) [ff137](https://github.com/ff137)
   - :lock: Update Token Permissions in GitHub Actions [\#3678](https://github.com/openwallet-foundation/acapy/pull/3678) [ff137](https://github.com/ff137)
   - :lock: ci: Harden GitHub Actions [\#3670](https://github.com/openwallet-foundation/acapy/pull/3670) [step-security-bot](https://github.com/step-security-bot)
@@ -154,11 +158,12 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - Update dockerfile image after release [\#3469](https://github.com/openwallet-foundation/acapy/pull/3469) [jamshale](https://github.com/jamshale)
   - :arrow_up: Upgrade dependencies [\#3455](https://github.com/openwallet-foundation/acapy/pull/3455) [ff137](https://github.com/ff137)
 - Release management pull requests:
+  - 1.3.0 [\#3696](https://github.com/openwallet-foundation/acapy/pull/3696) [swcurran](https://github.com/swcurran)
   - 1.3.0rc2 [\#3687](https://github.com/openwallet-foundation/acapy/pull/3687) [swcurran](https://github.com/swcurran)
   - 1.3.0rc1 [\#3628](https://github.com/openwallet-foundation/acapy/pull/3628) [swcurran](https://github.com/swcurran)
   - 1.3.0rc0 [\#3604](https://github.com/openwallet-foundation/acapy/pull/3604) [swcurran](https://github.com/swcurran)
 - Dependabot PRs
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-04-28+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-05-01+author%3Aapp%2Fdependabot+)
 
 ## 1.2.4
 
