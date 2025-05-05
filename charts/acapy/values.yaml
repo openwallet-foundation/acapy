@@ -74,7 +74,7 @@ updateStrategy:
 image:
   registry: ghcr.io
   repository: openwallet-foundation/acapy-agent
-  tag: py3.12-1.2.4
+  tag: py3.12-1.3.0
   digest: ""
   pullPolicy: IfNotPresent
   ## Optionally specify an array of imagePullSecrets.
