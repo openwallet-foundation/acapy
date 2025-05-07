@@ -60,6 +60,7 @@ from .messages.cred_problem_report import ProblemReportReason
 from .messages.cred_proposal import V20CredProposal
 from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
+from .models.detail.anoncreds import V20CredExRecordAnonCredsSchema
 from .models.detail.indy import V20CredExRecordIndySchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 
@@ -113,7 +114,7 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Credential exchange record"},
     )
-
+    anoncreds = fields.Nested(V20CredExRecordAnonCredsSchema, required=False)
     indy = fields.Nested(V20CredExRecordIndySchema, required=False)
     ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
     vc_di = fields.Nested(V20CredExRecordSchema, required=False)
