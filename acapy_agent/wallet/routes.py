@@ -830,6 +830,7 @@ async def promote_wallet_public_did(
     mediator_endpoint: Optional[str] = None,
 ) -> Tuple[DIDInfo, Optional[dict]]:
     """Promote supplied DID to the wallet public DID."""
+    LOGGER.debug("Starting promotion of DID %s to wallet public DID", did)
     info: Optional[DIDInfo] = None
     endorser_did = None
 
@@ -840,6 +841,7 @@ async def promote_wallet_public_did(
     if isinstance(context, InjectionContext):
         is_ctx_admin_request = False
         if not profile:
+            LOGGER.error("InjectionContext provided without profile")
             raise web.HTTPForbidden(
                 reason=(
                     "InjectionContext is provided but no profile is provided. "
@@ -858,10 +860,12 @@ async def promote_wallet_public_did(
             reason = "No ledger available"
             if not context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
+            LOGGER.info("Cannot promote DID %s to public DID: %s", did, reason)
             raise PermissionError(reason)
 
         async with ledger:
             if not await ledger.get_key_for_did(did):
+                LOGGER.info("Cannot promote DID %s; it is not posted to the ledger", did)
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
         is_author_profile = (
@@ -869,12 +873,13 @@ async def promote_wallet_public_did(
             if is_ctx_admin_request
             else is_author_role(profile)
         )
+
         # check if we need to endorse
         if is_author_profile:
             # authors cannot write to the ledger
             write_ledger = False
 
-            # author has not provided a connection id, so determine which to use
+            LOGGER.debug("No connection id provided; determining which to use")
             if not connection_id:
                 connection_id = (
                     await get_endorser_connection_id(context.profile)
@@ -882,6 +887,7 @@ async def promote_wallet_public_did(
                     else await get_endorser_connection_id(profile)
                 )
             if not connection_id:
+                LOGGER.info("Cannot promote DID %s; no endorser connection found", did)
                 raise web.HTTPBadRequest(reason="No endorser connection found")
         if not write_ledger:
             async with (
@@ -892,14 +898,20 @@ async def promote_wallet_public_did(
                         session, connection_id
                     )
                 except StorageNotFoundError as err:
+                    LOGGER.info("Connection record not found: %s", err.roll_up)
                     raise web.HTTPNotFound(reason=err.roll_up) from err
                 except BaseModelError as err:
+                    LOGGER.error("Base model error: %s", err.roll_up)
                     raise web.HTTPBadRequest(reason=err.roll_up) from err
                 endorser_info = await connection_record.metadata_get(
                     session, "endorser_info"
                 )
 
             if not endorser_info:
+                LOGGER.info(
+                    "Cannot promote DID %s; endorser info not set up in connection metadata",
+                    did,
+                )
                 raise web.HTTPForbidden(
                     reason=(
                         "Endorser Info is not set up in "
@@ -907,6 +919,10 @@ async def promote_wallet_public_did(
                     )
                 )
             if "endorser_did" not in endorser_info.keys():
+                LOGGER.info(
+                    'Cannot promote DID %s; "endorser_did" not set in "endorser_info"',
+                    did,
+                )
                 raise web.HTTPForbidden(
                     reason=(
                         ' "endorser_did" is not set in "endorser_info"'
@@ -914,6 +930,7 @@ async def promote_wallet_public_did(
                     )
                 )
             endorser_did = endorser_info["endorser_did"]
+            LOGGER.debug("Endorser DID %s found in connection metadata", endorser_did)
 
     did_info: Optional[DIDInfo] = None
     attrib_def = None
@@ -923,6 +940,7 @@ async def promote_wallet_public_did(
         wallet = session.inject(BaseWallet)
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
+        LOGGER.info("DID %s set as public DID", info.did)
 
         if info:
             # Publish endpoint if necessary
@@ -930,6 +948,7 @@ async def promote_wallet_public_did(
 
             if is_indy_did and not endpoint:
                 endpoint = mediator_endpoint or context.settings.get("default_endpoint")
+                LOGGER.debug("Setting endpoint for DID %s to %s", info.did, endpoint)
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
                     endpoint,
@@ -938,20 +957,19 @@ async def promote_wallet_public_did(
                     endorser_did=endorser_did,
                     routing_keys=routing_keys,
                 )
+                LOGGER.debug("Endpoint set for DID %s: %s", info.did, endpoint)
 
     if info:
-        # Route the public DID
-        route_manager = (
-            context.profile.inject(RouteManager)
-            if is_ctx_admin_request
-            else profile.inject(RouteManager)
-        )
-        (
-            await route_manager.route_verkey(context.profile, info.verkey)
-            if is_ctx_admin_request
-            else await route_manager.route_verkey(profile, info.verkey)
+        LOGGER.debug("Routing public DID %s", info.did)
+        if is_ctx_admin_request:
+            profile = context.profile
+        route_manager = profile.inject(RouteManager)
+        await route_manager.route_verkey(profile, info.verkey)
+        LOGGER.info(
+            "Routing set up for public DID %s with verkey %s", info.did, info.verkey
         )
 
+    LOGGER.debug("Completed promotion of DID %s", did)
     return info, attrib_def
 
 
