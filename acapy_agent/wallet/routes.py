@@ -909,7 +909,7 @@ async def promote_wallet_public_did(
 
             if not endorser_info:
                 LOGGER.info(
-                    "Cannot promote DID %s; endorser info not set up in connection metadata",
+                    "Cannot promote %s; endorser info not set up in connection metadata",
                     did,
                 )
                 raise web.HTTPForbidden(
