@@ -50,8 +50,8 @@ class MultitenantRouteManager(RouteManager):
         replace_key: Optional[str] = None,
     ) -> Optional[KeylistUpdate]:
         wallet_id = profile.settings["wallet.id"]
-        LOGGER.info(
-            f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
+        LOGGER.debug(
+            "Add route record for recipient %s to wallet %s", recipient_key, wallet_id
         )
         routing_mgr = RoutingManager(self.root_profile)
         mediation_mgr = MediationManager(self.root_profile)
@@ -66,9 +66,18 @@ class MultitenantRouteManager(RouteManager):
                     await RouteRecord.retrieve_by_recipient_key(session, recipient_key)
 
                 # If no error is thrown, it means there is already a record
+                LOGGER.debug(
+                    "Route record already exists for recipient %s to wallet %s. Skipping",
+                    recipient_key,
+                    wallet_id,
+                )
                 return None
             except StorageNotFoundError:
-                pass
+                LOGGER.debug(
+                    "Route record does not exist for recipient %s to wallet %s. Creating",
+                    recipient_key,
+                    wallet_id,
+                )
 
         await routing_mgr.create_route_record(
             recipient_key=recipient_key, internal_wallet_id=wallet_id
@@ -77,8 +86,12 @@ class MultitenantRouteManager(RouteManager):
         # External mediation
         keylist_updates = None
         if mediation_record:
+            LOGGER.debug("Adding key to mediation record for recipient %s", recipient_key)
             keylist_updates = await mediation_mgr.add_key(recipient_key)
             if replace_key:
+                LOGGER.debug(
+                    "Replacing key %s in mediation record %s", replace_key, recipient_key
+                )
                 keylist_updates = await mediation_mgr.remove_key(
                     replace_key, keylist_updates
                 )
@@ -123,6 +136,9 @@ class MultitenantRouteManager(RouteManager):
         mediation_record: Optional[MediationRecord] = None,
     ) -> RoutingInfo:
         """Return routing info."""
+        LOGGER.debug(
+            "Getting routing info for profile %s", profile.settings.get("wallet.id", "")
+        )
         routing_keys = []
         my_endpoint = None
 
