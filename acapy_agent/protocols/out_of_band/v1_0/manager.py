@@ -311,16 +311,19 @@ class InvitationCreator:
             connection_protocol=connection_protocol,
         )
 
+        LOGGER.debug("Creating connection record for invitation %s", self.msg_id)
         async with self.profile.transaction() as session:
             await conn_rec.save(session, reason="Created new invitation")
             await conn_rec.attach_invitation(session, msg)
 
             if self.metadata:
+                LOGGER.debug("Setting metadata for connection %s", conn_rec.connection_id)
                 for key, value in self.metadata.items():
                     await conn_rec.metadata_set(session, key, value)
 
             await session.commit()
 
+        LOGGER.debug("Routing invitation %s", conn_rec.connection_id)
         await self.route_manager.route_invitation(
             self.profile, conn_rec, mediation_record
         )
@@ -344,6 +347,7 @@ class InvitationCreator:
         mediation_record: Optional[MediationRecord],
     ) -> CreateResult:
         """Handle use_did invitation creation."""
+        LOGGER.debug("Handling invitation using DID %s", did_info.did)
         invi_msg = InvitationMessage(
             _id=self.msg_id,
             label=self.my_label,
@@ -360,12 +364,17 @@ class InvitationCreator:
         invi_url = invi_msg.to_url(endpoint)
 
         if self.handshake_protocols:
+            LOGGER.debug(
+                "Handshake protocols given: %s. Creating connection",
+                self.handshake_protocols,
+            )
             conn_rec = await self.handle_handshake_protos(
                 did_info.verkey, invi_msg, mediation_record
             )
             our_service = None
         else:
             conn_rec = None
+            LOGGER.debug("No handshake protocols. Routing verkey %s", did_info.verkey)
             await self.route_manager.route_verkey(
                 self.profile, did_info.verkey, mediation_record
             )
@@ -402,6 +411,7 @@ class InvitationCreator:
                 "Cannot create public invitation with no public DID"
             )
 
+        LOGGER.debug("Public DID found: %s", public_did.did)
         if bool(IndyDID.PATTERN.match(public_did.did)):
             public_did = DIDInfo(
                 did=f"did:sov:{public_did.did}",
@@ -479,6 +489,7 @@ class InvitationCreator:
         mediation_record: Optional[MediationRecord],
     ) -> CreateResult:
         """Create an invitation using legacy bare public key and inline service."""
+        LOGGER.debug("Handling legacy invitation")
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             connection_key = await wallet.create_signing_key(ED25519)
@@ -522,11 +533,15 @@ class InvitationCreator:
         )
 
         if self.handshake_protocols:
+            LOGGER.debug("Handshake protocols given: %s", self.handshake_protocols)
             conn_rec = await self.handle_handshake_protos(
                 connection_key.verkey, invi_msg, mediation_record
             )
             our_service = None
         else:
+            LOGGER.debug(
+                "No handshake protocols. Routing verkey %s", connection_key.verkey
+            )
             await self.route_manager.route_verkey(
                 self.profile, connection_key.verkey, mediation_record
             )
@@ -673,6 +688,7 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
+                LOGGER.debug("Getting mediation record for %s", mediation_id)
                 await self._route_manager.mediation_record_if_id(
                     self.profile, mediation_id
                 )

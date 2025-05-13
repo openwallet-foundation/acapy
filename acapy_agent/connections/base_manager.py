@@ -466,6 +466,9 @@ class BaseConnectionManager:
         Returns verification methods for a DIDComm service to enable extracting
         key material.
         """
+        self._logger.debug(
+            "Getting recipient and routing keys for service %s", service.id
+        )
         resolver = self._profile.inject(DIDResolver)
         recipient_keys: List[VerificationMethod] = [
             await resolver.dereference_verification_method(
@@ -498,19 +501,28 @@ class BaseConnectionManager:
             BaseConnectionManagerError: If the public DID has no associated
                 DIDComm services.
         """
+        self._logger.debug("Resolving invitation for DID %s", did)
         doc, didcomm_services = await self.resolve_didcomm_services(did, service_accept)
         if not didcomm_services:
+            self._logger.warning("No DIDComm services found for DID %s", did)
             raise BaseConnectionManagerError(
                 "Cannot connect via public DID that has no associated DIDComm services"
             )
-
         first_didcomm_service, *_ = didcomm_services
+        self._logger.debug(
+            "DIDComm service found for DID %s: %s", did, first_didcomm_service.id
+        )
 
         endpoint = str(first_didcomm_service.service_endpoint)
         recipient_keys, routing_keys = await self.verification_methods_for_service(
             doc, first_didcomm_service
         )
-
+        self._logger.debug(
+            "Recipient and routing keys for DID %s: %s, %s",
+            did,
+            recipient_keys,
+            routing_keys,
+        )
         return (
             endpoint,
             [self._extract_key_material_in_base58_format(key) for key in recipient_keys],
