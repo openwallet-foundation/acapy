@@ -140,18 +140,17 @@ class MultitenantRouteManager(RouteManager):
             "Getting routing info for profile %s", profile.settings.get("wallet.id", "")
         )
         routing_keys = []
+
+        base_mediation_record = await self.get_base_wallet_mediator()
+
         my_endpoint = None
+        if base_mediation_record:
+            routing_keys = base_mediation_record.routing_keys
+            my_endpoint = base_mediation_record.endpoint
 
         if mediation_record:
             routing_keys = [*routing_keys, *mediation_record.routing_keys]
             my_endpoint = mediation_record.endpoint
-        else:
-            base_mediation_record = await self.get_base_wallet_mediator()
-            if base_mediation_record:
-                routing_keys = base_mediation_record.routing_keys
-                my_endpoint = base_mediation_record.endpoint
-            else:
-                LOGGER.debug("No mediator info found")
 
         routing_keys = [normalize_to_did_key(key).key_id for key in routing_keys] or None
 
