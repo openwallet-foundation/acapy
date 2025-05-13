@@ -7,6 +7,7 @@ from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.responder import BaseResponder
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
+from ..protocols.coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ..protocols.coordinate_mediation.v1_0.normalization import (
     normalize_from_did_key,
@@ -47,7 +48,7 @@ class MultitenantRouteManager(RouteManager):
         *,
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
         wallet_id = profile.settings["wallet.id"]
         LOGGER.info(
             f"Add route record for recipient {recipient_key} to wallet {wallet_id}"

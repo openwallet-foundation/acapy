@@ -788,8 +788,8 @@ class BaseConnectionManager:
                         await entry.set_result([row.serialize() for row in targets], 3600)
                     else:
                         self._logger.debug(
-                            "Not caching connection targets for connection in "
-                            f"state ({connection.state})"
+                            "Not caching connection targets for connection in state %s",
+                            connection.state,
                         )
         else:
             if not connection:
