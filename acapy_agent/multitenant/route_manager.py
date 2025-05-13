@@ -88,10 +88,10 @@ class MultitenantRouteManager(RouteManager):
             # the root_profile to create the responder.
             # if sub-wallets are configuring their own mediation, then
             # we need the sub-wallet (profile) to create the responder.
-            responder = (
-                self.root_profile.inject(BaseResponder)
-                if base_mediation_record
-                else profile.inject(BaseResponder)
+            profile = self.root_profile if base_mediation_record else profile
+            responder = profile.inject(BaseResponder)
+            LOGGER.debug(
+                "Sending keylist updates to mediator %s", mediation_record.connection_id
             )
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
@@ -124,21 +124,22 @@ class MultitenantRouteManager(RouteManager):
     ) -> RoutingInfo:
         """Return routing info."""
         routing_keys = []
-
-        base_mediation_record = await self.get_base_wallet_mediator()
-
         my_endpoint = None
-        if base_mediation_record:
-            routing_keys = base_mediation_record.routing_keys
-            my_endpoint = base_mediation_record.endpoint
 
         if mediation_record:
             routing_keys = [*routing_keys, *mediation_record.routing_keys]
             my_endpoint = mediation_record.endpoint
+        else:
+            base_mediation_record = await self.get_base_wallet_mediator()
+            if base_mediation_record:
+                routing_keys = base_mediation_record.routing_keys
+                my_endpoint = base_mediation_record.endpoint
+            else:
+                LOGGER.debug("No mediator info found")
 
-        routing_keys = [normalize_to_did_key(key).key_id for key in routing_keys]
+        routing_keys = [normalize_to_did_key(key).key_id for key in routing_keys] or None
 
-        return RoutingInfo(routing_keys or None, my_endpoint)
+        return RoutingInfo(routing_keys, my_endpoint)
 
 
 class BaseWalletRouteManager(CoordinateMediationV1RouteManager):
