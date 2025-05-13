@@ -731,8 +731,8 @@ class OutOfBandManager(BaseConnectionManager):
                 search_public_did = public_did
 
             LOGGER.debug(
-                "Trying to find existing connection for oob invitation with "
-                f"did {search_public_did}"
+                "Trying to find existing connection for oob invitation with did %s",
+                search_public_did,
             )
 
             async with self._profile.session() as session:
@@ -755,7 +755,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
             LOGGER.warning(
-                f"Connection reuse request finished with state {oob_record.state}"
+                "Connection reuse request finished with state %s", oob_record.state
             )
 
             if oob_record.state == OobRecord.STATE_ACCEPTED:
@@ -776,7 +776,7 @@ class OutOfBandManager(BaseConnectionManager):
                 service_accept=service_accept,
             )
             LOGGER.debug(
-                f"Performed handshake with connection {oob_record.connection_id}"
+                "Performed handshake with connection %s", oob_record.connection_id
             )
             # re-fetch connection record
             async with self.profile.session() as session:
@@ -800,8 +800,9 @@ class OutOfBandManager(BaseConnectionManager):
         # Handle any attachments
         if invitation.requests_attach:
             LOGGER.debug(
-                f"Process attached messages for oob exchange {oob_record.oob_id} "
-                f"(connection_id {oob_record.connection_id})"
+                "Process attached messages for oob exchange %s (connection_id %s)",
+                oob_record.oob_id,
+                oob_record.connection_id,
             )
 
             # FIXME: this should ideally be handled using an event handler. Once the
@@ -942,7 +943,7 @@ class OutOfBandManager(BaseConnectionManager):
                     ]:
                         return oob_record
 
-                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted message")
+                LOGGER.debug("Wait for oob %s to receive reuse accepted message", oob_id)
                 event = await await_event
                 LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
@@ -966,7 +967,7 @@ class OutOfBandManager(BaseConnectionManager):
             "^acapy::record::connections::(active|completed|response)$"
         )
 
-        LOGGER.debug(f"Wait for connection {connection_id} to become active")
+        LOGGER.debug("Wait for connection %s to become active", connection_id)
 
         async def _wait_for_state() -> ConnRecord:
             event = self.profile.inject(EventBus)
@@ -983,7 +984,7 @@ class OutOfBandManager(BaseConnectionManager):
                     if conn_record.is_ready:
                         return conn_record
 
-                LOGGER.debug(f"Wait for connection {connection_id} to become active")
+                LOGGER.debug("Wait for connection %s to become active", connection_id)
                 # Wait for connection record to be in state
                 event = await await_event
                 return ConnRecord.deserialize(event.payload)
@@ -995,7 +996,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         except asyncio.TimeoutError:
-            LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
+            LOGGER.warning("Connection for connection_id %s not ready", connection_id)
             return None
 
     async def _handle_handshake_reuse(
@@ -1009,8 +1010,10 @@ class OutOfBandManager(BaseConnectionManager):
         # Wait for the reuse accepted message
         oob_record = await self._wait_for_reuse_response(oob_record.oob_id)
         LOGGER.debug(
-            f"Oob reuse for oob id {oob_record.oob_id} with connection "
-            f"{oob_record.connection_id} finished with state {oob_record.state}"
+            "Oob reuse for oob id %s with connection %s finished with state %s",
+            oob_record.oob_id,
+            oob_record.connection_id,
+            oob_record.state,
         )
 
         if oob_record.state != OobRecord.STATE_ACCEPTED:
@@ -1095,9 +1098,9 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         if public_did:
-            LOGGER.debug(f"Creating connection with public did {public_did}")
+            LOGGER.debug("Creating connection with public did %s", public_did)
         else:
-            LOGGER.debug(f"Creating connection with service {service}")
+            LOGGER.debug("Creating connection with service %s", service)
 
         conn_record = None
         for protocol in supported_handshake_protocols:
