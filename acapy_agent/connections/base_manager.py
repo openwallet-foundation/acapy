@@ -510,7 +510,7 @@ class BaseConnectionManager:
             )
         first_didcomm_service, *_ = didcomm_services
         self._logger.debug(
-            "DIDComm service found for DID %s: %s", did, first_didcomm_service.id
+            "DIDComm service (id %s) found for DID %s", first_didcomm_service.id, did
         )
 
         endpoint = str(first_didcomm_service.service_endpoint)
@@ -518,7 +518,7 @@ class BaseConnectionManager:
             doc, first_didcomm_service
         )
         self._logger.debug(
-            "Recipient and routing keys for DID %s: %s, %s",
+            "DID %s has recipient keys %s and routing keys %s",
             did,
             recipient_keys,
             routing_keys,
