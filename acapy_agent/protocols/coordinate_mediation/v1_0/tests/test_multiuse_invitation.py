@@ -1,5 +1,4 @@
 from unittest.mock import AsyncMock, MagicMock
-from acapy_agent.connections.models.diddoc.publickey import PublicKeyType
 import pytest
 from acapy_agent.connections.models.conn_record import ConnRecord
 from acapy_agent.protocols.coordinate_mediation.v1_0.route_manager import (
@@ -9,9 +8,6 @@ from contextlib import asynccontextmanager
 from acapy_agent.core.profile import Profile
 from acapy_agent.storage.base import BaseStorage
 from acapy_agent.cache.base import BaseCache
-from acapy_agent.multitenant.base import BaseMultitenantManager
-from acapy_agent.wallet.base import BaseWallet
-from acapy_agent.wallet.did_info import DIDInfo
 from acapy_agent.storage.record import StorageRecord
 import json
 
