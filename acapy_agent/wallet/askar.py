@@ -516,9 +516,9 @@ class AskarWallet(BaseWallet):
                     public_info = await self.get_local_did(public_did)
                     LOGGER.debug("Public DID found in wallet: %s", public_did)
                 except WalletNotFoundError:
-                    LOGGER.warning("Public DID not found in wallet")
+                    LOGGER.debug("Public DID not found in wallet: %s", public_did)
             else:
-                LOGGER.warning("Expected did not found in public DID storage record")
+                LOGGER.debug("DID not found in public DID storage record: %s", public_did)
 
         return public_info
 
