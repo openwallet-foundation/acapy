@@ -21,8 +21,6 @@ import json
 
 @asynccontextmanager
 async def make_profile():
-    
-
     profile = MagicMock(spec=Profile)
 
     # Mock settings
@@ -36,36 +34,38 @@ async def make_profile():
     storage_mock.get_record = AsyncMock()
     storage_mock.find_record = AsyncMock()
     storage_mock.find_all_records = AsyncMock()
-    
+
     cache_mock = MagicMock(spec=BaseCache)
-    cache_mock.clear = AsyncMock()   
+    cache_mock.clear = AsyncMock()
 
     multitenant_manager_mock = AsyncMock(spec=BaseMultitenantManager)
     multitenant_manager_mock.get_profile_for_key.return_value = None  # Simulate fallback
-    
+
     wallet_mock = AsyncMock(spec=BaseWallet)
     wallet_mock.get_local_did_for_verkey.return_value = DIDInfo(
         did="did:example:123456789abcdefghi",
         verkey=INVITATION_KEY,
         metadata={},
         method="sov",
-        key_type=PublicKeyType.ED25519_SIG_2018  # ← this is the required missing argument
-    ) 
+        key_type=PublicKeyType.ED25519_SIG_2018,  # ← this is the required missing argument
+    )
 
-    
     # Mock session with .settings and .inject
     session_mock = AsyncMock()
     session_mock.settings = settings_mock
     session_mock.inject = MagicMock(return_value=storage_mock)
     session_mock.inject_or = MagicMock(return_value=cache_mock)
     session_mock.inject.side_effect = lambda cls: (
-        storage_mock if cls.__name__ == "BaseStorage" else
-        cache_mock if cls.__name__ == "BaseCache" else
-        multitenant_manager_mock if cls.__name__ == "BaseMultitenantManager" else
-        wallet_mock if cls.__name__ == "BaseWallet" else
-        MagicMock()
+        storage_mock
+        if cls.__name__ == "BaseStorage"
+        else cache_mock
+        if cls.__name__ == "BaseCache"
+        else multitenant_manager_mock
+        if cls.__name__ == "BaseMultitenantManager"
+        else wallet_mock
+        if cls.__name__ == "BaseWallet"
+        else MagicMock()
     )
-
 
     # Async context manager that yields session
     session_context_manager = AsyncMock()
@@ -76,8 +76,6 @@ async def make_profile():
     profile.session.return_value = session_context_manager
 
     yield profile
-
-
 
 
 INVITATION_KEY = "B87peZJozsKpoUrNvdmsRdZyGN4cETNAvczo2n8tox5F"
@@ -101,21 +99,30 @@ async def test_multiuse_invitation_does_not_raise():
                 StorageRecord(
                     id="test-conn-id",
                     type=ConnRecord.RECORD_TYPE,
-                    value=json.dumps({k: v for k, v in conn_record.serialize().items() if k != "connection_id"}),
+                    value=json.dumps(
+                        {
+                            k: v
+                            for k, v in conn_record.serialize().items()
+                            if k != "connection_id"
+                        }
+                    ),
                     tags={
                         "invitation_key": INVITATION_KEY,
-                        "my_did": "did:example:123456789abcdefghi"
-                    }
+                        "my_did": "did:example:123456789abcdefghi",
+                    },
                 )
             ]
 
-
         route_mgr = CoordinateMediationV1RouteManager()
-        
+
         # call the classmethod twice
         # Call the method twice and store both results
-        result1 = await route_mgr.connection_from_recipient_key(profile, recipient_key=INVITATION_KEY)
-        result2 = await route_mgr.connection_from_recipient_key(profile, recipient_key=INVITATION_KEY)
+        result1 = await route_mgr.connection_from_recipient_key(
+            profile, recipient_key=INVITATION_KEY
+        )
+        result2 = await route_mgr.connection_from_recipient_key(
+            profile, recipient_key=INVITATION_KEY
+        )
 
         # Assert both are ConnRecords
         assert isinstance(result1, ConnRecord)
