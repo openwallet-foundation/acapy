@@ -23,7 +23,7 @@ class CredentialAckHandler(BaseHandler):
 
         self._logger.debug("CredentialAckHandler called with context %s", context)
         assert isinstance(context.message, CredentialAck)
-        self._logger.info(
+        self._logger.debug(
             "Received credential ack message: %s",
             context.message.serialize(as_string=True),
         )

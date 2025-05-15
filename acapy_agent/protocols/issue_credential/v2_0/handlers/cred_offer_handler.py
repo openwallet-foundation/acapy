@@ -32,7 +32,7 @@ class V20CredOfferHandler(BaseHandler):
 
         self._logger.debug("V20CredOfferHandler called with context %s", context)
         assert isinstance(context.message, V20CredOffer)
-        self._logger.info(
+        self._logger.debug(
             "Received v2.0 credential offer message: %s",
             context.message.serialize(as_string=True),
         )

@@ -28,7 +28,7 @@ class V20PresProposalHandler(BaseHandler):
 
         self._logger.debug("V20PresProposalHandler called with context %s", context)
         assert isinstance(context.message, V20PresProposal)
-        self._logger.info(
+        self._logger.debug(
             "Received v2.0 presentation proposal message: %s",
             context.message.serialize(as_string=True),
         )

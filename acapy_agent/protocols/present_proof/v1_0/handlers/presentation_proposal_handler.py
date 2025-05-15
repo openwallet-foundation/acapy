@@ -28,7 +28,7 @@ class PresentationProposalHandler(BaseHandler):
         profile = context.profile
         self._logger.debug("PresentationProposalHandler called with context %s", context)
         assert isinstance(context.message, PresentationProposal)
-        self._logger.info(
+        self._logger.debug(
             "Received presentation proposal message: %s",
             context.message.serialize(as_string=True),
         )

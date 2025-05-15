@@ -25,7 +25,7 @@ class BasicMessageHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established")
 
-        self._logger.info("Received basic message: %s", context.message.content)
+        self._logger.debug("Received basic message: %s", context.message.content)
 
         body = context.message.content
         meta = {"content": body}

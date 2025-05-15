@@ -19,7 +19,7 @@ class PingHandler(BaseHandler):
         self._logger.debug(f"PingHandler called with context {context}")
         assert isinstance(context.message, Ping)
 
-        self._logger.info(
+        self._logger.debug(
             "Received trust ping from: %s", context.message_receipt.sender_did
         )
 
