@@ -1773,6 +1773,7 @@ async def delete_tails(request: web.BaseRequest) -> json:
     cred_def_id = request.query.get("cred_def_id")
     revoc = IndyRevocation(profile)
     session = revoc._profile.session()
+
     if rev_reg_id:
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         tails_path = rev_reg.tails_local_path
@@ -1780,33 +1781,57 @@ async def delete_tails(request: web.BaseRequest) -> json:
         try:
             shutil.rmtree(main_dir_rev)
             return web.json_response({"message": "All files deleted successfully"})
+        except FileNotFoundError:
+            return web.json_response(
+                {"message": "No such file or directory"}, status=404
+            )
         except Exception as e:
             return web.json_response({"message": str(e)})
+
     elif cred_def_id:
         async with session:
-            cred_reg = sorted(
+            records = sorted(
                 await IssuerRevRegRecord.query_by_cred_def_id(
                     session, cred_def_id, IssuerRevRegRecord.STATE_GENERATED
                 )
-            )[0]
+            )
+            if not records:
+                return web.json_response(
+                    {"message": "No tail files found for deletion"}, status=404
+                )
+            cred_reg = records[0]
+
         tails_path = cred_reg.tails_local_path
         main_dir_rev = os.path.dirname(tails_path)
         main_dir_cred = os.path.dirname(main_dir_rev)
-        filenames = os.listdir(main_dir_cred)
+
         try:
-            flag = 0
+            filenames = os.listdir(main_dir_cred)
+            flag = False
+            safe_cred_def_id = re.escape(cred_def_id)
             for i in filenames:
-                safe_cred_def_id = re.escape(cred_def_id)
                 if re.search(safe_cred_def_id, i):
-                    shutil.rmtree(main_dir_cred + "/" + i)
-                    flag = 1
+                    path_to_delete = os.path.join(main_dir_cred, i)
+                    if os.path.exists(path_to_delete):
+                        shutil.rmtree(path_to_delete)
+                        flag = True
             if flag:
                 return web.json_response({"message": "All files deleted successfully"})
             else:
-                return web.json_response({"message": "No such file or directory"})
-
+                return web.json_response(
+                    {"message": "No such file or directory"}, status=404
+                )
+        except FileNotFoundError:
+            return web.json_response(
+                {"message": "No such file or directory"}, status=404
+            )
         except Exception as e:
             return web.json_response({"message": str(e)})
+
+    else:
+        return web.json_response(
+            {"message": "Must provide either rev_reg_id or cred_def_id"}, status=400
+        )
 
 
 async def register(app: web.Application):
