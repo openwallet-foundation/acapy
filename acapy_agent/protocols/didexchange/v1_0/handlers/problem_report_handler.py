@@ -17,7 +17,7 @@ class DIDXProblemReportHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle problem report message."""
-        self._logger.debug(f"DIDXProblemReportHandler called with context {context}")
+        self._logger.debug("DIDXProblemReportHandler called with context %s", context)
         assert isinstance(context.message, DIDXProblemReport)
 
         self._logger.info("Received problem report: %s", context.message.description)
