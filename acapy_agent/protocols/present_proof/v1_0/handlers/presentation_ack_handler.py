@@ -23,7 +23,7 @@ class PresentationAckHandler(BaseHandler):
 
         self._logger.debug("PresentationAckHandler called with context %s", context)
         assert isinstance(context.message, PresentationAck)
-        self._logger.info(
+        self._logger.debug(
             "Received presentation ack message: %s",
             context.message.serialize(as_string=True),
         )

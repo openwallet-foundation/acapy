@@ -18,7 +18,7 @@ class DIDXRequestHandler(BaseHandler):
             responder: Responder callback
         """
 
-        self._logger.debug(f"DIDXRequestHandler called with context {context}")
+        self._logger.debug("DIDXRequestHandler called with context %s", context)
         assert isinstance(context.message, DIDXRequest)
 
         profile = context.profile

@@ -15,7 +15,7 @@ class DIDXCompleteHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"DIDXCompleteHandler called with context {context}")
+        self._logger.debug("DIDXCompleteHandler called with context %s", context)
         assert isinstance(context.message, DIDXComplete)
 
         profile = context.profile

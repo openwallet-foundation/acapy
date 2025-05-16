@@ -23,7 +23,7 @@ class ForwardHandler(BaseHandler):
 
         if not context.message_receipt.recipient_verkey:
             raise HandlerException("Cannot forward message: unknown recipient")
-        self._logger.info(
+        self._logger.debug(
             "Received forward for: %s", context.message_receipt.recipient_verkey
         )
 

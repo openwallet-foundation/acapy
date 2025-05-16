@@ -30,7 +30,7 @@ class CredentialProposalHandler(BaseHandler):
 
         self._logger.debug("CredentialProposalHandler called with context %s", context)
         assert isinstance(context.message, CredentialProposal)
-        self._logger.info(
+        self._logger.debug(
             "Received credential proposal message: %s",
             context.message.serialize(as_string=True),
         )

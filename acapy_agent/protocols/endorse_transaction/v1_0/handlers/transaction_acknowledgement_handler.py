@@ -22,7 +22,7 @@ class TransactionAcknowledgementHandler(BaseHandler):
         """
 
         self._logger.debug(
-            f"TransactionAcknowledgementHandler called with context {context}"
+            "TransactionAcknowledgementHandler called with context %s", context
         )
         assert isinstance(context.message, TransactionAcknowledgement)
 

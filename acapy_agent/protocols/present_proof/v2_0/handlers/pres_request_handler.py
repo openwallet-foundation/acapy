@@ -34,7 +34,7 @@ class V20PresRequestHandler(BaseHandler):
 
         self._logger.debug("V20PresRequestHandler called with context %s", context)
         assert isinstance(context.message, V20PresRequest)
-        self._logger.info(
+        self._logger.debug(
             "Received v2.0 presentation request message: %s",
             context.message.serialize(as_string=True),
         )
