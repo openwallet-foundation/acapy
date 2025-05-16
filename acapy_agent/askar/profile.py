@@ -69,7 +69,7 @@ class AskarProfile(Profile):
     def init_ledger_pool(self):
         """Initialize the ledger pool."""
         if self.settings.get("ledger.disabled"):
-            LOGGER.info("Ledger support is disabled")
+            LOGGER.debug("init_ledger_pool: Ledger support is disabled")
             return
         if self.settings.get("ledger.genesis_transactions"):
             pool_name = self.settings.get("ledger.pool_name", "default")

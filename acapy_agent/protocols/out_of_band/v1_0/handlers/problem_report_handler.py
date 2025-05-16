@@ -21,7 +21,7 @@ class OOBProblemReportMessageHandler(BaseHandler):
             responder: Responder callback
         """
         self._logger.debug(
-            f"OOBProblemReportMessageHandler called with context {context}"
+            "OOBProblemReportMessageHandler called with context %s", context
         )
         assert isinstance(context.message, OOBProblemReport)
 

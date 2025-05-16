@@ -19,7 +19,7 @@ class CMProblemReportHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"CMProblemReportHandler called with context {context}")
+        self._logger.debug("CMProblemReportHandler called with context %s", context)
         assert isinstance(context.message, CMProblemReport)
         self._logger.error(
             f"Received coordinate-mediation problem report message: {context.message}"

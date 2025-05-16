@@ -29,9 +29,8 @@ class V20PresHandler(BaseHandler):
 
         self._logger.debug("V20PresHandler called with context %s", context)
         assert isinstance(context.message, V20Pres)
-        self._logger.info(
-            "Received presentation message: %s",
-            context.message.serialize(as_string=True),
+        self._logger.debug(
+            "Received presentation message: %s", context.message.serialize(as_string=True)
         )
 
         # If connection is present it must be ready for use
