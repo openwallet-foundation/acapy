@@ -27,8 +27,7 @@ from multidict import MultiDict
 import json
 
 
-@pytest.mark.asyncio
-class TestRevocationRoutes(unittest.TestCase):
+class TestRevocationRoutes(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.profile = await create_test_profile(
             settings={
@@ -1291,10 +1290,8 @@ class TestDeleteTails:
     @mock.patch("acapy_agent.revocation.routes.IndyRevocation.get_issuer_rev_reg_record")
     @mock.patch("acapy_agent.revocation.routes.shutil.rmtree")
     async def test_delete_tails_by_rev_reg_id(self, mock_rmtree, mock_get_rev_reg_record):
-        # Set tails_local_path to a file inside self.main_dir_rev
         tails_file_path = os.path.join(self.main_dir_rev, "tails")
         mock_record = mock.AsyncMock()
-        # File inside directory
         mock_record.tails_local_path = tails_file_path
 
         mock_get_rev_reg_record.return_value = mock_record
@@ -1303,7 +1300,6 @@ class TestDeleteTails:
 
         result = await test_module.delete_tails(request)
 
-        # The code deletes directory containing the tails file, which is self.main_dir_rev
         mock_rmtree.assert_called_once_with(self.main_dir_rev)
 
         body_bytes = result.body
