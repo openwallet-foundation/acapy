@@ -1,7 +1,6 @@
 import os
 import shutil
-from unittest import IsolatedAsyncioTestCase
-
+import unittest
 import pytest
 from aiohttp.web import HTTPBadRequest, HTTPNotFound
 
@@ -24,9 +23,11 @@ from ...utils.testing import create_test_profile
 from .. import routes as test_module
 from ..manager import RevocationManager
 from ..models.issuer_rev_reg_record import IssuerRevRegRecord
+from multidict import MultiDict
+import json
 
 
-class TestRevocationRoutes(IsolatedAsyncioTestCase):
+class TestRevocationRoutes(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.profile = await create_test_profile(
             settings={
@@ -1263,64 +1264,98 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         assert result.status == 200
 
 
-class TestDeleteTails(IsolatedAsyncioTestCase):
-    def setUp(self):
+def make_mock_request(query=None, path="/admin/revocation/delete_tails"):
+    query = query or {}
+    request = mock.MagicMock()
+    request.__getitem__.side_effect = lambda key: {
+        "context": mock.MagicMock(profile=mock.MagicMock())
+    }[key]
+    request.headers = {"Authorization": "Bearer fake-token"}
+    request.query = MultiDict(query)
+    request.path = path
+    return request
+
+
+@pytest.mark.asyncio
+class TestDeleteTails:
+    def setup_method(self):
         self.rev_reg_id = "rev_reg_id_123"
         self.cred_def_id = "cred_def_id_456"
-
         self.main_dir_rev = "path/to/main/dir/rev"
-        self.tails_path = os.path.join(self.main_dir_rev, "tails")
-        if not (os.path.exists(self.main_dir_rev)):
-            os.makedirs(self.main_dir_rev)
-        open(self.tails_path, "w").close()
+        os.makedirs(self.main_dir_rev, exist_ok=True)
+        tails_file = os.path.join(self.main_dir_rev, "tails")
+        with open(tails_file, "w") as f:
+            f.write("test tails file")
 
-    @pytest.mark.xfail(reason="This test never worked but was skipped due to a bug")
-    async def test_delete_tails_by_rev_reg_id(self):
-        # Setup
-        rev_reg_id = self.rev_reg_id
+    @mock.patch("acapy_agent.revocation.routes.IndyRevocation.get_issuer_rev_reg_record")
+    @mock.patch("acapy_agent.revocation.routes.shutil.rmtree")
+    async def test_delete_tails_by_rev_reg_id(self, mock_rmtree, mock_get_rev_reg_record):
+        tails_file_path = os.path.join(self.main_dir_rev, "tails")
+        mock_record = mock.AsyncMock()
+        mock_record.tails_local_path = tails_file_path
 
-        # Test
-        result = await test_module.delete_tails(
-            {"context": None, "query": {"rev_reg_id": rev_reg_id}}
-        )
+        mock_get_rev_reg_record.return_value = mock_record
 
-        # Assert
-        self.assertEqual(result, {"message": "All files deleted successfully"})
-        self.assertFalse(os.path.exists(self.tails_path))
+        request = make_mock_request({"rev_reg_id": self.rev_reg_id})
 
-    @pytest.mark.xfail(reason="This test never worked but was skipped due to a bug")
-    async def test_delete_tails_by_cred_def_id(self):
-        # Setup
+        result = await test_module.delete_tails(request)
+
+        mock_rmtree.assert_called_once_with(self.main_dir_rev)
+
+        body_bytes = result.body
+        body = json.loads(body_bytes.decode("utf-8"))
+
+        assert "message" in body
+        assert body["message"] == "All files deleted successfully"
+
+    @mock.patch("acapy_agent.revocation.routes.os.listdir")
+    @mock.patch("acapy_agent.revocation.routes.IssuerRevRegRecord.query_by_cred_def_id")
+    @mock.patch("acapy_agent.revocation.routes.shutil.rmtree")
+    async def test_delete_tails_by_cred_def_id(
+        self, mock_rmtree, mock_query_by_cred_def_id, mock_listdir
+    ):
+        main_dir_cred = "/path/to/main/dir"
         cred_def_id = self.cred_def_id
-        main_dir_cred = "path/to/main/dir/cred"
-        os.makedirs(main_dir_cred)
-        cred_dir = os.path.join(main_dir_cred, cred_def_id)
-        os.makedirs(cred_dir)
+        cred_dir_name = f"{cred_def_id}_folder"
 
-        # Test
-        result = await test_module.delete_tails(
-            {"context": None, "query": {"cred_def_id": cred_def_id}}
-        )
+        mock_listdir.return_value = [cred_dir_name, "other_folder"]
 
-        # Assert
-        self.assertEqual(result, {"message": "All files deleted successfully"})
-        self.assertFalse(os.path.exists(cred_dir))
-        self.assertTrue(os.path.exists(main_dir_cred))
+        record = mock.Mock()
+        record.tails_local_path = os.path.join(main_dir_cred, cred_dir_name, "tails")
+        mock_query_by_cred_def_id.return_value = [record]
 
-    @pytest.mark.xfail(reason="This test never worked but was skipped due to a bug")
-    async def test_delete_tails_not_found(self):
-        # Setup
-        cred_def_id = "invalid_cred_def_id"
+        request = make_mock_request({"cred_def_id": cred_def_id})
 
-        # Test
-        result = await test_module.delete_tails(
-            {"context": None, "query": {"cred_def_id": cred_def_id}}
-        )
+        result = await test_module.delete_tails(request)
 
-        # Assert
-        self.assertEqual(result, {"message": "No such file or directory"})
-        self.assertTrue(os.path.exists(self.main_dir_rev))
+        expected_rmtree_path = os.path.join(main_dir_cred, cred_dir_name)
+        mock_rmtree.assert_called_once_with(expected_rmtree_path)
 
-    def tearDown(self):
+        body_bytes = result.body
+        body = json.loads(body_bytes.decode("utf-8"))
+
+        assert "message" in body
+        assert body["message"] == "All files deleted successfully"
+
+    @mock.patch("acapy_agent.revocation.routes.IssuerRevRegRecord.query_by_cred_def_id")
+    @mock.patch("acapy_agent.revocation.routes.os.listdir")
+    async def test_delete_tails_not_found(self, mock_listdir, mock_query_by_cred_def_id):
+        mock_query_by_cred_def_id.return_value = []
+        mock_listdir.return_value = []  # Important! Avoid list index error.
+
+        request = make_mock_request({"cred_def_id": "nonexistent_cred_def_id"})
+
+        result = await test_module.delete_tails(request)
+
+        if hasattr(result, "json"):
+            body = await result.json()
+        elif hasattr(result, "body"):
+            body = json.loads(result.body.decode())
+        else:
+            body = result
+
+        assert "message" in body
+
+    def teardown_method(self):
         if os.path.exists(self.main_dir_rev):
             shutil.rmtree(self.main_dir_rev)

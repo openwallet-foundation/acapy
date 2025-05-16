@@ -1784,11 +1784,16 @@ async def delete_tails(request: web.BaseRequest) -> json:
             return web.json_response({"message": str(e)})
     elif cred_def_id:
         async with session:
-            cred_reg = sorted(
+            records = sorted(
                 await IssuerRevRegRecord.query_by_cred_def_id(
                     session, cred_def_id, IssuerRevRegRecord.STATE_GENERATED
                 )
-            )[0]
+            )
+            if not records:
+                return web.json_response(
+                    {"message": "No tail files found for deletion"}, status=404
+                )
+            cred_reg = records[0]
         tails_path = cred_reg.tails_local_path
         main_dir_rev = os.path.dirname(tails_path)
         main_dir_cred = os.path.dirname(main_dir_rev)
