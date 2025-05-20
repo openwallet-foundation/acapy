@@ -758,6 +758,242 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_promote_wallet_public_did(self):
+        # Test successful promotion of Indy DID
+        did_info = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            SOV,
+            ED25519,
+        )
+
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
+        ledger.get_key_for_did = mock.CoroutineMock(return_value=self.test_verkey)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
+        mock_route_manager.route_verkey = mock.CoroutineMock()
+        mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
+        mock_route_manager.routing_info = mock.CoroutineMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
+        self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
+
+        self.wallet.get_local_did.return_value = did_info
+        self.wallet.set_public_did.return_value = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.PUBLIC.metadata,
+            SOV,
+            ED25519,
+        )
+
+        result, attrib_def = await test_module.promote_wallet_public_did(
+            self.context, self.test_did_sov, write_ledger=True
+        )
+
+        assert result.did == self.test_did_sov
+        assert result.verkey == self.test_verkey
+        assert result.metadata == DIDPosture.PUBLIC.metadata
+        self.wallet.set_public_did.assert_called_once()
+        mock_route_manager.route_verkey.assert_called_once()
+
+    async def test_promote_wallet_public_did_no_ledger(self):
+        # Test promotion attempt without ledger
+        with self.assertRaises(PermissionError):
+            await test_module.promote_wallet_public_did(
+                self.context, self.test_did_sov, write_ledger=True
+            )
+
+    async def test_promote_wallet_public_did_not_on_ledger(self):
+        # Test promotion of DID not on ledger
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
+        ledger.get_key_for_did = mock.CoroutineMock(return_value=None)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        with self.assertRaises(LookupError):
+            await test_module.promote_wallet_public_did(
+                self.context, self.test_did_sov, write_ledger=True
+            )
+
+    async def test_promote_wallet_public_did_with_endorser(self):
+        # Test promotion with endorser
+        did_info = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            SOV,
+            ED25519,
+        )
+
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
+        ledger.get_key_for_did = mock.CoroutineMock(return_value=self.test_verkey)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        # Mock connection record with endorser info
+        connection_record = mock.MagicMock()
+        connection_record.metadata_get = mock.CoroutineMock(
+            return_value={"endorser_did": "endorser-did"}
+        )
+
+        with mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(return_value=connection_record),
+        ):
+            self.wallet.get_local_did.return_value = did_info
+            self.wallet.set_public_did.return_value = DIDInfo(
+                self.test_did_sov,
+                self.test_verkey,
+                DIDPosture.PUBLIC.metadata,
+                SOV,
+                ED25519,
+            )
+
+            result, attrib_def = await test_module.promote_wallet_public_did(
+                self.context,
+                self.test_did_sov,
+                write_ledger=False,
+                connection_id="test-connection-id",
+            )
+
+            assert result.did == self.test_did_sov
+            assert result.verkey == self.test_verkey
+            assert result.metadata == DIDPosture.PUBLIC.metadata
+
+    async def test_promote_wallet_public_did_with_endpoint(self):
+        # Test promotion with endpoint update
+        did_info = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            SOV,
+            ED25519,
+        )
+
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
+        ledger.get_key_for_did = mock.CoroutineMock(return_value=self.test_verkey)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
+        mock_route_manager.route_verkey = mock.CoroutineMock()
+        mock_route_manager.mediation_record_if_id = mock.CoroutineMock()
+        mock_route_manager.routing_info = mock.CoroutineMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
+        self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
+
+        self.wallet.get_local_did.return_value = did_info
+        self.wallet.set_public_did.return_value = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.PUBLIC.metadata,
+            SOV,
+            ED25519,
+        )
+        self.wallet.set_did_endpoint = mock.CoroutineMock()
+
+        result, attrib_def = await test_module.promote_wallet_public_did(
+            self.context,
+            self.test_did_sov,
+            write_ledger=True,
+            mediator_endpoint="https://custom-endpoint.com",
+        )
+
+        assert result.did == self.test_did_sov
+        self.wallet.set_did_endpoint.assert_called_once()
+
+    async def test_promote_wallet_public_did_non_indy(self):
+        # Test promotion of non-Indy DID
+        did_info = DIDInfo(
+            self.test_did_web,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            WEB,
+            ED25519,
+        )
+
+        mock_route_manager = mock.MagicMock(RouteManager, autospec=True)
+        mock_route_manager.route_verkey = mock.CoroutineMock()
+        self.profile.context.injector.bind_instance(RouteManager, mock_route_manager)
+
+        self.wallet.get_local_did.return_value = did_info
+        self.wallet.set_public_did.return_value = DIDInfo(
+            self.test_did_web,
+            self.test_verkey,
+            DIDPosture.PUBLIC.metadata,
+            WEB,
+            ED25519,
+        )
+
+        result, attrib_def = await test_module.promote_wallet_public_did(
+            self.context, self.test_did_web
+        )
+
+        assert result.did == self.test_did_web
+        assert result.verkey == self.test_verkey
+        assert result.metadata == DIDPosture.PUBLIC.metadata
+        self.wallet.set_public_did.assert_called_once()
+        mock_route_manager.route_verkey.assert_called_once()
+
+    async def test_promote_wallet_public_did_missing_connection(self):
+        # Test promotion with missing connection
+        did_info = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            SOV,
+            ED25519,
+        )
+
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
+        ledger.get_key_for_did = mock.CoroutineMock(return_value=self.test_verkey)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        with mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
+        ):
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.promote_wallet_public_did(
+                    self.context,
+                    self.test_did_sov,
+                    write_ledger=False,
+                    connection_id="test-connection-id",
+                )
+
+    async def test_promote_wallet_public_did_missing_endorser_info(self):
+        # Test promotion with missing endorser info
+        did_info = DIDInfo(
+            self.test_did_sov,
+            self.test_verkey,
+            DIDPosture.WALLET_ONLY.metadata,
+            SOV,
+            ED25519,
+        )
+
+        ledger = mock.MagicMock(BaseLedger, autospec=True)
+        ledger.get_key_for_did = mock.CoroutineMock(return_value=self.test_verkey)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        connection_record = mock.MagicMock()
+        connection_record.metadata_get = mock.CoroutineMock(return_value={})
+
+        with mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(return_value=connection_record),
+        ):
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.promote_wallet_public_did(
+                    self.context,
+                    self.test_did_sov,
+                    write_ledger=False,
+                    connection_id="test-connection-id",
+                )
+
     async def test_set_did_endpoint(self):
         self.request.json = mock.CoroutineMock(
             return_value={
