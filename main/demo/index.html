@@ -1209,6 +1209,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#did-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      DID Exchange
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endorser" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endorser
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mediation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mediation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multi-ledger" class="md-nav__link">
     <span class="md-ellipsis">
       Multi-ledger
@@ -1229,7 +1256,7 @@
           <li class="md-nav__item">
   <a href="#multi-tenancy-with-mediation" class="md-nav__link">
     <span class="md-ellipsis">
-      Multi-tenancy with Mediation!!!
+      Multi-tenancy with Mediation
     </span>
   </a>
   
@@ -2655,6 +2682,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#did-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      DID Exchange
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endorser" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endorser
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mediation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mediation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multi-ledger" class="md-nav__link">
     <span class="md-ellipsis">
       Multi-ledger
@@ -2675,7 +2729,7 @@
           <li class="md-nav__item">
   <a href="#multi-tenancy-with-mediation" class="md-nav__link">
     <span class="md-ellipsis">
-      Multi-tenancy with Mediation!!!
+      Multi-tenancy with Mediation
     </span>
   </a>
   
@@ -2778,7 +2832,7 @@
 <li><a href="#mediation">Mediation</a></li>
 <li><a href="#multi-ledger">Multi-ledger</a></li>
 <li><a href="#multi-tenancy">Multi-tenancy</a></li>
-<li><a href="#multi-tenancy-with-mediation">Multi-tenancy <em>with Mediation</em>!!!</a></li>
+<li><a href="#multi-tenancy-with-mediation">Multi-tenancy <em>with Mediation</em></a></li>
 <li><a href="#other-environment-settings">Other Environment Settings</a></li>
 <li><a href="#learning-about-the-alicefaber-code">Learning about the Alice/Faber code</a></li>
 <li><a href="#openapi-swagger-demo">OpenAPI (Swagger) Demo</a></li>
@@ -2884,7 +2938,7 @@ on starting and stopping your own local Hyperledger Indy instance.</p>
 <h2 id="additional-options-in-the-alicefaber-demo">Additional Options in the Alice/Faber demo<a class="headerlink" href="#additional-options-in-the-alicefaber-demo" title="Permanent link">&para;</a></h2>
 <p>You can enable support for various ACA-Py features by providing additional command-line arguments when starting up <code>alice</code> or <code>faber</code>.</p>
 <p>Note that when the controller starts up the agent, it prints out the ACA-Py startup command with <em>all</em> parameters - you can inspect this command to see what parameters are provided in each case.  For more details on the parameters, just start ACA-Py with the <code>--help</code> parameter, for example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./scripts/run_docker start --help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--help
 </code></pre></div>
 <h3 id="revocation">Revocation<a class="headerlink" href="#revocation" title="Permanent link">&para;</a></h3>
 <p>To enable support for revoking credentials, run the <code>faber</code> demo with the <code>--revocation</code> option:</p>
@@ -2893,7 +2947,7 @@ on starting and stopping your own local Hyperledger Indy instance.</p>
 <p>Note that you don't specify this option with <code>alice</code> because it's only applicable for the credential <code>issuer</code> (who has to enable revocation when creating a credential definition, and explicitly revoke credentials as appropriate; alice doesn't have to do anything special when revocation is enabled).</p>
 <p>You need to run an AnonCreds revocation registry tails server in order to support revocation - the details are described in the <a href="AliceGetsAPhone/#run-an-instance-of-indy-tails-server">Alice gets a Phone</a> demo instructions.</p>
 <p>Faber will setup support for revocation automatically, and you will see an extra option in faber's menu to revoke a credential:</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>    (1) Issue Credential
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>    (1) Issue Credential
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    (1a) Set Credential Type (indy)
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    (2) Send Proof Request
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    (3) Send Message
@@ -2904,100 +2958,89 @@ on starting and stopping your own local Hyperledger Indy instance.</p>
 <a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    (8) List Revocation Registries
 <a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>    (T) Toggle tracing on credential/proof exchange
 <a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    (X) Exit?
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>  ```
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>
-<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>When you issue a credential, make a note of the `Revocation registry ID` and `Credential revocation ID`:
 </code></pre></div>
-Faber      | Revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
-Faber      | Credential revocation ID: 1
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>When you revoke a credential you will need to provide those values:
+<p>When you issue a credential, make a note of the <code>Revocation registry ID</code> and <code>Credential revocation ID</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Faber      | Revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>Faber      | Credential revocation ID: 1
 </code></pre></div>
-[&frac12;/&frac34;/&#8538;/&#8542;/T/X] 5</p>
-<p>Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
-Enter credential revocation ID: 1
-Publish now? [Y/N]: y
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Note that you need to Publish the revocation information to the ledger.  Once you&#39;ve revoked a credential any proof which uses this credential will fail to verify.  
+<p>When you revoke a credential you will need to provide those values:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>[1/2/3/4/5/6/7/8/T/X] 5
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>Rotating the revocation registry will decommission any &quot;ready&quot; registry records and create 2 new registry records. You can view in the logs as the records are created and transition to &#39;active&#39;. There should always be 2 &#39;active&#39; revocation registries - one working and one for hot-swap. Note that revocation information can still be published from decommissioned registries.
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>You can also list the created registries, filtering by current state: &#39;init&#39;, &#39;generated&#39;, &#39;posted&#39;, &#39;active&#39;, &#39;full&#39;, &#39;decommissioned&#39;.
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>### DID Exchange
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>You can enable DID Exchange using the `--did-exchange` parameter for the `alice` and `faber` demos.
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
-<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>With DID Exchange, you can also enable use of the inviter&#39;s public DID for invitations, multi-use invitations, connection re-use, and use of qualified DIDs:
-<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>
-<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>- `--public-did-connections` - use the inviter&#39;s public DID in invitations, and allow use of implicit invitations
-<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>- `--reuse-connections` - support connection re-use (invitee will reuse an existing connection if it uses the same DID as in the new invitation)
-<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>- `--multi-use-invitations` - inviter will issue multi-use invitations
-<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>- `--emit-did-peer-4` - participants will prefer use of did:peer:4 for their pairwise connection DIDs
-<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>- `--emit-did-peer-2` - participants will prefer use of did:peer:2 for their pairwise connection DIDs
-<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>
-<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>### Endorser
-<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>
-<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>This is described in [Endorser.md](Endorser.md)
-<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>
-<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>### Mediation
-<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>
-<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>To enable mediation, run the `alice` or `faber` demo with the `--mediation` option:
-<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>
-<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>```bash
-<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>./run_demo faber --mediation
-</code></pre></div></p>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>Enter credential revocation ID: 1
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>Publish now? [Y/N]: y
+</code></pre></div>
+<p>Note that you need to Publish the revocation information to the ledger.  Once you've revoked a credential any proof which uses this credential will fail to verify.  </p>
+<p>Rotating the revocation registry will decommission any "ready" registry records and create 2 new registry records. You can view in the logs as the records are created and transition to 'active'. There should always be 2 'active' revocation registries - one working and one for hot-swap. Note that revocation information can still be published from decommissioned registries.</p>
+<p>You can also list the created registries, filtering by current state: 'init', 'generated', 'posted', 'active', 'full', 'decommissioned'.</p>
+<h3 id="did-exchange">DID Exchange<a class="headerlink" href="#did-exchange" title="Permanent link">&para;</a></h3>
+<p>You can enable DID Exchange using the <code>--did-exchange</code> parameter for the <code>alice</code> and <code>faber</code> demos.</p>
+<p>This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.</p>
+<p>With DID Exchange, you can also enable use of the inviter's public DID for invitations, multi-use invitations, connection re-use, and use of qualified DIDs:</p>
+<ul>
+<li><code>--public-did-connections</code> - use the inviter's public DID in invitations, and allow use of implicit invitations</li>
+<li><code>--reuse-connections</code> - support connection re-use (invitee will reuse an existing connection if it uses the same DID as in the new invitation)</li>
+<li><code>--multi-use-invitations</code> - inviter will issue multi-use invitations</li>
+<li><code>--emit-did-peer-4</code> - participants will prefer use of did:peer:4 for their pairwise connection DIDs</li>
+<li><code>--emit-did-peer-2</code> - participants will prefer use of did:peer:2 for their pairwise connection DIDs</li>
+</ul>
+<h3 id="endorser">Endorser<a class="headerlink" href="#endorser" title="Permanent link">&para;</a></h3>
+<p>This is described in <a href="Endorser/">Endorser.md</a></p>
+<h3 id="mediation">Mediation<a class="headerlink" href="#mediation" title="Permanent link">&para;</a></h3>
+<p>To enable mediation, run the <code>alice</code> or <code>faber</code> demo with the <code>--mediation</code> option:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--mediation
+</code></pre></div>
 <p>This will start up a "mediator" agent with Alice or Faber and automatically set the alice/faber connection to use the mediator.</p>
 <h3 id="multi-ledger">Multi-ledger<a class="headerlink" href="#multi-ledger" title="Permanent link">&para;</a></h3>
 <p>To enable multiple ledger mode, run the <code>alice</code> or <code>faber</code> demo with the <code>--multi-ledger</code> option:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--multi-ledger
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--multi-ledger
 </code></pre></div>
 <p>The configuration file for setting up multiple ledgers (for the demo) can be found at <code>./demo/multiple_ledger_config.yml</code>.</p>
 <h3 id="multi-tenancy">Multi-tenancy<a class="headerlink" href="#multi-tenancy" title="Permanent link">&para;</a></h3>
 <p>To enable support for multi-tenancy, run the <code>alice</code> or <code>faber</code> demo with the <code>--multitenant</code> option:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--multitenant
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--multitenant
 </code></pre></div>
 <p>(This option can be used with both (or either) <code>alice</code> and/or <code>faber</code>.)</p>
 <p>You will see an additional menu option to create new sub-wallets (or they can be considered to be "virtual agents").</p>
 <p>Faber:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>    (1) Issue Credential
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    (1a) Set Credential Type (indy)
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    (2) Send Proof Request
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    (3) Send Message
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>    (4) Create New Invitation
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>    (W) Create and/or Enable Wallet
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>    (T) Toggle tracing on credential/proof exchange
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>    (X) Exit?
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>    (1) Issue Credential
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    (1a) Set Credential Type (indy)
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    (2) Send Proof Request
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>    (3) Send Message
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>    (4) Create New Invitation
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>    (W) Create and/or Enable Wallet
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>    (T) Toggle tracing on credential/proof exchange
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>    (X) Exit?
 </code></pre></div>
 <p>Alice:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>    (3) Send Message
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    (4) Input New Invitation
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    (W) Create and/or Enable Wallet
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>    (X) Exit?
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>    (3) Send Message
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    (4) Input New Invitation
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    (W) Create and/or Enable Wallet
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    (X) Exit?
 </code></pre></div>
 <p>When you create a new wallet, you just need to provide the wallet name. (If you provide the name of an existing wallet then the controller will "activate" that wallet and make it the current wallet.)</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>[1/2/3/4/W/T/X] w
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>Enter wallet name: new_wallet_12
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>Faber      | Register or switch to wallet new_wallet_12
-<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>Faber      | Created new profile
-<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>Faber      | Profile backend: indy
-<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>Faber      | Profile name: new_wallet_12
-<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>Faber      | No public DID
-<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>... etc
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>[1/2/3/4/W/T/X] w
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>Enter wallet name: new_wallet_12
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>Faber      | Register or switch to wallet new_wallet_12
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>Faber      | Created new profile
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>Faber      | Profile backend: indy
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>Faber      | Profile name: new_wallet_12
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>Faber      | No public DID
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>... etc
 </code></pre></div>
 <p>Note that <code>faber</code> will create a public DID for this wallet, and will create a schema and credential definition.</p>
 <p>Once you have created a new wallet, you must establish a connection between <code>alice</code> and <code>faber</code> (remember that this is a new "virtual agent" and doesn't know anything about connections established for other "agents").</p>
 <p>In faber, create a new invitation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>[1/2/3/4/W/T/X] 4
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>(... creates a new invitation ...)
-</code></pre></div>
-<p>In alice, accept the invitation:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>[1/2/3/4/W/T/X] 4
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>(... enter the new invitation string ...)
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>(... creates a new invitation ...)
+</code></pre></div>
+<p>In alice, accept the invitation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>[1/2/3/4/W/T/X] 4
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>(... enter the new invitation string ...)
 </code></pre></div>
 <p>You can inspect the additional multi-tenancy admin API's (i.e. the "agency API" by opening either agent's swagger page in your browser:</p>
 <details>
@@ -3013,29 +3056,29 @@ Publish now? [Y/N]: y
 <li>"Sub-wallet" API calls are handled <a href="https://github.com/openwallet-foundation/acapy/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632">here</a></li>
 </ul>
 <p>Documentation on ACA-Py's multi-tenancy support can be found <a href="https://github.com/openwallet-foundation/acapy/blob/main/docs/features/Multitenancy.md">here</a>.</p>
-<h3 id="multi-tenancy-with-mediation">Multi-tenancy <em>with Mediation</em>!!!<a class="headerlink" href="#multi-tenancy-with-mediation" title="Permanent link">&para;</a></h3>
+<h3 id="multi-tenancy-with-mediation">Multi-tenancy <em>with Mediation</em><a class="headerlink" href="#multi-tenancy-with-mediation" title="Permanent link">&para;</a></h3>
 <p>There are two options for configuring mediation with multi-tenancy, documented <a href="https://github.com/openwallet-foundation/acapy/blob/main/docs/features/Multitenancy.md#mediation">here</a>.</p>
 <p>This demo implements option <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/2" title="GitHub Issue: squidfunk/mkdocs-material #2">#2</a> - each sub-wallet is configured with a separate connection to the mediator.</p>
 <p>Run the demo (Alice or Faber) specifying <em>both</em> options:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--multitenant<span class="w"> </span>--mediation
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>./run_demo<span class="w"> </span>faber<span class="w"> </span>--multitenant<span class="w"> </span>--mediation
 </code></pre></div>
 <p>This works exactly as the <em>vanilla</em> multi-tenancy, except that all connections are mediated.</p>
 <h2 id="other-environment-settings">Other Environment Settings<a class="headerlink" href="#other-environment-settings" title="Permanent link">&para;</a></h2>
 <p>The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)</p>
 <p>To override the default port settings:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nv">AGENT_PORT_OVERRIDE</span><span class="o">=</span><span class="m">8010</span><span class="w"> </span>./run_demo<span class="w"> </span>faber
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">AGENT_PORT_OVERRIDE</span><span class="o">=</span><span class="m">8010</span><span class="w"> </span>./run_demo<span class="w"> </span>faber
 </code></pre></div>
 <p>(The agent requires up to 10 available ports.)</p>
 <p>To pass extra arguments to the agent (for example):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">DEMO_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">&quot;[\&quot;--emit-did-peer-2\&quot;]&quot;</span><span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--did-exchange<span class="w"> </span>--reuse-connections
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nv">DEMO_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">&quot;[\&quot;--emit-did-peer-2\&quot;]&quot;</span><span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--did-exchange<span class="w"> </span>--reuse-connections
 </code></pre></div>
 <p>Additionally, separating the build and run functionalities in the script allows for smoother development and debugging processes. With the mounting of volumes from the host into the Docker container, code changes can be automatically reloaded without the need to repeatedly build the demo.</p>
-<p>Build Command:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>./demo/run_demo<span class="w"> </span>build<span class="w"> </span>alice<span class="w"> </span>--wallet-type<span class="w"> </span>askar-anoncreds<span class="w"> </span>--events
-</code></pre></div></p>
-<p>Run Command:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>./demo/run_demo<span class="w"> </span>run<span class="w"> </span>alice<span class="w"> </span>--wallet-type<span class="w"> </span>askar-anoncreds<span class="w"> </span>--events
-</code></pre></div></p>
+<p>Build Command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>./demo/run_demo<span class="w"> </span>build<span class="w"> </span>alice<span class="w"> </span>--wallet-type<span class="w"> </span>askar-anoncreds<span class="w"> </span>--events
+</code></pre></div>
+<p>Run Command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>./demo/run_demo<span class="w"> </span>run<span class="w"> </span>alice<span class="w"> </span>--wallet-type<span class="w"> </span>askar-anoncreds<span class="w"> </span>--events
+</code></pre></div>
 <h2 id="learning-about-the-alicefaber-code">Learning about the Alice/Faber code<a class="headerlink" href="#learning-about-the-alicefaber-code" title="Permanent link">&para;</a></h2>
 <p>These Alice and Faber scripts (in the <code>demo/runners</code> folder) implement the controller and run the agent as a sub-process (see the documentation for <code>aca-py</code>). The controller publishes a REST service to receive web hook callbacks from their agent. Note that this architecture, running the agent as a sub-process, is a variation on the documented architecture of running the controller and agent as separate processes/containers.</p>
 <p>The controllers for this demo can be found in the <a href="https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/alice.py">alice.py</a> and <a href="https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/faber.py">faber.py</a> files. Alice and Faber are instances of the agent class found in <a href="https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/support/agent.py">agent.py</a>.</p>
@@ -3051,15 +3094,15 @@ Publish now? [Y/N]: y
 <p>The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.</p>
 <p>A second version of the performance test can be run by adding the parameter <code>--routing</code> to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.</p>
 <p>You can also run the demo against a postgres database using the following:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml
 </code></pre></div>
 <p>(Obviously you need to be running a postgres database - the command to start postgres is in the yml file provided above.)</p>
 <p>You can tweak the number of credentials issued using the <code>--count</code> and <code>--batch</code> parameters, and you can run against an Askar database using the <code>--wallet-type askar</code> option (or run using indy-sdk using <code>--wallet-type indy</code>).</p>
 <p>An example full set of options is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml<span class="w"> </span>-c<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-b<span class="w"> </span><span class="m">10</span><span class="w"> </span>--wallet-type<span class="w"> </span>askar
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml<span class="w"> </span>-c<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-b<span class="w"> </span><span class="m">10</span><span class="w"> </span>--wallet-type<span class="w"> </span>askar
 </code></pre></div>
 <p>Or:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml<span class="w"> </span>-c<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-b<span class="w"> </span><span class="m">10</span><span class="w"> </span>--wallet-type<span class="w"> </span>indy
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml<span class="w"> </span>-c<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-b<span class="w"> </span><span class="m">10</span><span class="w"> </span>--wallet-type<span class="w"> </span>indy
 </code></pre></div>
 <h2 id="coding-challenge-adding-acme">Coding Challenge: Adding ACME<a class="headerlink" href="#coding-challenge-adding-acme" title="Permanent link">&para;</a></h2>
 <p>Now that you have a solid foundation in using ACA-Py, time for a coding challenge. In this challenge, we extend the Alice-Faber command line demo by adding in ACME Corp, a place where Alice wants to work. The demo adds:</p>
