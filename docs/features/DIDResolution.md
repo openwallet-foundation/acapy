@@ -73,7 +73,7 @@ The following is an example method resolver implementation. In this example, we 
 
 #### `__init __.py`
 
-```python=
+```python
 from aries_cloudagent.config.injection_context import InjectionContext
 from ..resolver.did_resolver import DIDResolver
 
@@ -90,7 +90,7 @@ async def setup(context: InjectionContext):
 
 #### `example_resolver.py`
 
-```python=
+```python
 import re
 from typing import Pattern
 from aries_cloudagent.resolver.base import BaseDIDResolver, ResolverType
@@ -175,7 +175,7 @@ plugin:
 
 The following is a fully functional Dockerfile encapsulating this setup:
 
-```dockerfile=
+```dockerfile
 FROM ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.3.0   
 RUN pip3 install git+https://github.com/dbluhm/acapy-resolver-github
 
