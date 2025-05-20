@@ -399,7 +399,7 @@ class Conductor:
                     from_version_storage,
                 )
             except StorageNotFoundError:
-                LOGGER.warning("Wallet version storage record not found.")
+                LOGGER.info("Wallet version storage record not found.")
 
         from_version_config = self.root_profile.settings.get("upgrade.from_version")
         force_upgrade_flag = (
@@ -429,12 +429,10 @@ class Conductor:
             LOGGER.debug("Determined from_version: %s", from_version)
 
         if not from_version:
-            LOGGER.warning(
-                (
-                    "No upgrade from version was found from wallet or via"
-                    " --from-version startup argument. Defaulting to %s.",
-                    DEFAULT_ACAPY_VERSION,
-                )
+            LOGGER.info(
+                "No upgrade from version was found from wallet or via"
+                " --from-version startup argument. Defaulting to %s.",
+                DEFAULT_ACAPY_VERSION,
             )
             from_version = DEFAULT_ACAPY_VERSION
             self.root_profile.settings.set_value("upgrade.from_version", from_version)
@@ -872,7 +870,7 @@ class Conductor:
                 storage_type_record = None
 
             if not storage_type_record:
-                LOGGER.warning("Wallet type record not found.")
+                LOGGER.info("Wallet type record not found.")
                 try:
                     acapy_version = await storage.find_record(
                         type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
