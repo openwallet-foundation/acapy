@@ -60,7 +60,7 @@ class RoutingManager:
                     record = await RouteRecord.retrieve_by_recipient_key(
                         session, recip_verkey
                     )
-                LOGGER.info("Found routing record for verkey: %s", recip_verkey)
+                LOGGER.debug("Found routing record for verkey: %s", recip_verkey)
                 return record
             except StorageDuplicateError:
                 LOGGER.info(
@@ -70,7 +70,7 @@ class RoutingManager:
                     f"More than one route record found with recipient key: {recip_verkey}"
                 )
             except StorageNotFoundError:
-                LOGGER.info("No routing record found for verkey: %s", recip_verkey)
+                LOGGER.debug("No routing record found for verkey: %s", recip_verkey)
                 i += 1
                 if i > RECIP_ROUTE_RETRY:
                     raise RouteNotFoundError(
