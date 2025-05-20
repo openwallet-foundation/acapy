@@ -209,9 +209,9 @@ class Conductor:
             self.root_profile, self.setup_public_did and self.setup_public_did.did
         )
         if not ledger_configured:
-            LOGGER.warning("No ledger configured.")
+            LOGGER.info("No ledger configured.")
         else:
-            LOGGER.debug("Ledger configured successfully.")
+            LOGGER.info("Ledger configured successfully.")
 
         if not context.settings.get("transport.disabled"):
             # Register all inbound transports if enabled
