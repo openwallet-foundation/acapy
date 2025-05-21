@@ -1,7 +1,8 @@
 """Utilities for testing."""
 
 from typing import Optional
-from uuid import uuid4
+
+from uuid_utils import uuid4
 
 from ..askar.profile import AskarProfile
 from ..askar.profile_anon import AskarAnonCredsProfile

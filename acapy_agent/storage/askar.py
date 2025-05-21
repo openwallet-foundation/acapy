@@ -1,5 +1,6 @@
 """Aries-Askar implementation of BaseStorage interface."""
 
+import logging
 from typing import Mapping, Optional, Sequence
 
 from aries_askar import AskarError, AskarErrorCode, Session
@@ -19,6 +20,8 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AskarStorage(BaseStorage):
@@ -44,6 +47,7 @@ class AskarStorage(BaseStorage):
             record: `StorageRecord` to be stored
 
         """
+        LOGGER.debug("Adding record %s", record.id)
         validate_record(record)
         try:
             await self._session.handle.insert(
@@ -51,9 +55,12 @@ class AskarStorage(BaseStorage):
             )
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
+                LOGGER.info("Duplicate record: %s/%s", record.type, record.id)
                 raise StorageDuplicateError(
                     f"Duplicate record: {record.type}/{record.id}"
                 ) from None
+
+            LOGGER.error("Error when adding storage record: %s", err)
             raise StorageError("Error when adding storage record") from err
 
     async def get_record(
@@ -80,15 +87,21 @@ class AskarStorage(BaseStorage):
             raise StorageError("Record type not provided")
         if not record_id:
             raise StorageError("Record ID not provided")
+
+        LOGGER.debug("Fetching record %s", record_id)
         for_update = bool(options and options.get("forUpdate"))
         try:
             item = await self._session.handle.fetch(
                 record_type, record_id, for_update=for_update
             )
         except AskarError as err:
+            LOGGER.error("Error when fetching storage record: %s", err)
             raise StorageError("Error when fetching storage record") from err
+
         if not item:
+            LOGGER.debug("Record not found for type/id: %s/%s", record_type, record_id)
             raise StorageNotFoundError(f"Record not found: {record_type}/{record_id}")
+
         return StorageRecord(
             type=item.category,
             id=item.name,
@@ -109,12 +122,16 @@ class AskarStorage(BaseStorage):
             StorageError: If a libindy error occurs
 
         """
+        LOGGER.debug("Updating record %s", record.id)
         validate_record(record)
         try:
             await self._session.handle.replace(record.type, record.id, value, tags)
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
+                LOGGER.info("Record not found for update: %s/%s", record.type, record.id)
                 raise StorageNotFoundError("Record not found") from None
+
+            LOGGER.error("Error when updating storage record: %s", err)
             raise StorageError("Error when updating storage record value") from err
 
     async def delete_record(self, record: StorageRecord):
@@ -128,16 +145,21 @@ class AskarStorage(BaseStorage):
             StorageError: If a libindy error occurs
 
         """
+        LOGGER.debug("Deleting record %s", record.id)
         validate_record(record, delete=True)
         try:
             await self._session.handle.remove(record.type, record.id)
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
+                LOGGER.info(
+                    "Record not found for deletion: %s/%s", record.type, record.id
+                )
                 raise StorageNotFoundError(
                     f"Record not found: {record.type}/{record.id}"
                 ) from None
-            else:
-                raise StorageError("Error when removing storage record") from err
+
+            LOGGER.error("Error when deleting storage record: %s", err)
+            raise StorageError("Error when removing storage record") from err
 
     async def find_record(
         self, type_filter: str, tag_query: Mapping, options: Optional[Mapping] = None
@@ -149,17 +171,28 @@ class AskarStorage(BaseStorage):
             tag_query: Tags to query
             options: Dictionary of backend-specific options
         """
+        LOGGER.debug("Finding record %s with tag query %s", type_filter, tag_query)
         for_update = bool(options and options.get("forUpdate"))
         try:
             results = await self._session.handle.fetch_all(
                 type_filter, tag_query, limit=2, for_update=for_update
             )
         except AskarError as err:
+            LOGGER.info("Error when finding storage record: %s", err)
             raise StorageError("Error when finding storage record") from err
+
         if len(results) > 1:
+            LOGGER.info("Duplicate records found: %s", results)
             raise StorageDuplicateError("Duplicate records found")
+
         if not results:
+            LOGGER.debug(
+                "Record not found with filter / tag query: %s / %s",
+                type_filter,
+                tag_query,
+            )
             raise StorageNotFoundError("Record not found")
+
         row = results[0]
         return StorageRecord(
             type=row.category,
@@ -192,6 +225,13 @@ class AskarStorage(BaseStorage):
         """
         results = []
 
+        LOGGER.debug(
+            "Scanning records (paginated: limit=%d, offset=%d) for %s with tag query %s",
+            limit,
+            offset,
+            type_filter,
+            tag_query,
+        )
         async for row in self._session.store.scan(
             category=type_filter,
             tag_filter=tag_query,
@@ -220,6 +260,9 @@ class AskarStorage(BaseStorage):
         options: Optional[Mapping] = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
+        LOGGER.debug(
+            "Fetching all records for %s with tag query %s", type_filter, tag_query
+        )
         for_update = bool(options and options.get("forUpdate"))
         results = []
         for row in await self._session.handle.fetch_all(
@@ -245,6 +288,9 @@ class AskarStorage(BaseStorage):
         tag_query: Optional[Mapping] = None,
     ):
         """Remove all records matching a particular type filter and tag query."""
+        LOGGER.debug(
+            "Deleting all records for %s with tag query %s", type_filter, tag_query
+        )
         await self._session.handle.remove_all(type_filter, tag_query)
 
 
@@ -376,6 +422,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             raise StorageSearchError("Search query is complete")
 
         limit = max_count or self.page_size
+        LOGGER.debug("Fetching records (limit=%d, offset=%d)", limit, offset or 0)
         await self._open(limit=limit, offset=offset)
 
         count = 0
@@ -399,6 +446,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             )
             count += 1
 
+        LOGGER.debug("Fetched %d records", len(ret))
         if not ret:
             self._done = True
             self._scan = None
