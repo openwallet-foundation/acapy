@@ -123,6 +123,8 @@ class Profile(ABC):
         event_bus = self.inject_or(EventBus)
         if event_bus:
             await event_bus.notify(self, Event(topic, payload))
+        else:
+            LOGGER.warning("No event bus found for profile %s", self.name)
 
     def __repr__(self) -> str:
         """Get a human readable string."""
