@@ -228,8 +228,7 @@ if [ "$RUNMODE" == "docker" ]; then
     NGROK_CURL="curl --silent localhost:4040/api/tunnels"
     NGROK_RESPONSE=$($NGROK_CURL)
     # Check if the response is not empty/whitespace and is valid JSON
-    if [ "$(echo "$NGROK_RESPONSE" | tr -d '[:space:]')" != "" ] && echo "$NGROK_RESPONSE" | $JQ . >/dev/null 2>&1; then
-      # check if ngrok is running on our $AGENT_PORT (don't override if AGENT_ENDPOINT is already set)
+
       if [ -z "$AGENT_ENDPOINT" ]; then
         # default behavior is to use the first tunnel as the agent endpoint
         NGROK_ENDPOINT=$(echo "$NGROK_RESPONSE" | $JQ -r '.tunnels[0].public_url')
@@ -269,6 +268,33 @@ if [ "$RUNMODE" == "docker" ]; then
     else
       echo "ngrok API not detected or not returning valid JSON"
     fi
+    # Always check for dev tunnel for acapy agent; override ngrok if found
+    DEVTUNNEL_BIN=$(which devtunnel 2>/dev/null)
+    if [ -x "$DEVTUNNEL_BIN" ]; then
+      echo "Checking dev tunnel for acapy agent..."
+      DEVTUNNEL_RESPONSE=$($DEVTUNNEL_BIN list --json 2>/dev/null)
+      if echo "$DEVTUNNEL_RESPONSE" | $JQ --exit-status . >/dev/null 2>&1; then
+        # Find a tunnelId with description matching acapy-agent
+        DEVTUNNEL_ID=$(echo "$DEVTUNNEL_RESPONSE" | $JQ -r '.tunnels[] | select(.description // empty | test("acapy-agent"; "i")) | .tunnelId' | head -n 1)
+        if [ ! -z "$DEVTUNNEL_ID" ] && [ "$DEVTUNNEL_ID" != "null" ]; then
+          DEVTUNNEL_SHOW=$($DEVTUNNEL_BIN show "$DEVTUNNEL_ID" --json 2>/dev/null)
+          if echo "$DEVTUNNEL_SHOW" | $JQ --exit-status . >/dev/null 2>&1; then
+            DEVTUNNEL_ENDPOINT=$(echo "$DEVTUNNEL_SHOW" | $JQ -r '.tunnel.ports[0].portUri')
+            if [ ! -z "$DEVTUNNEL_ENDPOINT" ] && [ "$DEVTUNNEL_ENDPOINT" != "null" ]; then
+              export AGENT_ENDPOINT=$DEVTUNNEL_ENDPOINT
+              echo "Detected dev tunnel agent endpoint [$AGENT_ENDPOINT] (overriding ngrok)"
+            else
+              echo "dev tunnel portUri not found for agent endpoint"
+            fi
+          else
+            echo "dev tunnel show did not return valid JSON"
+          fi
+        else
+          echo "dev tunnel not detected for agent endpoint"
+        fi
+      else
+        echo "dev tunnel CLI did not return valid JSON"
+      fi
   else
     echo "jq not found"
   fi
