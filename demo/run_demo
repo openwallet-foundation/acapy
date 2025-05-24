@@ -268,29 +268,44 @@ if [ "$RUNMODE" == "docker" ]; then
     else
       echo "ngrok API not detected or not returning valid JSON"
     fi
-    # Always check for dev tunnel for acapy agent; override ngrok if found
+    # Always check for dev tunnel for acapy-demo; override ngrok if found
     DEVTUNNEL_BIN=$(which devtunnel 2>/dev/null)
     if [ -x "$DEVTUNNEL_BIN" ]; then
-      echo "Checking dev tunnel for acapy agent..."
+      echo "Checking dev tunnel for acapy-demo..."
       DEVTUNNEL_RESPONSE=$($DEVTUNNEL_BIN list --json 2>/dev/null)
       if echo "$DEVTUNNEL_RESPONSE" | $JQ --exit-status . >/dev/null 2>&1; then
-        # Find a tunnelId with description matching acapy-agent
-        DEVTUNNEL_ID=$(echo "$DEVTUNNEL_RESPONSE" | $JQ -r '.tunnels[] | select(.description // empty | test("acapy-agent"; "i")) | .tunnelId' | head -n 1)
+        # Find a tunnelId with description matching acapy-demo
+        DEVTUNNEL_ID=$(echo "$DEVTUNNEL_RESPONSE" | $JQ -r '.tunnels[] | select(.description // empty | test("acapy-demo"; "i")) | .tunnelId' | head -n 1)
         if [ ! -z "$DEVTUNNEL_ID" ] && [ "$DEVTUNNEL_ID" != "null" ]; then
           DEVTUNNEL_SHOW=$($DEVTUNNEL_BIN show "$DEVTUNNEL_ID" --json 2>/dev/null)
           if echo "$DEVTUNNEL_SHOW" | $JQ --exit-status . >/dev/null 2>&1; then
-            DEVTUNNEL_ENDPOINT=$(echo "$DEVTUNNEL_SHOW" | $JQ -r '.tunnel.ports[0].portUri')
-            if [ ! -z "$DEVTUNNEL_ENDPOINT" ] && [ "$DEVTUNNEL_ENDPOINT" != "null" ]; then
-              export AGENT_ENDPOINT=$DEVTUNNEL_ENDPOINT
+            # Extract portUris for 8020, 8022, 6543
+            AGENT_ENDPOINT=$(echo "$DEVTUNNEL_SHOW" | $JQ -r '.tunnel.ports[] | select(.portNumber==8020) | .portUri')
+            WEBHOOK_ENDPOINT=$(echo "$DEVTUNNEL_SHOW" | $JQ -r '.tunnel.ports[] | select(.portNumber==8022) | .portUri')
+            TAILS_URL=$(echo "$DEVTUNNEL_SHOW" | $JQ -r '.tunnel.ports[] | select(.portNumber==6543) | .portUri')
+            if [ ! -z "$AGENT_ENDPOINT" ] && [ "$AGENT_ENDPOINT" != "null" ]; then
+              export AGENT_ENDPOINT
               echo "Detected dev tunnel agent endpoint [$AGENT_ENDPOINT] (overriding ngrok)"
             else
-              echo "dev tunnel portUri not found for agent endpoint"
+              echo "dev tunnel portUri not found for agent endpoint (8020)"
+            fi
+            if [ ! -z "$WEBHOOK_ENDPOINT" ] && [ "$WEBHOOK_ENDPOINT" != "null" ]; then
+              export WEBHOOK_TARGET=${WEBHOOK_ENDPOINT%/}/webhooks
+              echo "Detected dev tunnel webhooks endpoint [$WEBHOOK_TARGET] (overriding ngrok)"
+            else
+              echo "dev tunnel portUri not found for webhooks endpoint (8022)"
+            fi
+            if [ ! -z "$TAILS_URL" ] && [ "$TAILS_URL" != "null" ]; then
+              export PUBLIC_TAILS_URL=$TAILS_URL
+              echo "Detected dev tunnel tails-server endpoint [$PUBLIC_TAILS_URL] (overriding ngrok)"
+            else
+              echo "dev tunnel portUri not found for tails-server endpoint (6543)"
             fi
           else
             echo "dev tunnel show did not return valid JSON"
           fi
         else
-          echo "dev tunnel not detected for agent endpoint"
+          echo "dev tunnel not detected for acapy-demo tunnel"
         fi
       else
         echo "dev tunnel CLI did not return valid JSON"
