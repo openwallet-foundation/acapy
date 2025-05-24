@@ -351,6 +351,8 @@ Then in the faber demo, select option `2a` - Faber will display a QR code which 
 
 Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the `faber.py` code in the repository.
 
+### Port Forwarding with ngrok
+
 If you want to use a connectionless proof request with docker running locally, you need to set up ngrok to forward both the agent port (8020) and the webhooks port (8022). If you have a free ngrok account, you need to run a single ngrok agent that forwards all of the necessary ports. Here is an ngrok configuration file that works for this purpose:
 ```yaml
 version: "3"
@@ -372,6 +374,10 @@ When using this approach, leave your ngrok authtoken out of the tails-server ngr
 ```bash
 ERROR:  authentication failed: Your account is limited to 1 simultaneous ngrok agent sessions.
 ```
+
+### Port Forwarding with Microsoft dev tunnels
+
+You can also use [Microsoft dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/) to forward the required ports. Follow the [installation instructions](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started#install-dev-tunnels) to install the devtunnel client. You will need to authenticate to devtunnel using a Microsoft or GitHub account. To use a GitHub account, run `devtunnel user login -g`. Once you have logged in, run the following command to set up the agent, webhooks, and tails-server ports: `devtunnel host -p 8020 -p 8022 -p 6543 -d acapy-demo -a` The description (`-d acapy-demo`) is required for the `run_demo` script to find the dev tunnel ports. The `-a` flag is required to allow anonymous connections to the dev tunnel ports. For example, the existing wallets are not designed to work with dev tunnel authentication, so they will need to connect anonymously.
 
 ## Conclusion
 
