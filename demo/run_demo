@@ -264,8 +264,7 @@ if [ "$RUNMODE" == "docker" ]; then
     else
       echo "dev tunnel not installed"
     fi
-    NGROK_CURL="curl --silent localhost:4040/api/tunnels"
-    NGROK_RESPONSE=$($NGROK_CURL)
+    NGROK_RESPONSE=$(curl --silent localhost:4040/api/tunnels)
     # Check if the response is not empty/whitespace and is valid JSON
     if [ ! -z "$NGROK_RESPONSE" ] && echo "$NGROK_RESPONSE" | $JQ --exit-status . >/dev/null 2>&1; then
       if [ -z "$AGENT_ENDPOINT" ]; then
