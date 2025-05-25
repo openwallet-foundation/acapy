@@ -135,6 +135,7 @@ class WsTransport(BaseInboundTransport):
                 if outbound.done() and not ws.closed:
                     # response would be None if session was closed
                     response = outbound.result()
+                    LOGGER.debug("Sending outbound websocket message %s", response)
                     if isinstance(response, bytes):
                         await ws.send_bytes(response)
                     else:
