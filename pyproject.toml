@@ -76,7 +76,7 @@ pre-commit = ">=4.1,<4.3"
 
 pydevd = "~3.3.0"
 
-pydevd-pycharm = "^251.17181.23"
+pydevd-pycharm = ">=251.17181.23,<253.0.0"
 
 # testing
 pytest = "^8.3.4"
