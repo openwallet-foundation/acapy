@@ -44,7 +44,7 @@ requests = "~2.32.3"
 rlp = "^4.1.0"
 unflatten = "~0.2"
 sd-jwt = "^0.10.3"
-uuid_utils = "^0.10.0"
+uuid_utils = ">=0.10,<0.12"
 
 # did libraries
 did-peer-2 = "^0.1.2"
