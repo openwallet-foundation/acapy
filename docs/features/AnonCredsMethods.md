@@ -49,8 +49,8 @@ The basic work involved in creating an AnonCreds method is the implementation of
 write AnonCreds objects to a VDR, and a "resolver" to read AnonCreds objects from a VDR. To do
 that for your new AnonCreds method, you will need to:
 
-- Implement `BaseAnonCredsResolver` - [here](https://github.com/openwallet-foundation/acapy/blob/1786553ffea244c67d82ceaa3f1793dd1ec1c0f5/aries_cloudagent/anoncreds/base.py#L113)
-- Implement `BaseAnonCredsRegistrar` - [here](https://github.com/openwallet-foundation/acapy/blob/1786553ffea244c67d82ceaa3f1793dd1ec1c0f5/aries_cloudagent/anoncreds/base.py#L139)
+- Implement `BaseAnonCredsResolver` - [here](https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/anoncreds/base.py#L109)
+- Implement `BaseAnonCredsRegistrar` - [here](https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/anoncreds/base.py#L145)
 
 The links above are to a specific commit and the code may have been updated since. You might want to
 look at the methods in the current version of [acapy_agent/anoncreds/base.py](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/anoncreds/base.py) in the `main` branch.

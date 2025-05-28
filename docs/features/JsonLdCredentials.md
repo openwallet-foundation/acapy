@@ -232,7 +232,7 @@ To learn more about using these endpoints, please refer to the available [postma
 
 ## External Suite Provider
 
-It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/openwallet-foundation/acapy/blob/d3ee92b1b86aff076b52f31eaecea59c18005079/aries_cloudagent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
+It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
 
 This interface enables taking advantage of ACA-Py's JSON-LD processing to construct and format the credential while exposing a simple interface to a plugin to make it responsible for signatures. This can also be combined with plugged in DID Methods, `VerificationKeyStrategy`, and other pluggable components.
 

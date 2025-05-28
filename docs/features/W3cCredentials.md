@@ -82,7 +82,7 @@ Choose a DID method for issuing the credential. VC-DI format currently supports 
 
 #### `did:key`
 
-A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/) for more information.
+A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-key-spec/) for more information.
 
 You can create a `did:key` using the `/wallet/did/create` endpoint with the following body.
 

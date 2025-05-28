@@ -608,7 +608,7 @@ Storing a credential in the wallet is somewhat dependent on the kinds of metadat
 
 One of the questions we need to answer is whether the preferred approach is to modify the existing store credential function so that any credential type is a valid input, or whether there should be a special function just for storing W3C credentials.
 
-We will duplicate this [store_credential](https://github.com/openwallet-foundation/acapy/blob/8cfe8283ddb2a85e090ea1b8a916df2d78298ec0/aries_cloudagent/anoncreds/holder.py#L167) function and modify it:
+We will duplicate this [store_credential](https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/anoncreds/holder.py#L175) function and modify it:
 
 ```python
 async def store_w3c_credential(...) {
