@@ -3082,7 +3082,7 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <h3 id="how-a-w3c-credential-is-stored-in-the-wallet">How a W3C credential is stored in the wallet<a class="headerlink" href="#how-a-w3c-credential-is-stored-in-the-wallet" title="Permanent link">&para;</a></h3>
 <p>Storing a credential in the wallet is somewhat dependent on the kinds of metadata that are relevant. The metadata mapping between the W3C credential and an AnonCreds credential is not fully clear yet.</p>
 <p>One of the questions we need to answer is whether the preferred approach is to modify the existing store credential function so that any credential type is a valid input, or whether there should be a special function just for storing W3C credentials.</p>
-<p>We will duplicate this <a href="https://github.com/openwallet-foundation/acapy/blob/8cfe8283ddb2a85e090ea1b8a916df2d78298ec0/aries_cloudagent/anoncreds/holder.py#L167">store_credential</a> function and modify it:</p>
+<p>We will duplicate this <a href="https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/anoncreds/holder.py#L175">store_credential</a> function and modify it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">store_w3c_credential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="p">{</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    <span class="o">...</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    <span class="o">...</span>

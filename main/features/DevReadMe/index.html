@@ -2931,7 +2931,7 @@ variable:</p>
 </ol>
 <p>For a comprehensive list of all arguments, argument groups, CLI args, and their environment variable equivalents, please
 see
-the <a href="https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/config/argparse.py">argparse.py</a>
+the <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/config/argparse.py">argparse.py</a>
 file.</p>
 <h3 id="configuring-aca-py-command-line-parameters">Configuring ACA-PY: Command Line Parameters<a class="headerlink" href="#configuring-aca-py-command-line-parameters" title="Permanent link">&para;</a></h3>
 <p>ACA-Py agent instances are configured through the use of command line
@@ -2972,7 +2972,7 @@ them--for good and bad.</p>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>ws<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>http
 </code></pre></div>
-<p>ACA-Py ships with both inbound and outbound transport drivers for <code>http</code> and <code>ws</code> (websockets). Additional transport drivers can be added as pluggable implementations. See the existing implementations in the <a href="https://github.com/openwallet-foundation/acapy/tree/main/aries_cloudagent/transport">transports module</a> for getting started on adding a new transport.</p>
+<p>ACA-Py ships with both inbound and outbound transport drivers for <code>http</code> and <code>ws</code> (websockets). Additional transport drivers can be added as pluggable implementations. See the existing implementations in the <a href="https://github.com/openwallet-foundation/acapy/tree/main/acapy_agent/transport">transports module</a> for getting started on adding a new transport.</p>
 <p>Most configuration parameters are provided to the agent at startup. Refer to the <code>Running</code> sections above for details on listing the available command line parameters.</p>
 <h3 id="provisioning-secure-storage">Provisioning Secure Storage<a class="headerlink" href="#provisioning-secure-storage" title="Permanent link">&para;</a></h3>
 <p>It is possible to provision a secure storage (sometimes called a wallet--but not
@@ -3021,7 +3021,7 @@ secure storage seed on every invocation of an agent (e.g. on every <code>aca-py 
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./scripts/run_tests<span class="w"> </span>--debug
 </code></pre></div>
 <p>To run specific tests pass parameters as defined by <a href="https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests">pytest</a>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./scripts/run_tests<span class="w"> </span>aries_cloudagent/protocols/connections
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./scripts/run_tests<span class="w"> </span>acapy_agent/protocols/connections
 </code></pre></div>
 <h3 id="running-aries-agent-test-harness-tests">Running Aries Agent Test Harness Tests<a class="headerlink" href="#running-aries-agent-test-harness-tests" title="Permanent link">&para;</a></h3>
 <p>You can run a full suite of integration tests using the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness (AATH)</a>.</p>
@@ -3044,7 +3044,7 @@ secure storage seed on every invocation of an agent (e.g. on every <code>aca-py 
 <h2 id="dynamic-injection-of-services">Dynamic Injection of Services<a class="headerlink" href="#dynamic-injection-of-services" title="Permanent link">&para;</a></h2>
 <p>The Agent employs a dynamic injection system whereby providers of base classes are registered with the <code>RequestContext</code> instance, currently within <code>conductor.py</code>. Message handlers and services request an instance of the selected implementation using <code>context.inject(BaseClass)</code>; for instance the wallet instance may be injected using <code>wallet = context.inject(BaseWallet)</code>. The <code>inject</code> method normally throws an exception if no implementation of the base class is provided, but can be called with <code>required=False</code> for optional dependencies (in which case a value of <code>None</code> may be returned).</p>
 <p>Providers are registered with either <code>context.injector.bind_instance(BaseClass, instance)</code> for previously-constructed (singleton) object instances, or <code>context.injector.bind_provider(BaseClass, provider)</code> for dynamic providers. In some cases it may be desirable to write a custom provider which switches implementations based on configuration settings, such as the wallet provider.</p>
-<p>The <code>BaseProvider</code> classes in the <code>config.provider</code> module include <code>ClassProvider</code>, which can perform dynamic module inclusion when given the combined module and class name as a string (for instance <code>aries_cloudagent.wallet.indy.IndyWallet</code>). <code>ClassProvider</code> accepts additional positional and keyword arguments to be passed into the class constructor. Any of these arguments may be an instance of <code>ClassProvider.Inject(BaseClass)</code>, allowing dynamic injection of dependencies when the class instance is instantiated.</p>
+<p>The <code>BaseProvider</code> classes in the <code>config.provider</code> module include <code>ClassProvider</code>, which can perform dynamic module inclusion when given the combined module and class name as a string (for instance <code>acapy_agent.wallet.indy.IndyWallet</code>). <code>ClassProvider</code> accepts additional positional and keyword arguments to be passed into the class constructor. Any of these arguments may be an instance of <code>ClassProvider.Inject(BaseClass)</code>, allowing dynamic injection of dependencies when the class instance is instantiated.</p>
 
 
 
