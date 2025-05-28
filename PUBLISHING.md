@@ -123,23 +123,22 @@ Once you have the list of PRs:
    PyPi that the version is published.
 
 11.     New images for the release are automatically published by the GitHubAction
-   Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
-   when a release is tagged, so no manual action is needed. The images are
-   published in the [OpenWallet Foundation Package Repository under
-   acapy](https://github.com/openwallet-foundation/packages?repo_name=acapy)
-   and a link to the packages added to the repositories main page (under
-   "Packages").
+   Workflow: [publish.yml]. The action is triggered when a release is tagged, so
+   no manual action is needed. Images are published in the [OpenWallet
+   Foundation Package Repository under
+   acapy-agent](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged).
 
    Additional information about the container image publication process can be
    found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 
-   In addition, the published documentation site [https://aca-py.org] should be automatically updated to include the new release via the [publish-docs] GitHub Action.
-   Additional information about that process and some related maintenance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.
+   In addition, the published documentation site [https://aca-py.org] must be
+   updated to include the new release via the [publish-docs] GitHub Action.
+   Additional information about that process and some related maintenance
+   activities that are needed from time to time can be found in the [Managing the ACA-Py Documentation Site] document.
 
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
-[publish-indy.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-indy.yml
 
-12.   When a new release is tagged, create a new branch at the same commit with
+1.    When a new release is tagged, create a new branch at the same commit with
     the branch name in the format `docs-v<version>`, for example, `docs-v1.3.0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,

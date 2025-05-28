@@ -24,7 +24,7 @@ By design ACA-Py is credential format agnostic. This means you can use it for an
 The rest of this guide assumes some basic understanding of W3C Verifiable Credentials, JSON-LD and Linked Data Proofs. If you're not familiar with some of these concepts, the following resources can help you get started:
 
 - [Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/)
-- [JSON-LD Articles and Presentations](https://json-ld.org/learn.html)
+- [JSON-LD Articles and Presentations](https://json-ld.org/learn/)
 - [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs)
 
 ### BBS+
@@ -33,7 +33,7 @@ BBS+ credentials offer a lot of privacy preserving features over non-ZKP credent
 
 Some other resources that can help you get started with BBS+ credentials:
 
-- [BBS+ Signatures 2020](https://w3c-ccg.github.io/ldp-bbs2020)
+- [BBS+ Signatures](https://w3c.github.io/vc-di-bbs/)
 - [Video: BBS+ Credential Exchange in Hyperledger Aries](https://www.youtube.com/watch?v=LC0OXAir3Qw)
 
 ## Preparing to Issue a Credential
@@ -75,7 +75,7 @@ Before issuing a credential you must determine a signature suite to use. ACA-Py 
 
 - [`Ed25519Signature2018`](https://w3c-ccg.github.io/lds-ed25519-2018/) - Very well supported. No zero knowledge proofs or selective disclosure.
 - [`Ed25519Signature2020`](https://w3c.github.io/vc-di-eddsa/#ed25519signature2020-0) - Updated version of 2018 suite.
-- [`BbsBlsSignature2020`](https://w3c-ccg.github.io/ldp-bbs2020/) - Newer, but supports zero knowledge proofs and selective disclosure.
+- [`BbsBlsSignature2020`](https://w3c.github.io/vc-di-bbs/) - Newer, but supports zero knowledge proofs and selective disclosure.
 
 Generally you should always use `BbsBlsSignature2020` as it allows the holder to derive a new credential during the proving, meaning it doesn't have to disclose all fields and doesn't have to reveal the signature.
 
@@ -92,7 +92,7 @@ When using `did:sov` you need to make sure to use a public did so other agents c
 
 #### `did:key`
 
-A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/) for more information.
+A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-key-spec/) for more information.
 
 You can create a `did:key` using the `/wallet/did/create` endpoint with the following body. Use `ed25519` for `Ed25519Signature2018`, `bls12381g2` for `BbsBlsSignature2020`.
 

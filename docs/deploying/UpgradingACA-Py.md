@@ -130,5 +130,5 @@ capability will ever be needed. We expect to deprecate and remove these
 options in future (post-0.8.1) ACA-Py versions.
 
 [CHANGELOG.md]: https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md
-[version.py]: https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py
+[version.py]: https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/version.py
 [Upgrade Definition YML file]: https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/commands/default_version_upgrade_config.yml
