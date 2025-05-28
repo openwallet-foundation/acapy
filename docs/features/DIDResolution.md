@@ -74,7 +74,7 @@ The following is an example method resolver implementation. In this example, we 
 #### `__init __.py`
 
 ```python
-from aries_cloudagent.config.injection_context import InjectionContext
+from acapy_agent.config.injection_context import InjectionContext
 from ..resolver.did_resolver import DIDResolver
 
 from .example_resolver import ExampleResolver
@@ -93,7 +93,7 @@ async def setup(context: InjectionContext):
 ```python
 import re
 from typing import Pattern
-from aries_cloudagent.resolver.base import BaseDIDResolver, ResolverType
+from acapy_agent.resolver.base import BaseDIDResolver, ResolverType
 
 class ExampleResolver(BaseDIDResolver):
     """ExampleResolver class."""
