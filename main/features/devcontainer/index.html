@@ -2862,33 +2862,33 @@ We provide a <a href="https://containers.dev"><code>devcontainer</code></a> and 
 For all the agents if you don't want to support revocation you need to remove or comment out the <code>tails-server-base-url</code> config. If you want to use a non localhost server then you will need to change the url.</p>
 <h3 id="faber">Faber<a class="headerlink" href="#faber" title="Permanent link">&para;</a></h3>
 <ul>
-<li>admin api url = <a href="http://localhost:9041">http://localhost:9041</a></li>
+<li>admin api url = <code>http://localhost:9041</code></li>
 <li>study the demo to understand the steps to have the agent in the correct state. Make your public dids and schemas, cred-defs, etc.</li>
 </ul>
 <h3 id="alice">Alice<a class="headerlink" href="#alice" title="Permanent link">&para;</a></h3>
 <ul>
-<li>admin api url = <a href="http://localhost:9011">http://localhost:9011</a></li>
+<li>admin api url = <code>http://localhost:9011</code></li>
 <li>study the demo to get a connection with faber</li>
 </ul>
 <h3 id="endorser">Endorser<a class="headerlink" href="#endorser" title="Permanent link">&para;</a></h3>
 <ul>
-<li>admin api url = <a href="http://localhost:9031">http://localhost:9031</a></li>
+<li>admin api url = <code>http://localhost:9031</code></li>
 <li>This config is useful if you want to develop in an environment that requires endorsement. You can run the demo with <code>./run_demo faber --endorser-role author</code> to see all the steps to become and endorser.</li>
 </ul>
 <h3 id="author">Author<a class="headerlink" href="#author" title="Permanent link">&para;</a></h3>
 <ul>
-<li>admin api url = <a href="http://localhost:9021">http://localhost:9021</a></li>
+<li>admin api url = <code>http://localhost:9021</code></li>
 <li>This config is useful if you want to develop in an environment that requires endorsement. You can run the demo with <code>./run_demo faber --endorser-role author</code> to see all the steps to become and author. You need to uncomment the configurations for automating the connection to endorser.</li>
 </ul>
 <h3 id="multitenant-admin">Multitenant-Admin<a class="headerlink" href="#multitenant-admin" title="Permanent link">&para;</a></h3>
 <ul>
-<li>admin api url = <a href="http://localhost:9051">http://localhost:9051</a></li>
+<li>admin api url = <code>http://localhost:9051</code></li>
 <li>This is for a multitenant environment where you can create multiple tenants with subwallets with one agent. See <a href="../Multitenancy/">Multitenancy</a></li>
 </ul>
 <h3 id="try-running-faber-and-alice-at-the-same-time-and-add-break-points-and-recreate-the-demo">Try running Faber and Alice at the same time and add break points and recreate the demo<a class="headerlink" href="#try-running-faber-and-alice-at-the-same-time-and-add-break-points-and-recreate-the-demo" title="Permanent link">&para;</a></h3>
 <p>To run your ACA-Py code in debug mode, go to the <code>Run and Debug</code> view, select the agent(s) you want to start and click <code>Start Debugging (F5)</code>.</p>
 <p>This will start your source code as a running ACA-Py instance, all configuration is in the <code>*.yml</code> files. This is just a sample of a configuration. Note that we are not using a database and are joining to a local VON Network (by default, it would be <code>http://localhost:9000</code>). You could change this or another ledger such as <code>http://test.bcovrin.vonx.io</code>. These are purposefully, very simple configurations.</p>
-<p>For example, open <code>acapy_agent/admin/server.py</code> and set a breakpoint in <code>async def status_handler(self, request: web.BaseRequest):</code>, then call <a href="http://localhost:9061/api/doc#/server/get_status"><code>GET /status</code></a> in the Admin Console and hit your breakpoint.</p>
+<p>For example, open <code>acapy_agent/admin/server.py</code> and set a breakpoint in <code>async def status_handler(self, request: web.BaseRequest):</code>, then call <code>GET /status</code> at <code>http://localhost:9061/api/doc#/server/get_status</code> in the Admin Console and hit your breakpoint.</p>
 <h2 id="pytest">Pytest<a class="headerlink" href="#pytest" title="Permanent link">&para;</a></h2>
 <p>Pytest is installed and almost ready; however, we must build the test list. In the Command Palette, <code>Test: Refresh Tests</code> will scan and find the tests.</p>
 <p>See <a href="https://code.visualstudio.com/docs/python/testing">Python Testing</a> for more details, and <a href="https://code.visualstudio.com/docs/python/testing#_test-commands">Test Commands</a> for usage.</p>

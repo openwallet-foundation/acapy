@@ -2481,7 +2481,7 @@
 <p>Start a VON Network instance and a Tails server:</p>
 <ul>
 <li>Following the <a href="https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md#building-and-starting">Building and Starting</a> section of the VON Network Tutorial to get ledger started. You can leave off the <code>--logs</code> option if you want to use the same terminal for running both VON Network and the Tails server. When you are finished with VON Network, follow the <a href="https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md#stopping-and-removing-a-von-network">Stopping And Removing a VON Network</a> instructions.</li>
-<li>Run an AnonCreds revocation registry tails server in order to support revocation by following the instructions in the <a href="https://github.com/openwallet-foundation/acapy/blob/master/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server">Alice gets a Phone</a> demo.</li>
+<li>Run an AnonCreds revocation registry tails server in order to support revocation by following the instructions in the <a href="https://github.com/openwallet-foundation/acapy/blob/main/docs/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server">Alice gets a Phone</a> demo.</li>
 </ul>
 <p>Start up Faber as Author (note the tails file size override, to allow testing of the revocation registry roll-over):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">TAILS_FILE_COUNT</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--endorser-role<span class="w"> </span>author<span class="w"> </span>--revocation
@@ -2507,7 +2507,7 @@
 <p>Copy the invitation from Faber to Alice to complete the connection.</p>
 <p>Then in the Alice shell, select option "D" and copy Faber's DID (it is the DID displayed on faber agent startup).</p>
 <p>This starts up the ACA-Py agents with the endorser role set (via the new command-line args) and sets up the connection between the 2 agents with appropriate configuration.</p>
-<p>Then, in the <a href="http://localhost:8031">Alice swagger page</a> you can create a schema and cred def, and all the endorser steps will happen automatically.  You don't need to specify a connection id or explicitly request endorsement (ACA-Py does it all automatically based on the startup args).</p>
+<p>Then, on the <a href="http://localhost:8031">Alice swagger page</a> you can create a schema and cred def, and all the endorser steps will happen automatically.  You don't need to specify a connection id or explicitly request endorsement (ACA-Py does it all automatically based on the startup args).</p>
 <p>If you check the endorser transaction records in either <a href="http://localhost:8031">Alice</a> or <a href="http://localhost:8021">Faber</a> you can see that the endorser protocol executes automatically and the appropriate endorsements were endorsed before writing the transactions to the ledger.</p>
 
 

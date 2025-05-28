@@ -2729,8 +2729,12 @@
 <li>Raised when no resolver is registered for a given did method.</li>
 </ul>
 <h3 id="using-resolver-plugins">Using Resolver Plugins<a class="headerlink" href="#using-resolver-plugins" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This section is out of date, as the GitHub DID Method is no longer registered. The link below to the specification goes to a version of the specification captured by the Internet Wayback Machine. Help in updating this section to use an active DID Method and ACA-Py plugin would be appreciated.</p>
+</div>
 <p>In this section, the <a href="https://github.com/dbluhm/acapy-resolver-github">Github Resolver Plugin found here</a> will be used as an example plugin to work with. This resolver resolves <code>did:github</code> DIDs.</p>
-<p>The resolution algorithm is simple: for the github DID <code>did:github:dbluhm</code>, the method specific identifier <code>dbluhm</code> (a GitHub username) is used to lookup an <code>index.jsonld</code> file in the <code>ghdid</code> repository in that GitHub users profile. See <a href="http://docs.github-did.com/did-method-spec/">GitHub DID Method Specification</a> for more details.</p>
+<p>The resolution algorithm is simple: for the github DID <code>did:github:dbluhm</code>, the method specific identifier <code>dbluhm</code> (a GitHub username) is used to lookup an <code>index.jsonld</code> file in the <code>ghdid</code> repository in that GitHub users profile. See <a href="https://web.archive.org/web/20220420044252/https://docs.github-did.com/did-method-spec/">GitHub DID Method Specification</a> for more details.</p>
 <p>To use this plugin, first install it into your project's python environment:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/dbluhm/acapy-resolver-github
 </code></pre></div>
@@ -2755,13 +2759,21 @@
 </code></pre></div>
 <h3 id="directory-of-resolver-plugins">Directory of Resolver Plugins<a class="headerlink" href="#directory-of-resolver-plugins" title="Permanent link">&para;</a></h3>
 <ul>
+<li><a href="https://plugins.aca-py.org/latest/cheqd/">Cheqd</a></li>
+<li><a href="https://plugins.aca-py.org/latest/hedera/">Hedera</a></li>
+<li><a href="https://plugins.aca-py.org/latest/webvh/">did:webvh</a></li>
+</ul>
+<p>Older resolver plugins:</p>
+<ul>
 <li><a href="https://github.com/dbluhm/acapy-resolver-github">Github Resolver</a></li>
 <li><a href="https://github.com/sicpa-dlab/acapy-resolver-universal">Universal Resolver</a></li>
 <li><a href="https://github.com/sicpa-dlab/acapy-resolver-didcomm">DIDComm Resolver</a></li>
 </ul>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
-<p><a href="https://www.w3.org/TR/did-core/">https://www.w3.org/TR/did-core/</a>
-<a href="https://w3c-ccg.github.io/did-resolution/">https://w3c-ccg.github.io/did-resolution/</a></p>
+<ul>
+<li><a href="https://www.w3.org/TR/did-core">W3C DID Core Specification</a></li>
+<li><a href="https://www.w3.org/TR/did-resolution/">W3C DID Resolution Specification</a></li>
+</ul>
 
 
 

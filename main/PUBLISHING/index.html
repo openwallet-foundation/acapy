@@ -2520,18 +2520,18 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 </li>
 <li>
 <p>New images for the release are automatically published by the GitHubAction
-   Workflows: <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml">publish.yml</a> and <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-indy.yml">publish-indy.yml</a>. The actions are triggered
-   when a release is tagged, so no manual action is needed. The images are
-   published in the <a href="https://github.com/openwallet-foundation/packages?repo_name=acapy">OpenWallet Foundation Package Repository under
-   acapy</a>
-   and a link to the packages added to the repositories main page (under
-   "Packages").</p>
+   Workflow: <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml">publish.yml</a>. The action is triggered when a release is tagged, so
+   no manual action is needed. Images are published in the <a href="https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged">OpenWallet
+   Foundation Package Repository under
+   acapy-agent</a>.</p>
 </li>
 </ol>
 <p>Additional information about the container image publication process can be
    found in the document <a href="../deploying/ContainerImagesAndGithubActions/">Container Images and Github Actions</a>.</p>
-<p>In addition, the published documentation site <a href="https://aca-py.org">https://aca-py.org</a> should be automatically updated to include the new release via the <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml">publish-docs</a> GitHub Action.
-   Additional information about that process and some related maintenance activities that are needed from time to time can be found in the [Updating the ACA-Py Documentation Site] document.</p>
+<p>In addition, the published documentation site <a href="https://aca-py.org">https://aca-py.org</a> must be
+   updated to include the new release via the <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml">publish-docs</a> GitHub Action.
+   Additional information about that process and some related maintenance
+   activities that are needed from time to time can be found in the <a href="../Managing-ACA-Py-Doc-Site/">Managing the ACA-Py Documentation Site</a> document.</p>
 <ol>
 <li>
 <p>When a new release is tagged, create a new branch at the same commit with

@@ -2535,7 +2535,7 @@ are now built and published directly from the Aries Cloud Agent - Python project
 repository and made available through the <a href="https://ghcr.io">Github Packages Container
 Registry</a>.</p>
 <h2 id="image">Image<a class="headerlink" href="#image" title="Permanent link">&para;</a></h2>
-<p>This project builds and publishes the <code>ghcr.io/openwallet-foundation/acapy</code> image.
+<p>This project builds and publishes the <code>ghcr.io/openwallet-foundation/acapy-agent</code> image.
 Multiple variants are available; see <a href="#tags">Tags</a>.</p>
 <h3 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h3>
 <p>ACA-Py is a foundation for building decentralized identity applications; to this
@@ -2554,31 +2554,13 @@ variant is recommended for new projects. Migration from an Indy based image
 Standard image is outside of the scope of this document.</p>
 <p>The ACA-Py images built by this project are tagged to indicate which of the
 above variants it is. Other tags may also be generated for use by developers.</p>
-<p>Below is a table of all generated images and their tags:</p>
-<table>
-<thead>
-<tr>
-<th>Tag</th>
-<th>Variant</th>
-<th>Example</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>py3.9-X.Y.Z</td>
-<td>Standard</td>
-<td>py3.9-0.7.4</td>
-<td>Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z</td>
-</tr>
-<tr>
-<td>py3.10-X.Y.Z</td>
-<td>Standard</td>
-<td>py3.10-0.7.4</td>
-<td>Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z</td>
-</tr>
-</tbody>
-</table>
+<p>Click <a href="https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged">here</a> to see a current list of the tagged images available for ACA-Py in.</p>
+<p>The following is the ACA-Py comntainer images tagging format. In each of the following, <code>pyV.vv</code> is the base Python image being used (e.g. <code>py3.12</code>):</p>
+<ul>
+<li>Regular Releases: <code>pyV.vv-X.Y.Z</code> where <code>X.Y.Z</code> is the ACA-Py release.  The <code>Z</code> component may have an <code>rcN</code> appended when the tag is for a Release Candidate.</li>
+<li>Nightlies: <code>pyV-vv-nightly-YYYY-MM-DD</code> and <code>pyV-vv-nightly</code></li>
+<li>LTS (<a href="../../LTS-Strategy/">Long Term Support</a>): <code>pyV-vv-X.Y-lts</code>, where the <code>X.Y</code> are the major and minor components of the LTS (e.g. <code>0.12</code>, <code>1.2</code>). This tag moves to always be on latest release of each line of LTS releases (e.g. from <code>0.12.4</code> to <code>0.12.5</code> when the latter is released).</li>
+</ul>
 <h3 id="image-comparison">Image Comparison<a class="headerlink" href="#image-comparison" title="Permanent link">&para;</a></h3>
 <p>There are several key differences that should be noted between the two image
 variants and between the BC Gov ACA-Py images.</p>
@@ -2598,15 +2580,6 @@ variants and between the BC Gov ACA-Py images.</p>
 <li>Uses container's system python environment rather than <code>pyenv</code></li>
 <li>Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers</li>
 <li>Built from repo contents</li>
-<li>Includes Indy postgres storage plugin</li>
-<li><code>bcgovimages/aries-cloudagent</code></li>
-<li>(Usually) based on Ubuntu</li>
-<li>Based on <code>von-image</code></li>
-<li>Default user is <code>indy</code></li>
-<li>Includes <code>libindy</code> and Indy CLI</li>
-<li>Uses <code>pyenv</code></li>
-<li>Askar and Indy Shared libraries built from source</li>
-<li>Built from ACA-Py python package uploaded to PyPI</li>
 <li>Includes Indy postgres storage plugin</li>
 </ul>
 <h2 id="github-actions">Github Actions<a class="headerlink" href="#github-actions" title="Permanent link">&para;</a></h2>

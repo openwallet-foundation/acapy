@@ -2582,13 +2582,13 @@ moving to a new version. Such changes are documented in the <a href="https://git
 and those with ACA-Py deployments should take note of those upgrades. This
 document summarizes the upgrade system in ACA-Py.</p>
 <h2 id="version-information-and-automatic-upgrades">Version Information and Automatic Upgrades<a class="headerlink" href="#version-information-and-automatic-upgrades" title="Permanent link">&para;</a></h2>
-<p>The file <a href="https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py">version.py</a> contains the current version of a running instance of
+<p>The file <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/version.py">version.py</a> contains the current version of a running instance of
 ACA-Py. In addition, a record is made in the ACA-Py secure storage (database)
 about the "most recently upgraded" version. When deploying a new version of
-ACA-Py, the <a href="https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py">version.py</a> value will be higher than the version in
+ACA-Py, the <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/version.py">version.py</a> value will be higher than the version in
 secure storage. When that happens, an upgrade is executed, and on successful
 completion, the version is updated in secure storage to match what is
-in <a href="https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py">version.py</a>.</p>
+in <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/version.py">version.py</a>.</p>
 <p>Upgrades are defined in the <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/commands/default_version_upgrade_config.yml">Upgrade Definition YML file</a>. For a given
 version listed in the follow, the corresponding entry is what actions are
 required when upgrading from a previous version. If a version is not listed
@@ -2597,12 +2597,12 @@ predecessor version.</p>
 <p>Once an upgrade is identified as needed, the process is:</p>
 <ul>
 <li>Collect (if any) the actions to be taken to get from the version recorded in
-secure storage to the current <a href="https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py">version.py</a></li>
+secure storage to the current <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/version.py">version.py</a></li>
 <li>Execute the actions from oldest to newest.</li>
 <li>If the same action is collected more than once (e.g., "Resave the
 Connection Records" is defined for two different versions), perform the action
 only once.</li>
-<li>Store the current ACA-Py version (from <a href="https://github.com/openwallet-foundation/acapy/blob/main/aries_cloudagent/version.py">version.py</a>) in the secure storage
+<li>Store the current ACA-Py version (from <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/version.py">version.py</a>) in the secure storage
   database.</li>
 </ul>
 <h2 id="forced-offline-upgrades">Forced Offline Upgrades<a class="headerlink" href="#forced-offline-upgrades" title="Permanent link">&para;</a></h2>

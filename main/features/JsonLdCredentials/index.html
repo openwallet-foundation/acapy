@@ -2705,14 +2705,14 @@
 <p>The rest of this guide assumes some basic understanding of W3C Verifiable Credentials, JSON-LD and Linked Data Proofs. If you're not familiar with some of these concepts, the following resources can help you get started:</p>
 <ul>
 <li><a href="https://www.w3.org/TR/vc-data-model/">Verifiable Credentials Data Model</a></li>
-<li><a href="https://json-ld.org/learn.html">JSON-LD Articles and Presentations</a></li>
+<li><a href="https://json-ld.org/learn/">JSON-LD Articles and Presentations</a></li>
 <li><a href="https://w3c-ccg.github.io/ld-proofs">Linked Data Proofs</a></li>
 </ul>
 <h3 id="bbs">BBS+<a class="headerlink" href="#bbs" title="Permanent link">&para;</a></h3>
 <p>BBS+ credentials offer a lot of privacy preserving features over non-ZKP credentials. Therefore we recommend to always use BBS+ credentials over non-ZKP credentials. To get started with BBS+ credentials it is recommended to at least read <a href="https://github.com/hyperledger/aries-rfcs/blob/master/features/0646-bbs-credentials/README.md">RFC 0646: W3C Credential Exchange using BBS+ Signatures</a> for a general overview.</p>
 <p>Some other resources that can help you get started with BBS+ credentials:</p>
 <ul>
-<li><a href="https://w3c-ccg.github.io/ldp-bbs2020">BBS+ Signatures 2020</a></li>
+<li><a href="https://w3c.github.io/vc-di-bbs/">BBS+ Signatures</a></li>
 <li><a href="https://www.youtube.com/watch?v=LC0OXAir3Qw">Video: BBS+ Credential Exchange in Hyperledger Aries</a></li>
 </ul>
 <h2 id="preparing-to-issue-a-credential">Preparing to Issue a Credential<a class="headerlink" href="#preparing-to-issue-a-credential" title="Permanent link">&para;</a></h2>
@@ -2744,7 +2744,7 @@
 <ul>
 <li><a href="https://w3c-ccg.github.io/lds-ed25519-2018/"><code>Ed25519Signature2018</code></a> - Very well supported. No zero knowledge proofs or selective disclosure.</li>
 <li><a href="https://w3c.github.io/vc-di-eddsa/#ed25519signature2020-0"><code>Ed25519Signature2020</code></a> - Updated version of 2018 suite.</li>
-<li><a href="https://w3c-ccg.github.io/ldp-bbs2020/"><code>BbsBlsSignature2020</code></a> - Newer, but supports zero knowledge proofs and selective disclosure.</li>
+<li><a href="https://w3c.github.io/vc-di-bbs/"><code>BbsBlsSignature2020</code></a> - Newer, but supports zero knowledge proofs and selective disclosure.</li>
 </ul>
 <p>Generally you should always use <code>BbsBlsSignature2020</code> as it allows the holder to derive a new credential during the proving, meaning it doesn't have to disclose all fields and doesn't have to reveal the signature.</p>
 <h3 id="did-method">DID Method<a class="headerlink" href="#did-method" title="Permanent link">&para;</a></h3>
@@ -2756,7 +2756,7 @@
 <h4 id="didsov"><code>did:sov</code><a class="headerlink" href="#didsov" title="Permanent link">&para;</a></h4>
 <p>When using <code>did:sov</code> you need to make sure to use a public did so other agents can resolve the did. It is also important the other agent is using the same indy ledger for resolving the did. You can get the public did using the <code>/wallet/did/public</code> endpoint. For backwards compatibility the did is returned without <code>did:sov</code> prefix. When using the did for issuance make sure this prepend this to the did. (so <code>DViYrCMPWfuLiY7LLs8giB</code> becomes <code>did:sov:DViYrCMPWfuLiY7LLs8giB</code>)</p>
 <h4 id="didkey"><code>did:key</code><a class="headerlink" href="#didkey" title="Permanent link">&para;</a></h4>
-<p>A <code>did:key</code> did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the <a href="https://w3c-ccg.github.io/did-method-key/">did:key Method Specification</a> for more information.</p>
+<p>A <code>did:key</code> did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the <a href="https://w3c-ccg.github.io/did-key-spec/">did:key Method Specification</a> for more information.</p>
 <p>You can create a <code>did:key</code> using the <code>/wallet/did/create</code> endpoint with the following body. Use <code>ed25519</code> for <code>Ed25519Signature2018</code>, <code>bls12381g2</code> for <code>BbsBlsSignature2020</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  &quot;method&quot;: &quot;key&quot;,
