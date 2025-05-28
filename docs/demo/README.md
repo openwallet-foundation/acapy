@@ -120,7 +120,7 @@ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432
 
 #### Optional: Run a von-network ledger browser
 
-If you followed our advice and are using a VON Network instance of Hyperledger Indy, you can ignore this section, as you already have a Ledger browser running, accessible on http://localhost:9000.
+If you followed our advice and are using a VON Network instance of Hyperledger Indy, you can ignore this section, as you already have a Ledger browser running, accessible on `http://localhost:9000`.
 
  If you started the Indy ledger **without** using VON Network, and you want to be able to browse your local ledger as you run the demo, clone the [von-network](https://github.com/bcgov/von-network) repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger.
 

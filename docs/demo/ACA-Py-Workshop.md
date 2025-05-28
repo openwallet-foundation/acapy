@@ -50,7 +50,7 @@ Let’s start by getting your two agents — an Aries Mobile Wallet and an Aries
 ### Lab 1: Steps to Follow
 
 1. Get a compatible Aries Mobile Wallet to use with your Aries Traction tenant. There are a number to choose from.  We suggest that you use one of these:
-    1. [BC Wallet](https://digital.gov.bc.ca/digital-trust/about/about-bc-wallet) from the [Government of British Columbia](https://digital.gov.bc.ca/digital-trust/)
+    1. [BC Wallet](https://digital.gov.bc.ca/design/digital-trust/digital-credentials/bc-wallet/) from the [Government of British Columbia](https://digital.gov.bc.ca/design/digital-trust/)
     2. [Orbit Wallet](https://northernblock.io/orbit-edge-wallet/) from [Northern Block](https://northernblock.io/)
 2. Click this [Traction Sandbox] link to go to the Sandbox login page to create your own Traction Tenant Aries agent. Once there, do the following:
     1. Click "Create Request!", fill in at least the required form fields, and click "Submit".

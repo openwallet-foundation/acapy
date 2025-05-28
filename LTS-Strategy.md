@@ -17,7 +17,7 @@ This is one of the factors which motivated setting up the LTS releases which req
 In addition to this, administrators can expect the following of a LTS release:
 
 - Stable and well-tested code
-- A list of supported RFCs and features for each LTS version from this [document](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md).
+- A list of supported RFCs and features for each LTS version from this [Supported RFCs and features] document.
 - Minimal set of feature additions and other changes that can easily be applied, reducing the risk of functional regressions and bugs
 
 Similarly, there are benefits to ACA-Py maintainers, code contributors, and the wider community:
@@ -26,6 +26,8 @@ Similarly, there are benefits to ACA-Py maintainers, code contributors, and the 
 - Community feedback on new features can be solicited and acted upon.
 - Bug fixes only need to be backported to a small number of designated LTS releases.
 - Extra tests (e.g. upgrade tests for non-subsequent versions) only need to be executed against a small number of designated LTS releases.
+
+[Supported RFCs and features]: docs/features/SupportedRFCs.md
 
 ## ACA-Py LTS Mechanics
 
@@ -51,7 +53,7 @@ When a *new* LTS release is designated, an "end-of-life" date will be set as bei
 
 ### LTS to LTS Compatibility
 
-Features related to ACA-Py capabilities are documented in the [Supported RFCs and features](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md), in the ACA-Py [ChangeLog](https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md), and in documents updated and added as part of each ACA-Py Release. LTS to LTS compatibility can be determined from reviewing those sources.
+Features related to ACA-Py capabilities are documented in the [Supported RFCs and features], in the ACA-Py [ChangeLog](./CHANGELOG.md), and in documents updated and added as part of each ACA-Py Release. LTS to LTS compatibility can be determined from reviewing those sources.
 
 ### Upgrade Testing
 
