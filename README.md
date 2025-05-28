@@ -31,7 +31,7 @@ ACA-Py is a foundation for building Verifiable Credential (VC) ecosystems. It op
 
 ACA-Py includes support for the concepts and features that make up [Aries Interop Profile (AIP) 2.0](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20). [ACA-Py’s supported features](./docs/features/SupportedRFCs.md) include, most importantly, protocols for issuing, verifying, and holding verifiable credentials using both [Hyperledger AnonCreds] verifiable credential format, and the [W3C Standard Verifiable Credential Data Model] format using JSON-LD with LD-Signatures and BBS+ Signatures. Coming soon -- issuing and presenting [Hyperledger AnonCreds] verifiable credentials using the [W3C Standard Verifiable Credential Data Model] format.
 
-[Hyperledger AnonCreds]: https://www.hyperledger.org/use/anoncreds
+[Hyperledger AnonCreds]: https://www.lfdecentralizedtrust.org/projects/anoncreds
 [W3C Standard Verifiable Credential Data Model]: https://www.w3.org/TR/vc-data-model/
 
 To use ACA-Py you create a business logic "controller" that talks to an ACA-Py instance (sending HTTP requests and receiving webhook notifications), and ACA-Py handles the various protocols and related functionality. Your controller can be built in any language that supports making and receiving HTTP requests; knowledge of Python is not needed. Together, this means you can focus on building VC solutions using familiar web development technologies, instead of having to learn the nuts and bolts of low-level cryptography and Trust over IP-type protocols.

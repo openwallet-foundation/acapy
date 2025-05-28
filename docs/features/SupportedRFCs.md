@@ -32,7 +32,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | ---------- | :----------------: | -------------------------------------------------------------------------------------------------------------------------- |
 | Server     | :white_check_mark: |                                                                                                                            |
 | Kubernetes | :white_check_mark: | BC Gov has extensive experience running ACA-Py on Red Hat's OpenShift Kubernetes Distribution.                             |
-| Docker     | :white_check_mark: | Official docker images are published to the GitHub  container repository at [https://ghcr.io/openwallet-foundation/acapy](https://ghcr.io/openwallet-foundation/acapy). |
+| Docker     | :white_check_mark: | Official docker images are published to the GitHub  container repository at [https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent). |
 | Desktop    |     :warning:      | Could be run as a local service on the computer                                                                            |
 | iOS        |        :x:         |                                                                                                                            |
 | Android    |        :x:         |                                                                                                                            |
@@ -69,7 +69,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | `did:web` | :white_check_mark: | Resolution only |
 | `did:key` | :white_check_mark: | |
 | `did:peer` | :white_check_mark:| Algorithms `2`/`3` and `4` |
-| Universal Resolver | :white_check_mark: | A [plug in](https://github.com/sicpa-dlab/acapy-resolver-universal) from [SICPA](https://www.sicpa.com/) is available that can be added to an ACA-Py installation to support a [universal resolver](https://dev.uniresolver.io/) capability, providing support for most DID methods in the [W3C DID Method Registry](https://w3c.github.io/did-spec-registries/#did-methods). |
+| Universal Resolver | :white_check_mark: | A [plug in](https://github.com/sicpa-dlab/acapy-resolver-universal) from [SICPA](https://www.sicpa.com/) is available that can be added to an ACA-Py installation to support a [universal resolver](https://dev.uniresolver.io/) capability, providing support for most DID methods in the [W3C DID Method Registry](https://www.w3.org/TR/did-extensions-methods/). |
 
 ## Secure Storage Types
 
@@ -94,7 +94,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Invitations using peer dids supporting connection reuse     | :white_check_mark:        |         |
 | Implicit pickup of messages in role of mediator | :white_check_mark:        |         |
 | [Revocable AnonCreds Credentials](https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation) | :white_check_mark:        |         |
-| Multi-Tenancy      | :white_check_mark:        | [Documentation](https://github.com/openwallet-foundation/acapy/blob/main/Multitenancy.md) |
+| Multi-Tenancy      | :white_check_mark:        | [Multi-tenant Documentation] |
 | Multi-Tenant Management | :white_check_mark: | The [Traction] open source project from BC Gov is a layer on top of ACA-Py that enables the easy management of ACA-Py tenants, with an Administrative UI ("The Innkeeper") and a Tenant UI for using ACA-Py in a web UI (setting up, issuing, holding and verifying credentials) |
 | Connection-less (non OOB protocol / AIP 1.0)               | :white_check_mark:        | Only for issue credential and present proof          |
 | Connection-less (OOB protocol / AIP 2.0)               | :white_check_mark:        | Only for present proof          |
@@ -104,6 +104,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Storage Import & Export           | :warning:        | Supported by directly interacting with the Aries Askar (e.g., no Admin API endpoint available for wallet import & export). Aries Askar support includes the ability to import storage exported from the Indy SDK's "indy-wallet" component. Documentation for migrating from Indy SDK storage to Askar can be found in the [Indy SDK to Askar Migration Guide].|
 | SD-JWTs | :white_check_mark: | Signing and verifying SD-JWTs is supported |
 
+[Multi-tenant Documentation]: ./Multitenancy.md
 [ACA-Py Plugins]: https://plugins.aca-py.org
 [Indy SDK to Askar Migration Guide]: ../deploying/IndySDKtoAskarMigration.md
 [Traction]: https://github.com/bcgov/traction

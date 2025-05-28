@@ -15,7 +15,7 @@ Registry](https://ghcr.io).
 
 ## Image
 
-This project builds and publishes the `ghcr.io/openwallet-foundation/acapy` image.
+This project builds and publishes the `ghcr.io/openwallet-foundation/acapy-agent` image.
 Multiple variants are available; see [Tags](#tags).
 
 ### Tags
@@ -38,12 +38,13 @@ Standard image is outside of the scope of this document.
 The ACA-Py images built by this project are tagged to indicate which of the
 above variants it is. Other tags may also be generated for use by developers.
 
-Below is a table of all generated images and their tags:
+Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged) to see a current list of the tagged images available for ACA-Py in.
 
-Tag                     | Variant  | Example                  | Description                                                                                     |
-------------------------|----------|--------------------------|-------------------------------------------------------------------------------------------------|
-py3.9-X.Y.Z             | Standard | py3.9-0.7.4              | Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z                             |
-py3.10-X.Y.Z            | Standard | py3.10-0.7.4             | Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z                            |
+The following is the ACA-Py comntainer images tagging format. In each of the following, `pyV.vv` is the base Python image being used (e.g. `py3.12`):
+
+- Regular Releases: `pyV.vv-X.Y.Z` where `X.Y.Z` is the ACA-Py release.  The `Z` component may have an `rcN` appended when the tag is for a Release Candidate.
+- Nightlies: `pyV-vv-nightly-YYYY-MM-DD` and `pyV-vv-nightly`
+- LTS ([Long Term Support](../LTS-Strategy.md)): `pyV-vv-X.Y-lts`, where the `X.Y` are the major and minor components of the LTS (e.g. `0.12`, `1.2`). This tag moves to always be on latest release of each line of LTS releases (e.g. from `0.12.4` to `0.12.5` when the latter is released).
 
 ### Image Comparison
 
@@ -65,15 +66,6 @@ variants and between the BC Gov ACA-Py images.
   - Uses container's system python environment rather than `pyenv`
   - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
   - Built from repo contents
-  - Includes Indy postgres storage plugin
-- `bcgovimages/aries-cloudagent`
-  - (Usually) based on Ubuntu
-  - Based on `von-image`
-  - Default user is `indy`
-  - Includes `libindy` and Indy CLI
-  - Uses `pyenv`
-  - Askar and Indy Shared libraries built from source
-  - Built from ACA-Py python package uploaded to PyPI
   - Includes Indy postgres storage plugin
 
 ## Github Actions
