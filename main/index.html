@@ -525,6 +525,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#lts-docker-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      LTS Docker Images
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multi-tenant" class="md-nav__link">
     <span class="md-ellipsis">
       Multi-Tenant
@@ -2595,6 +2604,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#lts-docker-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      LTS Docker Images
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multi-tenant" class="md-nav__link">
     <span class="md-ellipsis">
       Multi-Tenant
@@ -2784,12 +2802,23 @@ important (as determined by the ACA-Py Maintainers) fixes are backported to
 the active LTS releases. Each LTS release will be supported with patches for <strong>9
 months</strong> following the designation of the <strong>next</strong> LTS Release. For more details see
 the <a href="LTS-Strategy/">LTS strategy</a>.</p>
-<p>Current LTS releases:</p>
+<h3 id="lts-docker-images">LTS Docker Images<a class="headerlink" href="#lts-docker-images" title="Permanent link">&para;</a></h3>
+<p>ACA-Py publishes Git tags in the format <code>x.y-lts</code> (e.g., <code>1.2-lts</code>) along with 
+corresponding Docker images to the GitHub Container Registry (GHCR) for each LTS release. These 
+Docker images are tagged with a stable <code>-lts</code> suffix, making it easier for developers to rely on 
+a consistent and maintained version line.</p>
+<p>You can pull the latest LTS image for version <code>1.2</code> using the following image tag:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2-lts
+</code></pre></div>
+<p>The <code>-lts</code> tags are kept up to date with the latest patch releases from the corresponding 
+<code>*.lts</code> branches. This ensures that consumers of the LTS Docker images always receive the most recent, 
+supported version within that release series.</p>
+<p><strong>Current LTS releases:</strong></p>
 <ul>
 <li>Release <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.2.4">1.2</a> <strong>Current LTS Release</strong></li>
 <li>Release <a href="https://github.com/openwallet-foundation/acapy/releases/tag/0.12.6">0.12</a> <strong>End of Life: October 2025</strong></li>
 </ul>
-<p>Past LTS releases:</p>
+<p><strong>Past LTS releases:</strong></p>
 <ul>
 <li>Release <a href="https://github.com/openwallet-foundation/acapy/releases/tag/0.11.3">0.11</a> <strong>End of Life: January 2025</strong></li>
 </ul>
