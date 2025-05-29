@@ -97,7 +97,7 @@ You can create a `did:key` using the `/wallet/did/create` endpoint with the foll
 
 ## Issue a Credential
 
-The issuance of W3C credentials is facilitated through the `/issue-credential-2.0/send` endpoint. This process adheres to the formats described in [RFC 0809 VC-DI](https://github.com/hyperledger/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md) and utilizes `didcomm` for communication between agents.
+The issuance of W3C credentials is facilitated through the `/issue-credential-2.0/send` endpoint. This process adheres to the formats described in [RFC 0809 VC-DI](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md) and utilizes `didcomm` for communication between agents.
 
 To issue a W3C credential, follow these steps:
 

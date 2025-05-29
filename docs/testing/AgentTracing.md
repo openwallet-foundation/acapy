@@ -1,6 +1,6 @@
 # Using Tracing in ACA-PY
 
-ACA-Py supports message tracing, according to the [Tracing RFC](https://github.com/hyperledger/aries-rfcs/tree/master/features/0034-message-tracing).
+ACA-Py supports message tracing, according to the [Tracing RFC](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0034-message-tracing).
 
 Tracing can be enabled globally, for all messages/events, or it can be enabled on an exchange-by-exchange basis.
 

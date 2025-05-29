@@ -61,7 +61,7 @@ There are no anoncreds-specific integration tests, for the new anoncreds functio
 
 Everything should just work!!!
 
-Theoretically AATH should work with anoncreds as well, by setting the wallet type (see [https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters](https://github.com/hyperledger/aries-agent-test-harness#extra-backchannel-specific-parameters)).
+Theoretically AATH should work with anoncreds as well, by setting the wallet type (see [https://github.com/openwallet-foundation/owl-agent-test-harness#extra-backchannel-specific-parameters](https://github.com/openwallet-foundation/owl-agent-test-harness#extra-backchannel-specific-parameters)).
 
 ## Revocation (new in anoncreds)
 

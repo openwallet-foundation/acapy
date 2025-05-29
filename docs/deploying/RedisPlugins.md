@@ -202,7 +202,7 @@ Regardless of the options above, you will need to startup `deliverer` and `relay
             - acapy_default
     ```
 
-Both relay and mediator [demos](https://github.com/bcgov/aries-acapy-plugin-redis-events/tree/master/demo) are also available.
+Both relay and mediator [demos](https://github.com/bcgov/aries-acapy-plugin-redis-events/tree/main/demo) are also available.
 
 ## [acapy-cache-redis](https://github.com/Indicio-tech/aries-acapy-cache-redis/blob/main/README.md) `redis_cache`
 
