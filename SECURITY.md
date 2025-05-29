@@ -1,25 +1,10 @@
 # ACA-Py Security Policy
 
-## Instructions
-
-The following is the best practices template security vulnerability disclosure
-policy for OpenWallet Foundation's projects. Please copy the text below, place it into the `SECURITY.md` file for the primary repository of your project,
-and adjust it as necessary for your project. Notably:
-
-* Remove this "Instructions" section.
-* Replace ==PROJECT== in the title of this page with the name of your project.
-* Populate the [Security Team section](#security-team) with maintainers who have agreed to be on the security team.
-* See the "**Alternative**" notes in the [OpenWallet Foundation's security vulnerability disclosure policy] document for how the "best practices" in this document can be changed to meet the needs of your project while still adhering to the OpenWallet Foundation's policies.
-
-Once your project's security vulnerability disclosure policy document is
-published, place a copy of it into each of your project's repositories
-(or link to the main repository's `SECURITY.md`).
-
 ## About this Document
 
 This document document defines how security vulnerability reporting is handled
-in this project. The approach aligns with the [OpenWallet Foundation's security
-vulnerability disclosure policy]. Please review that document to understand
+in this project. The approach aligns with the [OpenWallet Foundation's security vulnerability disclosure policy].
+Please review that document to understand
 the basis of the security reporting for this project
 
 This policy borrows heavily from the recommendations of the OpenSSF
