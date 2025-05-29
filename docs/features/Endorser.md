@@ -1,6 +1,6 @@
 # Transaction Endorser Support
 
-ACA-Py supports an [Endorser Protocol](https://github.com/hyperledger/aries-rfcs/pull/586), that allows an un-privileged agent (an "Author") to request another agent (the "Endorser") to sign their transactions so they can write these transactions to the ledger.  This is required on Indy ledgers, where new agents will typically be granted only "Author" privileges.
+ACA-Py supports an [Endorser Protocol](https://github.com/decentralized-identity/aries-rfcs/pull/586), that allows an un-privileged agent (an "Author") to request another agent (the "Endorser") to sign their transactions so they can write these transactions to the ledger.  This is required on Indy ledgers, where new agents will typically be granted only "Author" privileges.
 
 Transaction Endorsement is built into the protocols for Schema, Credential Definition and Revocation, and endorsements can be explicitly requested, or ACA-Py can be configured to automate the endorsement workflow.
 

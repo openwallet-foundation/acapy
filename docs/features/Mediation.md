@@ -2,7 +2,7 @@
 
 ## Concepts
 
-- **DIDComm Message Forwarding** - Sending an encrypted message to its recipient by first sending it to a third party responsible for forwarding the message on. Message contents are encrypted once for the recipient then wrapped in a [forward message](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0094-cross-domain-messaging/README.md#corerouting10forward) encrypted to the third party.
+- **DIDComm Message Forwarding** - Sending an encrypted message to its recipient by first sending it to a third party responsible for forwarding the message on. Message contents are encrypted once for the recipient then wrapped in a [forward message](https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0094-cross-domain-messaging/README.md#corerouting10forward) encrypted to the third party.
 - **Mediator** - An agent that forwards messages to a client over a DIDComm connection.
 - **Mediated Agent** or **Mediation client** - The agent(s) to which a mediator is willing to forward messages.
 - **Mediation Request** - A message from a client to a mediator requesting mediation or forwarding.
@@ -10,7 +10,7 @@
 - **Keylist Update** - A message from a client to a mediator informing the mediator of changes to the keylist.
 - **Default Mediator** - A mediator to be used with every newly created DIDComm connection.
 - **Mediation Connection** - Connection between the mediator and the mediated agent or client. Agents can use as many mediators as the identity owner sees fit. Requests for mediation are handled on a per connection basis.
-- See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/hyperledger/aries-rfcs/blob/master/features/0211-route-coordination/README.md) for additional details on message attributes and more.
+- See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0211-route-coordination/README.md) for additional details on message attributes and more.
 
 ## Command Line Arguments
 
@@ -38,7 +38,7 @@ If a default mediator has already been established, then the `--default-mediator
 
 ## DIDComm Messages
 
-See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/hyperledger/aries-rfcs/blob/master/features/0211-route-coordination/README.md).
+See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0211-route-coordination/README.md).
 
 ## Admin API
 

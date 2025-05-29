@@ -3,7 +3,7 @@
 
 In this workshop we will add some functionality to a third participant in the Alice/Faber drama - namely, Acme Inc.  After completing her education at Faber College, Alice is going to apply for a job at Acme Inc.  To do this she must provide proof of education (once she has completed the interview and other non-Indy tasks), and then Acme will issue her an employment credential.
 
-Note that an updated Acme controller is available here: https://github.com/ianco/aries-cloudagent-python/tree/acme_workshop/demo if you just want to skip ahead ...  There is also an alternate solution with some additional functionality available here:  https://github.com/ianco/aries-cloudagent-python/tree/agent_workshop/demo
+Note that an updated Acme controller is available here: [https://github.com/openwallet-foundation/acapy/blob/acme_workshop/demo/runners/acme.py](https://github.com/openwallet-foundation/acapy/blob/acme_workshop/demo/runners/acme.py) if you just want to skip ahead ...
 
 
 ## Preview of the Acme Controller

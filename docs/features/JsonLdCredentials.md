@@ -24,16 +24,16 @@ By design ACA-Py is credential format agnostic. This means you can use it for an
 The rest of this guide assumes some basic understanding of W3C Verifiable Credentials, JSON-LD and Linked Data Proofs. If you're not familiar with some of these concepts, the following resources can help you get started:
 
 - [Verifiable Credentials Data Model](https://www.w3.org/TR/vc-data-model/)
-- [JSON-LD Articles and Presentations](https://json-ld.org/learn.html)
+- [JSON-LD Articles and Presentations](https://json-ld.org/learn/)
 - [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs)
 
 ### BBS+
 
-BBS+ credentials offer a lot of privacy preserving features over non-ZKP credentials. Therefore we recommend to always use BBS+ credentials over non-ZKP credentials. To get started with BBS+ credentials it is recommended to at least read [RFC 0646: W3C Credential Exchange using BBS+ Signatures](https://github.com/hyperledger/aries-rfcs/blob/master/features/0646-bbs-credentials/README.md) for a general overview.
+BBS+ credentials offer a lot of privacy preserving features over non-ZKP credentials. Therefore we recommend to always use BBS+ credentials over non-ZKP credentials. To get started with BBS+ credentials it is recommended to at least read [RFC 0646: W3C Credential Exchange using BBS+ Signatures](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0646-bbs-credentials/README.md) for a general overview.
 
 Some other resources that can help you get started with BBS+ credentials:
 
-- [BBS+ Signatures 2020](https://w3c-ccg.github.io/ldp-bbs2020)
+- [BBS+ Signatures](https://w3c.github.io/vc-di-bbs/)
 - [Video: BBS+ Credential Exchange in Hyperledger Aries](https://www.youtube.com/watch?v=LC0OXAir3Qw)
 
 ## Preparing to Issue a Credential
@@ -75,7 +75,7 @@ Before issuing a credential you must determine a signature suite to use. ACA-Py 
 
 - [`Ed25519Signature2018`](https://w3c-ccg.github.io/lds-ed25519-2018/) - Very well supported. No zero knowledge proofs or selective disclosure.
 - [`Ed25519Signature2020`](https://w3c.github.io/vc-di-eddsa/#ed25519signature2020-0) - Updated version of 2018 suite.
-- [`BbsBlsSignature2020`](https://w3c-ccg.github.io/ldp-bbs2020/) - Newer, but supports zero knowledge proofs and selective disclosure.
+- [`BbsBlsSignature2020`](https://w3c.github.io/vc-di-bbs/) - Newer, but supports zero knowledge proofs and selective disclosure.
 
 Generally you should always use `BbsBlsSignature2020` as it allows the holder to derive a new credential during the proving, meaning it doesn't have to disclose all fields and doesn't have to reveal the signature.
 
@@ -92,7 +92,7 @@ When using `did:sov` you need to make sure to use a public did so other agents c
 
 #### `did:key`
 
-A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-method-key/) for more information.
+A `did:key` did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the [did:key Method Specification](https://w3c-ccg.github.io/did-key-spec/) for more information.
 
 You can create a `did:key` using the `/wallet/did/create` endpoint with the following body. Use `ed25519` for `Ed25519Signature2018`, `bls12381g2` for `BbsBlsSignature2020`.
 
@@ -111,7 +111,7 @@ The above call will return a did that looks something like this: `did:key:zUC7Fs
 
 > Issuing JSON-LD credentials is only possible with the issue credential v2 protocol (`/issue-credential-2.0`)
 
-The format used for exchanging JSON-LD credentials is defined in [RFC 0593: JSON-LD Credential Attachment format](https://github.com/hyperledger/aries-rfcs/tree/master/features/0593-json-ld-cred-attach/README.md). The API in ACA-Py exactly matches the formats as described in this RFC, with the most important (from the ACA-Py API perspective) being [`aries/ld-proof-vc-detail@v1.0`](https://github.com/hyperledger/aries-rfcs/blob/master/features/0593-json-ld-cred-attach/README.md#ld-proof-vc-detail-attachment-format). Read the RFC to see the exact properties required to construct a valid Linked Data Proof VC Detail.
+The format used for exchanging JSON-LD credentials is defined in [RFC 0593: JSON-LD Credential Attachment format](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0593-json-ld-cred-attach/README.md). The API in ACA-Py exactly matches the formats as described in this RFC, with the most important (from the ACA-Py API perspective) being [`aries/ld-proof-vc-detail@v1.0`](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0593-json-ld-cred-attach/README.md#ld-proof-vc-detail-attachment-format). Read the RFC to see the exact properties required to construct a valid Linked Data Proof VC Detail.
 
 All endpoints in API use the `aries/ld-proof-vc-detail@v1.0`. We'll use the `/issue-credential-2.0/send` as an example, but it works the same for the other endpoints. In contrary to issuing indy credentials, JSON-LD credentials do not require a credential preview. All properties should be directly embedded in the credentials.
 
@@ -232,7 +232,7 @@ To learn more about using these endpoints, please refer to the available [postma
 
 ## External Suite Provider
 
-It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/openwallet-foundation/acapy/blob/d3ee92b1b86aff076b52f31eaecea59c18005079/aries_cloudagent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
+It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
 
 This interface enables taking advantage of ACA-Py's JSON-LD processing to construct and format the credential while exposing a simple interface to a plugin to make it responsible for signatures. This can also be combined with plugged in DID Methods, `VerificationKeyStrategy`, and other pluggable components.
 
