@@ -1,7 +1,7 @@
 # Migrating from Indy SDK to Askar
 
 The document summarizes why the [Indy SDK] is being deprecated, it's replacement
-([Aries Askar] and the "shared components"), how to use [Aries Askar in a new
+([Askar] and the "shared components"), how to use [Askar in a new
 ACA-Py deployment](#new-aca-py-deployments), and the [migration
 process](#migrating-existing-indy-sdk-aca-py-deployments-to-askar) for an ACA-Py
 instance that is already deployed using the Indy SDK.
@@ -9,12 +9,12 @@ instance that is already deployed using the Indy SDK.
 ## The Time Has Come! Archiving Indy SDK
 
 Yes, it’s time. Indy SDK needs to be archived! In this article we’ll explain why
-this change is needed, why Aries Askar is a faster, better replacement, and how
+this change is needed, why Askar is a faster, better replacement, and how
 to transition your Indy SDK-based ACA-Py deployment to Askar as soon as
 possible.
 
 [Indy SDK]: https://github.com/hyperledger/indy-sdk
-[Aries Askar]: https://github.com/hyperledger/aries-askar
+[Askar]: https://github.com/openwallet-foundation/askar
 
 ### History of Indy SDK
 
@@ -36,7 +36,7 @@ Aries/Indy community needed to make a change.
 [Hyperledger Indy]: https://www.hyperledger.org/projects/hyperledger-indy
 [Hyperledger Aries]: https://www.hyperledger.org/projects/aries
 
-### Aries Askar and the Shared Components
+### Askar and the Shared Components
 
 The replacement for the Indy SDK is a set of **four components**, each replacing
 a part of Indy SDK. (In retrospect, Indy SDK ought to have been split up this
@@ -44,7 +44,7 @@ way from the start.)
 
 The components are:
 
-1. **[Aries Askar]**: the replacement for the “indy-wallet” part of Indy SDK.
+1. **[Askar]**: the replacement for the “indy-wallet” part of Indy SDK.
    Askar is a key management service, handling the creation and use of private
    keys managed by Aries agents. It’s also the secure storage for DIDs,
    verifiable credentials, and data used by issuers of verifiable credentials
@@ -71,7 +71,7 @@ AnonCreds soon.
 [Hyperledger AnonCreds]: https://github.com/hyperledger/anoncreds-rs
 
 If you’re involved in the community, you’ll know we’ve been planning this
-replacement for almost three years. The first release of the Aries Askar and
+replacement for almost three years. The first release of the Askar and
 related components was in 2021. At the end of 2022 there was a concerted effort
 to eliminate the Indy SDK by creating migration scripts, and removing the Indy
 SDK from various tools in the community (the Indy CLI, the Indy Test Automation
@@ -80,25 +80,25 @@ pipeline, and so on). This step is to finish the task.
 ### Performance
 
 What’s the performance and stability of the replacement? In short, it’s
-**dramatically better**. Overall Aries Askar performance is faster, and as the
+**dramatically better**. Overall Askar performance is faster, and as the
 load increases the performance remains constant. Combined with added flexibility
 and modularization, the community is very positive about the change.
 
 ## New ACA-Py Deployments
 
-If you are new to ACA-Py, the instructions are easy. Use Aries Askar and the
+If you are new to ACA-Py, the instructions are easy. Use Askar and the
 shared components from the start. To do that, simply make sure that you are
 using the `--wallet-type askar` configuration parameter. You will automatically
 be using all of the shared components.
 
 As of release 0.9.0, you will get a deprecation warning when you start ACA-Py
-with the Indy SDK. Switch to Aries Askar to eliminate that warning.
+with the Indy SDK. Switch to Askar to eliminate that warning.
 
 ## Migrating Existing Indy SDK ACA-Py Deployments to Askar
 
 If you have an existing deployment, in changing the `--wallet-type`
 configuration setting, your database must be migrated from the Indy SDK format
-to Aries Askar format. In order to facilitate the migration, an Indy SDK to
+to Askar format. In order to facilitate the migration, an Indy SDK to
 Askar migration script has been published in the [acapy-tools] repository.
 There is lots of information in that repository about the migration tool and how
 to use it. The following is a summary of the steps you will have to perform. Of

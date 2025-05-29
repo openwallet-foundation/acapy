@@ -72,7 +72,7 @@ issuer controller does:
 That is the minimum amount of tracking the controller must do while still being
 able to execute the business rules around revoking credentials.
 
-[Aries RFC 0183: Revocation Notification]: https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md
+[Aries RFC 0183: Revocation Notification]: https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0183-revocation-notification/README.md
 
 From experience, we’ve added to two extra features to deal with unexpected
 conditions:
@@ -195,7 +195,7 @@ Include the command line parameter `--tails-server-base-url <indy-tails-server u
 
 ## Revocation Notification
 
-ACA-Py supports [Revocation Notification v1.0](https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md).
+ACA-Py supports [Revocation Notification v1.0](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0183-revocation-notification/README.md).
 
 > **Note:** The optional `~please_ack` is not currently supported.
 

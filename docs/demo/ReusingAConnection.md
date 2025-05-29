@@ -30,12 +30,12 @@ Example invitation:
 }
 ```
 
-[RFC 0434 Out of Band]: https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband
-[RFC 0023 DID Exchange]: https://github.com/hyperledger/aries-rfcs/tree/main/features/0023-did-exchange
-[RFC 0160 Connection Protocol]: https://github.com/hyperledger/aries-rfcs/tree/main/features/0160-connection-protocol
-[RFC 0434 Out of Band invitation]: https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband#invitation-httpsdidcommorgout-of-bandverinvitation
-[RFC 0023 DID Exchange request]: https://github.com/hyperledger/aries-rfcs/tree/main/features/0023-did-exchange#1-exchange-request
-[RFC 0434 Out of Band reuse]: https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband#reuse-messages
+[RFC 0434 Out of Band]: https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband
+[RFC 0023 DID Exchange]: https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0023-did-exchange
+[RFC 0160 Connection Protocol]: https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0160-connection-protocol
+[RFC 0434 Out of Band invitation]: https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband#invitation-httpsdidcommorgout-of-bandverinvitation
+[RFC 0023 DID Exchange request]: https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0023-did-exchange#1-exchange-request
+[RFC 0434 Out of Band reuse]: https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband#reuse-messages
 
 Here's the flow that demonstrates where reuse helps. For simplicity, we'll use the terms "Issuer"
 and "Wallet" in this example, but it applies to any connection between any two

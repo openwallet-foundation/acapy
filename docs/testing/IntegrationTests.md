@@ -8,9 +8,9 @@ Integration testing in ACA-Py consists of 3 different levels or types.
 
 ## Interop profile (AATH) BDD tests
 
-Interoperability is extremely important in the decentralized trust/SSI community. for example, when implementing or changing features that are included in the [Aries Interop Profile](https://github.com/hyperledger/aries-rfcs/blob/main/concepts/0302-aries-interop-profile/README.md) the developer should try to add tests to this test suite.
+Interoperability is extremely important in the decentralized trust/SSI community. for example, when implementing or changing features that are included in the [Aries Interop Profile](https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0302-aries-interop-profile/README.md) the developer should try to add tests to this test suite.
 
-These tests are contained in a separate repo [AATH](https://github.com/hyperledger/aries-agent-test-harness). They use the gherkin syntax and a http back channel. Changes to the tests need to be added and merged into this repo before they will be reflected in the automatic testing workflows. There has been a lot of work to make developing and debugging tests easier. See (AATH Dev Containers)[https://github.com/hyperledger/aries-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath].
+These tests are contained in a separate repo [AATH](https://github.com/hyperledger/aries-agent-test-harness). They use the gherkin syntax and a http back channel. Changes to the tests need to be added and merged into this repo before they will be reflected in the automatic testing workflows. There has been a lot of work to make developing and debugging tests easier. See [AATH Dev Containers](https://github.com/openwallet-foundation/owl-agent-test-harness/blob/main/AATH_DEV_CONTAINERS.md#dev-containers-in-aath).
 
 The tests will then be ran for PR's and scheduled workflows for ACA-Py <--> ACA-Py agents. These tests are important because having them allows the AATH project to more easily test [Credo-TS](https://github.com/openwallet-foundation/credo-ts) <--> ACA-Py scenarios and ensure interoperability with mobile agents interacting with ACA-Py agents.
 

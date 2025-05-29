@@ -1,6 +1,6 @@
 # Creating Protocols
 
-Protocols that are added to this directory will be loaded automatically on startup. It is also possible load external protocol implementations. For example, [this protocol](https://github.com/bcgov/aries-vcr/tree/master/server/message_families/issuer_registration) implementation is built as a separate python package and explicitly loaded at startup with the `--plugin indy_catalyst_issuer_registration` parameter.
+Protocols that are added to this directory will be loaded automatically on startup. It is also possible load external protocol implementations. For example, [this protocol](https://github.com/bcgov/aries-vcr/tree/main/server/message_families/issuer_registration) implementation is built as a separate python package and explicitly loaded at startup with the `--plugin indy_catalyst_issuer_registration` parameter.
 
 ## Directory Structure
 
