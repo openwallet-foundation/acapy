@@ -2637,7 +2637,7 @@ issuer controller does:</p>
 <li>On Revocation, the controller passes in the logical “revocation ID" of the
   credential to be revoked, including a “notify holder” flag. ACA-Py records the
   revocation as pending and, if asked, sends a notification to the holder using
-  a DIDComm message (<a href="https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md">Aries RFC 0183: Revocation Notification</a>).</li>
+  a DIDComm message (<a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0183-revocation-notification/README.md">Aries RFC 0183: Revocation Notification</a>).</li>
 <li>The Issuer requests that the revocations for a CredDefId be published. ACA-Py
   figures out what RevRegs contain pending revocation and so need to be
   published, and publishes each.</li>
@@ -2755,7 +2755,7 @@ pending revocations in batches. Revocation are not written to ledger until this 
 </li>
 </ol>
 <h2 id="revocation-notification">Revocation Notification<a class="headerlink" href="#revocation-notification" title="Permanent link">&para;</a></h2>
-<p>ACA-Py supports <a href="https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md">Revocation Notification v1.0</a>.</p>
+<p>ACA-Py supports <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0183-revocation-notification/README.md">Revocation Notification v1.0</a>.</p>
 <blockquote>
 <p><strong>Note:</strong> The optional <code>~please_ack</code> is not currently supported.</p>
 </blockquote>

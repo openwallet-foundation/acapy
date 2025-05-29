@@ -1883,9 +1883,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#aries-askar-and-the-shared-components" class="md-nav__link">
+  <a href="#askar-and-the-shared-components" class="md-nav__link">
     <span class="md-ellipsis">
-      Aries Askar and the Shared Components
+      Askar and the Shared Components
     </span>
   </a>
   
@@ -2508,9 +2508,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#aries-askar-and-the-shared-components" class="md-nav__link">
+  <a href="#askar-and-the-shared-components" class="md-nav__link">
     <span class="md-ellipsis">
-      Aries Askar and the Shared Components
+      Askar and the Shared Components
     </span>
   </a>
   
@@ -2578,13 +2578,13 @@
 
 <h1 id="migrating-from-indy-sdk-to-askar">Migrating from Indy SDK to Askar<a class="headerlink" href="#migrating-from-indy-sdk-to-askar" title="Permanent link">&para;</a></h1>
 <p>The document summarizes why the <a href="https://github.com/hyperledger/indy-sdk">Indy SDK</a> is being deprecated, it's replacement
-(<a href="https://github.com/hyperledger/aries-askar">Aries Askar</a> and the "shared components"), how to use <a href="#new-aca-py-deployments">Aries Askar in a new
+(<a href="https://github.com/openwallet-foundation/askar">Askar</a> and the "shared components"), how to use <a href="#new-aca-py-deployments">Askar in a new
 ACA-Py deployment</a>, and the <a href="#migrating-existing-indy-sdk-aca-py-deployments-to-askar">migration
 process</a> for an ACA-Py
 instance that is already deployed using the Indy SDK.</p>
 <h2 id="the-time-has-come-archiving-indy-sdk">The Time Has Come! Archiving Indy SDK<a class="headerlink" href="#the-time-has-come-archiving-indy-sdk" title="Permanent link">&para;</a></h2>
 <p>Yes, it’s time. Indy SDK needs to be archived! In this article we’ll explain why
-this change is needed, why Aries Askar is a faster, better replacement, and how
+this change is needed, why Askar is a faster, better replacement, and how
 to transition your Indy SDK-based ACA-Py deployment to Askar as soon as
 possible.</p>
 <h3 id="history-of-indy-sdk">History of Indy SDK<a class="headerlink" href="#history-of-indy-sdk" title="Permanent link">&para;</a></h3>
@@ -2600,13 +2600,13 @@ and without major bugs, vulnerabilities or demands for new features.</p>
 notably, as load increases, Indy SDK performance drops. And with Indy-based
 ecosystems flourishing and loads exponentially increasing, this means the
 Aries/Indy community needed to make a change.</p>
-<h3 id="aries-askar-and-the-shared-components">Aries Askar and the Shared Components<a class="headerlink" href="#aries-askar-and-the-shared-components" title="Permanent link">&para;</a></h3>
+<h3 id="askar-and-the-shared-components">Askar and the Shared Components<a class="headerlink" href="#askar-and-the-shared-components" title="Permanent link">&para;</a></h3>
 <p>The replacement for the Indy SDK is a set of <strong>four components</strong>, each replacing
 a part of Indy SDK. (In retrospect, Indy SDK ought to have been split up this
 way from the start.)</p>
 <p>The components are:</p>
 <ol>
-<li><strong><a href="https://github.com/hyperledger/aries-askar">Aries Askar</a></strong>: the replacement for the “indy-wallet” part of Indy SDK.
+<li><strong><a href="https://github.com/openwallet-foundation/askar">Askar</a></strong>: the replacement for the “indy-wallet” part of Indy SDK.
    Askar is a key management service, handling the creation and use of private
    keys managed by Aries agents. It’s also the secure storage for DIDs,
    verifiable credentials, and data used by issuers of verifiable credentials
@@ -2627,27 +2627,27 @@ way from the start.)</p>
 <p>In ACA-Py, we are currently using CredX, but will be moving to Hyperledger
 AnonCreds soon.</p>
 <p>If you’re involved in the community, you’ll know we’ve been planning this
-replacement for almost three years. The first release of the Aries Askar and
+replacement for almost three years. The first release of the Askar and
 related components was in 2021. At the end of 2022 there was a concerted effort
 to eliminate the Indy SDK by creating migration scripts, and removing the Indy
 SDK from various tools in the community (the Indy CLI, the Indy Test Automation
 pipeline, and so on). This step is to finish the task.</p>
 <h3 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
 <p>What’s the performance and stability of the replacement? In short, it’s
-<strong>dramatically better</strong>. Overall Aries Askar performance is faster, and as the
+<strong>dramatically better</strong>. Overall Askar performance is faster, and as the
 load increases the performance remains constant. Combined with added flexibility
 and modularization, the community is very positive about the change.</p>
 <h2 id="new-aca-py-deployments">New ACA-Py Deployments<a class="headerlink" href="#new-aca-py-deployments" title="Permanent link">&para;</a></h2>
-<p>If you are new to ACA-Py, the instructions are easy. Use Aries Askar and the
+<p>If you are new to ACA-Py, the instructions are easy. Use Askar and the
 shared components from the start. To do that, simply make sure that you are
 using the <code>--wallet-type askar</code> configuration parameter. You will automatically
 be using all of the shared components.</p>
 <p>As of release 0.9.0, you will get a deprecation warning when you start ACA-Py
-with the Indy SDK. Switch to Aries Askar to eliminate that warning.</p>
+with the Indy SDK. Switch to Askar to eliminate that warning.</p>
 <h2 id="migrating-existing-indy-sdk-aca-py-deployments-to-askar">Migrating Existing Indy SDK ACA-Py Deployments to Askar<a class="headerlink" href="#migrating-existing-indy-sdk-aca-py-deployments-to-askar" title="Permanent link">&para;</a></h2>
 <p>If you have an existing deployment, in changing the <code>--wallet-type</code>
 configuration setting, your database must be migrated from the Indy SDK format
-to Aries Askar format. In order to facilitate the migration, an Indy SDK to
+to Askar format. In order to facilitate the migration, an Indy SDK to
 Askar migration script has been published in the <a href="https://github.com/openwallet-foundation/acapy-tools">acapy-tools</a> repository.
 There is lots of information in that repository about the migration tool and how
 to use it. The following is a summary of the steps you will have to perform. Of

@@ -2458,7 +2458,7 @@
 </ul>
 </blockquote>
 <h2 id="running-in-a-browser">Running in a Browser<a class="headerlink" href="#running-in-a-browser" title="Permanent link">&para;</a></h2>
-<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
+<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/main/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
 <h3 id="start-the-faber-agent">Start the Faber Agent<a class="headerlink" href="#start-the-faber-agent" title="Permanent link">&para;</a></h3>
 <p>In a browser, go to the <a href="https://labs.play-with-docker.com/">Play with Docker</a> home page, Login (if necessary) and click "Start." On the next screen, click (in the left menu) "+Add a new instance."  That will start up a terminal in your browser. Run the following commands to start the Faber agent.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy
@@ -2500,7 +2500,7 @@
 
 <p>You are ready to go. Skip down to the <a href="#using-the-openapiswagger-user-interface">Using the OpenAPI/Swagger User Interface</a> section.</p>
 <h2 id="running-in-docker">Running in Docker<a class="headerlink" href="#running-in-docker" title="Permanent link">&para;</a></h2>
-<p>To run the demo on your local system, you must have git, a running Docker installation, and terminal windows running bash. Need more information about getting set up? Click <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-docker-locally">here</a> to learn more.</p>
+<p>To run the demo on your local system, you must have git, a running Docker installation, and terminal windows running bash. Need more information about getting set up? Click <a href="https://github.com/cloudcompass/ToIPLabs/blob/main/docs/LFS173x/RunningLabs.md#running-on-docker-locally">here</a> to learn more.</p>
 <h3 id="start-the-faber-agent_1">Start the Faber Agent<a class="headerlink" href="#start-the-faber-agent_1" title="Permanent link">&para;</a></h3>
 <p>To begin running the demo in Docker, open up two terminal windows, one each for Faber’s and Alice’s agent.</p>
 <p>In the first terminal window, clone the ACA-Py repo, change into the demo folder and start the Faber agent:</p>
@@ -2663,7 +2663,7 @@
 </details>
 
 <h2 id="basic-messaging-between-agents">Basic Messaging Between Agents<a class="headerlink" href="#basic-messaging-between-agents" title="Permanent link">&para;</a></h2>
-<p>Once you have a connection between two agents, you have a channel to exchange secure, encrypted messages. In fact these underlying encrypted messages (similar to envelopes in a postal system) enable the delivery of messages that form the higher level protocols, such as issuing Credentials and providing Proofs. So, let's send a couple of messages that contain the simplest of context&mdash;text. For this we wil use the Basic Message protocol, <a href="https://github.com/hyperledger/aries-rfcs/tree/master/features/0095-basic-message">Aries RFC 0095</a>.</p>
+<p>Once you have a connection between two agents, you have a channel to exchange secure, encrypted messages. In fact these underlying encrypted messages (similar to envelopes in a postal system) enable the delivery of messages that form the higher level protocols, such as issuing Credentials and providing Proofs. So, let's send a couple of messages that contain the simplest of context&mdash;text. For this we wil use the Basic Message protocol, <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0095-basic-message">Aries RFC 0095</a>.</p>
 <h3 id="sending-a-message-from-alice-to-faber">Sending a message from Alice to Faber<a class="headerlink" href="#sending-a-message-from-alice-to-faber" title="Permanent link">&para;</a></h3>
 <p>On Alice's swagger page, scroll to the <strong><code>POST /connections/{conn_id}/send-message</code></strong> endpoint. Click on <code>Try it Out</code> and enter a message in the body provided (for example <code>{"content": "Hello Faber"}</code>). Enter the connection id of Alice's connection in the field provided. Then click on <code>Execute</code>.</p>
 <details>

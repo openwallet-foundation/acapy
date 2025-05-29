@@ -3024,14 +3024,14 @@ secure storage seed on every invocation of an agent (e.g. on every <code>aca-py 
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./scripts/run_tests<span class="w"> </span>acapy_agent/protocols/connections
 </code></pre></div>
 <h3 id="running-aries-agent-test-harness-tests">Running Aries Agent Test Harness Tests<a class="headerlink" href="#running-aries-agent-test-harness-tests" title="Permanent link">&para;</a></h3>
-<p>You can run a full suite of integration tests using the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness (AATH)</a>.</p>
+<p>You can run a full suite of integration tests using the <a href="https://github.com/openwallet-foundation/owl-agent-test-harness">Aries Agent Test Harness (AATH)</a>.</p>
 <p>Check out and run AATH tests as follows (this tests the aca-py <code>main</code> branch):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hyperledger/aries-agent-test-harness.git
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/owl-agent-test-harness.git
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">cd</span><span class="w"> </span>aries-agent-test-harness
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>./manage<span class="w"> </span>build<span class="w"> </span>-a<span class="w"> </span>acapy-main
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>./manage<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>acapy-main<span class="w"> </span>-t<span class="w"> </span>@AcceptanceTest<span class="w"> </span>-t<span class="w"> </span>~@wip
 </code></pre></div>
-<p>The <code>manage</code> script is described in detail <a href="https://github.com/hyperledger/aries-agent-test-harness#the-manage-bash-script">here</a>, including how to modify the AATH code to run the tests against your aca-py repo/branch.</p>
+<p>The <code>manage</code> script is described in detail <a href="https://github.com/openwallet-foundation/owl-agent-test-harness#the-manage-bash-script">here</a>, including how to modify the AATH code to run the tests against your aca-py repo/branch.</p>
 <h2 id="development-workflow">Development Workflow<a class="headerlink" href="#development-workflow" title="Permanent link">&para;</a></h2>
 <p>We use <a href="https://github.com/astral-sh/ruff">Ruff</a> to enforce a coding style guide.</p>
 <p>Please write tests for the work that you submit.</p>

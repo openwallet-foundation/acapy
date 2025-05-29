@@ -2435,9 +2435,9 @@
 </ul>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <p>This demo can be run on your local machine or on Play with Docker (PWD), and will demonstrate credential exchange and proof exchange as well as revocation with a mobile agent. Both approaches (running locally and on PWD) will be described, for the most part the commands are the same, but there are a couple of different parameters you need to provide when starting up.</p>
-<p>If you are not familiar with how revocation is currently implemented in Hyperledger Indy, <a href="https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation">this article</a> provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.</p>
+<p>If you are not familiar with how revocation is currently implemented in Hyperledger Indy, <a href="https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation">this article</a> provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.</p>
 <h3 id="get-a-mobile-agent">Get a mobile agent<a class="headerlink" href="#get-a-mobile-agent" title="Permanent link">&para;</a></h3>
-<p>Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions <a href="https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md">here</a>.</p>
+<p>Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions <a href="https://github.com/bcgov/identity-kit-poc/blob/main/docs/GettingApp.md">here</a>.</p>
 <h3 id="running-locally-in-docker">Running Locally in Docker<a class="headerlink" href="#running-locally-in-docker" title="Permanent link">&para;</a></h3>
 <p>Open a new bash shell and in a project directory run the following:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy.git
@@ -2464,7 +2464,7 @@
 <p>Note that an ngrok process is created automatically for your tails server.</p>
 <p>Keep this process running as we'll come back to it in a moment.</p>
 <h3 id="running-in-play-with-docker">Running in Play With Docker<a class="headerlink" href="#running-in-play-with-docker" title="Permanent link">&para;</a></h3>
-<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
+<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/main/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
 <p>Open a new bash shell and in a project directory run the following:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy.git
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo

@@ -2616,7 +2616,7 @@
 <p>Integration tests for ACA-Py are implemented using Behave functional tests to drive ACA-Py agents based on the alice/faber demo framework.</p>
 <p>If you are new to the ACA-Py integration test suite, this <a href="https://youtu.be/AbuPg4J8Pd4">video</a> from ACA-Py Maintainer <a href="https://github.com/ianco">@ianco</a> describes
 the Integration Tests in ACA-Py, how to run them and how to add more tests. See also the video at the end of this document about running
-<a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness</a> (AATH) tests before you submit your pull requests. Note
+<a href="https://github.com/openwallet-foundation/owl-agent-test-harness">Aries Agent Test Harness</a> (AATH) tests before you submit your pull requests. Note
 that the relevant AATH tests are now run as part of the tests run when submitting a code PR for ACA-Py.</p>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <p>To run the ACA-Py Behave tests, open a bash shell run the following:</p>
@@ -2679,11 +2679,11 @@ using postgres run the following:</p>
 </code></pre></div>
 <p>Note: The <code>bbs</code> library may not install on ARM (i.e. aarch64 or  arm64) architecture therefore YMMV with testing BBS Signatures on ARM based devices.</p>
 <h2 id="aca-py-integration-tests-vs-aries-agent-test-harness-aath">ACA-Py Integration Tests vs Aries Agent Test Harness (AATH)<a class="headerlink" href="#aca-py-integration-tests-vs-aries-agent-test-harness-aath" title="Permanent link">&para;</a></h2>
-<p>ACA-Py Behave tests are based on the interoperability tests that are implemented in the <a href="https://github.com/hyperledger/aries-agent-test-harness">Aries Agent Test Harness (AATH)</a>.  Both use <a href="https://behave.readthedocs.io/en/stable/">Behave (Gherkin)</a> to execute tests against a running ACA-Py agent (or in the case of AATH, against any compatible Aries agent), however the ACA-Py integration tests focus on ACA-Py specific features.</p>
+<p>ACA-Py Behave tests are based on the interoperability tests that are implemented in the <a href="https://github.com/openwallet-foundation/owl-agent-test-harness">Aries Agent Test Harness (AATH)</a>.  Both use <a href="https://behave.readthedocs.io/en/stable/">Behave (Gherkin)</a> to execute tests against a running ACA-Py agent (or in the case of AATH, against any compatible Aries agent), however the ACA-Py integration tests focus on ACA-Py specific features.</p>
 <p>AATH:</p>
 <ul>
 <li>Main purpose is to test interoperability between Aries agents</li>
-<li>Implements detailed tests based on <a href="https://github.com/hyperledger/aries-rfcs">Aries RFC's</a> (runs different scenarios, tests exception paths, etc.)</li>
+<li>Implements detailed tests based on <a href="https://github.com/decentralized-identity/aries-rfcs">Aries RFC's</a> (runs different scenarios, tests exception paths, etc.)</li>
 <li>Runs Aries agents using Docker images (agents run for the duration of the tests)</li>
 <li>Uses a standard "backchannel" to support integration of any Aries agent</li>
 </ul>
@@ -2697,7 +2697,7 @@ using postgres run the following:</p>
 <li>Uses the same Python framework as used for the interactive Alice/Faber demo</li>
 </ul>
 <h2 id="configuration-driven-tests">Configuration-driven Tests<a class="headerlink" href="#configuration-driven-tests" title="Permanent link">&para;</a></h2>
-<p>ACA-Py integration tests use the same configuration approach as AATH, documented <a href="https://github.com/hyperledger/aries-agent-test-harness/blob/master/CONFIGURE-CRED-TYPES.md">here</a>.</p>
+<p>ACA-Py integration tests use the same configuration approach as AATH, documented <a href="https://github.com/openwallet-foundation/owl-agent-test-harness/blob/main/CONFIGURE-CRED-TYPES.md">here</a>.</p>
 <p>In addition to support for external schemas, credential data etc, the ACA-Py integration tests support configuration of the ACA-Py agents that are used to run the test.  For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  Given &quot;3&quot; agents
@@ -2735,7 +2735,7 @@ using postgres run the following:</p>
 <li><code>ACAPY_ARG_FILE</code> - specify global ACA-Py parameters (see above)</li>
 </ul>
 <h2 id="running-specific-test-scenarios">Running specific test scenarios<a class="headerlink" href="#running-specific-test-scenarios" title="Permanent link">&para;</a></h2>
-<p>Behave tests are tagged using the same <a href="https://github.com/hyperledger/aries-agent-test-harness#test-tags">standard tags as used in AATH</a>.</p>
+<p>Behave tests are tagged using the same <a href="https://github.com/openwallet-foundation/owl-agent-test-harness#test-tags">standard tags as used in AATH</a>.</p>
 <p>To run a specific set of ACA-Py integration tests (or exclude specific tests):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./run_bdd<span class="w"> </span>-t<span class="w"> </span>tag1<span class="w"> </span>-t<span class="w"> </span>~tag2
 </code></pre></div>

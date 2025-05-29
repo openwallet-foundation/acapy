@@ -2549,7 +2549,7 @@
 <h1 id="mediation-docs">Mediation docs<a class="headerlink" href="#mediation-docs" title="Permanent link">&para;</a></h1>
 <h2 id="concepts">Concepts<a class="headerlink" href="#concepts" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>DIDComm Message Forwarding</strong> - Sending an encrypted message to its recipient by first sending it to a third party responsible for forwarding the message on. Message contents are encrypted once for the recipient then wrapped in a <a href="https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0094-cross-domain-messaging/README.md#corerouting10forward">forward message</a> encrypted to the third party.</li>
+<li><strong>DIDComm Message Forwarding</strong> - Sending an encrypted message to its recipient by first sending it to a third party responsible for forwarding the message on. Message contents are encrypted once for the recipient then wrapped in a <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0094-cross-domain-messaging/README.md#corerouting10forward">forward message</a> encrypted to the third party.</li>
 <li><strong>Mediator</strong> - An agent that forwards messages to a client over a DIDComm connection.</li>
 <li><strong>Mediated Agent</strong> or <strong>Mediation client</strong> - The agent(s) to which a mediator is willing to forward messages.</li>
 <li><strong>Mediation Request</strong> - A message from a client to a mediator requesting mediation or forwarding.</li>
@@ -2557,7 +2557,7 @@
 <li><strong>Keylist Update</strong> - A message from a client to a mediator informing the mediator of changes to the keylist.</li>
 <li><strong>Default Mediator</strong> - A mediator to be used with every newly created DIDComm connection.</li>
 <li><strong>Mediation Connection</strong> - Connection between the mediator and the mediated agent or client. Agents can use as many mediators as the identity owner sees fit. Requests for mediation are handled on a per connection basis.</li>
-<li>See <a href="https://github.com/hyperledger/aries-rfcs/blob/master/features/0211-route-coordination/README.md">Aries RFC 0211: Coordinate Mediation Protocol</a> for additional details on message attributes and more.</li>
+<li>See <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0211-route-coordination/README.md">Aries RFC 0211: Coordinate Mediation Protocol</a> for additional details on message attributes and more.</li>
 </ul>
 <h2 id="command-line-arguments">Command Line Arguments<a class="headerlink" href="#command-line-arguments" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2577,7 +2577,7 @@
 </code></pre></div>
 <p>If a default mediator has already been established, then the <code>--default-mediator-id</code> argument can be used <em>instead</em> of the <code>--mediator-invitation</code>.</p>
 <h2 id="didcomm-messages">DIDComm Messages<a class="headerlink" href="#didcomm-messages" title="Permanent link">&para;</a></h2>
-<p>See <a href="https://github.com/hyperledger/aries-rfcs/blob/master/features/0211-route-coordination/README.md">Aries RFC 0211: Coordinate Mediation Protocol</a>.</p>
+<p>See <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0211-route-coordination/README.md">Aries RFC 0211: Coordinate Mediation Protocol</a>.</p>
 <h2 id="admin-api">Admin API<a class="headerlink" href="#admin-api" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>GET mediation/requests</code></li>

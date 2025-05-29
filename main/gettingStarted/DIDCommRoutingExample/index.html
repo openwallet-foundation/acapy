@@ -2513,7 +2513,7 @@
 <h1 id="diocomm-routing-an-example">DIOComm Routing - an example<a class="headerlink" href="#diocomm-routing-an-example" title="Permanent link">&para;</a></h1>
 <p>In this example, we'll walk through an example of complex DIDComm routing, outlining some of the possibilities that can be implemented. Do realize that
 the vast majority of the work is already done for you if you are just using ACA-Py. You have to define the setup your agents will use, and ACA-Py will take care of all the messy details described below.</p>
-<p>We'll start with the Alice and Bob example from the <a href="https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0094-cross-domain-messaging">Cross Domain Messaging</a> Aries RFC.</p>
+<p>We'll start with the Alice and Bob example from the <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0094-cross-domain-messaging">Cross Domain Messaging</a> Aries RFC.</p>
 <p><img alt="Cross Domain Messaging Example" src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/concepts/0094-cross-domain-messaging/domains.jpg" title="Cross Domain Messaging Example" /></p>
 <p>What are the DIDs involved, what's in their DIDDocs, and what communications are happening between the agents as the connections are made?</p>
 <h2 id="the-scenario">The Scenario<a class="headerlink" href="#the-scenario" title="Permanent link">&para;</a></h2>
@@ -2528,7 +2528,7 @@ the vast majority of the work is already done for you if you are just using ACA-
 </ul>
 <p>That's a lot more than just the Bob and Alice relationship we usually think about!</p>
 <h2 id="diddoc-data">DIDDoc Data<a class="headerlink" href="#diddoc-data" title="Permanent link">&para;</a></h2>
-<p>From a routing perspective the important information in the DIDDoc is the following (as defined in the <a href="https://github.com/hyperledger/aries-rfcs/blob/master/features/0067-didcomm-diddoc-conventions/README.md">DIDDoc Conventions Aries RFC</a>):</p>
+<p>From a routing perspective the important information in the DIDDoc is the following (as defined in the <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0067-didcomm-diddoc-conventions/README.md">DIDDoc Conventions Aries RFC</a>):</p>
 <ul>
 <li>The public keys for agents referenced in the routing</li>
 <li>The <code>services</code> of type <code>did-communication</code>, including:</li>
@@ -2574,7 +2574,7 @@ the vast majority of the work is already done for you if you are just using ACA-
 <li>The <code>recipientKeys</code> entry is a key reference for Bob's Routing Agent specifically for the Agency.</li>
 <li>The <code>routingKeys</code> array is empty.</li>
 </ul>
-<p>The null <code>serviceEndpoint</code> for Bob's iPhone is worth a comment. Mobile apps work by sending requests to servers, but cannot be accessed directly from a server. A DIDComm mechanism (<a href="https://github.com/hyperledger/aries-rfcs/tree/master/features/0092-transport-return-route">Transports Return Route</a>) enables a server to send messages to a Mobile agent by putting the messages into the response to a request from the mobile agent. While not formalized in an Aries RFC (yet), cloud agents can use mobile platforms' (Apple and Google) notification mechanisms to trigger a user interface event.</p>
+<p>The null <code>serviceEndpoint</code> for Bob's iPhone is worth a comment. Mobile apps work by sending requests to servers, but cannot be accessed directly from a server. A DIDComm mechanism (<a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0092-transport-return-route">Transports Return Route</a>) enables a server to send messages to a Mobile agent by putting the messages into the response to a request from the mobile agent. While not formalized in an Aries RFC (yet), cloud agents can use mobile platforms' (Apple and Google) notification mechanisms to trigger a user interface event.</p>
 <h2 id="preparing-bobs-diddoc-for-alice">Preparing Bob's DIDDoc for Alice<a class="headerlink" href="#preparing-bobs-diddoc-for-alice" title="Permanent link">&para;</a></h2>
 <p>Given that background, let's go through the sequence of events and messages that occur in building a DIDDoc for Bob's edge agent to send to Alice's edge agent. We'll start the sequence with all of the Agents in place as the bootstrapping of the Agency, Routing Agent and Bob's iPhone is trickier than we need to go through here. We'll call that an "exercise left for the reader".</p>
 <p>We'll start the process with Alice sending an out of band connection invitation message to Bob, e.g. through a QR code or a link in an email. Here's one possible sequence for creating the DIDDoc. Note that there are other ways this could be done:</p>

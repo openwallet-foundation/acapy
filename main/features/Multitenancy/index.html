@@ -2824,7 +2824,7 @@
 
 <h1 id="multi-tenancy-in-aca-py">Multi-tenancy in ACA-Py <!-- omit in toc --><a class="headerlink" href="#multi-tenancy-in-aca-py" title="Permanent link">&para;</a></h1>
 <p>Most deployments of ACA-Py use a single wallet for all operations. This means all connections, credentials, keys, and everything else is stored in the same wallet and shared between all controllers of the agent. Multi-tenancy in ACA-Py allows multiple tenants to use the same ACA-Py instance with a different context. All tenants get their own encrypted wallet that only holds their own data.</p>
-<p>This allows ACA-Py to be used for a wider range of use cases. One use case could be a company that creates a wallet for each department. Each department has full control over the actions they perform while having a shared instance for easy maintenance. Another use case could be for a <a href="https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0566-issuer-hosted-custodidal-agents/README.md">Issuer-Hosted Custodial Agent</a>. Sometimes it is required to host the agent on behalf of someone else.</p>
+<p>This allows ACA-Py to be used for a wider range of use cases. One use case could be a company that creates a wallet for each department. Each department has full control over the actions they perform while having a shared instance for easy maintenance. Another use case could be for a <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0566-issuer-hosted-custodidal-agents/README.md">Issuer-Hosted Custodial Agent</a>. Sometimes it is required to host the agent on behalf of someone else.</p>
 <h2 id="table-of-contents">Table of Contents <!-- omit in toc --><a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="#general-concept">General Concept</a></li>
@@ -2911,7 +2911,7 @@
 </code></pre></div>
 <h2 id="message-routing">Message Routing<a class="headerlink" href="#message-routing" title="Permanent link">&para;</a></h2>
 <p>In multi-tenant mode, when ACA-Py receives a message from another agent, it will need to determine which tenant to route the message to. ACA-Py defines two types of routing methods, mediation and relaying.</p>
-<p>See the <a href="https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0046-mediators-and-relays/README.md">Mediators and Relays</a> RFC for an in-depth description of the difference between the two concepts.</p>
+<p>See the <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0046-mediators-and-relays/README.md">Mediators and Relays</a> RFC for an in-depth description of the difference between the two concepts.</p>
 <h3 id="relaying">Relaying<a class="headerlink" href="#relaying" title="Permanent link">&para;</a></h3>
 <p>In multi-tenant mode, ACA-Py still exposes a single endpoint for each transport. This means it can't route messages to sub wallets based on the endpoint. To resolve this the base wallet acts as a relay for all sub wallets. As can be seen in the architecture diagram above, all messages go through the base wallet. whenever a sub wallet creates a new key or connection, it will be registered at the base wallet. This allows the base wallet to look at the recipient keys for a message and determine which wallet it needs to route to.</p>
 <h3 id="mediation">Mediation<a class="headerlink" href="#mediation" title="Permanent link">&para;</a></h3>

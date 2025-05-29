@@ -2400,11 +2400,11 @@
 
 
 <h1 id="reusing-a-connection">Reusing a Connection<a class="headerlink" href="#reusing-a-connection" title="Permanent link">&para;</a></h1>
-<p>The Aries <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband">RFC 0434 Out of Band</a> protocol enables the concept of reusing a
-connection such that when using <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0023-did-exchange">RFC 0023 DID Exchange</a> to establish a
+<p>The Aries <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband">RFC 0434 Out of Band</a> protocol enables the concept of reusing a
+connection such that when using <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0023-did-exchange">RFC 0023 DID Exchange</a> to establish a
 connection with an agent with which you already have a connection, you can reuse
 the existing connection instead of creating a new one. This is something you
-couldn't do a with the older <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0160-connection-protocol">RFC 0160 Connection Protocol</a> that we used in the
+couldn't do a with the older <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0160-connection-protocol">RFC 0160 Connection Protocol</a> that we used in the
 early days of Aries. It was a pain, and made for a lousy user experience, as on
 every visit to an existing contact, the invitee got a new connection.</p>
 <p>The requirements on your invitations (such as in the example below) are:</p>
@@ -2433,9 +2433,9 @@ agents (the inviter and the invitee) that establish connections with one another
 <li>The Wallet user is using a browser on the Issuers website and gets to the
   point where they are going to be offered a credential. As part of that flow,
   they are presented with a QR code that they scan with their wallet app.</li>
-<li>The QR contains an <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband#invitation-httpsdidcommorgout-of-bandverinvitation">RFC 0434 Out of Band invitation</a> to connect that the
+<li>The QR contains an <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband#invitation-httpsdidcommorgout-of-bandverinvitation">RFC 0434 Out of Band invitation</a> to connect that the
   Wallet processes as the <em>invitee</em>.</li>
-<li>The Wallet uses the information in the invitation to send an <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0023-did-exchange#1-exchange-request">RFC 0023 DID Exchange request</a>
+<li>The Wallet uses the information in the invitation to send an <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0023-did-exchange#1-exchange-request">RFC 0023 DID Exchange request</a>
   DIDComm message back to the Issuer to initiate establishing a connection.</li>
 <li>The Issuer responds back to the <code>request</code> with a <code>response</code> message, and the
   connection is established.</li>
@@ -2446,12 +2446,12 @@ agents (the inviter and the invitee) that establish connections with one another
 <li>The Wallet recognizes (based on the DID in the <code>services</code> item in the
   invitation -- see example below) that it already has a connection to the
   Issuer, so instead of sending a DID Exchange <code>request</code> message back to the
-  Issuer, they send an <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband#reuse-messages">RFC 0434 Out of Band reuse</a> DIDComm message, and both
+  Issuer, they send an <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband#reuse-messages">RFC 0434 Out of Band reuse</a> DIDComm message, and both
   parties know to use the existing connection.</li>
 <li>Had the Wallet used the DID Exchange <code>request</code> message, a new connection
     would have been established.</li>
 </ul>
-<p>The <a href="https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband">RFC 0434 Out of Band</a> protocol requirement enables <code>reuse</code> message by the
+<p>The <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband">RFC 0434 Out of Band</a> protocol requirement enables <code>reuse</code> message by the
 invitee (the Wallet in the flow above) is that the <code>service</code> in the invitation
 <strong>MUST</strong> be a resolvable DID that is the same in all of the invitations. In the
 example invitation above, the DID is a <code>did:sov</code> DID that is resolvable on a public
