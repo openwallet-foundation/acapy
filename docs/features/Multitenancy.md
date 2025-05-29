@@ -2,7 +2,7 @@
 
 Most deployments of ACA-Py use a single wallet for all operations. This means all connections, credentials, keys, and everything else is stored in the same wallet and shared between all controllers of the agent. Multi-tenancy in ACA-Py allows multiple tenants to use the same ACA-Py instance with a different context. All tenants get their own encrypted wallet that only holds their own data.
 
-This allows ACA-Py to be used for a wider range of use cases. One use case could be a company that creates a wallet for each department. Each department has full control over the actions they perform while having a shared instance for easy maintenance. Another use case could be for a [Issuer-Hosted Custodial Agent](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0566-issuer-hosted-custodidal-agents/README.md). Sometimes it is required to host the agent on behalf of someone else.
+This allows ACA-Py to be used for a wider range of use cases. One use case could be a company that creates a wallet for each department. Each department has full control over the actions they perform while having a shared instance for easy maintenance. Another use case could be for a [Issuer-Hosted Custodial Agent](https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0566-issuer-hosted-custodidal-agents/README.md). Sometimes it is required to host the agent on behalf of someone else.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -106,7 +106,7 @@ The mode used can be specified when creating a wallet using the `key_management_
 
 In multi-tenant mode, when ACA-Py receives a message from another agent, it will need to determine which tenant to route the message to. ACA-Py defines two types of routing methods, mediation and relaying.
 
-See the [Mediators and Relays](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0046-mediators-and-relays/README.md) RFC for an in-depth description of the difference between the two concepts.
+See the [Mediators and Relays](https://github.com/decentralized-identity/aries-rfcs/blob/main/concepts/0046-mediators-and-relays/README.md) RFC for an in-depth description of the difference between the two concepts.
 
 ### Relaying
 

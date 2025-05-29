@@ -902,7 +902,7 @@ Much progress has been made on `did:peer` support in this release, with the hand
 
 [Qualified DIDs]: https://aca-py.org/latest/features/QualifiedDIDs/
 [Credo-TS]:  https://github.com/openwallet-foundation/credo-ts
-[Aries Interop Profile v2.0]: https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20
+[Aries Interop Profile v2.0]: https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20
 
 Work continues towards supporting ledger agnostic [AnonCreds], and the new [Hyperledger AnonCreds Rust] library. Some of that work is in this release, the rest will be in the next release.
 
@@ -1852,7 +1852,7 @@ case is that an ACA-Py instance publishes a public DID on a ledger with a
 DIDComm `service` in the DIDDoc. Other agents resolve that DID, and attempt to
 establish a connection with the ACA-Py instance using the `service` endpoint.
 This is called an "implicit" connection in [RFC 0023 DID
-Exchange](https://github.com/hyperledger/aries-rfcs/blob/main/features/0023-did-exchange/README.md).
+Exchange](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0023-did-exchange/README.md).
 
 #### PR [\#1913](https://github.com/hyperledger/aries-cloudagent-python/pull/1913) -- Unrevealed attributes in presentations
 
@@ -2298,7 +2298,7 @@ However, anyone else using an external queue should be aware of the impact of th
 included in the release.
 
 For those that have an existing deployment of ACA-Py with long-lasting connection records, an upgrade is needed to use
-[RFC 434 Out of Band](https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband) and the "reuse connection" as the invitee. In PR #1453
+[RFC 434 Out of Band](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband) and the "reuse connection" as the invitee. In PR #1453
 (details below) a performance improvement was made when finding a connection for reuse. The new approach
 (adding a tag to the connection to enable searching) applies only to connections made using this ACA-Py
 release and later, and "as-is" connections made using earlier releases of ACA-Py will not be found as reuse
@@ -2474,9 +2474,9 @@ Includes some cleanups of JSON-LD Verifiable Credentials and Verifiable Presenta
 Another significant release, this version adds support for multiple new protocols, credential formats, and extension methods.
 
 - Support for [W3C Standard Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) based on JSON-LD using LD-Signatures and [BBS+ Signatures](https://w3c-ccg.github.io/ldp-bbs2020/), contributed by [Animo Solutions](https://animo.id/) - [#1061](https://github.com/hyperledger/aries-cloudagent-python/pull/1061)
-- [Present Proof V2](https://github.com/hyperledger/aries-rfcs/tree/master/features/0454-present-proof-v2) including support for [DIF Presentation Exchange](https://identity.foundation/presentation-exchange/) - [#1125](https://github.com/hyperledger/aries-cloudagent-python/pull/1125)
+- [Present Proof V2](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0454-present-proof-v2) including support for [DIF Presentation Exchange](https://identity.foundation/presentation-exchange/) - [#1125](https://github.com/hyperledger/aries-cloudagent-python/pull/1125)
 - Pluggable DID Resolver (with a did:web resolver) with fallback to an external DID universal resolver, contributed by [Indicio](https://indicio.tech/) - [#1070](https://github.com/hyperledger/aries-cloudagent-python/pull/1070)
-- Updates and extensions to ledger transaction endorsement via the [Sign Attachment Protocol](https://github.com/hyperledger/aries-rfcs/pull/586), contributed by [AyanWorks](https://www.ayanworks.com/) - [#1134](https://github.com/hyperledger/aries-cloudagent-python/pull/1134), [#1200](https://github.com/hyperledger/aries-cloudagent-python/pull/1200)
+- Updates and extensions to ledger transaction endorsement via the [Sign Attachment Protocol](https://github.com/decentralized-identity/aries-rfcs/pull/586), contributed by [AyanWorks](https://www.ayanworks.com/) - [#1134](https://github.com/hyperledger/aries-cloudagent-python/pull/1134), [#1200](https://github.com/hyperledger/aries-cloudagent-python/pull/1200)
 - Upgrades to Demos to add support for Credential Exchange 2.0 and W3C Verifiable Credentials [#1235](https://github.com/hyperledger/aries-cloudagent-python/pull/1235)
 - Alpha support for the Indy/Aries Shared Components ([indy-vdr](https://github.com/hyperledger/indy-vdr), [indy-credx](https://github.com/hyperledger/indy-shared-rs) and [aries-askar](https://github.com/hyperledger/aries-askar)), which enable running ACA-Py without using Indy-SDK, while still supporting the use of Indy as a ledger, and Indy AnonCreds verifiable credentials [#1267](https://github.com/hyperledger/aries-cloudagent-python/pull/1267)
 - A new event bus for distributing internally generated ACA-Py events to controllers and other listeners, contributed by [Indicio](https://indicio.tech/) - [#1063](https://github.com/hyperledger/aries-cloudagent-python/pull/1063)
@@ -2495,7 +2495,7 @@ This is a significant release of ACA-Py with several new features, as well as ch
 
 #### Mediator support
 
-While ACA-Py had previous support for a basic routing protocol, this was never fully developed or used in practice. Starting with this release, inbound and outbound connections can be established through a mediator agent using the Aries [Mediator Coordination Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0211-route-coordination). This work was initially contributed by Adam Burdett and Daniel Bluhm of [Indicio](https://indicio.tech/) on behalf of [SICPA](https://sicpa.com/). [Read more about mediation support](docs/features/Mediation.md).
+While ACA-Py had previous support for a basic routing protocol, this was never fully developed or used in practice. Starting with this release, inbound and outbound connections can be established through a mediator agent using the Aries [Mediator Coordination Protocol](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0211-route-coordination). This work was initially contributed by Adam Burdett and Daniel Bluhm of [Indicio](https://indicio.tech/) on behalf of [SICPA](https://sicpa.com/). [Read more about mediation support](docs/features/Mediation.md).
 
 #### Multi-Tenancy support
 
@@ -2503,11 +2503,11 @@ Started by [BMW](https://bmw.com/) and completed by [Animo Solutions](https://an
 
 #### New connection protocol(s)
 
-In addition to the Aries 0160 Connections RFC, ACA-Py now supports the Aries [DID Exchange Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange) for connection establishment and reuse, as well as the Aries [Out-of-Band Protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0434-outofband) for representing connection invitations and other pre-connection requests.
+In addition to the Aries 0160 Connections RFC, ACA-Py now supports the Aries [DID Exchange Protocol](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0023-did-exchange) for connection establishment and reuse, as well as the Aries [Out-of-Band Protocol](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband) for representing connection invitations and other pre-connection requests.
 
 #### Issue-Credential v2
 
-This release includes an initial implementation of the Aries [Issue Credential v2](https://github.com/hyperledger/aries-rfcs/tree/master/features/0453-issue-credential-v2) protocol.
+This release includes an initial implementation of the Aries [Issue Credential v2](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0453-issue-credential-v2) protocol.
 
 #### Notable changes for administrators
 
@@ -2517,7 +2517,7 @@ This release includes an initial implementation of the Aries [Issue Credential v
 
 - When running `aca-py provision`, an existing wallet will not be removed and re-created unless the `--recreate-wallet` argument is provided. This is a breaking change from previous versions.
 
-- The logic around revocation intervals has been tightened up in accordance with [Present Proof Best Practices](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0441-present-proof-best-practices).
+- The logic around revocation intervals has been tightened up in accordance with [Present Proof Best Practices](https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0441-present-proof-best-practices).
 
 #### Notable changes for plugin writers
 
@@ -2665,7 +2665,7 @@ async with profile.session() as session:
 - Add a command line argument to preserve connection exchange records [#355](https://github.com/hyperledger/aries-cloudagent-python/pull/355)
 - Allow custom credential IDs to be specified by the controller in the issue-credential protocol [#384](https://github.com/hyperledger/aries-cloudagent-python/pull/384)
 - Handle send timeouts in the admin server websocket implementation [#377](https://github.com/hyperledger/aries-cloudagent-python/pull/377)
-- [Aries RFC 0348](https://github.com/hyperledger/aries-rfcs/tree/master/features/0348-transition-msg-type-to-https): Support the 'didcomm.org' message type prefix for incoming messages [#379](https://github.com/hyperledger/aries-cloudagent-python/pull/379)
+- [Aries RFC 0348](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0348-transition-msg-type-to-https): Support the 'didcomm.org' message type prefix for incoming messages [#379](https://github.com/hyperledger/aries-cloudagent-python/pull/379)
 - Add support for additional postgres wallet schemes such as "MultiWalletDatabase" [#378](https://github.com/hyperledger/aries-cloudagent-python/pull/378)
 - Updates to the demo agents and documentation to support demos using the OpenAPI interface [#371](https://github.com/hyperledger/aries-cloudagent-python/pull/371), [#375](https://github.com/hyperledger/aries-cloudagent-python/pull/375), [#376](https://github.com/hyperledger/aries-cloudagent-python/pull/376), [#382](https://github.com/hyperledger/aries-cloudagent-python/pull/382), [#383](https://github.com/hyperledger/aries-cloudagent-python/pull/376), [#382](https://github.com/hyperledger/aries-cloudagent-python/pull/383)
 - Add a new flag for preventing writes to the ledger [#364](https://github.com/hyperledger/aries-cloudagent-python/pull/364)

@@ -229,18 +229,18 @@ To run specific tests pass parameters as defined by [pytest](https://docs.pytest
 
 ### Running Aries Agent Test Harness Tests
 
-You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).
+You can run a full suite of integration tests using the [Aries Agent Test Harness (AATH)](https://github.com/openwallet-foundation/owl-agent-test-harness).
 
 Check out and run AATH tests as follows (this tests the aca-py `main` branch):
 
 ```bash
-git clone https://github.com/hyperledger/aries-agent-test-harness.git
+git clone https://github.com/openwallet-foundation/owl-agent-test-harness.git
 cd aries-agent-test-harness
 ./manage build -a acapy-main
 ./manage run -d acapy-main -t @AcceptanceTest -t ~@wip
 ```
 
-The `manage` script is described in detail [here](https://github.com/hyperledger/aries-agent-test-harness#the-manage-bash-script), including how to modify the AATH code to run the tests against your aca-py repo/branch.
+The `manage` script is described in detail [here](https://github.com/openwallet-foundation/owl-agent-test-harness#the-manage-bash-script), including how to modify the AATH code to run the tests against your aca-py repo/branch.
 
 ## Development Workflow
 

@@ -4,7 +4,7 @@ Integration tests for ACA-Py are implemented using Behave functional tests to dr
 
 If you are new to the ACA-Py integration test suite, this [video](https://youtu.be/AbuPg4J8Pd4) from ACA-Py Maintainer [@ianco](https://github.com/ianco) describes
 the Integration Tests in ACA-Py, how to run them and how to add more tests. See also the video at the end of this document about running
-[Aries Agent Test Harness](https://github.com/hyperledger/aries-agent-test-harness) (AATH) tests before you submit your pull requests. Note
+[Aries Agent Test Harness](https://github.com/openwallet-foundation/owl-agent-test-harness) (AATH) tests before you submit your pull requests. Note
 that the relevant AATH tests are now run as part of the tests run when submitting a code PR for ACA-Py.
 
 ## Getting Started
@@ -109,12 +109,12 @@ Note: The `bbs` library may not install on ARM (i.e. aarch64 or  arm64) architec
 
 ## ACA-Py Integration Tests vs Aries Agent Test Harness (AATH)
 
-ACA-Py Behave tests are based on the interoperability tests that are implemented in the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).  Both use [Behave (Gherkin)](https://behave.readthedocs.io/en/stable/) to execute tests against a running ACA-Py agent (or in the case of AATH, against any compatible Aries agent), however the ACA-Py integration tests focus on ACA-Py specific features.
+ACA-Py Behave tests are based on the interoperability tests that are implemented in the [Aries Agent Test Harness (AATH)](https://github.com/openwallet-foundation/owl-agent-test-harness).  Both use [Behave (Gherkin)](https://behave.readthedocs.io/en/stable/) to execute tests against a running ACA-Py agent (or in the case of AATH, against any compatible Aries agent), however the ACA-Py integration tests focus on ACA-Py specific features.
 
 AATH:
 
 - Main purpose is to test interoperability between Aries agents
-- Implements detailed tests based on [Aries RFC's](https://github.com/hyperledger/aries-rfcs) (runs different scenarios, tests exception paths, etc.)
+- Implements detailed tests based on [Aries RFC's](https://github.com/decentralized-identity/aries-rfcs) (runs different scenarios, tests exception paths, etc.)
 - Runs Aries agents using Docker images (agents run for the duration of the tests)
 - Uses a standard "backchannel" to support integration of any Aries agent
 
@@ -130,7 +130,7 @@ ACA-Py integration tests:
 
 ## Configuration-driven Tests
 
-ACA-Py integration tests use the same configuration approach as AATH, documented [here](https://github.com/hyperledger/aries-agent-test-harness/blob/master/CONFIGURE-CRED-TYPES.md).
+ACA-Py integration tests use the same configuration approach as AATH, documented [here](https://github.com/openwallet-foundation/owl-agent-test-harness/blob/main/CONFIGURE-CRED-TYPES.md).
 
 In addition to support for external schemas, credential data etc, the ACA-Py integration tests support configuration of the ACA-Py agents that are used to run the test.  For example:
 
@@ -186,7 +186,7 @@ ACA-Py integration tests support the following environment-driven configuration:
 
 ## Running specific test scenarios
 
-Behave tests are tagged using the same [standard tags as used in AATH](https://github.com/hyperledger/aries-agent-test-harness#test-tags).
+Behave tests are tagged using the same [standard tags as used in AATH](https://github.com/openwallet-foundation/owl-agent-test-harness#test-tags).
 
 To run a specific set of ACA-Py integration tests (or exclude specific tests):
 

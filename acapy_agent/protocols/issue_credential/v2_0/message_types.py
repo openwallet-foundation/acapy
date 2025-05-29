@@ -4,7 +4,7 @@ from ...didcomm_prefix import DIDCommPrefix
 from .messages.cred_format import V20CredFormat
 
 SPEC_URI = (
-    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "https://github.com/decentralized-identity/aries-rfcs/tree/"
     "cd27fc64aa2805f756a118043d7c880354353047/features/0453-issue-credential-v2"
 )
 

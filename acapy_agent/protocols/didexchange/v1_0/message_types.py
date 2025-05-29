@@ -5,7 +5,7 @@ from ...didcomm_prefix import DIDCommPrefix
 from ..definition import versions
 
 SPEC_URI = (
-    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "https://github.com/decentralized-identity/aries-rfcs/tree/"
     "25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
 )
 # Default Version
