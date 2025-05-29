@@ -16,7 +16,7 @@
     "description" : "Revocation registry management",
     "externalDocs" : {
       "description" : "Overview",
-      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation"
     }
   }, {
     "name" : "AnonCreds - Schemas",
@@ -40,7 +40,7 @@
     "description" : "Simple messaging",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/527849ec3aa2a8fd47a7bb6c57f918ff8bcb5e8c/features/0095-basic-message"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/527849ec3aa2a8fd47a7bb6c57f918ff8bcb5e8c/features/0095-basic-message"
     }
   }, {
     "name" : "connection",
@@ -50,7 +50,7 @@
     "description" : "Credential definition operations",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/indy-node/blob/master/design/anoncreds.md#cred_def"
+      "url" : "https://github.com/hyperledger/indy-node/tree/main/design/anoncreds.md#cred_def"
     }
   }, {
     "name" : "credentials",
@@ -71,28 +71,28 @@
     "description" : "Connection management via DID exchange",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
     }
   }, {
     "name" : "did-rotate",
     "description" : "Rotate a DID",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/main/features/0794-did-rotate"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0794-did-rotate"
     }
   }, {
     "name" : "discover-features",
     "description" : "Feature discovery",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0031-discover-features"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0031-discover-features"
     }
   }, {
     "name" : "discover-features v2.0",
     "description" : "Feature discovery v2",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0557-discover-features-v2"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0557-discover-features-v2"
     }
   }, {
     "name" : "endorse-transaction",
@@ -105,14 +105,14 @@
     "description" : "Credential issue v1.0",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential"
     }
   }, {
     "name" : "issue-credential v2.0",
     "description" : "Credential issue v2.0",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/cd27fc64aa2805f756a118043d7c880354353047/features/0453-issue-credential-v2"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/cd27fc64aa2805f756a118043d7c880354353047/features/0453-issue-credential-v2"
     }
   }, {
     "name" : "jsonld",
@@ -133,7 +133,7 @@
     "description" : "Mediation management",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/fa8dc4ea1e667eb07db8f9ffeaf074a4455697c0/features/0211-route-coordination"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/fa8dc4ea1e667eb07db8f9ffeaf074a4455697c0/features/0211-route-coordination"
     }
   }, {
     "name" : "multitenancy",
@@ -143,21 +143,21 @@
     "description" : "Out-of-band connections",
     "externalDocs" : {
       "description" : "Design",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/2da7fc4ee043effa3a9960150e7ba8c9a4628b68/features/0434-outofband"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/2da7fc4ee043effa3a9960150e7ba8c9a4628b68/features/0434-outofband"
     }
   }, {
     "name" : "present-proof v1.0",
     "description" : "Proof presentation v1.0",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof"
     }
   }, {
     "name" : "present-proof v2.0",
     "description" : "Proof presentation v2.0",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/eace815c3e8598d4a8dd7881d8c731fdb2bcc0aa/features/0454-present-proof-v2"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/eace815c3e8598d4a8dd7881d8c731fdb2bcc0aa/features/0454-present-proof-v2"
     }
   }, {
     "name" : "resolver",
@@ -171,14 +171,14 @@
     "description" : "Revocation registry management",
     "externalDocs" : {
       "description" : "Overview",
-      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation"
     }
   }, {
     "name" : "schema",
     "description" : "Schema operations",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/indy-node/blob/master/design/anoncreds.md#schema"
+      "url" : "https://github.com/hyperledger/indy-node/blob/main/design/anoncreds.md#schema"
     }
   }, {
     "name" : "settings",
@@ -188,7 +188,7 @@
     "description" : "Trust-ping over connection",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/527849ec3aa2a8fd47a7bb6c57f918ff8bcb5e8c/features/0048-trust-ping"
+      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/527849ec3aa2a8fd47a7bb6c57f918ff8bcb5e8c/features/0048-trust-ping"
     }
   }, {
     "name" : "vc-api",
@@ -202,7 +202,7 @@
     "description" : "DID and tag policy management",
     "externalDocs" : {
       "description" : "Design",
-      "url" : "https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage"
+      "url" : "https://github.com/hyperledger/indy-sdk/tree/main/docs/design/003-wallet-storage"
     }
   } ],
   "security" : [ {

@@ -2,7 +2,7 @@
 # Behave Step Definitions for the Connection Protocol 0160
 # used to establish connections between Aries Agents.
 # 0160 connection-protocol RFC:
-# https://github.com/hyperledger/aries-rfcs/tree/9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol#0160-connection-protocol
+# https://github.com/decentralized-identity/aries-rfcs/tree/9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol#0160-connection-protocol
 #
 # Current AIP version level of test coverage: 1.0
 #

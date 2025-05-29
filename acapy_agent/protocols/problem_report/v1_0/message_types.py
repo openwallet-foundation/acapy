@@ -3,7 +3,7 @@
 from ...didcomm_prefix import DIDCommPrefix
 
 SPEC_URI = (
-    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "https://github.com/decentralized-identity/aries-rfcs/tree/"
     "437d80d752d667ee00b1b6446892980ebda86da3/features/0035-report-problem"
 )
 

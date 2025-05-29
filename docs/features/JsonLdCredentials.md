@@ -29,7 +29,7 @@ The rest of this guide assumes some basic understanding of W3C Verifiable Creden
 
 ### BBS+
 
-BBS+ credentials offer a lot of privacy preserving features over non-ZKP credentials. Therefore we recommend to always use BBS+ credentials over non-ZKP credentials. To get started with BBS+ credentials it is recommended to at least read [RFC 0646: W3C Credential Exchange using BBS+ Signatures](https://github.com/hyperledger/aries-rfcs/blob/master/features/0646-bbs-credentials/README.md) for a general overview.
+BBS+ credentials offer a lot of privacy preserving features over non-ZKP credentials. Therefore we recommend to always use BBS+ credentials over non-ZKP credentials. To get started with BBS+ credentials it is recommended to at least read [RFC 0646: W3C Credential Exchange using BBS+ Signatures](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0646-bbs-credentials/README.md) for a general overview.
 
 Some other resources that can help you get started with BBS+ credentials:
 
@@ -111,7 +111,7 @@ The above call will return a did that looks something like this: `did:key:zUC7Fs
 
 > Issuing JSON-LD credentials is only possible with the issue credential v2 protocol (`/issue-credential-2.0`)
 
-The format used for exchanging JSON-LD credentials is defined in [RFC 0593: JSON-LD Credential Attachment format](https://github.com/hyperledger/aries-rfcs/tree/master/features/0593-json-ld-cred-attach/README.md). The API in ACA-Py exactly matches the formats as described in this RFC, with the most important (from the ACA-Py API perspective) being [`aries/ld-proof-vc-detail@v1.0`](https://github.com/hyperledger/aries-rfcs/blob/master/features/0593-json-ld-cred-attach/README.md#ld-proof-vc-detail-attachment-format). Read the RFC to see the exact properties required to construct a valid Linked Data Proof VC Detail.
+The format used for exchanging JSON-LD credentials is defined in [RFC 0593: JSON-LD Credential Attachment format](https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0593-json-ld-cred-attach/README.md). The API in ACA-Py exactly matches the formats as described in this RFC, with the most important (from the ACA-Py API perspective) being [`aries/ld-proof-vc-detail@v1.0`](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0593-json-ld-cred-attach/README.md#ld-proof-vc-detail-attachment-format). Read the RFC to see the exact properties required to construct a valid Linked Data Proof VC Detail.
 
 All endpoints in API use the `aries/ld-proof-vc-detail@v1.0`. We'll use the `/issue-credential-2.0/send` as an example, but it works the same for the other endpoints. In contrary to issuing indy credentials, JSON-LD credentials do not require a credential preview. All properties should be directly embedded in the credentials.
 
