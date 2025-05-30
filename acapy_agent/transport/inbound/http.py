@@ -5,6 +5,7 @@ import logging
 from aiohttp import web
 
 from ...messaging.error import MessageParseError
+from ...utils.server import remove_unwanted_headers
 from ..error import WireFormatParseError
 from ..wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
 from .base import BaseInboundTransport, InboundTransportSetupError
@@ -38,6 +39,7 @@ class HttpTransport(BaseInboundTransport):
         app = web.Application(**app_args)
         app.add_routes([web.get("/", self.invite_message_handler)])
         app.add_routes([web.post("/", self.inbound_message_handler)])
+        app.on_response_prepare.append(remove_unwanted_headers)
         return app
 
     async def start(self) -> None:

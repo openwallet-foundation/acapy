@@ -536,6 +536,20 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             assert response.status == 503
         await server.stop()
 
+    async def test_server_aiohttp_headers_removed(self):
+        settings = {
+            "admin.admin_insecure_mode": True,
+        }
+        server = await self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.headers.get("Server") is None
+
+        await server.stop()
+
     async def test_upgrade_middleware(self):
         profile = await create_test_profile()
         self.context = AdminRequestContext.test_context({}, profile)
