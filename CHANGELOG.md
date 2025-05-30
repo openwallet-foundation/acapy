@@ -133,7 +133,7 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - Add did:indy transaction version 2 support [\#3253](https://github.com/openwallet-foundation/acapy/pull/3253) [jamshale](https://github.com/jamshale)
   - :art: Deprecate count/start query params and implement limit/offset [\#3208](https://github.com/openwallet-foundation/acapy/pull/3208) [ff137](https://github.com/ff137)
   - :sparkles: Add ordering options to askar scan and fetch_all methods [\#3173](https://github.com/openwallet-foundation/acapy/pull/3173) [ff137](https://github.com/ff137)
--  "Updates/fixes to AnonCreds Processing
+-  Updates/fixes to AnonCreds Processing
   - :art: Fix swagger tag names for AnonCreds endpoints [\#3661](https://github.com/openwallet-foundation/acapy/pull/3661) [ff137](https://github.com/ff137)
   - :art: Add type hints to anoncreds module [\#3652](https://github.com/openwallet-foundation/acapy/pull/3652) [ff137](https://github.com/ff137)
   - :bug: Fix publishing all pending AnonCreds revocations [\#3626](https://github.com/openwallet-foundation/acapy/pull/3626) [ff137](https://github.com/ff137)
