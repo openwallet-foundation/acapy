@@ -6,7 +6,7 @@ In the past, ACA-Py has used "unqualified" DIDs by convention established early 
 
 For those familiar with the DID Core Specification, it is a stretch to refer to these unqualified DIDs as DIDs. Usage of these DIDs will be phased out, as dictated by [Aries RFC 0793: Unqualified DID Transition][rfc0793]. These DIDs will be phased out in favor of the `did:peer` DID Method. ACA-Py's support for this method and it's use in DID Exchange and DID Rotation is dictated below.
 
-[rfc0793]: https://github.com/hyperledger/aries-rfcs/blob/50d148b812c45af3fc847c1e7033b084683dceb7/features/0793-unqualfied-dids-transition/README.md
+[rfc0793]: https://github.com/decentralized-identity/aries-rfcs/blob/50d148b812c45af3fc847c1e7033b084683dceb7/features/0793-unqualfied-dids-transition/README.md
 
 ## DID Exchange
 

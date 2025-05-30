@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# based on code developed by Sovrin:  https://github.com/hyperledger/aries-acapy-plugin-toolbox
+# based on code developed by Sovrin:  https://github.com/hyperledger-aries/aries-acapy-plugin-toolbox
 
 # if a tails network is specified, there should be an associated ngrok as well ...
 if ! [ -z "$TAILS_NGROK_NAME" ]; then

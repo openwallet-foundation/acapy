@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# based on code developed by Sovrin:  https://github.com/hyperledger/aries-acapy-plugin-toolbox
+# based on code developed by Sovrin:  https://github.com/hyperledger-aries/aries-acapy-plugin-toolbox
 
 echo "using ngrok end point [$NGROK_NAME]"
 

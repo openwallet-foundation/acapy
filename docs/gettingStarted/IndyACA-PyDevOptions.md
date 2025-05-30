@@ -12,7 +12,7 @@ If you just want to build enterprise applications on top of the decentralized id
 
 If you want to build a mobile agent, there are open source options available, including [Bifold Wallet](https://github.com/openwallet-foundation/bifold-wallet), which is built on [Credo-TS](https://github.com/openwallet-foundation/credo-ts). Both are OpenWallet Projects.
 
-As a developer building applications that use/embed ACA-Py agents, you should join the [Aries Working Group](https://wiki.hyperledger.org/display/ARIES/Aries+Working+Group)'s weekly calls and watch the [aries-rfcs](https://github.com/hyperledger/aries-rfcs) repo to see what protocols are being added and extended. In some cases, you may need to create your own protocols to be added to this repository, and if you are looking for interoperability, you should specify those protocols in an open way, involving the community.
+As a developer building applications that use/embed ACA-Py agents, you should join the [ACA-Py Users Group (ACA-Pug)](https://lf-openwallet-foundation.atlassian.net/wiki/spaces/ACAPy/pages/36831233/ACA-PUG)'s bi-weekly calls and watch the [aries-rfcs](https://github.com/decentralized-identity/aries-rfcs) repo to see what protocols are being added and extended. In some cases, you may need to create your own protocols to be added to this repository, and if you are looking for interoperability, you should specify those protocols in an open way, involving the community.
 
 Note that if building apps is what you want to do, you don't need to do a deep dive into the inner workings of ACA-Py, ledgers or mobile wallets. You need to know the concepts, but it's not a requirement that you know the code base intimately.
 

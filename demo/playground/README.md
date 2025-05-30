@@ -108,7 +108,7 @@ docker compose up
 
 Currently, we show how to connect two agents with each other and send pings back and forth. This includes adding a tenant to the multi-tenanted instance and interacting with that tenant.
 
-A more involved test requires that you have a mediator service running and have the mediator's invitation URL. See [Aries Mediator Service](https://github.com/hyperledger/aries-mediator-service) for standing up a local instance and how to find the invitation URL. In this script, each agent requests mediation and we can see the mediator forwarding messages between the agents.
+A more involved test requires that you have a mediator service running and have the mediator's invitation URL. See [DIDComm Mediator Service](https://github.com/openwallet-foundation/didcomm-mediator-service) for standing up a local instance and how to find the invitation URL. In this script, each agent requests mediation and we can see the mediator forwarding messages between the agents.
 
 Assuming you have stood up both the mediator service and the playground, and have copied the mediator's invitation url...
 
