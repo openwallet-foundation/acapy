@@ -1,5 +1,75 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.3.1rc0
+
+### May 30, 2025
+
+ACA-Py 1.3.1 is a maintenance release that focuses on improving reliability, developer experience, and project documentation. It includes important fixes, updated links and metadata, and minor enhancements, particularly in support of long-term stability and governance clarity.
+
+This release includes:
+
+- Extensive updates to outdated or redirected links in documentation and code comments, moving references from Hyperledger to the OpenWallet Foundation and other current locations.
+- Updates to project governance documentation, including the Code of Conduct, Security Policy, and Maintainers Guide, aligned with the OpenWallet Foundation processes.
+- Logging improvements for better observability, especially around public DID handling, routing keys, and outbound websocket messages.
+- Demo enhancements, including migration to prompt_toolkit 3.x and fixes to markdown and code formatting issues.
+- A fix ensuring webhook events for V2 credential and presentation exchange are correctly emitted after database persistence, preventing race conditions.
+- Minor bug fixes and test coverage improvements, including regression test additions and index error handling.
+
+This release also prepares for future long-term support (LTS) work, with internal updates to Docker tags, versioning, and CI metadata. No breaking changes are introduced. As always, routine Dependabot updates were also included to keep dependencies current and secure.
+
+### 1.3.1 Deprecation Notices
+
+In the next ACA-Py release, we will be dropping from the core ACA-Py repository the [AIP 1.0] [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
+
+[ACA-Py Plugins]: https://plugins.aca-py.org
+[RFC 0160 Connections]: https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/
+[RFC 0037 Issue Credentials v1.0]: https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/
+[RFC 0037 Present Proof v1.0]: https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/
+[AIP 1.0]: https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10
+[AIP 2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/
+[RFC 0434 Out of Band]: https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/
+[RFC 0023 DID Exchange]: https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/
+[RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
+[RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
+[Connections Protocol Plugin]: https://plugins.aca-py.org/latest/connections/
+
+### 1.3.1 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.3.1 Categorized List of Pull Requests
+
+- **Logging and Observability Improvements**
+  - Add websocket outbound debug log [#3736](https://github.com/openwallet-foundation/acapy/pull/3736) [jamshale](https://github.com/jamshale)
+  - :loud_sound: Improve logging in Handlers [#3722](https://github.com/openwallet-foundation/acapy/pull/3722) [ff137](https://github.com/ff137)
+  - :loud_sound: Improve logging related to public DIDs and routing keys [#3719](https://github.com/openwallet-foundation/acapy/pull/3719) [ff137](https://github.com/ff137)
+- **VC-Related Bug Fixes and Behavior Corrections**
+  - :art: Add missing anoncreds field to V20CredExRecordDetail model [#3710](https://github.com/openwallet-foundation/acapy/pull/3710) [ff137](https://github.com/ff137)
+  - :bug: Fix v2 cred ex and pres ex webhook events to emit after db write [#3699](https://github.com/openwallet-foundation/acapy/pull/3699) [ff137](https://github.com/ff137)
+- **Test and CI Improvements**
+  - TestDeleteTails testcase fixes and indexError fix [#3727](https://github.com/openwallet-foundation/acapy/pull/3727) [ann-aot](https://github.com/ann-aot)
+  - Regress test to check #2818 issue [#3721](https://github.com/openwallet-foundation/acapy/pull/3721) [andrepestana-aot](https://github.com/andrepestana-aot)
+- **Dependency and Environment Updates**
+  - Remove unnecessary hash pinning [#3744](https://github.com/openwallet-foundation/acapy/pull/3744) [jamshale](https://github.com/jamshale)
+  - :arrow_up: Update lock file [#3720](https://github.com/openwallet-foundation/acapy/pull/3720) [ff137](https://github.com/ff137)
+- **Demo and Example Improvements**
+  - Demo: Change mediation connection to out-of-band [#3751](https://github.com/openwallet-foundation/acapy/pull/3751) [jamshale](https://github.com/jamshale)
+  - Feat(demo): migrate to prompt_toolkit 3.x (Fixes #3681) [#3713](https://github.com/openwallet-foundation/acapy/pull/3713) [andrepestana-aot](https://github.com/andrepestana-aot)
+- **Documentation, Governance, and Link Updates**
+  - Updates to links in the docs and code comments to URLs that have been redirected -- mostly from Hyperledger to OWF and DIF [#3750](https://github.com/openwallet-foundation/acapy/pull/3750) [swcurran](https://github.com/swcurran)
+  - Update the ACA-Py Security, Code of Conduct, and Maintainers Documents [#3749](https://github.com/openwallet-foundation/acapy/pull/3749) [swcurran](https://github.com/swcurran)
+  - Cleaned up more broken links and updates some code permalinks [#3748](https://github.com/openwallet-foundation/acapy/pull/3748) [swcurran](https://github.com/swcurran)
+  - Fix broken links in the aca-py.org site / documentation [#3745](https://github.com/openwallet-foundation/acapy/pull/3745) [swcurran](https://github.com/swcurran)
+  - Cleanup markdown errors in docs/demo/readme [#3734](https://github.com/openwallet-foundation/acapy/pull/3734) [swcurran](https://github.com/swcurran)
+  - :art: Fix codeblock typing in DIDResolution.md [#3730](https://github.com/openwallet-foundation/acapy/pull/3730) [ff137](https://github.com/ff137)
+- **Versioning and Release Support**
+  - Tag and Recreate ACA-Py LTS Release [#3735](https://github.com/openwallet-foundation/acapy/pull/3735) [pradeepp88](https://github.com/pradeepp88)
+  - Update images and tags to version 1.3.0 [#3708](https://github.com/openwallet-foundation/acapy/pull/3708) [jamshale](https://github.com/jamshale)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-05-30+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.3.0rc0 [\#3752](https://github.com/openwallet-foundation/acapy/pull/3752) [swcurran](https://github.com/swcurran)
+
 ## 1.3.0
 
 ### May 1, 2025
@@ -22,7 +92,7 @@ Significant work was also done in this release to improve the security and integ
 
 ### 1.3.0 Deprecation Notices
 
-- In the next ACA-Py release, we will be dropping from the core ACA-Py repository the [AIP 1.0] [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
+In the next ACA-Py release, we will be dropping from the core ACA-Py repository the [AIP 1.0] [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
 
 [ACA-Py Plugins]: https://plugins.aca-py.org
 [RFC 0160 Connections]: https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/
@@ -63,7 +133,7 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - Add did:indy transaction version 2 support [\#3253](https://github.com/openwallet-foundation/acapy/pull/3253) [jamshale](https://github.com/jamshale)
   - :art: Deprecate count/start query params and implement limit/offset [\#3208](https://github.com/openwallet-foundation/acapy/pull/3208) [ff137](https://github.com/ff137)
   - :sparkles: Add ordering options to askar scan and fetch_all methods [\#3173](https://github.com/openwallet-foundation/acapy/pull/3173) [ff137](https://github.com/ff137)
-- Updates/fixes to AnonCreds Processing
+-  Updates/fixes to AnonCreds Processing
   - :art: Fix swagger tag names for AnonCreds endpoints [\#3661](https://github.com/openwallet-foundation/acapy/pull/3661) [ff137](https://github.com/ff137)
   - :art: Add type hints to anoncreds module [\#3652](https://github.com/openwallet-foundation/acapy/pull/3652) [ff137](https://github.com/ff137)
   - :bug: Fix publishing all pending AnonCreds revocations [\#3626](https://github.com/openwallet-foundation/acapy/pull/3626) [ff137](https://github.com/ff137)
