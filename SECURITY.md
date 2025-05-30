@@ -55,9 +55,10 @@ The current security team is:
 | Name            | Email ID                   | OWF Discord Chat ID | Area/Specialty     |
 | --------------- | -------------------------- | ------------------- | ------------------ |
 | Stephen Curran  | swcurran@cloudcompass.ca   | swcurran            | Generalist         |
-| Emilaino Sune   | emiliano.sune@quartech.com | esune               | Python             |
+| Emiliano Sune   | emiliano.sune@quartech.com | esune               | Python             |
 | Wade Barnes     | wade@neoterictech.ca       | wadebarnes          | GHA and Deployment |
 | Mourits de Beer | mourits.debeer@didx.co.za  | friendlyfire137     | Python             |
+| Jamie Hale      | jamie.hale@quartech.com    | jamshale            | Python             |
 
 The security team for this project must include at least three project
 Maintainers that agree to carry out the following duties and responsibilities.
