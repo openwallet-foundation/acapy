@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
-**Last Update**: 2025-05-01, Release 1.3.0
+**Last Update**: 2025-05-30, Release 1.3.1rc0
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -69,7 +69,13 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | `did:web` | :white_check_mark: | Resolution only |
 | `did:key` | :white_check_mark: | |
 | `did:peer` | :white_check_mark:| Algorithms `2`/`3` and `4` |
+| `did:webvh` | :white_check_mark:| Requires the [didwebvh Plugin] for ACA-Py, and the use of a [didwebvh Server] instance. See the [didwebvh Plugin] documentation. Supports both DID registration, resolution and the use of [did:webvh] for VCs including the [did:webvh AnonCreds Method] |
 | Universal Resolver | :white_check_mark: | A [plug in](https://github.com/sicpa-dlab/acapy-resolver-universal) from [SICPA](https://www.sicpa.com/) is available that can be added to an ACA-Py installation to support a [universal resolver](https://dev.uniresolver.io/) capability, providing support for most DID methods in the [W3C DID Method Registry](https://www.w3.org/TR/did-extensions-methods/). |
+
+[didwebvh Plugin]: https://plugins.aca-py.org/latest/webvh/
+[didwebvh Server]: https://github.com/decentralized-identity/didwebvh-server-py
+[did:webvh]: https://identity.foundation/didwebvh/
+[did:webvh AnonCreds Method]: https://identity.foundation/didwebvh/anoncreds-method/
 
 ## Secure Storage Types
 
