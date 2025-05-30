@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.0"
+    "version" : "v1.3.1rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -21,7 +21,7 @@
     "description" : "Revocation registry management",
     "externalDocs" : {
       "description" : "Overview",
-      "url" : "https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation"
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
     },
     "name" : "AnonCreds - Revocation"
   }, {
@@ -55,7 +55,7 @@
     "description" : "Credential definition operations",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/indy-node/blob/main/design/anoncreds.md#cred_def"
+      "url" : "https://github.com/hyperledger/indy-node/tree/main/design/anoncreds.md#cred_def"
     },
     "name" : "credential-definition"
   }, {
@@ -176,7 +176,7 @@
     "description" : "Revocation registry management",
     "externalDocs" : {
       "description" : "Overview",
-      "url" : "https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation"
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
     },
     "name" : "revocation"
   }, {
@@ -207,7 +207,7 @@
     "description" : "DID and tag policy management",
     "externalDocs" : {
       "description" : "Design",
-      "url" : "https://github.com/hyperledger/indy-sdk/tree/main/docs/design/003-wallet-storage"
+      "url" : "https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage"
     },
     "name" : "wallet"
   } ],
@@ -15535,6 +15535,60 @@
         },
         "type" : "object"
       },
+      "V20CredExRecordAnonCreds" : {
+        "properties" : {
+          "created_at" : {
+            "description" : "Time of record creation",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          },
+          "cred_ex_anoncreds_id" : {
+            "description" : "Record identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "cred_ex_id" : {
+            "description" : "Corresponding v2.0 credential exchange record identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "cred_id_stored" : {
+            "description" : "Credential identifier stored in wallet",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "cred_request_metadata" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Credential request metadata for anoncreds holder",
+            "type" : "object"
+          },
+          "cred_rev_id" : {
+            "description" : "Credential revocation identifier within revocation registry",
+            "example" : "did:(method):3:CL:20:tag",
+            "type" : "string"
+          },
+          "rev_reg_id" : {
+            "description" : "Revocation registry identifier",
+            "example" : "did:(method):4:did:<method>:3:CL:20:tag:CL_ACCUM:0",
+            "type" : "string"
+          },
+          "state" : {
+            "description" : "Current record state",
+            "example" : "active",
+            "type" : "string"
+          },
+          "updated_at" : {
+            "description" : "Time of last record update",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "V20CredExRecordByFormat" : {
         "properties" : {
           "cred_issue" : {
@@ -15566,6 +15620,9 @@
       },
       "V20CredExRecordDetail" : {
         "properties" : {
+          "anoncreds" : {
+            "$ref" : "#/components/schemas/V20CredExRecordAnonCreds"
+          },
           "cred_ex_record" : {
             "allOf" : [ {
               "$ref" : "#/components/schemas/V20CredExRecord"
