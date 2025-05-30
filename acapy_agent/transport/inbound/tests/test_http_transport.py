@@ -106,6 +106,8 @@ class TestHttpTransport(AioHTTPTestCase):
 
         async with self.client.post("/", json=test_message) as resp:
             assert await resp.json() == {"response": "ok"}
+            # Assert that Server header is cleared
+            assert resp.headers.get("Server") is None
 
         await self.transport.stop()
 
