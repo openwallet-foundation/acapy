@@ -1488,7 +1488,7 @@ class DemoAgent:
                     "create_unique_did": json.dumps(create_unique_did),
                 }
                 payload = {
-                    "handshake_protocols": ["https://didcomm.org/connections/1.0"],
+                    "handshake_protocols": ["https://didcomm.org/didexchange/1.1"],
                     "use_public_did": public_did_connections,
                 }
                 if self.mediation:
@@ -1506,7 +1506,7 @@ class DemoAgent:
                 }
                 payload = {
                     "mediation_id": self.mediator_request_id,
-                    "handshake_protocols": ["https://didcomm.org/connections/1.1"],
+                    "handshake_protocols": ["https://didcomm.org/didexchange/1.1"],
                 }
                 invi_rec = await self.admin_POST(
                     "/out-of-band/create-invitation",
@@ -1516,7 +1516,7 @@ class DemoAgent:
             else:
                 invi_rec = await self.admin_POST(
                     "/out-of-band/create-invitation",
-                    {"handshake_protocols": ["https://didcomm.org/connections/1.1"]},
+                    {"handshake_protocols": ["https://didcomm.org/didexchange/1.1"]},
                 )
 
         return invi_rec
