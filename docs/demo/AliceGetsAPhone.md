@@ -54,19 +54,59 @@ There are a couple of extra steps you need to take to prepare to run the Faber a
 
 #### Install ngrok and jq
 
-[ngrok](https://ngrok.com/) is used to expose public endpoints for services running locally on your computer.
+[ngrok](https://ngrok.com/) and [Microsoft dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview) are two options for exposing public endpoints for services running locally on your computer. These two services provide connectivity from clients like mobile wallets to services running in development mode. Note that these kinds of forwarding systems are fundamentally insecure because the intermediating servers (run by ngrok and Microsoft) can see all traffic passing through them. So, use them carefully and only with development systems and test data.
 
-[jq](https://github.com/stedolan/jq) is a json parser that is used to automatically detect the endpoints exposed by ngrok.
+Putting APIs online is ngrok's primary business, so their product is a lot more finished than dev tunnels. For example, ngrok offers a Traffic Inspector with an easy-to-use interface and default data retention of 3 days (which can be extended with a paid plan). Dev tunnels also offers an inspection interface, but it is has a user interface that is similar to browser developer tools and retains data only while the inspector is open in a browser tab. Dev tunnels also requires either a Microsoft or a GitHub account.
 
-You can install ngrok from [here](https://ngrok.com/)
+ngrok is increasingly moving towards paid plans, while Microsoft seems committed to providing a free service for developers. So, we're providing both options for this demo. You can use dev tunnels for getting started with this repo and implementing small changes. If you plan to do more intense development, you should give ngrok a try to see if their solution is right for you.
 
-You can download jq releases [here](https://github.com/stedolan/jq/releases)
+[jq](https://github.com/stedolan/jq) is a json parser that is used to automatically detect the endpoints exposed by ngrok and dev tunnels.
 
-#### Expose services publicly using ngrok
+You can install ngrok from [here](https://ngrok.com/) or dev tunnels from [here](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started).
 
-Note that this is _only required when running docker on your local machine_. When you run on PWD a public endpoint for your agent is exposed automatically.
+You can download jq releases [here](https://github.com/stedolan/jq/releases).
 
-Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accessible url for some services on your machine. The easiest way to do this is with [ngrok](https://ngrok.com/). Once ngrok is installed, create a tunnel to your local machine:
+#### Expose services publicly
+
+Note that this is _only required when running docker on your local machine_. When you run on PWD a public endpoint for your agent is exposed automatically. Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accessible url for some services on your machine.
+
+##### Using dev tunnels
+
+Once dev tunnels is installed, log in to your Microsoft or GitHub account.
+
+```bash
+devtunnel user login -g # For GitHub credentials. Remove the -g to use your Microsoft account
+```
+
+Create a tunnel to your local machine:
+
+```bash
+devtunnel host -p 8020 -p 8022 -p 6543 -d acapy-demo -a # See below for more detailed information
+```
+
+You will see something like this:
+
+```
+Hosting port: 6543
+Connect via browser: https://4qn68lz0-6543.usw3.devtunnels.ms
+Inspect network activity: https://4qn68lz0-6543-inspect.usw3.devtunnels.ms
+Hosting port: 8020
+Connect via browser: https://4qn68lz0-8020.usw3.devtunnels.ms
+Inspect network activity: https://4qn68lz0-8020-inspect.usw3.devtunnels.ms
+Hosting port: 8022
+Connect via browser: https://4qn68lz0-8022.usw3.devtunnels.ms
+Inspect network activity: https://4qn68lz0-8022-inspect.usw3.devtunnels.ms
+
+Ready to accept connections for tunnel: amusing-mountain-q0rpt0b.usw3
+```
+This creates a public url for ports 8020 (the acapy agent), 8022 (the webhooks port), and 6543 (the tails server).
+
+Keep this process running as we'll come back to it in a moment.
+
+
+##### Using ngrok
+
+Once ngrok is installed, create a tunnel to your local machine:
 
 ```bash
 ngrok http 8020
