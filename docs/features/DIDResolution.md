@@ -73,8 +73,8 @@ The following is an example method resolver implementation. In this example, we 
 
 #### `__init __.py`
 
-```python=
-from aries_cloudagent.config.injection_context import InjectionContext
+```python
+from acapy_agent.config.injection_context import InjectionContext
 from ..resolver.did_resolver import DIDResolver
 
 from .example_resolver import ExampleResolver
@@ -90,10 +90,10 @@ async def setup(context: InjectionContext):
 
 #### `example_resolver.py`
 
-```python=
+```python
 import re
 from typing import Pattern
-from aries_cloudagent.resolver.base import BaseDIDResolver, ResolverType
+from acapy_agent.resolver.base import BaseDIDResolver, ResolverType
 
 class ExampleResolver(BaseDIDResolver):
     """ExampleResolver class."""
@@ -148,9 +148,12 @@ There are 3 different errors associated with resolution in ACA-Py that could be 
 
 ### Using Resolver Plugins
 
+!!! note
+    This section is out of date, as the GitHub DID Method is no longer registered. The link below to the specification goes to a version of the specification captured by the Internet Wayback Machine. Help in updating this section to use an active DID Method and ACA-Py plugin would be appreciated.
+
 In this section, the [Github Resolver Plugin found here](https://github.com/dbluhm/acapy-resolver-github) will be used as an example plugin to work with. This resolver resolves `did:github` DIDs.
 
-The resolution algorithm is simple: for the github DID `did:github:dbluhm`, the method specific identifier `dbluhm` (a GitHub username) is used to lookup an `index.jsonld` file in the `ghdid` repository in that GitHub users profile. See [GitHub DID Method Specification](http://docs.github-did.com/did-method-spec/) for more details.
+The resolution algorithm is simple: for the github DID `did:github:dbluhm`, the method specific identifier `dbluhm` (a GitHub username) is used to lookup an `index.jsonld` file in the `ghdid` repository in that GitHub users profile. See [GitHub DID Method Specification](https://web.archive.org/web/20220420044252/https://docs.github-did.com/did-method-spec/) for more details.
 
 To use this plugin, first install it into your project's python environment:
 
@@ -175,7 +178,7 @@ plugin:
 
 The following is a fully functional Dockerfile encapsulating this setup:
 
-```dockerfile=
+```dockerfile
 FROM ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.3.0   
 RUN pip3 install git+https://github.com/dbluhm/acapy-resolver-github
 
@@ -191,11 +194,17 @@ docker run --rm -it -p 3000:3000 -p 3001:3001 resolver-example
 
 ### Directory of Resolver Plugins
 
+- [Cheqd](https://plugins.aca-py.org/latest/cheqd/)
+- [Hedera](https://plugins.aca-py.org/latest/hedera/)
+- [did:webvh](https://plugins.aca-py.org/latest/webvh/)
+
+Older resolver plugins:
+
 - [Github Resolver](https://github.com/dbluhm/acapy-resolver-github)
 - [Universal Resolver](https://github.com/sicpa-dlab/acapy-resolver-universal)
 - [DIDComm Resolver](https://github.com/sicpa-dlab/acapy-resolver-didcomm)
 
 ## References
 
-<https://www.w3.org/TR/did-core/>
-<https://w3c-ccg.github.io/did-resolution/>
+- [W3C DID Core Specification](https://www.w3.org/TR/did-core)
+- [W3C DID Resolution Specification](https://www.w3.org/TR/did-resolution/)

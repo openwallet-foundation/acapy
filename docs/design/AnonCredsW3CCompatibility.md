@@ -10,11 +10,11 @@ The pre-requisites for the work are:
 - The availability of the AnonCreds RS library supporting the generation and verification of AnonCreds VPs in W3C VP format.
 - The availability of support in the AnonCreds RS Python Wrapper for the W3C VC/VP capabilities in AnonCreds RS.
 - Agreement on the Aries Issue Credential v2.0 and Present Proof v2.0 protocol attachment formats to use when issuing AnonCreds W3C VC format credentials, and when presenting AnonCreds W3C VP format presentations.
-  - For issuing, use the (proposed) [RFC 0809 VC-DI] Attachments
+  - For issuing, use the [RFC 0809 VC-DI] Attachments
   - For presenting, use the [RFC 0510 DIF Presentation Exchange] Attachments
 
-[RFC 0809 VC-DI]: https://github.com/hyperledger/aries-rfcs/pull/809
-[RFC 0510 DIF Presentation Exchange]: https://github.com/hyperledger/aries-rfcs/blob/main/features/0510-dif-pres-exch-attach/README.md
+[RFC 0809 VC-DI]: https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md
+[RFC 0510 DIF Presentation Exchange]: https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0510-dif-pres-exch-attach/README.md
 
 As of 2024-01-15, these pre-requisites have been met.
 
@@ -133,7 +133,7 @@ Looking at the [/anoncreds/issuer.py](https://github.com/openwallet-foundation/a
 
 Create VC_DI Credential Offer
 
-According to this DI credential offer attachment format - [didcomm/w3c-di-vc-offer@v0.1](https://github.com/hyperledger/aries-rfcs/pull/809/files#diff-40b1f86053dd6f0b34250d5be1319d3a0662b96a5a121957fe4dc8cceaa9cbc8R30-R63),
+According to this DI credential offer attachment format - [didcomm/w3c-di-vc-offer@v0.1](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md#credential-offer-attachment-format),
 
 - binding_required
 - binding_method
@@ -291,7 +291,7 @@ class CredExRecordW3C(BaseRecord):
 
 ```
 
-Based on the proposed credential attachment format with the new Data Integrity proof in [aries-rfcs 809](https://github.com/hyperledger/aries-rfcs/pull/809/files#diff-40b1f86053dd6f0b34250d5be1319d3a0662b96a5a121957fe4dc8cceaa9cbc8R132-R151) -
+Based on the credential attachment format with the new Data Integrity proof in [aries-rfcs 809](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md#credential-request-attachment-format) -
 
 ```json
 {
@@ -411,7 +411,7 @@ And this [\_formats_filter](https://github.com/openwallet-foundation/acapy/blob/
 - [credential_exchange_create](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/issue_credential/v2_0/routes.py#L630) handler function of `/issue-credential-2.0/create` route
 - [credential_exchange_send](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/issue_credential/v2_0/routes.py#L721) handler function of `/issue-credential-2.0/send` route
 
-The same goes for [ATTACHMENT_FORMAT](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/present_proof/v2_0/message_types.py#L33-L47) of `Present Proof` flow. In this case, DIF Presentation Exchange formats in these [test vectors](https://github.com/TimoGlastra/anoncreds-w3c-test-vectors/tree/main/test-vectors) that are influenced by [RFC 0510 DIF Presentation Exchange](https://github.com/hyperledger/aries-rfcs/blob/main/features/0510-dif-pres-exch-attach/README.md) will be implemented. Here, the [\_formats_attach](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/present_proof/v2_0/routes.py#L403-L422) function is the key for the same purpose above. It gets called in:
+The same goes for [ATTACHMENT_FORMAT](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/present_proof/v2_0/message_types.py#L33-L47) of `Present Proof` flow. In this case, DIF Presentation Exchange formats in these [test vectors](https://github.com/TimoGlastra/anoncreds-w3c-test-vectors/tree/main/test-vectors) that are influenced by [RFC 0510 DIF Presentation Exchange](https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0510-dif-pres-exch-attach/README.md) will be implemented. Here, the [\_formats_attach](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/present_proof/v2_0/routes.py#L403-L422) function is the key for the same purpose above. It gets called in:
 
 - [present_proof_send_proposal](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/present_proof/v2_0/routes.py#L833) handler function of `/present-proof-2.0/send-proposal` route
 - [present_proof_create_request](https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/protocols/present_proof/v2_0/routes.py#L916) handler function of `/present-proof-2.0/create-request` route
@@ -608,7 +608,7 @@ Storing a credential in the wallet is somewhat dependent on the kinds of metadat
 
 One of the questions we need to answer is whether the preferred approach is to modify the existing store credential function so that any credential type is a valid input, or whether there should be a special function just for storing W3C credentials.
 
-We will duplicate this [store_credential](https://github.com/openwallet-foundation/acapy/blob/8cfe8283ddb2a85e090ea1b8a916df2d78298ec0/aries_cloudagent/anoncreds/holder.py#L167) function and modify it:
+We will duplicate this [store_credential](https://github.com/openwallet-foundation/acapy/blob/4b13df29b1c14207965975b1e86d828a607fae1d/acapy_agent/anoncreds/holder.py#L175) function and modify it:
 
 ```python
 async def store_w3c_credential(...) {

@@ -1488,7 +1488,7 @@ class DemoAgent:
                     "create_unique_did": json.dumps(create_unique_did),
                 }
                 payload = {
-                    "handshake_protocols": ["https://didcomm.org/connections/1.0"],
+                    "handshake_protocols": ["https://didcomm.org/didexchange/1.1"],
                     "use_public_did": public_did_connections,
                 }
                 if self.mediation:
@@ -1504,14 +1504,20 @@ class DemoAgent:
                 invi_params = {
                     "auto_accept": json.dumps(auto_accept),
                 }
-                payload = {"mediation_id": self.mediator_request_id}
+                payload = {
+                    "mediation_id": self.mediator_request_id,
+                    "handshake_protocols": ["https://didcomm.org/didexchange/1.1"],
+                }
                 invi_rec = await self.admin_POST(
-                    "/connections/create-invitation",
+                    "/out-of-band/create-invitation",
                     payload,
                     params=invi_params,
                 )
             else:
-                invi_rec = await self.admin_POST("/connections/create-invitation")
+                invi_rec = await self.admin_POST(
+                    "/out-of-band/create-invitation",
+                    {"handshake_protocols": ["https://didcomm.org/didexchange/1.1"]},
+                )
 
         return invi_rec
 
@@ -1522,20 +1528,12 @@ class DemoAgent:
             params = {}
         if self.mediation:
             params["mediation_id"] = self.mediator_request_id
-        if "/out-of-band/" in invite.get("@type", ""):
-            # reuse connections if requested and possible
-            params["use_existing_connection"] = json.dumps(self.reuse_connections)
-            connection = await self.admin_POST(
-                "/out-of-band/receive-invitation",
-                invite,
-                params=params,
-            )
-        else:
-            connection = await self.admin_POST(
-                "/connections/receive-invitation",
-                invite,
-                params=params,
-            )
+        params["use_existing_connection"] = json.dumps(self.reuse_connections)
+        connection = await self.admin_POST(
+            "/out-of-band/receive-invitation",
+            invite,
+            params=params,
+        )
 
         self.connection_id = connection["connection_id"]
         return connection
@@ -1556,6 +1554,7 @@ class MediatorAgent(DemoAgent):
             seed=None,
             **kwargs,
         )
+        self.invi_msg_id = None
         self.connection_id = None
         self._connection_ready = None
         self.cred_state = {}
@@ -1569,13 +1568,22 @@ class MediatorAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_connections(self, message):
-        if message["connection_id"] == self.mediator_connection_id:
+        self.log("Received connection message:", message)
+        self.log(message["invitation_msg_id"], self.invi_msg_id)
+        if message["invitation_msg_id"] == self.invi_msg_id:
             if message["state"] == "active" and not self._connection_ready.done():
                 self.log("Mediator Connected")
                 self._connection_ready.set_result(True)
 
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
+
+    async def handle_out_of_band(self, message):
+        self.log("Received out-of-band message:", message)
+        # if message["invi_msg_id"] == self.invi_msg_id:
+        #     if message["state"] == "done" and not self._connection_ready.done():
+        #         self.log("Mediator Connected")
+        #         self._connection_ready.set_result(True)
 
 
 async def start_mediator_agent(
@@ -1603,25 +1611,36 @@ async def connect_wallet_to_mediator(agent, mediator_agent):
     log_msg("Generate mediation invite ...")
     mediator_agent._connection_ready = asyncio.Future()
     mediator_connection = await mediator_agent.admin_POST(
-        "/connections/create-invitation"
+        "/out-of-band/create-invitation",
+        {"handshake_protocols": ["https://didcomm.org/didexchange/1.1"]},
     )
-    mediator_agent.mediator_connection_id = mediator_connection["connection_id"]
+    mediator_agent.invi_msg_id = mediator_connection["invi_msg_id"]
 
     # accept the invitation
     log_msg("Accept mediation invite ...")
     connection = await agent.admin_POST(
-        "/connections/receive-invitation", mediator_connection["invitation"]
+        "/out-of-band/receive-invitation", mediator_connection["invitation"]
     )
-    agent.mediator_connection_id = connection["connection_id"]
+    log_msg("Connection created:", connection)
+    agent.invi_msg_id = connection["invi_msg_id"]
+
+    await asyncio.sleep(2.0)
 
     log_msg("Await mediation connection status ...")
     await mediator_agent.detect_connection()
     log_msg("Connected agent to mediator:", agent.ident, mediator_agent.ident)
 
+    connection = (
+        await agent.admin_GET(
+            "/connections", params={"invitation_msg_id": mediator_agent.invi_msg_id}
+        )
+    )["results"][0]
+
+    log_msg(connection)
     # setup mediation on our connection
     log_msg(f"Request mediation on connection {agent.mediator_connection_id} ...")
     mediation_request = await agent.admin_POST(
-        "/mediation/request/" + agent.mediator_connection_id, {}
+        "/mediation/request/" + connection["connection_id"], {}
     )
     agent.mediator_request_id = mediation_request["mediation_id"]
     log_msg(f"Mediation request id: {agent.mediator_request_id}")
@@ -1738,7 +1757,7 @@ async def start_endorser_agent(
     else:
         # old-style connection
         endorser_connection = await endorser_agent.admin_POST(
-            "/connections/create-invitation?alias=EndorserMultiuse&auto_accept=true&multi_use=true"
+            "/out-of-band/create-invitation?alias=EndorserMultiuse&auto_accept=true&multi_use=true"
         )
     endorser_agent.endorser_multi_connection = endorser_connection
     endorser_agent.endorser_multi_invitation = endorser_connection["invitation"]
@@ -1762,18 +1781,12 @@ async def connect_wallet_to_endorser(agent, endorser_agent):
 
     # accept the invitation
     log_msg("Accept endorser invite ...")
-    if endorser_agent.use_did_exchange:
-        connection = await agent.admin_POST(
-            "/out-of-band/receive-invitation",
-            endorser_connection["invitation"],
-            params={"alias": "endorser"},
-        )
-    else:
-        connection = await agent.admin_POST(
-            "/connections/receive-invitation",
-            endorser_connection["invitation"],
-            params={"alias": "endorser"},
-        )
+    connection = await agent.admin_POST(
+        "/out-of-band/receive-invitation",
+        endorser_connection["invitation"],
+        params={"alias": "endorser"},
+    )
+
     agent.endorser_connection_id = connection["connection_id"]
 
     log_msg("Await endorser connection status ...")
