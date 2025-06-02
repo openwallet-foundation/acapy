@@ -30,6 +30,7 @@ from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils import general as general_utils
 from ..utils.extract_validation_error import extract_validation_error_message
+from ..utils.server import remove_unwanted_headers
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
@@ -389,6 +390,8 @@ class AdminServer(BaseAdminServer):
             web.get("/ws", self.websocket_handler, allow_head=False),
         ]
         app.add_routes(server_routes)
+
+        app.on_response_prepare.append(remove_unwanted_headers)
 
         plugin_registry = self.context.inject_or(PluginRegistry)
         if plugin_registry:
