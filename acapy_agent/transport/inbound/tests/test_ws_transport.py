@@ -101,4 +101,7 @@ class TestWsTransport(AioHTTPTestCase):
             result = await asyncio.wait_for(ws.receive_json(), 1.0)
             assert result == {"response": "ok"}
 
+            # Check the Server header is removed
+            assert "Server" not in ws._response.headers
+
         await self.transport.stop()
