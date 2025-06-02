@@ -6,6 +6,7 @@ name: Tag and Recreate LTS Release
 on:
   release:
     types: [published]
+  push:
     branches: 
       - '*.lts'
       
@@ -80,4 +81,3 @@ jobs:
     with:
       tag: ${{ needs.recreate-lts-release.outputs.lts_tag }}
       ref: ${{ github.event.release.tag_name }}
-      platforms: linux/amd64,linux/arm64
