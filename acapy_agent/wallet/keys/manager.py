@@ -140,11 +140,11 @@ class MultikeyManager:
         try:
             key = await self.wallet.get_key_by_kid(kid=kid)
 
-            if key:
-                return True
-            return False
+            if not key:
+                return False
+            return True
 
-        except (WalletNotFoundError, AttributeError):
+        except (WalletError, WalletNotFoundError, AttributeError):
             return False
 
     async def multikey_exists(self, multikey: str):
