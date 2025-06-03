@@ -20,6 +20,12 @@ ALG_MAPPINGS = {
         "prefix_hex": "ed01",
         "prefix_length": 2,
     },
+    "x25519": {
+        "key_type": ED25519,
+        "multikey_prefix": "z6LS",
+        "prefix_hex": "ec01",
+        "prefix_length": 2,
+    },
     "p256": {
         "key_type": P256,
         "multikey_prefix": "zDn",
