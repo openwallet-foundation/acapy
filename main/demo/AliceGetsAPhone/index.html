@@ -2407,8 +2407,8 @@
 <li><a href="#getting-started">Getting Started</a></li>
 <li><a href="#get-a-mobile-agent">Get a mobile agent</a></li>
 <li><a href="#running-locally-in-docker">Running Locally in Docker</a><ul>
-<li><a href="#install-ngrok-and-jq">Install ngrok and jq</a></li>
-<li><a href="#expose-services-publicly-using-ngrok">Expose services publicly using ngrok</a></li>
+<li><a href="#install-dev-tunnels-or-ngrok-and-jq">Install dev tunnels or ngrok and jq</a></li>
+<li><a href="#expose-services-publicly">Expose services publicly</a></li>
 </ul>
 </li>
 <li><a href="#running-in-play-with-docker">Running in Play With Docker</a></li>
@@ -2435,9 +2435,9 @@
 </ul>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <p>This demo can be run on your local machine or on Play with Docker (PWD), and will demonstrate credential exchange and proof exchange as well as revocation with a mobile agent. Both approaches (running locally and on PWD) will be described, for the most part the commands are the same, but there are a couple of different parameters you need to provide when starting up.</p>
-<p>If you are not familiar with how revocation is currently implemented in Hyperledger Indy, <a href="https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation">this article</a> provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.</p>
+<p>If you are not familiar with how revocation is currently implemented in Hyperledger Indy, <a href="https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation">this article</a> provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.</p>
 <h3 id="get-a-mobile-agent">Get a mobile agent<a class="headerlink" href="#get-a-mobile-agent" title="Permanent link">&para;</a></h3>
-<p>Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions <a href="https://github.com/bcgov/identity-kit-poc/blob/main/docs/GettingApp.md">here</a>.</p>
+<p>Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions <a href="https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md">here</a>.</p>
 <h3 id="running-locally-in-docker">Running Locally in Docker<a class="headerlink" href="#running-locally-in-docker" title="Permanent link">&para;</a></h3>
 <p>Open a new bash shell and in a project directory run the following:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy.git
@@ -2445,29 +2445,54 @@
 </code></pre></div>
 <p>We'll come back to this in a minute, when we start the <code>faber</code> agent!</p>
 <p>There are a couple of extra steps you need to take to prepare to run the Faber agent locally:</p>
-<h4 id="install-ngrok-and-jq">Install ngrok and jq<a class="headerlink" href="#install-ngrok-and-jq" title="Permanent link">&para;</a></h4>
-<p><a href="https://ngrok.com/">ngrok</a> is used to expose public endpoints for services running locally on your computer.</p>
-<p><a href="https://github.com/stedolan/jq">jq</a> is a json parser that is used to automatically detect the endpoints exposed by ngrok.</p>
-<p>You can install ngrok from <a href="https://ngrok.com/">here</a></p>
-<p>You can download jq releases <a href="https://github.com/stedolan/jq/releases">here</a></p>
-<h4 id="expose-services-publicly-using-ngrok">Expose services publicly using ngrok<a class="headerlink" href="#expose-services-publicly-using-ngrok" title="Permanent link">&para;</a></h4>
-<p>Note that this is <em>only required when running docker on your local machine</em>. When you run on PWD a public endpoint for your agent is exposed automatically.</p>
-<p>Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accessible url for some services on your machine. The easiest way to do this is with <a href="https://ngrok.com/">ngrok</a>. Once ngrok is installed, create a tunnel to your local machine:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ngrok<span class="w"> </span>http<span class="w"> </span><span class="m">8020</span>
+<h4 id="install-dev-tunnels-or-ngrok-and-jq">Install dev tunnels or ngrok and jq<a class="headerlink" href="#install-dev-tunnels-or-ngrok-and-jq" title="Permanent link">&para;</a></h4>
+<p><a href="https://ngrok.com/">ngrok</a> and <a href="https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview">Microsoft dev tunnels</a> are two options for exposing public endpoints for services running locally on your computer. These two services provide connectivity from clients like mobile wallets to services running in development mode. Note that these kinds of forwarding systems are fundamentally insecure because the intermediating servers (run by ngrok and Microsoft) can see all traffic passing through them. Use them carefully, only with development systems and test data, and verify that your organization's security policies allow you to use them.</p>
+<p>Putting APIs online is ngrok's primary business, so their product is a lot more finished than dev tunnels. For example, ngrok offers a Traffic Inspector with an easy-to-use interface and default data retention of 3 days (which can be extended with a paid plan). Dev tunnels also offers an inspection interface, but it is has a user interface similar to browser developer tools that retain data only while open in a browser tab. Dev tunnels also requires either a Microsoft or a GitHub account.</p>
+<p>ngrok is increasingly moving towards paid plans, while Microsoft seems committed to providing a free service for developers. So, we're providing both options for this demo. You can use dev tunnels for getting started with this repo and implementing small changes. If you plan to do more intense development, you should give ngrok a try to see if their solution is right for you.</p>
+<p><a href="https://github.com/stedolan/jq">jq</a> is a json parser that is used to automatically detect the endpoints exposed by ngrok and dev tunnels.</p>
+<p>You can install ngrok from <a href="https://ngrok.com/">here</a> or dev tunnels from <a href="https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started">here</a>.</p>
+<p>You can download jq releases <a href="https://github.com/stedolan/jq/releases">here</a>.</p>
+<h4 id="expose-services-publicly">Expose services publicly<a class="headerlink" href="#expose-services-publicly" title="Permanent link">&para;</a></h4>
+<p>Note that this is <em>only required when running docker on your local machine</em>. When you run on PWD a public endpoint for your agent is exposed automatically. Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accessible url for some services on your machine.</p>
+<h5 id="using-dev-tunnels">Using dev tunnels<a class="headerlink" href="#using-dev-tunnels" title="Permanent link">&para;</a></h5>
+<p>Once dev tunnels is installed, log in to your Microsoft or GitHub account.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>devtunnel<span class="w"> </span>user<span class="w"> </span>login<span class="w"> </span>-g<span class="w"> </span><span class="c1"># For GitHub credentials. Remove the -g to use your Microsoft account</span>
+</code></pre></div>
+<p>Create a tunnel to your local machine:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>devtunnel<span class="w"> </span>host<span class="w"> </span>-p<span class="w"> </span><span class="m">8020</span><span class="w"> </span>-p<span class="w"> </span><span class="m">8022</span><span class="w"> </span>-p<span class="w"> </span><span class="m">6543</span><span class="w"> </span>-d<span class="w"> </span>acapy-demo<span class="w"> </span>-a<span class="w"> </span><span class="c1"># See below for more detailed information</span>
+</code></pre></div>
+<p>You will see something like this:</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Hosting port: 6543
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Connect via browser: https://4qn68lz0-6543.usw3.devtunnels.ms
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Inspect network activity: https://4qn68lz0-6543-inspect.usw3.devtunnels.ms
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Hosting port: 8020
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Connect via browser: https://4qn68lz0-8020.usw3.devtunnels.ms
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>Inspect network activity: https://4qn68lz0-8020-inspect.usw3.devtunnels.ms
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>Hosting port: 8022
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>Connect via browser: https://4qn68lz0-8022.usw3.devtunnels.ms
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>Inspect network activity: https://4qn68lz0-8022-inspect.usw3.devtunnels.ms
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>Ready to accept connections for tunnel: amusing-mountain-q0rpt0b.usw3
+</code></pre></div>
+This creates a public url for ports 8020 (the acapy agent), 8022 (the webhooks port), and 6543 (the tails server).</p>
+<p>Keep this process running as we'll come back to it in a moment.</p>
+<h5 id="using-ngrok">Using ngrok<a class="headerlink" href="#using-ngrok" title="Permanent link">&para;</a></h5>
+<p>Once ngrok is installed, create a tunnel to your local machine:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ngrok<span class="w"> </span>http<span class="w"> </span><span class="m">8020</span>
 </code></pre></div>
 <p>This service is used for your local aca-py agent - it is the endpoint that is advertised for other Aries agents to connect to.</p>
 <p>You will see something like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Forwarding                    http://abc123.ngrok.io -&gt; http://localhost:8020
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Forwarding                    https://abc123.ngrok.io -&gt; http://localhost:8020
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Forwarding                    http://abc123.ngrok.io -&gt; http://localhost:8020
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Forwarding                    https://abc123.ngrok.io -&gt; http://localhost:8020
 </code></pre></div>
 <p>This creates a public url for ports 8020 on your local machine.</p>
-<p>Note that an ngrok process is created automatically for your tails server.</p>
+<p>Note that an ngrok process is created automatically for your tails server. (Check the output of <code>./manage logs</code> to see if you need to provide an ngrok authentication token for ngrok to work. Note that you can use dev tunnels as an alternative to ngrok if you don't have an ngrok account.)</p>
 <p>Keep this process running as we'll come back to it in a moment.</p>
 <h3 id="running-in-play-with-docker">Running in Play With Docker<a class="headerlink" href="#running-in-play-with-docker" title="Permanent link">&para;</a></h3>
-<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/main/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
+<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
 <p>Open a new bash shell and in a project directory run the following:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy.git
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy.git
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
 </code></pre></div>
 <p>We'll come back to this in a minute, when we start the <code>faber</code> agent!</p>
 <h3 id="run-an-instance-of-indy-tails-server">Run an instance of indy-tails-server<a class="headerlink" href="#run-an-instance-of-indy-tails-server" title="Permanent link">&para;</a></h3>
@@ -2475,35 +2500,35 @@
 <p>If you are not running with revocation enabled you can skip this step.</p>
 <h4 id="running-locally-in-a-bash-shell">Running locally in a bash shell?<a class="headerlink" href="#running-locally-in-a-bash-shell" title="Permanent link">&para;</a></h4>
 <p>Open a new bash shell, and in a project directory, run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/bcgov/indy-tails-server.git
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>indy-tails-server/docker
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>./manage<span class="w"> </span>build
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>./manage<span class="w"> </span>start
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>./manage<span class="w"> </span>logs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/bcgov/indy-tails-server.git
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">cd</span><span class="w"> </span>indy-tails-server/docker
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>./manage<span class="w"> </span>build
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>./manage<span class="w"> </span>start
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>./manage<span class="w"> </span>logs
 </code></pre></div>
 <p>This will run the required components for the tails server to function and make a tails server available on port 6543.</p>
 <p>This will also automatically start an ngrok server that will expose a public url for your tails server - this is required to support mobile agents. The docker output will look something like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ngrok-tails-server_1<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="nv">t</span><span class="o">=</span><span class="m">2020</span>-05-13T22:51:14+0000<span class="w"> </span><span class="nv">lvl</span><span class="o">=</span>info<span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;started tunnel&quot;</span><span class="w"> </span><span class="nv">obj</span><span class="o">=</span>tunnels<span class="w"> </span><span class="nv">name</span><span class="o">=</span><span class="s2">&quot;command_line (http)&quot;</span><span class="w"> </span><span class="nv">addr</span><span class="o">=</span>http://tails-server:6543<span class="w"> </span><span class="nv">url</span><span class="o">=</span>http://c5789aa0.ngrok.io
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>ngrok-tails-server_1<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="nv">t</span><span class="o">=</span><span class="m">2020</span>-05-13T22:51:14+0000<span class="w"> </span><span class="nv">lvl</span><span class="o">=</span>info<span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;started tunnel&quot;</span><span class="w"> </span><span class="nv">obj</span><span class="o">=</span>tunnels<span class="w"> </span><span class="nv">name</span><span class="o">=</span>command_line<span class="w"> </span><span class="nv">addr</span><span class="o">=</span>http://tails-server:6543<span class="w"> </span><span class="nv">url</span><span class="o">=</span>https://c5789aa0.ngrok.io
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ngrok-tails-server_1<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="nv">t</span><span class="o">=</span><span class="m">2020</span>-05-13T22:51:14+0000<span class="w"> </span><span class="nv">lvl</span><span class="o">=</span>info<span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;started tunnel&quot;</span><span class="w"> </span><span class="nv">obj</span><span class="o">=</span>tunnels<span class="w"> </span><span class="nv">name</span><span class="o">=</span><span class="s2">&quot;command_line (http)&quot;</span><span class="w"> </span><span class="nv">addr</span><span class="o">=</span>http://tails-server:6543<span class="w"> </span><span class="nv">url</span><span class="o">=</span>http://c5789aa0.ngrok.io
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>ngrok-tails-server_1<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="nv">t</span><span class="o">=</span><span class="m">2020</span>-05-13T22:51:14+0000<span class="w"> </span><span class="nv">lvl</span><span class="o">=</span>info<span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;started tunnel&quot;</span><span class="w"> </span><span class="nv">obj</span><span class="o">=</span>tunnels<span class="w"> </span><span class="nv">name</span><span class="o">=</span>command_line<span class="w"> </span><span class="nv">addr</span><span class="o">=</span>http://tails-server:6543<span class="w"> </span><span class="nv">url</span><span class="o">=</span>https://c5789aa0.ngrok.io
 </code></pre></div>
 <p>Note the server name in the <code>url=https://c5789aa0.ngrok.io</code> parameter (<code>https://c5789aa0.ngrok.io</code>) - this is the external url for your tails server. Make sure you use the <code>https</code> url!</p>
 <p>If you see an "authentication failed" error in the logs like this:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:<span class="w">  </span>authentication<span class="w"> </span>failed:<span class="w"> </span>Usage<span class="w"> </span>of<span class="w"> </span>ngrok<span class="w"> </span>requires<span class="w"> </span>a<span class="w"> </span>verified<span class="w"> </span>account<span class="w"> </span>and<span class="w"> </span>authtoken.
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:<span class="w">  </span>Sign<span class="w"> </span>up<span class="w"> </span><span class="k">for</span><span class="w"> </span>an<span class="w"> </span>account:<span class="w"> </span>https://dashboard.ngrok.com/signup
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:<span class="w">  </span>Install<span class="w"> </span>your<span class="w"> </span>authtoken:<span class="w"> </span>https://dashboard.ngrok.com/get-started/your-authtoken
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:<span class="w">  </span>authentication<span class="w"> </span>failed:<span class="w"> </span>Usage<span class="w"> </span>of<span class="w"> </span>ngrok<span class="w"> </span>requires<span class="w"> </span>a<span class="w"> </span>verified<span class="w"> </span>account<span class="w"> </span>and<span class="w"> </span>authtoken.
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:<span class="w">  </span>Sign<span class="w"> </span>up<span class="w"> </span><span class="k">for</span><span class="w"> </span>an<span class="w"> </span>account:<span class="w"> </span>https://dashboard.ngrok.com/signup
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>ngrok-tails-server-1<span class="w">  </span><span class="p">|</span><span class="w"> </span>ERROR:<span class="w">  </span>Install<span class="w"> </span>your<span class="w"> </span>authtoken:<span class="w"> </span>https://dashboard.ngrok.com/get-started/your-authtoken
 </code></pre></div>
 then you'll need to follow the links to set up a ngrok account and get an authentication token.
 When you have the authtoken, hit CTRL-C to exit from the logs and run the following commands,
 replacing <code>&lt;YOUR AUTHTOKEN&gt;</code> with the authtoken from ngrok.
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./manage<span class="w"> </span>logs<span class="w"> </span><span class="c1"># run above</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>^C
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>./manage<span class="w"> </span>stop
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>cat<span class="w"> </span>&gt;&gt;ngrok.yml
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>authtoken:<span class="w"> </span>&lt;YOUR<span class="w"> </span>AUTHTOKEN&gt;
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>^D
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>./manage<span class="w"> </span>start
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>./manage<span class="w"> </span>logs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>./manage<span class="w"> </span>logs<span class="w"> </span><span class="c1"># run above</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>^C
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>./manage<span class="w"> </span>stop
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>cat<span class="w"> </span>&gt;&gt;ngrok.yml
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>authtoken:<span class="w"> </span>&lt;YOUR<span class="w"> </span>AUTHTOKEN&gt;
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>^D
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>./manage<span class="w"> </span>start
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>./manage<span class="w"> </span>logs
 </code></pre></div></p>
 <h4 id="running-in-play-with-docker_1">Running in Play with Docker?<a class="headerlink" href="#running-in-play-with-docker_1" title="Permanent link">&para;</a></h4>
 <p>Run the same steps on <em>PWD</em> as you would run locally (see above).  Open a new shell (click on "ADD NEW INSTANCE") to run the tails server.</p>
@@ -2513,13 +2538,13 @@ replacing <code>&lt;YOUR AUTHTOKEN&gt;</code> with the authtoken from ngrok.
 <h4 id="running-locally-in-a-bash-shell_1">Running locally in a bash shell?<a class="headerlink" href="#running-locally-in-a-bash-shell_1" title="Permanent link">&para;</a></h4>
 <p>If you are running in a <em>local bash shell</em>, navigate to the <code>demo</code> directory in
 your fork/clone of the ACA-Py repository and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nv">TAILS_NETWORK</span><span class="o">=</span>docker_tails-server<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation<span class="w"> </span>--events
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">TAILS_NETWORK</span><span class="o">=</span>docker_tails-server<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation<span class="w"> </span>--events
 </code></pre></div>
 <p>The <code>TAILS_NETWORK</code> parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).</p>
 <h4 id="running-in-play-with-docker_2">Running in Play with Docker?<a class="headerlink" href="#running-in-play-with-docker_2" title="Permanent link">&para;</a></h4>
 <p>If you are running in <em>Play with Docker</em>, navigate to the <code>demo</code> folder in the
 clone of ACA-Py and run the following:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">PUBLIC_TAILS_URL</span><span class="o">=</span>https://c4f7fbb85911.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation<span class="w"> </span>--events
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">PUBLIC_TAILS_URL</span><span class="o">=</span>https://c4f7fbb85911.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--revocation<span class="w"> </span>--events
 </code></pre></div>
 <p>The <code>PUBLIC_TAILS_URL</code> parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.</p>
 <p>Use the ngrok url for the tails server that you noted earlier.</p>
@@ -2560,14 +2585,14 @@ clone of ACA-Py and run the following:</p>
 
 <p>Switch your browser back to Play with Docker. You should see that the connection has been established, and there is a prompt for what actions you want to take, e.g. "Issue Credential", "Send Proof Request" and so on.</p>
 <p>Tip: If your screen is too small to display the QR code (this can happen in Play With Docker because the shell is only given a small portion of the browser) you can copy the invitation url to a site like <a href="https://www.the-qrcode-generator.com/">https://www.the-qrcode-generator.com/</a> to convert the invitation url into a QR code that you can scan. Make sure you select the <code>URL</code> option, and copy the <code>invitation_url</code>, which will look something like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>https://abfde260.ngrok.io?c_i<span class="o">=</span>eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZjI2ZjA2YTItNWU1Mi00YTA5LWEwMDctOTNkODBiZTYyNGJlIiwgInJlY2lwaWVudEtleXMiOiBbIjlQRFE2alNXMWZwZkM5UllRWGhCc3ZBaVJrQmVKRlVhVmI0QnRQSFdWbTFXIl0sICJsYWJlbCI6ICJGYWJlci5BZ2VudCIsICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cHM6Ly9hYmZkZTI2MC5uZ3Jvay5pbyJ9
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>https://abfde260.ngrok.io?c_i<span class="o">=</span>eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZjI2ZjA2YTItNWU1Mi00YTA5LWEwMDctOTNkODBiZTYyNGJlIiwgInJlY2lwaWVudEtleXMiOiBbIjlQRFE2alNXMWZwZkM5UllRWGhCc3ZBaVJrQmVKRlVhVmI0QnRQSFdWbTFXIl0sICJsYWJlbCI6ICJGYWJlci5BZ2VudCIsICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cHM6Ly9hYmZkZTI2MC5uZ3Jvay5pbyJ9
 </code></pre></div>
 <p>Or this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-docker.com?c_i<span class="o">=</span><span class="nv">eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZWI2MTI4NDUtYmU1OC00YTNiLTk2MGUtZmE3NDUzMGEwNzkyIiwgInJlY2lwaWVudEtleXMiOiBbIkFacEdoMlpIOTJVNnRFRTlmYk13Z3BqQkp3TEUzRFJIY1dCbmg4Y2FqdzNiIl0sICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cDovL2lwMTAtMC0xMjEtNC1icXVxbzgxNmI0ODBhNGJmbjNrZy04MDIwLmRpcmVjdC5wbGF5LXdpdGgtdm9uLnZvbnguaW8iLCAibGFiZWwiOiAiRmFiZXIuQWdlbnQifQ</span><span class="o">==</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-docker.com?c_i<span class="o">=</span><span class="nv">eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZWI2MTI4NDUtYmU1OC00YTNiLTk2MGUtZmE3NDUzMGEwNzkyIiwgInJlY2lwaWVudEtleXMiOiBbIkFacEdoMlpIOTJVNnRFRTlmYk13Z3BqQkp3TEUzRFJIY1dCbmg4Y2FqdzNiIl0sICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cDovL2lwMTAtMC0xMjEtNC1icXVxbzgxNmI0ODBhNGJmbjNrZy04MDIwLmRpcmVjdC5wbGF5LXdpdGgtdm9uLnZvbnguaW8iLCAibGFiZWwiOiAiRmFiZXIuQWdlbnQifQ</span><span class="o">==</span>
 </code></pre></div>
 <p>Note that this will use the ngrok endpoint if you are running locally, or your PWD endpoint if you are running on PWD.</p>
 <p>When running locally, use the <code>AGENT_ENDPOINT</code> environment variable to run the demo so that it puts the public hostname in the QR code:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">AGENT_ENDPOINT</span><span class="o">=</span>https://abc123.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">AGENT_ENDPOINT</span><span class="o">=</span>https://abc123.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber
 </code></pre></div>
 See the Connectionless Proof Request section below for a more complete ngrok configuration that also supports the revocation option.</p>
 <h2 id="issue-a-credential">Issue a Credential<a class="headerlink" href="#issue-a-credential" title="Permanent link">&para;</a></h2>
@@ -2579,10 +2604,10 @@ See the Connectionless Proof Request section below for a more complete ngrok con
 </details>
 
 <p>The Faber agent outputs details to the console; e.g.,</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Faber      | Credential: state = credential-issued, cred_ex_id = ba3089d6-92da-4cb7-9062-7f24066b2a2a
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Faber      | Revocation registry ID: CMqNjZ8e59jDuBYcquce4D:4:CMqNjZ8e59jDuBYcquce4D:3:CL:50:faber.agent.degree_schema:CL_ACCUM:4f4fb2e4-3a59-45b1-8921-578d005a7ff6
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Faber      | Credential revocation ID: 1
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>Faber      | Credential: state = done, cred_ex_id = ba3089d6-92da-4cb7-9062-7f24066b2a2a
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Faber      | Credential: state = credential-issued, cred_ex_id = ba3089d6-92da-4cb7-9062-7f24066b2a2a
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>Faber      | Revocation registry ID: CMqNjZ8e59jDuBYcquce4D:4:CMqNjZ8e59jDuBYcquce4D:3:CL:50:faber.agent.degree_schema:CL_ACCUM:4f4fb2e4-3a59-45b1-8921-578d005a7ff6
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>Faber      | Credential revocation ID: 1
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>Faber      | Credential: state = done, cred_ex_id = ba3089d6-92da-4cb7-9062-7f24066b2a2a
 </code></pre></div>
 <p>The revocation registry id and credential revocation id only appear if revocation is active. If you are doing revocation, you to need the <code>Revocation registry id</code> later, so we recommend that you copy it it now and paste it into a text file or some place that you can access later. If you don't write it down, you can get the Id from the Admin API using the <strong><code>GET /revocation/active-registry/{cred_def_id}</code></strong> endpoint, and passing in the credential definition Id (which you can get from the <strong><code>GET /credential-definitions/created</code></strong> endpoint).</p>
 <h3 id="accept-the-credential">Accept the Credential<a class="headerlink" href="#accept-the-credential" title="Permanent link">&para;</a></h3>
@@ -2646,24 +2671,29 @@ See the Connectionless Proof Request section below for a more complete ngrok con
 <p>If you have gone through the above steps, you can delete the Faber connection in your mobile agent (however <em>do not</em> delete the credential that Faber issued to you).</p>
 <p>Then in the faber demo, select option <code>2a</code> - Faber will display a QR code which you can scan with your mobile agent.  You will see the same proof request displayed in your mobile agent, which you can respond to.</p>
 <p>Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the <code>faber.py</code> code in the repository.</p>
-<p>If you want to use a connectionless proof request with docker running locally, you need to set up ngrok to forward both the agent port (8020) and the webhooks port (8022). If you have a free ngrok account, you need to run a single ngrok agent that forwards all of the necessary ports. Here is an ngrok configuration file that works for this purpose:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;3&quot;</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nt">agent</span><span class="p">:</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="nt">authtoken</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR AUTHTOKEN&gt;</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="nt">tunnels</span><span class="p">:</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="nt">acapy-agent</span><span class="p">:</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">       </span><span class="nt">proto</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">       </span><span class="nt">addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8020</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">    </span><span class="nt">acapy-webhooks</span><span class="p">:</span>
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">       </span><span class="nt">proto</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">       </span><span class="nt">addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8022</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">    </span><span class="nt">tails-server</span><span class="p">:</span>
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">       </span><span class="nt">addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6543</span>
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="w">       </span><span class="nt">inspect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="w">       </span><span class="nt">proto</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
+<h3 id="port-forwarding">Port Forwarding<a class="headerlink" href="#port-forwarding" title="Permanent link">&para;</a></h3>
+<p>If you want to use a connectionless proof request with docker running locally, you need to set up dev tunnels or ngrok to forward both the agent port (8020) and the webhooks port (8022).</p>
+<h4 id="dev-tunnels">dev tunnels<a class="headerlink" href="#dev-tunnels" title="Permanent link">&para;</a></h4>
+<p>You can use <a href="https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/">Microsoft dev tunnels</a> to forward the required ports. Follow the <a href="https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started#install-dev-tunnels">installation instructions</a> to install the devtunnel client. You will need to authenticate to devtunnel using a Microsoft or GitHub account. To use a GitHub account, run <code>devtunnel user login -g</code>. Once you have logged in, run the following command to set up the agent, webhooks, and tails-server ports: <code>devtunnel host -p 8020 -p 8022 -p 6543 -d acapy-demo -a</code> The description (<code>-d acapy-demo</code>) is required for the <code>run_demo</code> script to find the dev tunnel ports. The <code>-a</code> flag is required to allow anonymous connections to the dev tunnel ports. For example, the existing wallets are not designed to work with dev tunnel authentication, so they will need to connect anonymously.</p>
+<h4 id="ngrok">ngrok<a class="headerlink" href="#ngrok" title="Permanent link">&para;</a></h4>
+<p>If you have a free ngrok account, you need to run a single ngrok agent that forwards all of the necessary ports. Here is an ngrok configuration file that works for this purpose:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;3&quot;</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nt">agent</span><span class="p">:</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="nt">authtoken</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;YOUR AUTHTOKEN&gt;</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="nt">tunnels</span><span class="p">:</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">    </span><span class="nt">acapy-agent</span><span class="p">:</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">       </span><span class="nt">proto</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">       </span><span class="nt">addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8020</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">    </span><span class="nt">acapy-webhooks</span><span class="p">:</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">       </span><span class="nt">proto</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">       </span><span class="nt">addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8022</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">    </span><span class="nt">tails-server</span><span class="p">:</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">       </span><span class="nt">addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6543</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="w">       </span><span class="nt">inspect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="w">       </span><span class="nt">proto</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
 </code></pre></div>
 When using this approach, leave your ngrok authtoken out of the tails-server ngrok.yml file to prevent the tails-server from starting its own ngrok agent. This trick avoids the following error from ngrok:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>ERROR:<span class="w">  </span>authentication<span class="w"> </span>failed:<span class="w"> </span>Your<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>limited<span class="w"> </span>to<span class="w"> </span><span class="m">1</span><span class="w"> </span>simultaneous<span class="w"> </span>ngrok<span class="w"> </span>agent<span class="w"> </span>sessions.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>ERROR:<span class="w">  </span>authentication<span class="w"> </span>failed:<span class="w"> </span>Your<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>limited<span class="w"> </span>to<span class="w"> </span><span class="m">1</span><span class="w"> </span>simultaneous<span class="w"> </span>ngrok<span class="w"> </span>agent<span class="w"> </span>sessions.
 </code></pre></div></p>
 <h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
 <p>That’s the Faber-Mobile Alice demo. Feel free to play with the Swagger API and experiment further and figure out what an instance of a controller has to do to make things work.</p>
