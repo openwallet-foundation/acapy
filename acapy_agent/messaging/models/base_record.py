@@ -48,23 +48,24 @@ def match_post_filter(
         return True
 
     if alt:
-        return (
-            positive
-            and all(
+        if positive:
+            # Check if all record values exist and are in the allowed alternatives
+            return all(
                 record.get(k) and record.get(k) in alts for k, alts in post_filter.items()
             )
-        ) or (
-            (not positive)
-            and all(
+        else:
+            # Check if all record values exist and are not in the excluded alternatives
+            return all(
                 record.get(k) and record.get(k) not in alts
                 for k, alts in post_filter.items()
             )
-        )
 
     for k, v in post_filter.items():
         if record.get(k) != v:
+            # If the record value does not match the post_filter value
             return not positive
 
+    # Otherwise, the record value matches the post_filter value
     return positive
 
 
@@ -116,6 +117,7 @@ class BaseRecord(BaseModel):
         """
         record_id_name = cls.RECORD_ID_NAME
         if record_id_name in record:
+            LOGGER.error("Duplicate %s inputs; %s", record_id_name, record)
             raise ValueError(f"Duplicate {record_id_name} inputs; {record}")
         params = dict(**record)
         params[record_id_name] = record_id
@@ -179,6 +181,7 @@ class BaseRecord(BaseModel):
             return
         cache = session.inject_or(BaseCache)
         if cache:
+            LOGGER.debug("Getting cached key %s", cache_key)
             return await cache.get(cache_key)
 
     @classmethod
@@ -198,6 +201,7 @@ class BaseRecord(BaseModel):
             return
         cache = session.inject_or(BaseCache)
         if cache:
+            LOGGER.debug("Setting cached key %s", cache_key)
             await cache.set(cache_key, value, ttl or cls.DEFAULT_CACHE_TTL)
 
     @classmethod
@@ -213,6 +217,7 @@ class BaseRecord(BaseModel):
             return
         cache = session.inject_or(BaseCache)
         if cache:
+            LOGGER.debug("Clearing cached key %s", cache_key)
             await cache.clear(cache_key)
 
     @classmethod
@@ -232,6 +237,7 @@ class BaseRecord(BaseModel):
         """
 
         storage = session.inject(BaseStorage)
+        LOGGER.debug("Retrieving %s record %s", cls.RECORD_TYPE, record_id)
         result = await storage.get_record(
             cls.RECORD_TYPE, record_id, options={"forUpdate": for_update}
         )
@@ -257,6 +263,7 @@ class BaseRecord(BaseModel):
                 with sequence values specifying alternatives to match (hit any)
             for_update: Whether to lock the record for update
         """
+        LOGGER.debug("Retrieving %s record by tag filter %s", cls.RECORD_TYPE, tag_filter)
 
         storage = session.inject(BaseStorage)
         rows = await storage.find_all_records(
@@ -269,6 +276,12 @@ class BaseRecord(BaseModel):
             vals = json.loads(record.value)
             if match_post_filter(vals, post_filter, alt=False):
                 if found:
+                    LOGGER.info(
+                        "Multiple %s records located for %s%s",
+                        cls.__name__,
+                        tag_filter,
+                        f", {post_filter}" if post_filter else "",
+                    )
                     raise StorageDuplicateError(
                         "Multiple {} records located for {}{}".format(
                             cls.__name__,
@@ -278,6 +291,12 @@ class BaseRecord(BaseModel):
                     )
                 found = cls.from_storage(record.id, vals)
         if not found:
+            LOGGER.info(
+                "%s record not found for %s%s",
+                cls.__name__,
+                tag_filter,
+                f", {post_filter}" if post_filter else "",
+            )
             raise StorageNotFoundError(
                 "{} record not found for {}{}".format(
                     cls.__name__, tag_filter, f", {post_filter}" if post_filter else ""
@@ -372,6 +391,7 @@ class BaseRecord(BaseModel):
 
                     num_results_post_filter += 1
             except (BaseModelError, json.JSONDecodeError, TypeError) as err:
+                LOGGER.error("Error decoding record %s: %s", record.id, err)
                 raise BaseModelError(f"{err}, for record id {record.id}")
         return result
 
@@ -393,6 +413,7 @@ class BaseRecord(BaseModel):
             log_override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
         """
+        LOGGER.debug("Saving record %s", self._id or "(new)")
 
         new_record = None
         log_reason = reason or ("Updated record" if self._id else "Created record")
@@ -411,6 +432,8 @@ class BaseRecord(BaseModel):
                 new_record = True
                 self._new_with_id = False
         finally:
+            # TODO: serialize is called here, even if `log_state` does not log anything
+            # And then serialize is called again in `post_save`
             params = {self.RECORD_TYPE: self.serialize()}
             if log_params:
                 params.update(log_params)
@@ -454,12 +477,15 @@ class BaseRecord(BaseModel):
         """
 
         if self._id:
+            LOGGER.debug("Deleting record %s", self._id)
             storage = session.inject(BaseStorage)
             if self.state:
+                LOGGER.debug("Setting state to deleted for record %s", self._id)
                 self._previous_state = self.state
                 self.state = BaseRecord.STATE_DELETED
                 await self.emit_event(session, self.serialize())
             await storage.delete_record(self.storage_record)
+            LOGGER.debug("Record %s deleted", self._id)
 
     async def emit_event(self, session: ProfileSession, payload: Optional[Any] = None):
         """Emit an event.
@@ -470,6 +496,10 @@ class BaseRecord(BaseModel):
         """
 
         if not self.RECORD_TOPIC:
+            LOGGER.warning(
+                "Emit event called but RECORD_TOPIC is not set for %s",
+                self.RECORD_TYPE,
+            )
             return
 
         if self.state:
@@ -478,6 +508,7 @@ class BaseRecord(BaseModel):
             topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
         if not payload:
+            LOGGER.debug("Serializing payload for %s record", self.RECORD_TYPE)
             payload = self.serialize()
 
         await session.emit_event(topic, payload)

@@ -1,6 +1,6 @@
 """DIDComm V2 Agent message base class and schema."""
 
-from uuid import uuid4
+from uuid_utils import uuid4
 
 from .base_message import BaseMessage, DIDCommVersion
 
