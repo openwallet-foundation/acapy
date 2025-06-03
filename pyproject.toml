@@ -49,7 +49,7 @@ uuid_utils = ">=0.10,<0.12"
 # did libraries
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-did-webvh = ">=0.3.0"
+did-webvh = ">=1.0.0rc0"
 
 # Verifiable Credentials
 indy-credx = "~1.1.1"
