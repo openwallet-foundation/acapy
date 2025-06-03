@@ -73,6 +73,7 @@ from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.anoncreds_upgrade import upgrade_wallet_to_anoncreds_if_requested
 from ..wallet.did_info import DIDInfo
+from ..wallet.singletons import IsAnonCredsSingleton
 from .dispatcher import Dispatcher
 from .error import ProfileError, StartupError
 from .oob_processor import OobMessageProcessor
@@ -587,6 +588,10 @@ class Conductor:
             LOGGER.exception(
                 "An exception was caught while checking for wallet upgrades in progress."
             )
+
+        # Ensure anoncreds wallet is added to singleton (avoids unnecessary upgrade check)
+        if self.root_profile.settings.get("wallet.type") == "askar-anoncreds":
+            IsAnonCredsSingleton().set_wallet(self.root_profile.name)
 
         # notify protocols of startup status
         LOGGER.debug("Notifying protocols of startup status.")
