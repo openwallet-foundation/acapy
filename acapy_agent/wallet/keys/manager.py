@@ -164,7 +164,7 @@ class MultikeyManager:
 
     async def from_kid(self, kid: str):
         """Fetch a single key."""
-        
+
         try:
             key_info = await self.wallet.get_key_by_kid(kid=kid)
 
@@ -212,8 +212,8 @@ class MultikeyManager:
     async def update(self, multikey: str, kid: str, unbind=False):
         """Bind or unbind a kid with a key pair."""
         (
-            await self.unbind_key_id(multikey, kid) 
-            if unbind 
+            await self.unbind_key_id(multikey, kid)
+            if unbind
             else await self.bind_key_id(multikey, kid)
         )
 
@@ -222,9 +222,7 @@ class MultikeyManager:
     async def bind_key_id(self, multikey: str, kid: str):
         """Bind a new key id to a key pair."""
         try:
-            return await self.wallet.assign_kid_to_key(
-                multikey_to_verkey(multikey), kid
-            )
+            return await self.wallet.assign_kid_to_key(multikey_to_verkey(multikey), kid)
         except (WalletError, WalletDuplicateError, WalletNotFoundError) as err:
             LOGGER.info(err)
             raise MultikeyManagerError(err)

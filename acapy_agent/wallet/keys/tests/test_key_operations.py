@@ -42,21 +42,15 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
                 manager = MultikeyManager(session=session)
                 kid = f"did:web:example.com#key-0{i}"
 
-                key_info = await manager.create(
-                    seed=self.seed, alg=alg
-                )
+                key_info = await manager.create(seed=self.seed, alg=alg)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] is None
 
-                key_info = await manager.from_multikey(
-                    multikey=expected_multikey
-                )
+                key_info = await manager.from_multikey(multikey=expected_multikey)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] == []
 
-                key_info = await manager.update(
-                    multikey=expected_multikey, kid=kid
-                )
+                key_info = await manager.update(multikey=expected_multikey, kid=kid)
                 assert key_info["multikey"] == expected_multikey
                 assert key_info["kid"] == kid
 
@@ -66,24 +60,23 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
 
     async def test_key_id_binding(self):
         async with self.profile.session() as session:
-            
             test_multikey = self.ed25519_multikey
             key_id_01 = "did:web:example.com#key-01"
             key_id_02 = "did:web:example.com#key-02"
             key_id_03 = "did:web:example.com#key-03"
-            
+
             manager = MultikeyManager(session=session)
-            
+
             await manager.create(self.seed, key_id_01, self.ed25519_alg)
             await manager.bind_key_id(test_multikey, key_id_02)
             await manager.bind_key_id(test_multikey, key_id_03)
-            
+
             assert (await manager.from_kid(key_id_01))["multikey"] == test_multikey
             assert (await manager.from_kid(key_id_02))["multikey"] == test_multikey
             assert (await manager.from_kid(key_id_03))["multikey"] == test_multikey
-            
+
             await manager.unbind_key_id(test_multikey, key_id_01)
-            
+
             assert (await manager.from_kid(key_id_01)) is None
             assert (await manager.from_kid(key_id_02))["multikey"] == test_multikey
             assert (await manager.from_kid(key_id_03))["multikey"] == test_multikey

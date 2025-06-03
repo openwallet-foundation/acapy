@@ -102,7 +102,7 @@ class AskarWallet(BaseWallet):
                 "multikey": verkey_to_multikey(verkey, key_type.key_type),
                 "kid": [kid] if kid else [],
             }
-            
+
             await self._session.handle.insert_key(
                 verkey,
                 keypair,
@@ -141,7 +141,7 @@ class AskarWallet(BaseWallet):
         key_type = key_types.from_key_type(key.algorithm.value)
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
-        
+
         tags = key_entry.tags or {"kid": []}
         key_ids = tags.get("kid", [])
         key_ids = key_ids if isinstance(key_ids, list) else [key_ids]
