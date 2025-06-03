@@ -148,7 +148,7 @@ class AskarWallet(BaseWallet):
         key_tags["kid"] = key_kids
 
         await self._session.handle.update_key(name=verkey, tags=key_tags)
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key_kids)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def remove_kid_from_key(self, multikey: str, kid: str) -> KeyInfo:
         """Remove a kid association.
@@ -193,7 +193,7 @@ class AskarWallet(BaseWallet):
         key_tags["kid"] = key_kids
 
         await self._session.handle.update_key(name=verkey, tags=key_tags)
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=key_kids)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
         """Fetch a key by looking up its kid.
