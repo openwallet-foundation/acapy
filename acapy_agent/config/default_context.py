@@ -146,7 +146,6 @@ class DefaultContextBuilder(ContextBuilder):
 
         anoncreds_plugins = [
             "acapy_agent.anoncreds",
-            "acapy_agent.anoncreds.default.did_indy",
             "acapy_agent.anoncreds.default.did_web",
             "acapy_agent.anoncreds.default.legacy_indy",
             "acapy_agent.revocation_anoncreds",
