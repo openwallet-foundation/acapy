@@ -14,14 +14,6 @@ async def setup(context: InjectionContext) -> None:
         LOGGER.error("No AnonCredsRegistry instance found in context!!!")
         return
 
-    indy_registry = ClassProvider(
-        "acapy_agent.anoncreds.default.did_indy.registry.DIDIndyRegistry",
-        # supported_identifiers=[],
-        # method_name="did:indy",
-    ).provide(context.settings, context.injector)
-    await indy_registry.setup(context)
-    registry.register(indy_registry)
-
     web_registry = ClassProvider(
         "acapy_agent.anoncreds.default.did_web.registry.DIDWebRegistry",
         # supported_identifiers=[],
