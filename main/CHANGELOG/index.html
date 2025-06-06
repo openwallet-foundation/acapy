@@ -528,19 +528,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#131rc0" class="md-nav__link">
+  <a href="#131rc1" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.1rc0
+      1.3.1rc1
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.1rc0">
+    <nav class="md-nav" aria-label="1.3.1rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#may-30-2025" class="md-nav__link">
+  <a href="#june-6-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      May 30, 2025
+      June 6, 2025
     </span>
   </a>
   
@@ -3266,19 +3266,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#131rc0" class="md-nav__link">
+  <a href="#131rc1" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.1rc0
+      1.3.1rc1
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.1rc0">
+    <nav class="md-nav" aria-label="1.3.1rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#may-30-2025" class="md-nav__link">
+  <a href="#june-6-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      May 30, 2025
+      June 6, 2025
     </span>
   </a>
   
@@ -4131,12 +4131,13 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="131rc0">1.3.1rc0<a class="headerlink" href="#131rc0" title="Permanent link">&para;</a></h2>
-<h3 id="may-30-2025">May 30, 2025<a class="headerlink" href="#may-30-2025" title="Permanent link">&para;</a></h3>
+<h2 id="131rc1">1.3.1rc1<a class="headerlink" href="#131rc1" title="Permanent link">&para;</a></h2>
+<h3 id="june-6-2025">June 6, 2025<a class="headerlink" href="#june-6-2025" title="Permanent link">&para;</a></h3>
 <p>ACA-Py 1.3.1 is a maintenance release that focuses on improving reliability, developer experience, and project documentation. It includes important fixes, updated links and metadata, and minor enhancements, particularly in support of long-term stability and governance clarity.</p>
 <p>This release includes:</p>
 <ul>
 <li>Extensive updates to outdated or redirected links in documentation and code comments, moving references from Hyperledger to the OpenWallet Foundation and other current locations.</li>
+<li>Expanded options for running the ACA-Py demo, with support added for Microsoft Dev Tunnels and improved out-of-band connection flows.</li>
 <li>Updates to project governance documentation, including the Code of Conduct, Security Policy, and Maintainers Guide, aligned with the OpenWallet Foundation processes.</li>
 <li>Logging improvements for better observability, especially around public DID handling, routing keys, and outbound websocket messages.</li>
 <li>Demo enhancements, including migration to prompt_toolkit 3.x and fixes to markdown and code formatting issues.</li>
@@ -4150,6 +4151,11 @@
 <p>There are no breaking changes in this release.</p>
 <h3 id="131-categorized-list-of-pull-requests">1.3.1 Categorized List of Pull Requests<a class="headerlink" href="#131-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>Security and Performance Improvements</strong><ul>
+<li><img alt="⚡" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/26a1.svg" title=":zap:" /> Skip upgrade check for status checks <a href="https://github.com/openwallet-foundation/acapy/pull/3761">#3761</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>Remove  header from http/ws responses <a href="https://github.com/openwallet-foundation/acapy/pull/3753">#3753</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
 <li><strong>Logging and Observability Improvements</strong><ul>
 <li>Add websocket outbound debug log <a href="https://github.com/openwallet-foundation/acapy/pull/3736">#3736</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li><img alt="🔊" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f50a.svg" title=":loud_sound:" /> Improve logging in Handlers <a href="https://github.com/openwallet-foundation/acapy/pull/3722">#3722</a> <a href="https://github.com/ff137">ff137</a></li>
@@ -4159,6 +4165,11 @@
 <li><strong>VC-Related Bug Fixes and Behavior Corrections</strong><ul>
 <li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Add missing anoncreds field to V20CredExRecordDetail model <a href="https://github.com/openwallet-foundation/acapy/pull/3710">#3710</a> <a href="https://github.com/ff137">ff137</a></li>
 <li><img alt="🐛" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f41b.svg" title=":bug:" /> Fix v2 cred ex and pres ex webhook events to emit after db write <a href="https://github.com/openwallet-foundation/acapy/pull/3699">#3699</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
+<li><strong>DID Method Updates</strong><ul>
+<li>chore: Remove <code>did:indy</code> Stub <a href="https://github.com/openwallet-foundation/acapy/pull/3764">#3764</a> <a href="https://github.com/TheTechmage">TheTechmage</a></li>
+<li>Update webvh package version <a href="https://github.com/openwallet-foundation/acapy/pull/3763">#3763</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 </ul>
 </li>
 <li><strong>Test and CI Improvements</strong><ul>
@@ -4172,6 +4183,7 @@
 </ul>
 </li>
 <li><strong>Demo and Example Improvements</strong><ul>
+<li>alice/faber demo supports Microsoft dev tunnels <a href="https://github.com/openwallet-foundation/acapy/pull/3755">#3755</a> <a href="https://github.com/davidchaiken">davidchaiken</a></li>
 <li>Demo: Change mediation connection to out-of-band <a href="https://github.com/openwallet-foundation/acapy/pull/3751">#3751</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Feat(demo): migrate to prompt_toolkit 3.x (Fixes <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3681" title="GitHub Issue: squidfunk/mkdocs-material #3681">#3681</a>) <a href="https://github.com/openwallet-foundation/acapy/pull/3713">#3713</a> <a href="https://github.com/andrepestana-aot">andrepestana-aot</a></li>
 </ul>
@@ -4186,16 +4198,18 @@
 </ul>
 </li>
 <li><strong>Versioning and Release Support</strong><ul>
+<li>Repair lts workflow <a href="https://github.com/openwallet-foundation/acapy/pull/3759">#3759</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Tag and Recreate ACA-Py LTS Release <a href="https://github.com/openwallet-foundation/acapy/pull/3735">#3735</a> <a href="https://github.com/pradeepp88">pradeepp88</a></li>
 <li>Update images and tags to version 1.3.0 <a href="https://github.com/openwallet-foundation/acapy/pull/3708">#3708</a> <a href="https://github.com/jamshale">jamshale</a></li>
 </ul>
 </li>
 <li><strong>Dependabot PRs</strong><ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-05-30+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-06-06+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 <li><strong>Release management pull requests</strong>:<ul>
-<li>1.3.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3752">#3752</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>1.3.1rc1 <a href="https://github.com/openwallet-foundation/acapy/pull/3765">#3765</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>1.3.1rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3752">#3752</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
 </ul>
