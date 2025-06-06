@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.3.1rc0",
+    "version" : "v1.3.1rc1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -50,7 +50,7 @@
     "description" : "Credential definition operations",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/indy-node/tree/main/design/anoncreds.md#cred_def"
+      "url" : "https://github.com/hyperledger/indy-node/blob/main/design/anoncreds.md#cred_def"
     }
   }, {
     "name" : "credentials",
