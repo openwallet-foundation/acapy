@@ -192,6 +192,10 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
 @web.middleware
 async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
     """Blocking middleware for upgrades."""
+    # Skip upgrade check for status checks
+    if str(request.rel_url).startswith("/status/"):
+        return await handler(request)
+
     context: AdminRequestContext = request["context"]
 
     # Already upgraded
