@@ -4,7 +4,7 @@ import logging
 from ...core.profile import ProfileSession
 from ...resolver.did_resolver import DIDResolver
 from ...utils.multiformats import multibase
-from ...wallet.error import WalletNotFoundError
+from ...wallet.error import WalletError, WalletNotFoundError
 from ..base import BaseWallet
 from ..key_type import BLS12381G2, ED25519, P256, KeyType
 from ..util import b58_to_bytes, bytes_to_b58
@@ -18,6 +18,12 @@ ALG_MAPPINGS = {
         "key_type": ED25519,
         "multikey_prefix": "z6Mk",
         "prefix_hex": "ed01",
+        "prefix_length": 2,
+    },
+    "x25519": {
+        "key_type": ED25519,
+        "multikey_prefix": "z6LS",
+        "prefix_hex": "ec01",
         "prefix_length": 2,
     },
     "p256": {
@@ -107,11 +113,11 @@ class MultikeyManager:
         This function is idempotent.
         """
         if await self.kid_exists(kid):
-            LOGGER.debug(f"kid {kid} already bound in storage, will not resolve.")
+            LOGGER.info(f"kid {kid} already bound in storage, will not resolve.")
             return await self.from_kid(kid)
         else:
             multikey = await self.resolve_multikey_from_verification_method_id(kid)
-            LOGGER.debug(
+            LOGGER.info(
                 f"kid {kid} binding not found in storage, \
                 binding to resolved multikey {multikey}."
             )
@@ -165,14 +171,18 @@ class MultikeyManager:
     async def from_kid(self, kid: str):
         """Fetch a single key."""
 
-        key_info = await self.wallet.get_key_by_kid(kid=kid)
+        try:
+            key_info = await self.wallet.get_key_by_kid(kid=kid)
 
-        return {
-            "kid": key_info.kid,
-            "multikey": verkey_to_multikey(
-                key_info.verkey, alg=key_info.key_type.key_type
-            ),
-        }
+            return {
+                "kid": key_info.kid,
+                "multikey": verkey_to_multikey(
+                    key_info.verkey, alg=key_info.key_type.key_type
+                ),
+            }
+        except WalletError as err:
+            LOGGER.error(err)
+            return None
 
     async def from_multikey(self, multikey: str):
         """Fetch a single key."""
@@ -205,19 +215,30 @@ class MultikeyManager:
             "multikey": verkey_to_multikey(key_info.verkey, alg=alg),
         }
 
-    async def update(self, multikey: str, kid: str):
-        """Assign a new kid to a key pair."""
-
-        if kid and await self.kid_exists(kid=kid):
-            raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
-
-        key_info = await self.wallet.assign_kid_to_key(
-            verkey=multikey_to_verkey(multikey), kid=kid
+    async def update(self, multikey: str, kid: str, unbind=False):
+        """Bind or unbind a kid with a key pair."""
+        (
+            await self.unbind_key_id(multikey, kid)
+            if unbind
+            else await self.bind_key_id(multikey, kid)
         )
 
-        return {
-            "kid": key_info.kid,
-            "multikey": verkey_to_multikey(
-                key_info.verkey, alg=key_info.key_type.key_type
-            ),
-        }
+        return {"kid": kid, "multikey": multikey}
+
+    async def bind_key_id(self, multikey: str, kid: str):
+        """Bind a new key id to a key pair."""
+        try:
+            return await self.wallet.assign_kid_to_key(multikey_to_verkey(multikey), kid)
+        except WalletError as err:
+            LOGGER.error(err)
+            raise MultikeyManagerError(err)
+
+    async def unbind_key_id(self, multikey: str, kid: str):
+        """Unbind a key id from a key pair."""
+        try:
+            return await self.wallet.unassign_kid_from_key(
+                multikey_to_verkey(multikey), kid
+            )
+        except WalletError as err:
+            LOGGER.error(err)
+            raise MultikeyManagerError(err)
