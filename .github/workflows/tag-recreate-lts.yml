@@ -6,9 +6,6 @@ name: Tag and Recreate LTS Release
 on:
   release:
     types: [published]
-  push:
-    branches: 
-      - '*.lts'
       
 permissions:
   contents: write
@@ -16,6 +13,8 @@ permissions:
 
 jobs:
   recreate-lts-release:
+    # This job is disabled by default for main, should be enabled for LTS branches and tags
+    if: false 
     name: Recreate LTS Release
     runs-on: ubuntu-latest
     outputs:
@@ -42,9 +41,8 @@ jobs:
           echo "Release published from branch: $BRANCH_REF"
 
           # Creating a LTS tag from the branch name
-          VERSION_PREFIX="${BRANCH_REF%.lts}"
-          echo "VERSION_PREFIX=$VERSION_PREFIX" >> $GITHUB_ENV
-          LTS_TAG="${VERSION_PREFIX}-lts"
+          SHORT_TAG=$(echo "$RELEASE_TAG" | cut -d. -f1,2)
+          LTS_TAG="${SHORT_TAG}-lts"
           echo "LTS_TAG=$LTS_TAG" >> "$GITHUB_OUTPUT"
 
           # Force update the tag to the current commit
