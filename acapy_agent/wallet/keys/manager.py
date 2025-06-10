@@ -181,7 +181,7 @@ class MultikeyManager:
                 ),
             }
         except (WalletDuplicateError, WalletError, WalletNotFoundError) as err:
-            LOGGER.info(err)
+            LOGGER.error(err)
             return None
 
     async def from_multikey(self, multikey: str):
@@ -230,7 +230,7 @@ class MultikeyManager:
         try:
             return await self.wallet.assign_kid_to_key(multikey_to_verkey(multikey), kid)
         except (WalletError, WalletDuplicateError, WalletNotFoundError) as err:
-            LOGGER.info(err)
+            LOGGER.error(err)
             raise MultikeyManagerError(err)
 
     async def unbind_key_id(self, multikey: str, kid: str):
@@ -240,5 +240,5 @@ class MultikeyManager:
                 multikey_to_verkey(multikey), kid
             )
         except (WalletError, WalletDuplicateError, WalletNotFoundError) as err:
-            LOGGER.info(err)
+            LOGGER.error(err)
             raise MultikeyManagerError(err)
