@@ -180,7 +180,7 @@ class MultikeyManager:
                     key_info.verkey, alg=key_info.key_type.key_type
                 ),
             }
-        except (WalletDuplicateError, WalletError, WalletNotFoundError) as err:
+        except WalletError as err:
             LOGGER.error(err)
             return None
 
@@ -229,7 +229,7 @@ class MultikeyManager:
         """Bind a new key id to a key pair."""
         try:
             return await self.wallet.assign_kid_to_key(multikey_to_verkey(multikey), kid)
-        except (WalletError, WalletDuplicateError, WalletNotFoundError) as err:
+        except WalletError as err:
             LOGGER.error(err)
             raise MultikeyManagerError(err)
 
@@ -239,6 +239,6 @@ class MultikeyManager:
             return await self.wallet.unassign_kid_from_key(
                 multikey_to_verkey(multikey), kid
             )
-        except (WalletError, WalletDuplicateError, WalletNotFoundError) as err:
+        except WalletError as err:
             LOGGER.error(err)
             raise MultikeyManagerError(err)
