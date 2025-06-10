@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.1rc0"
+    "version" : "v1.3.1rc1"
   },
   "servers" : [ {
     "url" : "/"
@@ -55,7 +55,7 @@
     "description" : "Credential definition operations",
     "externalDocs" : {
       "description" : "Specification",
-      "url" : "https://github.com/hyperledger/indy-node/tree/main/design/anoncreds.md#cred_def"
+      "url" : "https://github.com/hyperledger/indy-node/blob/main/design/anoncreds.md#cred_def"
     },
     "name" : "credential-definition"
   }, {
