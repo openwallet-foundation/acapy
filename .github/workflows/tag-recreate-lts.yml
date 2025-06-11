@@ -14,6 +14,9 @@ permissions:
 jobs:
   recreate-lts-release:
     # This job is disabled by default for main, should be enabled for LTS branches and tags
+    # Example: 
+    # if: startsWith(github.event.release.tag_name, '1.2.')
+    # for the LTS 1.2.lts
     if: false 
     name: Recreate LTS Release
     runs-on: ubuntu-latest
