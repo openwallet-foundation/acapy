@@ -13,10 +13,12 @@ permissions:
 
 jobs:
   recreate-lts-release:
-    # This job is disabled by default for main, should be enabled for LTS branches and tags
-    # Example: 
-    # if: startsWith(github.event.release.tag_name, '1.2.')
-    # for the LTS 1.2.lts
+    # This job is disabled by default for main, should be enabled for LTS branches and tags.
+    # To enable it, you can set the condition in the `if` statement below.
+    # The condition should check if the release tag starts with the LTS version prefix.
+    # For example, if your LTS versions are prefixed with '1.2.', you can use:
+    #   if: startsWith(github.event.release.tag_name, '1.2.')
+    # This will ensure that the job only runs for releases that are tagged with LTS versions.
     if: false 
     name: Recreate LTS Release
     runs-on: ubuntu-latest
