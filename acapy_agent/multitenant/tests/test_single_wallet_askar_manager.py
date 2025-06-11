@@ -1,6 +1,7 @@
 import asyncio
 from unittest import IsolatedAsyncioTestCase
-from uuid import uuid4
+
+from uuid_utils import uuid4
 
 from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext
