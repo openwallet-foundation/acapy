@@ -32,6 +32,8 @@ from ...anoncreds.registry import AnonCredsRegistry
 from ...anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
 from ...anoncreds.tests.test_issuer import MockCredDefEntry
 from ...askar.profile_anon import AskarAnonCredsProfileSession
+from ...core.async_lock.async_lock import AsyncLock
+from ...core.async_lock.async_lock_sqlite import SqliteAsyncLock
 from ...core.event_bus import Event, EventBus, MockEventBus
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
 from ...tests import mock
@@ -1008,6 +1010,8 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     async def test_create_credential_private_no_rev_reg_or_tails(
         self, mock_create, mock_handle
     ):
+        SqliteAsyncLock.create()
+        self.profile.context.injector.bind_instance(AsyncLock, SqliteAsyncLock())
         mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), MockEntry()])
         await self.revocation._create_credential(
             credential_definition_id="test-cred-def-id",
@@ -1091,6 +1095,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 tails_file_path="tails-file-path",
                 credential_type=Credential,
             )
+
+        SqliteAsyncLock.create()
+        self.profile.context.injector.bind_instance(AsyncLock, SqliteAsyncLock())
 
         # missing rev def
         mock_handle.fetch = mock.CoroutineMock(
@@ -1549,6 +1556,8 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_credential_w3c_keyerror(self, mock_handle):
+        SqliteAsyncLock.create()
+        self.profile.context.injector.bind_instance(AsyncLock, SqliteAsyncLock())
         mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), MockEntry()])
         with pytest.raises(test_module.AnonCredsRevocationError) as excinfo:
             await self.revocation._create_credential(
