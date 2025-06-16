@@ -1054,16 +1054,16 @@ class AnonCredsRevocation:
                         tags=rev_list_tags,
                     )
                     await txn.commit()
+
+                revoc = CredentialRevocationConfig(
+                    rev_reg_def,
+                    rev_key.raw_value,
+                    rev_list,
+                    rev_reg_index,
+                )
+                credential_revocation_id = str(rev_reg_index)
                 # Free the distributed lock after commit the revocation list update
                 # by exiting with the async with block.
-
-        revoc = CredentialRevocationConfig(
-            rev_reg_def,
-            rev_key.raw_value,
-            rev_list,
-            rev_reg_index,
-        )
-        credential_revocation_id = str(rev_reg_index)
 
         cred_def, cred_def_private = await self._get_cred_def_objects(
             credential_definition_id
