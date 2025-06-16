@@ -81,7 +81,10 @@ class PostgresAsyncLock(AsyncLock):
 
                 if not acquired:
                     raise TimeoutError(
-                        f"Could not acquire advisory lock {lock_key} within {timeout} seconds."
+                        f"""
+                        Could not acquire advisory lock {lock_key} within {timeout} 
+                        seconds.
+                        """
                     )
 
                 try:
