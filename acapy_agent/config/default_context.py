@@ -132,6 +132,7 @@ class DefaultContextBuilder(ContextBuilder):
             "acapy_agent.vc.data_integrity",
             "acapy_agent.wallet",
             "acapy_agent.wallet.keys",
+            "acapy_agent.core.async_lock",
         ]
 
         did_management_plugins = [
