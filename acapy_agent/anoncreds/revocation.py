@@ -993,46 +993,48 @@ class AnonCredsRevocation:
         rev_list = None
 
         if _has_required_id_and_tails_path():
-            async with self.profile.session() as session:
-                rev_reg_def = await session.handle.fetch(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id
-                )
-                rev_list = await session.handle.fetch(CATEGORY_REV_LIST, rev_reg_def_id)
-                rev_key = await session.handle.fetch(
+            # We need to make sure the read, index increment, and write
+            # operations on the revocation list are atomic.
+            # This is done by using a transaction.
+            async with self.profile.transaction() as txn:
+                rev_reg_def = await txn.handle.fetch(CATEGORY_REV_REG_DEF, rev_reg_def_id)
+                rev_list = await txn.handle.fetch(CATEGORY_REV_LIST, rev_reg_def_id)
+                rev_key = await txn.handle.fetch(
                     CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
                 )
 
-            _handle_missing_entries(rev_list, rev_reg_def, rev_key)
+                _handle_missing_entries(rev_list, rev_reg_def, rev_key)
 
-            rev_list_value_json = rev_list.value_json
-            rev_list_tags = rev_list.tags
+                rev_list_value_json = rev_list.value_json
+                rev_list_tags = rev_list.tags
 
-            # If the rev_list state is failed then the tails file was never uploaded,
-            # try to upload it now and finish the revocation list
-            if rev_list_tags.get("state") == RevListState.STATE_FAILED:
-                await self.upload_tails_file(
-                    RevRegDef.deserialize(rev_reg_def.value_json)
-                )
-                rev_list_tags["state"] = RevListState.STATE_FINISHED
+                # If the rev_list state is failed then the tails file was never uploaded,
+                # try to upload it now and finish the revocation list
+                if rev_list_tags.get("state") == RevListState.STATE_FAILED:
+                    await self.upload_tails_file(
+                        RevRegDef.deserialize(rev_reg_def.value_json)
+                    )
+                    rev_list_tags["state"] = RevListState.STATE_FINISHED
 
-            rev_reg_index = rev_list_value_json["next_index"]
-            try:
-                rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
-                rev_list = RevocationStatusList.load(rev_list_value_json["rev_list"])
-            except AnoncredsError as err:
-                raise AnonCredsRevocationError(
-                    "Error loading revocation registry"
-                ) from err
+                rev_reg_index = rev_list_value_json["next_index"]
+                try:
+                    rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
+                    rev_list = RevocationStatusList.load(rev_list_value_json["rev_list"])
+                except AnoncredsError as err:
+                    raise AnonCredsRevocationError(
+                        "Error loading revocation registry"
+                    ) from err
 
-            # NOTE: we increment the index ahead of time to keep the
-            # transaction short. The revocation registry itself will NOT
-            # be updated because we always use ISSUANCE_BY_DEFAULT.
-            # If something goes wrong later, the index will be skipped.
-            # FIXME - double check issuance type in case of upgraded wallet?
-            if rev_reg_index > rev_reg_def.max_cred_num:
-                raise AnonCredsRevocationRegistryFullError("Revocation registry is full")
-            rev_list_value_json["next_index"] = rev_reg_index + 1
-            async with self.profile.transaction() as txn:
+                # NOTE: we increment the index ahead of time to keep the
+                # transaction short. The revocation registry itself will NOT
+                # be updated because we always use ISSUANCE_BY_DEFAULT.
+                # If something goes wrong later, the index will be skipped.
+                # FIXME - double check issuance type in case of upgraded wallet?
+                if rev_reg_index > rev_reg_def.max_cred_num:
+                    raise AnonCredsRevocationRegistryFullError(
+                        "Revocation registry is full"
+                    )
+                rev_list_value_json["next_index"] = rev_reg_index + 1
                 await txn.handle.replace(
                     CATEGORY_REV_LIST,
                     rev_reg_def_id,
