@@ -1,0 +1,202 @@
+ 
+ services:
+  nginx:
+    image: nginx:latest
+    container_name: test_nginx
+    ports:
+      - "8080:80"  # Host:Container for Admin API
+      - "5000:5000"  # Host:Container for didcomm
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - faber_0
+      - faber_1
+      - faber_2
+      - alice
+
+  faber_0:
+    image: acapy-test
+    ports:
+      - "4000:4000"
+    command: >
+      start
+        --label Faber
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://nginx:5000
+        --admin 0.0.0.0 4000
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar-anoncreds
+        --wallet-name faber
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level info
+        --debug-webhooks
+        --notify-revocation
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4000/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+  faber_1:
+    image: acapy-test
+    ports:
+      - "4001:4001"
+    command: >
+      start
+        --label Faber
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://nginx:5000
+        --admin 0.0.0.0 4001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar-anoncreds
+        --wallet-name faber
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level info
+        --debug-webhooks
+        --notify-revocation
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      # This prevents db access race conditions. 
+      faber_0:
+        condition: service_healthy
+  faber_2:
+    image: acapy-test
+    ports:
+      - "4002:4002"
+    command: >
+      start
+        --label Faber
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://nginx:5000
+        --admin 0.0.0.0 4002
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar-anoncreds
+        --wallet-name faber
+        --wallet-key insecure
+        --wallet-storage-type "postgres_storage"
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-provision
+        --log-level info
+        --debug-webhooks
+        --notify-revocation
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4002/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      # This prevents db access race conditions. 
+      faber_1:
+        condition: service_healthy
+
+  alice:
+    image: acapy-test
+    ports:
+      - "6001:6001"
+    command: >
+      start
+        --label Alice
+        --inbound-transport http 0.0.0.0 6000
+        --outbound-transport http
+        --endpoint http://alice:6000
+        --admin 0.0.0.0 6001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name alice
+        --wallet-key insecure
+        --auto-provision
+        --log-level info
+        --debug-webhooks
+        --monitor-revocation-notification
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:6001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+
+  example:
+    container_name: controller
+    build:
+      context: ../..
+    environment:
+      - FABER_0=http://faber_0:4000
+      - FABER_1=http://faber_1:4001
+      - FABER_2=http://faber_2:4002
+      - ALICE=http://alice:6001
+    volumes:
+      - ./example.py:/usr/src/app/example.py:ro,z
+    command: python -m example
+    depends_on:
+      faber_0:
+        condition: service_healthy
+      faber_1:
+        condition: service_healthy
+      faber_2:
+        condition: service_healthy
+      alice:
+        condition: service_healthy
+      wallet-db:
+        condition: service_healthy
+
+  tails:
+    image: ghcr.io/bcgov/tails-server:latest
+    ports:
+      - 6543:6543
+    environment:
+      - GENESIS_URL=http://test.bcovrin.vonx.io/genesis
+    command: >
+      tails-server
+      --host 0.0.0.0
+      --port 6543
+      --storage-path /tmp/tails-files
+      --log-level info
+
+  wallet-db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DB_USER"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+      
