@@ -129,7 +129,7 @@ async def main():
     """Test Controller protocols."""
     async with Controller(base_url=ALICE) as alice, Controller(base_url=FABER) as faber:
         # Connecting
-        alice_conn, faber_conn = await didexchange(faber, alice)
+        alice_conn, _ = await didexchange(faber, alice)
 
         # Issuance prep
         config = (await alice.get("/status/config"))["config"]
