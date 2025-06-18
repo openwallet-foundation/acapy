@@ -9,15 +9,16 @@
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - faber_0
-      - faber_1
-      - faber_2
+      - faber
       - alice
 
-  faber_0:
+  faber:
     image: acapy-test
     ports:
-      - "4000:4000"
+      - "4000"
+    deploy:
+      replicas: 3
+    restart: unless-stopped # Due to askar store race condition. Can remove if that's fixed.
     command: >
       start
         --label Faber
@@ -39,7 +40,7 @@
         --debug-webhooks
         --notify-revocation
     healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4000/status/live" | grep "200" > /dev/null
+      test: curl -s -o /dev/null -w '%{http_code}' "http://nginx/status/live" | grep "200" > /dev/null
       start_period: 30s
       interval: 7s
       timeout: 5s
@@ -47,78 +48,6 @@
     depends_on:
       tails:
         condition: service_started
-  faber_1:
-    image: acapy-test
-    ports:
-      - "4001:4001"
-    command: >
-      start
-        --label Faber
-        --inbound-transport http 0.0.0.0 3000
-        --outbound-transport http
-        --endpoint http://nginx:5000
-        --admin 0.0.0.0 4001
-        --admin-insecure-mode
-        --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
-        --wallet-type askar-anoncreds
-        --wallet-name faber
-        --wallet-key insecure
-        --wallet-storage-type "postgres_storage"
-        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
-        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
-        --auto-provision
-        --log-level info
-        --debug-webhooks
-        --notify-revocation
-    healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4001/status/live" | grep "200" > /dev/null
-      start_period: 30s
-      interval: 7s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      tails:
-        condition: service_started
-      # This prevents db access race conditions. 
-      faber_0:
-        condition: service_healthy
-  faber_2:
-    image: acapy-test
-    ports:
-      - "4002:4002"
-    command: >
-      start
-        --label Faber
-        --inbound-transport http 0.0.0.0 3000
-        --outbound-transport http
-        --endpoint http://nginx:5000
-        --admin 0.0.0.0 4002
-        --admin-insecure-mode
-        --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
-        --wallet-type askar-anoncreds
-        --wallet-name faber
-        --wallet-key insecure
-        --wallet-storage-type "postgres_storage"
-        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
-        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
-        --auto-provision
-        --log-level info
-        --debug-webhooks
-        --notify-revocation
-    healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4002/status/live" | grep "200" > /dev/null
-      start_period: 30s
-      interval: 7s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      tails:
-        condition: service_started
-      # This prevents db access race conditions. 
-      faber_1:
-        condition: service_healthy
 
   alice:
     image: acapy-test
@@ -142,7 +71,7 @@
         --debug-webhooks
         --monitor-revocation-notification
     healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:6001/status/live" | grep "200" > /dev/null
+      test: curl -s -o /dev/null -w '%{http_code}' "http://alice:6001/status/live" | grep "200" > /dev/null
       start_period: 30s
       interval: 7s
       timeout: 5s
@@ -153,19 +82,13 @@
     build:
       context: ../..
     environment:
-      - FABER_0=http://faber_0:4000
-      - FABER_1=http://faber_1:4001
-      - FABER_2=http://faber_2:4002
+      - FABER=http://nginx
       - ALICE=http://alice:6001
     volumes:
       - ./example.py:/usr/src/app/example.py:ro,z
     command: python -m example
     depends_on:
-      faber_0:
-        condition: service_healthy
-      faber_1:
-        condition: service_healthy
-      faber_2:
+      faber:
         condition: service_healthy
       alice:
         condition: service_healthy
