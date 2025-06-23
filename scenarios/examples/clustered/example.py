@@ -3,17 +3,14 @@
 import asyncio
 from os import getenv
 from secrets import token_hex
-from typing import Optional
 
 import aiohttp
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
 from acapy_controller.protocols import (
-    ConnRecord,
     DIDResult,
-    InvitationMessage,
+    InvitationRecord,
     OobRecord,
-    oob_invitation,
     params,
 )
 from aiohttp import ClientSession
@@ -28,75 +25,6 @@ REVOCATION_BASE_PATH = "/anoncreds"
 
 FABER = getenv("FABER", "http://nginx")
 ALICE = getenv("ALICE", "http://alice:6001")
-
-
-# Custom didexchange function without `completed` listener with to handle multiple
-# instances. It may get received by another agent.
-async def didexchange(
-    inviter: Controller,
-    invitee: Controller,
-    *,
-    invite: Optional[InvitationMessage] = None,
-    use_existing_connection: bool = False,
-):
-    """Custom didexchange without the webhook listener for multiple instances."""
-    if not invite:
-        invite = await oob_invitation(inviter)
-
-    invitee_oob_record = await invitee.post(
-        "/out-of-band/receive-invitation",
-        json=invite,
-        params=params(
-            use_existing_connection=use_existing_connection,
-        ),
-        response=OobRecord,
-    )
-
-    if use_existing_connection and invitee_oob_record == "reuse-accepted":
-        inviter_oob_record = await inviter.event_with_values(
-            topic="out_of_band",
-            invi_msg_id=invite.id,
-            event_type=OobRecord,
-        )
-        inviter_conn = await inviter.get(
-            f"/connections/{inviter_oob_record.connection_id}",
-            response=ConnRecord,
-        )
-        invitee_conn = await invitee.get(
-            f"/connections/{invitee_oob_record.connection_id}",
-            response=ConnRecord,
-        )
-        return inviter_conn, invitee_conn
-
-    invitee_conn = await invitee.post(
-        f"/didexchange/{invitee_oob_record.connection_id}/accept-invitation",
-        response=ConnRecord,
-    )
-    inviter_oob_record = await inviter.event_with_values(
-        topic="out_of_band",
-        invi_msg_id=invite.id,
-        state="done",
-        event_type=OobRecord,
-    )
-    inviter_conn = await inviter.event_with_values(
-        topic="connections",
-        event_type=ConnRecord,
-        rfc23_state="request-received",
-        invitation_key=inviter_oob_record.our_recipient_key,
-    )
-    await asyncio.sleep(1)
-    inviter_conn = await inviter.post(
-        f"/didexchange/{inviter_conn.connection_id}/accept-request",
-        response=ConnRecord,
-    )
-
-    await invitee.event_with_values(
-        topic="connections",
-        connection_id=invitee_conn.connection_id,
-        rfc23_state="response-received",
-    )
-
-    return inviter_conn, invitee_conn
 
 
 async def check_unique_cred_rev_ids(
@@ -129,7 +57,27 @@ async def main():
     """Test Controller protocols."""
     async with Controller(base_url=ALICE) as alice, Controller(base_url=FABER) as faber:
         # Connecting
-        alice_conn, _ = await didexchange(faber, alice)
+
+        invite_record = await faber.post(
+            "/out-of-band/create-invitation",
+            json={
+                "handshake_protocols": ["https://didcomm.org/didexchange/1.1"],
+            },
+            params=params(
+                auto_accept=True,
+            ),
+            response=InvitationRecord,
+        )
+
+        await alice.post(
+            "/out-of-band/receive-invitation",
+            json=invite_record.invitation,
+            response=OobRecord,
+        )
+
+        await asyncio.sleep(1)  # Wait for the invitation to be processed
+
+        alice_conn = (await faber.get("connections"))["results"][0]
 
         # Issuance prep
         config = (await alice.get("/status/config"))["config"]
@@ -198,7 +146,7 @@ async def main():
                     "auto_remove": False,
                     "comment": "Credential from minimal example",
                     "trace": False,
-                    "connection_id": alice_conn.connection_id,
+                    "connection_id": alice_conn["connection_id"],
                     "filter": {
                         "anoncreds": {
                             "cred_def_id": cred_def.credential_definition_state[
@@ -253,7 +201,7 @@ async def main():
         # Wait for all credentials to be completed.
         # This could be done more efficiently with a webhook listener, but
         # is challenging with the current Controller library and multiple instances.
-        await asyncio.sleep(8)
+        await asyncio.sleep(3)
         async with aiohttp.ClientSession() as session:
             seen = []
 

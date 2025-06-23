@@ -35,12 +35,14 @@
         --wallet-storage-type "postgres_storage"
         --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
         --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
+        --auto-accept-invites
+        --auto-accept-requests
         --auto-provision
         --log-level info
         --debug-webhooks
         --notify-revocation
     healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://nginx/status/live" | grep "200" > /dev/null
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:4000/status/live" | grep "200" > /dev/null
       start_period: 30s
       interval: 7s
       timeout: 5s
@@ -67,6 +69,8 @@
         --wallet-name alice
         --wallet-key insecure
         --auto-provision
+        --auto-accept-invites
+        --auto-accept-requests
         --log-level info
         --debug-webhooks
         --monitor-revocation-notification
