@@ -11,6 +11,12 @@
     depends_on:
       - faber
       - alice
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   faber:
     image: acapy-test
@@ -50,6 +56,8 @@
     depends_on:
       tails:
         condition: service_started
+      wallet-db:
+        condition: service_healthy
 
   alice:
     image: acapy-test
@@ -80,6 +88,11 @@
       interval: 7s
       timeout: 5s
       retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
 
   example:
     container_name: controller
@@ -98,6 +111,8 @@
         condition: service_healthy
       wallet-db:
         condition: service_healthy
+      nginx:
+        condition: service_started
 
   tails:
     image: ghcr.io/bcgov/tails-server:latest
