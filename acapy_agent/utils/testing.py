@@ -69,7 +69,6 @@ def skip_on_jsonld_url_error(test_func):
 
     def _handle_jsonld_error(e):
         """Check if exception is a JSON-LD URL resolution error and skip if so."""
-        # Import here to avoid circular imports
 
         if isinstance(e, JsonLdError):
             error_str = str(e)
@@ -97,6 +96,7 @@ def skip_on_jsonld_url_error(test_func):
                 pytest.skip(
                     f"Skipping test due to JSON-LD URL resolution error: {error_str}"
                 )
+
         # Re-raise if it's not a URL resolution error we want to skip
         raise
 
