@@ -1,6 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
 
-from ....storage.base import StorageNotFoundError
 from ....utils.testing import create_test_profile
 from .. import issuer_cred_rev_record as test_module
 from ..issuer_cred_rev_record import IssuerCredRevRecord
@@ -84,13 +83,30 @@ class TestIssuerCredRevRecord(IsolatedAsyncioTestCase):
                 )
             )
 
+            await recs[1].set_state(  # Save extra record
+                session,
+                IssuerCredRevRecord.STATE_REVOKED,
+            )
+            # Fetch cred rev id as string
+            assert await IssuerCredRevRecord.retrieve_by_ids(
+                session, rev_reg_id=REV_REG_ID, cred_rev_id="1"
+            ) == [recs[0]]
+
+            # Fetch cred rev id as list
+            assert await IssuerCredRevRecord.retrieve_by_ids(
+                session, rev_reg_id=REV_REG_ID, cred_rev_id=["2"]
+            ) == [recs[1]]
+
+            # Fetch both
             assert (
                 await IssuerCredRevRecord.retrieve_by_ids(
-                    session, rev_reg_id=REV_REG_ID, cred_rev_id="1"
+                    session, rev_reg_id=REV_REG_ID, cred_rev_id=["1", "2"]
                 )
-                == recs[0]
-            )
-            with self.assertRaises(StorageNotFoundError):
+            ) == recs
+
+            # Fetch cred rev id that doesn't exist
+            assert (
                 await IssuerCredRevRecord.retrieve_by_ids(
-                    session, rev_reg_id=REV_REG_ID, cred_rev_id="2"
+                    session, rev_reg_id=REV_REG_ID, cred_rev_id=["3"]
                 )
+            ) == []

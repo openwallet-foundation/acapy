@@ -348,9 +348,9 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                 test_module.web, "json_response", mock.Mock()
             ) as mock_json_response,
         ):
-            mock_retrieve.return_value = mock.MagicMock(
-                serialize=mock.MagicMock(return_value="dummy")
-            )
+            mock_retrieve.return_value = [
+                mock.MagicMock(serialize=mock.MagicMock(return_value="dummy"))
+            ]
             result = await test_module.get_cred_rev_record(self.request)
 
             mock_json_response.assert_called_once_with({"result": "dummy"})
