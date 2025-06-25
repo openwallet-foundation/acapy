@@ -57,7 +57,7 @@ from ..revocation.models.issuer_rev_reg_record import (
     IssuerRevRegRecord,
     IssuerRevRegRecordSchema,
 )
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
 from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from .manager import RevocationManager, RevocationManagerError
 from .models.issuer_cred_rev_record import (
@@ -961,9 +961,21 @@ async def get_cred_rev_record(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             if rev_reg_id and cred_rev_id:
-                rec = await IssuerCredRevRecord.retrieve_by_ids(
+                recs = await IssuerCredRevRecord.retrieve_by_ids(
                     session, rev_reg_id, cred_rev_id
                 )
+                if len(recs) == 1:
+                    rec = recs[0]
+                elif len(recs) > 1:
+                    raise StorageDuplicateError(
+                        f"Multiple records found for rev_reg_id: {rev_reg_id} "
+                        f"and cred_rev_id: {cred_rev_id}"
+                    )
+                else:
+                    raise StorageNotFoundError(
+                        f"No record found for rev_reg_id: {rev_reg_id} "
+                        f"and cred_rev_id: {cred_rev_id}"
+                    )
             else:
                 rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
                     session, cred_ex_id
