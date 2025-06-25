@@ -1,12 +1,15 @@
 """Issuer credential revocation information."""
 
-from typing import Any, Optional, Sequence
+import json
+from collections.abc import Sequence
+from typing import Any, List, Optional
 
 from marshmallow import fields
 
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import UUID4_EXAMPLE
+from ...storage.base import BaseStorage
 
 
 class IssuerCredRevRecord(BaseRecord):
@@ -90,17 +93,33 @@ class IssuerCredRevRecord(BaseRecord):
         cls,
         session: ProfileSession,
         rev_reg_id: str,
-        cred_rev_id: str,
+        cred_rev_id: str | List[str],
         *,
         for_update: bool = False,
-    ) -> "IssuerCredRevRecord":
-        """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
-        return await cls.retrieve_by_tag_filter(
-            session,
-            {"rev_reg_id": rev_reg_id},
-            {"cred_rev_id": cred_rev_id},
-            for_update=for_update,
+    ) -> Sequence["IssuerCredRevRecord"]:
+        """Retrieve a list of issuer cred rev records by rev reg id and cred rev ids."""
+        cred_rev_ids = [cred_rev_id] if isinstance(cred_rev_id, str) else cred_rev_id
+
+        tag_query = {
+            "rev_reg_id": rev_reg_id,
+            "cred_rev_id": {"$in": cred_rev_ids},
+        }
+
+        storage = session.inject(BaseStorage)
+        storage_records = await storage.find_all_records(
+            cls.RECORD_TYPE,
+            tag_query,
+            options={
+                "for_update": for_update,
+            },
         )
+
+        rev_reg_records = [
+            cls.from_storage(record.id, json.loads(record.value))
+            for record in storage_records
+        ]
+
+        return rev_reg_records
 
     @classmethod
     async def retrieve_by_cred_ex_id(
