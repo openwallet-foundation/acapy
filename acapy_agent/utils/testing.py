@@ -6,7 +6,7 @@ from typing import Optional
 
 import pytest
 from pyld.jsonld import JsonLdError
-from uuid import uuid4
+from uuid_utils import uuid4
 
 from ..askar.profile import AskarProfile
 from ..askar.profile_anon import AskarAnonCredsProfile
