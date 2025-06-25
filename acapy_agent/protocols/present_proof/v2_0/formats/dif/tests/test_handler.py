@@ -10,7 +10,7 @@ from .......resolver.did_resolver import DIDResolver
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
 from .......tests import mock
-from .......utils.testing import create_test_profile
+from .......utils.testing import create_test_profile, skip_on_jsonld_url_error
 from .......vc.ld_proofs import DocumentLoader
 from .......vc.vc_di.manager import VcDiManager
 from .......vc.vc_ld.manager import VcLdpManager
@@ -2025,6 +2025,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
 
+    @skip_on_jsonld_url_error
     async def test_verify_received_pres_no_match_b(self):
         dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
         dif_proof_req["presentation_definition"]["input_descriptors"][0]["constraints"][
@@ -2128,6 +2129,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
 
+    @skip_on_jsonld_url_error
     async def test_verify_received_pres_limit_disclosure_fail_b(self):
         dif_proof = deepcopy(DIF_PRES)
         dif_proof["verifiableCredential"][0]["credentialSubject"]["test"] = "Test"

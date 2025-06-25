@@ -11,7 +11,7 @@ from .....resolver.default.key import KeyDIDResolver
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....tests import mock
-from .....utils.testing import create_test_profile
+from .....utils.testing import create_test_profile, skip_on_jsonld_url_error
 from .....vc.ld_proofs import BbsBlsSignature2020
 from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .....vc.ld_proofs.document_loader import DocumentLoader
@@ -82,6 +82,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             creds, pds = get_test_data()
             return creds, pds
 
+    @skip_on_jsonld_url_error
     async def test_load_cred_json_a(self):
         cred_list, pd_list = await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
@@ -103,6 +104,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_load_cred_json_b(self):
         cred_list, pd_list = await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(
@@ -346,6 +348,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             )
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_subject_is_issuer_check(self):
         cred_list, _ = await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
@@ -712,6 +715,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         assert tmp_reveal_doc
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_filter_number_type_check(self):
         await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
@@ -1246,6 +1250,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         assert len(tmp_vp.get("verifiableCredential")) == 3
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_filter_string(self):
         cred_list, _ = await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
@@ -1864,6 +1869,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
+    @skip_on_jsonld_url_error
     def test_create_vc_record_with_graph_struct(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_credential_dict_a = {
@@ -2639,6 +2645,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_derive_cred_missing_credsubjectid(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
