@@ -3,7 +3,7 @@
 import json
 from unittest import IsolatedAsyncioTestCase
 
-from ....utils.testing import create_test_profile
+from ....utils.testing import create_test_profile, skip_on_jsonld_url_error
 from ....wallet.base import BaseWallet
 from ....wallet.key_type import ED25519
 from .. import credential as test_module
@@ -52,6 +52,7 @@ class TestOps(IsolatedAsyncioTestCase):
             self.wallet = session.inject(BaseWallet)
             await self.wallet.create_signing_key(ED25519, TEST_SEED)
 
+    @skip_on_jsonld_url_error
     async def test_verify_credential(self):
         async with self.profile.session() as session:
             for input_ in TEST_VERIFY_OBJS:
@@ -73,6 +74,7 @@ class TestOps(IsolatedAsyncioTestCase):
                 assert "proof" in result.keys()
                 assert "jws" in result.get("proof", {}).keys()
 
+    @skip_on_jsonld_url_error
     async def test_sign_dropped_attribute_exception(self):
         async with self.profile.session() as session:
             for input_ in TEST_SIGN_ERROR_OBJS:
@@ -97,6 +99,7 @@ class TestOps(IsolatedAsyncioTestCase):
                         TEST_VERKEY,
                     )
 
+    @skip_on_jsonld_url_error
     async def test_invalid_jws_header(self):
         with self.assertRaises(BadJWSHeaderError):
             async with self.profile.session() as session:
