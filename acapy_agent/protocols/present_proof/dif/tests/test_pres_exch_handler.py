@@ -715,6 +715,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         assert tmp_reveal_doc
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_filter_number_type_check(self):
         await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)

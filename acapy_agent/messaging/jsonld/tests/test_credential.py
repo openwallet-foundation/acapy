@@ -99,6 +99,7 @@ class TestOps(IsolatedAsyncioTestCase):
                         TEST_VERKEY,
                     )
 
+    @skip_on_jsonld_url_error
     async def test_invalid_jws_header(self):
         with self.assertRaises(BadJWSHeaderError):
             async with self.profile.session() as session:
