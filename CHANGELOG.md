@@ -2,7 +2,7 @@
 
 ## 0.12.7rc0
 
-### June 24, 2025
+### June 25, 2025
 
 This patch release adds a GitHub Action to publish an LTS container image with the tag `0.12-lts` when a release is published from the ACA-Py 0.12.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required. The `rc0` release candidate contains only the LTS release GitHub Actions change. We plan to cherry pick some additional PRs from the main branch for the final `0.12.7` release.
 
@@ -13,7 +13,8 @@ There are no breaking changes in this release.
 #### 0.12.7 Categorized List of Pull Requests
 
 - LTS Container image Publishing
-  - [\#3771](https://github.com/openwallet-foundation/acapy/pull/3771) [jamshale](https://github.com/jamshale)
+  - Add recreate lts workflow to 0.12.lts branch [\#3771](https://github.com/openwallet-foundation/acapy/pull/3771) [jamshale](https://github.com/jamshale)
+  - Don't run workflow for release candidates [\#3796](https://github.com/openwallet-foundation/acapy/pull/3796) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
   - 0.12.7rc0 [\#3794](https://github.com/openwallet-foundation/acapy/pull/3794) [swcurran](https://github.com/swcurran)
