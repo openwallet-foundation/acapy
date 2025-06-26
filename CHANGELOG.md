@@ -1,14 +1,15 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.1rc1
+## 1.3.1rc2
 
-### June 6, 2025
+### June 26, 2025
 
 ACA-Py 1.3.1 is a maintenance release that focuses on improving reliability, developer experience, and project documentation. It includes important fixes, updated links and metadata, and minor enhancements, particularly in support of long-term stability and governance clarity.
 
 This release includes:
 
 - Extensive updates to outdated or redirected links in documentation and code comments, moving references from Hyperledger to the OpenWallet Foundation and other current locations.
+- A fix to a concurrency issue (described in [\#3738](https://github.com/openwallet-foundation/acapy/issues/3738)) in the newer `anoncreds` endpoint that assigns a revocation index to a credential. The operation is new wrapped in a transaction, ensuring data consistency under load.
 - Expanded options for running the ACA-Py demo, with support added for Microsoft Dev Tunnels and improved out-of-band connection flows.
 - Updates to project governance documentation, including the Code of Conduct, Security Policy, and Maintainers Guide, aligned with the OpenWallet Foundation processes.
 - Logging improvements for better observability, especially around public DID handling, routing keys, and outbound websocket messages.
@@ -48,12 +49,17 @@ There are no breaking changes in this release.
   - :loud_sound: Improve logging in Handlers [#3722](https://github.com/openwallet-foundation/acapy/pull/3722) [ff137](https://github.com/ff137)
   - :loud_sound: Improve logging related to public DIDs and routing keys [#3719](https://github.com/openwallet-foundation/acapy/pull/3719) [ff137](https://github.com/ff137)
 - **VC-Related Bug Fixes and Behavior Corrections**
+  - :bug: Improve efficiency of revoking credentials [#3795](https://github.com/openwallet-foundation/acapy/pull/3795) [ff137](https://github.com/ff137)
+  - Put cred_rev_id read, increment and write in a transaction [#3793](https://github.com/openwallet-foundation/acapy/pull/3793) [jamshale](https://github.com/jamshale)
   - :art: Add missing anoncreds field to V20CredExRecordDetail model [#3710](https://github.com/openwallet-foundation/acapy/pull/3710) [ff137](https://github.com/ff137)
   - :bug: Fix v2 cred ex and pres ex webhook events to emit after db write [#3699](https://github.com/openwallet-foundation/acapy/pull/3699) [ff137](https://github.com/ff137)
 - **DID Method Updates**
+  - Add multi key id binding (supersedes #3472) [#3762](https://github.com/openwallet-foundation/acapy/pull/3762) [PatStLouis](https://github.com/PatStLouis)
   - chore: Remove `did:indy` Stub [\#3764](https://github.com/openwallet-foundation/acapy/pull/3764) [TheTechmage](https://github.com/TheTechmage)
   - Update webvh package version [\#3763](https://github.com/openwallet-foundation/acapy/pull/3763) [PatStLouis](https://github.com/PatStLouis)
 - **Test and CI Improvements**
+  - :test_tube: Skip tests with jsonld url resolution failures [#3798](https://github.com/openwallet-foundation/acapy/pull/3798) [ff137](https://github.com/ff137)
+  - Disable lts-recreate workflow for main branch [#3773](https://github.com/openwallet-foundation/acapy/pull/3773) [jamshale](https://github.com/jamshale)
   - TestDeleteTails testcase fixes and indexError fix [#3727](https://github.com/openwallet-foundation/acapy/pull/3727) [ann-aot](https://github.com/ann-aot)
   - Regress test to check #2818 issue [#3721](https://github.com/openwallet-foundation/acapy/pull/3721) [andrepestana-aot](https://github.com/andrepestana-aot)
 - **Dependency and Environment Updates**
@@ -75,8 +81,9 @@ There are no breaking changes in this release.
   - Tag and Recreate ACA-Py LTS Release [#3735](https://github.com/openwallet-foundation/acapy/pull/3735) [pradeepp88](https://github.com/pradeepp88)
   - Update images and tags to version 1.3.0 [#3708](https://github.com/openwallet-foundation/acapy/pull/3708) [jamshale](https://github.com/jamshale)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-06-06+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-06-26+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.3.1rc2 [\#3800](https://github.com/openwallet-foundation/acapy/pull/3800) [swcurran](https://github.com/swcurran)
   - 1.3.1rc1 [\#3765](https://github.com/openwallet-foundation/acapy/pull/3765) [swcurran](https://github.com/swcurran)
   - 1.3.1rc0 [\#3752](https://github.com/openwallet-foundation/acapy/pull/3752) [swcurran](https://github.com/swcurran)
 
