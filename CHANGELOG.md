@@ -9,7 +9,7 @@ ACA-Py 1.3.1 is a maintenance release that focuses on improving reliability, dev
 This release includes:
 
 - Extensive updates to outdated or redirected links in documentation and code comments, moving references from Hyperledger to the OpenWallet Foundation and other current locations.
-- A fix to a concurrency issue in the newer `anoncreds` endpoint for revoking a credential that wraps operation in a transaction, ensuring data consistency under load.
+- A fix to a concurrency issue (described in [\#3738](https://github.com/openwallet-foundation/acapy/issues/3738)) in the newer `anoncreds` endpoint that assigns a revocation index to a credential. The operation is new wrapped in a transaction, ensuring data consistency under load.
 - Expanded options for running the ACA-Py demo, with support added for Microsoft Dev Tunnels and improved out-of-band connection flows.
 - Updates to project governance documentation, including the Code of Conduct, Security Policy, and Maintainers Guide, aligned with the OpenWallet Foundation processes.
 - Logging improvements for better observability, especially around public DID handling, routing keys, and outbound websocket messages.
