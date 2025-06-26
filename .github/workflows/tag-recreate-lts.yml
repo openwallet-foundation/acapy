@@ -13,7 +13,8 @@ permissions:
 
 jobs:
   recreate-lts-release:
-    if: startsWith(github.event.release.tag_name, '1.2.')
+    # This job will recreate the LTS release if the tag starts with '1.2.' and is not a release candidate
+    if: startsWith(github.event.release.tag_name, '1.2.') && !contains(github.event.release.tag_name, 'rc')
     name: Recreate LTS Release
     runs-on: ubuntu-latest
     outputs:
