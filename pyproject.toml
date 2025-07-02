@@ -16,11 +16,13 @@ repository = "https://github.com/openwallet-foundation/acapy"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+
 aiohttp = ">=3.11.16,<3.13.0"
 aiohttp-apispec-acapy = "~3.0.3"
 aiohttp-cors = ">=0.7,<0.9"
 apispec = "^6.6.0"
 base58 = "~2.1.0"
+canonicaljson = "^2.0.0"
 ConfigArgParse = "~1.7"
 deepmerge = "^2.0"
 ecdsa = "~0.19.0"
@@ -42,8 +44,8 @@ pyyaml = "~6.0.2"
 qrcode = { version = "^8.1", extras = ["pil"] }
 requests = "~2.32.3"
 rlp = "^4.1.0"
-unflatten = "~0.2"
 sd-jwt = "^0.10.3"
+unflatten = "~0.2"
 uuid_utils = ">=0.10,<0.12"
 
 # did libraries
@@ -52,8 +54,8 @@ did-peer-4 = "^0.1.4"
 did-webvh = ">=1.0.0rc0"
 
 # Verifiable Credentials
-indy-credx = "~1.1.1"
 anoncreds = "~0.2.0"
+indy-credx = "~1.1.1"
 
 # askar
 aries-askar = ">=0.4.3"
@@ -66,7 +68,6 @@ ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 
 # didcommv2
 didcomm-messaging = { version = "^0.1.1a0", optional = true }
-canonicaljson = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
