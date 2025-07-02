@@ -94,14 +94,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         if auto_create_revocation:
             revoc = AnonCredsRevocation(profile)
-            failed_to_upload_tails = False
             try:
                 await revoc.upload_tails_file(payload.rev_reg_def)
             except AnonCredsRevocationError as err:
                 LOGGER.warning(f"Failed to upload tails file: {err}")
-                failed_to_upload_tails = True
-
-            if failed_to_upload_tails:
                 payload.options["failed_to_upload"] = True
 
             await revoc.create_and_register_revocation_list(
