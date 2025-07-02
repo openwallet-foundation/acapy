@@ -406,19 +406,15 @@ class AnonCredsRevocation:
                 "Error retrieving required revocation registry definition data"
             ) from err
 
-        if not rev_reg_def_entry or not rev_reg_def_private_entry:
+        missing_items = []
+        if not rev_reg_def_entry:
+            missing_items.append("revocation registry definition")
+        if not rev_reg_def_private_entry:
+            missing_items.append("revocation registry private definition")
+
+        if missing_items:
             raise AnonCredsRevocationError(
-                (
-                    "Missing required revocation registry data: "
-                    "revocation registry definition"
-                    if not rev_reg_def_entry
-                    else ""
-                ),
-                (
-                    "revocation registry private definition"
-                    if not rev_reg_def_private_entry
-                    else ""
-                ),
+                f"Missing required revocation registry data: {', '.join(missing_items)}"
             )
 
         try:
