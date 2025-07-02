@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 from enum import Enum
-from typing import Any
+from typing import Any, Union
 
 Relation = namedtuple("Relation", "fortran wql math yes no")
 
@@ -55,7 +55,7 @@ class Predicate(Enum):
         return self.value.math
 
     @staticmethod
-    def get(relation: str) -> "Predicate":
+    def get(relation: str) -> Union["Predicate", None]:
         """Return enum instance corresponding to input relation string."""
 
         for pred in Predicate:

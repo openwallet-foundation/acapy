@@ -27,7 +27,7 @@ class AnonCredsKeyCorrectnessProof(BaseModel):
         self,
         c: Optional[str] = None,
         xz_cap: Optional[str] = None,
-        xr_cap: Sequence[Sequence[str]] = None,
+        xr_cap: Optional[Sequence[Sequence[str]]] = None,
         **kwargs,
     ):
         """Initialize XR cap for anoncreds key correctness proof."""

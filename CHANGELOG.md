@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.1rc2
+## 1.3.1
 
-### June 26, 2025
+### July 02, 2025
 
 ACA-Py 1.3.1 is a maintenance release that focuses on improving reliability, developer experience, and project documentation. It includes important fixes, updated links and metadata, and minor enhancements, particularly in support of long-term stability and governance clarity.
 
@@ -63,6 +63,7 @@ There are no breaking changes in this release.
   - TestDeleteTails testcase fixes and indexError fix [#3727](https://github.com/openwallet-foundation/acapy/pull/3727) [ann-aot](https://github.com/ann-aot)
   - Regress test to check #2818 issue [#3721](https://github.com/openwallet-foundation/acapy/pull/3721) [andrepestana-aot](https://github.com/andrepestana-aot)
 - **Dependency and Environment Updates**
+  - :art: Code cleanup and :arrow_up: lock file update [\#3808](https://github.com/openwallet-foundation/acapy/pull/3808) [ff137](https://github.com/ff137)
   - Remove unnecessary hash pinning [#3744](https://github.com/openwallet-foundation/acapy/pull/3744) [jamshale](https://github.com/jamshale)
   - :arrow_up: Update lock file [#3720](https://github.com/openwallet-foundation/acapy/pull/3720) [ff137](https://github.com/ff137)
 - **Demo and Example Improvements**
@@ -81,8 +82,9 @@ There are no breaking changes in this release.
   - Tag and Recreate ACA-Py LTS Release [#3735](https://github.com/openwallet-foundation/acapy/pull/3735) [pradeepp88](https://github.com/pradeepp88)
   - Update images and tags to version 1.3.0 [#3708](https://github.com/openwallet-foundation/acapy/pull/3708) [jamshale](https://github.com/jamshale)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-06-26+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-05-01..2025-07-02+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.3.1 [\#3809](https://github.com/openwallet-foundation/acapy/pull/3809) [swcurran](https://github.com/swcurran)
   - 1.3.1rc2 [\#3800](https://github.com/openwallet-foundation/acapy/pull/3800) [swcurran](https://github.com/swcurran)
   - 1.3.1rc1 [\#3765](https://github.com/openwallet-foundation/acapy/pull/3765) [swcurran](https://github.com/swcurran)
   - 1.3.1rc0 [\#3752](https://github.com/openwallet-foundation/acapy/pull/3752) [swcurran](https://github.com/swcurran)
