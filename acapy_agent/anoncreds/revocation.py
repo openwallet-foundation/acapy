@@ -1440,17 +1440,20 @@ class AnonCredsRevocation:
                 ) from err
             break
 
+        revoked = list(rev_crids)
+        failed = [str(rev_id) for rev_id in sorted(failed_crids)]
+
         result = RevokeResult(
             prev=rev_list,
             curr=RevList.from_native(updated_list) if updated_list else None,
-            revoked=list(rev_crids),
-            failed=[str(rev_id) for rev_id in sorted(failed_crids)],
+            revoked=revoked,
+            failed=failed,
         )
         LOGGER.info(
             "Completed revocation process for registry %s: %d revoked, %d failed",
             revoc_reg_id,
-            len(result.revoked),
-            len(result.failed),
+            len(revoked),
+            len(failed),
         )
         return result
 

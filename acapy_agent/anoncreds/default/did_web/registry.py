@@ -126,4 +126,4 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self, profile: Profile, schema_id: str
     ) -> AnonCredsSchemaInfo:
         """Get a schema info from the registry."""
-        return await super().get_schema_info_by_id(schema_id)
+        return await super().get_schema_info_by_id(profile, schema_id)

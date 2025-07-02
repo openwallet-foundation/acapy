@@ -55,7 +55,7 @@ class Predicate(Enum):
         return self.value.math
 
     @staticmethod
-    def get(relation: str) -> "Predicate":
+    def get(relation: str) -> "Predicate" | None:
         """Return enum instance corresponding to input relation string."""
 
         for pred in Predicate:
