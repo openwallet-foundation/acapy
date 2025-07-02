@@ -786,9 +786,13 @@ class AnonCredsRevocation:
                 tag=str(uuid4()),
                 max_cred_num=active_rev_reg_def.value_json["value"]["maxCredNum"],
             )
-            LOGGER.info(f"Previous rev_reg_def_id = {rev_reg_def_id}")
-            LOGGER.info(f"Current rev_reg_def_id = {backup_rev_reg_def_id}")
-            LOGGER.info(f"Backup reg = {backup_reg.rev_reg_def_id}")
+            LOGGER.debug(
+                "Previous rev_reg_def_id = %s.\nCurrent rev_reg_def_id = %s.\n"
+                "Backup reg = %s",
+                rev_reg_def_id,
+                backup_rev_reg_def_id,
+                backup_reg.rev_reg_def_id,
+            )
 
     async def decommission_registry(self, cred_def_id: str) -> list:
         """Decommission post-init registries and start the next registry generation."""
@@ -842,9 +846,12 @@ class AnonCredsRevocation:
             max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
         )
 
-        LOGGER.info(f"New registry = {new_reg}")
-        LOGGER.info(f"Backup registry = {backup_reg}")
-        LOGGER.debug(f"Decommissioned registries = {recs}")
+        LOGGER.debug(
+            "New registry = %s.\nBackup registry = %s.\nDecommissioned registries = %s",
+            new_reg,
+            backup_reg,
+            recs,
+        )
         return recs
 
     async def get_or_create_active_registry(self, cred_def_id: str) -> RevRegDefResult:
