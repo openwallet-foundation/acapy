@@ -3,7 +3,6 @@
 import asyncio
 import hashlib
 import http
-import json
 import logging
 import os
 import time
@@ -238,7 +237,7 @@ class AnonCredsRevocation:
                     tags={
                         "cred_def_id": rev_reg_def.cred_def_id,
                         "state": result.revocation_registry_definition_state.state,
-                        "active": json.dumps(False),
+                        "active": "false",
                     },
                 )
                 await txn.handle.insert(
@@ -346,7 +345,7 @@ class AnonCredsRevocation:
                     f"{CATEGORY_REV_REG_DEF} with id {rev_reg_def_id} could not be found"
                 )
 
-            if entry.tags["active"] == json.dumps(True):
+            if entry.tags["active"] == "true":
                 # NOTE If there are other registries set as active, we're not
                 # clearing them if the one we want to be active is already
                 # active. This probably isn't an issue.
@@ -357,7 +356,7 @@ class AnonCredsRevocation:
             old_active_entries = await txn.handle.fetch_all(
                 CATEGORY_REV_REG_DEF,
                 {
-                    "active": json.dumps(True),
+                    "active": "true",
                     "cred_def_id": cred_def_id,
                 },
                 for_update=True,
@@ -371,7 +370,7 @@ class AnonCredsRevocation:
 
             for old_entry in old_active_entries:
                 tags = old_entry.tags
-                tags["active"] = json.dumps(False)
+                tags["active"] = "false"
                 await txn.handle.replace(
                     CATEGORY_REV_REG_DEF,
                     old_entry.name,
@@ -380,7 +379,7 @@ class AnonCredsRevocation:
                 )
 
             tags = entry.tags
-            tags["active"] = json.dumps(True)
+            tags["active"] = "true"
             await txn.handle.replace(
                 CATEGORY_REV_REG_DEF,
                 rev_reg_def_id,
@@ -407,19 +406,15 @@ class AnonCredsRevocation:
                 "Error retrieving required revocation registry definition data"
             ) from err
 
-        if not rev_reg_def_entry or not rev_reg_def_private_entry:
+        missing_items = []
+        if not rev_reg_def_entry:
+            missing_items.append("revocation registry definition")
+        if not rev_reg_def_private_entry:
+            missing_items.append("revocation registry private definition")
+
+        if missing_items:
             raise AnonCredsRevocationError(
-                (
-                    "Missing required revocation registry data: "
-                    "revocation registry definition"
-                    if not rev_reg_def_entry
-                    else ""
-                ),
-                (
-                    "revocation registry private definition"
-                    if not rev_reg_def_private_entry
-                    else ""
-                ),
+                f"Missing required revocation registry data: {', '.join(missing_items)}"
             )
 
         try:
@@ -484,7 +479,7 @@ class AnonCredsRevocation:
                     },
                     tags={
                         "state": result.revocation_list_state.state,
-                        "pending": json.dumps(False),
+                        "pending": "false",
                     },
                 )
 
@@ -615,7 +610,7 @@ class AnonCredsRevocation:
             async with self.profile.session() as session:
                 rev_list_entries = await session.handle.fetch_all(
                     CATEGORY_REV_LIST,
-                    {"pending": json.dumps(True)},
+                    {"pending": "true"},
                 )
         except AskarError as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
@@ -742,7 +737,7 @@ class AnonCredsRevocation:
                 rev_reg_defs = await session.handle.fetch_all(
                     CATEGORY_REV_REG_DEF,
                     {
-                        "active": json.dumps(False),
+                        "active": "false",
                         "cred_def_id": active_rev_reg_def.value_json["credDefId"],
                         "state": RevRegDefState.STATE_FINISHED,
                     },
@@ -787,9 +782,13 @@ class AnonCredsRevocation:
                 tag=str(uuid4()),
                 max_cred_num=active_rev_reg_def.value_json["value"]["maxCredNum"],
             )
-            LOGGER.info(f"Previous rev_reg_def_id = {rev_reg_def_id}")
-            LOGGER.info(f"Current rev_reg_def_id = {backup_rev_reg_def_id}")
-            LOGGER.info(f"Backup reg = {backup_reg.rev_reg_def_id}")
+            LOGGER.debug(
+                "Previous rev_reg_def_id = %s.\nCurrent rev_reg_def_id = %s.\n"
+                "Backup reg = %s",
+                rev_reg_def_id,
+                backup_rev_reg_def_id,
+                backup_reg.rev_reg_def_id,
+            )
 
     async def decommission_registry(self, cred_def_id: str) -> list:
         """Decommission post-init registries and start the next registry generation."""
@@ -825,7 +824,7 @@ class AnonCredsRevocation:
             for rec in recs:
                 if rec.name != new_reg.rev_reg_def_id:
                     tags = rec.tags
-                    tags["active"] = json.dumps(False)
+                    tags["active"] = "false"
                     tags["state"] = RevRegDefState.STATE_DECOMMISSIONED
                     await txn.handle.replace(
                         CATEGORY_REV_REG_DEF,
@@ -843,9 +842,12 @@ class AnonCredsRevocation:
             max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
         )
 
-        LOGGER.info(f"New registry = {new_reg}")
-        LOGGER.info(f"Backup registry = {backup_reg}")
-        LOGGER.debug(f"Decommissioned registries = {recs}")
+        LOGGER.debug(
+            "New registry = %s.\nBackup registry = %s.\nDecommissioned registries = %s",
+            new_reg,
+            backup_reg,
+            recs,
+        )
         return recs
 
     async def get_or_create_active_registry(self, cred_def_id: str) -> RevRegDefResult:
@@ -855,7 +857,7 @@ class AnonCredsRevocation:
                 CATEGORY_REV_REG_DEF,
                 {
                     "cred_def_id": cred_def_id,
-                    "active": json.dumps(True),
+                    "active": "true",
                 },
                 limit=1,
             )
@@ -1419,7 +1421,7 @@ class AnonCredsRevocation:
                     rev_info_upd["pending"] = (
                         list(skipped_crids) if skipped_crids else None
                     )
-                    tags["pending"] = json.dumps(True if skipped_crids else False)
+                    tags["pending"] = "true" if skipped_crids else "false"
                     await txn.handle.replace(
                         CATEGORY_REV_LIST,
                         revoc_reg_id,
@@ -1438,17 +1440,20 @@ class AnonCredsRevocation:
                 ) from err
             break
 
+        revoked = list(rev_crids)
+        failed = [str(rev_id) for rev_id in sorted(failed_crids)]
+
         result = RevokeResult(
             prev=rev_list,
             curr=RevList.from_native(updated_list) if updated_list else None,
-            revoked=list(rev_crids),
-            failed=[str(rev_id) for rev_id in sorted(failed_crids)],
+            revoked=revoked,
+            failed=failed,
         )
         LOGGER.info(
             "Completed revocation process for registry %s: %d revoked, %d failed",
             revoc_reg_id,
-            len(result.revoked),
-            len(result.failed),
+            len(revoked),
+            len(failed),
         )
         return result
 
@@ -1475,7 +1480,7 @@ class AnonCredsRevocation:
             value = entry.value_json
             value["pending"] = pending
             tags = entry.tags
-            tags["pending"] = json.dumps(True)
+            tags["pending"] = "true"
             await txn.handle.replace(
                 CATEGORY_REV_LIST,
                 rev_reg_def_id,
@@ -1521,7 +1526,7 @@ class AnonCredsRevocation:
             value["pending"] = set(value["pending"]) - set(crid_mask)
 
         tags = entry.tags
-        tags["pending"] = json.dumps(False)
+        tags["pending"] = "false"
         await txn.handle.replace(
             CATEGORY_REV_LIST,
             rev_reg_def_id,

@@ -43,7 +43,7 @@ class AnonCredsNonRevocationInterval(BaseModel):
         timestamp = timestamp or int(time())
         return (self.fro or 0) <= timestamp <= (self.to or timestamp)
 
-    def timestamp(self) -> bool:
+    def timestamp(self) -> int:
         """Return a timestamp that the non-revocation interval covers."""
         return self.to or self.fro or int(time())
 
