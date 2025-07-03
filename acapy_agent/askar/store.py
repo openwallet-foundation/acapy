@@ -1,3 +1,5 @@
+"""Askar store configuration and management."""
+
 import asyncio
 import json
 import logging
