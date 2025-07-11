@@ -205,7 +205,7 @@ class V20PresExRecord(BaseExchangeRecord):
             payload = V20PresExRecordWebhook(**payload)
             payload = payload.__dict__
 
-        await session.profile.notify(topic, payload)
+        await session.emit_event(topic, payload)
 
     @property
     def record_value(self) -> Mapping:
