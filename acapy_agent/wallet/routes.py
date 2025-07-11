@@ -1399,7 +1399,7 @@ async def upgrade_anoncreds(request: web.BaseRequest):
             upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet)
         )
         # Store task reference to prevent garbage collection
-        if not hasattr(profile, '_background_tasks'):
+        if not hasattr(profile, "_background_tasks"):
             profile._background_tasks = set()
         profile._background_tasks.add(task)
         # Remove task from set when it completes to prevent memory leaks
