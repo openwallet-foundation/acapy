@@ -30,19 +30,19 @@ class TestStart(IsolatedAsyncioTestCase):
 
     def test_execute_ok(self):
         """Test the execute() function with patched asyncio.run."""
-        with mock.patch.object(
-            test_module, "run_app", mock.AsyncMock()
-        ), mock.patch.object(
-            test_module.asyncio, "run"
-        ) as mock_asyncio_run:
+        with (
+            mock.patch.object(test_module, "run_app", mock.MagicMock()),
+            mock.patch.object(test_module.asyncio, "run") as mock_asyncio_run,
+        ):
             test_module.execute(["--some", "args"])
             mock_asyncio_run.assert_called_once()
 
     def test_execute_keyboard_interrupt(self):
         """Test the execute() function with a KeyboardInterrupt."""
-        with mock.patch.object(
-            test_module.asyncio, "run", side_effect=KeyboardInterrupt
-        ), mock.patch.object(test_module, "LOGGER") as mock_logger:
+        with (
+            mock.patch.object(test_module.asyncio, "run", side_effect=KeyboardInterrupt),
+            mock.patch.object(test_module, "LOGGER") as mock_logger,
+        ):
             test_module.execute()
             mock_logger.info.assert_called_with("Interrupted by user")
 
@@ -61,8 +61,9 @@ class TestStart(IsolatedAsyncioTestCase):
 
     def test_main_executes_when_main(self):
         """Ensure main() calls execute() when __name__ == '__main__'."""
-        with mock.patch.object(
-            test_module, "__name__", "__main__"
-        ), mock.patch.object(test_module, "execute") as mock_execute:
+        with (
+            mock.patch.object(test_module, "__name__", "__main__"),
+            mock.patch.object(test_module, "execute") as mock_execute,
+        ):
             test_module.main()
             mock_execute.assert_called_once()
