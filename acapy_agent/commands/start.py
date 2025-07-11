@@ -8,6 +8,8 @@ from typing import Sequence
 
 from configargparse import ArgumentParser
 
+from ..config.error import ArgsParseError
+
 try:
     import uvloop
 except ImportError:
@@ -85,6 +87,9 @@ def execute(argv: Sequence[str] = None):
     """Entrypoint."""
     try:
         asyncio.run(run_app(argv))
+    except ArgsParseError as e:
+        LOGGER.error("Argument parsing error: %s", e)
+        raise e
     except KeyboardInterrupt:
         LOGGER.info("Interrupted by user")
     except Exception:
