@@ -1394,9 +1394,16 @@ async def upgrade_anoncreds(request: web.BaseRequest):
         )
         await storage.add_record(upgrading_record)
         is_subwallet = context.metadata and "wallet_id" in context.metadata
-        asyncio.create_task(
+        # Create background task and store reference to prevent garbage collection
+        task = asyncio.create_task(
             upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet)
         )
+        # Store task reference to prevent garbage collection
+        if not hasattr(profile, '_background_tasks'):
+            profile._background_tasks = set()
+        profile._background_tasks.add(task)
+        # Remove task from set when it completes to prevent memory leaks
+        task.add_done_callback(profile._background_tasks.discard)
         UpgradeInProgressSingleton().set_wallet(profile.name)
 
     return web.json_response(
