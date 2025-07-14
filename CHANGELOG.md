@@ -1,10 +1,20 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.12.7rc0
+## 0.12.7rc1
 
-### June 25, 2025
+### July 14, 2025
 
-This patch release adds a GitHub Action to publish an LTS container image with the tag `0.12-lts` when a release is published from the ACA-Py 0.12.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required. The `rc0` release candidate contains only the LTS release GitHub Actions change. We plan to cherry pick some additional PRs from the main branch for the final `0.12.7` release.
+This patch release adds a GitHub Action to publish an LTS container image with the tag `0.12-lts` when a release is published from the ACA-Py 0.12.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required.
+
+The release includes the following PRs from the `main` branch were cherry-picked into this release:
+
+- Put cred_rev_id read, increment and write in a transaction [\#3793](https://github.com/openwallet-foundation/acapy/pull/3793)
+- Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753)
+- 🐛 Fix v2 cred ex and pres ex webhook events to emit after db write [\#3699](https://github.com/openwallet-foundation/acapy/pull/3699)
+
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies.
+
+A reminder that the **0.12 LTS branch will reach end-of-life in October, 2025**. Anyone still using this branch should plan to upgrade to the 1.2 LTS or (better) latest release of ACA-Py as soon as possible.
 
 ### 0.12.7 Breaking Changes
 
@@ -13,10 +23,12 @@ There are no breaking changes in this release.
 #### 0.12.7 Categorized List of Pull Requests
 
 - LTS Container image Publishing
-  - Add recreate lts workflow to 0.12.lts branch [\#3771](https://github.com/openwallet-foundation/acapy/pull/3771) [jamshale](https://github.com/jamshale)
+  - 0.12.lts.patch [\#3817](https://github.com/openwallet-foundation/acapy/pull/3817) [jamshale](https://github.com/jamshale)
   - Don't run workflow for release candidates [\#3796](https://github.com/openwallet-foundation/acapy/pull/3796) [jamshale](https://github.com/jamshale)
+  - Add recreate lts workflow to 0.12.lts branch [\#3771](https://github.com/openwallet-foundation/acapy/pull/3771) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 0.12.7rc1 [\#3820](https://github.com/openwallet-foundation/acapy/pull/3820) [swcurran](https://github.com/swcurran)
   - 0.12.7rc0 [\#3794](https://github.com/openwallet-foundation/acapy/pull/3794) [swcurran](https://github.com/swcurran)
 
 ## 0.12.6
