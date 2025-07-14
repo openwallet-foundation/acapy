@@ -1,5 +1,34 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.2.5rc0
+
+### July 14, 2025
+
+This patch release adds a GitHub Action to publish an LTS container image with the tag `1.2-lts` when a release is published from the ACA-Py 1.2.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- Put cred_rev_id read, increment and write in a transaction [\#3793](https://github.com/openwallet-foundation/acapy/pull/3793)
+- Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753)
+- 🐛 Fix v2 cred ex and pres ex webhook events to emit after db write [\#3699](https://github.com/openwallet-foundation/acapy/pull/3699)
+- fix: multiuse invite derived conns should have msg id [\#3692](https://github.com/openwallet-foundation/acapy/pull/3692)
+
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies.
+
+### 1.2.5 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.5 Categorized List of Pull Requests
+
+- LTS Container image Publishing
+  - 1.2.lts.patch [\#3816](https://github.com/openwallet-foundation/acapy/pull/3816) [jamshale](https://github.com/jamshale)
+  - Don't run workflow for release candidates [\#3797](https://github.com/openwallet-foundation/acapy/pull/3797) [jamshale](https://github.com/jamshale)
+  - Add recreate lts workflow to 1.2.lts branch [\#3772](https://github.com/openwallet-foundation/acapy/pull/3772) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.5rc0 [\#3821](https://github.com/openwallet-foundation/acapy/pull/3821) [swcurran](https://github.com/swcurran)
+
 ## 1.2.4
 
 ### March 13, 2025
