@@ -6,7 +6,7 @@
 
 This patch release adds a GitHub Action to publish an LTS container image with the tag `0.12-lts` when a release is published from the ACA-Py 0.12.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required.
 
-The release includes the following PRs from the `main` branch were cherry-picked into this release:
+The release includes the following PRs from the `main` branch cherry-picked into this release:
 
 - Put cred_rev_id read, increment and write in a transaction [\#3793](https://github.com/openwallet-foundation/acapy/pull/3793)
 - Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753)
