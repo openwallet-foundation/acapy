@@ -40,7 +40,7 @@ class TestStart(IsolatedAsyncioTestCase):
     def test_execute_keyboard_interrupt(self):
         """Test the execute() function with a KeyboardInterrupt."""
         with (
-            mock.patch.object(test_module.asyncio, "run", side_effect=KeyboardInterrupt),
+            mock.patch.object(test_module, "run_app", side_effect=KeyboardInterrupt),
             mock.patch.object(test_module, "LOGGER") as mock_logger,
         ):
             test_module.execute()
@@ -49,9 +49,7 @@ class TestStart(IsolatedAsyncioTestCase):
     def test_execute_other_exception(self):
         """Test the execute() function with generic Exception."""
         with (
-            mock.patch.object(
-                test_module.asyncio, "run", side_effect=RuntimeError("boom")
-            ),
+            mock.patch.object(test_module, "run_app", side_effect=RuntimeError("boom")),
             mock.patch.object(test_module, "LOGGER") as mock_logger,
             mock.patch.object(sys, "exit") as mock_exit,
         ):
