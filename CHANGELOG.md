@@ -8,7 +8,6 @@ This patch release adds a GitHub Action to publish an LTS container image with t
 
 The release includes the following PRs from the `main` branch cherry-picked into this release:
 
-- Put cred_rev_id read, increment and write in a transaction [\#3793](https://github.com/openwallet-foundation/acapy/pull/3793)
 - Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753)
 - 🐛 Fix v2 cred ex and pres ex webhook events to emit after db write [\#3699](https://github.com/openwallet-foundation/acapy/pull/3699)
 
