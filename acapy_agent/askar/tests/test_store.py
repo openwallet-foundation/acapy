@@ -40,7 +40,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
             "storage_type": self.storage_type,
         }
 
-        store = await AskarStoreConfig(config).open_store()
+        store = await AskarStoreConfig(config).open_or_provision_store()
         assert isinstance(store, AskarOpenStore)
         assert mock_store_open.called
 
@@ -59,11 +59,11 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         ]
 
         with self.assertRaises(ProfileNotFoundError):
-            await AskarStoreConfig(config).open_store()
+            await AskarStoreConfig(config).open_or_provision_store()
         with self.assertRaises(ProfileDuplicateError):
-            await AskarStoreConfig(config).open_store()
+            await AskarStoreConfig(config).open_or_provision_store()
         with self.assertRaises(ProfileError):
-            await AskarStoreConfig(config).open_store()
+            await AskarStoreConfig(config).open_or_provision_store()
 
     @mock.patch.object(Store, "open")
     @mock.patch.object(Store, "rekey")
@@ -80,7 +80,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
             mock.AsyncMock(auto_spec=True),
         ]
 
-        store = await AskarStoreConfig(config).open_store()
+        store = await AskarStoreConfig(config).open_or_provision_store()
 
         assert isinstance(store, AskarOpenStore)
         assert mock_rekey.called
@@ -102,7 +102,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
             mock.AsyncMock(auto_spec=True),
         ]
 
-        store = await AskarStoreConfig(config).open_store()
+        store = await AskarStoreConfig(config).open_or_provision_store()
 
         assert isinstance(store, AskarOpenStore)
         assert mock_rekey.called
