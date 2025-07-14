@@ -65,3 +65,58 @@ class TestStart(IsolatedAsyncioTestCase):
         ):
             test_module.main()
             mock_execute.assert_called_once()
+
+    @mock.patch.object(test_module, "uvloop")
+    @mock.patch("asyncio.get_running_loop")
+    @mock.patch("asyncio.Event")
+    @mock.patch.object(test_module, "DefaultContextBuilder")
+    @mock.patch.object(test_module, "Conductor")
+    @mock.patch.object(test_module, "init_argument_parser")
+    @mock.patch.object(test_module.arg, "create_argument_parser")
+    async def test_run_app_success(
+        self,
+        mock_create_parser,
+        mock_init_arg_parser,
+        mock_conductor_cls,
+        mock_context_builder_cls,
+        mock_event_cls,
+        mock_get_loop,
+        mock_uvloop,
+    ):
+        mock_uvloop.install = mock.MagicMock()
+        # Setup parser and args
+        mock_parser = mock.MagicMock()
+        mock_parser.parse_args.return_value = ["--mock"]
+        mock_create_parser.return_value = mock_parser
+
+        settings = {"ledger.read_only": False}
+        mock_init_arg_parser.return_value = lambda args: settings
+
+        # Setup conductor
+        mock_conductor = mock.AsyncMock()
+        mock_conductor_cls.return_value = mock_conductor
+
+        # Simulate shutdown event triggering
+        shutdown_event = mock.AsyncMock()
+        shutdown_event.wait = mock.AsyncMock()
+        mock_event_cls.return_value = shutdown_event
+
+        # Setup signal handling
+        mock_loop = mock.MagicMock()
+        mock_get_loop.return_value = mock_loop
+
+        # Run
+        await test_module.run_app(["--mock"])
+
+        # Assertions
+        mock_uvloop.install.assert_called_once()
+        mock_create_parser.assert_called_once()
+        mock_init_arg_parser.assert_called_once()
+        mock_conductor.setup.assert_awaited_once()
+        mock_conductor.start.assert_awaited_once()
+        shutdown_event.wait.assert_awaited_once()
+        mock_conductor.stop.assert_awaited_once()
+
+        # Signal handlers
+        mock_loop.add_signal_handler.assert_any_call(test_module.signal.SIGTERM, mock.ANY)
+        mock_loop.add_signal_handler.assert_any_call(test_module.signal.SIGINT, mock.ANY)
