@@ -8,9 +8,9 @@ This patch release adds a GitHub Action to publish an LTS container image with t
 
 The release includes the following PRs from the `main` branch cherry-picked into this release:
 
-- Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753)
 - 🐛 Fix v2 cred ex and pres ex webhook events to emit after db write [\#3699](https://github.com/openwallet-foundation/acapy/pull/3699)
 - fix: multiuse invite derived conns should have msg id [\#3692](https://github.com/openwallet-foundation/acapy/pull/3692)
+- Fix unchanged endpoint being rewritten to ledger [\#3608](https://github.com/openwallet-foundation/acapy/pull/3608)
 
 As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies.
 
