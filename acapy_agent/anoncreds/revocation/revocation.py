@@ -21,7 +21,8 @@ from anoncreds import (
     RevocationStatusList,
     W3cCredential,
 )
-from aries_askar import Entry
+from aries_askar import AskarErrorCode, Entry
+from aries_askar.error import AskarError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
@@ -30,7 +31,7 @@ from ...core.error import BaseError
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile, ProfileSession
 from ...database_manager.db_errors import DBError
-from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
+from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
 from ..constants import (
     CATEGORY_CRED_DEF,
@@ -41,7 +42,24 @@ from ..constants import (
     STATE_FINISHED,
 )
 from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
+from ..event_storage import generate_request_id
+from ..events import (
+    FIRST_REGISTRY_TAG,
+    RevListCreateRequestedEvent,
+    RevListCreateResponseEvent,
+    RevListFinishedEvent,
+    RevListStoreRequestedEvent,
+    RevListStoreResponseEvent,
+    RevRegActivationRequestedEvent,
+    RevRegActivationResponseEvent,
+    RevRegDefCreateRequestedEvent,
+    RevRegDefCreateResponseEvent,
+    RevRegDefFinishedEvent,
+    RevRegDefStoreRequestedEvent,
+    RevRegDefStoreResponseEvent,
+    RevRegFullDetectedEvent,
+    RevRegFullHandlingResponseEvent,
+)
 from ..issuer import AnonCredsIssuer
 from ..models.credential_definition import CredDef
 from ..models.revocation import (
@@ -141,6 +159,49 @@ class AnonCredsRevocation:
         await txn.handle.remove(category, job_id)
         return entry
 
+    async def emit_create_revocation_registry_definition_event(
+        self,
+        issuer_id: str,
+        cred_def_id: str,
+        registry_type: str,
+        tag: str,
+        max_cred_num: int,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Emit event to request creation and registration of a new revocation registry.
+
+        Args:
+            issuer_id (str): issuer identifier
+            cred_def_id (str): credential definition identifier
+            registry_type (str): revocation registry type
+            tag (str): revocation registry tag
+            max_cred_num (int): maximum number of credentials supported
+            options (dict): revocation registry options
+
+        """
+        options = options or {}
+        LOGGER.info(
+            "Emitting create revocation registry definition event for issuer: %s, "
+            "cred_def_id: %s, registry_type: %s, tag: %s, max_cred_num: %s. "
+            "request_id: %s, correlation_id: %s",
+            issuer_id,
+            cred_def_id,
+            registry_type,
+            tag,
+            max_cred_num,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+        event = RevRegDefCreateRequestedEvent.with_payload(
+            issuer_id=issuer_id,
+            cred_def_id=cred_def_id,
+            registry_type=registry_type,
+            tag=tag,
+            max_cred_num=max_cred_num,
+            options=options,
+        )
+        await self.notify(event)
+
     async def create_and_register_revocation_registry_definition(
         self,
         issuer_id: str,
@@ -152,6 +213,9 @@ class AnonCredsRevocation:
     ) -> RevRegDefResult:
         """Create a new revocation registry and register on network.
 
+        This method picks up the RevRegDefCreateRequestedEvent, performing the registry
+        creation and registration, emitting success or failure events based on the result.
+
         Args:
             issuer_id (str): issuer identifier
             cred_def_id (str): credential definition identifier
@@ -160,33 +224,42 @@ class AnonCredsRevocation:
             max_cred_num (int): maximum number of credentials supported
             options (dict): revocation registry options
 
-        Returns:
-            RevRegDefResult: revocation registry definition result
-
         """
         options = options or {}
+        LOGGER.debug(
+            "Creating and registering revocation registry definition for issuer: %s, "
+            "cred_def_id: %s, registry_type: %s, tag: %s, max_cred_num: %s. "
+            "request_id: %s, correlation_id: %s",
+            issuer_id,
+            cred_def_id,
+            registry_type,
+            tag,
+            max_cred_num,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+        retry_count = options.pop("retry_count", 0)
+
         try:
+            # Validate credential definition exists
             async with self.profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-        except DBError as err:
-            raise AnonCredsRevocationError(
-                "Error retrieving credential definition"
-            ) from err
 
-        if not cred_def:
-            raise AnonCredsRevocationError(
-                "Credential definition not found for revocation registry"
-            )
+            if not cred_def:
+                raise AskarError(
+                    AskarErrorCode.NOT_FOUND,
+                    f"Credential definition {cred_def_id} not found for "
+                    f"creating revocation registry {tag}",
+                )
 
-        tails_dir = indy_client_dir("tails", create=True)
+            # Create a directory for the tails file in the indy-client directory
+            tails_dir = indy_client_dir("tails", create=True)
 
-        try:
-            (
-                rev_reg_def,
-                rev_reg_def_private,
-            ) = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: RevocationRegistryDefinition.create(
+            # Method to create the revocation registry definition and private key
+            def create_rev_reg_def() -> Tuple[
+                RevocationRegistryDefinition, RevocationRegistryDefinitionPrivate
+            ]:
+                return RevocationRegistryDefinition.create(
                     cred_def_id,
                     cred_def.raw_value,
                     issuer_id,
@@ -194,45 +267,272 @@ class AnonCredsRevocation:
                     registry_type,
                     max_cred_num,
                     tails_dir_path=tails_dir,
-                ),
+                )
+
+            # Run the creation of the revocation registry definition in a thread pool
+            # to avoid blocking the event loop
+            (
+                rev_reg_def,
+                rev_reg_def_private,
+            ) = await asyncio.get_event_loop().run_in_executor(None, create_rev_reg_def)
+
+            rev_reg_def = RevRegDef.from_native(rev_reg_def)
+
+            # Generate and set the public tails URI
+            public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
+            rev_reg_def.value.tails_location = public_tails_uri
+
+            # Upload tails file
+            await self.upload_tails_file(rev_reg_def)
+
+            # We want to store the private key now so we can recover it in case of failure
+            # Example of failure and recovery scenario:
+            # - Rev reg creation is requested, but agent terminates before it completes.
+            # - Rev reg creation actually succeeded on the ledger, but the agent never
+            #   got the response to emit next event, so on recovery, tries to recreate it.
+            # - The ledger should return the existing rev reg, instead of recreating it.
+            # We don't know the rev_reg_def_id until after registry creation, so to link
+            # the rev reg with the private key, we can instead use the tails hash, which
+            # is known, and then we recover the private key from storage using the tails
+            # file hash of the returned RevRegDefResult
+
+            # Store the private definition with temporary identifier to avoid losing it
+            private_key_storage_id = self._get_private_key_storage_id(rev_reg_def)
+            LOGGER.debug(
+                "Storing private revocation registry definition with storage ID: %s",
+                private_key_storage_id,
             )
-        except AnoncredsError as err:
-            raise AnonCredsRevocationError("Error creating revocation registry") from err
+            async with self.profile.session() as session:
+                await session.handle.insert(
+                    CATEGORY_REV_REG_DEF_PRIVATE,
+                    private_key_storage_id,
+                    rev_reg_def_private.to_json_buffer(),
+                )
 
-        rev_reg_def = RevRegDef.from_native(rev_reg_def)
+            # Register on network
+            anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+            result = await anoncreds_registry.register_revocation_registry_definition(
+                self.profile, rev_reg_def, options
+            )
 
-        public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
-        rev_reg_def.value.tails_location = public_tails_uri
+            # Emit success event, which passes info needed to trigger the store request
+            LOGGER.info(
+                "Emitting successful create rev reg def response event for rev reg def: "
+                "rev reg def id: %s, cred_def_id: %s, registry_type: %s, tag: %s, "
+                "max_cred_num: %s, issuer_id: %s. request_id: %s, correlation_id: %s",
+                result.rev_reg_def_id,
+                cred_def_id,
+                registry_type,
+                tag,
+                max_cred_num,
+                issuer_id,
+                options.get("request_id"),
+                options.get("correlation_id"),
+            )
 
-        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        result = await anoncreds_registry.register_revocation_registry_definition(
-            self.profile, rev_reg_def, options
+            event = RevRegDefCreateResponseEvent.with_payload(
+                rev_reg_def_result=result,
+                rev_reg_def=rev_reg_def,
+                options=options,
+            )
+            await self.notify(event)
+
+            return result
+        except Exception as err:
+            # Emit failure event with appropriate error message based on exception type
+            should_retry = True
+            if isinstance(err, AskarError):
+                error_msg = f"Error retrieving credential definition: {str(err)}"
+                if err.code == AskarErrorCode.NOT_FOUND:
+                    should_retry = False
+            elif isinstance(err, AnoncredsError):
+                error_msg = f"Error creating revocation registry: {str(err)}"
+            else:
+                error_msg = f"Registry creation failed: {str(err)}"
+
+            if "Resource already exists" in error_msg:
+                should_retry = False
+
+            error_msg += (
+                f". Extra context: issuer_id: {issuer_id}, "
+                f"cred_def_id: {cred_def_id}, registry_type: {registry_type}, "
+                f"tag: {tag}, max_cred_num: {max_cred_num}, options: {options}"
+            )
+
+            LOGGER.warning(f"{error_msg}. Emitting failure event.")
+
+            event = RevRegDefCreateResponseEvent.with_failure(
+                error_msg=error_msg,
+                should_retry=should_retry,
+                retry_count=retry_count,
+                issuer_id=issuer_id,
+                cred_def_id=cred_def_id,
+                registry_type=registry_type,
+                tag=tag,
+                max_cred_num=max_cred_num,
+                options=options,
+            )
+            await self.notify(event)
+
+    async def emit_store_revocation_registry_definition_event(
+        self,
+        *,
+        rev_reg_def: RevRegDef,
+        rev_reg_def_result: RevRegDefResult,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Emit event to request storing revocation registry definition locally.
+
+        Args:
+            rev_reg_def_result (RevRegDefResult): revocation registry definition result
+            rev_reg_def (RevRegDef): revocation registry definition
+            options (dict): storage options
+
+        """
+        options = options or {}
+        LOGGER.info(
+            "Emitting store revocation registry definition event for rev_reg_def_id: %s, "
+            "tag: %s. request_id: %s, correlation_id: %s",
+            rev_reg_def_result.rev_reg_def_id,
+            rev_reg_def.tag,
+            options.get("request_id"),
+            options.get("correlation_id"),
         )
 
-        await self.store_revocation_registry_definition(
-            result, rev_reg_def_private, options
+        event = RevRegDefStoreRequestedEvent.with_payload(
+            rev_reg_def=rev_reg_def,
+            rev_reg_def_result=rev_reg_def_result,
+            options=options,
         )
-        return result
+        await self.notify(event)
+
+    async def handle_store_revocation_registry_definition_request(
+        self,
+        rev_reg_def_result: RevRegDefResult,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Handle storing revocation registry definition locally.
+
+        If the tag is the first registry, then successful storage will trigger the
+        creation of a backup registry.
+
+        Args:
+            rev_reg_def_result (RevRegDefResult): revocation registry definition result
+            options (dict): storage options
+
+        """
+        options = options or {}
+        retry_count = options.pop("retry_count", 0)
+        rev_reg_def_state = rev_reg_def_result.revocation_registry_definition_state
+        rev_reg_def = rev_reg_def_state.revocation_registry_definition
+        tag = rev_reg_def.tag
+        rev_reg_def_id = rev_reg_def_result.rev_reg_def_id
+
+        LOGGER.debug(
+            "Handling registry store request for rev_reg_def_id: %s, tag: %s. "
+            "request_id: %s, correlation_id: %s",
+            rev_reg_def_id,
+            tag,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+
+        try:
+            # Store locally
+            await self.store_revocation_registry_definition(rev_reg_def_result, options)
+
+            # Emit success event
+            LOGGER.info(
+                "Emitting rev-reg-def store response event for rev reg def id: %s, "
+                "tag: %s. request_id: %s, correlation_id: %s",
+                rev_reg_def_id,
+                tag,
+                options.get("request_id"),
+                options.get("correlation_id"),
+            )
+            event = RevRegDefStoreResponseEvent.with_payload(
+                rev_reg_def_id=rev_reg_def_id,
+                rev_reg_def=rev_reg_def,
+                rev_reg_def_result=rev_reg_def_result,
+                tag=tag,
+                options=options,
+            )
+            await self.notify(event)
+
+        except Exception as err:
+            # Emit failure event
+            should_retry = True
+            if isinstance(err, AnonCredsRevocationError):
+                error_msg = str(err)
+                if "Revocation registry definition id or job id not found" in error_msg:
+                    should_retry = False
+            else:
+                error_msg = f"Store operation failed: {str(err)}"
+
+            error_msg += (
+                f". Extra context: rev_reg_def_id: {rev_reg_def_id}, "
+                f"tag: {tag}, options: {options}"
+            )
+
+            LOGGER.warning(f"{error_msg}. Emitting failure event.")
+
+            event = RevRegDefStoreResponseEvent.with_failure(
+                rev_reg_def=rev_reg_def,
+                tag=tag,
+                error_msg=error_msg,
+                should_retry=should_retry,
+                retry_count=retry_count,
+                options=options,
+            )
+            await self.notify(event)
 
     async def store_revocation_registry_definition(
         self,
         result: RevRegDefResult,
-        rev_reg_def_private: RevocationRegistryDefinitionPrivate,
         options: Optional[dict] = None,
     ) -> None:
-        """Store a revocation registry definition."""
+        """Store a revocation registry definition.
+
+        Args:
+            result (RevRegDefResult): revocation registry definition result
+            options (dict): storage options
+
+        """
         options = options or {}
         identifier = result.job_id or result.rev_reg_def_id
         if not identifier:
             raise AnonCredsRevocationError(
                 "Revocation registry definition id or job id not found"
             )
+        LOGGER.debug(
+            "Storing revocation registry definition for rev_reg_def_id: %s, tag: %s. "
+            "request_id: %s, correlation_id: %s",
+            result.rev_reg_def_id,
+            result.revocation_registry_definition_state.revocation_registry_definition.tag,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
 
         rev_reg_def = (
             result.revocation_registry_definition_state.revocation_registry_definition
         )
+        rev_reg_def_state = result.revocation_registry_definition_state.state
 
         try:
+            private_key_storage_id = self._get_private_key_storage_id(rev_reg_def)
+
+            # Read the private definition from storage (stored immediately after creation)
+            async with self.profile.session() as session:
+                rev_reg_def_private_entry = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF_PRIVATE, private_key_storage_id
+                )
+
+            if not rev_reg_def_private_entry:
+                raise AnonCredsRevocationError(
+                    "Private revocation registry definition "
+                    f"not found for {private_key_storage_id}"
+                )
+
             async with self.profile.transaction() as txn:
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF,
@@ -240,16 +540,24 @@ class AnonCredsRevocation:
                     rev_reg_def.to_json(),
                     tags={
                         "cred_def_id": rev_reg_def.cred_def_id,
-                        "state": result.revocation_registry_definition_state.state,
+                        "state": rev_reg_def_state,
                         "active": "false",
                     },
                 )
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,
                     identifier,
-                    rev_reg_def_private.to_json_buffer(),
+                    rev_reg_def_private_entry.value,
+                )
+                await txn.handle.remove(
+                    CATEGORY_REV_REG_DEF_PRIVATE, private_key_storage_id
+                )
+                LOGGER.debug(
+                    "Removed rev reg def private %s from storage",
+                    private_key_storage_id,
                 )
                 await txn.commit()
+            LOGGER.debug("Revocation registry definition storage transaction committed")
 
             if result.revocation_registry_definition_state.state == STATE_FINISHED:
                 await self.notify(
@@ -265,11 +573,19 @@ class AnonCredsRevocation:
     ) -> None:
         """Mark a rev reg def as finished."""
         options = options or {}
+        LOGGER.debug(
+            "Finishing revocation registry definition job_id=%s, rev_reg_def_id=%s",
+            job_id,
+            rev_reg_def_id,
+        )
         async with self.profile.transaction() as txn:
-            entry = await self._finish_registration(
-                txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
+            await self._finish_registration(
+                txn,
+                CATEGORY_REV_REG_DEF,
+                job_id,
+                rev_reg_def_id,
+                state=STATE_FINISHED,
             )
-            rev_reg_def = RevRegDef.from_json(entry.value)
             await self._finish_registration(
                 txn,
                 CATEGORY_REV_REG_DEF_PRIVATE,
@@ -278,8 +594,10 @@ class AnonCredsRevocation:
             )
             await txn.commit()
 
-        await self.notify(
-            RevRegDefFinishedEvent.with_payload(rev_reg_def_id, rev_reg_def, options)
+        options.pop("correlation_id", None)  # Remove correlation id for new request
+        await self.emit_create_and_register_revocation_list_event(
+            rev_reg_def_id=rev_reg_def_id,
+            options=options,
         )
 
     async def get_created_revocation_registry_definitions(
@@ -338,6 +656,7 @@ class AnonCredsRevocation:
 
     async def set_active_registry(self, rev_reg_def_id: str) -> None:
         """Mark a registry as active."""
+        LOGGER.debug("Setting registry as active: %s", rev_reg_def_id)
         async with self.profile.transaction() as txn:
             entry = await txn.handle.fetch(
                 CATEGORY_REV_REG_DEF,
@@ -350,6 +669,7 @@ class AnonCredsRevocation:
                 )
 
             if entry.tags["active"] == "true":
+                LOGGER.warning("Registry %s is already active", rev_reg_def_id)
                 # NOTE If there are other registries set as active, we're not
                 # clearing them if the one we want to be active is already
                 # active. This probably isn't an issue.
@@ -391,6 +711,64 @@ class AnonCredsRevocation:
                 tags=tags,
             )
             await txn.commit()
+
+        LOGGER.debug("Registry %s set as active", rev_reg_def_id)
+
+    async def emit_create_and_register_revocation_list_event(
+        self,
+        rev_reg_def_id: str,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Emit event to request revocation list creation.
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID
+            options (dict): creation options
+
+        """
+        options = options or {}
+        LOGGER.info(
+            "Emitting create and register revocation list event for rev_reg_def_id: %s. "
+            "request_id: %s, correlation_id: %s",
+            rev_reg_def_id,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+
+        # Emit event to request revocation list creation
+        event = RevListCreateRequestedEvent.with_payload(
+            rev_reg_def_id=rev_reg_def_id, options=options
+        )
+        await self.notify(event)
+
+    async def emit_store_revocation_list_event(
+        self,
+        rev_reg_def_id: str,
+        result: RevListResult,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Emit event to request revocation list storage.
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID
+            result (RevListResult): revocation list result
+            options (dict): storage options
+
+        """
+        options = options or {}
+        LOGGER.info(
+            "Emitting store revocation list event for rev_reg_def_id: %s. "
+            "request_id: %s, correlation_id: %s",
+            rev_reg_def_id,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+
+        # Emit event to request revocation list storage
+        event = RevListStoreRequestedEvent.with_payload(
+            rev_reg_def_id=rev_reg_def_id, result=result, options=options
+        )
+        await self.notify(event)
 
     async def wait_for_active_revocation_registry(self, cred_def_id: str) -> None:
         """Wait for revocation registry setup to complete.
@@ -461,10 +839,19 @@ class AnonCredsRevocation:
 
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
-    ) -> RevListResult:
-        """Create and register a revocation list."""
+    ) -> None:
+        """Handle revocation list creation request event.
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID
+            options (dict): creation options
+
+        """
         options = options or {}
+        retry_count = options.get("retry_count", 0)
+
         try:
+            # Fetch revocation registry definition and private definition
             async with self.profile.session() as session:
                 rev_reg_def_entry = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF, rev_reg_def_id
@@ -472,62 +859,121 @@ class AnonCredsRevocation:
                 rev_reg_def_private_entry = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
                 )
-        except DBError as err:
-            raise AnonCredsRevocationError(
-                "Error retrieving required revocation registry definition data"
-            ) from err
 
-        missing_items = []
-        if not rev_reg_def_entry:
-            missing_items.append("revocation registry definition")
-        if not rev_reg_def_private_entry:
-            missing_items.append("revocation registry private definition")
+                # Ensure both rev reg definition and private definition are present
+                missing_items = []
+                if not rev_reg_def_entry:
+                    missing_items.append("revocation registry definition")
+                if not rev_reg_def_private_entry:
+                    missing_items.append("revocation registry private definition")
 
-        if missing_items:
-            raise AnonCredsRevocationError(
-                f"Missing required revocation registry data: {', '.join(missing_items)}"
+                if missing_items:
+                    raise AskarError(
+                        AskarErrorCode.NOT_FOUND,
+                        f"Revocation registry data not found: {', '.join(missing_items)}",
+                    )
+
+                # Fetch credential definition
+                cred_def_id = rev_reg_def_entry.value_json["credDefId"]
+                cred_def_entry = await session.handle.fetch(
+                    CATEGORY_CRED_DEF, cred_def_id
+                )
+                if not cred_def_entry:
+                    raise AskarError(
+                        AskarErrorCode.NOT_FOUND,
+                        f"Credential definition {cred_def_id} not found",
+                    )
+
+            # Deserialize rev reg def, private def, and cred def
+            rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
+            rev_reg_def_private = RevocationRegistryDefinitionPrivate.load(
+                rev_reg_def_private_entry.value_json
+            )
+            cred_def = CredDef.deserialize(cred_def_entry.value_json)
+
+            # Add "first" flag before registering, so we have it in case of registry error
+            options["first_registry"] = rev_reg_def.tag == FIRST_REGISTRY_TAG
+
+            # TODO This is a little rough; stored tails location will have public uri
+            rev_reg_def.value.tails_location = self.get_local_tails_path(rev_reg_def)
+
+            rev_list = RevocationStatusList.create(
+                cred_def.to_native(),
+                rev_reg_def_id,
+                rev_reg_def.to_native(),
+                rev_reg_def_private,
+                rev_reg_def.issuer_id,
             )
 
-        try:
-            async with self.profile.session() as session:
-                cred_def_entry = await session.handle.fetch(
-                    CATEGORY_CRED_DEF, rev_reg_def_entry.value_json["credDefId"]
-                )
-        except DBError as err:
-            raise AnonCredsRevocationError(
-                f"Error retrieving cred def {rev_reg_def_entry.value_json['credDefId']}"
-            ) from err
+            # Perform the actual revocation list creation and registration
+            anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+            result = await anoncreds_registry.register_revocation_list(
+                self.profile, rev_reg_def, RevList.from_native(rev_list), options
+            )
 
-        rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
-        cred_def = CredDef.deserialize(cred_def_entry.value_json)
-        rev_reg_def_private = RevocationRegistryDefinitionPrivate.load(
-            rev_reg_def_private_entry.value_json
-        )
-        # TODO This is a little rough; stored tails location will have public uri
-        rev_reg_def.value.tails_location = self.get_local_tails_path(rev_reg_def)
+            if options.get("failed_to_upload", False):
+                # ??? Why register revocation list if we already know tails upload failed?
+                result.revocation_list_state.state = RevListState.STATE_FAILED
 
-        rev_list = RevocationStatusList.create(
-            cred_def.to_native(),
-            rev_reg_def_id,
-            rev_reg_def.to_native(),
-            rev_reg_def_private,
-            rev_reg_def.issuer_id,
-        )
+            # Emit success event with the result to trigger store request
+            LOGGER.info(
+                "Emitting successful create and register revocation list event for "
+                "rev_reg_def_id: %s, tag: %s. request_id: %s, correlation_id: %s",
+                rev_reg_def_id,
+                rev_reg_def.tag,
+                options.get("request_id"),
+                options.get("correlation_id"),
+            )
+            event = RevListCreateResponseEvent.with_payload(
+                rev_reg_def_id=rev_reg_def_id,
+                rev_list_result=result,
+                options=options,
+            )
+            await self.notify(event)
 
-        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        result = await anoncreds_registry.register_revocation_list(
-            self.profile, rev_reg_def, RevList.from_native(rev_list), options
-        )
+        except Exception as err:
+            # Emit failure event with appropriate error message based on exception type
+            should_retry = True
+            if isinstance(err, AskarError):
+                error_msg = f"Error retrieving records: {str(err)}"
+                if err.code == AskarErrorCode.NOT_FOUND:
+                    should_retry = False
+            elif isinstance(err, AnoncredsError):
+                error_msg = f"Error creating revocation list: {str(err)}"
+            else:
+                error_msg = f"Revocation list creation failed: {str(err)}"
 
-        if options.get("failed_to_upload", False):
-            result.revocation_list_state.state = RevListState.STATE_FAILED
+            if "Resource already exists" in error_msg:
+                should_retry = False
 
-        await self.store_revocation_registry_list(result)
+            error_msg += (
+                f". Extra context: rev_reg_def_id: {rev_reg_def_id}, options: {options}"
+            )
 
-        return result
+            LOGGER.warning(f"{error_msg}. Emitting failure event.")
 
-    async def store_revocation_registry_list(self, result: RevListResult) -> None:
+            event = RevListCreateResponseEvent.with_failure(
+                rev_reg_def_id=rev_reg_def_id,
+                error_msg=error_msg,
+                should_retry=should_retry,
+                retry_count=retry_count,
+                options=options,
+            )
+            await self.notify(event)
+
+    async def store_revocation_registry_list(
+        self, result: RevListResult, options: Optional[dict] = None
+    ) -> None:
         """Store a revocation registry list."""
+        options = options or {}
+        LOGGER.debug(
+            "Storing revocation registry list for rev_reg_def_id: %s. "
+            "request_id: %s, correlation_id: %s",
+            result.rev_reg_def_id,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+
         identifier = result.job_id or result.rev_reg_def_id
         if not identifier:
             raise AnonCredsRevocationError(
@@ -552,12 +998,36 @@ class AnonCredsRevocation:
                         "pending": "false",
                     },
                 )
+                LOGGER.info(
+                    "Revocation list stored successfully for rev_reg_def_id: %s. "
+                    "request_id: %s, correlation_id: %s",
+                    rev_list.rev_reg_def_id,
+                    options.get("request_id"),
+                    options.get("correlation_id"),
+                )
 
             if result.revocation_list_state.state == STATE_FINISHED:
+                LOGGER.info(
+                    "Revocation list state is 'finished', emitting event for "
+                    "rev_reg_def_id: %s. request_id: %s, correlation_id: %s",
+                    rev_list.rev_reg_def_id,
+                    options.get("request_id"),
+                    options.get("correlation_id"),
+                )
                 await self.notify(
                     RevListFinishedEvent.with_payload(
-                        rev_list.rev_reg_def_id, rev_list.revocation_list
+                        rev_list.rev_reg_def_id,
+                        rev_list.revocation_list,
+                        options,
                     )
+                )
+            else:
+                LOGGER.warning(
+                    "Revocation list state is '%s', not emitting finished event for "
+                    "rev_reg_def_id: %s. Options: %s",
+                    result.revocation_list_state.state,
+                    rev_list.rev_reg_def_id,
+                    options,
                 )
 
         except DBError as err:
@@ -565,10 +1035,77 @@ class AnonCredsRevocation:
                 "Error storing revocation registry list"
             ) from err
 
+    async def handle_store_revocation_list_request(
+        self,
+        rev_reg_def_id: str,
+        result: RevListResult,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Handle revocation list store request.
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID
+            result (RevListResult): revocation list result
+            options (dict): storage options
+
+        """
+        options = options or {}
+        retry_count = options.pop("retry_count", 0)
+
+        try:
+            # Store the revocation list
+            await self.store_revocation_registry_list(result, options)
+
+            # Emit success event
+            LOGGER.info(
+                "Emitting revocation list store response event for rev_reg_def_id: %s. "
+                "request_id: %s, correlation_id: %s",
+                rev_reg_def_id,
+                options.get("request_id"),
+                options.get("correlation_id"),
+            )
+            event = RevListStoreResponseEvent.with_payload(
+                rev_reg_def_id=rev_reg_def_id,
+                result=result,
+                options=options,
+            )
+            await self.notify(event)
+
+        except Exception as err:
+            # Emit failure event
+            should_retry = True
+            if isinstance(err, AskarError):
+                error_msg = f"Error storing revocation list: {str(err)}"
+                if err.code == AskarErrorCode.NOT_FOUND:
+                    should_retry = False
+            else:
+                error_msg = f"Revocation list store failed: {str(err)}"
+
+            error_msg += (
+                f". Extra context: rev_reg_def_id: {rev_reg_def_id}, options: {options}"
+            )
+
+            LOGGER.warning(f"{error_msg}. Emitting failure event.")
+
+            event = RevListStoreResponseEvent.with_failure(
+                rev_reg_def_id=rev_reg_def_id,
+                error_msg=error_msg,
+                should_retry=should_retry,
+                retry_count=retry_count,
+                options=options,
+            )
+            await self.notify(event)
+
     async def finish_revocation_list(
         self, job_id: str, rev_reg_def_id: str, revoked: list
     ) -> None:
         """Mark a revocation list as finished."""
+        LOGGER.info(
+            "Finishing revocation list job_id=%s, rev_reg_def_id=%s, revoked=%s",
+            job_id,
+            rev_reg_def_id,
+            revoked,
+        )
         async with self.profile.transaction() as txn:
             # Finish the registration if the list is new, otherwise already updated
             existing_list = await txn.handle.fetch(
@@ -584,8 +1121,16 @@ class AnonCredsRevocation:
                     state=STATE_FINISHED,
                 )
                 await txn.commit()
-            # Notify about revoked creds on any list update
-            await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id, revoked))
+                LOGGER.debug("Revocation list finish transaction committed")
+            else:
+                LOGGER.debug("Existing list found, skipping registration finish")
+
+        LOGGER.info(
+            "Notifying about %d revoked creds for rev_reg_def_id: %s",
+            len(revoked),
+            rev_reg_def_id,
+        )
+        await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id, revoked))
 
     async def update_revocation_list(
         self,
@@ -597,6 +1142,12 @@ class AnonCredsRevocation:
     ) -> RevListResult:
         """Publish and update to a revocation list."""
         options = options or {}
+        LOGGER.debug(
+            "Updating revocation list for rev_reg_def_id=%s with %d revoked credentials",
+            rev_reg_def_id,
+            len(revoked),
+        )
+
         try:
             async with self.profile.session() as session:
                 rev_reg_def_entry = await session.handle.fetch(
@@ -674,7 +1225,9 @@ class AnonCredsRevocation:
 
         return None
 
-    async def get_revocation_lists_with_pending_revocations(self) -> Sequence[str]:
+    async def get_revocation_lists_with_pending_revocations(
+        self,
+    ) -> Sequence[str]:
         """Return a list of rev reg def ids with pending revocations."""
         try:
             async with self.profile.session() as session:
@@ -797,83 +1350,139 @@ class AnonCredsRevocation:
         return await self.retrieve_tails(rev_reg_def)
 
     # Registry Management
+    async def handle_full_registry_event(
+        self,
+        rev_reg_def_id: str,
+        cred_def_id: str,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Handle the full registry process event.
 
-    async def handle_full_registry(self, rev_reg_def_id: str) -> None:
-        """Update the registry status and start the next registry generation."""
-        async with self.profile.session() as session:
-            active_rev_reg_def = await session.handle.fetch(
-                CATEGORY_REV_REG_DEF, rev_reg_def_id
-            )
-            if active_rev_reg_def:
-                # ok, we have an active rev reg.
-                # find the backup/fallover rev reg (finished and not active)
+        This method handles the full registry process by:
+        1. Finding the backup registry that should become active
+        2. Setting the current registry state to full
+        3. Activating the backup registry (event-driven)
+        4. Creating a new backup registry (event-driven)
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID that is full
+            cred_def_id (str): credential definition ID
+            options (dict): handling options
+
+        """
+        options = options or {}
+        LOGGER.debug(
+            "Handling full registry event for cred def id: %s, rev reg def id: %s. "
+            "request_id: %s, correlation_id: %s",
+            cred_def_id,
+            rev_reg_def_id,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+        retry_count = options.get("retry_count", 0)
+
+        try:
+            # Find the backup registry that should become active
+            async with self.profile.session() as session:
+                # First, get the active registry
+                active_rev_reg_def = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF, rev_reg_def_id
+                )
+                if not active_rev_reg_def:
+                    raise AnonCredsRevocationError(
+                        f"Active registry {rev_reg_def_id} not found"
+                    )
+
+                # Then, find the backup registry (finished and not active)
                 rev_reg_defs = await session.handle.fetch_all(
                     CATEGORY_REV_REG_DEF,
                     {
                         "active": "false",
-                        "cred_def_id": active_rev_reg_def.value_json["credDefId"],
+                        "cred_def_id": cred_def_id,
                         "state": RevRegDefState.STATE_FINISHED,
                     },
                     limit=1,
                 )
-                if len(rev_reg_defs):
-                    backup_rev_reg_def_id = rev_reg_defs[0].name
-                else:
-                    # attempted to create and register here but fails in practical usage.
-                    # the indexes and list do not get set properly (timing issue?)
-                    # if max cred num = 4 for instance, will get
-                    # Revocation status list does not have the index 4
-                    # in _create_credential calling Credential.create
+                if not rev_reg_defs:
                     raise AnonCredsRevocationError(
                         "Error handling full registry. No backup registry available."
                     )
 
-        # set the backup to active...
-        if backup_rev_reg_def_id:
-            await self.set_active_registry(backup_rev_reg_def_id)
+                backup_rev_reg_def_id = rev_reg_defs[0].name
 
-            async with self.profile.transaction() as txn:
-                # re-fetch the old active (it's been updated), we need to mark as full
-                active_rev_reg_def = await txn.handle.fetch(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id, for_update=True
-                )
-                tags = active_rev_reg_def.tags
-                tags["state"] = RevRegDefState.STATE_FULL
-                await txn.handle.replace(
-                    CATEGORY_REV_REG_DEF,
-                    active_rev_reg_def.name,
-                    active_rev_reg_def.value,
-                    tags,
-                )
-                await txn.commit()
+            # Set the current registry state to full
+            await self.set_rev_reg_state(rev_reg_def_id, RevRegDefState.STATE_FULL)
 
-            # create our next fallover/backup
-            backup_reg = await self.create_and_register_revocation_registry_definition(
-                issuer_id=active_rev_reg_def.value_json["issuerId"],
-                cred_def_id=active_rev_reg_def.value_json["credDefId"],
-                registry_type=active_rev_reg_def.value_json["revocDefType"],
-                tag=str(uuid4()),
-                max_cred_num=active_rev_reg_def.value_json["value"]["maxCredNum"],
-            )
-            LOGGER.debug(
-                "Previous rev_reg_def_id = %s.\nCurrent rev_reg_def_id = %s.\n"
-                "Backup reg = %s",
+            LOGGER.info(
+                "Registry %s state set to full, activating backup registry %s. "
+                "cred_def_id: %s, request_id: %s, correlation_id: %s",
                 rev_reg_def_id,
                 backup_rev_reg_def_id,
-                backup_reg.rev_reg_def_id,
+                cred_def_id,
+                options.get("request_id"),
+                options.get("correlation_id"),
             )
+
+            # Store context for later use in creating new backup after activation
+            set_active_registry_options = options.copy()
+            set_active_registry_options["cred_def_id"] = cred_def_id
+            set_active_registry_options["old_rev_reg_def_id"] = rev_reg_def_id
+            set_active_registry_options.pop("correlation_id", None)
+
+            # Activate the backup registry (this will trigger creation of new backup)
+            await self.emit_set_active_registry_event(
+                rev_reg_def_id=backup_rev_reg_def_id,
+                options=set_active_registry_options,
+            )
+
+            LOGGER.info(
+                "Emitting full handling response event for rev_reg_def_id: %s. "
+                "cred_def_id: %s, request_id: %s, correlation_id: %s",
+                rev_reg_def_id,
+                cred_def_id,
+                options.get("request_id"),
+                options.get("correlation_id"),
+            )
+            full_handling_response_event = RevRegFullHandlingResponseEvent.with_payload(
+                old_rev_reg_def_id=rev_reg_def_id,
+                new_active_rev_reg_def_id=backup_rev_reg_def_id,
+                cred_def_id=cred_def_id,
+                options=options,
+            )
+            await self.notify(full_handling_response_event)
+
+        except Exception as err:
+            # Emit failure event
+            error_msg = (
+                f"Full registry handling failed: {str(err)}. "
+                f"Extra context: rev_reg_def_id: {rev_reg_def_id}, options: {options}"
+            )
+
+            LOGGER.warning(f"{error_msg}. Emitting failure event.")
+
+            event = RevRegFullHandlingResponseEvent.with_failure(
+                old_rev_reg_def_id=rev_reg_def_id,
+                cred_def_id=cred_def_id,
+                error_msg=error_msg,
+                retry_count=retry_count,
+                options=options,
+            )
+            await self.notify(event)
 
     async def decommission_registry(self, cred_def_id: str) -> list:
         """Decommission post-init registries and start the next registry generation."""
-        active_reg = await self.get_or_create_active_registry(cred_def_id)
+        active_reg = await self.get_active_registry(cred_def_id)
 
         # create new one and set active
-        new_reg = await self.create_and_register_revocation_registry_definition(
-            issuer_id=active_reg.rev_reg_def.issuer_id,
-            cred_def_id=active_reg.rev_reg_def.cred_def_id,
-            registry_type=active_reg.rev_reg_def.type,
-            tag=str(uuid4()),
-            max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+        LOGGER.debug("Creating new registry to replace active one")
+        new_reg = await asyncio.shield(
+            self.create_and_register_revocation_registry_definition(
+                issuer_id=active_reg.rev_reg_def.issuer_id,
+                cred_def_id=active_reg.rev_reg_def.cred_def_id,
+                registry_type=active_reg.rev_reg_def.type,
+                tag=self._generate_backup_registry_tag(),
+                max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+            )
         )
         # set new as active...
         await self.set_active_registry(new_reg.rev_reg_def_id)
@@ -907,12 +1516,15 @@ class AnonCredsRevocation:
                     )
             await txn.commit()
         # create a second one for backup, don't make it active
-        backup_reg = await self.create_and_register_revocation_registry_definition(
-            issuer_id=active_reg.rev_reg_def.issuer_id,
-            cred_def_id=active_reg.rev_reg_def.cred_def_id,
-            registry_type=active_reg.rev_reg_def.type,
-            tag=str(uuid4()),
-            max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+        LOGGER.debug("Creating backup registry")
+        backup_reg = await asyncio.shield(
+            self.create_and_register_revocation_registry_definition(
+                issuer_id=active_reg.rev_reg_def.issuer_id,
+                cred_def_id=active_reg.rev_reg_def.cred_def_id,
+                registry_type=active_reg.rev_reg_def.type,
+                tag=self._generate_backup_registry_tag(),
+                max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+            )
         )
 
         LOGGER.debug(
@@ -923,8 +1535,8 @@ class AnonCredsRevocation:
         )
         return recs
 
-    async def get_or_create_active_registry(self, cred_def_id: str) -> RevRegDefResult:
-        """Get or create a revocation registry for the given cred def id."""
+    async def get_active_registry(self, cred_def_id: str) -> RevRegDefResult:
+        """Get the active revocation registry for a given cred def id."""
         async with self.profile.session() as session:
             rev_reg_defs = await session.handle.fetch_all(
                 CATEGORY_REV_REG_DEF,
@@ -953,8 +1565,112 @@ class AnonCredsRevocation:
         )
         return result
 
-    # Credential Operations
+    async def emit_full_registry_event(
+        self, rev_reg_def_id: str, cred_def_id: str
+    ) -> None:
+        """Emit event to indicate full registry detected.
 
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID that is full
+            cred_def_id (str): credential definition ID
+
+        """
+        request_id = generate_request_id()
+        LOGGER.info(
+            "Emitting full registry event for cred def id: %s, rev reg def id: %s, "
+            "request_id: %s",
+            cred_def_id,
+            rev_reg_def_id,
+            request_id,
+        )
+        options = {"request_id": request_id}
+
+        # Emit event to indicate full registry detected
+        event = RevRegFullDetectedEvent.with_payload(
+            rev_reg_def_id=rev_reg_def_id,
+            cred_def_id=cred_def_id,
+            options=options,
+        )
+        await self.notify(event)
+
+    async def emit_set_active_registry_event(
+        self,
+        rev_reg_def_id: str,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Emit event to request registry activation.
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID
+            options (dict): activation options
+
+        """
+        options = options or {}
+        LOGGER.info(
+            "Emitting set active registry event for rev reg def id: %s. "
+            "request_id: %s, correlation_id: %s",
+            rev_reg_def_id,
+            options.get("request_id"),
+            options.get("correlation_id"),
+        )
+
+        event = RevRegActivationRequestedEvent.with_payload(
+            rev_reg_def_id=rev_reg_def_id,
+            options=options,
+        )
+        await self.notify(event)
+
+    async def handle_activate_registry_request(
+        self,
+        rev_reg_def_id: str,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Handle registry activation request event.
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID
+            options (dict): activation options
+
+        """
+        options = options or {}
+        retry_count = options.pop("retry_count", 0)
+
+        try:
+            # Perform registry activation
+            await self.set_active_registry(rev_reg_def_id)
+
+            # Emit success event
+            LOGGER.info(
+                "Emitting registry activation success response event for "
+                "rev_reg_def_id: %s. request_id: %s, correlation_id: %s",
+                rev_reg_def_id,
+                options.get("request_id"),
+                options.get("correlation_id"),
+            )
+            event = RevRegActivationResponseEvent.with_payload(
+                rev_reg_def_id=rev_reg_def_id,
+                options=options,
+            )
+            await self.notify(event)
+
+        except Exception as err:
+            # Emit failure event
+            error_msg = (
+                f"Registry activation failed: {str(err)}. "
+                f"Extra context: rev_reg_def_id: {rev_reg_def_id}, options: {options}"
+            )
+
+            LOGGER.warning(f"{error_msg}. Emitting failure event.")
+
+            event = RevRegActivationResponseEvent.with_failure(
+                rev_reg_def_id=rev_reg_def_id,
+                error_msg=error_msg,
+                retry_count=retry_count,
+                options=options,
+            )
+            await self.notify(event)
+
+    # Credential Operations
     async def create_credential_w3c(
         self,
         w3c_credential_offer: dict,
@@ -1053,14 +1769,15 @@ class AnonCredsRevocation:
         def _handle_missing_entries(
             rev_list: Entry, rev_reg_def: Entry, rev_key: Entry
         ) -> None:
-            if not rev_list:
-                raise AnonCredsRevocationError("Revocation registry list not found")
             if not rev_reg_def:
                 raise AnonCredsRevocationError("Revocation registry definition not found")
             if not rev_key:
                 raise AnonCredsRevocationError(
                     "Revocation registry definition private data not found"
                 )
+            if not rev_list:
+                LOGGER.error("Revocation registry list not found for %s", rev_reg_def_id)
+                raise AnonCredsRevocationError("Revocation registry list not found")
 
         def _has_required_id_and_tails_path() -> bool:
             return rev_reg_def_id and tails_file_path
@@ -1200,7 +1917,7 @@ class AnonCredsRevocation:
             retries: number of times to retry credential creation
 
         Returns:
-            A tuple of created credential and revocation id
+            A tuple of created credential, revocation id, and the rev reg def id
 
         """
         issuer = AnonCredsIssuer(self.profile)
@@ -1266,8 +1983,9 @@ class AnonCredsRevocation:
                     <= int(cred_rev_id) + 1
                 )
 
-            if rev_reg_def_result and _is_full_registry(rev_reg_def_result, cred_rev_id):
-                await self.handle_full_registry(rev_reg_def_id)
+            if rev_reg_def_id and rev_reg_def_result:
+                if _is_full_registry(rev_reg_def_result, cred_rev_id):
+                    await self.emit_full_registry_event(rev_reg_def_id, cred_def_id)
 
             return cred_json, cred_rev_id, rev_reg_def_id
 
@@ -1628,7 +2346,45 @@ class AnonCredsRevocation:
         # TODO: Implement or remove
         pass
 
-    async def set_rev_reg_state(self, rev_reg_id: str, state: str) -> None:
+    async def set_rev_reg_state(self, rev_reg_id: str, state: str) -> RevRegDef:
         """Update Revocation Registry state."""
-        # TODO: Implement or remove
-        pass
+        try:
+            async with self.profile.transaction() as txn:
+                # Fetch the revocation registry definition entry
+                rev_reg_def_entry = await txn.handle.fetch(
+                    CATEGORY_REV_REG_DEF, rev_reg_id, for_update=True
+                )
+
+                if not rev_reg_def_entry:
+                    raise AnonCredsRevocationError(
+                        f"Revocation registry definition not found for id {rev_reg_id}"
+                    )
+
+                # Update the state in the tags
+                tags = rev_reg_def_entry.tags
+                tags["state"] = state
+
+                # Replace the entry with updated tags
+                await txn.handle.replace(
+                    CATEGORY_REV_REG_DEF,
+                    rev_reg_id,
+                    value=rev_reg_def_entry.value,
+                    tags=tags,
+                )
+
+                await txn.commit()
+        except AskarError as err:
+            raise AnonCredsRevocationError(
+                f"Error updating revocation registry state: {err}"
+            ) from err
+
+        LOGGER.debug("Set registry %s state: %s", rev_reg_id, state)
+        return RevRegDef.deserialize(rev_reg_def_entry.value_json)
+
+    def _generate_backup_registry_tag(self) -> str:
+        """Generate a unique tag for a backup registry."""
+        return str(uuid4())
+
+    def _get_private_key_storage_id(self, rev_reg_def: RevRegDef) -> str:
+        """Get the private key storage identifier for a revocation registry definition."""
+        return f"rev_reg_def_private_{rev_reg_def.value.tails_hash}"
