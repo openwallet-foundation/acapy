@@ -490,7 +490,7 @@
     "/anoncreds/revocation-registry-definition" : {
       "post" : {
         "tags" : [ "AnonCreds - Revocation" ],
-        "summary" : "Create and publish a registration revocation on the connected datastore",
+        "summary" : "Create and publish a revocation registry definition on the connected datastore",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",

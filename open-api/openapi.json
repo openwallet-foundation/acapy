@@ -581,7 +581,7 @@
             "description" : ""
           }
         },
-        "summary" : "Create and publish a registration revocation on the connected datastore",
+        "summary" : "Create and publish a revocation registry definition on the connected datastore",
         "tags" : [ "AnonCreds - Revocation" ],
         "x-codegen-request-body-name" : "body"
       }

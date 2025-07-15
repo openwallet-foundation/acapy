@@ -35,7 +35,7 @@ class Event:
         self._payload = payload
 
     @property
-    def topic(self):
+    def topic(self) -> str:
         """Return this event's topic."""
         return self._topic
 
