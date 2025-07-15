@@ -1,5 +1,5 @@
 ARG python_version=3.9.18
-ARG rust_version=1.46
+ARG rust_version=1.56
 
 # This image could be replaced with an "indy" image from another repo,
 # such as the indy-sdk
