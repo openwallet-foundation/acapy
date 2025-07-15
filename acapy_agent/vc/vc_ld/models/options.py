@@ -165,3 +165,33 @@ class LDProofVCOptionsSchema(BaseModelSchema):
             )
         },
     )
+
+
+class CredentialStoreOptionsSchema(Schema):
+    """Verifiable Credential store options schema."""
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+
+    credentialId = fields.Str(
+        required=False,
+        metadata={
+            "description": ("Credential ID to use in storage & api calls."),
+            "example": "257d68ae-2b9c-406c-bc00-8e205d1abd44",
+        },
+    )
+
+    verify = fields.Bool(
+        required=False,
+        metadata={
+            "description": (
+                "Store a Verifiable Credential without verifying any of the proofs."
+                "This is an unsecured option to be used for development "
+                "and experimentation of new unsupported cryptosuites."
+            ),
+            "example": True,
+        },
+        default=True,
+    )

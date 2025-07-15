@@ -5,7 +5,7 @@ from marshmallow import fields
 from ....messaging.models.openapi import OpenAPISchema
 from ..validation_result import PresentationVerificationResultSchema
 from .credential import CredentialSchema, VerifiableCredentialSchema
-from .options import LDProofVCOptionsSchema
+from .options import LDProofVCOptionsSchema, CredentialStoreOptionsSchema
 from .presentation import PresentationSchema, VerifiablePresentationSchema
 
 
@@ -51,6 +51,7 @@ class StoreCredentialRequest(OpenAPISchema):
     """Request schema for verifying an LDP VP."""
 
     verifiableCredential = fields.Nested(VerifiableCredentialSchema)
+    options = fields.Nested(CredentialStoreOptionsSchema)
 
 
 class StoreCredentialResponse(OpenAPISchema):

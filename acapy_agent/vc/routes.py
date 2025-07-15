@@ -154,14 +154,16 @@ async def store_credential_route(request: web.BaseRequest):
     manager = VcLdpManager(context.profile)
 
     try:
-        vc = body["verifiableCredential"]
-        cred_id = vc["id"] if "id" in vc else f"urn:uuid:{str(uuid4())}"
-        options = {} if "options" not in body else body["options"]
+        vc = body.get("verifiableCredential")
+        options = body.get("options", {})
+        cred_id = vc.get("id", options.get("credentialId", str(uuid4())))
 
         vc = VerifiableCredential.deserialize(vc)
         options = LDProofVCOptions.deserialize(options)
 
-        await manager.verify_credential(vc)
+        if options.get("verify", True):
+            await manager.verify_credential(vc)
+
         await manager.store_credential(vc, cred_id)
 
         return web.json_response({"credentialId": cred_id}, status=200)
