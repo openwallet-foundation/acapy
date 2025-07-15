@@ -4,6 +4,7 @@ import asyncio
 import logging
 from contextlib import contextmanager
 from functools import partial
+import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -122,18 +123,22 @@ class EventBus:
             except Exception:
                 LOGGER.exception("Error occurred while processing event")
 
-    def subscribe(self, pattern: Pattern, processor: Callable):
+    def subscribe(self, pattern: Pattern | str, processor: Callable):
         """Subscribe to an event.
 
         Args:
-            pattern (Pattern): compiled regular expression for matching topics
+            pattern (Pattern | str): compiled regular expression for matching topics,
+                or the string to be compiled into a regular expression.
             processor (Callable): async callable accepting profile and event
 
         """
-        LOGGER.debug("Subscribed: topic %s, processor %s", pattern, processor)
+        if isinstance(pattern, str):
+            pattern = re.compile(pattern)
+
         if pattern not in self.topic_patterns_to_subscribers:
             self.topic_patterns_to_subscribers[pattern] = []
         self.topic_patterns_to_subscribers[pattern].append(processor)
+        LOGGER.debug("Subscribed: topic %s, processor %s", pattern, processor)
 
     def unsubscribe(self, pattern: Pattern, processor: Callable):
         """Unsubscribe from an event.
