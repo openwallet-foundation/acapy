@@ -398,6 +398,7 @@ class AnonCredsRevocation:
             event = RevRegDefStoreResponseEvent.with_payload(
                 rev_reg_def_id=rev_reg_def_id,
                 rev_reg_def=rev_reg_def,
+                rev_reg_def_result=rev_reg_def_result,
                 tag=tag,
                 options=options,
             )
