@@ -6,6 +6,8 @@ import pytest
 from aiohttp import web
 
 from ...routes import store_credential_route
+from ....tests import mock
+from ....utils.testing import create_test_profile
 
 VALID_VC = {
     "@context": [
@@ -29,6 +31,22 @@ INVALID_VC["proof"]["proofValue"] = "unsecured"
 
 @pytest.mark.vc
 class TestVcApiRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = self.profile.context
+        setattr(self.context, "profile", self.profile)
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
+        )
+
     async def test_credentials_store(self):
         self.request.match_info = {
             "verifiableCredential": VALID_VC,
