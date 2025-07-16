@@ -374,11 +374,11 @@ class RevRegDefStoreResponsePayload(NamedTuple):
     # Following fields are for handling success cases
     rev_reg_def_id: Optional[str]
     rev_reg_def: RevRegDef
+    rev_reg_def_result: Optional[RevRegDefResult]
     tag: str
     options: dict
 
     # Following fields are for handling failure cases
-    rev_reg_def_result: Optional[RevRegDefResult]
     rev_reg_def_private: Optional[RevocationRegistryDefinitionPrivate]
     error_msg: Optional[str]
     should_retry: bool
@@ -401,8 +401,8 @@ class RevRegDefStoreResponseEvent(Event):
         *,
         rev_reg_def_id: str,
         rev_reg_def: RevRegDef,
-        tag: str,
         rev_reg_def_result: Optional[RevRegDefResult] = None,
+        tag: str,
         rev_reg_def_private: Optional[RevocationRegistryDefinitionPrivate] = None,
         error_msg: Optional[str] = None,
         should_retry: bool = False,
@@ -413,8 +413,8 @@ class RevRegDefStoreResponseEvent(Event):
         payload = RevRegDefStoreResponsePayload(
             rev_reg_def_id=rev_reg_def_id,
             rev_reg_def=rev_reg_def,
-            tag=tag,
             rev_reg_def_result=rev_reg_def_result,
+            tag=tag,
             rev_reg_def_private=rev_reg_def_private,
             error_msg=error_msg,
             should_retry=should_retry,
