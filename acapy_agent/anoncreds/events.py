@@ -7,7 +7,6 @@ from anoncreds import RevocationRegistryDefinitionPrivate
 from ..core.event_bus import Event
 from .models.revocation import RevListResult, RevRegDef, RevRegDefResult
 
-
 # Initial credential definition event, kicks off the revocation setup process
 CRED_DEF_FINISHED_EVENT = "anoncreds::credential-definition::finished"
 
@@ -791,59 +790,24 @@ class RevRegFullDetectedEvent(Event):
         return self._payload
 
 
-class RevRegFullHandlingStartedPayload(NamedTuple):
-    """Payload for rev reg full handling started event."""
-
-    rev_reg_def_id: str
-    cred_def_id: str
-    options: dict
-
-
-class RevRegFullHandlingStartedEvent(Event):
-    """Event for rev reg full handling started."""
-
-    event_topic = REV_REG_FULL_HANDLING_STARTED_EVENT
-
-    def __init__(self, payload: RevRegFullHandlingStartedPayload):
-        """Initialize an instance."""
-        self._topic = self.event_topic
-        self._payload = payload
-
-    @classmethod
-    def with_payload(
-        cls,
-        rev_reg_def_id: str,
-        cred_def_id: str,
-        options: Optional[dict] = None,
-    ):
-        """With payload."""
-        payload = RevRegFullHandlingStartedPayload(
-            rev_reg_def_id, cred_def_id, options or {}
-        )
-        return cls(payload)
-
-    @property
-    def payload(self) -> RevRegFullHandlingStartedPayload:
-        """Return payload."""
-        return self._payload
-
-
-class RevRegFullHandlingCompletedPayload(NamedTuple):
-    """Payload for rev reg full handling completed event."""
+class RevRegFullHandlingResponsePayload(NamedTuple):
+    """Payload for rev reg full handling result event."""
 
     old_rev_reg_def_id: str
     new_active_rev_reg_def_id: str
     new_backup_rev_reg_def_id: str
     cred_def_id: str
     options: dict
+    error_msg: str
+    retry_count: int
 
 
-class RevRegFullHandlingCompletedEvent(Event):
-    """Event for rev reg full handling completed."""
+class RevRegFullHandlingResponseEvent(Event):
+    """Event for rev reg full handling result."""
 
     event_topic = REV_REG_FULL_HANDLING_COMPLETED_EVENT
 
-    def __init__(self, payload: RevRegFullHandlingCompletedPayload):
+    def __init__(self, payload: RevRegFullHandlingResponsePayload):
         """Initialize an instance."""
         self._topic = self.event_topic
         self._payload = payload
@@ -851,64 +815,28 @@ class RevRegFullHandlingCompletedEvent(Event):
     @classmethod
     def with_payload(
         cls,
+        *,
         old_rev_reg_def_id: str,
         new_active_rev_reg_def_id: str,
         new_backup_rev_reg_def_id: str,
         cred_def_id: str,
         options: Optional[dict] = None,
+        error_msg: str = "",
+        retry_count: int = 0,
     ):
         """With payload."""
-        payload = RevRegFullHandlingCompletedPayload(
-            old_rev_reg_def_id,
-            new_active_rev_reg_def_id,
-            new_backup_rev_reg_def_id,
-            cred_def_id,
-            options or {},
+        payload = RevRegFullHandlingResponsePayload(
+            old_rev_reg_def_id=old_rev_reg_def_id,
+            new_active_rev_reg_def_id=new_active_rev_reg_def_id,
+            new_backup_rev_reg_def_id=new_backup_rev_reg_def_id,
+            cred_def_id=cred_def_id,
+            options=options or {},
+            error_msg=error_msg,
+            retry_count=retry_count,
         )
         return cls(payload)
 
     @property
-    def payload(self) -> RevRegFullHandlingCompletedPayload:
-        """Return payload."""
-        return self._payload
-
-
-class RevRegFullHandlingFailedPayload(NamedTuple):
-    """Payload for rev reg full handling failed event."""
-
-    rev_reg_def_id: str
-    cred_def_id: str
-    error: str
-    retry_count: int
-    options: dict
-
-
-class RevRegFullHandlingFailedEvent(Event):
-    """Event for rev reg full handling failed."""
-
-    event_topic = REV_REG_FULL_HANDLING_FAILED_EVENT
-
-    def __init__(self, payload: RevRegFullHandlingFailedPayload):
-        """Initialize an instance."""
-        self._topic = self.event_topic
-        self._payload = payload
-
-    @classmethod
-    def with_payload(
-        cls,
-        rev_reg_def_id: str,
-        cred_def_id: str,
-        error: str,
-        retry_count: int,
-        options: Optional[dict] = None,
-    ):
-        """With payload."""
-        payload = RevRegFullHandlingFailedPayload(
-            rev_reg_def_id, cred_def_id, error, retry_count, options or {}
-        )
-        return cls(payload)
-
-    @property
-    def payload(self) -> RevRegFullHandlingFailedPayload:
+    def payload(self) -> RevRegFullHandlingResponsePayload:
         """Return payload."""
         return self._payload

@@ -47,8 +47,7 @@ from ..events import (
     RevRegDefStoreRequestedEvent,
     RevRegDefStoreResponseEvent,
     RevRegFullDetectedEvent,
-    RevRegFullHandlingCompletedEvent,
-    RevRegFullHandlingFailedEvent,
+    RevRegFullHandlingResponseEvent,
     TailsUploadRequestedEvent,
     TailsUploadResponseEvent,
 )
@@ -1185,81 +1184,95 @@ class AnonCredsRevocation:
         return await self.retrieve_tails(rev_reg_def)
 
     # Registry Management
-    async def handle_full_registry(self, rev_reg_def_id: str) -> None:
-        """Update the registry status and start the next registry generation."""
-        async with self.profile.session() as session:
-            active_rev_reg_def = await session.handle.fetch(
-                CATEGORY_REV_REG_DEF, rev_reg_def_id
-            )
-            if active_rev_reg_def:
-                # ok, we have an active rev reg.
-                # find the backup/fallover rev reg (finished and not active)
+    async def handle_full_registry_event(
+        self,
+        rev_reg_def_id: str,
+        cred_def_id: str,
+        options: Optional[dict] = None,
+    ) -> None:
+        """Handle the full registry process event.
+
+        This method handles the full registry process by:
+        1. Finding the backup registry that should become active
+        2. Setting the current registry state to full
+        3. Activating the backup registry (event-driven)
+        4. Creating a new backup registry (event-driven)
+
+        Args:
+            rev_reg_def_id (str): revocation registry definition ID that is full
+            cred_def_id (str): credential definition ID
+            options (dict): handling options
+
+        """
+        LOGGER.debug(
+            "Handling full registry event for cred def id: %s, rev reg def id: %s",
+            cred_def_id,
+            rev_reg_def_id,
+        )
+        options = options or {}
+
+        try:
+            # Find the backup registry that should become active
+            async with self.profile.session() as session:
+                active_rev_reg_def = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF, rev_reg_def_id
+                )
+                if not active_rev_reg_def:
+                    raise AnonCredsRevocationError(
+                        f"Active registry {rev_reg_def_id} not found"
+                    )
+
+                # Find the backup registry (finished and not active)
                 rev_reg_defs = await session.handle.fetch_all(
                     CATEGORY_REV_REG_DEF,
                     {
                         "active": "false",
-                        "cred_def_id": active_rev_reg_def.value_json["credDefId"],
+                        "cred_def_id": cred_def_id,
                         "state": RevRegDefState.STATE_FINISHED,
                     },
                     limit=1,
                 )
-                if len(rev_reg_defs):
-                    backup_rev_reg_def_id = rev_reg_defs[0].name
-                else:
-                    # attempted to create and register here but fails in practical usage.
-                    # the indexes and list do not get set properly (timing issue?)
-                    # if max cred num = 4 for instance, will get
-                    # Revocation status list does not have the index 4
-                    # in _create_credential calling Credential.create
+                if not rev_reg_defs:
                     raise AnonCredsRevocationError(
                         "Error handling full registry. No backup registry available."
                     )
 
-            else:
-                LOGGER.error(
-                    "Error handling full registry. No active registry available. This "
-                    "should not happen."
-                )
+                backup_rev_reg_def_id = rev_reg_defs[0].name
 
-        # set the backup to active...
-        if backup_rev_reg_def_id:
-            await self.set_active_registry(backup_rev_reg_def_id)
+            # Set the current registry state to full
+            await self.set_rev_reg_state(rev_reg_def_id, RevRegDefState.STATE_FULL)
 
-            async with self.profile.transaction() as txn:
-                # re-fetch the old active (it's been updated), we need to mark as full
-                active_rev_reg_def = await txn.handle.fetch(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id, for_update=True
-                )
-                tags = active_rev_reg_def.tags
-                tags["state"] = RevRegDefState.STATE_FULL
-                await txn.handle.replace(
-                    CATEGORY_REV_REG_DEF,
-                    active_rev_reg_def.name,
-                    active_rev_reg_def.value,
-                    tags,
-                )
-                await txn.commit()
-
-            # create our next fallover/backup
-            backup_reg = await self.create_and_register_revocation_registry_definition(
-                issuer_id=active_rev_reg_def.value_json["issuerId"],
-                cred_def_id=active_rev_reg_def.value_json["credDefId"],
-                registry_type=active_rev_reg_def.value_json["revocDefType"],
-                tag=self._generate_backup_registry_tag(),
-                max_cred_num=active_rev_reg_def.value_json["value"]["maxCredNum"],
-            )
-            LOGGER.debug(
-                "Previous rev_reg_def_id = %s.\nCurrent rev_reg_def_id = %s.\n"
-                "Backup reg = %s",
+            LOGGER.info(
+                "Registry %s state set to full, activating backup registry %s",
                 rev_reg_def_id,
                 backup_rev_reg_def_id,
-                backup_reg.rev_reg_def_id,
             )
-        else:
-            LOGGER.error(
-                "Error handling full registry. No backup registry available. This "
-                "should not happen."
+
+            # Store context for later use in creating new backup after activation
+            options["cred_def_id"] = cred_def_id
+            options["old_rev_reg_def_id"] = rev_reg_def_id
+
+            # Activate the backup registry (this will trigger creation of new backup)
+            await self.emit_set_active_registry_event(
+                rev_reg_def_id=backup_rev_reg_def_id,
+                options=options,
             )
+
+        except Exception as err:
+            # Emit failure event
+            error_msg = f"Full registry handling failed: {str(err)}"
+            retry_count = options.get("retry_count", 0)
+
+            event = RevRegFullHandlingResponseEvent.with_payload(
+                old_rev_reg_def_id=rev_reg_def_id,
+                new_active_rev_reg_def_id="",
+                new_backup_rev_reg_def_id="",
+                cred_def_id=cred_def_id,
+                error_msg=error_msg,
+                retry_count=retry_count,
+                options=options,
+            )
+            await self.notify(event)
 
     async def decommission_registry(self, cred_def_id: str) -> list:  # ✅
         """Decommission post-init registries and start the next registry generation."""
@@ -1374,84 +1387,6 @@ class AnonCredsRevocation:
             options=options,
         )
         await self.notify(event)
-
-    async def handle_full_registry_event(
-        self,
-        rev_reg_def_id: str,
-        cred_def_id: str,
-        options: Optional[dict] = None,
-    ) -> None:
-        """Handle the full registry process event.
-
-        Args:
-            rev_reg_def_id (str): revocation registry definition ID that is full
-            cred_def_id (str): credential definition ID
-            options (dict): handling options
-
-        """
-        LOGGER.debug(
-            "Handling full registry event for cred def id: %s, rev reg def id: %s",
-            cred_def_id,
-            rev_reg_def_id,
-        )
-        options = options or {}
-
-        try:
-            await self.handle_full_registry(rev_reg_def_id)
-
-            # Set backup as active
-            # TODO: continue here
-            # await self.emit_set_active_registry_event(backup_rev_reg_def_id)
-
-            # Mark old registry as full
-            async with self.profile.transaction() as txn:
-                active_rev_reg_def = await txn.handle.fetch(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id, for_update=True
-                )
-                tags = active_rev_reg_def.tags
-                tags["state"] = RevRegDefState.STATE_FULL
-                await txn.handle.replace(
-                    CATEGORY_REV_REG_DEF,
-                    active_rev_reg_def.name,
-                    active_rev_reg_def.value,
-                    tags,
-                )
-                await txn.commit()
-
-            # Create new backup registry using dedicated backup event
-            event = RevRegDefCreateRequestedEvent.with_payload(
-                issuer_id=active_rev_reg_def.value_json["issuerId"],
-                cred_def_id=cred_def_id,
-                registry_type=active_rev_reg_def.value_json["revocDefType"],
-                tag=self._generate_backup_registry_tag(),
-                max_cred_num=active_rev_reg_def.value_json["value"]["maxCredNum"],
-                options=options,
-            )
-            await self.notify(event)
-
-            # Emit success event - we'll get the new backup ID from a later event
-            event = RevRegFullHandlingCompletedEvent.with_payload(
-                old_rev_reg_def_id=rev_reg_def_id,
-                new_active_rev_reg_def_id="",  # TODO: #backup_rev_reg_def_id,
-                new_backup_rev_reg_def_id="pending",  # Updated when creation completes
-                cred_def_id=cred_def_id,
-                options=options,
-            )
-            await self.notify(event)
-
-        except Exception as err:
-            # Emit failure event
-            error_msg = f"Full registry handling failed: {str(err)}"
-            retry_count = options.get("retry_count", 0)
-
-            event = RevRegFullHandlingFailedEvent.with_payload(
-                rev_reg_def_id=rev_reg_def_id,
-                cred_def_id=cred_def_id,
-                error=error_msg,
-                retry_count=retry_count,
-                options=options,
-            )
-            await self.notify(event)
 
     async def emit_set_active_registry_event(
         self,
@@ -2173,7 +2108,7 @@ class AnonCredsRevocation:
         # TODO: Implement or remove
         pass
 
-    async def set_rev_reg_state(self, rev_reg_id: str, state: str) -> Optional[RevRegDef]:
+    async def set_rev_reg_state(self, rev_reg_id: str, state: str) -> RevRegDef:
         """Update Revocation Registry state."""
         try:
             async with self.profile.transaction() as txn:

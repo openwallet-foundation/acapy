@@ -553,9 +553,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     try:
         revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.set_rev_reg_state(rev_reg_id, state)
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
+        await revocation.set_rev_reg_state(rev_reg_id, state)
 
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
