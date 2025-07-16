@@ -13,24 +13,22 @@ from ..revocation.util import notify_revocation_published_event
 from .events import (
     FIRST_REGISTRY_TAG,
     CredDefFinishedEvent,
-    RevListFinishedEvent,
-    RevRegDefFinishedEvent,
-    RevRegDefCreateRequestedEvent,
-    RevRegDefCreateResponseEvent,
-    RevRegDefStoreRequestedEvent,
-    RevRegDefStoreResponseEvent,
-    TailsUploadRequestedEvent,
-    TailsUploadResponseEvent,
     RevListCreateRequestedEvent,
     RevListCreateResponseEvent,
+    RevListFinishedEvent,
     RevListStoreRequestedEvent,
     RevListStoreResponseEvent,
     RevRegActivationRequestedEvent,
     RevRegActivationResponseEvent,
+    RevRegDefCreateRequestedEvent,
+    RevRegDefCreateResponseEvent,
+    RevRegDefFinishedEvent,
+    RevRegDefStoreRequestedEvent,
+    RevRegDefStoreResponseEvent,
     RevRegFullDetectedEvent,
-    RevRegFullHandlingStartedEvent,
-    RevRegFullHandlingCompletedEvent,
-    RevRegFullHandlingFailedEvent,
+    RevRegFullHandlingResponseEvent,
+    TailsUploadRequestedEvent,
+    TailsUploadResponseEvent,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -78,51 +76,63 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         # On cred def, request creation and registration of a revocation registry
         event_bus.subscribe(CredDefFinishedEvent.event_topic, self.on_cred_def)
 
-        event_bus.subscribe(RevListFinishedEvent.event_topic, self.on_rev_list_finished)
-
         # On registry create requested, create and register a revocation registry
         event_bus.subscribe(
             RevRegDefCreateRequestedEvent.event_topic, self.on_registry_create_requested
         )
-        # On registry create response, store the revocation registry
+        # On registry create response, emit event to store the revocation registry
         event_bus.subscribe(
             RevRegDefCreateResponseEvent.event_topic, self.on_registry_create_response
         )
 
+        # On registry store requested, store the revocation registry
         event_bus.subscribe(
             RevRegDefStoreRequestedEvent.event_topic, self.on_registry_store_requested
         )
+        # On store success, emit rev reg finished event, and requests backup registry
         event_bus.subscribe(
             RevRegDefStoreResponseEvent.event_topic, self.on_registry_store_response
         )
 
+        # Rev list finished event will notify the issuer of successful revocations
+        event_bus.subscribe(RevListFinishedEvent.event_topic, self.on_rev_list_finished)
+
+        # On rev reg def finished, emit tails upload request event
         event_bus.subscribe(RevRegDefFinishedEvent.event_topic, self.on_rev_reg_def)
 
+        # On tails upload requested, upload tails file
         event_bus.subscribe(
             TailsUploadRequestedEvent.event_topic, self.on_tails_upload_requested
         )
+        # On tails upload response, emit rev list create requested event
         event_bus.subscribe(
             TailsUploadResponseEvent.event_topic, self.on_tails_upload_response
         )
 
+        # On rev list create requested, create and register a revocation list
         event_bus.subscribe(
             RevListCreateRequestedEvent.event_topic, self.on_rev_list_create_requested
         )
+        # On successful rev list creation, emit store rev list request event
         event_bus.subscribe(
             RevListCreateResponseEvent.event_topic, self.on_rev_list_create_response
         )
 
+        # On rev list store requested, store the revocation list
         event_bus.subscribe(
             RevListStoreRequestedEvent.event_topic, self.on_rev_list_store_requested
         )
+        # On store success, emit set active registry event, if it is the first registry
         event_bus.subscribe(
             RevListStoreResponseEvent.event_topic, self.on_rev_list_store_response
         )
 
+        # On set active registry requested, set the active registry
         event_bus.subscribe(
             RevRegActivationRequestedEvent.event_topic,
             self.on_registry_activation_requested,
         )
+        # On successful registry activation, this completes the revocation setup
         event_bus.subscribe(
             RevRegActivationResponseEvent.event_topic,
             self.on_registry_activation_response,
@@ -133,16 +143,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             self.on_registry_full_detected,
         )
         event_bus.subscribe(
-            RevRegFullHandlingStartedEvent.event_topic,
-            self.on_registry_full_handling_started,
-        )
-        event_bus.subscribe(
-            RevRegFullHandlingCompletedEvent.event_topic,
-            self.on_registry_full_handling_completed,
-        )
-        event_bus.subscribe(
-            RevRegFullHandlingFailedEvent.event_topic,
-            self.on_registry_full_handling_failed,
+            RevRegFullHandlingResponseEvent.event_topic,
+            self.on_registry_full_handling_response,
         )
 
     async def on_cred_def(self, profile: Profile, event: CredDefFinishedEvent) -> None:
@@ -607,6 +609,49 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Handle success
             LOGGER.info("Registry activation succeeded for: %s", payload.rev_reg_def_id)
 
+            # Check if this request was part of full registry handling; then create backup
+            if payload.options.get("cred_def_id") and payload.options.get(
+                "old_rev_reg_def_id"
+            ):
+                LOGGER.info(
+                    "Creating new backup registry for cred_def_id: %s "
+                    "after full registry handling",
+                    payload.options["cred_def_id"],
+                )
+
+                # Get the registry definition to extract issuer details
+                revoc = AnonCredsRevocation(profile)
+                rev_reg_def = await revoc.get_created_revocation_registry_definition(
+                    payload.rev_reg_def_id
+                )
+
+                if rev_reg_def:
+                    # Create new backup registry
+                    await revoc.emit_create_revocation_registry_definition_event(
+                        issuer_id=rev_reg_def.issuer_id,
+                        cred_def_id=payload.options["cred_def_id"],
+                        registry_type=rev_reg_def.type,
+                        tag=revoc._generate_backup_registry_tag(),
+                        max_cred_num=rev_reg_def.value.max_cred_num,
+                        options=payload.options,
+                    )
+
+                    # Emit the full handling completed event
+                    # TODO: replace this
+                    full_handling_event = RevRegFullHandlingResponseEvent.with_payload(
+                        old_rev_reg_def_id=payload.options["old_rev_reg_def_id"],
+                        new_active_rev_reg_def_id=payload.rev_reg_def_id,
+                        new_backup_rev_reg_def_id="pending",  # Updated when it completes
+                        cred_def_id=payload.options["cred_def_id"],
+                        options=payload.options,
+                    )
+                    await revoc.notify(full_handling_event)
+                else:
+                    LOGGER.error(
+                        "Could not retrieve registry definition %s for creating backup",
+                        payload.rev_reg_def_id,
+                    )
+
     async def on_registry_full_detected(
         self, profile: Profile, event: RevRegFullDetectedEvent
     ) -> None:
@@ -623,60 +668,48 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             options=payload.options,
         )
 
-    async def on_registry_full_handling_started(
-        self, profile: Profile, event: RevRegFullHandlingStartedEvent
-    ) -> None:
-        """Handle registry full handling started."""
-        payload = event.payload
-
-        LOGGER.info("Full registry handling started for: %s", payload.rev_reg_def_id)
-
-    async def on_registry_full_handling_completed(
-        self, profile: Profile, event: RevRegFullHandlingCompletedEvent
+    async def on_registry_full_handling_response(
+        self, profile: Profile, event: RevRegFullHandlingResponseEvent
     ) -> None:
         """Handle registry full handling completed."""
         payload = event.payload
 
-        LOGGER.info(
-            "Full registry handling completed. Old: %s, New Active: %s",
-            payload.old_rev_reg_def_id,
-            payload.new_active_rev_reg_def_id,
-        )
-
-    async def on_registry_full_handling_failed(
-        self, profile: Profile, event: RevRegFullHandlingFailedEvent
-    ) -> None:
-        """Handle registry full handling failure."""
-        payload = event.payload
-
-        LOGGER.error(
-            "Full registry handling failed for: %s, error: %s",
-            payload.rev_reg_def_id,
-            payload.error,
-        )
-
-        # Implement retry logic
-        if payload.retry_count < self.MAX_RETRY_COUNT:
-            LOGGER.info(
-                "Retrying full registry handling, attempt %d",
-                payload.retry_count + 1,
-            )
-
-            new_options = payload.options.copy()
-            new_options["retry_count"] = payload.retry_count + 1
-
-            revoc = AnonCredsRevocation(profile)
-            await revoc.handle_full_registry_event(
-                rev_reg_def_id=payload.rev_reg_def_id,
-                cred_def_id=payload.cred_def_id,
-                options=new_options,
-            )
-        else:
+        if payload.error_msg:
             LOGGER.error(
-                "Max retries exceeded for full registry handling: %s",
-                payload.rev_reg_def_id,
+                "Full registry handling failed for: %s, error: %s",
+                payload.old_rev_reg_def_id,
+                payload.error_msg,
             )
-            # TODO: Implement notification to issuer about failure
+
+            # Implement retry logic
+            if payload.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.info(
+                    "Retrying full registry handling, attempt %d",
+                    payload.retry_count + 1,
+                )
+
+                new_options = payload.options.copy()
+                new_options["retry_count"] = payload.retry_count + 1
+
+                revoc = AnonCredsRevocation(profile)
+                await revoc.handle_full_registry_event(
+                    rev_reg_def_id=payload.old_rev_reg_def_id,
+                    cred_def_id=payload.cred_def_id,
+                    options=new_options,
+                )
+            else:
+                LOGGER.error(
+                    "Max retries exceeded for full registry handling: %s",
+                    payload.old_rev_reg_def_id,
+                )
+                # TODO: Implement notification to issuer about failure
+
+        else:
+            LOGGER.info(
+                "Full registry handling response. Old: %s, New Active: %s",
+                payload.old_rev_reg_def_id,
+                payload.new_active_rev_reg_def_id,
+            )
 
     # Helper methods for error handling and notifications
     async def _notify_issuer_about_failure(
