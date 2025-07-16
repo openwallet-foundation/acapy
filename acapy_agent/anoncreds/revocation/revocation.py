@@ -205,7 +205,7 @@ class AnonCredsRevocation:
         tag: str,
         max_cred_num: int,
         options: Optional[dict] = None,
-    ) -> None:
+    ) -> RevRegDefResult:
         """Create a new revocation registry and register on network.
 
         This method picks up the RevRegDefCreateRequestedEvent, performing the registry
@@ -323,6 +323,8 @@ class AnonCredsRevocation:
             )
             await self.notify(event)
 
+        return result
+
     async def emit_store_revocation_registry_definition_event(  # ✅
         self,
         *,
@@ -413,6 +415,7 @@ class AnonCredsRevocation:
 
             LOGGER.warning(error_msg)
             event = RevRegDefStoreResponseEvent.with_payload(
+                rev_reg_def_id=rev_reg_def_id,
                 rev_reg_def=rev_reg_def,
                 rev_reg_def_result=rev_reg_def_result,
                 rev_reg_def_private=rev_reg_def_private,
@@ -657,14 +660,14 @@ class AnonCredsRevocation:
     async def emit_store_revocation_list_event(
         self,
         rev_reg_def_id: str,
-        result: dict,
+        result: RevListResult,
         options: Optional[dict] = None,
     ) -> None:
         """Emit event to request revocation list storage.
 
         Args:
             rev_reg_def_id (str): revocation registry definition ID
-            result (dict): RevListResult serialized as dict
+            result (RevListResult): revocation list result
             options (dict): storage options
 
         """
@@ -833,14 +836,14 @@ class AnonCredsRevocation:
     async def handle_store_revocation_list_request(
         self,
         rev_reg_def_id: str,
-        result: dict,
+        result: RevListResult,
         options: Optional[dict] = None,
     ) -> None:
         """Handle revocation list store request.
 
         Args:
             rev_reg_def_id (str): revocation registry definition ID
-            result (dict): RevListResult serialized as dict
+            result (RevListResult): revocation list result
             options (dict): storage options
 
         """
@@ -1181,7 +1184,7 @@ class AnonCredsRevocation:
         return await self.retrieve_tails(rev_reg_def)
 
     # Registry Management
-    async def handle_full_registry(self, rev_reg_def_id: str) -> str:
+    async def handle_full_registry(self, rev_reg_def_id: str) -> None:
         """Update the registry status and start the next registry generation."""
         async with self.profile.session() as session:
             active_rev_reg_def = await session.handle.fetch(
@@ -1211,7 +1214,6 @@ class AnonCredsRevocation:
                         "Error handling full registry. No backup registry available."
                     )
 
-                return backup_rev_reg_def_id
             else:
                 LOGGER.error(
                     "Error handling full registry. No active registry available. This "
@@ -1394,10 +1396,11 @@ class AnonCredsRevocation:
         options = options or {}
 
         try:
-            backup_rev_reg_def_id = await self.handle_full_registry(rev_reg_def_id)
+            await self.handle_full_registry(rev_reg_def_id)
 
             # Set backup as active
-            await self.emit_set_active_registry_event(backup_rev_reg_def_id)
+            # TODO: continue here
+            # await self.emit_set_active_registry_event(backup_rev_reg_def_id)
 
             # Mark old registry as full
             async with self.profile.transaction() as txn:
@@ -1428,7 +1431,7 @@ class AnonCredsRevocation:
             # Emit success event - we'll get the new backup ID from a later event
             event = RevRegFullHandlingCompletedEvent.with_payload(
                 old_rev_reg_def_id=rev_reg_def_id,
-                new_active_rev_reg_def_id=backup_rev_reg_def_id,
+                new_active_rev_reg_def_id="",  # TODO: #backup_rev_reg_def_id,
                 new_backup_rev_reg_def_id="pending",  # Updated when creation completes
                 cred_def_id=cred_def_id,
                 options=options,
@@ -1812,7 +1815,7 @@ class AnonCredsRevocation:
                     <= int(cred_rev_id) + 1
                 )
 
-            if rev_reg_def_result and _is_full_registry(rev_reg_def_result, cred_rev_id):
+            if rev_reg_def_id and _is_full_registry(rev_reg_def_result, cred_rev_id):
                 await self.emit_full_registry_event(rev_reg_def_id, cred_def_id)
 
             return cred_json, cred_rev_id, rev_reg_def_id
