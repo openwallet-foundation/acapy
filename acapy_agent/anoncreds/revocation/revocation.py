@@ -850,10 +850,8 @@ class AnonCredsRevocation:
         options = options or {}
 
         try:
-            rev_list_result = RevListResult.deserialize(result)
-
             # Store the revocation list
-            await self.store_revocation_registry_list(rev_list_result)
+            await self.store_revocation_registry_list(result)
 
             # Emit success event
             event = RevListStoreResponseEvent.with_payload(
