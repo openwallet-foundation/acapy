@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.12.7rc1
+## 0.12.7rc2
 
-### July 14, 2025
+### July 16, 2025
 
 This patch release adds a GitHub Action to publish an LTS container image with the tag `0.12-lts` when a release is published from the ACA-Py 0.12.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required.
 
@@ -12,7 +12,7 @@ The release includes the following PRs from the `main` branch cherry-picked into
 - fix: multiuse invite derived conns should have msg id [\#3692](https://github.com/openwallet-foundation/acapy/pull/3692)
 - Fix unchanged endpoint being rewritten to ledger [\#3608](https://github.com/openwallet-foundation/acapy/pull/3608)
 
-As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies.
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies, including an update to the version of Rust being used in the indy-build container artifact.
 
 A reminder that the **0.12 LTS branch will reach end-of-life in October, 2025**. Anyone still using this branch should plan to upgrade to the 1.2 LTS or (better) latest release of ACA-Py as soon as possible.
 
@@ -23,11 +23,13 @@ There are no breaking changes in this release.
 #### 0.12.7 Categorized List of Pull Requests
 
 - LTS Container image Publishing
+  - Upgrade rust version for indy-build to 1.56 [\#3826](https://github.com/openwallet-foundation/acapy/pull/3826) [jamshale](https://github.com/jamshale)
   - 0.12.lts.patch [\#3817](https://github.com/openwallet-foundation/acapy/pull/3817) [jamshale](https://github.com/jamshale)
   - Don't run workflow for release candidates [\#3796](https://github.com/openwallet-foundation/acapy/pull/3796) [jamshale](https://github.com/jamshale)
   - Add recreate lts workflow to 0.12.lts branch [\#3771](https://github.com/openwallet-foundation/acapy/pull/3771) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 0.12.7rc2 [\#3827](https://github.com/openwallet-foundation/acapy/pull/3827) [swcurran](https://github.com/swcurran)
   - 0.12.7rc1 [\#3820](https://github.com/openwallet-foundation/acapy/pull/3820) [swcurran](https://github.com/swcurran)
   - 0.12.7rc0 [\#3794](https://github.com/openwallet-foundation/acapy/pull/3794) [swcurran](https://github.com/swcurran)
 
