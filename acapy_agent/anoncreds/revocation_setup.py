@@ -76,64 +76,73 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     def register_events(self, event_bus: EventBus) -> None:
         """Register event listeners."""
         # On cred def, request creation and registration of a revocation registry
-        event_bus.subscribe(CredDefFinishedEvent.topic, self.on_cred_def)
+        event_bus.subscribe(CredDefFinishedEvent.event_topic, self.on_cred_def)
 
-        event_bus.subscribe(RevListFinishedEvent.topic, self.on_rev_list_finished)
+        event_bus.subscribe(RevListFinishedEvent.event_topic, self.on_rev_list_finished)
 
         # On registry create requested, create and register a revocation registry
         event_bus.subscribe(
-            RevRegDefCreateRequestedEvent.topic, self.on_registry_create_requested
+            RevRegDefCreateRequestedEvent.event_topic, self.on_registry_create_requested
         )
         # On registry create response, store the revocation registry
         event_bus.subscribe(
-            RevRegDefCreateResponseEvent.topic, self.on_registry_create_response
+            RevRegDefCreateResponseEvent.event_topic, self.on_registry_create_response
         )
 
         event_bus.subscribe(
-            RevRegDefStoreRequestedEvent.topic, self.on_registry_store_requested
+            RevRegDefStoreRequestedEvent.event_topic, self.on_registry_store_requested
         )
         event_bus.subscribe(
-            RevRegDefStoreResponseEvent.topic, self.on_registry_store_response
+            RevRegDefStoreResponseEvent.event_topic, self.on_registry_store_response
         )
 
-        event_bus.subscribe(RevRegDefFinishedEvent.topic, self.on_rev_reg_def)
+        event_bus.subscribe(RevRegDefFinishedEvent.event_topic, self.on_rev_reg_def)
 
         event_bus.subscribe(
-            TailsUploadRequestedEvent.topic, self.on_tails_upload_requested
-        )
-        event_bus.subscribe(TailsUploadResponseEvent.topic, self.on_tails_upload_response)
-
-        event_bus.subscribe(
-            RevListCreateRequestedEvent.topic, self.on_rev_list_create_requested
+            TailsUploadRequestedEvent.event_topic, self.on_tails_upload_requested
         )
         event_bus.subscribe(
-            RevListCreateResponseEvent.topic, self.on_rev_list_create_response
+            TailsUploadResponseEvent.event_topic, self.on_tails_upload_response
         )
 
         event_bus.subscribe(
-            RevListStoreRequestedEvent.topic, self.on_rev_list_store_requested
+            RevListCreateRequestedEvent.event_topic, self.on_rev_list_create_requested
         )
         event_bus.subscribe(
-            RevListStoreResponseEvent.topic, self.on_rev_list_store_response
+            RevListCreateResponseEvent.event_topic, self.on_rev_list_create_response
+        )
+
+        event_bus.subscribe(
+            RevListStoreRequestedEvent.event_topic, self.on_rev_list_store_requested
+        )
+        event_bus.subscribe(
+            RevListStoreResponseEvent.event_topic, self.on_rev_list_store_response
         )
 
         event_bus.subscribe(
-            RevRegActivationRequestedEvent.topic, self.on_registry_activation_requested
+            RevRegActivationRequestedEvent.event_topic,
+            self.on_registry_activation_requested,
         )
         event_bus.subscribe(
-            RevRegActivationResponseEvent.topic, self.on_registry_activation_response
+            RevRegActivationResponseEvent.event_topic,
+            self.on_registry_activation_response,
         )
 
-        event_bus.subscribe(RevRegFullDetectedEvent.topic, self.on_registry_full_detected)
         event_bus.subscribe(
-            RevRegFullHandlingStartedEvent.topic, self.on_registry_full_handling_started
+            RevRegFullDetectedEvent.event_topic,
+            self.on_registry_full_detected,
         )
         event_bus.subscribe(
-            RevRegFullHandlingCompletedEvent.topic,
+            RevRegFullHandlingStartedEvent.event_topic,
+            self.on_registry_full_handling_started,
+        )
+        event_bus.subscribe(
+            RevRegFullHandlingCompletedEvent.event_topic,
             self.on_registry_full_handling_completed,
         )
         event_bus.subscribe(
-            RevRegFullHandlingFailedEvent.topic, self.on_registry_full_handling_failed
+            RevRegFullHandlingFailedEvent.event_topic,
+            self.on_registry_full_handling_failed,
         )
 
     async def on_cred_def(self, profile: Profile, event: CredDefFinishedEvent) -> None:
@@ -383,7 +392,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 new_options["retry_count"] = payload.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
-                await revoc.emit_upload_tails_file_event(payload.rev_reg_def, new_options)
+                await revoc.emit_upload_tails_file_event(
+                    rev_reg_def_id=payload.rev_reg_def_id,
+                    rev_reg_def=payload.rev_reg_def,
+                    options=new_options,
+                )
             else:
                 LOGGER.error(
                     "Max retries exceeded for tails upload: %s", payload.rev_reg_def_id

@@ -76,6 +76,8 @@ class CredDefFinishedPayload(NamedTuple):
 class CredDefFinishedEvent(Event):
     """Event for cred def finished."""
 
+    event_topic = CRED_DEF_FINISHED_EVENT
+
     def __init__(
         self,
         payload: CredDefFinishedPayload,
@@ -85,7 +87,7 @@ class CredDefFinishedEvent(Event):
         Args:
             payload: CredDefFinishedPayload
         """
-        self._topic = CRED_DEF_FINISHED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -105,7 +107,7 @@ class CredDefFinishedEvent(Event):
             issuer_id=issuer_id,
             support_revocation=support_revocation,
             max_cred_num=max_cred_num,
-            options=options,
+            options=options or {},
         )
         return cls(payload)
 
@@ -126,13 +128,15 @@ class RevRegDefFinishedPayload(NamedTuple):
 class RevRegDefFinishedEvent(Event):
     """Event for rev reg def finished."""
 
+    event_topic = REV_REG_DEF_FINISHED_EVENT
+
     def __init__(self, payload: RevRegDefFinishedPayload):
         """Initialize an instance.
 
         Args:
             payload: RevRegDefFinishedPayload
         """
-        self._topic = REV_REG_DEF_FINISHED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -168,13 +172,15 @@ class RevListFinishedPayload(NamedTuple):
 class RevListFinishedEvent(Event):
     """Event for rev list finished."""
 
+    event_topic = REV_LIST_FINISHED_EVENT
+
     def __init__(self, payload: RevListFinishedPayload):
         """Initialize an instance.
 
         Args:
             payload: RevListFinishedPayload
         """
-        self._topic = REV_LIST_FINISHED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -185,7 +191,11 @@ class RevListFinishedEvent(Event):
         options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevListFinishedPayload(rev_reg_id, revoked, options)
+        payload = RevListFinishedPayload(
+            rev_reg_id=rev_reg_id,
+            revoked=revoked,
+            options=options or {},
+        )
         return cls(payload)
 
     @property
@@ -208,9 +218,11 @@ class RevRegDefCreateRequestedPayload(NamedTuple):
 class RevRegDefCreateRequestedEvent(Event):
     """Event for rev reg def create requested."""
 
+    event_topic = REV_REG_DEF_CREATE_REQUESTED_EVENT
+
     def __init__(self, payload: RevRegDefCreateRequestedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_DEF_CREATE_REQUESTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -264,9 +276,11 @@ class RevRegDefCreateResponsePayload(NamedTuple):
 class RevRegDefCreateResponseEvent(Event):
     """Event for rev reg def create response."""
 
+    event_topic = REV_REG_DEF_CREATE_RESPONSE_EVENT
+
     def __init__(self, payload: RevRegDefCreateResponsePayload):
         """Initialize an instance."""
-        self._topic = REV_REG_DEF_CREATE_RESPONSE_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -323,9 +337,11 @@ class RevRegDefStoreRequestedPayload(NamedTuple):
 class RevRegDefStoreRequestedEvent(Event):
     """Event for rev reg def store requested."""
 
+    event_topic = REV_REG_DEF_STORE_REQUESTED_EVENT
+
     def __init__(self, payload: RevRegDefStoreRequestedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_DEF_STORE_REQUESTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -372,9 +388,11 @@ class RevRegDefStoreResponsePayload(NamedTuple):
 class RevRegDefStoreResponseEvent(Event):
     """Event for rev reg def store response."""
 
+    event_topic = REV_REG_DEF_STORE_RESPONSE_EVENT
+
     def __init__(self, payload: RevRegDefStoreResponsePayload):
         """Initialize an instance."""
-        self._topic = REV_REG_DEF_STORE_RESPONSE_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -422,9 +440,11 @@ class TailsUploadRequestedPayload(NamedTuple):
 class TailsUploadRequestedEvent(Event):
     """Event for tails upload requested."""
 
+    event_topic = TAILS_UPLOAD_REQUESTED_EVENT
+
     def __init__(self, payload: TailsUploadRequestedPayload):
         """Initialize an instance."""
-        self._topic = TAILS_UPLOAD_REQUESTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -463,9 +483,11 @@ class TailsUploadResponsePayload(NamedTuple):
 class TailsUploadResponseEvent(Event):
     """Event for tails upload response."""
 
+    event_topic = TAILS_UPLOAD_RESPONSE_EVENT
+
     def __init__(self, payload: TailsUploadResponsePayload):
         """Initialize an instance."""
-        self._topic = TAILS_UPLOAD_RESPONSE_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -505,9 +527,11 @@ class RevListCreateRequestedPayload(NamedTuple):
 class RevListCreateRequestedEvent(Event):
     """Event for rev list create requested."""
 
+    event_topic = REV_LIST_CREATE_REQUESTED_EVENT
+
     def __init__(self, payload: RevListCreateRequestedPayload):
         """Initialize an instance."""
-        self._topic = REV_LIST_CREATE_REQUESTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -540,9 +564,11 @@ class RevListCreateResponsePayload(NamedTuple):
 class RevListCreateResponseEvent(Event):
     """Event for rev list create response."""
 
+    event_topic = REV_LIST_CREATE_RESPONSE_EVENT
+
     def __init__(self, payload: RevListCreateResponsePayload):
         """Initialize an instance."""
-        self._topic = REV_LIST_CREATE_RESPONSE_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -583,9 +609,11 @@ class RevListStoreRequestedPayload(NamedTuple):
 class RevListStoreRequestedEvent(Event):
     """Event for rev list store requested."""
 
+    event_topic = REV_LIST_STORE_REQUESTED_EVENT
+
     def __init__(self, payload: RevListStoreRequestedPayload):
         """Initialize an instance."""
-        self._topic = REV_LIST_STORE_REQUESTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -620,9 +648,11 @@ class RevListStoreResponsePayload(NamedTuple):
 class RevListStoreResponseEvent(Event):
     """Event for rev list store response."""
 
+    event_topic = REV_LIST_STORE_RESPONSE_EVENT
+
     def __init__(self, payload: RevListStoreResponsePayload):
         """Initialize an instance."""
-        self._topic = REV_LIST_STORE_RESPONSE_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -662,9 +692,11 @@ class RevRegActivationRequestedPayload(NamedTuple):
 class RevRegActivationRequestedEvent(Event):
     """Event for rev reg activation requested."""
 
+    event_topic = REV_REG_ACTIVATION_REQUESTED_EVENT
+
     def __init__(self, payload: RevRegActivationRequestedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_ACTIVATION_REQUESTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -696,9 +728,11 @@ class RevRegActivationResponsePayload(NamedTuple):
 class RevRegActivationResponseEvent(Event):
     """Event for rev reg activation response."""
 
+    event_topic = REV_REG_ACTIVATION_RESPONSE_EVENT
+
     def __init__(self, payload: RevRegActivationResponsePayload):
         """Initialize an instance."""
-        self._topic = REV_REG_ACTIVATION_RESPONSE_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -733,9 +767,11 @@ class RevRegFullDetectedPayload(NamedTuple):
 class RevRegFullDetectedEvent(Event):
     """Event for rev reg full detected."""
 
+    event_topic = REV_REG_FULL_DETECTED_EVENT
+
     def __init__(self, payload: RevRegFullDetectedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_FULL_DETECTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -766,9 +802,11 @@ class RevRegFullHandlingStartedPayload(NamedTuple):
 class RevRegFullHandlingStartedEvent(Event):
     """Event for rev reg full handling started."""
 
+    event_topic = REV_REG_FULL_HANDLING_STARTED_EVENT
+
     def __init__(self, payload: RevRegFullHandlingStartedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_FULL_HANDLING_STARTED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -803,9 +841,11 @@ class RevRegFullHandlingCompletedPayload(NamedTuple):
 class RevRegFullHandlingCompletedEvent(Event):
     """Event for rev reg full handling completed."""
 
+    event_topic = REV_REG_FULL_HANDLING_COMPLETED_EVENT
+
     def __init__(self, payload: RevRegFullHandlingCompletedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_FULL_HANDLING_COMPLETED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
@@ -846,9 +886,11 @@ class RevRegFullHandlingFailedPayload(NamedTuple):
 class RevRegFullHandlingFailedEvent(Event):
     """Event for rev reg full handling failed."""
 
+    event_topic = REV_REG_FULL_HANDLING_FAILED_EVENT
+
     def __init__(self, payload: RevRegFullHandlingFailedPayload):
         """Initialize an instance."""
-        self._topic = REV_REG_FULL_HANDLING_FAILED_EVENT
+        self._topic = self.event_topic
         self._payload = payload
 
     @classmethod
