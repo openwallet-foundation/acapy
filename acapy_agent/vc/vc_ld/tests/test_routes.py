@@ -1,4 +1,3 @@
-import json
 import uuid
 from unittest import IsolatedAsyncioTestCase
 
@@ -31,13 +30,24 @@ INVALID_VC["proof"]["proofValue"] = "unsecured"
 @pytest.mark.vc
 class TestVcApiRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_store(self):
-        response = store_credential_route(VALID_VC)
+        self.request.match_info = {
+            "verifiableCredential": VALID_VC,
+            "options": {"credentialId": str(uuid.uuid4())},
+        }
+        response = store_credential_route(self.request)
         assert response
 
     async def test_credentials_store_unsecured(self):
-        options = {"credentialId": str(uuid.uuid4()), "verify": False}
-        response = store_credential_route(INVALID_VC, options)
+        self.request.match_info = {
+            "verifiableCredential": INVALID_VC,
+            "options": {"credentialId": str(uuid.uuid4()), "verify": False},
+        }
+        response = store_credential_route(self.request)
         assert response
 
         with self.assertRaises(web.HTTPBadRequest):
+            self.request.match_info = {
+                "verifiableCredential": INVALID_VC,
+                "options": {"credentialId": str(uuid.uuid4()), "verify": True},
+            }
             response = store_credential_route(INVALID_VC)
