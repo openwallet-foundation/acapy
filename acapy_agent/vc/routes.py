@@ -161,7 +161,9 @@ async def store_credential_route(request: web.BaseRequest):
         vc = VerifiableCredential.deserialize(vc)
 
         if options.get("verify", True):
-            await manager.verify_credential(vc)
+            verification = await manager.verify_credential(vc)
+            if not verification.verified:
+                return web.json_response({"verified": False}, status=400)
 
         await manager.store_credential(vc, cred_id)
 
