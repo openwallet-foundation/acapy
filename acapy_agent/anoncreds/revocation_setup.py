@@ -613,12 +613,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             if payload.options.get("cred_def_id") and payload.options.get(
                 "old_rev_reg_def_id"
             ):
-                LOGGER.info(
-                    "Creating new backup registry for cred_def_id: %s "
-                    "after full registry handling",
-                    payload.options["cred_def_id"],
-                )
-
                 # Get the registry definition to extract issuer details
                 revoc = AnonCredsRevocation(profile)
                 rev_reg_def = await revoc.get_created_revocation_registry_definition(
@@ -627,6 +621,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                 if rev_reg_def:
                     # Create new backup registry
+                    LOGGER.debug(
+                        "Emitting event to create new backup registry for cred def id %s",
+                        payload.options["cred_def_id"],
+                    )
                     await revoc.emit_create_revocation_registry_definition_event(
                         issuer_id=rev_reg_def.issuer_id,
                         cred_def_id=payload.options["cred_def_id"],

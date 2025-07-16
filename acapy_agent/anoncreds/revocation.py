@@ -576,6 +576,7 @@ class AnonCredsRevocation:
 
     async def set_active_registry(self, rev_reg_def_id: str) -> None:
         """Mark a registry as active."""
+        LOGGER.debug("Setting registry %s as active", rev_reg_def_id)
         async with self.profile.transaction() as txn:
             entry = await txn.handle.fetch(
                 CATEGORY_REV_REG_DEF,
@@ -1373,6 +1374,11 @@ class AnonCredsRevocation:
             options (dict): handling options
 
         """
+        LOGGER.debug(
+            "Emitting full registry event for cred def id: %s, rev reg def id: %s",
+            cred_def_id,
+            rev_reg_def_id,
+        )
         options = options or {}
 
         # Emit event to indicate full registry detected
@@ -1395,6 +1401,9 @@ class AnonCredsRevocation:
             options (dict): activation options
 
         """
+        LOGGER.debug(
+            "Emitting set active registry event for rev reg def id: %s", rev_reg_def_id
+        )
         options = options or {}
 
         event = RevRegActivationRequestedEvent.with_payload(
