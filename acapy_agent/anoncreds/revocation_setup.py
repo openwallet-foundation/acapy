@@ -301,7 +301,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Emit finished event
             revoc = AnonCredsRevocation(profile)
-            state = payload.rev_reg_def_result.revocation_registry_definition_state
+            state = payload.rev_reg_def_result.revocation_registry_definition_state.state
             if state == STATE_FINISHED:
                 await revoc.emit_rev_reg_def_finished_event(
                     rev_reg_def_id=payload.rev_reg_def_id,
