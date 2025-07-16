@@ -156,10 +156,9 @@ async def store_credential_route(request: web.BaseRequest):
     try:
         vc = body.get("verifiableCredential")
         options = body.get("options", {})
-        cred_id = vc.get("id", options.get("credentialId", str(uuid4())))
+        cred_id = options.get("credentialId", vc.get("id", str(uuid4())))
 
         vc = VerifiableCredential.deserialize(vc)
-        options = LDProofVCOptions.deserialize(options)
 
         if options.get("verify", True):
             await manager.verify_credential(vc)

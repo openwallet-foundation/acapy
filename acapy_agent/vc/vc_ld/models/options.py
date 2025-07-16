@@ -170,11 +170,6 @@ class LDProofVCOptionsSchema(BaseModelSchema):
 class CredentialStoreOptionsSchema(Schema):
     """Verifiable Credential store options schema."""
 
-    class Meta:
-        """Accept parameter overload."""
-
-        unknown = INCLUDE
-
     credentialId = fields.Str(
         required=False,
         metadata={

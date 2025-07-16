@@ -51,7 +51,10 @@ class StoreCredentialRequest(OpenAPISchema):
     """Request schema for verifying an LDP VP."""
 
     verifiableCredential = fields.Nested(VerifiableCredentialSchema)
-    options = fields.Nested(CredentialStoreOptionsSchema)
+    options = fields.Nested(
+        CredentialStoreOptionsSchema,
+        required=False
+    )
 
 
 class StoreCredentialResponse(OpenAPISchema):
