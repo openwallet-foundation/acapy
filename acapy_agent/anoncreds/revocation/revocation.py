@@ -311,15 +311,16 @@ class AnonCredsRevocation:
                 error_msg = f"Registry creation failed: {str(err)}"
 
             LOGGER.warning(f"{error_msg}. Emitting failure event.")
-            event = RevRegDefCreateResponseEvent.with_payload(
+
+            event = RevRegDefCreateResponseEvent.with_failure(
+                error_msg=error_msg,
+                should_retry=should_retry,
+                retry_count=retry_count,
                 issuer_id=issuer_id,
                 cred_def_id=cred_def_id,
                 registry_type=registry_type,
                 tag=tag,
                 max_cred_num=max_cred_num,
-                error_msg=error_msg,
-                should_retry=should_retry,
-                retry_count=retry_count,
                 options=options,
             )
             await self.notify(event)
@@ -375,6 +376,7 @@ class AnonCredsRevocation:
 
         """
         options = options or {}
+        retry_count = options.pop("retry_count", 0)
         rev_reg_def_state = rev_reg_def_result.revocation_registry_definition_state
         rev_reg_def = rev_reg_def_state.revocation_registry_definition
         tag = rev_reg_def.tag
@@ -414,15 +416,13 @@ class AnonCredsRevocation:
                 error_msg = f"Store operation failed: {str(err)}"
 
             LOGGER.warning(error_msg)
-            event = RevRegDefStoreResponseEvent.with_payload(
-                rev_reg_def_id=rev_reg_def_id,
+            event = RevRegDefStoreResponseEvent.with_failure(
                 rev_reg_def=rev_reg_def,
-                rev_reg_def_result=rev_reg_def_result,
-                rev_reg_def_private=rev_reg_def_private,
                 tag=tag,
                 error_msg=error_msg,
                 should_retry=should_retry,
-                retry_count=0,
+                retry_count=retry_count,
+                rev_reg_def_private=rev_reg_def_private,
                 options=options,
             )
             await self.notify(event)
@@ -695,6 +695,7 @@ class AnonCredsRevocation:
 
         """
         options = options or {}
+        retry_count = options.get("retry_count", 0)
 
         try:
             # Fetch revocation registry definition and private definition
@@ -785,11 +786,11 @@ class AnonCredsRevocation:
             else:
                 error_msg = f"Revocation list creation failed: {str(err)}"
 
-            event = RevListCreateResponseEvent.with_payload(
+            event = RevListCreateResponseEvent.with_failure(
                 rev_reg_def_id=rev_reg_def_id,
                 error_msg=error_msg,
                 should_retry=should_retry,
-                retry_count=0,
+                retry_count=retry_count,
                 options=options,
             )
             await self.notify(event)
@@ -849,6 +850,7 @@ class AnonCredsRevocation:
 
         """
         options = options or {}
+        retry_count = options.pop("retry_count", 0)
 
         try:
             # Store the revocation list
@@ -872,12 +874,12 @@ class AnonCredsRevocation:
             else:
                 error_msg = f"Revocation list store failed: {str(err)}"
 
-            event = RevListStoreResponseEvent.with_payload(
+            event = RevListStoreResponseEvent.with_failure(
                 rev_reg_def_id=rev_reg_def_id,
-                result=result,
                 error_msg=error_msg,
                 should_retry=should_retry,
-                retry_count=0,
+                retry_count=retry_count,
+                result=result,
                 options=options,
             )
             await self.notify(event)
@@ -1145,6 +1147,7 @@ class AnonCredsRevocation:
 
         """
         options = options or {}
+        retry_count = options.pop("retry_count", 0)
 
         try:
             # Perform tails upload
@@ -1161,9 +1164,8 @@ class AnonCredsRevocation:
         except Exception as err:
             # Emit failure event
             error_msg = f"Tails upload failed: {str(err)}"
-            retry_count = options.get("retry_count", 0)
 
-            event = TailsUploadResponseEvent.with_payload(
+            event = TailsUploadResponseEvent.with_failure(
                 rev_reg_def_id=rev_reg_def_id,
                 rev_reg_def=rev_reg_def,
                 error_msg=error_msg,
@@ -1209,6 +1211,7 @@ class AnonCredsRevocation:
             rev_reg_def_id,
         )
         options = options or {}
+        retry_count = options.get("retry_count", 0)
 
         try:
             # Find the backup registry that should become active
@@ -1260,12 +1263,9 @@ class AnonCredsRevocation:
         except Exception as err:
             # Emit failure event
             error_msg = f"Full registry handling failed: {str(err)}"
-            retry_count = options.get("retry_count", 0)
 
-            event = RevRegFullHandlingResponseEvent.with_payload(
+            event = RevRegFullHandlingResponseEvent.with_failure(
                 old_rev_reg_def_id=rev_reg_def_id,
-                new_active_rev_reg_def_id="",
-                new_backup_rev_reg_def_id="",
                 cred_def_id=cred_def_id,
                 error_msg=error_msg,
                 retry_count=retry_count,
@@ -1428,6 +1428,7 @@ class AnonCredsRevocation:
 
         """
         options = options or {}
+        retry_count = options.pop("retry_count", 0)
 
         try:
             # Perform registry activation
@@ -1443,9 +1444,8 @@ class AnonCredsRevocation:
         except Exception as err:
             # Emit failure event
             error_msg = f"Registry activation failed: {str(err)}"
-            retry_count = options.get("retry_count", 0)
 
-            event = RevRegActivationResponseEvent.with_payload(
+            event = RevRegActivationResponseEvent.with_failure(
                 rev_reg_def_id=rev_reg_def_id,
                 error_msg=error_msg,
                 retry_count=retry_count,
