@@ -216,12 +216,23 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
             # We need to check for completion (or fail) in another process
             in_progress_upgrades.set_wallet(context.profile.name)
             is_subwallet = context.metadata and "wallet_id" in context.metadata
-            asyncio.create_task(
+
+            # Create background task and store reference to prevent garbage collection
+            task = asyncio.create_task(
                 check_upgrade_completion_loop(
                     context.profile,
                     is_subwallet,
                 )
             )
+
+            # Store task reference on the app to prevent garbage collection
+            if not hasattr(request.app, "_background_tasks"):
+                request.app._background_tasks = set()
+            request.app._background_tasks.add(task)
+
+            # Remove task from set when it completes to prevent memory leaks
+            task.add_done_callback(request.app._background_tasks.discard)
+
             raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
 
     return await handler(request)
