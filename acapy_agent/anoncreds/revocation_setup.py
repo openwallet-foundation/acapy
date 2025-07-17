@@ -191,48 +191,56 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     ) -> None:
         """Handle registry creation response."""
         payload = event.payload
-        registry_type = "initial" if payload.tag == FIRST_REGISTRY_TAG else "backup"
 
-        if payload.error_msg:
-            # Handle failure
-            LOGGER.warning(
-                "%s registry creation failed for cred_def_id: %s, error: %s",
-                registry_type.title(),
-                payload.cred_def_id,
-                payload.error_msg,
+        if payload.failure:
+            # Handle failure with full type safety
+            failure = payload.failure
+            error_info = failure.error_info
+
+            registry_type_name = (
+                "initial" if failure.tag == FIRST_REGISTRY_TAG else "backup"
             )
 
-            # Handle retry
-            if payload.should_retry and payload.retry_count < self.MAX_RETRY_COUNT:  # ✅
+            LOGGER.warning(
+                "%s registry creation failed for cred_def_id: %s, error: %s",
+                registry_type_name.title(),
+                failure.cred_def_id,
+                error_info.error_msg,
+            )
+
+            # Handle retry with structured data
+            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
                     "Retrying %s registry creation, attempt %d",
-                    registry_type,
-                    payload.retry_count + 1,
+                    registry_type_name,
+                    error_info.retry_count + 1,
                 )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
 
                 await revoc.emit_create_revocation_registry_definition_event(
-                    issuer_id=payload.issuer_id,
-                    cred_def_id=payload.cred_def_id,
-                    registry_type=payload.registry_type,
-                    tag=payload.tag,
-                    max_cred_num=payload.max_cred_num,
+                    issuer_id=failure.issuer_id,
+                    cred_def_id=failure.cred_def_id,
+                    registry_type=failure.registry_type,
+                    tag=failure.tag,
+                    max_cred_num=failure.max_cred_num,
                     options=new_options,
                 )
             else:
                 # Not retryable, so notify issuer about failure
                 LOGGER.error(
                     "%s %s registry creation for cred def: %s",
-                    "Max retries exceeded for" if payload.should_retry else "Won't retry",
-                    registry_type,
-                    payload.cred_def_id,
+                    "Max retries exceeded for"
+                    if error_info.should_retry
+                    else "Won't retry",
+                    registry_type_name,
+                    failure.cred_def_id,
                 )
                 # TODO: Implement notification to issuer about failure
-        else:  # ✅
+        else:
             # Handle success - emit store request event
             revoc = AnonCredsRevocation(profile)
             await revoc.emit_store_revocation_registry_definition_event(
@@ -261,34 +269,39 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         """Handle registry store response."""
         payload = event.payload
 
-        if payload.error_msg:
+        if payload.failure:
             # Handle failure
+            failure = payload.failure
+            error_info = failure.error_info
+
             LOGGER.warning(
                 "Registry store failed for: %s, tag: %s, error: %s",
                 payload.rev_reg_def_id,
                 payload.tag,
-                payload.error_msg,
+                error_info.error_msg,
             )
 
             # Implement retry logic
-            if payload.should_retry and payload.retry_count < self.MAX_RETRY_COUNT:
+            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
-                    "Retrying registry store, attempt %d", payload.retry_count + 1
+                    "Retrying registry store, attempt %d", error_info.retry_count + 1
                 )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_store_revocation_registry_definition_request(
                     rev_reg_def_result=payload.rev_reg_def_result,
-                    rev_reg_def_private=payload.rev_reg_def_private,
+                    rev_reg_def_private=failure.rev_reg_def_private,
                     options=new_options,
                 )
             else:
                 LOGGER.error(
                     "%s registry store for: %s, tag: %s",
-                    "Max retries exceeded for" if payload.should_retry else "Won't retry",
+                    "Max retries exceeded for"
+                    if error_info.should_retry
+                    else "Won't retry",
                     payload.rev_reg_def_id,
                     payload.tag,
                 )
@@ -378,20 +391,25 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         """Handle tails upload response."""
         payload = event.payload
 
-        if payload.error_msg:
+        if payload.failure:
             # Handle failure
+            failure = payload.failure
+            error_info = failure.error_info
+
             LOGGER.error(
                 "Tails upload failed for: %s, error: %s",
                 payload.rev_reg_def_id,
-                payload.error_msg,
+                error_info.error_msg,
             )
 
             # Implement retry logic
-            if payload.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.info("Retrying tails upload, attempt %d", payload.retry_count + 1)
+            if error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.info(
+                    "Retrying tails upload, attempt %d", error_info.retry_count + 1
+                )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.emit_upload_tails_file_event(
@@ -438,23 +456,26 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         """Handle revocation list creation response."""
         payload = event.payload
 
-        if payload.error_msg:
+        if payload.failure:
             # Handle failure
+            failure = payload.failure
+            error_info = failure.error_info
+
             LOGGER.error(
                 "Revocation list creation failed for: %s, error: %s",
                 payload.rev_reg_def_id,
-                payload.error_msg,
+                error_info.error_msg,
             )
 
             # Implement retry logic
-            if payload.retry_count < self.MAX_RETRY_COUNT:
+            if error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
                     "Retrying revocation list creation, attempt %d",
-                    payload.retry_count + 1,
+                    error_info.retry_count + 1,
                 )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.emit_create_and_register_revocation_list_event(
@@ -512,28 +533,31 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         """Handle revocation list store response."""
         payload = event.payload
 
-        if payload.error_msg:
+        if payload.failure:
             # Handle failure
+            failure = payload.failure
+            error_info = failure.error_info
+
             LOGGER.error(
                 "Revocation list store failed for: %s, error: %s",
                 payload.rev_reg_def_id,
-                payload.error_msg,
+                error_info.error_msg,
             )
 
             # Implement retry logic
-            if payload.should_retry and payload.retry_count < self.MAX_RETRY_COUNT:
+            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
                     "Retrying revocation list store, attempt %d",
-                    payload.retry_count + 1,
+                    error_info.retry_count + 1,
                 )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_store_revocation_list_request(
                     rev_reg_def_id=payload.rev_reg_def_id,
-                    result=payload.result,
+                    result=failure.result,
                     options=new_options,
                 )
             else:
@@ -578,22 +602,25 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         """Handle registry activation response."""
         payload = event.payload
 
-        if payload.error_msg:
+        if payload.failure:
             # Handle failure
+            failure = payload.failure
+            error_info = failure.error_info
+
             LOGGER.error(
                 "Registry activation failed for: %s, error: %s",
                 payload.rev_reg_def_id,
-                payload.error_msg,
+                error_info.error_msg,
             )
 
             # Implement retry logic
-            if payload.retry_count < self.MAX_RETRY_COUNT:
+            if error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
-                    "Retrying registry activation, attempt %d", payload.retry_count + 1
+                    "Retrying registry activation, attempt %d", error_info.retry_count + 1
                 )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.emit_set_active_registry_event(
@@ -672,22 +699,25 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         """Handle registry full handling completed."""
         payload = event.payload
 
-        if payload.error_msg:
+        if payload.failure:
+            failure = payload.failure
+            error_info = failure.error_info
+
             LOGGER.error(
                 "Full registry handling failed for: %s, error: %s",
                 payload.old_rev_reg_def_id,
-                payload.error_msg,
+                error_info.error_msg,
             )
 
             # Implement retry logic
-            if payload.retry_count < self.MAX_RETRY_COUNT:
+            if error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
                     "Retrying full registry handling, attempt %d",
-                    payload.retry_count + 1,
+                    error_info.retry_count + 1,
                 )
 
                 new_options = payload.options.copy()
-                new_options["retry_count"] = payload.retry_count + 1
+                new_options["retry_count"] = error_info.retry_count + 1
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_full_registry_event(
@@ -745,37 +775,3 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         # - Admin dashboard alerts
         # - Email notifications
         # - Persistent failure tracking
-
-    async def _should_retry_operation(
-        self,
-        retry_count: int,
-        error_msg: str,
-        operation_type: str,
-    ) -> bool:
-        """Determine if an operation should be retried.
-
-        Args:
-            retry_count (int): Current retry count
-            error_msg (str): Error message
-            operation_type (str): Type of operation
-
-        Returns:
-            bool: Whether to retry the operation
-
-        """
-        # Basic retry logic - can be enhanced with more sophisticated logic
-        if retry_count >= self.MAX_RETRY_COUNT:
-            return False
-
-        # Don't retry certain types of errors
-        non_retryable_errors = [
-            "credential definition not found",
-            "invalid parameters",
-            "permission denied",
-        ]
-
-        for non_retryable in non_retryable_errors:
-            if non_retryable.lower() in error_msg.lower():
-                return False
-
-        return True
