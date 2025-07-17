@@ -211,7 +211,7 @@ class EventStorageManager:
 
         await self.storage.add_record(record)
 
-        LOGGER.debug(
+        LOGGER.info(
             "Stored request event: %s with correlation_id: %s",
             event_type,
             correlation_id,
@@ -253,7 +253,7 @@ class EventStorageManager:
 
             await self.storage.update_record(record, json.dumps(record_data), new_tags)
 
-            LOGGER.debug(
+            LOGGER.info(
                 "Updated event response: %s with correlation_id: %s, success: %s",
                 event_type,
                 correlation_id,
@@ -290,7 +290,7 @@ class EventStorageManager:
 
             await self.storage.update_record(record, json.dumps(record_data), new_tags)
 
-            LOGGER.debug(
+            LOGGER.info(
                 "Marked event completed: %s with correlation_id: %s",
                 event_type,
                 correlation_id,
@@ -318,7 +318,7 @@ class EventStorageManager:
             record = await self.storage.get_record(event_type, correlation_id)
             await self.storage.delete_record(record)
 
-            LOGGER.debug(
+            LOGGER.info(
                 "Deleted event: %s with correlation_id: %s",
                 event_type,
                 correlation_id,

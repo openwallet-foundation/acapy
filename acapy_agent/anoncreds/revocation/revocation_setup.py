@@ -246,6 +246,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev reg def create response")
 
         if payload.failure:
             # Handle failure with full type safety
@@ -372,6 +374,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev reg def store response")
 
         if payload.failure:
             # Handle failure
@@ -556,6 +560,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for tails upload response")
 
         if payload.failure:
             # Handle failure
@@ -680,6 +686,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev list create response")
 
         if payload.failure:
             # Handle failure
@@ -807,6 +815,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev list store response")
 
         if payload.failure:
             # Handle failure
@@ -936,6 +946,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev reg def activation response")
 
         if payload.failure:
             # Handle failure
