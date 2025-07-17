@@ -155,7 +155,7 @@ def pytest_sessionstart(session):
     # --debug to use microsoft's visual studio remote debugger
     if ENABLE_PTVSD or "--debug" in args:
         DAP_HOST = os.getenv("PTVSD_HOST", None) or os.getenv("DAP_HOST", "localhost")
-        DAP_PORT = os.getenv("PTVSD_PORT", None) or os.getenv("DAP_PORT", 5678)
+        DAP_PORT = int(os.getenv("PTVSD_PORT", 5678) or os.getenv("DAP_PORT", 5678))
         try:
             import debugpy
 
