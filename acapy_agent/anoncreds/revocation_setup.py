@@ -189,7 +189,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         if not correlation_id:
             # Generate new correlation_id for new requests
             correlation_id = generate_correlation_id()
-            
+
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
@@ -247,6 +247,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev reg def create response")
 
         if payload.failure:
             # Handle failure with full type safety
@@ -326,7 +328,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         if not correlation_id:
             # Generate new correlation_id for new requests
             correlation_id = generate_correlation_id()
-            
+
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
@@ -373,6 +375,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev reg def store response")
 
         if payload.failure:
             # Handle failure
@@ -504,7 +508,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         if not correlation_id:
             # Generate new correlation_id for new requests
             correlation_id = generate_correlation_id()
-            
+
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
@@ -557,6 +561,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for tails upload response")
 
         if payload.failure:
             # Handle failure
@@ -629,7 +635,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         if not correlation_id:
             # Generate new correlation_id for new requests
             correlation_id = generate_correlation_id()
-            
+
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
@@ -681,6 +687,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev list create response")
 
         if payload.failure:
             # Handle failure
@@ -755,7 +763,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         if not correlation_id:
             # Generate new correlation_id for new requests
             correlation_id = generate_correlation_id()
-            
+
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
@@ -808,6 +816,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev list store response")
 
         if payload.failure:
             # Handle failure
@@ -885,7 +895,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         if not correlation_id:
             # Generate new correlation_id for new requests
             correlation_id = generate_correlation_id()
-            
+
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
@@ -937,6 +947,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         success=True,
                         response_data=serialize_event_payload(payload),
                     )
+        else:
+            LOGGER.warning("No correlation_id found for rev reg def activation response")
 
         if payload.failure:
             # Handle failure
