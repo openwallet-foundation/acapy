@@ -85,6 +85,24 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     def __init__(self):
         """Init manager."""
 
+    def _clean_options_for_new_request(self, options: dict) -> dict:
+        """Clean options for new request by removing correlation_id.
+
+        Each new request should have a unique correlation_id. When transitioning
+        from one successful operation to the next new operation, we need to remove
+        the correlation_id so that the next operation generates its own unique
+        correlation_id.
+
+        Args:
+            options (dict): Original options dictionary
+
+        Returns:
+            dict: Cleaned options dictionary without correlation_id
+        """
+        cleaned_options = options.copy()
+        cleaned_options.pop("correlation_id", None)
+        return cleaned_options
+
     def register_events(self, event_bus: EventBus) -> None:
         """Register event listeners."""
         # On cred def, request creation and registration of a revocation registry
@@ -175,7 +193,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 registry_type=self.REGISTRY_TYPE,
                 max_cred_num=payload.max_cred_num,
                 tag=FIRST_REGISTRY_TAG,
-                options=payload.options,
+                options=self._clean_options_for_new_request(payload.options),
             )
 
     async def on_registry_create_requested(  # ✅
@@ -314,7 +332,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 rev_reg_def=payload.rev_reg_def,
                 rev_reg_def_result=payload.rev_reg_def_result,
                 rev_reg_def_private=payload.rev_reg_def_private,
-                options=payload.options,
+                options=self._clean_options_for_new_request(payload.options),
             )
 
     async def on_registry_store_requested(
@@ -470,7 +488,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     registry_type=payload.rev_reg_def.type,
                     tag=revoc._generate_backup_registry_tag(),
                     max_cred_num=payload.rev_reg_def.value.max_cred_num,
-                    options=payload.options,
+                    options=self._clean_options_for_new_request(payload.options),
                 )
 
     async def on_rev_reg_def(
@@ -491,7 +509,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 await revoc.emit_upload_tails_file_event(
                     rev_reg_def_id=payload.rev_reg_def_id,
                     rev_reg_def=payload.rev_reg_def,
-                    options=payload.options,
+                    options=self._clean_options_for_new_request(payload.options),
                 )
             except AnonCredsRevocationError as err:  # TODO: ensure this is implemented
                 LOGGER.warning(f"Failed to upload tails file: {err}")
@@ -621,7 +639,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             revoc = AnonCredsRevocation(profile)
             await revoc.emit_create_and_register_revocation_list_event(
                 rev_reg_def_id=payload.rev_reg_def_id,
-                options=payload.options,
+                options=self._clean_options_for_new_request(payload.options),
             )
 
     async def on_rev_list_create_requested(
@@ -741,7 +759,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             await revoc.emit_store_revocation_list_event(
                 rev_reg_def_id=payload.rev_reg_def_id,
                 result=payload.rev_list_result,
-                options=payload.options,
+                options=self._clean_options_for_new_request(payload.options),
             )
 
     async def on_rev_list_finished(
@@ -876,7 +894,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # If this is for the first registry, activate it
             revoc = AnonCredsRevocation(profile)
-            options = payload.options.copy()
+            options = self._clean_options_for_new_request(payload.options)
             first_registry = options.pop("first_registry", False)
             if first_registry:
                 await revoc.emit_set_active_registry_event(
@@ -1024,7 +1042,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         registry_type=rev_reg_def.type,
                         tag=revoc._generate_backup_registry_tag(),
                         max_cred_num=rev_reg_def.value.max_cred_num,
-                        options=payload.options,
+                        options=self._clean_options_for_new_request(payload.options),
                     )
 
                     # Emit the full handling completed event
