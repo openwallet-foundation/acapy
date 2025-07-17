@@ -11,6 +11,7 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
+    RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
     RECORD_TYPE_TAILS_UPLOAD_EVENT,
 )
 from .event_storage import EventStorageManager, deserialize_event_payload
@@ -25,6 +26,8 @@ from .events import (
     RevRegDefCreateRequestedPayload,
     RevRegDefStoreRequestedEvent,
     RevRegDefStoreRequestedPayload,
+    RevRegFullDetectedEvent,
+    RevRegFullDetectedPayload,
     TailsUploadRequestedEvent,
     TailsUploadRequestedPayload,
 )
@@ -115,6 +118,8 @@ class EventRecoveryManager:
             await self._recover_rev_list_store_event(event_data, recovery_options)
         elif event_type == RECORD_TYPE_REV_REG_ACTIVATION_EVENT:
             await self._recover_rev_reg_activation_event(event_data, recovery_options)
+        elif event_type == RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT:
+            await self._recover_rev_reg_full_handling_event(event_data, recovery_options)
         else:
             LOGGER.warning("Unknown event type for recovery: %s", event_type)
 
@@ -236,6 +241,26 @@ class EventRecoveryManager:
         )
 
         event = RevRegActivationRequestedEvent(new_payload)
+        await self.event_bus.notify(self.profile, event)
+
+    async def _recover_rev_reg_full_handling_event(
+        self, event_data: Dict, options: Dict
+    ) -> None:
+        """Recover a revocation registry full handling event."""
+        payload = deserialize_event_payload(event_data, RevRegFullDetectedPayload)
+
+        # Update options with recovery context
+        payload_options = payload.options.copy()
+        payload_options.update(options)
+
+        # Create new payload with updated options
+        new_payload = RevRegFullDetectedPayload(
+            rev_reg_def_id=payload.rev_reg_def_id,
+            cred_def_id=payload.cred_def_id,
+            options=payload_options,
+        )
+
+        event = RevRegFullDetectedEvent(new_payload)
         await self.event_bus.notify(self.profile, event)
 
     async def cleanup_old_events(self, max_age_hours: int = 24) -> int:
