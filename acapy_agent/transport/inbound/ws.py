@@ -7,6 +7,7 @@ from typing import Optional
 from aiohttp import WSMessage, WSMsgType, web
 
 from ...messaging.error import MessageParseError
+from ...utils.server import remove_unwanted_headers
 from ..error import WireFormatParseError
 from .base import BaseInboundTransport, InboundTransportSetupError
 
@@ -48,6 +49,7 @@ class WsTransport(BaseInboundTransport):
         """Construct the aiohttp application."""
         app = web.Application()
         app.add_routes([web.get("/", self.inbound_message_handler)])
+        app.on_response_prepare.append(remove_unwanted_headers)
         return app
 
     async def start(self) -> None:
@@ -135,6 +137,7 @@ class WsTransport(BaseInboundTransport):
                 if outbound.done() and not ws.closed:
                     # response would be None if session was closed
                     response = outbound.result()
+                    LOGGER.debug("Sending outbound websocket message %s", response)
                     if isinstance(response, bytes):
                         await ws.send_bytes(response)
                     else:

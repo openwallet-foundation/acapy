@@ -1,4 +1,4 @@
-"""Anoncreds admin routes."""
+"""AnonCreds admin routes."""
 
 import logging
 from asyncio import shield
@@ -48,6 +48,10 @@ from .util import handle_value_error
 
 LOGGER = logging.getLogger(__name__)
 
+CRED_DEF_TAG_TITLE = "AnonCreds - Credential Definitions"
+SCHEMAS_TAG_TITLE = "AnonCreds - Schemas"
+REVOCATION_TAG_TITLE = "AnonCreds - Revocation"
+
 SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
 
 endorser_connection_id_description = (
@@ -62,7 +66,7 @@ create_transaction_for_endorser_description = (
 )
 
 
-class AnoncredsRevocationModuleResponseSchema(OpenAPISchema):
+class AnonCredsRevocationModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
 
@@ -153,7 +157,10 @@ class SchemaPostRequestSchema(OpenAPISchema):
     options = fields.Nested(SchemaPostOptionSchema())
 
 
-@docs(tags=["anoncreds - schemas"], summary="Create a schema on the connected datastore")
+@docs(
+    tags=[SCHEMAS_TAG_TITLE],
+    summary="Create a schema on the connected datastore",
+)
 @request_schema(SchemaPostRequestSchema())
 @response_schema(SchemaResultSchema(), 200, description="")
 @tenant_authentication
@@ -225,7 +232,10 @@ async def schemas_post(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
-@docs(tags=["anoncreds - schemas"], summary="Retrieve an individual schemas details")
+@docs(
+    tags=[SCHEMAS_TAG_TITLE],
+    summary="Retrieve an individual schemas details",
+)
 @match_info_schema(SchemaIdMatchInfo())
 @response_schema(GetSchemaResultSchema(), 200, description="")
 @tenant_authentication
@@ -255,7 +265,10 @@ async def schema_get(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
-@docs(tags=["anoncreds - schemas"], summary="Retrieve all schema ids")
+@docs(
+    tags=[SCHEMAS_TAG_TITLE],
+    summary="Retrieve all schema ids",
+)
 @querystring_schema(SchemasQueryStringSchema())
 @response_schema(GetSchemasResponseSchema(), 200, description="")
 @tenant_authentication
@@ -397,7 +410,7 @@ class CredDefsQueryStringSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - credential definitions"],
+    tags=[CRED_DEF_TAG_TITLE],
     summary="Create a credential definition on the connected datastore",
 )
 @request_schema(CredDefPostRequestSchema())
@@ -449,7 +462,7 @@ async def cred_def_post(request: web.BaseRequest):
 
 
 @docs(
-    tags=["anoncreds - credential definitions"],
+    tags=[CRED_DEF_TAG_TITLE],
     summary="Retrieve an individual credential definition details",
 )
 @match_info_schema(CredIdMatchInfo())
@@ -497,7 +510,7 @@ class GetCredDefsResponseSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - credential definitions"],
+    tags=[CRED_DEF_TAG_TITLE],
     summary="Retrieve all credential definition ids",
 )
 @querystring_schema(CredDefsQueryStringSchema())
@@ -584,7 +597,7 @@ class RevRegDefOptionsSchema(OpenAPISchema):
     )
 
 
-class RevRegCreateRequestSchemaAnoncreds(OpenAPISchema):
+class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
     """Wrapper for revocation registry creation request."""
 
     revocation_registry_definition = fields.Nested(InnerRevRegDefSchema())
@@ -592,10 +605,10 @@ class RevRegCreateRequestSchemaAnoncreds(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Create and publish a registration revocation on the connected datastore",
 )
-@request_schema(RevRegCreateRequestSchemaAnoncreds())
+@request_schema(RevRegCreateRequestSchemaAnonCreds())
 @response_schema(RevRegDefResultSchema(), 200, description="")
 @tenant_authentication
 async def rev_reg_def_post(request: web.BaseRequest):
@@ -677,7 +690,7 @@ class RevListCreateRequestSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Create and publish a revocation status list on the connected datastore",
 )
 @request_schema(RevListCreateRequestSchema())
@@ -713,11 +726,11 @@ async def rev_list_post(request: web.BaseRequest):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Upload local tails file to server",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def upload_tails_file(request: web.BaseRequest):
     """Request handler to upload local tails file for revocation registry.
@@ -749,11 +762,11 @@ async def upload_tails_file(request: web.BaseRequest):
 
 
 @docs(
-    tags=["anoncreds - revocation"],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Update the active registry",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnoncredsRevocationModuleResponseSchema(), description="")
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
 @tenant_authentication
 async def set_active_registry(request: web.BaseRequest):
     """Request handler to set the active registry.
@@ -778,14 +791,14 @@ async def set_active_registry(request: web.BaseRequest):
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
 
-def register_events(event_bus: EventBus):
+def register_events(event_bus: EventBus) -> None:
     """Register events."""
     # TODO Make this pluggable?
     setup_manager = DefaultRevocationSetup()
     setup_manager.register_events(event_bus)
 
 
-async def register(app: web.Application):
+async def register(app: web.Application) -> None:
     """Register routes."""
 
     app.add_routes(
@@ -812,7 +825,7 @@ async def register(app: web.Application):
     )
 
 
-def post_process_routes(app: web.Application):
+def post_process_routes(app: web.Application) -> None:
     """Amend swagger API."""
 
     # Add top-level tags description
@@ -820,15 +833,15 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "anoncreds - schemas",
-            "description": "Anoncreds schema management",
+            "name": SCHEMAS_TAG_TITLE,
+            "description": "AnonCreds schema management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "anoncreds - credential definitions",
-            "description": "Anoncreds credential definition management",
+            "name": CRED_DEF_TAG_TITLE,
+            "description": "AnonCreds credential definition management",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

@@ -1,6 +1,7 @@
 """test prove.py"""
 
 import pytest
+import pytest_asyncio
 from anoncreds import CredentialRevocationState, RevocationStatusList
 
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
@@ -33,7 +34,7 @@ def resolver():
     yield DIDResolver([KeyDIDResolver()])
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile(resolver: DIDResolver):
     profile = await create_test_profile()
     profile.context.injector.bind_instance(DIDMethods, DIDMethods())

@@ -40,7 +40,7 @@
       - "3002:3001"
     command: >
       start
-        --label Holder-Anoncreds
+        --label Holder-AnonCreds
         --inbound-transport http 0.0.0.0 3000
         --outbound-transport http
         --endpoint http://holder_anoncreds:3000

@@ -9,7 +9,7 @@ An ACA-Py agent (such as the one in this repository):
 * sends notifications about protocol events to a controller, and
 * exposes an API for responses from the controller with direction in handling protocol events.
 
-The some of the concepts and features that make up the ACA-Py project are documented in the [aries-rfcs](https://github.com/hyperledger/aries-rfcs) - but **don't** dive in there yet! We'll get to the features and concepts to be found there with a guided tour of the key RFCs.
+The some of the concepts and features that make up the ACA-Py project are documented in the [aries-rfcs](https://github.com/decentralized-identity/aries-rfcs) - but **don't** dive in there yet! We'll get to the features and concepts to be found there with a guided tour of the key RFCs.
 
 > Back to the [ACA-Py Developer - Getting Started Guide](./README.md).
 >

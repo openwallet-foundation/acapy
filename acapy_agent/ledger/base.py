@@ -179,11 +179,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Fetch the public DID from the wallet."""
 
     @abstractmethod
-    async def get_txn_author_agreement(self, reload: bool = False):
+    async def get_txn_author_agreement(self, reload: bool = False) -> dict:
         """Get the current transaction author agreement, fetching it if necessary."""
 
     @abstractmethod
-    async def fetch_txn_author_agreement(self):
+    async def fetch_txn_author_agreement(self) -> dict:
         """Fetch the current AML and TAA from the ledger."""
 
     @abstractmethod
@@ -193,7 +193,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Save a new record recording the acceptance of the TAA."""
 
     @abstractmethod
-    async def get_latest_txn_author_acceptance(self):
+    async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
 
     def taa_digest(self, version: str, text: str):
@@ -622,9 +622,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             LedgerObjectAlreadyExistsError: If the schema already exists on the ledger.
 
         """
-        from acapy_agent.anoncreds.default.legacy_indy.registry import (
-            LegacyIndyRegistry,
-        )
+        from acapy_agent.anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 
         public_info = await self.get_wallet_public_did()
         if not public_info:

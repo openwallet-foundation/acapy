@@ -2,7 +2,7 @@
 
 from ...didcomm_prefix import DIDCommPrefix
 
-SPEC_URI = "https://github.com/hyperledger/aries-rfcs/tree/main/features/0794-did-rotate"
+SPEC_URI = "https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0794-did-rotate"
 
 # Message types
 ROTATE = "did-rotate/1.0/rotate"

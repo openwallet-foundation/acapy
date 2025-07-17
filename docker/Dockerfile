@@ -1,12 +1,15 @@
 ARG python_version=3.12
 FROM python:${python_version}-slim-bookworm AS build
 
+RUN pip install --no-cache-dir poetry==2.1.1
+
 WORKDIR /src
 
-COPY ./acapy_agent ./acapy_agent
-COPY ./pyproject.toml ./poetry.lock ./README.md ./
+COPY ./pyproject.toml ./poetry.lock ./
+RUN poetry install --no-root
 
-RUN pip install --no-cache-dir poetry==2.1.1
+COPY ./acapy_agent ./acapy_agent
+COPY ./README.md /src
 RUN poetry build
 
 FROM python:${python_version}-slim-bookworm AS main
@@ -18,7 +21,7 @@ ARG acapy_version
 ARG acapy_reqs=[didcommv2]
 
 ENV HOME="/home/$user" \
-    APP_ROOT="$HOME" \
+    APP_ROOT="/home/$user" \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
     PIP_NO_CACHE_DIR=off \
@@ -42,7 +45,7 @@ LABEL summary="$SUMMARY" \
 RUN useradd -U -ms /bin/bash -u $uid $user
 
 # Install environment
-RUN apt-get update -y && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
@@ -55,8 +58,9 @@ RUN apt-get update -y && \
     openssl \
     sqlite3 \
     zlib1g && \
+    apt-get autopurge -y && \
+    apt-get clean -y && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
-
 
 WORKDIR $HOME
 
@@ -94,11 +98,5 @@ RUN acapy_agent_package=$(find ./ -name "acapy_agent*.whl" | head -n 1) && \
     pip install --no-cache-dir --find-links=. ${acapy_agent_package}${acapy_reqs} && \
     rm acapy_agent*.whl && \
     chmod +rx $(python -m site --user-site) $HOME/.local
-
-# Clean-up unnecessary build dependencies and reduce final image size
-USER root
-RUN apt-get purge -y
-
-USER $user
 
 ENTRYPOINT ["aca-py"]

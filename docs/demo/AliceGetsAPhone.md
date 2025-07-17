@@ -9,8 +9,8 @@ This demo also introduces revocation of credentials.
 - [Getting Started](#getting-started)
   - [Get a mobile agent](#get-a-mobile-agent)
   - [Running Locally in Docker](#running-locally-in-docker)
-    - [Install ngrok and jq](#install-ngrok-and-jq)
-    - [Expose services publicly using ngrok](#expose-services-publicly-using-ngrok)
+    - [Install dev tunnels or ngrok and jq](#install-dev-tunnels-or-ngrok-and-jq)
+    - [Expose services publicly](#expose-services-publicly)
   - [Running in Play With Docker](#running-in-play-with-docker)
   - [Run an instance of indy-tails-server](#run-an-instance-of-indy-tails-server)
     - [Running locally in a bash shell?](#running-locally-in-a-bash-shell)
@@ -52,21 +52,61 @@ We'll come back to this in a minute, when we start the `faber` agent!
 
 There are a couple of extra steps you need to take to prepare to run the Faber agent locally:
 
-#### Install ngrok and jq
+#### Install dev tunnels or ngrok and jq
 
-[ngrok](https://ngrok.com/) is used to expose public endpoints for services running locally on your computer.
+[ngrok](https://ngrok.com/) and [Microsoft dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview) are two options for exposing public endpoints for services running locally on your computer. These two services provide connectivity from clients like mobile wallets to services running in development mode. Note that these kinds of forwarding systems are fundamentally insecure because the intermediating servers (run by ngrok and Microsoft) can see all traffic passing through them. Use them carefully, only with development systems and test data, and verify that your organization's security policies allow you to use them.
 
-[jq](https://github.com/stedolan/jq) is a json parser that is used to automatically detect the endpoints exposed by ngrok.
+Putting APIs online is ngrok's primary business, so their product is a lot more finished than dev tunnels. For example, ngrok offers a Traffic Inspector with an easy-to-use interface and default data retention of 3 days (which can be extended with a paid plan). Dev tunnels also offers an inspection interface, but it is has a user interface similar to browser developer tools that retain data only while open in a browser tab. Dev tunnels also requires either a Microsoft or a GitHub account.
 
-You can install ngrok from [here](https://ngrok.com/)
+ngrok is increasingly moving towards paid plans, while Microsoft seems committed to providing a free service for developers. So, we're providing both options for this demo. You can use dev tunnels for getting started with this repo and implementing small changes. If you plan to do more intense development, you should give ngrok a try to see if their solution is right for you.
 
-You can download jq releases [here](https://github.com/stedolan/jq/releases)
+[jq](https://github.com/stedolan/jq) is a json parser that is used to automatically detect the endpoints exposed by ngrok and dev tunnels.
 
-#### Expose services publicly using ngrok
+You can install ngrok from [here](https://ngrok.com/) or dev tunnels from [here](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started).
 
-Note that this is _only required when running docker on your local machine_. When you run on PWD a public endpoint for your agent is exposed automatically.
+You can download jq releases [here](https://github.com/stedolan/jq/releases).
 
-Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accessible url for some services on your machine. The easiest way to do this is with [ngrok](https://ngrok.com/). Once ngrok is installed, create a tunnel to your local machine:
+#### Expose services publicly
+
+Note that this is _only required when running docker on your local machine_. When you run on PWD a public endpoint for your agent is exposed automatically. Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accessible url for some services on your machine.
+
+##### Using dev tunnels
+
+Once dev tunnels is installed, log in to your Microsoft or GitHub account.
+
+```bash
+devtunnel user login -g # For GitHub credentials. Remove the -g to use your Microsoft account
+```
+
+Create a tunnel to your local machine:
+
+```bash
+devtunnel host -p 8020 -p 8022 -p 6543 -d acapy-demo -a # See below for more detailed information
+```
+
+You will see something like this:
+
+```
+Hosting port: 6543
+Connect via browser: https://4qn68lz0-6543.usw3.devtunnels.ms
+Inspect network activity: https://4qn68lz0-6543-inspect.usw3.devtunnels.ms
+Hosting port: 8020
+Connect via browser: https://4qn68lz0-8020.usw3.devtunnels.ms
+Inspect network activity: https://4qn68lz0-8020-inspect.usw3.devtunnels.ms
+Hosting port: 8022
+Connect via browser: https://4qn68lz0-8022.usw3.devtunnels.ms
+Inspect network activity: https://4qn68lz0-8022-inspect.usw3.devtunnels.ms
+
+Ready to accept connections for tunnel: amusing-mountain-q0rpt0b.usw3
+```
+This creates a public url for ports 8020 (the acapy agent), 8022 (the webhooks port), and 6543 (the tails server).
+
+Keep this process running as we'll come back to it in a moment.
+
+
+##### Using ngrok
+
+Once ngrok is installed, create a tunnel to your local machine:
 
 ```bash
 ngrok http 8020
@@ -83,7 +123,7 @@ Forwarding                    https://abc123.ngrok.io -> http://localhost:8020
 
 This creates a public url for ports 8020 on your local machine.
 
-Note that an ngrok process is created automatically for your tails server.
+Note that an ngrok process is created automatically for your tails server. (Check the output of `./manage logs` to see if you need to provide an ngrok authentication token for ngrok to work. Note that you can use dev tunnels as an alternative to ngrok if you don't have an ngrok account.)
 
 Keep this process running as we'll come back to it in a moment.
 
@@ -115,6 +155,7 @@ git clone https://github.com/bcgov/indy-tails-server.git
 cd indy-tails-server/docker
 ./manage build
 ./manage start
+./manage logs
 ```
 
 This will run the required components for the tails server to function and make a tails server available on port 6543.
@@ -128,11 +169,34 @@ ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel"
 
 Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server. Make sure you use the `https` url!
 
+If you see an "authentication failed" error in the logs like this:
+```bash
+ngrok-tails-server-1  | ERROR:  authentication failed: Usage of ngrok requires a verified account and authtoken.
+ngrok-tails-server-1  | ERROR:
+ngrok-tails-server-1  | ERROR:  Sign up for an account: https://dashboard.ngrok.com/signup
+ngrok-tails-server-1  | ERROR:  Install your authtoken: https://dashboard.ngrok.com/get-started/your-authtoken
+```
+then you'll need to follow the links to set up a ngrok account and get an authentication token.
+When you have the authtoken, hit CTRL-C to exit from the logs and run the following commands,
+replacing `<YOUR AUTHTOKEN>` with the authtoken from ngrok.
+```bash
+./manage logs # run above
+^C
+./manage stop
+cat >>ngrok.yml
+authtoken: <YOUR AUTHTOKEN>
+^D
+./manage start
+./manage logs
+```
+
 #### Running in Play with Docker?
 
 Run the same steps on _PWD_ as you would run locally (see above).  Open a new shell (click on "ADD NEW INSTANCE") to run the tails server.
 
 Note that with _Play with Docker_ it can be challenging to capture the information you need from the log file as it scrolls by, you can try leaving off the `--events` option when you run the Faber agent to reduce the quantity of information logged to the screen.
+
+Also note that _PWD_ enviroments are insecure. If you enter a ngrok authtoken into a _PWD_ session, you should invalidate (reset) the authtoken as soon as you are done using the environment.
 
 ### Run `faber` With Extra Parameters
 
@@ -217,6 +281,12 @@ http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-docker.com?c_i=ey
 ```
 
 Note that this will use the ngrok endpoint if you are running locally, or your PWD endpoint if you are running on PWD.
+
+When running locally, use the `AGENT_ENDPOINT` environment variable to run the demo so that it puts the public hostname in the QR code:
+```bash
+AGENT_ENDPOINT=https://abc123.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber
+```
+See the Connectionless Proof Request section below for a more complete ngrok configuration that also supports the revocation option.
 
 ## Issue a Credential
 
@@ -320,6 +390,38 @@ If you have gone through the above steps, you can delete the Faber connection in
 Then in the faber demo, select option `2a` - Faber will display a QR code which you can scan with your mobile agent.  You will see the same proof request displayed in your mobile agent, which you can respond to.
 
 Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the `faber.py` code in the repository.
+
+### Port Forwarding
+
+If you want to use a connectionless proof request with docker running locally, you need to set up dev tunnels or ngrok to forward both the agent port (8020) and the webhooks port (8022).
+
+#### dev tunnels
+
+You can use [Microsoft dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/) to forward the required ports. Follow the [installation instructions](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started#install-dev-tunnels) to install the devtunnel client. You will need to authenticate to devtunnel using a Microsoft or GitHub account. To use a GitHub account, run `devtunnel user login -g`. Once you have logged in, run the following command to set up the agent, webhooks, and tails-server ports: `devtunnel host -p 8020 -p 8022 -p 6543 -d acapy-demo -a` The description (`-d acapy-demo`) is required for the `run_demo` script to find the dev tunnel ports. The `-a` flag is required to allow anonymous connections to the dev tunnel ports. For example, the existing wallets are not designed to work with dev tunnel authentication, so they will need to connect anonymously.
+
+#### ngrok
+
+ If you have a free ngrok account, you need to run a single ngrok agent that forwards all of the necessary ports. Here is an ngrok configuration file that works for this purpose:
+```yaml
+version: "3"
+agent:
+    authtoken: <YOUR AUTHTOKEN>
+tunnels:
+    acapy-agent:
+       proto: http
+       addr: 8020
+    acapy-webhooks:
+       proto: http
+       addr: 8022
+    tails-server:
+       addr: 6543
+       inspect: false
+       proto: http
+```
+When using this approach, leave your ngrok authtoken out of the tails-server ngrok.yml file to prevent the tails-server from starting its own ngrok agent. This trick avoids the following error from ngrok:
+```bash
+ERROR:  authentication failed: Your account is limited to 1 simultaneous ngrok agent sessions.
+```
 
 ## Conclusion
 

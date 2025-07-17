@@ -26,7 +26,7 @@ from ...messaging.valid import (
 )
 
 
-class AnoncredsPresentationReqPredSpecSchema(OpenAPISchema):
+class AnonCredsPresentationReqPredSpecSchema(OpenAPISchema):
     """Schema for predicate specification in anoncreds proof request."""
 
     name = fields.Str(
@@ -90,14 +90,14 @@ class AnoncredsPresentationReqPredSpecSchema(OpenAPISchema):
                     },
                 ),
             },
-            name="AnoncredsPresentationReqPredSpecNonRevokedSchema",
+            name="AnonCredsPresentationReqPredSpecNonRevokedSchema",
         ),
         allow_none=True,
         required=False,
     )
 
 
-class AnoncredsPresentationReqAttrSpecSchema(OpenAPISchema):
+class AnonCredsPresentationReqAttrSpecSchema(OpenAPISchema):
     """Schema for attribute specification in anoncreds proof request."""
 
     name = fields.Str(
@@ -156,14 +156,14 @@ class AnoncredsPresentationReqAttrSpecSchema(OpenAPISchema):
                     },
                 ),
             },
-            name="AnoncredsPresentationReqAttrSpecNonRevokedSchema",
+            name="AnonCredsPresentationReqAttrSpecNonRevokedSchema",
         ),
         allow_none=True,
         required=False,
     )
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields.
 
         Data must have exactly one of name or names; if names then restrictions are
@@ -188,13 +188,13 @@ class AnoncredsPresentationReqAttrSpecSchema(OpenAPISchema):
             )
 
 
-class AnoncredsPresentationRequest(BaseModel):
+class AnonCredsPresentationRequest(BaseModel):
     """anoncreds proof request."""
 
     class Meta:
-        """Anoncreds proof request metadata."""
+        """AnonCreds proof request metadata."""
 
-        schema_class = "AnoncredsPresentationRequestSchema"
+        schema_class = "AnonCredsPresentationRequestSchema"
 
     def __init__(
         self,
@@ -229,13 +229,13 @@ class AnoncredsPresentationRequest(BaseModel):
         self.non_revoked = non_revoked
 
 
-class AnoncredsPresentationRequestSchema(BaseModelSchema):
+class AnonCredsPresentationRequestSchema(BaseModelSchema):
     """Schema for anoncreds proof request."""
 
     class Meta:
-        """Anoncreds proof request schema metadata."""
+        """AnonCreds proof request schema metadata."""
 
-        model_class = AnoncredsPresentationRequest
+        model_class = AnonCredsPresentationRequest
         unknown = EXCLUDE
 
     nonce = fields.Str(
@@ -262,7 +262,7 @@ class AnoncredsPresentationRequestSchema(BaseModelSchema):
         keys=fields.Str(
             metadata={"decription": "Attribute referent", "example": "0_legalname_uuid"}
         ),
-        values=fields.Nested(AnoncredsPresentationReqAttrSpecSchema()),
+        values=fields.Nested(AnonCredsPresentationReqAttrSpecSchema()),
         metadata={"description": "Requested attribute specifications of proof request"},
     )
     requested_predicates = fields.Dict(
@@ -270,7 +270,7 @@ class AnoncredsPresentationRequestSchema(BaseModelSchema):
         keys=fields.Str(
             metadata={"description": "Predicate referent", "example": "0_age_GE_uuid"}
         ),
-        values=fields.Nested(AnoncredsPresentationReqPredSpecSchema()),
+        values=fields.Nested(AnonCredsPresentationReqPredSpecSchema()),
         metadata={"description": "Requested predicate specifications of proof request"},
     )
     non_revoked = fields.Nested(
@@ -299,7 +299,7 @@ class AnoncredsPresentationRequestSchema(BaseModelSchema):
                     },
                 ),
             },
-            name="AnoncredsPresentationRequestNonRevokedSchema",
+            name="AnonCredsPresentationRequestNonRevokedSchema",
         ),
         allow_none=True,
         required=False,

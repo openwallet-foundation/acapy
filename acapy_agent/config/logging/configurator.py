@@ -5,7 +5,6 @@ import io
 import logging
 import logging.config
 import os
-import sys
 from importlib import resources
 from logging.config import (
     _clearExistingHandlers,
@@ -32,6 +31,8 @@ from .timed_rotating_file_multi_process_handler import (
     TimedRotatingFileMultiProcessHandler,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def load_resource(path: str, encoding: Optional[str] = None):
     """Open a resource file located in a python package or the local filesystem.
@@ -57,7 +58,8 @@ def load_resource(path: str, encoding: Optional[str] = None):
                 return io.TextIOWrapper(bstream, encoding=encoding)
             return bstream
     except IOError:
-        pass
+        LOGGER.warning("Resource not found: %s", path)
+        return None
 
 
 def dictConfig(config, new_file_path=None):
@@ -95,18 +97,7 @@ def fileConfig(
             raise RuntimeError(f"{fname} is invalid: {e}")
 
     if new_file_path and cp.has_section("handler_timed_file_handler"):
-        cp.set(
-            "handler_timed_file_handler",
-            "args",
-            str(
-                (
-                    f"{new_file_path}",
-                    "d",
-                    7,
-                    1,
-                )
-            ),
-        )
+        cp.set("handler_timed_file_handler", "args", str((new_file_path, "d", 7, 1)))
 
     formatters = _create_formatters(cp)
     with logging._lock:
@@ -294,7 +285,6 @@ class LoggingConfigurator:
             border_character: (Default value = ":") Character to use in banner
             border
         """
-        print()
         with Banner(border=border_character, length=banner_length) as banner:
             # Title
             banner.title(agent_label or "ACA")
@@ -356,14 +346,10 @@ class LoggingConfigurator:
 
             banner.version(__version__)
 
-        print()
-        print("Listening...")
-        print()
-
     @classmethod
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
-        with Banner(border=":", length=80, file=sys.stderr) as banner:
+        with Banner(border=":", length=80) as banner:
             if settings.get("wallet.type", "in_memory").lower() == "indy":
                 banner.centered("⚠ DEPRECATION NOTICE: ⚠")
                 banner.hr()
@@ -400,4 +386,3 @@ class LoggingConfigurator:
                     "and support will be removed in a future release; "
                     "use RFC 0454: Present Proof 2.0 instead."
                 )
-        print()

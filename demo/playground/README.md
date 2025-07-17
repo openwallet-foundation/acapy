@@ -26,7 +26,7 @@ These configuration files are provided to the ACA-Py start command via the `AGEN
 
 ### Dockerfile and start.sh
 
-[`Dockerfile.acapy`](./Dockerfile.acapy) assembles the image to run. Currently based on [ACA-Py 1.2.0](ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2.4), we need [jq](https://stedolan.github.io/jq/) to setup (or not) the ngrok tunnel and execute the Aca-py start command - see [`start.sh`](./start.sh). You may note that the start command is very sparse, additional configuration is done via environment variables in the [docker compose file](./docker-compose.yml).
+[`Dockerfile.acapy`](./Dockerfile.acapy) assembles the image to run. Currently based on [ACA-Py 1.3.0](ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.3.0), we need [jq](https://stedolan.github.io/jq/) to setup (or not) the ngrok tunnel and execute the Aca-py start command - see [`start.sh`](./start.sh). You may note that the start command is very sparse, additional configuration is done via environment variables in the [docker compose file](./docker-compose.yml).
 
 ### ngrok
 
@@ -108,7 +108,7 @@ docker compose up
 
 Currently, we show how to connect two agents with each other and send pings back and forth. This includes adding a tenant to the multi-tenanted instance and interacting with that tenant.
 
-A more involved test requires that you have a mediator service running and have the mediator's invitation URL. See [Aries Mediator Service](https://github.com/hyperledger/aries-mediator-service) for standing up a local instance and how to find the invitation URL. In this script, each agent requests mediation and we can see the mediator forwarding messages between the agents.
+A more involved test requires that you have a mediator service running and have the mediator's invitation URL. See [DIDComm Mediator Service](https://github.com/openwallet-foundation/didcomm-mediator-service) for standing up a local instance and how to find the invitation URL. In this script, each agent requests mediation and we can see the mediator forwarding messages between the agents.
 
 Assuming you have stood up both the mediator service and the playground, and have copied the mediator's invitation url...
 

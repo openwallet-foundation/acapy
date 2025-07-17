@@ -60,6 +60,7 @@ from .messages.cred_problem_report import ProblemReportReason
 from .messages.cred_proposal import V20CredProposal
 from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
+from .models.detail.anoncreds import V20CredExRecordAnonCredsSchema
 from .models.detail.indy import V20CredExRecordIndySchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 
@@ -113,7 +114,7 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Credential exchange record"},
     )
-
+    anoncreds = fields.Nested(V20CredExRecordAnonCredsSchema, required=False)
     indy = fields.Nested(V20CredExRecordIndySchema, required=False)
     ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
     vc_di = fields.Nested(V20CredExRecordSchema, required=False)
@@ -138,8 +139,8 @@ class V20CredStoreRequestSchema(OpenAPISchema):
     credential_id = fields.Str(required=False)
 
 
-class V20CredFilterAnoncredsSchema(OpenAPISchema):
-    """Anoncreds credential filtration criteria."""
+class V20CredFilterAnonCredsSchema(OpenAPISchema):
+    """AnonCreds credential filtration criteria."""
 
     schema_issuer_id = fields.Str(
         required=False,
@@ -272,7 +273,7 @@ class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
     anoncreds = fields.Nested(
-        V20CredFilterAnoncredsSchema,
+        V20CredFilterAnonCredsSchema,
         required=False,
         metadata={"description": "Credential filter for anoncreds"},
     )
@@ -865,7 +866,12 @@ async def credential_exchange_send(request: web.BaseRequest):
         V20CredManagerError,
         V20CredFormatError,
     ) as err:
-        LOGGER.exception("Error preparing credential offer")
+        # Only log full exception for unexpected errors
+        if isinstance(err, (V20CredFormatError, V20CredManagerError)):
+            LOGGER.warning(f"Error preparing credential offer: {err.roll_up}")
+        else:
+            LOGGER.exception("Error preparing credential offer")
+
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)

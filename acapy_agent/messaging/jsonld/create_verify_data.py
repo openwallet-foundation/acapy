@@ -9,6 +9,7 @@ import hashlib
 
 from pyld import jsonld
 
+from ...vc.ld_proofs import DocumentLoader
 from .error import (
     DroppedAttributeError,
     MissingVerificationMethodError,
@@ -16,7 +17,7 @@ from .error import (
 )
 
 
-def _canonize(data, document_loader=None):
+def _canonize(data: dict, document_loader: DocumentLoader | None = None) -> dict:
     return jsonld.normalize(
         data,
         {
@@ -27,32 +28,36 @@ def _canonize(data, document_loader=None):
     )
 
 
-def _sha256(data):
+def _sha256(data: str) -> str:
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
-def _canonize_signature_options(signatureOptions, document_loader=None):
-    _signatureOptions = {**signatureOptions, "@context": "https://w3id.org/security/v2"}
-    _signatureOptions.pop("jws", None)
-    _signatureOptions.pop("signatureValue", None)
-    _signatureOptions.pop("proofValue", None)
-    return _canonize(_signatureOptions, document_loader)
+def _canonize_signature_options(
+    signature_options: dict, document_loader: DocumentLoader | None = None
+) -> dict:
+    _signature_options = {**signature_options, "@context": "https://w3id.org/security/v2"}
+    _signature_options.pop("jws", None)
+    _signature_options.pop("signatureValue", None)
+    _signature_options.pop("proofValue", None)
+    return _canonize(_signature_options, document_loader)
 
 
-def _canonize_document(doc, document_loader=None):
+def _canonize_document(doc: dict, document_loader: DocumentLoader | None = None) -> dict:
     _doc = {**doc}
     _doc.pop("proof", None)
     return _canonize(_doc, document_loader)
 
 
-def _created_at():
+def _created_at() -> str:
     """Creation Timestamp."""
 
     stamp = datetime.datetime.now(datetime.timezone.utc)
     return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def create_verify_data(data, signature_options, document_loader=None):
+def create_verify_data(
+    data: dict, signature_options: dict, document_loader: DocumentLoader | None = None
+) -> tuple[dict, str]:
     """Encapsulate process of constructing string used during sign and verify."""
 
     signature_options["type"] = signature_options.get("type", "Ed25519Signature2018")

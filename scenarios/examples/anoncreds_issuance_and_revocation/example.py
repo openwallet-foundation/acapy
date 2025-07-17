@@ -10,9 +10,7 @@ from secrets import token_hex
 
 from acapy_controller import Controller
 from acapy_controller.logging import logging_to_stdout
-from acapy_controller.models import (
-    CreateWalletResponse,
-)
+from acapy_controller.models import CreateWalletResponse
 from acapy_controller.protocols import (
     DIDResult,
     didexchange,
@@ -21,8 +19,8 @@ from acapy_controller.protocols import (
 )
 from aiohttp import ClientSession
 from examples.util import (
-    CredDefResultAnoncreds,
-    SchemaResultAnoncreds,
+    CredDefResultAnonCreds,
+    SchemaResultAnonCreds,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
 )
@@ -127,7 +125,7 @@ async def main():
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            {"firstname": "Anoncreds", "lastname": "Holder"},
+            {"firstname": "AnonCreds", "lastname": "Holder"},
             cred_def_id=cred_def.credential_definition_id,
             issuer_id=public_did.did,
             schema_id=schema.schema_id,
@@ -181,7 +179,7 @@ async def main():
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            {"firstname": "Anoncreds", "lastname": "Holder"},
+            {"firstname": "AnonCreds", "lastname": "Holder"},
             cred_def_id=cred_def.credential_definition_id,
             issuer_id=public_did.did,
             schema_id=schema.schema_id,
@@ -361,7 +359,7 @@ async def main():
                     "issuerId": public_did.did,
                 }
             },
-            response=SchemaResultAnoncreds,
+            response=SchemaResultAnonCreds,
         )
         cred_def = await issuer.post(
             "/anoncreds/credential-definition",
@@ -373,7 +371,7 @@ async def main():
                 },
                 "options": {"support_revocation": True, "revocation_registry_size": 10},
             },
-            response=CredDefResultAnoncreds,
+            response=CredDefResultAnonCreds,
         )
 
         # Issue a new credential to anoncreds holder
@@ -382,7 +380,7 @@ async def main():
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            {"middlename": "Anoncreds"},
+            {"middlename": "AnonCreds"},
             cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
             issuer_id=public_did.did,
             schema_id=schema.schema_state["schema_id"],
@@ -522,14 +520,14 @@ async def main():
                 },
                 "options": {"support_revocation": True, "revocation_registry_size": 10},
             },
-            response=CredDefResultAnoncreds,
+            response=CredDefResultAnonCreds,
         )
         issuer_cred_ex, _ = await anoncreds_issue_credential_v2(
             issuer_without_schema,
             holder_anoncreds,
             issuer_conn_with_anoncreds_holder.connection_id,
             holder_anoncreds_conn.connection_id,
-            {"middlename": "Anoncreds"},
+            {"middlename": "AnonCreds"},
             cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
             schema_id=schema.schema_state["schema_id"],
         )

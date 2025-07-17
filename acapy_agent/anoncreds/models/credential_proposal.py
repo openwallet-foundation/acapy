@@ -1,4 +1,4 @@
-"""Anoncreds credential definition proposal."""
+"""AnonCreds credential definition proposal."""
 
 import re
 
@@ -19,7 +19,7 @@ from ...messaging.valid import (
 )
 
 
-class AnoncredsCredentialDefinitionProposal(OpenAPISchema):
+class AnonCredsCredentialDefinitionProposal(OpenAPISchema):
     """Query string parameters for credential definition searches."""
 
     cred_def_id = fields.Str(
@@ -69,14 +69,16 @@ class AnoncredsCredentialDefinitionProposal(OpenAPISchema):
 
 
 CRED_DEF_TAGS = list(
-    vars(AnoncredsCredentialDefinitionProposal).get("_declared_fields", [])
+    vars(AnonCredsCredentialDefinitionProposal).get("_declared_fields", [])
 )
 
 CRED_DEF_EVENT_PREFIX = "acapy::CRED_DEF::"
 EVENT_LISTENER_PATTERN = re.compile(f"^{CRED_DEF_EVENT_PREFIX}(.*)?$")
 
 
-async def notify_cred_def_event(profile: Profile, cred_def_id: str, meta_data: dict):
+async def notify_cred_def_event(
+    profile: Profile, cred_def_id: str, meta_data: dict
+) -> None:
     """Send notification for a cred def post-process event."""
     await profile.notify(
         CRED_DEF_EVENT_PREFIX + cred_def_id,

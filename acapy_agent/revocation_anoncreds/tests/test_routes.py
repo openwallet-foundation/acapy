@@ -38,7 +38,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
     async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (
             test_module.CredRevRecordQueryStringSchema(),
-            test_module.RevokeRequestSchemaAnoncreds(),
+            test_module.RevokeRequestSchemaAnonCreds(),
         ):
             req.validate_fields(
                 {
@@ -348,9 +348,9 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                 test_module.web, "json_response", mock.Mock()
             ) as mock_json_response,
         ):
-            mock_retrieve.return_value = mock.MagicMock(
-                serialize=mock.MagicMock(return_value="dummy")
-            )
+            mock_retrieve.return_value = [
+                mock.MagicMock(serialize=mock.MagicMock(return_value="dummy"))
+            ]
             result = await test_module.get_cred_rev_record(self.request)
 
             mock_json_response.assert_called_once_with({"result": "dummy"})

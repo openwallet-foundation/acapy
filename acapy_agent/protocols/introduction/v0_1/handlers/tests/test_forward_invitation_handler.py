@@ -4,9 +4,9 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from .....out_of_band.v1_0.messages.invitation import InvitationMessage, Service
 from ......tests import mock
 from ......utils.testing import create_test_profile
+from .....out_of_band.v1_0.messages.invitation import InvitationMessage, Service
 from ...messages.forward_invitation import ForwardInvitation
 from .. import forward_invitation_handler as test_module
 

@@ -29,7 +29,7 @@ drill into the modules, subpackages and submodules that make up ACA-Py.
 Developers that are interested in what DIDComm protocols are supported in ACA-Py
 should take a look at the `protocols <generated/acapy_agent.protocols.html>`_ package. 
 These should align with the corresponding
-`aries-rfcs protocols <https://github.com/decentralized-identity/aries-rfcs/tree/master/features>`_.
+`aries-rfcs protocols <https://github.com/decentralized-identity/aries-rfcs/tree/main/features>`_.
 Decorators defined in aries-rfcs and implemented in ACA-Py can be found
 `here <generated/acapy_agent.messaging.decorators.html>`_.
 Some general purpose subpackages that might be of interest include

@@ -29,9 +29,9 @@ Check it out! It's much easier to navigate than the ACA-Py GitHub repo for readi
 
 ACA-Py is a foundation for building Verifiable Credential (VC) ecosystems. It operates in the second and third layers of the [Trust Over IP framework (PDF)](https://trustoverip.org/wp-content/uploads/2020/05/toip_050520_primer.pdf) using a variety of verifiable credential formats and protocols. ACA-Py runs on servers (cloud, enterprise, IoT devices, and so forth), and is not designed to run on mobile devices.
 
-ACA-Py includes support for the concepts and features that make up [Aries Interop Profile (AIP) 2.0](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20). [ACA-Py’s supported features](./docs/features/SupportedRFCs.md) include, most importantly, protocols for issuing, verifying, and holding verifiable credentials using both [Hyperledger AnonCreds] verifiable credential format, and the [W3C Standard Verifiable Credential Data Model] format using JSON-LD with LD-Signatures and BBS+ Signatures. Coming soon -- issuing and presenting [Hyperledger AnonCreds] verifiable credentials using the [W3C Standard Verifiable Credential Data Model] format.
+ACA-Py includes support for the concepts and features that make up [Aries Interop Profile (AIP) 2.0](https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20). [ACA-Py’s supported features](./docs/features/SupportedRFCs.md) include, most importantly, protocols for issuing, verifying, and holding verifiable credentials using both [Hyperledger AnonCreds] verifiable credential format, and the [W3C Standard Verifiable Credential Data Model] format using JSON-LD with LD-Signatures and BBS+ Signatures. Coming soon -- issuing and presenting [Hyperledger AnonCreds] verifiable credentials using the [W3C Standard Verifiable Credential Data Model] format.
 
-[Hyperledger AnonCreds]: https://www.hyperledger.org/use/anoncreds
+[Hyperledger AnonCreds]: https://www.lfdecentralizedtrust.org/projects/anoncreds
 [W3C Standard Verifiable Credential Data Model]: https://www.w3.org/TR/vc-data-model/
 
 To use ACA-Py you create a business logic "controller" that talks to an ACA-Py instance (sending HTTP requests and receiving webhook notifications), and ACA-Py handles the various protocols and related functionality. Your controller can be built in any language that supports making and receiving HTTP requests; knowledge of Python is not needed. Together, this means you can focus on building VC solutions using familiar web development technologies, instead of having to learn the nuts and bolts of low-level cryptography and Trust over IP-type protocols.
@@ -49,12 +49,29 @@ the active LTS releases. Each LTS release will be supported with patches for **9
 months** following the designation of the **next** LTS Release. For more details see
 the [LTS strategy](./LTS-Strategy.md).
 
-Current LTS releases:
+### LTS Docker Images
+
+ACA-Py publishes Git tags in the format `x.y-lts` (e.g., `1.2-lts`) along with 
+corresponding Docker images to the GitHub Container Registry (GHCR) for each LTS release. These 
+Docker images are tagged with a stable `-lts` suffix, making it easier for developers to rely on 
+a consistent and maintained version line.
+
+You can pull the latest LTS image for version `1.2` using the following image tag:
+
+```bash
+ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2-lts
+```
+
+The `-lts` tags are kept up to date with the latest patch releases from the corresponding 
+`*.lts` branches. This ensures that consumers of the LTS Docker images always receive the most recent, 
+supported version within that release series.
+
+**Current LTS releases:**
 
 - Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.4) **Current LTS Release**
 - Release [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.6) **End of Life: October 2025**
 
-Past LTS releases:
+**Past LTS releases:**
 
 - Release [0.11](https://github.com/openwallet-foundation/acapy/releases/tag/0.11.3) **End of Life: January 2025**
 
@@ -75,7 +92,7 @@ ACA-Py supports "multi-tenant" scenarios. In these scenarios, one (scalable) ins
 
 ### Mediator Service
 
-Startup options allow the use of an ACA-Py as a DIDComm [mediator](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0046-mediators-and-relays#summary) using core DIDComm protocols to coordinate its mediation role. Such an ACA-Py instance receives, stores and forwards messages to DIDComm agents that (for example) lack an addressable endpoint on the Internet such as a mobile wallet. A live instance of a public mediator based on ACA-Py is available [here](https://indicio-tech.github.io/mediator/) from [Indicio, PBC](https://indicio.tech). Learn more about deploying a mediator [here](./docs/features/Mediation.md). See the [Aries Mediator Service](https://github.com/hyperledger/aries-mediator-service) for a "best practices" configuration of an Aries mediator.
+Startup options allow the use of an ACA-Py as a DIDComm [mediator](https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0046-mediators-and-relays#summary) using core DIDComm protocols to coordinate its mediation role. Such an ACA-Py instance receives, stores and forwards messages to DIDComm agents that (for example) lack an addressable endpoint on the Internet such as a mobile wallet. A live instance of a public mediator based on ACA-Py is available [here](https://indicio-tech.github.io/mediator/) from [Indicio, PBC](https://indicio.tech). Learn more about deploying a mediator [here](./docs/features/Mediation.md). See the [DIDComm Mediator Service](https://github.com/openwallet-foundation/didcomm-mediator-service) for a "best practices" configuration of an Aries mediator.
 
 ### Indy Transaction Endorsing
 

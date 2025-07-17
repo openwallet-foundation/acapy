@@ -15,43 +15,12 @@ updates:
 
   # Maintain dependencies for Python Packages
   - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
-
-  # Maintain dependencies for Python Packages
-  - package-ecosystem: "pip"
-    directory: "/demo/playground/examples"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
-
-  # Maintain dependencies for Python Packages
-  - package-ecosystem: "pip"
-    directory: "/demo"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
-
-  # Maintain dependencies for Python Packages
-  - package-ecosystem: "pip"
-    directory: "/docs"
+    directories: 
+      - "/"
+      - "/demo"
+      - "/demo/playground/examples"
+      - "/docs"
+      - "/scenarios"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -63,160 +32,26 @@ updates:
 
   # Maintain dependencies for docker
   - package-ecosystem: "docker"
-    directory: "/.devcontainer"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/docker-agent"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/docker-test/db"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/elasticsearch"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/curator"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/enterprise-search"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/filebeat"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/fleet"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/heartbeat"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/logspout"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/extensions/metricbeat"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/kibana"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/logstash"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/elk-stack/setup"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/multi-demo"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/playground"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/demo/playground/examples"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-      timezone: "Canada/Pacific"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/docker"
+    directories: 
+      - "/.devcontainer"
+      - "/demo/docker-agent"
+      - "/demo/docker-test/db"
+      - "/demo/elk-stack/elasticsearch"
+      - "/demo/elk-stack/extensions/curator"
+      - "/demo/elk-stack/extensions/enterprise-search"
+      - "/demo/elk-stack/extensions/filebeat"
+      - "/demo/elk-stack/extensions/fleet"
+      - "/demo/elk-stack/extensions/heartbeat"
+      - "/demo/elk-stack/extensions/logspout"
+      - "/demo/elk-stack/extensions/metricbeat"
+      - "/demo/elk-stack/kibana"
+      - "/demo/elk-stack/logstash"
+      - "/demo/elk-stack/setup"
+      - "/demo/multi-demo"
+      - "/demo/playground"
+      - "/demo/playground/examples"
+      - "/docker"
+      - "/scenarios"
     schedule:
       interval: "weekly"
       day: "monday"

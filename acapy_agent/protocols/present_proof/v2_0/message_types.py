@@ -4,7 +4,7 @@ from ...didcomm_prefix import DIDCommPrefix
 from .messages.pres_format import V20PresFormat
 
 SPEC_URI = (
-    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "https://github.com/decentralized-identity/aries-rfcs/tree/"
     "eace815c3e8598d4a8dd7881d8c731fdb2bcc0aa/features/0454-present-proof-v2"
 )
 

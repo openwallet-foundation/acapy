@@ -4,6 +4,7 @@ import re
 from typing import Dict, Optional, Union
 
 import pytest
+import pytest_asyncio
 
 from ....config.settings import Settings
 from ....tests import mock
@@ -13,7 +14,7 @@ from .. import universal as test_module
 from ..universal import UniversalResolver
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def resolver():
     """Resolver fixture."""
     yield UniversalResolver(
@@ -21,7 +22,7 @@ async def resolver():
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     """Profile fixture."""
     profile = await create_test_profile()

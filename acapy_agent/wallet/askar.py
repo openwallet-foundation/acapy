@@ -21,6 +21,7 @@ from .did_method import INDY, SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation
 from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, P256, X25519, KeyType, KeyTypes
+from .keys.manager import verkey_to_multikey
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
@@ -94,11 +95,14 @@ class AskarWallet(BaseWallet):
         if metadata is None:
             metadata = {}
 
-        tags = {"kid": kid} if kid else None
-
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
+            tags = {
+                "multikey": verkey_to_multikey(verkey, key_type.key_type),
+                "kid": [kid] if kid else [],
+            }
+
             await self._session.handle.insert_key(
                 verkey,
                 keypair,
@@ -138,7 +142,57 @@ class AskarWallet(BaseWallet):
         if not key_type:
             raise WalletError(f"Unknown key type {key.algorithm.value}")
 
-        await self._session.handle.update_key(name=verkey, tags={"kid": kid})
+        tags = key_entry.tags or {"kid": []}
+        key_ids = tags.get("kid", [])
+        key_ids = key_ids if isinstance(key_ids, list) else [key_ids]
+        key_ids.append(kid)
+        tags["kid"] = key_ids
+
+        await self._session.handle.update_key(name=verkey, tags=tags)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
+
+    async def unassign_kid_from_key(self, verkey: str, kid: str) -> KeyInfo:
+        """Remove a kid association.
+
+        Args:
+            kid: The key identifier
+            verkey: The verification key of the keypair
+
+        Returns:
+            The key identified by kid
+
+        """
+        key_entries = await self._session.handle.fetch_all_keys(
+            tag_filter={"kid": kid}, limit=2
+        )
+        if len(key_entries) > 1:
+            raise WalletDuplicateError(f"More than one key found by kid {kid}")
+
+        key_entry = key_entries[0]
+        key = cast(Key, key_entry.key)
+        fetched_verkey = bytes_to_b58(key.get_public_bytes())
+
+        metadata = cast(dict, key_entry.metadata)
+        key_types = self.session.inject(KeyTypes)
+        key_type = key_types.from_key_type(key.algorithm.value)
+        if not key_type:
+            raise WalletError(f"Unknown key type {key.algorithm.value}")
+
+        if fetched_verkey != verkey:
+            raise WalletError(f"Multikey mismatch: {fetched_verkey} != {verkey}")
+
+        key_tags = key_entry.tags or {"kid": []}
+        key_kids = key_tags.get("kid", [])
+        key_kids = key_kids if isinstance(key_kids, list) else [key_kids]
+
+        try:
+            key_kids.remove(kid)
+        except ValueError:
+            pass
+
+        key_tags["kid"] = key_kids
+
+        await self._session.handle.update_key(name=verkey, tags=key_tags)
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
@@ -156,6 +210,8 @@ class AskarWallet(BaseWallet):
         )
         if len(key_entries) > 1:
             raise WalletDuplicateError(f"More than one key found by kid {kid}")
+        elif len(key_entries) < 1:
+            raise WalletNotFoundError(f"No key found for kid {kid}")
 
         entry = key_entries[0]
         key = cast(Key, entry.key)
@@ -190,10 +246,7 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key_entry.metadata or "{}")
 
-        try:
-            kid = key_entry.tags.get("kid")
-        except Exception:
-            kid = None
+        kid = key_entry.tags.get("kid", []) if key_entry.tags else []
 
         key = cast(Key, key_entry.key)
         key_types = self.session.inject(KeyTypes)
@@ -251,6 +304,13 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
+        LOGGER.debug(
+            "Creating local %s %s DID %s%s",
+            method.method_name,
+            key_type.key_type,
+            did or "",
+            " from seed" if seed else "",
+        )
         did_validation = DIDParametersValidation(self._session.context.inject(DIDMethods))
         did_validation.validate_key_type(method, key_type)
 
@@ -328,6 +388,7 @@ class AskarWallet(BaseWallet):
         Returns:
             The stored `DIDInfo`
         """
+        LOGGER.debug("Storing DID %s", did_info.did)
         try:
             item = await self._session.handle.fetch(
                 CATEGORY_DID, did_info.did, for_update=True
@@ -367,7 +428,7 @@ class AskarWallet(BaseWallet):
             A list of locally stored DIDs as `DIDInfo` instances
 
         """
-
+        LOGGER.debug("Getting local DIDs")
         ret = []
         for item in await self._session.handle.fetch_all(CATEGORY_DID):
             ret.append(self._load_did_entry(item))
@@ -387,7 +448,7 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
-
+        LOGGER.debug("Getting local DID for DID %s", did)
         if not did:
             raise WalletNotFoundError("No identifier provided")
         try:
@@ -411,7 +472,7 @@ class AskarWallet(BaseWallet):
             WalletNotFoundError: If the verkey is not found
 
         """
-
+        LOGGER.debug("Getting local DID for verkey %s", verkey)
         try:
             dids = await self._session.handle.fetch_all(CATEGORY_DID, {"verkey": verkey})
         except AskarError as err:
@@ -437,10 +498,12 @@ class AskarWallet(BaseWallet):
             metadata: The new metadata
 
         """
+        LOGGER.debug("Replacing metadata for DID %s with %s", did, metadata)
 
         try:
             item = await self._session.handle.fetch(CATEGORY_DID, did, for_update=True)
             if not item:
+                LOGGER.warning("DID %s not found when replacing metadata", did)
                 raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
             entry_val = item.value_json
             if entry_val["metadata"] != metadata:
@@ -449,6 +512,7 @@ class AskarWallet(BaseWallet):
                     CATEGORY_DID, did, value_json=entry_val, tags=item.tags
                 )
         except AskarError as err:
+            LOGGER.error("Error updating DID metadata: %s", err)
             raise WalletError("Error updating DID metadata") from err
 
     async def get_public_did(self) -> DIDInfo | None:
@@ -458,6 +522,7 @@ class AskarWallet(BaseWallet):
             The currently public `DIDInfo`, if any
 
         """
+        LOGGER.debug("Retrieving public DID")
         public_did = None
         public_info = None
         public_item = None
@@ -470,15 +535,18 @@ class AskarWallet(BaseWallet):
             # populate public DID record
             # this should only happen once, for an upgraded wallet
             # the 'public' metadata flag is no longer used
+            LOGGER.debug("No %s found, retrieving local DIDs", RECORD_NAME_PUBLIC_DID)
             dids = await self.get_local_dids()
             for info in dids:
                 if info.metadata.get("public"):
                     public_did = info.did
                     public_info = info
+                    LOGGER.debug("Public DID found: %s", public_did)
                     break
             try:
                 # even if public is not set, store a record
                 # to avoid repeated queries
+                LOGGER.debug("Adding %s record", RECORD_NAME_PUBLIC_DID)
                 await storage.add_record(
                     StorageRecord(
                         type=CATEGORY_CONFIG,
@@ -487,17 +555,23 @@ class AskarWallet(BaseWallet):
                     )
                 )
             except StorageDuplicateError:
-                # another process stored the record first
+                LOGGER.debug(
+                    "Another process stored the %s record first", RECORD_NAME_PUBLIC_DID
+                )
                 public_item = await storage.get_record(
                     CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID
                 )
         if public_item:
+            LOGGER.debug("Public DID storage record found")
             public_did = json.loads(public_item.value)["did"]
             if public_did:
                 try:
                     public_info = await self.get_local_did(public_did)
+                    LOGGER.debug("Public DID found in wallet: %s", public_did)
                 except WalletNotFoundError:
-                    pass
+                    LOGGER.debug("Public DID not found in wallet: %s", public_did)
+            else:
+                LOGGER.debug("DID not found in public DID storage record: %s", public_did)
 
         return public_info
 
@@ -527,6 +601,7 @@ class AskarWallet(BaseWallet):
         if not public or public.did != info.did:
             storage = AskarStorage(self._session)
             if not info.metadata.get("posted"):
+                LOGGER.debug("Setting posted flag for DID %s", info.did)
                 metadata = {**info.metadata, "posted": True}
                 if item:
                     entry_val = item.value_json
@@ -539,6 +614,7 @@ class AskarWallet(BaseWallet):
                 info = info._replace(
                     metadata=metadata,
                 )
+            LOGGER.debug("Updating public DID to %s", info.did)
             await storage.update_record(
                 StorageRecord(
                     type=CATEGORY_CONFIG,
@@ -549,6 +625,8 @@ class AskarWallet(BaseWallet):
                 tags=None,
             )
             public = info
+        else:
+            LOGGER.warning("Public DID is already set to %s", public.did)
 
         return public
 
@@ -585,6 +663,7 @@ class AskarWallet(BaseWallet):
             dict: The attribute definition if write_ledger is False, otherwise None.
 
         """
+        LOGGER.debug("Setting endpoint for DID %s to %s", did, endpoint)
         did_info = await self.get_local_did(did)
         if did_info.method not in (SOV, INDY):
             raise WalletError(
@@ -602,10 +681,12 @@ class AskarWallet(BaseWallet):
         ) or did_info.metadata.get("posted"):
             # if DID on ledger, set endpoint there first
             if not ledger:
+                LOGGER.error("No ledger available but DID %s is public", did)
                 raise LedgerConfigError(
                     f"No ledger available but DID {did} is public: missing wallet-type?"
                 )
             if not ledger.read_only:
+                LOGGER.debug("Updating endpoint for DID %s on ledger", did)
                 async with ledger:
                     attrib_def = await ledger.update_endpoint_for_did(
                         did,

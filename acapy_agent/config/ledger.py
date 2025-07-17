@@ -33,65 +33,73 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
         # https://github.com/openwallet-foundation/acapy/issues/1745
         return await fetch(genesis_url, headers=headers, max_attempts=20)
     except FetchError as e:
+        LOGGER.error("Error retrieving genesis transactions from %s: %s", genesis_url, e)
         raise ConfigError("Error retrieving ledger genesis transactions") from e
+
+
+async def fetch_genesis_from_url_or_file(
+    genesis_url: Optional[str], genesis_path: Optional[str]
+) -> str:
+    """Fetch genesis transactions from URL or file."""
+    txns = ""
+    if genesis_url:
+        txns = await fetch_genesis_transactions(genesis_url)
+    elif genesis_path:
+        try:
+            LOGGER.info("Reading ledger genesis transactions from: %s", genesis_path)
+            with open(genesis_path, "r") as genesis_file:
+                txns = genesis_file.read()
+        except IOError as e:
+            LOGGER.error("Failed to read genesis file: %s", str(e))
+            raise ConfigError("Error reading ledger genesis transactions") from e
+    else:
+        LOGGER.warning("No genesis url or path found in settings")
+    return txns
 
 
 async def get_genesis_transactions(settings: Settings) -> str:
     """Fetch genesis transactions if necessary."""
 
+    LOGGER.debug("Getting genesis transactions from settings")
     txns = settings.get("ledger.genesis_transactions")
+    LOGGER.debug("Genesis transactions from settings: %s", "found" if txns else "absent")
     if not txns:
-        if settings.get("ledger.genesis_url"):
-            txns = await fetch_genesis_transactions(settings["ledger.genesis_url"])
-        elif settings.get("ledger.genesis_file"):
-            try:
-                genesis_path = settings["ledger.genesis_file"]
-                LOGGER.info("Reading ledger genesis transactions from: %s", genesis_path)
-                with open(genesis_path, "r") as genesis_file:
-                    txns = genesis_file.read()
-            except IOError as e:
-                raise ConfigError("Error reading ledger genesis transactions") from e
+        LOGGER.debug("No genesis transactions found in settings")
+        genesis_url = settings.get("ledger.genesis_url")
+        genesis_path = settings.get("ledger.genesis_file")
+
+        txns = await fetch_genesis_from_url_or_file(genesis_url, genesis_path)
         if txns:
+            LOGGER.debug("Storing genesis transactions in settings")
             settings["ledger.genesis_transactions"] = txns
+
     return txns
 
 
-async def load_multiple_genesis_transactions_from_config(settings: Settings):
+async def load_multiple_genesis_transactions_from_config(settings: Settings) -> None:
     """Fetch genesis transactions for multiple ledger configuration."""
 
     ledger_config_list = settings.get("ledger.ledger_config_list")
     ledger_txns_list = []
     write_ledger_set = False
+
+    LOGGER.debug("Processing %d ledger configs", len(ledger_config_list))
     for config in ledger_config_list:
-        txns = None
-        if "genesis_transactions" in config:
-            txns = config.get("genesis_transactions")
+        txns = config.get("genesis_transactions")
+
         if not txns:
-            if "genesis_url" in config:
-                txns = await fetch_genesis_transactions(config.get("genesis_url"))
-            elif "genesis_file" in config:
-                try:
-                    genesis_path = config.get("genesis_file")
-                    LOGGER.info(
-                        "Reading ledger genesis transactions from: %s", genesis_path
-                    )
-                    with open(genesis_path, "r") as genesis_file:
-                        txns = genesis_file.read()
-                except IOError as e:
-                    raise ConfigError("Error reading ledger genesis transactions") from e
-        is_write_ledger = (
-            False if config.get("is_write") is None else config.get("is_write")
-        )
-        ledger_id = config.get("id") or str(uuid4())
+            genesis_url = config.get("genesis_url")
+            genesis_path = config.get("genesis_file")
+            txns = await fetch_genesis_from_url_or_file(genesis_url, genesis_path)
+
+        is_write_ledger = config.get("is_write", False)
         if is_write_ledger:
             write_ledger_set = True
+
+        ledger_id = config.get("id", str(uuid4()))  # Default to UUID if no ID provided
         config_item = {
             "id": ledger_id,
-            "is_production": (
-                True
-                if config.get("is_production") is None
-                else config.get("is_production")
-            ),
+            "is_production": config.get("is_production", True),
             "is_write": is_write_ledger,
             "genesis_transactions": txns,
             "keepalive": int(config.get("keepalive", 5)),
@@ -103,27 +111,37 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
             config_item["endorser_alias"] = config.get("endorser_alias")
         if "endorser_did" in config:
             config_item["endorser_did"] = config.get("endorser_did")
+
         ledger_txns_list.append(config_item)
-    if (
-        not write_ledger_set
-        and not settings.get("ledger.read_only")
-        and not (
-            settings.get("ledger.genesis_transactions")
-            or settings.get("ledger.genesis_file")
-            or settings.get("ledger.genesis_url")
-        )
-    ):
+
+    # Check if we have a writable ledger or genesis information
+    is_read_only = settings.get("ledger.read_only")
+    has_genesis_info = (
+        settings.get("ledger.genesis_transactions")
+        or settings.get("ledger.genesis_file")
+        or settings.get("ledger.genesis_url")
+    )
+
+    # Raise error if we have neither a writable ledger nor genesis info (unless read-only)
+    if not write_ledger_set and not is_read_only and not has_genesis_info:
         raise ConfigError(
-            "No is_write ledger set and no genesis_url,"
-            " genesis_file and genesis_transactions provided."
+            "No writable ledger configured and no genesis information provided. "
+            "Please set is_write=True for a ledger or provide genesis_url, "
+            "genesis_file, or genesis_transactions."
         )
+
     settings["ledger.ledger_config_list"] = ledger_txns_list
+    LOGGER.debug("Processed %d ledger configs successfully", len(ledger_txns_list))
 
 
 async def ledger_config(
     profile: Profile, public_did: str, provision: bool = False
 ) -> bool:
     """Perform Indy ledger configuration."""
+
+    LOGGER.debug(
+        "Configuring ledger for profile %s and public_did %s", profile.name, public_did
+    )
 
     session = await profile.session()
 
@@ -135,32 +153,48 @@ async def ledger_config(
     async with ledger:
         # Check transaction author agreement acceptance
         if not ledger.read_only:
+            LOGGER.debug("Checking transaction author agreement")
             taa_info = await ledger.get_txn_author_agreement()
             if taa_info["taa_required"] and public_did:
+                LOGGER.debug("TAA acceptance required")
                 taa_accepted = await ledger.get_latest_txn_author_acceptance()
-                if (
-                    not taa_accepted
-                    or taa_info["taa_record"]["digest"] != taa_accepted["digest"]
-                ):
+
+                taa_record_digest = taa_info["taa_record"]["digest"]  # keys exist
+                taa_accepted_digest = taa_accepted.get("digest")  # key might not exist
+
+                digest_match = taa_record_digest == taa_accepted_digest
+                if not taa_accepted or not digest_match:
+                    LOGGER.info("TAA acceptance needed - performing acceptance")
                     if not await accept_taa(ledger, profile, taa_info, provision):
+                        LOGGER.warning("TAA acceptance failed")
                         return False
+                    LOGGER.info("TAA acceptance completed")
 
         # Publish endpoints if necessary - skipped if TAA is required but not accepted
         endpoint = session.settings.get("default_endpoint")
         if public_did:
             wallet = session.inject(BaseWallet)
             try:
+                LOGGER.debug("Setting DID endpoint to: %s", endpoint)
                 await wallet.set_did_endpoint(public_did, endpoint, ledger)
             except LedgerError as x_ledger:
+                LOGGER.error("Error setting DID endpoint: %s", x_ledger.message)
                 raise ConfigError(x_ledger.message) from x_ledger  # e.g., read-only
 
             # Publish profile endpoint if ledger is NOT read-only
             profile_endpoint = session.settings.get("profile_endpoint")
             if profile_endpoint and not ledger.read_only:
+                LOGGER.debug(
+                    "Publishing profile endpoint: %s for DID: %s",
+                    profile_endpoint,
+                    public_did,
+                )
                 await ledger.update_endpoint_for_did(
                     public_did, profile_endpoint, EndpointType.PROFILE
                 )
+                LOGGER.info("Profile endpoint published successfully")
 
+    LOGGER.info("Ledger configuration complete")
     return True
 
 
@@ -262,10 +296,10 @@ async def accept_taa(
             )
 
         if taa_acceptance_mechanism not in mechanisms:
+            valid_mechanisms = ", ".join(mechanisms.keys())
             raise LedgerError(
                 f"TAA acceptance mechanism '{taa_acceptance_mechanism}' is not a "
-                "valid acceptance mechanism. Valid mechanisms are: "
-                + str(list(mechanisms.keys()))
+                f"valid acceptance mechanism. Valid mechanisms are: {valid_mechanisms}"
             )
 
         mechanism = taa_acceptance_mechanism

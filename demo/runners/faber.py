@@ -522,7 +522,7 @@ async def main(args):
             if option is not None:
                 option = option.strip()
 
-            # Anoncreds has different endpoints for revocation
+            # AnonCreds has different endpoints for revocation
             is_anoncreds = False
             if (
                 faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds"
@@ -679,12 +679,14 @@ async def main(args):
                     "/present-proof-2.0/create-request", proof_request_web_request
                 )
                 pres_req_id = proof_request["pres_ex_id"]
-                url = (
-                    "http://"
-                    + os.getenv("DOCKERHOST").replace(
-                        "{PORT}", str(faber_agent.agent.admin_port + 1)
-                    )
-                    + "/webhooks/pres_req/"
+                url = ((os.getenv("WEBHOOK_TARGET") or (
+                        "http://"
+                        + os.getenv("DOCKERHOST").replace(
+                            "{PORT}", str(faber_agent.agent.admin_port + 1)
+                        )
+                        + "/webhooks"
+                        ))
+                    + "/pres_req/"
                     + pres_req_id
                     + "/"
                 )

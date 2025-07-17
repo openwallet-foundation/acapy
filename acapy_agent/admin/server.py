@@ -30,6 +30,7 @@ from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils import general as general_utils
 from ..utils.extract_validation_error import extract_validation_error_message
+from ..utils.server import remove_unwanted_headers
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
@@ -65,7 +66,7 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::keylist::updated": "keylist",
 }
 
-anoncreds_wallets = singletons.IsAnoncredsSingleton().wallets
+anoncreds_wallets = singletons.IsAnonCredsSingleton().wallets
 in_progress_upgrades = singletons.UpgradeInProgressSingleton()
 
 status_paths = ("/status/live", "/status/ready")
@@ -191,6 +192,10 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
 @web.middleware
 async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
     """Blocking middleware for upgrades."""
+    # Skip upgrade check for status checks
+    if str(request.rel_url).startswith("/status/"):
+        return await handler(request)
+
     context: AdminRequestContext = request["context"]
 
     # Already upgraded
@@ -226,11 +231,14 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
 async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     """Show request detail in debug log."""
 
-    if LOGGER.isEnabledFor(logging.DEBUG):
-        LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
-        LOGGER.debug(f"Match info: {request.match_info}")
-        body = await request.text() if request.body_exists else None
-        LOGGER.debug(f"Body: {body}")
+    if LOGGER.isEnabledFor(logging.DEBUG):  # Skipped if DEBUG is not enabled
+        LOGGER.debug("Incoming request: %s %s", request.method, request.path_qs)
+        is_status_check = str(request.rel_url).startswith("/status/")
+        if not is_status_check:  # Don't log match info for status checks; reduces noise
+            LOGGER.debug("Match info: %s", request.match_info)
+
+            if request.body_exists:  # Only log body if it exists
+                LOGGER.debug("Body: %s", await request.text())
 
     return await handler(request)
 
@@ -386,6 +394,8 @@ class AdminServer(BaseAdminServer):
             web.get("/ws", self.websocket_handler, allow_head=False),
         ]
         app.add_routes(server_routes)
+
+        app.on_response_prepare.append(remove_unwanted_headers)
 
         plugin_registry = self.context.inject_or(PluginRegistry)
         if plugin_registry:

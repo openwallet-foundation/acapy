@@ -21,7 +21,7 @@ from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_info import DIDInfo, INVITATION_REUSE_KEY
+from ....wallet.did_info import INVITATION_REUSE_KEY, DIDInfo
 from ....wallet.did_method import PEER2, PEER4
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519
@@ -311,16 +311,19 @@ class InvitationCreator:
             connection_protocol=connection_protocol,
         )
 
+        LOGGER.debug("Creating connection record for invitation %s", self.msg_id)
         async with self.profile.transaction() as session:
             await conn_rec.save(session, reason="Created new invitation")
             await conn_rec.attach_invitation(session, msg)
 
             if self.metadata:
+                LOGGER.debug("Setting metadata for connection %s", conn_rec.connection_id)
                 for key, value in self.metadata.items():
                     await conn_rec.metadata_set(session, key, value)
 
             await session.commit()
 
+        LOGGER.debug("Routing invitation %s", conn_rec.connection_id)
         await self.route_manager.route_invitation(
             self.profile, conn_rec, mediation_record
         )
@@ -344,6 +347,7 @@ class InvitationCreator:
         mediation_record: Optional[MediationRecord],
     ) -> CreateResult:
         """Handle use_did invitation creation."""
+        LOGGER.debug("Handling invitation using DID %s", did_info.did)
         invi_msg = InvitationMessage(
             _id=self.msg_id,
             label=self.my_label,
@@ -360,12 +364,17 @@ class InvitationCreator:
         invi_url = invi_msg.to_url(endpoint)
 
         if self.handshake_protocols:
+            LOGGER.debug(
+                "Handshake protocols given: %s. Creating connection",
+                self.handshake_protocols,
+            )
             conn_rec = await self.handle_handshake_protos(
                 did_info.verkey, invi_msg, mediation_record
             )
             our_service = None
         else:
             conn_rec = None
+            LOGGER.debug("No handshake protocols. Routing verkey %s", did_info.verkey)
             await self.route_manager.route_verkey(
                 self.profile, did_info.verkey, mediation_record
             )
@@ -402,6 +411,7 @@ class InvitationCreator:
                 "Cannot create public invitation with no public DID"
             )
 
+        LOGGER.debug("Public DID found: %s", public_did.did)
         if bool(IndyDID.PATTERN.match(public_did.did)):
             public_did = DIDInfo(
                 did=f"did:sov:{public_did.did}",
@@ -479,6 +489,7 @@ class InvitationCreator:
         mediation_record: Optional[MediationRecord],
     ) -> CreateResult:
         """Create an invitation using legacy bare public key and inline service."""
+        LOGGER.debug("Handling legacy invitation")
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             connection_key = await wallet.create_signing_key(ED25519)
@@ -522,11 +533,15 @@ class InvitationCreator:
         )
 
         if self.handshake_protocols:
+            LOGGER.debug("Handshake protocols given: %s", self.handshake_protocols)
             conn_rec = await self.handle_handshake_protos(
                 connection_key.verkey, invi_msg, mediation_record
             )
             our_service = None
         else:
+            LOGGER.debug(
+                "No handshake protocols. Routing verkey %s", connection_key.verkey
+            )
             await self.route_manager.route_verkey(
                 self.profile, connection_key.verkey, mediation_record
             )
@@ -673,6 +688,7 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
+                LOGGER.debug("Getting mediation record for %s", mediation_id)
                 await self._route_manager.mediation_record_if_id(
                     self.profile, mediation_id
                 )
@@ -715,8 +731,8 @@ class OutOfBandManager(BaseConnectionManager):
                 search_public_did = public_did
 
             LOGGER.debug(
-                "Trying to find existing connection for oob invitation with "
-                f"did {search_public_did}"
+                "Trying to find existing connection for oob invitation with did %s",
+                search_public_did,
             )
 
             async with self._profile.session() as session:
@@ -739,7 +755,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
             LOGGER.warning(
-                f"Connection reuse request finished with state {oob_record.state}"
+                "Connection reuse request finished with state %s", oob_record.state
             )
 
             if oob_record.state == OobRecord.STATE_ACCEPTED:
@@ -760,7 +776,7 @@ class OutOfBandManager(BaseConnectionManager):
                 service_accept=service_accept,
             )
             LOGGER.debug(
-                f"Performed handshake with connection {oob_record.connection_id}"
+                "Performed handshake with connection %s", oob_record.connection_id
             )
             # re-fetch connection record
             async with self.profile.session() as session:
@@ -784,8 +800,9 @@ class OutOfBandManager(BaseConnectionManager):
         # Handle any attachments
         if invitation.requests_attach:
             LOGGER.debug(
-                f"Process attached messages for oob exchange {oob_record.oob_id} "
-                f"(connection_id {oob_record.connection_id})"
+                "Process attached messages for oob exchange %s (connection_id %s)",
+                oob_record.oob_id,
+                oob_record.connection_id,
             )
 
             # FIXME: this should ideally be handled using an event handler. Once the
@@ -926,7 +943,7 @@ class OutOfBandManager(BaseConnectionManager):
                     ]:
                         return oob_record
 
-                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted message")
+                LOGGER.debug("Wait for oob %s to receive reuse accepted message", oob_id)
                 event = await await_event
                 LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
@@ -950,7 +967,7 @@ class OutOfBandManager(BaseConnectionManager):
             "^acapy::record::connections::(active|completed|response)$"
         )
 
-        LOGGER.debug(f"Wait for connection {connection_id} to become active")
+        LOGGER.debug("Wait for connection %s to become active", connection_id)
 
         async def _wait_for_state() -> ConnRecord:
             event = self.profile.inject(EventBus)
@@ -967,7 +984,7 @@ class OutOfBandManager(BaseConnectionManager):
                     if conn_record.is_ready:
                         return conn_record
 
-                LOGGER.debug(f"Wait for connection {connection_id} to become active")
+                LOGGER.debug("Wait for connection %s to become active", connection_id)
                 # Wait for connection record to be in state
                 event = await await_event
                 return ConnRecord.deserialize(event.payload)
@@ -979,7 +996,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         except asyncio.TimeoutError:
-            LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
+            LOGGER.warning("Connection for connection_id %s not ready", connection_id)
             return None
 
     async def _handle_handshake_reuse(
@@ -993,8 +1010,10 @@ class OutOfBandManager(BaseConnectionManager):
         # Wait for the reuse accepted message
         oob_record = await self._wait_for_reuse_response(oob_record.oob_id)
         LOGGER.debug(
-            f"Oob reuse for oob id {oob_record.oob_id} with connection "
-            f"{oob_record.connection_id} finished with state {oob_record.state}"
+            "Oob reuse for oob id %s with connection %s finished with state %s",
+            oob_record.oob_id,
+            oob_record.connection_id,
+            oob_record.state,
         )
 
         if oob_record.state != OobRecord.STATE_ACCEPTED:
@@ -1079,9 +1098,9 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         if public_did:
-            LOGGER.debug(f"Creating connection with public did {public_did}")
+            LOGGER.debug("Creating connection with public did %s", public_did)
         else:
-            LOGGER.debug(f"Creating connection with service {service}")
+            LOGGER.debug("Creating connection with service %s", service)
 
         conn_record = None
         for protocol in supported_handshake_protocols:

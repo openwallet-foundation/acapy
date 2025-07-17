@@ -3,7 +3,7 @@
 ## Maintainer Scopes, GitHub Roles and GitHub Teams
 
 The Maintainers of this repo, defined as GitHub users with escalated privileges
-in the repo, are managed in the Hyperledger "governance" repo's [access-control.yaml](https://github.com/openwallet-foundation/governance/blob/main/config.yaml) file. Consult that to see:
+in the repo, are managed in the OpenWallet Foundation "governance" repo's [access-control.yaml](https://github.com/openwallet-foundation/governance/blob/main/config.yaml) file. Consult that to see:
 
 - What teams have escalated privileges to this repository.
 - What GitHub roles those teams have in the repository.
@@ -29,10 +29,10 @@ Maintainers are expected to perform the following duties for this repository. Th
 - Maintain the repository CONTRIBUTING.md file and getting started documents to
   give guidance and encouragement to those wanting to contribute to the product, and those wanting to become maintainers.
 - Contribute to the product via GitHub Pull Requests.
-- Monitor requests from the Hyperledger Technical Oversight Committee about the
-contents and management of Hyperledger repositories, such as branch handling,
+- Monitor requests from the OpenWallet Foundation Technical Advisory Council about the
+contents and management of [OpenWallet Foundation](https://github.com/openwallet-foundation) repositories, such as branch handling,
 required files in repositories and so on.
-- Contribute to the Hyperledger Project's Quarterly Report.
+- Contribute to the ACA-Py Project's Annual Reports to the OpenWallet Foundation Technical Advisory Council.
 
 ## Becoming a Maintainer
 
@@ -54,7 +54,7 @@ occur, roughly in order.
   - Two weeks have passed since at least three (3) Maintainer issue approvals have been recorded, OR
   - An absolute majority of maintainers have approved the issue.
 - If the issue does not get the requisite approvals, it may be closed.
-- Once the add maintainer issue has been approved, the necessary updates to the GitHub Teams are made via a PR to the Hyperledger "governance" repo's [access-control.yaml](https://github.com/hyperledger/governance/blob/main/access-control.yaml) file.
+- Once the add maintainer issue has been approved, the necessary updates to the GitHub Teams are made via a PR to the OpenWallet Foundation "governance" repo's [access-control.yaml](https://github.com/openwallet-foundation/governance/blob/main/config.yaml) file.
 
 ## Removing Maintainers
 
@@ -76,7 +76,7 @@ The process to move a maintainer from active to emeritus status is comparable to
 resignation, the Pull Request can be merged following a maintainer issue approval. If the removal is for any other reason, the following steps **SHOULD** be followed:
 
 - An issue is created to move the maintainer to the list of emeritus maintainers.
-- The issue is authored by, or has a comment supporting the proposal from, an existing maintainer or Hyperledger GitHub organization administrator.
+- The issue is authored by, or has a comment supporting the proposal from, an existing maintainer or OpenWallet Foundation GitHub organization administrator.
 - Once the issue and necessary comments have been received, the approval timeframe begins.
 - The issue **MAY** be communicated on appropriate communication channels, including relevant community calls, chat channels and mailing lists.
 - The issue is approved and the maintainer transitions to maintainer emeritus if:
@@ -84,7 +84,7 @@ resignation, the Pull Request can be merged following a maintainer issue approva
   - Two weeks have passed since at least three (3) Maintainer issue approvals have been recorded, OR
   - An absolute majority of maintainers have approved the issue.
 - If the issue does not get the requisite approvals, it may be closed.
-- Once the remove maintainer issue has been approved, the necessary updates to the GitHub Teams are made via a PR to the Hyperledger "governance" repo's [access-control.yaml](https://github.com/hyperledger/governance/blob/main/access-control.yaml) file.
+- Once the remove maintainer issue has been approved, the necessary updates to the GitHub Teams are made via a PR to the OpenWallet Foundation "governance" repo's [access-control.yaml](https://github.com/openwallet-foundation/governance/blob/main/config.yaml) file.
 
 Returning to active status from emeritus status uses the same steps as adding a
 new maintainer. Note that the emeritus maintainer already has the 5 required

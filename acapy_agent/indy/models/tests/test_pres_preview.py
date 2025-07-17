@@ -5,9 +5,7 @@ from unittest import TestCase
 
 import pytest
 
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ....messaging.util import canon
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
@@ -369,6 +367,7 @@ class TestIndyPresPreviewAsync:
 
         assert indy_proof_req == INDY_PROOF_REQ_ATTR_NAMES
 
+    @pytest.mark.asyncio
     async def test_to_indy_proof_request_self_attested(self):
         """Test presentation preview to indy proof request with self-attested values."""
 

@@ -1,0 +1,86 @@
+# This Action will run when a release is published from the LTS branches 
+# and create new LTS tag, release and publish the image in GHCR
+
+name: Tag and Recreate LTS Release
+
+on:
+  release:
+    types: [published]
+      
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  recreate-lts-release:
+    # This job is disabled by default for main, should be enabled for LTS branches and tags.
+    # To enable it, you can set the condition in the `if` statement below.
+    # The condition should check if the release tag starts with the LTS version prefix.
+    # For example, if your LTS versions are prefixed with '1.2.', you can use:
+    #   if: startsWith(github.event.release.tag_name, '1.2.')
+    # This will ensure that the job only runs for releases that are tagged with LTS versions.
+    if: false 
+    name: Recreate LTS Release
+    runs-on: ubuntu-latest
+    outputs:
+      lts_tag: ${{ steps.vars.outputs.LTS_TAG }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git identity
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Determine LTS tag and update
+        id: vars
+        env:
+          BRANCH_REF: ${{ github.event.release.target_commitish }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          echo "Release published from branch: $BRANCH_REF"
+
+          # Creating a LTS tag from the branch name
+          SHORT_TAG=$(echo "$RELEASE_TAG" | cut -d. -f1,2)
+          LTS_TAG="${SHORT_TAG}-lts"
+          echo "LTS_TAG=$LTS_TAG" >> "$GITHUB_OUTPUT"
+
+          # Force update the tag to the current commit
+          git tag -f "$LTS_TAG" $GITHUB_SHA
+          git push origin -f "$LTS_TAG" 
+
+          # Write release notes into env (for multiline input)
+          echo "RELEASE_BODY<<EOF" >> "$GITHUB_ENV"
+          echo "${RELEASE_BODY}" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+
+      - name: Delete existing LTS release (if any)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
+        run: |
+          echo "Trying to delete existing release for $LTS_TAG"
+          gh release delete "$LTS_TAG" -y
+
+      - name: Create fresh LTS release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
+          RELEASE_BODY: ${{ env.RELEASE_BODY }}
+        run: |
+          echo "Creating new GitHub release for $LTS_TAG"
+          gh release create "$LTS_TAG" --title "$LTS_TAG" --notes "$RELEASE_BODY"
+  
+  call-publish-image:
+    name: Publish LTS Image in GHCR
+    needs: recreate-lts-release
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: ${{ needs.recreate-lts-release.outputs.lts_tag }}
+      ref: ${{ github.event.release.tag_name }}

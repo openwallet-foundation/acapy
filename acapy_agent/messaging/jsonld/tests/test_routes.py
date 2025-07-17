@@ -3,6 +3,7 @@ from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
+import pytest_asyncio
 from aiohttp import web
 from pyld import jsonld
 
@@ -11,7 +12,7 @@ from ....config.base import InjectionError
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....tests import mock
-from ....utils.testing import create_test_profile
+from ....utils.testing import create_test_profile, skip_on_jsonld_url_error
 from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.error import WalletError
@@ -81,7 +82,7 @@ def mock_verify_credential():
     test_module.verify_credential = temp
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def mock_sign_request(mock_sign_credential):
     profile = await create_test_profile(
         settings={
@@ -139,7 +140,7 @@ def request_body():
     }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
     profile = await create_test_profile(
         settings={
@@ -307,6 +308,7 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
         # Ensure the event loop is closed
         await self.profile.close()
 
+    @skip_on_jsonld_url_error
     async def test_verify_credential(self):
         POSTED_REQUEST = {  # posted json
             "verkey": (
@@ -438,6 +440,7 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.verify(self.request)
 
+    @skip_on_jsonld_url_error
     async def test_sign_credential(self):
         POSTED_REQUEST = {  # posted json
             "verkey": self.did_info.verkey,

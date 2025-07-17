@@ -9,6 +9,11 @@ on:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -26,12 +31,12 @@ jobs:
       is_release: ${{ steps.check_if_release.outputs.is_release }}
     steps:
       - name: checkout-acapy
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Check changed files
         id: check-changed-files
-        uses: tj-actions/changed-files@v46.0.3
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         with:
           files_yaml: |
             src: 
@@ -52,7 +57,7 @@ jobs:
         id: check_if_release
       - name: Request GitHub API for PR data
         if: steps.check-if-src-changed.outputs.run_tests != 'false'
-        uses: octokit/request-action@v2.x
+        uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         id: get_pr_data
@@ -84,7 +89,7 @@ jobs:
         run: |
           cd owl-agent-test-harness
           NO_TTY=1 LEDGER_URL_CONFIG=http://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Anoncreds >> output.txt
-      - name: Run Release or Nightly Interop Tests Anoncreds
+      - name: Run Release or Nightly Interop Tests AnonCreds
         if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd owl-agent-test-harness

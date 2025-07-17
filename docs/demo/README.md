@@ -24,7 +24,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Mediation](#mediation)
   - [Multi-ledger](#multi-ledger)
   - [Multi-tenancy](#multi-tenancy)
-  - [Multi-tenancy *with Mediation*!!!](#multi-tenancy-with-mediation)
+  - [Multi-tenancy *with Mediation*](#multi-tenancy-with-mediation)
 - [Other Environment Settings](#other-environment-settings)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
@@ -120,7 +120,7 @@ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432
 
 #### Optional: Run a von-network ledger browser
 
-If you followed our advice and are using a VON Network instance of Hyperledger Indy, you can ignore this section, as you already have a Ledger browser running, accessible on http://localhost:9000.
+If you followed our advice and are using a VON Network instance of Hyperledger Indy, you can ignore this section, as you already have a Ledger browser running, accessible on `http://localhost:9000`.
 
  If you started the Indy ledger **without** using VON Network, and you want to be able to browse your local ledger as you run the demo, clone the [von-network](https://github.com/bcgov/von-network) repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger.
 
@@ -169,7 +169,7 @@ With both the Alice and Faber agents started, go to the Faber terminal window. T
 
 Faber:
 
-```
+``` text
     (1) Issue Credential
     (1a) Set Credential Type (indy)
     (2) Send Proof Request
@@ -181,7 +181,7 @@ Faber:
 
 Alice:
 
-```
+``` text
     (3) Send Message
     (4) Input New Invitation
     (X) Exit?
@@ -205,7 +205,7 @@ You can enable support for various ACA-Py features by providing additional comma
 
 Note that when the controller starts up the agent, it prints out the ACA-Py startup command with *all* parameters - you can inspect this command to see what parameters are provided in each case.  For more details on the parameters, just start ACA-Py with the `--help` parameter, for example:
 
-```
+``` bash
 ./scripts/run_docker start --help
 ```
 
@@ -223,7 +223,7 @@ You need to run an AnonCreds revocation registry tails server in order to suppor
 
 Faber will setup support for revocation automatically, and you will see an extra option in faber's menu to revoke a credential:
 
-```
+``` text
     (1) Issue Credential
     (1a) Set Credential Type (indy)
     (2) Send Proof Request
@@ -235,18 +235,18 @@ Faber will setup support for revocation automatically, and you will see an extra
     (8) List Revocation Registries
     (T) Toggle tracing on credential/proof exchange
     (X) Exit?
-  ```
+```
 
 When you issue a credential, make a note of the `Revocation registry ID` and `Credential revocation ID`:
 
-```
+``` text
 Faber      | Revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
 Faber      | Credential revocation ID: 1
 ```
 
 When you revoke a credential you will need to provide those values:
 
-```
+``` text
 [1/2/3/4/5/6/7/8/T/X] 5
 
 Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
@@ -282,7 +282,7 @@ This is described in [Endorser.md](Endorser.md)
 
 To enable mediation, run the `alice` or `faber` demo with the `--mediation` option:
 
-```bash
+``` bash
 ./run_demo faber --mediation
 ```
 
@@ -292,7 +292,7 @@ This will start up a "mediator" agent with Alice or Faber and automatically set 
 
 To enable multiple ledger mode, run the `alice` or `faber` demo with the `--multi-ledger` option:
 
-```bash
+``` bash
 ./run_demo faber --multi-ledger
 ```
 
@@ -302,7 +302,7 @@ The configuration file for setting up multiple ledgers (for the demo) can be fou
 
 To enable support for multi-tenancy, run the `alice` or `faber` demo with the `--multitenant` option:
 
-```bash
+``` bash
 ./run_demo faber --multitenant
 ```
 
@@ -312,7 +312,7 @@ You will see an additional menu option to create new sub-wallets (or they can be
 
 Faber:
 
-```
+``` text
     (1) Issue Credential
     (1a) Set Credential Type (indy)
     (2) Send Proof Request
@@ -325,7 +325,7 @@ Faber:
 
 Alice:
 
-```
+``` text
     (3) Send Message
     (4) Input New Invitation
     (W) Create and/or Enable Wallet
@@ -334,7 +334,7 @@ Alice:
 
 When you create a new wallet, you just need to provide the wallet name. (If you provide the name of an existing wallet then the controller will "activate" that wallet and make it the current wallet.)
 
-```
+``` text
 [1/2/3/4/W/T/X] w
 
 Enter wallet name: new_wallet_12
@@ -353,7 +353,7 @@ Once you have created a new wallet, you must establish a connection between `ali
 
 In faber, create a new invitation:
 
-```
+``` text
 [1/2/3/4/W/T/X] 4
 
 (... creates a new invitation ...)
@@ -361,7 +361,7 @@ In faber, create a new invitation:
 
 In alice, accept the invitation:
 
-```
+``` text
 [1/2/3/4/W/T/X] 4
 
 (... enter the new invitation string ...)
@@ -383,7 +383,7 @@ Note that with multi-tenancy enabled:
 
 Documentation on ACA-Py's multi-tenancy support can be found [here](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/Multitenancy.md).
 
-### Multi-tenancy *with Mediation*!!!
+### Multi-tenancy *with Mediation*
 
 There are two options for configuring mediation with multi-tenancy, documented [here](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/Multitenancy.md#mediation).
 
@@ -391,7 +391,7 @@ This demo implements option #2 - each sub-wallet is configured with a separate c
 
 Run the demo (Alice or Faber) specifying *both* options:
 
-```bash
+``` bash
 ./run_demo faber --multitenant --mediation
 ```
 
@@ -403,7 +403,7 @@ The agents run on a pre-defined set of ports, however occasionally your local sy
 
 To override the default port settings:
 
-```bash
+``` bash
 AGENT_PORT_OVERRIDE=8010 ./run_demo faber
 ```
 
@@ -411,19 +411,21 @@ AGENT_PORT_OVERRIDE=8010 ./run_demo faber
 
 To pass extra arguments to the agent (for example):
 
-```bash
+``` bash
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --did-exchange --reuse-connections
 ```
 
 Additionally, separating the build and run functionalities in the script allows for smoother development and debugging processes. With the mounting of volumes from the host into the Docker container, code changes can be automatically reloaded without the need to repeatedly build the demo.
 
 Build Command:
-```bash
+
+``` bash
 ./demo/run_demo build alice --wallet-type askar-anoncreds --events
 ```
 
 Run Command:
-```bash
+
+``` bash
 ./demo/run_demo run alice --wallet-type askar-anoncreds --events
 ```
 
@@ -443,8 +445,8 @@ Another example in the `demo/runners` folder is [performance.py](https://github.
 
 To run the demo, make sure that you shut down any running Alice/Faber agents. Then, follow the same steps to start the Alice/Faber demo, but:
 
-* When starting the first agent, replace the agent name (e.g. `faber`) with `performance`.
-* Don't start the second agent (`alice`) at all.
+- When starting the first agent, replace the agent name (e.g. `faber`) with `performance`.
+- Don't start the second agent (`alice`) at all.
 
 The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
 
@@ -452,7 +454,7 @@ A second version of the performance test can be run by adding the parameter `--r
 
 You can also run the demo against a postgres database using the following:
 
-```bash
+``` bash
 ./run_demo performance --arg-file demo/postgres-indy-args.yml
 ```
 
@@ -462,13 +464,13 @@ You can tweak the number of credentials issued using the `--count` and `--batch`
 
 An example full set of options is:
 
-```bash
+``` bash
 ./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type askar
 ```
 
 Or:
 
-```bash
+``` bash
 ./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type indy
 ```
 
@@ -476,13 +478,13 @@ Or:
 
 Now that you have a solid foundation in using ACA-Py, time for a coding challenge. In this challenge, we extend the Alice-Faber command line demo by adding in ACME Corp, a place where Alice wants to work. The demo adds:
 
-* ACME inviting Alice to connect
-* ACME requesting a proof of her College degree
-* ACME issuing Alice a credential after she is hired.
+- ACME inviting Alice to connect
+- ACME requesting a proof of her College degree
+- ACME issuing Alice a credential after she is hired.
 
 The framework for the code is in the [acme.py](https://github.com/openwallet-foundation/acapy/tree/main/demo/runners/acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
 
-* Use the instructions above to start the Alice/Faber demo (above).
-* Start another terminal session and run the same commands as for "Alice", but replace "alice" with "acme".
+- Use the instructions above to start the Alice/Faber demo (above).
+- Start another terminal session and run the same commands as for "Alice", but replace "alice" with "acme".
 
 All done? Checkout how we added the missing code segments [here](AcmeDemoWorkshop.md).

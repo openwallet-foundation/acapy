@@ -13,9 +13,9 @@ from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import (
     BbsBlsSignature2020,
+    EcdsaSecp256r1Signature2019,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    EcdsaSecp256r1Signature2019,
 )
 from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
@@ -28,12 +28,7 @@ from ....dif.pres_proposal_schema import DIFProofProposalSchema
 from ....dif.pres_request_schema import DIFPresSpecSchema, DIFProofRequestSchema
 from ....dif.pres_schema import DIFProofSchema
 from ....v2_0.messages.pres_problem_report import ProblemReportReason
-from ...message_types import (
-    ATTACHMENT_FORMAT,
-    PRES_20,
-    PRES_20_PROPOSAL,
-    PRES_20_REQUEST,
-)
+from ...message_types import ATTACHMENT_FORMAT, PRES_20, PRES_20_PROPOSAL, PRES_20_REQUEST
 from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord

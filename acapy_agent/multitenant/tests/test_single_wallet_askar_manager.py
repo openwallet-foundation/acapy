@@ -123,11 +123,11 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
                 "acapy_agent.multitenant.single_wallet_askar_manager.wallet_config"
             ) as wallet_config,
             mock.patch(
-                "acapy_agent.multitenant.single_wallet_askar_manager.AskarAnoncredsProfile",
-            ) as AskarAnoncredsProfile,
+                "acapy_agent.multitenant.single_wallet_askar_manager.AskarAnonCredsProfile",
+            ) as AskarAnonCredsProfile,
         ):
             sub_wallet_profile_context = InjectionContext()
-            sub_wallet_profile = AskarAnoncredsProfile(None, None)
+            sub_wallet_profile = AskarAnonCredsProfile(None, None)
             sub_wallet_profile.context.copy.return_value = sub_wallet_profile_context
 
             def side_effect(context, provision):
@@ -138,7 +138,7 @@ class TestSingleWalletAskarMultitenantManager(IsolatedAsyncioTestCase):
 
             await self.manager.get_wallet_profile(self.profile.context, wallet_record)
 
-            AskarAnoncredsProfile.assert_called_with(
+            AskarAnonCredsProfile.assert_called_with(
                 sub_wallet_profile.opened, sub_wallet_profile_context, profile_id="test"
             )
 

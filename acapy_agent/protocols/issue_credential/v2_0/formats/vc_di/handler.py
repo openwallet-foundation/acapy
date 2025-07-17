@@ -48,14 +48,14 @@ from ...models.detail.indy import V20CredExRecordIndy
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 from .models.cred import VCDIIndyCredentialSchema
 from .models.cred_offer import (
-    AnoncredsLinkSecret,
+    AnonCredsLinkSecret,
     BindingMethod,
     DidcommSignedAttachment,
     VCDICredAbstract,
     VCDICredAbstractSchema,
 )
 from .models.cred_request import (
-    AnoncredsLinkSecretRequest,
+    AnonCredsLinkSecretRequest,
     BindingProof,
     DidcommSignedAttachmentRequest,
     VCDICredRequest,
@@ -262,7 +262,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             issuance_date=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
 
-        anoncreds_link_secret_instance = AnoncredsLinkSecret(
+        anoncreds_link_secret_instance = AnonCredsLinkSecret(
             cred_def_id=cred_offer["cred_def_id"],
             key_correctness_proof=cred_offer["key_correctness_proof"],
             nonce=cred_offer["nonce"],
@@ -380,7 +380,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             entropy = cred_req_result["request"]["prover_did"]
         else:
             entropy = cred_req_result["request"]["entropy"]
-        anoncreds_link_secret_instance = AnoncredsLinkSecretRequest(
+        anoncreds_link_secret_instance = AnonCredsLinkSecretRequest(
             entropy=entropy,
             cred_def_id=cred_req_result["request"]["cred_def_id"],
             blinded_ms=cred_req_result["request"]["blinded_ms"],

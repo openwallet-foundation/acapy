@@ -1,4 +1,4 @@
-"""Anoncreds verifier implementation."""
+"""AnonCreds verifier implementation."""
 
 import asyncio
 import logging
@@ -199,9 +199,11 @@ class AnonCredsVerifier:
                                 f"{uuid}"
                             )
                             LOGGER.info(
-                                f"Timestamp {timestamp} from ledger for item"
-                                f"{uuid} falls outside non-revocation interval "
-                                f"{non_revoc_intervals[uuid]}"
+                                "Timestamp %s from ledger for item %s falls outside "
+                                "non-revocation interval %s",
+                                timestamp,
+                                uuid,
+                                non_revoc_intervals[uuid],
                             )
                 elif uuid in unrevealed_attrs:
                     # nothing to do, attribute value is not revealed
@@ -236,10 +238,12 @@ class AnonCredsVerifier:
                         msgs.append(
                             f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::{uuid}"
                         )
-                        LOGGER.warning(
-                            f"Timestamp {timestamp} from ledger for item"
-                            f"{uuid} falls outside non-revocation interval "
-                            f"{non_revoc_intervals[uuid]}"
+                        LOGGER.info(
+                            "Timestamp %s from ledger for item %s falls outside "
+                            "non-revocation interval %s",
+                            timestamp,
+                            uuid,
+                            non_revoc_intervals[uuid],
                         )
 
         for uuid, req_pred in pres_req["requested_predicates"].items():
@@ -428,12 +432,12 @@ class AnonCredsVerifier:
 
     async def verify_presentation(
         self,
-        pres_req,
-        pres,
-        schemas,
-        credential_definitions,
-        rev_reg_defs,
-        rev_lists,
+        pres_req: dict,
+        pres: dict,
+        schemas: dict,
+        credential_definitions: dict,
+        rev_reg_defs: dict,
+        rev_lists: dict,
     ) -> Tuple[bool, list]:
         """Verify a presentation.
 
@@ -490,7 +494,7 @@ class AnonCredsVerifier:
         return (verified, msgs)
 
     async def verify_presentation_w3c(
-        self, pres_req, pres, cred_metadata
+        self, pres_req: dict, pres: dict, cred_metadata: list
     ) -> PresentationVerificationResult:
         """Verify a W3C presentation.
 

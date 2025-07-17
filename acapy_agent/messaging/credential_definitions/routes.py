@@ -644,7 +644,7 @@ def post_process_routes(app: web.Application):
             "externalDocs": {
                 "description": "Specification",
                 "url": (
-                    "https://github.com/hyperledger/indy-node/blob/master/"
+                    "https://github.com/hyperledger/indy-node/blob/main/"
                     "design/anoncreds.md#cred_def"
                 ),
             },

@@ -2,6 +2,7 @@
 
 import json
 
+from ...core.profile import ProfileSession
 from ...did.did_key import DIDKey
 from ...vc.ld_proofs import DocumentLoader
 from ...wallet.base import BaseWallet
@@ -20,22 +21,22 @@ def did_key(verkey: str) -> str:
     return DIDKey.from_public_key_b58(verkey, ED25519).did
 
 
-def b64encode(str):
+def b64encode(val: str) -> str:
     """Url Safe B64 Encode."""
-    return str_to_b64(str, urlsafe=True, pad=False)
+    return str_to_b64(val, urlsafe=True, pad=False)
 
 
-def b64decode(bytes):
+def b64decode(val: str) -> str:
     """Url Safe B64 Decode."""
-    return b64_to_str(bytes, urlsafe=True)
+    return b64_to_str(val, urlsafe=True)
 
 
-def create_jws(encoded_header, verify_data):
+def create_jws(encoded_header: str, verify_data: bytes) -> bytes:
     """Compose JWS."""
     return (encoded_header + ".").encode("utf-8") + verify_data
 
 
-async def jws_sign(session, verify_data, verkey):
+async def jws_sign(session: ProfileSession, verify_data: bytes, verkey: str) -> str:
     """Sign JWS."""
 
     header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
@@ -52,14 +53,16 @@ async def jws_sign(session, verify_data, verkey):
     return encoded_header + ".." + encoded_signature
 
 
-def verify_jws_header(header):
+def verify_jws_header(header: dict) -> None:
     """Check header requirements."""
 
     if header != {"alg": "EdDSA", "b64": False, "crit": ["b64"]}:
         raise BadJWSHeaderError("Invalid JWS header parameters for Ed25519Signature2018.")
 
 
-async def jws_verify(session, verify_data, signature, public_key):
+async def jws_verify(
+    session: ProfileSession, verify_data: bytes, signature: str, public_key: str
+) -> bool:
     """Detached jws verify handling."""
 
     encoded_header, _, encoded_signature = signature.partition("..")
@@ -79,11 +82,13 @@ async def jws_verify(session, verify_data, signature, public_key):
     return verified
 
 
-async def sign_credential(session, credential, signature_options, verkey):
+async def sign_credential(
+    session: ProfileSession, credential: dict, signature_options: dict, verkey: str
+) -> dict:
     """Sign Credential."""
 
     document_loader = session.profile.inject_or(DocumentLoader)
-    framed, verify_data_hex_string = create_verify_data(
+    _, verify_data_hex_string = create_verify_data(
         credential,
         signature_options,
         document_loader,
@@ -93,7 +98,7 @@ async def sign_credential(session, credential, signature_options, verkey):
     return {**credential, "proof": {**signature_options, "jws": jws}}
 
 
-async def verify_credential(session, doc, verkey):
+async def verify_credential(session: ProfileSession, doc: dict, verkey: str) -> bool:
     """Verify credential."""
 
     document_loader = session.profile.inject_or(DocumentLoader)

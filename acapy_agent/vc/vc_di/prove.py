@@ -1,6 +1,7 @@
 """Verifiable Credential and Presentation proving methods."""
 
 import asyncio
+import logging
 import re
 from hashlib import sha256
 from typing import Any, Optional, Tuple
@@ -19,6 +20,8 @@ from ...anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ...anoncreds.verifier import AnonCredsVerifier
 from ...core.profile import Profile
 from ..ld_proofs import LinkedDataProofException, ProofPurpose
+
+LOGGER = logging.getLogger(__name__)
 
 
 async def create_signed_anoncreds_presentation(
@@ -163,11 +166,11 @@ async def create_rev_states(
 
 
 async def prepare_data_for_presentation(
-    presentation,
-    w3c_creds,
-    pres_definition,
-    profile,
-    challenge,
+    presentation: dict,
+    w3c_creds: list,
+    pres_definition: dict,
+    profile: Profile,
+    challenge: str,
 ) -> tuple[dict[str, Any], list, list]:
     """prepare_data_for_presentation.
 
@@ -311,7 +314,7 @@ async def prepare_data_for_presentation(
                 # issuer_id = field["filter"]["const"]
                 pass
             else:
-                print("... skipping:", path)
+                LOGGER.info("... skipping: %s", path)
 
     return anoncreds_proofrequest, w3c_creds_metadata
 

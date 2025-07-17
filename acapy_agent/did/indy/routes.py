@@ -13,13 +13,17 @@ from ...messaging.models.openapi import OpenAPISchema
 from ...wallet.error import WalletError
 
 
-class CreateRequestSchema(OpenAPISchema):
-    """Parameters and validators for create DID endpoint."""
+class CreateDidIndyRequestSchema(OpenAPISchema):
+    """Parameters and validators for create DID Indy endpoint."""
 
     options = fields.Dict(
         required=False,
         metadata={
-            "description": "Additional configuration options",
+            "description": (
+                "Additional configuration options. "
+                "Supported options: did, seed, key_type. "
+                "Default key_type is ed25519."
+            ),
             "example": {
                 "did": "did:indy:WRfXPg8dantKVubE3HX8pw",
                 "seed": "000000000000000000000000Trustee1",
@@ -36,8 +40,8 @@ class CreateRequestSchema(OpenAPISchema):
     )
 
 
-class CreateResponseSchema(OpenAPISchema):
-    """Response schema for create DID endpoint."""
+class CreateDidIndyResponseSchema(OpenAPISchema):
+    """Response schema for create DID Indy endpoint."""
 
     did = fields.Str(
         metadata={
@@ -54,17 +58,17 @@ class CreateResponseSchema(OpenAPISchema):
 
 
 @docs(tags=["did"], summary="Create a did:indy")
-@request_schema(CreateRequestSchema())
-@response_schema(CreateResponseSchema, HTTPStatus.OK)
+@request_schema(CreateDidIndyRequestSchema())
+@response_schema(CreateDidIndyResponseSchema, HTTPStatus.OK)
 @tenant_authentication
 async def create_indy_did(request: web.BaseRequest):
     """Create a INDY DID."""
     context: AdminRequestContext = request["context"]
     body = await request.json()
+    options = body.get("options", {})
     try:
-        return web.json_response(
-            (await DidIndyManager(context.profile).register(body.get("options"))),
-        )
+        result = await DidIndyManager(context.profile).register(options)
+        return web.json_response(result)
     except WalletError as e:
         raise web.HTTPBadRequest(reason=str(e))
 

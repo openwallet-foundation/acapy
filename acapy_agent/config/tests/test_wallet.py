@@ -154,7 +154,14 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
                 await test_module.wallet_config(self.context, provision=False)
 
             self.context.update_settings({"auto_provision": True})
-            await test_module.wallet_config(self.context, provision=False)
+            profile, did_info = await test_module.wallet_config(
+                self.context, provision=False
+            )
+
+            self.assertEqual(profile, self.profile)
+            self.assertIsNotNone(did_info)
+            self.assertEqual(did_info.did, TEST_DID)
+            self.assertEqual(did_info.verkey, TEST_VERKEY)
 
     async def test_wallet_config_non_indy_x(self):
         self.context.update_settings(
@@ -227,7 +234,14 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
-            await test_module.wallet_config(self.context, provision=True)
+            profile, did_info = await test_module.wallet_config(
+                self.context, provision=True
+            )
+
+            self.assertEqual(profile, self.profile)
+            self.assertIsNotNone(did_info)
+            self.assertEqual(did_info.did, TEST_DID)
+            self.assertEqual(did_info.verkey, TEST_VERKEY)
 
     async def test_wallet_config_seed_public(self):
         self.context.update_settings(
@@ -254,9 +268,17 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
                 test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
             ),
         ):
-            await test_module.wallet_config(self.context, provision=True)
+            profile, did_info = await test_module.wallet_config(
+                self.context, provision=True
+            )
+
+            self.assertEqual(profile, self.profile)
+            self.assertIsNotNone(did_info)
+            self.assertEqual(did_info.did, TEST_DID)
+            self.assertEqual(did_info.verkey, TEST_VERKEY)
 
     async def test_wallet_config_seed_no_public_did(self):
+        self.context.update_settings({"wallet.seed": "original_seed"})
         mock_wallet = mock.MagicMock(
             get_public_did=mock.CoroutineMock(return_value=None),
             set_public_did=mock.CoroutineMock(),
@@ -268,15 +290,17 @@ class TestWalletConfig(IsolatedAsyncioTestCase):
 
         with (
             mock.patch.object(
-                test_module, "seed_to_did", mock.MagicMock()
-            ) as mock_seed_to_did,
-            mock.patch.object(
                 test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
             ),
         ):
-            mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+            profile, did_info = await test_module.wallet_config(
+                self.context, provision=True
+            )
 
-            await test_module.wallet_config(self.context, provision=True)
+            self.assertEqual(profile, self.profile)
+            self.assertIsNotNone(did_info)
+            self.assertEqual(did_info.did, TEST_DID)
+            self.assertEqual(did_info.verkey, TEST_VERKEY)
 
     async def test_wallet_config_for_key_derivation_method(self):
         self.context.update_settings(

@@ -1,19 +1,19 @@
 """DataIntegrity class."""
 
-from ...core.profile import ProfileSession
+from datetime import datetime
+
 from ...core.error import BaseError
+from ...core.profile import ProfileSession
 from ...resolver.base import DIDNotFound
 from .cryptosuites import EddsaJcs2022
-from .models.proof import DataIntegrityProof
+from .errors import PROBLEM_DETAILS
 from .models.options import DataIntegrityProofOptions
+from .models.proof import DataIntegrityProof
 from .models.verification_response import (
     DataIntegrityVerificationResponse,
     DataIntegrityVerificationResult,
     ProblemDetails,
 )
-from .errors import PROBLEM_DETAILS
-
-from datetime import datetime
 
 CRYPTOSUITES = {
     "eddsa-jcs-2022": EddsaJcs2022,

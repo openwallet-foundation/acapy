@@ -1,19 +1,29 @@
 """Module to contain logic to generate the banner for ACA-py."""
 
-import sys
+import logging
 import textwrap
 from contextlib import contextmanager
 from enum import Enum, auto
 from typing import Optional, TextIO
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
 def Banner(border: str, length: int, file: Optional[TextIO] = None):
     """Context manager to generate a banner for ACA-py."""
     banner = _Banner(border, length, file)
-    banner.print_border()
+    banner.add_border()
     yield banner
-    banner.print_border()
+    banner.add_border()
+
+    # Join all lines with newlines and log them
+    banner_text = "\n".join(banner.lines)
+    banner_text = f"\n{banner_text.strip()}\n"  # Start/end with a newline
+    if file:
+        print(banner_text, file=file)
+    else:
+        logger.info(banner_text)
 
 
 class _Banner:
@@ -34,11 +44,12 @@ class _Banner:
         """
         self.border = border
         self.length = length
-        self.file = file or sys.stdout
+        self.file = file
+        self.lines = []
 
-    def _print(self, text: str):
-        """Print value."""
-        print(text, file=self.file)
+    def _add_line(self, text: str):
+        """Add a line to the banner."""
+        self.lines.append(text)
 
     def _lr_pad(self, content: str):
         """Pad string content with defined border character.
@@ -48,80 +59,87 @@ class _Banner:
         """
         return f"{self.border}{self.border} {content} {self.border}{self.border}"
 
-    def _print_line(self, text: str, alignment: align = align.LEFT):
-        """Print line."""
+    def _format_line(self, text: str, alignment: align = align.LEFT):
+        """Format a line with the specified alignment."""
         lines = textwrap.wrap(text, width=self.length)
+        formatted_lines = []
+
         for line in lines:
             if len(line) < self.length:
                 if alignment == self.align.LEFT:
-                    left = ""
-                    right = " " * (self.length - len(line))
+                    # Left alignment
+                    formatted_line = f"{line:<{self.length}}"
                 elif alignment == self.align.CENTER:
-                    left = " " * ((self.length - len(line)) // 2)
-                    right = " " * ((self.length - len(line)) // 2)
-                    if len(line) % 2 != 0:
-                        right += " "
+                    # Center alignment
+                    total_padding = self.length - len(line)
+                    left_padding = total_padding // 2
+                    right_padding = total_padding - left_padding
+                    formatted_line = f"{' ' * left_padding}{line}{' ' * right_padding}"
                 elif alignment == self.align.RIGHT:
-                    left = " " * (self.length - len(line))
-                    right = ""
+                    # Right alignment
+                    formatted_line = f"{line:>{self.length}}"
                 else:
                     raise ValueError(f"Invalid alignment: {alignment}")
-                line = f"{left}{line}{right}"
-            self._print(self._lr_pad(line))
+            else:
+                formatted_line = line
 
-    def print_border(self):
-        """Print a full line using the border character."""
-        self._print(self.border * (self.length + 6))
+            formatted_lines.append(self._lr_pad(formatted_line))
+
+        return formatted_lines
+
+    def add_border(self):
+        """Add a full line using the border character."""
+        self._add_line(self.border * (self.length + 6))
 
     def title(self, title, spacing_after: int = 2):
-        """Print the main title element."""
-        self._print_line(title, self.align.CENTER)
+        """Add the main title element."""
+        self.lines.extend(self._format_line(title, self.align.CENTER))
         for _ in range(spacing_after):
             self.spacer()
 
     def spacer(self):
-        """Print an empty line with the border character only."""
-        self._print(self._lr_pad(" " * self.length))
+        """Add an empty line with the border character only."""
+        self._add_line(self._lr_pad(" " * self.length))
 
     def hr(self, char: str = "-"):
-        """Print a line with a horizontal rule."""
-        self._print(self._lr_pad(char * self.length))
+        """Add a line with a horizontal rule."""
+        self._add_line(self._lr_pad(char * self.length))
 
     def subtitle(self, title: str, spacing_after: int = 1):
-        """Print a subtitle for a section."""
+        """Add a subtitle for a section."""
         title += ":"
-        self._print_line(title, self.align.LEFT)
+        self.lines.extend(self._format_line(title, self.align.LEFT))
         for _ in range(spacing_after):
             self.spacer()
 
     def list(self, items, spacing_after: int = 1):
-        """Print a list of items, prepending a dash to each item."""
+        """Add a list of items, prepending a dash to each item."""
         for item in items:
-            self._print_line(f"  - {item}", self.align.LEFT)
+            self.lines.extend(self._format_line(f"  - {item}", self.align.LEFT))
 
         for _ in range(spacing_after):
             self.spacer()
 
     def version(self, version):
-        """Print the current ``version``."""
+        """Add the current ``version``."""
         version = f"ver: {version}"
-        self._print_line(version, self.align.RIGHT)
+        self.lines.extend(self._format_line(version, self.align.RIGHT))
 
     def print(self, text: str):
-        """Print a line of text."""
-        self._print_line(text, self.align.LEFT)
+        """Add a line of text."""
+        self.lines.extend(self._format_line(text, self.align.LEFT))
 
     def left(self, text: str):
-        """Print a line of text left aligned.
+        """Add a line of text left aligned.
 
         Same as `print` method.
         """
-        self._print_line(text, self.align.LEFT)
+        self.lines.extend(self._format_line(text, self.align.LEFT))
 
     def centered(self, text: str):
-        """Print a line of text centered."""
-        self._print_line(text, self.align.CENTER)
+        """Add a line of text centered."""
+        self.lines.extend(self._format_line(text, self.align.CENTER))
 
     def right(self, text: str):
-        """Print a line of text right aligned."""
-        self._print_line(text, self.align.RIGHT)
+        """Add a line of text right aligned."""
+        self.lines.extend(self._format_line(text, self.align.RIGHT))

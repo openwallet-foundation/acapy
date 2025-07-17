@@ -4,6 +4,7 @@ import re
 from typing import Pattern
 
 import pytest
+import pytest_asyncio
 from pydid import DID, BasicDIDDocument, DIDDocument, VerificationMethod
 
 from ...utils.testing import create_test_profile
@@ -93,7 +94,7 @@ def resolver():
     return DIDResolver(did_resolver_registry)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def profile():
     profile = await create_test_profile()
     yield profile

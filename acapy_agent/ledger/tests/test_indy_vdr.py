@@ -2,6 +2,7 @@ import json
 
 import indy_vdr
 import pytest
+import pytest_asyncio
 
 from ...anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ...cache.base import BaseCache
@@ -34,7 +35,7 @@ WEB = DIDMethod(
 )
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture
 async def ledger():
     did_methods = DIDMethods()
     did_methods.register(WEB)

@@ -12,10 +12,7 @@ from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
 from .manager import V20DiscoveryMgr
 from .message_types import SPEC_URI
-from .models.discovery_record import (
-    V20DiscoveryExchangeRecord,
-    V20DiscoveryRecordSchema,
-)
+from .models.discovery_record import V20DiscoveryExchangeRecord, V20DiscoveryRecordSchema
 
 
 class V20DiscoveryExchangeResultSchema(OpenAPISchema):

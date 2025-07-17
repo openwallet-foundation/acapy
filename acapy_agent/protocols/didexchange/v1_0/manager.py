@@ -7,10 +7,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 from did_peer_4 import LONG_PATTERN, long_to_short
 
 from ....admin.server import AdminResponder
-from ....connections.base_manager import (
-    BaseConnectionManager,
-    BaseConnectionManagerError,
-)
+from ....connections.base_manager import BaseConnectionManager, BaseConnectionManagerError
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
@@ -759,6 +756,7 @@ class DIDXManager(BaseConnectionManager):
         """
         new_conn_rec = ConnRecord(
             invitation_key=conn_rec.invitation_key,
+            invitation_msg_id=conn_rec.invitation_msg_id,
             state=ConnRecord.State.INIT.rfc160,
             accept=conn_rec.accept,
             their_role=conn_rec.their_role,
