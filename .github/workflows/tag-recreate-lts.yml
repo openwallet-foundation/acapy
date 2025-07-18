@@ -57,7 +57,7 @@ jobs:
       - name: Delete existing LTS release (if any)
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.HYPERLEDGER_GHCR_PAT }}
           LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
         run: |
           echo "Trying to delete existing release for $LTS_TAG"
@@ -65,7 +65,7 @@ jobs:
 
       - name: Create fresh LTS release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.HYPERLEDGER_GHCR_PAT }}
           LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
           RELEASE_BODY: ${{ env.RELEASE_BODY }}
         run: |
