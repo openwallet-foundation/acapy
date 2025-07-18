@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.12.7rc2
+## 0.12.7
 
-### July 16, 2025
+### July 18, 2025
 
 This patch release adds a GitHub Action to publish an LTS container image with the tag `0.12-lts` when a release is published from the ACA-Py 0.12.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required.
 
@@ -29,6 +29,7 @@ There are no breaking changes in this release.
   - Add recreate lts workflow to 0.12.lts branch [\#3771](https://github.com/openwallet-foundation/acapy/pull/3771) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 0.12.7 [\#3829](https://github.com/openwallet-foundation/acapy/pull/3829) [swcurran](https://github.com/swcurran)
   - 0.12.7rc2 [\#3827](https://github.com/openwallet-foundation/acapy/pull/3827) [swcurran](https://github.com/swcurran)
   - 0.12.7rc1 [\#3820](https://github.com/openwallet-foundation/acapy/pull/3820) [swcurran](https://github.com/swcurran)
   - 0.12.7rc0 [\#3794](https://github.com/openwallet-foundation/acapy/pull/3794) [swcurran](https://github.com/swcurran)
