@@ -118,7 +118,6 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
     )
     types = fields.List(
         fields.Str(
-            validate=ENDPOINT_VALIDATE,
             metadata={
                 "description": "Credential type to match",
                 "example": ENDPOINT_EXAMPLE,
