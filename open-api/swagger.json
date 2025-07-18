@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.2.5rc0",
+    "version" : "v1.2.5",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -6283,7 +6283,7 @@
           "example" : {
             "hello" : "world"
           },
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "options" : {
           "$ref" : "#/definitions/AddProof_options"
@@ -6299,7 +6299,7 @@
           "example" : {
             "hello" : "world"
           },
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -6310,7 +6310,7 @@
         "config" : {
           "type" : "object",
           "description" : "Configuration settings",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -6342,7 +6342,7 @@
         "conductor" : {
           "type" : "object",
           "description" : "Conductor statistics",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "label" : {
           "type" : "string",
@@ -6352,7 +6352,7 @@
         "timing" : {
           "type" : "object",
           "description" : "Timing results",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "version" : {
           "type" : "string",
@@ -6743,31 +6743,31 @@
       "properties" : {
         "di_vc" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "jwt" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "jwt_vc" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "jwt_vp" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "ldp" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "ldp_vc" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "ldp_vp" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -6990,7 +6990,7 @@
         "results" : {
           "type" : "object",
           "description" : "Dictionary of metadata associated with connection.",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -7001,7 +7001,7 @@
         "metadata" : {
           "type" : "object",
           "description" : "Dictionary of metadata to set for connection.",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -7140,7 +7140,7 @@
         "metadata" : {
           "type" : "object",
           "description" : "Optional metadata to attach to the connection created with the invitation",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "my_label" : {
           "type" : "string",
@@ -7215,7 +7215,7 @@
         "extra_settings" : {
           "type" : "object",
           "description" : "Agent config key-value pairs",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "image_url" : {
           "type" : "string",
@@ -7290,7 +7290,7 @@
         "settings" : {
           "type" : "object",
           "description" : "Settings for this wallet.",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "state" : {
           "type" : "string",
@@ -7424,7 +7424,7 @@
       "properties" : {
         "credential_definition_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "credential_definition_state" : {
           "$ref" : "#/definitions/CredDefState"
@@ -7434,7 +7434,7 @@
         },
         "registration_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -7505,7 +7505,7 @@
         },
         "r" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "rctxt" : {
           "type" : "string",
@@ -7650,7 +7650,7 @@
         "rev_reg_delta" : {
           "type" : "object",
           "description" : "Indy revocation registry delta",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -7660,7 +7660,7 @@
         "rev_reg_delta" : {
           "type" : "object",
           "description" : "Indy revocation registry delta",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -7987,7 +7987,7 @@
         "metadata" : {
           "type" : "object",
           "description" : "Additional metadata associated with the DID",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "method" : {
           "type" : "string",
@@ -8253,7 +8253,7 @@
             "<input descriptor id_2>" : [ "<record id>" ]
           },
           "description" : "Mapping of input_descriptor id to list of stored W3C credential record_id",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "reveal_doc" : {
           "type" : "object",
@@ -8275,7 +8275,7 @@
             "type" : [ "VerifiableCredential", "LabReport" ]
           },
           "description" : "reveal doc [JSON-LD frame] dict used to derive the credential when selective disclosure is required",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -8437,7 +8437,7 @@
         "credential" : {
           "type" : "object",
           "description" : "Credential to sign",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "options" : {
           "$ref" : "#/definitions/Doc_options"
@@ -8450,7 +8450,7 @@
       "properties" : {
         "document" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "errors" : {
           "type" : "array",
@@ -8609,11 +8609,11 @@
         },
         "credential_definitions_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "resolution_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -8670,7 +8670,7 @@
       "properties" : {
         "resolution_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "schema" : {
           "$ref" : "#/definitions/AnonCredsSchema"
@@ -8682,7 +8682,7 @@
         },
         "schema_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -8831,12 +8831,12 @@
         "blinded_ms" : {
           "type" : "object",
           "description" : "Blinded master secret",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "blinded_ms_correctness_proof" : {
           "type" : "object",
           "description" : "Blinded master secret correctness proof",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "cred_def_id" : {
           "type" : "string",
@@ -8870,7 +8870,7 @@
         "rev_reg" : {
           "type" : "object",
           "description" : "Revocation registry state",
-          "properties" : { },
+          "additionalProperties" : { },
           "x-nullable" : true
         },
         "rev_reg_id" : {
@@ -8889,12 +8889,12 @@
         "signature" : {
           "type" : "object",
           "description" : "Credential signature",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "signature_correctness_proof" : {
           "type" : "object",
           "description" : "Credential signature correctness proof",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "values" : {
           "type" : "object",
@@ -8906,7 +8906,7 @@
         "witness" : {
           "type" : "object",
           "description" : "Witness for revocation proof",
-          "properties" : { },
+          "additionalProperties" : { },
           "x-nullable" : true
         }
       }
@@ -9497,12 +9497,12 @@
         "self_attested_attrs" : {
           "type" : "object",
           "description" : "Proof requested proof self-attested attributes",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "unrevealed_attrs" : {
           "type" : "object",
           "description" : "Unrevealed attributes",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -9769,7 +9769,7 @@
         "metadata" : {
           "type" : "object",
           "description" : "Metadata dictionary",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "name" : {
           "type" : "string",
@@ -9837,7 +9837,7 @@
         "metadata" : {
           "type" : "object",
           "description" : "Optional metadata to attach to the connection created with the invitation",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "my_label" : {
           "type" : "string",
@@ -10241,11 +10241,11 @@
         },
         "headers" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "payload" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "verificationMethod" : {
           "type" : "string",
@@ -10276,7 +10276,7 @@
         "headers" : {
           "type" : "object",
           "description" : "Headers from verified JWT.",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "kid" : {
           "type" : "string",
@@ -10285,7 +10285,7 @@
         "payload" : {
           "type" : "object",
           "description" : "Payload from verified JWT",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "valid" : {
           "type" : "boolean"
@@ -10323,7 +10323,7 @@
             "filter" : { }
           },
           "description" : "Query dictionary object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "paginate" : {
           "$ref" : "#/definitions/KeylistQuery_paginate"
@@ -10336,7 +10336,7 @@
         "filter" : {
           "type" : "object",
           "description" : "Filter for keylist query",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -10991,7 +10991,7 @@
           "type" : "array",
           "items" : {
             "type" : "object",
-            "properties" : { }
+            "additionalProperties" : { }
           }
         }
       },
@@ -11117,7 +11117,7 @@
             "public_invites" : false
           },
           "description" : "Profile settings dict",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -11129,7 +11129,7 @@
         },
         "proof" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "purpose_result" : {
           "$ref" : "#/definitions/PurposeResult"
@@ -11254,7 +11254,7 @@
       "properties" : {
         "controller" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "error" : {
           "type" : "string"
@@ -11413,12 +11413,12 @@
         "did_document" : {
           "type" : "object",
           "description" : "DID Document",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "metadata" : {
           "type" : "object",
           "description" : "Resolution metadata",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -11492,11 +11492,11 @@
         },
         "registration_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "revocation_list_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "revocation_list_state" : {
           "$ref" : "#/definitions/RevListState"
@@ -11593,11 +11593,11 @@
         },
         "registration_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "revocation_registry_definition_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "revocation_registry_definition_state" : {
           "$ref" : "#/definitions/RevRegDefState"
@@ -11631,7 +11631,7 @@
         "publicKeys" : {
           "type" : "object",
           "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "tailsHash" : {
           "type" : "string",
@@ -11699,17 +11699,17 @@
         "accum_calculated" : {
           "type" : "object",
           "description" : "Calculated accumulator for phantom revocations",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "accum_fixed" : {
           "type" : "object",
           "description" : "Applied ledger transaction to fix revocations",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "rev_reg_delta" : {
           "type" : "object",
           "description" : "Indy revocation registry delta",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -11719,17 +11719,17 @@
         "accum_calculated" : {
           "type" : "object",
           "description" : "Calculated accumulator for phantom revocations",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "accum_fixed" : {
           "type" : "object",
           "description" : "Applied ledger transaction to fix revocations",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "rev_reg_delta" : {
           "type" : "object",
           "description" : "Indy revocation registry delta",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -11938,7 +11938,7 @@
         },
         "headers" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "non_sd_list" : {
           "type" : "array",
@@ -11950,7 +11950,7 @@
         },
         "payload" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "verificationMethod" : {
           "type" : "string",
@@ -11992,7 +11992,7 @@
         "headers" : {
           "type" : "object",
           "description" : "Headers from verified JWT.",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "kid" : {
           "type" : "string",
@@ -12001,7 +12001,7 @@
         "payload" : {
           "type" : "object",
           "description" : "Payload from verified JWT",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "valid" : {
           "type" : "boolean"
@@ -12106,11 +12106,11 @@
         },
         "registration_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "schema_metadata" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "schema_state" : {
           "$ref" : "#/definitions/SchemaState"
@@ -12280,7 +12280,7 @@
         "signed_doc" : {
           "type" : "object",
           "description" : "Signed document",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -12524,7 +12524,7 @@
               },
               "mime-type" : "application/json"
             },
-            "properties" : { }
+            "additionalProperties" : { }
           }
         },
         "meta_data" : {
@@ -12539,7 +12539,7 @@
               "other" : "other_value"
             } ]
           },
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "signature_request" : {
           "type" : "array",
@@ -12552,7 +12552,7 @@
               "signature_type" : "default",
               "signer_goal_code" : "aries.transaction.endorse"
             },
-            "properties" : { }
+            "additionalProperties" : { }
           }
         },
         "signature_response" : {
@@ -12565,7 +12565,7 @@
               "method" : "add-signature",
               "signer_goal_code" : "aries.transaction.refuse"
             },
-            "properties" : { }
+            "additionalProperties" : { }
           }
         },
         "state" : {
@@ -12583,7 +12583,7 @@
           "example" : {
             "expires_time" : "2020-12-13T17:29:06+0000"
           },
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "trace" : {
           "type" : "boolean",
@@ -12718,7 +12718,7 @@
             "public-invites" : false
           },
           "description" : "Agent config key-value pairs",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -12728,7 +12728,7 @@
         "extra_settings" : {
           "type" : "object",
           "description" : "Agent config key-value pairs",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "image_url" : {
           "type" : "string",
@@ -12920,7 +12920,7 @@
         "credential_request_metadata" : {
           "type" : "object",
           "description" : "(Indy) credential request metadata",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "error_msg" : {
           "type" : "string",
@@ -13699,19 +13699,19 @@
       "properties" : {
         "cred_issue" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "cred_offer" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "cred_proposal" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "cred_request" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -13759,7 +13759,7 @@
         "cred_request_metadata" : {
           "type" : "object",
           "description" : "Credential request metadata for indy holder",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "cred_rev_id" : {
           "type" : "string",
@@ -14583,15 +14583,15 @@
       "properties" : {
         "pres" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "pres_proposal" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "pres_request" : {
           "type" : "object",
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -14862,7 +14862,7 @@
         "cred_value" : {
           "type" : "object",
           "description" : "(JSON-serializable) credential value",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "expanded_types" : {
           "type" : "array",
@@ -15011,7 +15011,7 @@
           "type" : "array",
           "items" : {
             "type" : "object",
-            "properties" : { }
+            "additionalProperties" : { }
           }
         }
       },
@@ -15052,7 +15052,7 @@
               "proofValue" : "zHtda8vV7kJQUPfSKiTGSQDhZfhkgtpnVziT7cdEzhu                            fjPjbeRmysHvizMJEox1eHR7xUGzNUj1V4yaKiLw7UA6E"
             } ]
           },
-          "properties" : { }
+          "additionalProperties" : { }
         }
       }
     },
@@ -15213,7 +15213,7 @@
         "settings" : {
           "type" : "object",
           "description" : "Settings for this wallet.",
-          "properties" : { }
+          "additionalProperties" : { }
         },
         "state" : {
           "type" : "string",

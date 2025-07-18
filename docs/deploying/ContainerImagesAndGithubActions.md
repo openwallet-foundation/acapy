@@ -38,12 +38,18 @@ Standard image is outside of the scope of this document.
 The ACA-Py images built by this project are tagged to indicate which of the
 above variants it is. Other tags may also be generated for use by developers.
 
+For LTS releases, an LTS tag is generated that can be used as a "latest LTS"
+version for a given LTS branch. The tag is py<version>-<lts_tag> (e.g.,
+py3.12-1.2-lts). The container is the same as the most recent Standard image for
+that LTS release.
+
 Below is a table of all generated images and their tags:
 
 Tag                     | Variant  | Example                  | Description                                                                                     |
 ------------------------|----------|--------------------------|-------------------------------------------------------------------------------------------------|
 py3.9-X.Y.Z             | Standard | py3.9-0.7.4              | Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z                             |
 py3.10-X.Y.Z            | Standard | py3.10-0.7.4             | Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z                            |
+py3.12-X.Y.Z-lts        | LTS      | py3.12-1.2-lts           | Standard image variant built on Python 3.12 for ACA-Py version X.Y.Z                            |
 
 ### Image Comparison
 
@@ -66,15 +72,8 @@ variants and between the BC Gov ACA-Py images.
   - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
   - Built from repo contents
   - Includes Indy postgres storage plugin
-- `bcgovimages/aries-cloudagent`
-  - (Usually) based on Ubuntu
-  - Based on `von-image`
-  - Default user is `indy`
-  - Includes `libindy` and Indy CLI
-  - Uses `pyenv`
-  - Askar and Indy Shared libraries built from source
-  - Built from ACA-Py python package uploaded to PyPI
-  - Includes Indy postgres storage plugin
+- LTS Image
+  - Same as standard, but only built for LTS releases.
 
 ## Github Actions
 
@@ -90,6 +89,8 @@ variants and between the BC Gov ACA-Py images.
 - Publish (`.github/workflows/publish.yml`) - Run on new release published or
   when manually triggered; builds and pushes the Standard ACA-Py variant to the
   Github Container Registry.
+- LTS (`github/workflows/tag-recreate-lts.yml`) - Run on all releases, but only generates an artifact for a final (non-release candidate) LTS
+  release to create the LTS tagged artifact.
 - BDD Integration Tests (`.github/workflows/BDDTests.yml`) - Run on pull
   requests (to the openwallet-foundation fork only); runs BDD integration tests.
 - Format (`.github/workflows/format.yml`) - Run on pull requests;
