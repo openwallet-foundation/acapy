@@ -55,7 +55,8 @@ There are no breaking changes in this release.
 
 #### 0.12.7 Categorized List of Pull Requests
 
-- LTS Container image Publishing
+- Enhancements and Updates
+  - Change ghcr token to hyperledger scoped [\#3832](https://github.com/openwallet-foundation/acapy/pull/3832) [jamshale](https://github.com/jamshale)
   - Upgrade rust version for indy-build to 1.56 [\#3826](https://github.com/openwallet-foundation/acapy/pull/3826) [jamshale](https://github.com/jamshale)
   - 0.12.lts.patch [\#3817](https://github.com/openwallet-foundation/acapy/pull/3817) [jamshale](https://github.com/jamshale)
   - Don't run workflow for release candidates [\#3796](https://github.com/openwallet-foundation/acapy/pull/3796) [jamshale](https://github.com/jamshale)
