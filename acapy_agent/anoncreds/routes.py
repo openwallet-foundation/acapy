@@ -606,7 +606,7 @@ class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
 
 @docs(
     tags=[REVOCATION_TAG_TITLE],
-    summary="Create and publish a registration revocation on the connected datastore",
+    summary="Create and publish a revocation registry definition on the connected datastore",  # noqa: E501
 )
 @request_schema(RevRegCreateRequestSchemaAnonCreds())
 @response_schema(RevRegDefResultSchema(), 200, description="")
