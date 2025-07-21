@@ -3,7 +3,6 @@ from unittest import IsolatedAsyncioTestCase
 
 import copy
 import pytest
-from aiohttp import web
 
 from ...routes import store_credential_route
 from ....tests import mock
