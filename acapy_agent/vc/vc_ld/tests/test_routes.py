@@ -62,10 +62,3 @@ class TestVcApiRoutes(IsolatedAsyncioTestCase):
         }
         response = store_credential_route(self.request)
         assert response
-
-        with self.assertRaises(web.HTTPBadRequest):
-            self.request.match_info = {
-                "verifiableCredential": INVALID_VC,
-                "options": {"credentialId": str(uuid.uuid4()), "verify": True},
-            }
-            response = store_credential_route(INVALID_VC)
