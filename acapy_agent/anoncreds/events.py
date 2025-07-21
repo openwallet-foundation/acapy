@@ -1003,7 +1003,6 @@ class RevRegFullHandlingResponsePayload(NamedTuple):
     # Success fields - populated when operation succeeds
     old_rev_reg_def_id: str
     new_active_rev_reg_def_id: str
-    new_backup_rev_reg_def_id: str
     cred_def_id: str
 
     # Failure field - populated when operation fails
@@ -1029,21 +1028,18 @@ class RevRegFullHandlingResponseEvent(Event):
         *,
         old_rev_reg_def_id: str,
         new_active_rev_reg_def_id: str,
-        new_backup_rev_reg_def_id: str,
         cred_def_id: str,
         failure: Optional[RevRegFullHandlingFailurePayload] = None,
         options: Optional[dict] = None,
     ):
         """With payload.
 
-        For success: pass old_rev_reg_def_id, new_active_rev_reg_def_id,
-        new_backup_rev_reg_def_id, cred_def_id
+        For success: pass old_rev_reg_def_id, new_active_rev_reg_def_id, cred_def_id
         For failure: pass failure=RevRegFullHandlingFailurePayload(...)
         """
         payload = RevRegFullHandlingResponsePayload(
             old_rev_reg_def_id=old_rev_reg_def_id,
             new_active_rev_reg_def_id=new_active_rev_reg_def_id,
-            new_backup_rev_reg_def_id=new_backup_rev_reg_def_id,
             cred_def_id=cred_def_id,
             failure=failure,
             options=options or {},
@@ -1071,7 +1067,6 @@ class RevRegFullHandlingResponseEvent(Event):
         return cls.with_payload(
             old_rev_reg_def_id=old_rev_reg_def_id,
             new_active_rev_reg_def_id="",  # Empty on failure
-            new_backup_rev_reg_def_id="",  # Empty on failure
             cred_def_id=cred_def_id,
             failure=failure,
             options=options,

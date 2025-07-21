@@ -1044,17 +1044,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         max_cred_num=rev_reg_def.value.max_cred_num,
                         options=self._clean_options_for_new_request(payload.options),
                     )
-
-                    # Emit the full handling completed event
-                    # TODO: replace this
-                    full_handling_event = RevRegFullHandlingResponseEvent.with_payload(
-                        old_rev_reg_def_id=payload.options["old_rev_reg_def_id"],
-                        new_active_rev_reg_def_id=payload.rev_reg_def_id,
-                        new_backup_rev_reg_def_id="pending",  # Updated when it completes
-                        cred_def_id=payload.options["cred_def_id"],
-                        options=payload.options,
-                    )
-                    await revoc.notify(full_handling_event)
                 else:
                     LOGGER.error(
                         "Could not retrieve registry definition %s for creating backup",
