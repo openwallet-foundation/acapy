@@ -40,7 +40,7 @@ async def create_test_profile(
         context = InjectionContext(
             settings=settings,
         )
-    opened = await store_config.open_store(provision=True, in_memory=True)
+    opened = await store_config.open_or_provision_store(provision=True, in_memory=True)
 
     if settings.get("wallet.type") == "askar-anoncreds":
         return AskarAnonCredsProfile(
