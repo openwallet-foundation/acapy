@@ -1251,13 +1251,15 @@ class AnonCredsRevocation:
             )
 
             # Store context for later use in creating new backup after activation
-            options["cred_def_id"] = cred_def_id
-            options["old_rev_reg_def_id"] = rev_reg_def_id
+            set_active_registry_options = options.copy()
+            set_active_registry_options["cred_def_id"] = cred_def_id
+            set_active_registry_options["old_rev_reg_def_id"] = rev_reg_def_id
+            set_active_registry_options.pop("correlation_id", None)  # new context
 
             # Activate the backup registry (this will trigger creation of new backup)
             await self.emit_set_active_registry_event(
                 rev_reg_def_id=backup_rev_reg_def_id,
-                options=options,
+                options=set_active_registry_options,
             )
 
         except Exception as err:
