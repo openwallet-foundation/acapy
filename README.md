@@ -68,8 +68,9 @@ supported version within that release series.
 
 **Current LTS releases:**
 
-- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.4) **Current LTS Release**
-- Release [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.6) **End of Life: October 2025**
+- Release [1.3](https://github.com/openwallet-foundation/acapy/releases/tag/1.3.1) **Current LTS Release**
+- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.5) **End of Life: April 2026**
+- Release [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.7) **End of Life: October 2025**
 
 **Past LTS releases:**
 
