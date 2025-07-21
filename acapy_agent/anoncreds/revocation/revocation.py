@@ -1216,6 +1216,7 @@ class AnonCredsRevocation:
         try:
             # Find the backup registry that should become active
             async with self.profile.session() as session:
+                # First, get the active registry
                 active_rev_reg_def = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF, rev_reg_def_id
                 )
@@ -1224,7 +1225,7 @@ class AnonCredsRevocation:
                         f"Active registry {rev_reg_def_id} not found"
                     )
 
-                # Find the backup registry (finished and not active)
+                # Then, find the backup registry (finished and not active)
                 rev_reg_defs = await session.handle.fetch_all(
                     CATEGORY_REV_REG_DEF,
                     {
@@ -1254,13 +1255,20 @@ class AnonCredsRevocation:
             set_active_registry_options = options.copy()
             set_active_registry_options["cred_def_id"] = cred_def_id
             set_active_registry_options["old_rev_reg_def_id"] = rev_reg_def_id
-            set_active_registry_options.pop("correlation_id", None)  # new context
 
             # Activate the backup registry (this will trigger creation of new backup)
             await self.emit_set_active_registry_event(
                 rev_reg_def_id=backup_rev_reg_def_id,
                 options=set_active_registry_options,
             )
+
+            full_handling_response_event = RevRegFullHandlingResponseEvent.with_payload(
+                old_rev_reg_def_id=rev_reg_def_id,
+                new_active_rev_reg_def_id=backup_rev_reg_def_id,
+                cred_def_id=cred_def_id,
+                options=options,
+            )
+            await self.notify(full_handling_response_event)
 
         except Exception as err:
             # Emit failure event
