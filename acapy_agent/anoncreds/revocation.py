@@ -508,7 +508,7 @@ class AnonCredsRevocation:
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,
                     identifier,
-                    rev_reg_def_private_entry.value_json,
+                    rev_reg_def_private_entry.value,
                 )
                 await txn.handle.remove(CATEGORY_REV_REG_DEF_PRIVATE, temp_private_key_id)
                 LOGGER.debug(
