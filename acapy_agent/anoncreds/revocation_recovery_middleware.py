@@ -184,7 +184,7 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
 
     # Check if automatic revocation recovery is enabled
     auto_recovery_enabled = profile.settings.get_bool(
-        "anoncreds.revocation.auto_recovery_enabled", True
+        "anoncreds.revocation.auto_recovery_enabled", default=True
     )
     LOGGER.debug(
         "Auto recovery enabled for profile %s: %s", profile_name, auto_recovery_enabled
