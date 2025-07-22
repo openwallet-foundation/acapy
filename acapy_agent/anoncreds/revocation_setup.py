@@ -1,5 +1,6 @@
 """Automated setup process for AnonCreds credential definitions with revocation."""
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 
@@ -16,8 +17,8 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-    RECORD_TYPE_TAILS_UPLOAD_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
+    RECORD_TYPE_TAILS_UPLOAD_EVENT,
 )
 from .event_storage import (
     EventStorageManager,
@@ -231,13 +232,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         options_with_correlation = payload.options.copy()
         options_with_correlation["correlation_id"] = correlation_id
 
-        await revoc.create_and_register_revocation_registry_definition(
-            issuer_id=payload.issuer_id,
-            cred_def_id=payload.cred_def_id,
-            registry_type=payload.registry_type,
-            tag=payload.tag,
-            max_cred_num=payload.max_cred_num,
-            options=options_with_correlation,
+        await asyncio.shield(
+            revoc.create_and_register_revocation_registry_definition(
+                issuer_id=payload.issuer_id,
+                cred_def_id=payload.cred_def_id,
+                registry_type=payload.registry_type,
+                tag=payload.tag,
+                max_cred_num=payload.max_cred_num,
+                options=options_with_correlation,
+            )
         )
 
     async def on_registry_create_response(
@@ -675,9 +678,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         options_with_correlation = payload.options.copy()
         options_with_correlation["correlation_id"] = correlation_id
 
-        await revoc.create_and_register_revocation_list(
-            rev_reg_def_id=payload.rev_reg_def_id,
-            options=options_with_correlation,
+        await asyncio.shield(
+            revoc.create_and_register_revocation_list(
+                rev_reg_def_id=payload.rev_reg_def_id,
+                options=options_with_correlation,
+            )
         )
 
     async def on_rev_list_create_response(
