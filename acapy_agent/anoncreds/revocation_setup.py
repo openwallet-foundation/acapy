@@ -334,7 +334,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             await revoc.emit_store_revocation_registry_definition_event(
                 rev_reg_def=payload.rev_reg_def,
                 rev_reg_def_result=payload.rev_reg_def_result,
-                rev_reg_def_private=payload.rev_reg_def_private,
                 options=self._clean_options_for_new_request(payload.options),
             )
 
@@ -367,7 +366,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         await revoc.handle_store_revocation_registry_definition_request(
             rev_reg_def_result=payload.rev_reg_def_result,
-            rev_reg_def_private=payload.rev_reg_def_private,
             options=options_with_correlation,
         )
 
@@ -424,7 +422,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_store_revocation_registry_definition_request(
                     rev_reg_def_result=payload.rev_reg_def_result,
-                    rev_reg_def_private=failure.rev_reg_def_private,
                     options=new_options,
                 )
             else:
