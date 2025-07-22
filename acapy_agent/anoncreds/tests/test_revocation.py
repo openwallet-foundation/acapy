@@ -933,7 +933,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             ]
         )
         # active registry
-        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
+        self.revocation.get_active_registry = mock.CoroutineMock(
             return_value=RevRegDefResult(
                 job_id="test-job-id",
                 revocation_registry_definition_state=RevRegDefState(
@@ -978,7 +978,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
-    async def test_get_or_create_active_registry(self, mock_handle):
+    async def test_get_active_registry(self, mock_handle):
         mock_handle.fetch_all = mock.CoroutineMock(
             side_effect=[
                 [MockRevRegDefEntry("reg-1"), MockRevRegDefEntry("reg-0")],
@@ -987,9 +987,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
 
         # valid
-        result = await self.revocation.get_or_create_active_registry(
-            "test-rev-reg-def-id"
-        )
+        result = await self.revocation.get_active_registry("test-rev-reg-def-id")
         assert isinstance(result, RevRegDefResult)
         assert result.revocation_registry_definition_state.state == (
             RevRegDefState.STATE_FINISHED
@@ -999,9 +997,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             == ("reg-1")
         )
 
-        # no active registry, todo: create one
+        # no active registry
         with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.get_or_create_active_registry("test-rev-reg-def-id")
+            await self.revocation.get_active_registry("test-rev-reg-def-id")
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=mock.MagicMock())
@@ -1168,7 +1166,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 )
             )
         )
-        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
+        self.revocation.get_active_registry = mock.CoroutineMock(
             return_value=RevRegDefResult(
                 job_id="test-job-id",
                 revocation_registry_definition_state=RevRegDefState(
@@ -1515,7 +1513,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 )
             )
         )
-        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
+        self.revocation.get_active_registry = mock.CoroutineMock(
             return_value=RevRegDefResult(
                 job_id="test-job-id",
                 revocation_registry_definition_state=RevRegDefState(
