@@ -102,6 +102,10 @@ async def has_in_progress_revocation_events(profile: Profile) -> bool:
                         str(e),
                     )
 
+                LOGGER.debug(
+                    "No records of type %s found with tag state=requested", event_type
+                )
+
             return False
     except Exception as e:
         LOGGER.error("Error checking for in-progress revocation events: %s", str(e))
@@ -172,20 +176,29 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         context: AdminRequestContext = request["context"]
         profile = context.profile
         profile_name = profile.name
+        LOGGER.debug("Retrieved profile context for profile: %s", profile_name)
     except (KeyError, AttributeError):
         # No profile context available, skip recovery
+        LOGGER.debug("No profile context available, skipping recovery")
         return await handler(request)
 
     # Check if automatic revocation recovery is enabled
     auto_recovery_enabled = profile.settings.get_bool(
         "anoncreds.revocation.auto_recovery_enabled", True
     )
+    LOGGER.debug(
+        "Auto recovery enabled for profile %s: %s", profile_name, auto_recovery_enabled
+    )
 
     if not auto_recovery_enabled:
+        LOGGER.debug("Auto recovery disabled for profile %s", profile_name)
         return await handler(request)
 
     # Check if we've already recovered this profile
     if recovery_tracker.is_recovered(profile_name):
+        LOGGER.debug(
+            "Profile %s already recovered, proceeding with request", profile_name
+        )
         return await handler(request)
 
     # Check if recovery is already in progress for this profile
@@ -197,9 +210,13 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         return await handler(request)
 
     # Check if profile has any in-progress revocation events
+    LOGGER.debug(
+        "Checking for in-progress revocation events for profile %s", profile_name
+    )
     try:
         if not await has_in_progress_revocation_events(profile):
             # No events to recover, mark as recovered
+            LOGGER.debug("No in-progress events found for profile %s", profile_name)
             recovery_tracker.mark_recovery_completed(profile_name)
             return await handler(request)
     except Exception as e:
@@ -212,12 +229,15 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         return await handler(request)
 
     # Mark recovery as started
+    LOGGER.debug("Starting recovery process for profile %s", profile_name)
     recovery_tracker.mark_recovery_started(profile_name)
 
     try:
         # Get event bus from profile context
+        LOGGER.debug("Injecting EventBus for profile %s", profile_name)
         try:
             event_bus = context.profile.inject(EventBus)
+            LOGGER.debug("Successfully injected EventBus for profile %s", profile_name)
         except Exception as e:
             LOGGER.error(
                 "Failed to inject EventBus for profile %s: %s", profile_name, str(e)
@@ -226,8 +246,12 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
             return await handler(request)
 
         # Perform recovery with timeout protection
+        LOGGER.debug("Beginning event recovery for profile %s", profile_name)
         try:
             await recover_profile_events(profile, event_bus)
+            LOGGER.debug(
+                "Event recovery completed successfully for profile %s", profile_name
+            )
         except asyncio.TimeoutError:
             LOGGER.error(
                 "Revocation event recovery timed out for profile %s", profile_name
@@ -244,12 +268,17 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
             return await handler(request)
 
         # Mark recovery as completed
+        LOGGER.debug("Marking recovery as completed for profile %s", profile_name)
         recovery_tracker.mark_recovery_completed(profile_name)
 
         LOGGER.info("Revocation event recovery completed for profile %s", profile_name)
 
     except Exception as e:
         # Catch-all for any unexpected errors
+        LOGGER.debug(
+            "Marking recovery as failed due to unexpected error for profile %s",
+            profile_name,
+        )
         recovery_tracker.mark_recovery_failed(profile_name)
 
         LOGGER.error(
@@ -261,4 +290,5 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         # Continue with request despite recovery failure
         # This ensures recovery issues don't block normal operations
 
+    LOGGER.debug("Proceeding with original request for profile %s", profile_name)
     return await handler(request)
