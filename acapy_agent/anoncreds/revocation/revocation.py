@@ -1288,12 +1288,15 @@ class AnonCredsRevocation:
         active_reg = await self.get_active_registry(cred_def_id)
 
         # create new one and set active
-        new_reg = await self.create_and_register_revocation_registry_definition(
-            issuer_id=active_reg.rev_reg_def.issuer_id,
-            cred_def_id=active_reg.rev_reg_def.cred_def_id,
-            registry_type=active_reg.rev_reg_def.type,
-            tag=self._generate_backup_registry_tag(),
-            max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+        LOGGER.debug("Creating new registry to replace active one")
+        new_reg = await asyncio.shield(
+            self.create_and_register_revocation_registry_definition(
+                issuer_id=active_reg.rev_reg_def.issuer_id,
+                cred_def_id=active_reg.rev_reg_def.cred_def_id,
+                registry_type=active_reg.rev_reg_def.type,
+                tag=self._generate_backup_registry_tag(),
+                max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+            )
         )
         # set new as active...
         await self.set_active_registry(new_reg.rev_reg_def_id)
@@ -1327,12 +1330,15 @@ class AnonCredsRevocation:
                     )
             await txn.commit()
         # create a second one for backup, don't make it active
-        backup_reg = await self.create_and_register_revocation_registry_definition(
-            issuer_id=active_reg.rev_reg_def.issuer_id,
-            cred_def_id=active_reg.rev_reg_def.cred_def_id,
-            registry_type=active_reg.rev_reg_def.type,
-            tag=self._generate_backup_registry_tag(),
-            max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+        LOGGER.debug("Creating backup registry")
+        backup_reg = await asyncio.shield(
+            self.create_and_register_revocation_registry_definition(
+                issuer_id=active_reg.rev_reg_def.issuer_id,
+                cred_def_id=active_reg.rev_reg_def.cred_def_id,
+                registry_type=active_reg.rev_reg_def.type,
+                tag=self._generate_backup_registry_tag(),
+                max_cred_num=active_reg.rev_reg_def.value.max_cred_num,
+            )
         )
 
         LOGGER.debug(
