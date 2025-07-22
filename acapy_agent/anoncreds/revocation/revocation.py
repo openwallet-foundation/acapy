@@ -1285,7 +1285,7 @@ class AnonCredsRevocation:
 
     async def decommission_registry(self, cred_def_id: str) -> list:  # ✅
         """Decommission post-init registries and start the next registry generation."""
-        active_reg = await self.get_or_create_active_registry(cred_def_id)
+        active_reg = await self.get_active_registry(cred_def_id)
 
         # create new one and set active
         new_reg = await self.create_and_register_revocation_registry_definition(
@@ -1343,8 +1343,8 @@ class AnonCredsRevocation:
         )
         return recs
 
-    async def get_or_create_active_registry(self, cred_def_id: str) -> RevRegDefResult:
-        """Get or create a revocation registry for the given cred def id."""
+    async def get_active_registry(self, cred_def_id: str) -> RevRegDefResult:
+        """Get the active revocation registry for a given cred def id."""
         async with self.profile.session() as session:
             rev_reg_defs = await session.handle.fetch_all(
                 CATEGORY_REV_REG_DEF,
@@ -1730,7 +1730,7 @@ class AnonCredsRevocation:
 
             rev_reg_def_result = None
             if revocable:
-                rev_reg_def_result = await self.get_or_create_active_registry(cred_def_id)
+                rev_reg_def_result = await self.get_active_registry(cred_def_id)
                 if (
                     rev_reg_def_result.revocation_registry_definition_state.state
                     != STATE_FINISHED
