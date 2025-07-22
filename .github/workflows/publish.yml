@@ -31,6 +31,9 @@ on:
       ref:
         required: false
         type: string
+    secrets:
+      HYPERLEDGER_GHCR_PAT:
+        required: true
 
 env:
   # linux/386 platform support has been disabled pending a permanent fix for https://github.com/jamshale/aries-cloudagent-python/issues/2124
