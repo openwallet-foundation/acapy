@@ -137,8 +137,8 @@ class TaskQueue:
             trace_fn: A callback for all completed tasks
         """
         self.loop = asyncio.get_event_loop()
-        self.active_tasks = []
-        self.pending_tasks = []
+        self.active_tasks: list[asyncio.Task] = []
+        self.pending_tasks: list[PendingTask] = []
         self.timed = timed
         self.total_done = 0
         self.total_failed = 0
