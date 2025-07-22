@@ -65,15 +65,17 @@ class EventRecoveryManager:
             LOGGER.info("Found %d in-progress events to recover", len(in_progress_events))
 
             for event_record in in_progress_events:
+                LOGGER.debug(
+                    "Recovering %s event: %s", event_record["event_type"], event_record
+                )
                 try:
                     await self._recover_single_event(event_record)
                     recovered_count += 1
-                except Exception as e:
-                    LOGGER.error(
+                except Exception:
+                    LOGGER.exception(
                         "Failed to recover event %s (correlation_id: %s): %s",
                         event_record["event_type"],
                         event_record["correlation_id"],
-                        str(e),
                     )
 
         if recovered_count > 0:
@@ -100,9 +102,10 @@ class EventRecoveryManager:
         recovery_options["correlation_id"] = correlation_id
 
         LOGGER.debug(
-            "Recovering event %s with correlation_id: %s",
+            "Recovering event %s with correlation_id: %s. Event data: %s",
             event_type,
             correlation_id,
+            event_data,
         )
 
         # Map event types to their corresponding event classes and re-emit

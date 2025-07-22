@@ -122,7 +122,7 @@ def deserialize_event_payload[T: BaseModel | NamedTuple](
     for key, value in event_data.items():
         deserialized_data[key] = _deserialize_nested_object(value)
 
-    if issubclass(payload_class, NamedTuple):
+    if issubclass(payload_class, tuple) and hasattr(payload_class, "_fields"):
         # Handle NamedTuple payloads
         return payload_class(**deserialized_data)
     elif issubclass(payload_class, BaseModel):
