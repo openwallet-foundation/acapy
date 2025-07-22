@@ -823,6 +823,9 @@ class AnonCredsRevocation:
             else:
                 error_msg = f"Revocation list creation failed: {str(err)}"
 
+            if "Resource already exists" in error_msg:
+                should_retry = False
+
             event = RevListCreateResponseEvent.with_failure(
                 rev_reg_def_id=rev_reg_def_id,
                 error_msg=error_msg,
