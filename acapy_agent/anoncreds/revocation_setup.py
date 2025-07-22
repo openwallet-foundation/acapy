@@ -45,6 +45,8 @@ from .events import (
     TailsUploadRequestedEvent,
     TailsUploadResponseEvent,
 )
+from .models.revocation import GetRevListResult, RevListResult, RevListState
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -287,6 +289,16 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 failure.cred_def_id,
                 error_info.error_msg,
             )
+
+            # Check if resource already exists; recover by fetching existing registry
+            if "Resource already exists" in error_info.error_msg:
+                LOGGER.error(
+                    "Resource already exists for %s registry, "
+                    "attempting to fetch existing resource",
+                    registry_type_name,
+                )
+
+                # TODO: Implement recovery
 
             # Handle retry with structured data
             if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
@@ -722,8 +734,76 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 error_info.error_msg,
             )
 
+            # Check if resource already exists and try to recover by fetching it
+            if "Resource already exists" in error_info.error_msg:
+                LOGGER.info(
+                    "Resource already exists for revocation list: %s, "
+                    "attempting to fetch existing resource",
+                    payload.rev_reg_def_id,
+                )
+
+                try:
+                    # Get the existing revocation list from the registry
+                    anoncreds_registry = profile.inject(AnonCredsRegistry)
+                    get_rev_list_result: GetRevListResult = (
+                        await anoncreds_registry.get_revocation_list(
+                            profile=profile,
+                            rev_reg_def_id=payload.rev_reg_def_id,
+                        )
+                    )
+
+                    # Convert GetRevListResult to RevListResult for downstream processing
+                    rev_list_state = RevListState(
+                        state=STATE_FINISHED,  # Assume existing rev list is finished
+                        revocation_list=get_rev_list_result.revocation_list,
+                    )
+
+                    rev_list_result = RevListResult(
+                        job_id=None,  # No job_id for existing resource
+                        revocation_list_state=rev_list_state,
+                        registration_metadata={},
+                        revocation_list_metadata={},
+                    )
+
+                    LOGGER.info(
+                        "Successfully recovered existing revocation list for: %s",
+                        payload.rev_reg_def_id,
+                    )
+
+                    # Mark the event as completed since we recovered
+                    if correlation_id:
+                        async with profile.session() as session:
+                            event_storage = EventStorageManager(session)
+                            await event_storage.update_event_response(
+                                event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
+                                correlation_id=correlation_id,
+                                success=True,
+                                response_data=serialize_event_payload(payload),
+                            )
+                            await event_storage.mark_event_completed(
+                                event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
+                                correlation_id=correlation_id,
+                            )
+
+                    # Emit store request event with recovered result
+                    revoc = AnonCredsRevocation(profile)
+                    await revoc.emit_store_revocation_list_event(
+                        rev_reg_def_id=payload.rev_reg_def_id,
+                        result=rev_list_result,
+                        options=self._clean_options_for_new_request(payload.options),
+                    )
+                    return  # Successfully recovered, exit early
+
+                except Exception as recovery_err:
+                    LOGGER.error(
+                        "Failed to recover existing revocation list for: %s, error: %s",
+                        payload.rev_reg_def_id,
+                        str(recovery_err),
+                    )
+                    # Fall through to retry logic or mark as failed
+
             # Implement retry logic
-            if error_info.retry_count < self.MAX_RETRY_COUNT:
+            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
                 LOGGER.info(
                     "Retrying revocation list creation, attempt %d",
                     error_info.retry_count + 1,
