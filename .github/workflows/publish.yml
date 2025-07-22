@@ -33,7 +33,7 @@ on:
         type: string
 
 env:
-  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/hyperledger/aries-cloudagent-python/issues/2124
+  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/jamshale/aries-cloudagent-python/issues/2124
   # PLATFORMS: ${{ inputs.platforms || 'linux/amd64,linux/arm64,linux/386' }}
   PLATFORMS: ${{ inputs.platforms || 'linux/amd64' }}
 
@@ -74,7 +74,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/hyperledger/aries-cloudagent-python
+            ghcr.io/jamshale/aries-cloudagent-python
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 

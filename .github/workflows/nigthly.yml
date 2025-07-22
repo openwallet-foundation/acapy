@@ -7,7 +7,7 @@ on:
 
 jobs:
   tests:
-    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
+    if: github.repository == 'jamshale/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
     name: Tests
     strategy:
       fail-fast: false

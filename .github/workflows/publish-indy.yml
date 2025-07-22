@@ -36,7 +36,7 @@ env:
   # - https://github.com/hyperledger/indy-sdk/issues/2445
   # There is a pending PR to fix this issue here; https://github.com/hyperledger/indy-sdk/pull/2453
   #
-  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/hyperledger/aries-cloudagent-python/issues/2124
+  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/jamshale/aries-cloudagent-python/issues/2124
   # PLATFORMS: ${{ inputs.platforms || 'linux/amd64,linux/386' }}
   PLATFORMS: ${{ inputs.platforms || 'linux/amd64' }}
 
