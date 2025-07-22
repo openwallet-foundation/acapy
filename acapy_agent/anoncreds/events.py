@@ -2,8 +2,6 @@
 
 from typing import NamedTuple, Optional
 
-from anoncreds import RevocationRegistryDefinitionPrivate
-
 from ..core.event_bus import Event
 from .models.revocation import RevListResult, RevRegDef, RevRegDefResult
 
@@ -273,7 +271,6 @@ class RevRegDefCreateResponsePayload(NamedTuple):
     # Success fields - populated when operation succeeds
     rev_reg_def_result: Optional[RevRegDefResult]
     rev_reg_def: Optional[RevRegDef]
-    rev_reg_def_private: Optional[RevocationRegistryDefinitionPrivate]
 
     # Failure field - populated when operation fails
     failure: Optional[RevRegDefCreateFailurePayload]
@@ -299,20 +296,18 @@ class RevRegDefCreateResponseEvent(Event):
         # Success case parameters
         rev_reg_def_result: Optional[RevRegDefResult] = None,
         rev_reg_def: Optional[RevRegDef] = None,
-        rev_reg_def_private: Optional[RevocationRegistryDefinitionPrivate] = None,
         options: Optional[dict] = None,
         # Failure case parameters
         failure: Optional[RevRegDefCreateFailurePayload] = None,
     ):
         """With payload.
 
-        For success: pass rev_reg_def_result, rev_reg_def, rev_reg_def_private
+        For success: pass rev_reg_def_result, rev_reg_def
         For failure: pass failure=RevRegDefCreateFailurePayload(...)
         """
         payload = RevRegDefCreateResponsePayload(
             rev_reg_def_result=rev_reg_def_result,
             rev_reg_def=rev_reg_def,
-            rev_reg_def_private=rev_reg_def_private,
             failure=failure,
             options=options or {},
         )
@@ -358,7 +353,6 @@ class RevRegDefStoreRequestedPayload(NamedTuple):
 
     rev_reg_def: RevRegDef
     rev_reg_def_result: RevRegDefResult
-    rev_reg_def_private: RevocationRegistryDefinitionPrivate
     options: dict
 
 
@@ -378,14 +372,12 @@ class RevRegDefStoreRequestedEvent(Event):
         *,
         rev_reg_def: RevRegDef,
         rev_reg_def_result: RevRegDefResult,
-        rev_reg_def_private: RevocationRegistryDefinitionPrivate,
         options: Optional[dict] = None,
     ):
         """With payload."""
         payload = RevRegDefStoreRequestedPayload(
             rev_reg_def=rev_reg_def,
             rev_reg_def_result=rev_reg_def_result,
-            rev_reg_def_private=rev_reg_def_private,
             options=options or {},
         )
         return cls(payload)
@@ -400,8 +392,6 @@ class RevRegDefStoreFailurePayload(NamedTuple):
     """Failure-specific payload for registry definition store."""
 
     error_info: ErrorInfoPayload
-    # Need rev_reg_def_private for retry
-    rev_reg_def_private: RevocationRegistryDefinitionPrivate
 
 
 class RevRegDefStoreResponsePayload(NamedTuple):
@@ -465,7 +455,6 @@ class RevRegDefStoreResponseEvent(Event):
         error_msg: str,
         should_retry: bool,
         retry_count: int,
-        rev_reg_def_private: RevocationRegistryDefinitionPrivate,
         options: Optional[dict] = None,
     ):
         """Convenience method for creating failure response."""
@@ -475,7 +464,6 @@ class RevRegDefStoreResponseEvent(Event):
                 should_retry=should_retry,
                 retry_count=retry_count,
             ),
-            rev_reg_def_private=rev_reg_def_private,
         )
         return cls.with_payload(
             rev_reg_def=rev_reg_def,

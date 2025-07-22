@@ -163,7 +163,6 @@ class EventRecoveryManager:
         new_payload = RevRegDefStoreRequestedPayload(
             rev_reg_def=payload.rev_reg_def,
             rev_reg_def_result=payload.rev_reg_def_result,
-            rev_reg_def_private=payload.rev_reg_def_private,
             options=payload_options,
         )
 
