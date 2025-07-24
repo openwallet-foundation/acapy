@@ -151,6 +151,11 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 )
         else:
             if IndyPresExchangeHandler.format.api in request_data:
+                if not request_data.get("indy"):
+                    raise V20PresFormatHandlerError(
+                        """Indy request data is missing. Are you sure the
+                        request is using the Indy format?"""
+                    )
                 indy_spec = request_data.get(IndyPresExchangeHandler.format.api)
                 requested_credentials = {
                     "self_attested_attributes": indy_spec["self_attested_attributes"],

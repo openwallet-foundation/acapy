@@ -153,6 +153,11 @@ class AnonCredsPresExchangeHandler(V20PresFormatHandler):
                 AnonCredsPresExchangeHandler.format.api in request_data
                 or IndyPresExchangeHandler.format.api in request_data
             ):
+                if not request_data.get("anoncreds"):
+                    raise V20PresFormatHandlerError(
+                        """AnonCreds request data is missing. Are you sure the
+                        request is using the AnonCreds format?"""
+                    )
                 spec = request_data.get(
                     AnonCredsPresExchangeHandler.format.api
                 ) or request_data.get(IndyPresExchangeHandler.format.api)
