@@ -1295,6 +1295,7 @@ class AnonCredsRevocation:
             set_active_registry_options = options.copy()
             set_active_registry_options["cred_def_id"] = cred_def_id
             set_active_registry_options["old_rev_reg_def_id"] = rev_reg_def_id
+            set_active_registry_options.pop("correlation_id", None)
 
             # Activate the backup registry (this will trigger creation of new backup)
             await self.emit_set_active_registry_event(
