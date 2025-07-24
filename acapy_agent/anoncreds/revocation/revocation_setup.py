@@ -83,6 +83,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
     REGISTRY_TYPE = "CL_ACCUM"
     MAX_RETRY_COUNT = 3
+    RETRY_SLEEP_TIME = 3  # seconds
 
     def __init__(self) -> None:
         """Init manager."""
@@ -301,6 +302,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Handle retry with structured data
             if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying %s registry creation, attempt %d",
                     registry_type_name,
@@ -423,6 +429,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Implement retry logic
             if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying registry store, attempt %d", error_info.retry_count + 1
                 )
@@ -607,6 +618,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Implement retry logic
             if error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying tails upload, attempt %d", error_info.retry_count + 1
                 )
@@ -803,6 +819,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Implement retry logic
             if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying revocation list creation, attempt %d",
                     error_info.retry_count + 1,
@@ -932,6 +953,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Implement retry logic
             if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying revocation list store, attempt %d",
                     error_info.retry_count + 1,
@@ -1063,6 +1089,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Implement retry logic
             if error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying registry activation, attempt %d", error_info.retry_count + 1
                 )
@@ -1212,6 +1243,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             # Implement retry logic
             if error_info.retry_count < self.MAX_RETRY_COUNT:
+                LOGGER.debug(
+                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
+                )
+                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+
                 LOGGER.info(
                     "Retrying full registry handling, attempt %d",
                     error_info.retry_count + 1,
