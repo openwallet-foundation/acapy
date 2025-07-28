@@ -288,6 +288,9 @@ class AnonCredsRevocation:
             # Generate and set the public tails URI
             public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
             rev_reg_def.value.tails_location = public_tails_uri
+            
+            # Upload tails file
+            await self.upload_tails_file(rev_reg_def)
 
             # Register on network
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
