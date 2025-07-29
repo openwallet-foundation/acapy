@@ -269,28 +269,36 @@ class AnonCredsRevocation:
 
             rev_reg_def = RevRegDef.from_native(rev_reg_def)
 
-            # Generate a temporary identifier for storing the private key
-            # We don't know the final rev_reg_def_id until after registry creation
-            temp_private_key_id = f"temp_private_{uuid4()}"
-
-            # Store the private definition with temporary identifier to avoid losing it
-            LOGGER.debug(
-                "Storing private revocation registry definition with temp ID: %s",
-                temp_private_key_id,
-            )
-            async with self.profile.session() as session:
-                await session.handle.insert(
-                    CATEGORY_REV_REG_DEF_PRIVATE,
-                    temp_private_key_id,
-                    rev_reg_def_private.to_json_buffer(),
-                )
-
             # Generate and set the public tails URI
             public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
             rev_reg_def.value.tails_location = public_tails_uri
 
             # Upload tails file
             await self.upload_tails_file(rev_reg_def)
+
+            # We want to store the private key now so we can recover it in case of failure
+            # Example of failure and recovery scenario:
+            # - Rev reg creation is requested, but agent terminates before it completes.
+            # - Rev reg creation actually succeeded on the ledger, but the agent never
+            #   got the response to emit next event, so on recovery, tries to recreate it.
+            # - The ledger should return the existing rev reg, instead of recreating it.
+            # We don't know the rev_reg_def_id until after registry creation, so to link
+            # the rev reg with the private key, we can instead use the tails hash, which
+            # is known, and then we recover the private key from storage using the tails
+            # file hash of the returned RevRegDefResult
+
+            # Store the private definition with temporary identifier to avoid losing it
+            private_key_storage_id = self._get_private_key_storage_id(rev_reg_def)
+            LOGGER.debug(
+                "Storing private revocation registry definition with storage ID: %s",
+                private_key_storage_id,
+            )
+            async with self.profile.session() as session:
+                await session.handle.insert(
+                    CATEGORY_REV_REG_DEF_PRIVATE,
+                    private_key_storage_id,
+                    rev_reg_def_private.to_json_buffer(),
+                )
 
             # Register on network
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -308,14 +316,11 @@ class AnonCredsRevocation:
                 tag,
                 max_cred_num,
             )
-            # Include temp_private_key_id in options for potential recovery
-            options_with_temp_id = options.copy()
-            options_with_temp_id["temp_private_key_id"] = temp_private_key_id
 
             event = RevRegDefCreateResponseEvent.with_payload(
                 rev_reg_def_result=result,
                 rev_reg_def=rev_reg_def,
-                options=options_with_temp_id,
+                options=options,
             )
             await self.notify(event)
 
@@ -337,11 +342,6 @@ class AnonCredsRevocation:
 
             LOGGER.warning(f"{error_msg}. Emitting failure event.")
 
-            # Include temp_private_key_id in options for potential recovery
-            failure_options = options.copy()
-            if "temp_private_key_id" in locals():
-                failure_options["temp_private_key_id"] = temp_private_key_id
-
             event = RevRegDefCreateResponseEvent.with_failure(
                 error_msg=error_msg,
                 should_retry=should_retry,
@@ -351,7 +351,7 @@ class AnonCredsRevocation:
                 registry_type=registry_type,
                 tag=tag,
                 max_cred_num=max_cred_num,
-                options=failure_options,
+                options=options,
             )
             await self.notify(event)
 
@@ -481,20 +481,18 @@ class AnonCredsRevocation:
         rev_reg_def_state = result.revocation_registry_definition_state.state
 
         try:
-            temp_private_key_id = options.pop("temp_private_key_id", None)
-            if not temp_private_key_id:
-                LOGGER.error("No temp private key id found in options")
-                raise AnonCredsRevocationError("No temp private key id found in options")
+            private_key_storage_id = self._get_private_key_storage_id(rev_reg_def)
 
             # Read the private definition from storage (stored immediately after creation)
             async with self.profile.session() as session:
                 rev_reg_def_private_entry = await session.handle.fetch(
-                    CATEGORY_REV_REG_DEF_PRIVATE, temp_private_key_id
+                    CATEGORY_REV_REG_DEF_PRIVATE, private_key_storage_id
                 )
 
             if not rev_reg_def_private_entry:
                 raise AnonCredsRevocationError(
-                    f"Private revocation registry definition not found for {temp_private_key_id}"  # noqa: E501
+                    "Private revocation registry definition "
+                    f"not found for {private_key_storage_id}"
                 )
 
             async with self.profile.transaction() as txn:
@@ -513,9 +511,12 @@ class AnonCredsRevocation:
                     identifier,
                     rev_reg_def_private_entry.value,
                 )
-                await txn.handle.remove(CATEGORY_REV_REG_DEF_PRIVATE, temp_private_key_id)
+                await txn.handle.remove(
+                    CATEGORY_REV_REG_DEF_PRIVATE, private_key_storage_id
+                )
                 LOGGER.debug(
-                    "Removed temp private key id %s from storage", temp_private_key_id
+                    "Removed rev reg def private %s from storage",
+                    private_key_storage_id,
                 )
                 await txn.commit()
             LOGGER.debug("Revocation registry definition storage transaction committed")
@@ -2216,3 +2217,7 @@ class AnonCredsRevocation:
     def _generate_backup_registry_tag(self) -> str:
         """Generate a unique tag for a backup registry."""
         return str(uuid4())
+
+    def _get_private_key_storage_id(self, rev_reg_def: RevRegDef) -> str:
+        """Get the private key storage identifier for a revocation registry definition."""
+        return f"rev_reg_def_private_{rev_reg_def.value.tails_hash}"
