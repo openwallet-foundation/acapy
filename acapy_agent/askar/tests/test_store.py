@@ -108,12 +108,12 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         assert isinstance(store, AskarOpenStore)
         assert mock_rekey.called
 
-    async def test_unsupported_storage_type(self):
+    def test_unsupported_storage_type(self):
         with self.assertRaises(ProfileError) as ctx:
             AskarStoreConfig({"storage_type": "invalid"})
         assert "Unsupported storage type" in str(ctx.exception)
 
-    async def test_get_uri_sqlite_memory(self):
+    def test_get_uri_sqlite_memory(self):
         config = {
             "storage_type": "sqlite",
             "name": "test",
@@ -122,7 +122,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         uri = askar_store.get_uri(in_memory=True)
         assert uri == "sqlite://:memory:"
 
-    async def test_get_uri_postgres(self):
+    def test_get_uri_postgres(self):
         config = {
             "storage_type": "postgres",
             "name": "testname",
@@ -164,7 +164,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         with self.assertRaises(ProfileError):
             await store_config.remove_store()
 
-    async def test_askar_open_store_name_property(self):
+    def test_askar_open_store_name_property(self):
         config = AskarStoreConfig({"storage_type": "sqlite", "name": "teststore"})
         store = mock.AsyncMock()
         open_store = AskarOpenStore(config=config, created=True, store=store)
