@@ -80,7 +80,7 @@ class V2PackWireFormat(BaseWireFormat):
         # handle transport decorator
         receipt.direct_response_mode = message_dict.get("return_route")
 
-        LOGGER.debug("Expanded message: %s", message_dict)
+        LOGGER.debug(f"Expanded message: {message_dict}")
 
         return message_dict, receipt
 

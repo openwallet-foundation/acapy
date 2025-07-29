@@ -160,8 +160,7 @@ class RevocationRegistry:
             raise RevocationError("Tails file public URI is empty")
 
         LOGGER.info(
-            "Downloading the tails file for the revocation registry: %s",
-            self.registry_id,
+            f"Downloading the tails file for the revocation registry: {self.registry_id}"
         )
 
         tails_file_path = Path(self.get_receiving_tails_local_path())

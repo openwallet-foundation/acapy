@@ -27,13 +27,13 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
     """Get genesis transactions."""
     headers = {}
     headers["Content-Type"] = "application/json"
-    LOGGER.info("Fetching genesis transactions from: %s", genesis_url)
+    LOGGER.info(f"Fetching genesis transactions from: {genesis_url}")
     try:
         # Fetch from --genesis-url likely to fail in composed container setup
         # https://github.com/openwallet-foundation/acapy/issues/1745
         return await fetch(genesis_url, headers=headers, max_attempts=20)
     except FetchError as e:
-        LOGGER.error("Error retrieving genesis transactions from %s: %s", genesis_url, e)
+        LOGGER.error(f"Error retrieving genesis transactions from {genesis_url}: {e}")
         raise ConfigError("Error retrieving ledger genesis transactions") from e
 
 
@@ -46,11 +46,11 @@ async def fetch_genesis_from_url_or_file(
         txns = await fetch_genesis_transactions(genesis_url)
     elif genesis_path:
         try:
-            LOGGER.info("Reading ledger genesis transactions from: %s", genesis_path)
+            LOGGER.info(f"Reading ledger genesis transactions from: {genesis_path}")
             with open(genesis_path, "r") as genesis_file:
                 txns = genesis_file.read()
         except IOError as e:
-            LOGGER.error("Failed to read genesis file: %s", str(e))
+            LOGGER.error(f"Failed to read genesis file: {str(e)}")
             raise ConfigError("Error reading ledger genesis transactions") from e
     else:
         LOGGER.warning("No genesis url or path found in settings")
@@ -62,7 +62,7 @@ async def get_genesis_transactions(settings: Settings) -> str:
 
     LOGGER.debug("Getting genesis transactions from settings")
     txns = settings.get("ledger.genesis_transactions")
-    LOGGER.debug("Genesis transactions from settings: %s", "found" if txns else "absent")
+    LOGGER.debug(f"Genesis transactions from settings: {"found" if txns else "absent"}")
     if not txns:
         LOGGER.debug("No genesis transactions found in settings")
         genesis_url = settings.get("ledger.genesis_url")
@@ -83,7 +83,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings) -> 
     ledger_txns_list = []
     write_ledger_set = False
 
-    LOGGER.debug("Processing %d ledger configs", len(ledger_config_list))
+    LOGGER.debug(f"Processing {len(ledger_config_list)} ledger configs")
     for config in ledger_config_list:
         txns = config.get("genesis_transactions")
 
@@ -131,7 +131,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings) -> 
         )
 
     settings["ledger.ledger_config_list"] = ledger_txns_list
-    LOGGER.debug("Processed %d ledger configs successfully", len(ledger_txns_list))
+    LOGGER.debug(f"Processed {len(ledger_txns_list)} ledger configs successfully")
 
 
 async def ledger_config(
@@ -140,7 +140,7 @@ async def ledger_config(
     """Perform Indy ledger configuration."""
 
     LOGGER.debug(
-        "Configuring ledger for profile %s and public_did %s", profile.name, public_did
+        f"Configuring ledger for profile {profile.name} and public_did {public_did}
     )
 
     session = await profile.session()
@@ -175,19 +175,17 @@ async def ledger_config(
         if public_did:
             wallet = session.inject(BaseWallet)
             try:
-                LOGGER.debug("Setting DID endpoint to: %s", endpoint)
+                LOGGER.debug(f"Setting DID endpoint to: {endpoint}")
                 await wallet.set_did_endpoint(public_did, endpoint, ledger)
             except LedgerError as x_ledger:
-                LOGGER.error("Error setting DID endpoint: %s", x_ledger.message)
+                LOGGER.error(f"Error setting DID endpoint: {x_ledger.message}")
                 raise ConfigError(x_ledger.message) from x_ledger  # e.g., read-only
 
             # Publish profile endpoint if ledger is NOT read-only
             profile_endpoint = session.settings.get("profile_endpoint")
             if profile_endpoint and not ledger.read_only:
                 LOGGER.debug(
-                    "Publishing profile endpoint: %s for DID: %s",
-                    profile_endpoint,
-                    public_did,
+                    "Publishing profile endpoint: {profile_endpoint} for DID: {public_did}"
                 )
                 await ledger.update_endpoint_for_did(
                     public_did, profile_endpoint, EndpointType.PROFILE

@@ -336,9 +336,7 @@ class RevocationManager:
 
         """
         self._logger.debug(
-            "Setting credential revoked state for %d credentials in rev_reg_id=%s",
-            len(cred_rev_ids),
-            rev_reg_id,
+            f"Setting credential revoked state for {len(cred_rev_ids)} credentials in rev_reg_id={rev_reg_id}"
         )
         cred_rev_ids = [str(_id) for _id in cred_rev_ids]  # Method expects strings
         updated_cred_rev_ids = []  # Track updated to know if any were not found
@@ -353,13 +351,12 @@ class RevocationManager:
             for record in cred_rev_records:
                 cred_rev_id = record.cred_rev_id
                 self._logger.debug(
-                    "Updating IssuerCredRevRecord for cred_rev_id=%s", cred_rev_id
+                    f"Updating IssuerCredRevRecord for cred_rev_id={cred_rev_id}"
                 )
                 record.state = IssuerCredRevRecord.STATE_REVOKED
                 await record.save(txn, reason="revoke credential")
                 self._logger.debug(
-                    "Updated IssuerCredRevRecord state to REVOKED for cred_rev_id=%s",
-                    cred_rev_id,
+                    f"Updated IssuerCredRevRecord state to REVOKED for cred_rev_id={cred_rev_id}"
                 )
                 updated_cred_rev_ids.append(cred_rev_id)
 
@@ -371,8 +368,7 @@ class RevocationManager:
         ]
         if missing_cred_rev_ids:
             self._logger.warning(
-                "IssuerCredRevRecord not found for cred_rev_id=%s. Could not revoke.",
-                missing_cred_rev_ids,
+                f"IssuerCredRevRecord not found for cred_rev_id={missing_cred_rev_ids}. Could not revoke."
             )
 
         # Map cred_ex_version to the record type
@@ -406,9 +402,7 @@ class RevocationManager:
                         await cred_ex_record.save(txn, reason="revoke credential")
 
                         self._logger.debug(
-                            "Updated %s state to REVOKED for cred_ex_id=%s",
-                            record_type.__name__,
-                            cred_ex_id,
+                            f"Updated {record_type.__name__} state to REVOKED for cred_ex_id={cred_ex_id}"
                         )
                         await txn.commit()
                         break  # Record found, no need to check other record type

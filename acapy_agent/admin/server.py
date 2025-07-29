@@ -147,7 +147,7 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         return await handler(request)
     except web.HTTPFound as e:
         # redirect, typically / -> /api/doc
-        LOGGER.info("Handler redirect to: %s", e.location)
+        LOGGER.info(f"Handler redirect to: {e.location}")
         raise
     except asyncio.CancelledError:
         # redirection spawns new task and cancels old
@@ -155,32 +155,26 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         raise
     except (web.HTTPUnauthorized, jwt.InvalidTokenError, InvalidTokenError) as e:
         LOGGER.info(
-            "Unauthorized access during %s %s: %s", request.method, request.path, e
+            f"Unauthorized access during {request.method} {request.path} {e}"
         )
         raise web.HTTPUnauthorized(reason=str(e)) from e
     except (web.HTTPBadRequest, MultitenantManagerError) as e:
-        LOGGER.info("Bad request during %s %s: %s", request.method, request.path, e)
+        LOGGER.info(f"Bad request during {request.method} {request.path} {e}")
         raise web.HTTPBadRequest(reason=str(e)) from e
     except (web.HTTPNotFound, StorageNotFoundError) as e:
         LOGGER.info(
-            "Not Found error occurred during %s %s: %s",
-            request.method,
-            request.path,
-            e,
+            f"Not Found error occurred during {request.method} {request.path} {e}"
         )
         raise web.HTTPNotFound(reason=str(e)) from e
     except web.HTTPUnprocessableEntity as e:
         validation_error_message = extract_validation_error_message(e)
         LOGGER.info(
-            "Unprocessable Entity occurred during %s %s: %s",
-            request.method,
-            request.path,
-            validation_error_message,
+            f"Unprocessable Entity occurred during {request.method} {request.path} {validation_error_message}"
         )
         raise web.HTTPUnprocessableEntity(reason=validation_error_message) from e
     except (LedgerConfigError, LedgerTransactionError) as e:
         # fatal, signal server shutdown
-        LOGGER.critical("Shutdown with %s", str(e))
+        LOGGER.critical(f"Shutdown with {str(e)}")
         request.app._state["ready"] = False
         request.app._state["alive"] = False
         raise
@@ -232,13 +226,13 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     """Show request detail in debug log."""
 
     if LOGGER.isEnabledFor(logging.DEBUG):  # Skipped if DEBUG is not enabled
-        LOGGER.debug("Incoming request: %s %s", request.method, request.path_qs)
+        LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
         is_status_check = str(request.rel_url).startswith("/status/")
         if not is_status_check:  # Don't log match info for status checks; reduces noise
-            LOGGER.debug("Match info: %s", request.match_info)
+            LOGGER.debug(f"Match info: {request.match_info}")
 
             if request.body_exists:  # Only log body if it exists
-                LOGGER.debug("Body: %s", await request.text())
+                LOGGER.debug(f"Body: {await request.text()}")
 
     return await handler(request)
 

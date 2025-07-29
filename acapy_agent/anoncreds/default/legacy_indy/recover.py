@@ -31,7 +31,7 @@ class RevocRecoveryException(Exception):
 
 async def _check_tails_hash_for_inconsistency(tails_location: str, tails_hash: str):
     async with aiohttp.ClientSession() as session:
-        LOGGER.debug("Tails URL: %s", tails_location)
+        LOGGER.debug(f"Tails URL: {tails_location}")
         tails_data_http_response = await session.get(tails_location)
         tails_data = await tails_data_http_response.read()
         remote_tails_hash = base58.b58encode(hashlib.sha256(tails_data).digest()).decode(
@@ -85,7 +85,7 @@ async def fetch_txns(
     registry_from_ledger = result["data"]["value"]["accum_to"]
     registry_from_ledger["ver"] = "1.0"
     revoked = set(result["data"]["value"]["revoked"])
-    LOGGER.debug("Ledger revoked indexes: %s", revoked)
+    LOGGER.debug(f"Ledger revoked indexes: {revoked}")
 
     return registry_from_ledger, revoked
 
@@ -103,8 +103,7 @@ async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList) -
     mismatch = prev_revoked - set_revoked
     if mismatch:
         LOGGER.warning(
-            "Credential index(es) revoked on the ledger, but not in wallet: %s",
-            mismatch,
+            f"Credential index(es) revoked on the ledger, but not in wallet: {mismatch}"
         )
 
     updates = set_revoked - prev_revoked
@@ -112,7 +111,7 @@ async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList) -
         LOGGER.debug("No updates to perform")
         return {}
     else:
-        LOGGER.debug("New revoked indexes: %s", updates)
+        LOGGER.debug(f"New revoked indexes: {updates}")
 
         # Prepare the transaction to write to the ledger
         registry = RevocationRegistry.load(registry_from_ledger)

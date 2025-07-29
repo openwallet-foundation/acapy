@@ -90,7 +90,7 @@ class UniversalResolver(BaseDIDResolver):
                 if resp.status == 200:
                     doc = await resp.json()
                     did_doc = doc["didDocument"]
-                    LOGGER.info("Retrieved doc: %s", did_doc)
+                    LOGGER.info(f"Retrieved doc: {did_doc}")
                     return did_doc
                 if resp.status == 404:
                     raise DIDNotFound(f"{did} not found by {self.__class__.__name__}")

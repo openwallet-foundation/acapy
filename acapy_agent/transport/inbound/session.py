@@ -299,7 +299,7 @@ class InboundSession:
                     try:
                         response = await self.encode_outbound(self.response_buffer)
                     except WireFormatError as e:
-                        LOGGER.warning("Error encoding direct response: %s", str(e))
+                        LOGGER.warning(f"Error encoding direct response: {str(e)}")
                         self.clear_response()
                 if response:
                     return response

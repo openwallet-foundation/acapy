@@ -208,7 +208,7 @@ class InboundTransportManager:
                         break
 
         if accepted:
-            LOGGER.debug("Returned message to socket %s", session.session_id)
+            LOGGER.debug(f"Returned message to socket {session.session_id}")
         return accepted
 
     def return_undelivered(self, outbound: OutboundMessage) -> bool:

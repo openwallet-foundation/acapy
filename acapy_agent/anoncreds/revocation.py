@@ -623,8 +623,7 @@ class AnonCredsRevocation:
     async def retrieve_tails(self, rev_reg_def: RevRegDef) -> str:
         """Retrieve tails file from server."""
         LOGGER.info(
-            "Downloading the tails file with hash: %s",
-            rev_reg_def.value.tails_hash,
+            f"Downloading the tails file with hash: {rev_reg_def.value.tails_hash}",
         )
 
         tails_file_path = Path(self.get_local_tails_path(rev_reg_def))
@@ -783,11 +782,8 @@ class AnonCredsRevocation:
                 max_cred_num=active_rev_reg_def.value_json["value"]["maxCredNum"],
             )
             LOGGER.debug(
-                "Previous rev_reg_def_id = %s.\nCurrent rev_reg_def_id = %s.\n"
-                "Backup reg = %s",
-                rev_reg_def_id,
-                backup_rev_reg_def_id,
-                backup_reg.rev_reg_def_id,
+                f"Previous rev_reg_def_id = {rev_reg_def_id}.\nCurrent rev_reg_def_id = {backup_rev_reg_def_id}.\n"
+                f"Backup reg = {backup_reg.rev_reg_def_id}",
             )
 
     async def decommission_registry(self, cred_def_id: str) -> list:
@@ -843,10 +839,7 @@ class AnonCredsRevocation:
         )
 
         LOGGER.debug(
-            "New registry = %s.\nBackup registry = %s.\nDecommissioned registries = %s",
-            new_reg,
-            backup_reg,
-            recs,
+            f"New registry = {new_reg}.\nBackup registry = {backup_reg}.\nDecommissioned registries = {recs}"
         )
         return recs
 
@@ -1139,8 +1132,7 @@ class AnonCredsRevocation:
         for attempt in range(max(retries, 1)):
             if attempt > 0:
                 LOGGER.info(
-                    "Waiting 2s before retrying credential issuance for cred def '%s'",
-                    cred_def_id,
+                    f"Waiting 2s before retrying credential issuance for cred def '{cred_def_id}'"
                 )
                 await asyncio.sleep(2)
 
@@ -1214,11 +1206,8 @@ class AnonCredsRevocation:
 
         """
         LOGGER.info(
-            "Starting revocation process for registry %s with "
-            "additional_crids=%s, limit_crids=%s",
-            revoc_reg_id,
-            additional_crids,
-            limit_crids,
+            f"Starting revocation process for registry {revoc_reg_id} with "
+            f"additional_crids={additional_crids}, limit_crids={limit_crids}"
         )
         updated_list = None
         failed_crids = set()
@@ -1227,19 +1216,17 @@ class AnonCredsRevocation:
 
         while True:
             attempt += 1
-            LOGGER.debug("Revocation attempt %d/%d", attempt, max_attempt)
+            LOGGER.debug(f"Revocation attempt {attempt}/{max_attempt}")
             if attempt >= max_attempt:
                 LOGGER.error(
-                    "Max attempts (%d) reached while trying to update registry %s",
-                    max_attempt,
-                    revoc_reg_id,
+                    f"Max attempts ({max_attempt}) reached while trying to update registry {revoc_reg_id}"
                 )
                 raise AnonCredsRevocationError(
                     "Repeated conflict attempting to update registry"
                 )
             try:
                 async with self.profile.session() as session:
-                    LOGGER.debug("Fetching revocation registry data for %s", revoc_reg_id)
+                    LOGGER.debug(f"Fetching revocation registry data for {revoc_reg_id}")
                     rev_reg_def_entry = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF, revoc_reg_id
                     )
@@ -1251,9 +1238,7 @@ class AnonCredsRevocation:
                     )
             except AskarError as err:
                 LOGGER.error(
-                    "Failed to retrieve revocation registry data for %s: %s",
-                    revoc_reg_id,
-                    str(err),
+                    f"Failed to retrieve revocation registry data for {revoc_reg_id}: {str(err)}"
                 )
                 raise AnonCredsRevocationError(
                     "Error retrieving revocation registry"
@@ -1272,9 +1257,7 @@ class AnonCredsRevocation:
                 if not rev_reg_def_private_entry:
                     missing_data.append("revocation registry private definition")
                 LOGGER.error(
-                    "Missing required revocation registry data for %s: %s",
-                    revoc_reg_id,
-                    ", ".join(missing_data),
+                    f"Missing required revocation registry data for {revoc_reg_id}: {", ".join(missing_data)}"
                 )
                 raise AnonCredsRevocationError(
                     f"Missing required revocation registry data: {' '.join(missing_data)}"
@@ -1283,15 +1266,13 @@ class AnonCredsRevocation:
             try:
                 async with self.profile.session() as session:
                     cred_def_id = rev_reg_def_entry.value_json["credDefId"]
-                    LOGGER.debug("Fetching credential definition %s", cred_def_id)
+                    LOGGER.debug(f"Fetching credential definition {cred_def_id}")
                     cred_def_entry = await session.handle.fetch(
                         CATEGORY_CRED_DEF, cred_def_id
                     )
             except AskarError as err:
                 LOGGER.error(
-                    "Failed to retrieve credential definition %s: %s",
-                    cred_def_id,
-                    str(err),
+                    f"Failed to retrieve credential definition {cred_def_id}: {str(err)}"
                 )
                 raise AnonCredsRevocationError(
                     f"Error retrieving cred def {cred_def_id}"
@@ -1309,7 +1290,7 @@ class AnonCredsRevocation:
                 )
             except AnoncredsError as err:
                 LOGGER.error(
-                    "Failed to load revocation registry definition: %s", str(err)
+                    f"Failed to load revocation registry definition: {str(err)}"
                 )
                 raise AnonCredsRevocationError(
                     "Error loading revocation registry definition"
@@ -1323,36 +1304,26 @@ class AnonCredsRevocation:
             rev_list = RevList.deserialize(rev_info["rev_list"])
 
             LOGGER.info(
-                "Processing %d credential revocation IDs for registry %s",
-                len(cred_revoc_ids),
-                revoc_reg_id,
+                f"Processing {len(cred_revoc_ids)} credential revocation IDs for registry {revoc_reg_id}"
             )
 
             for rev_id in cred_revoc_ids:
                 if rev_id < 1 or rev_id > max_cred_num:
                     LOGGER.error(
                         "Skipping requested credential revocation "
-                        "on rev reg id %s, cred rev id=%s not in range (1-%d)",
-                        revoc_reg_id,
-                        rev_id,
-                        max_cred_num,
+                        f"on rev reg id {revoc_reg_id}, cred rev id={rev_id} not in range (1-{max_cred_num})"
                     )
                     failed_crids.add(rev_id)
                 elif rev_id >= rev_info["next_index"]:
                     LOGGER.warning(
                         "Skipping requested credential revocation "
-                        "on rev reg id %s, cred rev id=%s not yet issued (next_index=%d)",
-                        revoc_reg_id,
-                        rev_id,
-                        rev_info["next_index"],
+                        f"on rev reg id {revoc_reg_id}, cred rev id={rev_id} not yet issued (next_index={rev_info["next_index"]})"
                     )
                     failed_crids.add(rev_id)
                 elif rev_list.revocation_list[rev_id] == 1:
                     LOGGER.warning(
                         "Skipping requested credential revocation "
-                        "on rev reg id %s, cred rev id=%s already revoked",
-                        revoc_reg_id,
-                        rev_id,
+                        f"on rev reg id {revoc_reg_id}, cred rev id={rev_id} already revoked"
                     )
                     failed_crids.add(rev_id)
                 else:
@@ -1360,7 +1331,7 @@ class AnonCredsRevocation:
 
             if not rev_crids:
                 LOGGER.info(
-                    "No valid credentials to revoke for registry %s", revoc_reg_id
+                    f"No valid credentials to revoke for registry {revoc_reg_id}"
                 )
                 break
 
@@ -1371,10 +1342,7 @@ class AnonCredsRevocation:
             rev_crids = rev_crids - skipped_crids
 
             LOGGER.info(
-                "Revoking %d credentials, skipping %d credentials for registry %s",
-                len(rev_crids),
-                len(skipped_crids),
-                revoc_reg_id,
+                f"Revoking {len(rev_crids)} credentials, skipping {len(skipped_crids)} credentials for registry {revoc_reg_id}"
             )
 
             try:
@@ -1391,7 +1359,7 @@ class AnonCredsRevocation:
                     ),
                 )
             except AnoncredsError as err:
-                LOGGER.error("Failed to update revocation registry: %s", str(err))
+                LOGGER.error(f"Failed to update revocation registry: {str(err)}")
                 raise AnonCredsRevocationError(
                     "Error updating revocation registry"
                 ) from err
@@ -1404,8 +1372,7 @@ class AnonCredsRevocation:
                     )
                     if not rev_info_upd:
                         LOGGER.warning(
-                            "Revocation registry %s missing during update, skipping",
-                            revoc_reg_id,
+                            f"Revocation registry {revoc_reg_id} missing during update, skipping"
                         )
                         updated_list = None
                         break
@@ -1413,8 +1380,7 @@ class AnonCredsRevocation:
                     rev_info_upd = rev_info_upd.value_json
                     if rev_info_upd != rev_info:
                         LOGGER.debug(
-                            "Concurrent update detected for registry %s, retrying",
-                            revoc_reg_id,
+                            f"Concurrent update detected for registry {revoc_reg_id}, retrying"
                         )
                         continue
                     rev_info_upd["rev_list"] = updated_list.to_dict()
@@ -1430,11 +1396,10 @@ class AnonCredsRevocation:
                     )
                     await txn.commit()
                     LOGGER.info(
-                        "Successfully updated revocation list for registry %s",
-                        revoc_reg_id,
+                        f"Successfully updated revocation list for registry {revoc_reg_id}",
                     )
             except AskarError as err:
-                LOGGER.error("Failed to save revocation registry: %s", str(err))
+                LOGGER.error(f"Failed to save revocation registry: {str(err)}")
                 raise AnonCredsRevocationError(
                     "Error saving revocation registry"
                 ) from err
@@ -1450,10 +1415,7 @@ class AnonCredsRevocation:
             failed=failed,
         )
         LOGGER.info(
-            "Completed revocation process for registry %s: %d revoked, %d failed",
-            revoc_reg_id,
-            len(revoked),
-            len(failed),
+            f"Completed revocation process for registry {revoc_reg_id}: {len(revoked)} revoked, {len(failed)} failed"
         )
         return result
 

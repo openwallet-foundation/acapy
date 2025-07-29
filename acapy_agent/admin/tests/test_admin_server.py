@@ -132,10 +132,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPUnauthorized):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Unauthorized access during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Unauthorized access during {request.method} {request.path} {handler.side_effect}"
             )
 
             # Test jwt.InvalidTokenError
@@ -145,10 +142,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPUnauthorized):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Unauthorized access during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Unauthorized access during {request.method} {request.path} {handler.side_effect}"
             )
 
             # Test InvalidTokenError
@@ -158,10 +152,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPUnauthorized):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Unauthorized access during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Unauthorized access during {request.method} {request.path} {handler.side_effect}"
             )
 
     async def test_ready_middleware_http_bad_request(self):
@@ -182,10 +173,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPBadRequest):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Bad request during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Bad request during {request.method} {request.path} {handler.side_effect}"
             )
 
             # Test MultitenantManagerError
@@ -195,10 +183,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPBadRequest):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Bad request during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Bad request during {request.method} {request.path} {handler.side_effect}"
             )
 
     async def test_ready_middleware_http_not_found(self):
@@ -217,10 +202,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPNotFound):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Not Found error occurred during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Not Found error occurred during {request.method} {request.path} {handler.side_effect}"
             )
 
             # Test StorageNotFoundError
@@ -230,10 +212,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             with self.assertRaises(web.HTTPNotFound):
                 await test_module.ready_middleware(request, handler)
             mock_logger.info.assert_called_with(
-                "Not Found error occurred during %s %s: %s",
-                request.method,
-                request.path,
-                handler.side_effect,
+                f"Not Found error occurred during {request.method} {request.path} {handler.side_effect}"
             )
 
     async def test_ready_middleware_http_unprocessable_entity(self):
@@ -262,10 +241,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
                     await test_module.ready_middleware(request, handler)
                 mock_extract.assert_called_once_with(http_error)
                 mock_logger.info.assert_called_with(
-                    "Unprocessable Entity occurred during %s %s: %s",
-                    request.method,
-                    request.path,
-                    mock_extract.return_value,
+                    f"Unprocessable Entity occurred during {request.method} {request.path} {mock_extract.return_value}"
                 )
 
     async def get_admin_server(

@@ -165,9 +165,7 @@ class AnonCredsHolder:
 
         LOGGER.debug(
             "Created credential request. "
-            "credential_request_json=%s credential_request_metadata_json=%s",
-            cred_req_json,
-            cred_req_metadata_json,
+            f"credential_request_json={cred_req_json} credential_request_metadata_json={cred_req_metadata_json}"
         )
 
         return cred_req_json, cred_req_metadata_json

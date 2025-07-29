@@ -43,7 +43,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         if context.settings.get("timing.enabled"):
             timing_log = context.settings.get("timing.log_file")
-            LOGGER.debug("Enabling timing collector with log file: %s", timing_log)
+            LOGGER.debug(f"Enabling timing collector with log file: {timing_log}")
             collector = Collector(log_path=timing_log)
             context.injector.bind_instance(Collector, collector)
 
@@ -182,7 +182,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):
-            LOGGER.debug("Registering external plugin: %s", plugin_path)
+            LOGGER.debug(f"Registering external plugin: {plugin_path}")
             plugin_registry.register_plugin(plugin_path)
 
         # Register message protocols

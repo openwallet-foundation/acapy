@@ -74,7 +74,7 @@ class HttpTransport(BaseOutboundTransport):
         else:
             headers["Content-Type"] = "application/json"
         self.logger.debug(
-            "Posting to %s; Data: %s; Headers: %s", endpoint, payload, headers
+            f"Posting to {endpoint}; Data: {payload}; Headers: {headers}"
         )
         async with self.client_session.post(
             endpoint, data=payload, headers=headers

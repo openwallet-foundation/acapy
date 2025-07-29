@@ -113,7 +113,7 @@ class WsTransport(BaseInboundTransport):
 
                 if inbound.done():
                     msg: WSMessage = inbound.result()
-                    LOGGER.info("Websocket received message: %s", msg.data)
+                    LOGGER.info(f"Websocket received message: {msg.data}")
                     if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
                         try:
                             await session.receive(msg.data)
@@ -121,15 +121,11 @@ class WsTransport(BaseInboundTransport):
                             await ws.close(1003)  # unsupported data error
                     elif msg.type == WSMsgType.ERROR:
                         LOGGER.error(
-                            "Websocket connection closed with exception: %s",
-                            ws.exception(),
+                            f"Websocket connection closed with exception: {ws.exception()}"
                         )
                     else:
                         LOGGER.error(
-                            "Unexpected Websocket message type received: %s: %s, %s",
-                            msg.type,
-                            msg.data,
-                            msg.extra,
+                            f"Unexpected Websocket message type received: {msg.type}: {msg.data}, {msg.extra}"
                         )
                     if not ws.closed:
                         inbound = loop.create_task(ws.receive())

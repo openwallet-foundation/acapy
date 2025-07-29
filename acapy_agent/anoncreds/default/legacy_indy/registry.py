@@ -234,7 +234,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             raise AnonCredsRegistrationError(NO_LEDGER_AVAILABLE_MSG)
 
         # Translate schema into format expected by Indy
-        LOGGER.debug("Registering schema: %s", schema_id)
+        LOGGER.debug(f"Registering schema: {schema_id}")
         indy_schema = {
             "ver": "1.0",
             "id": schema_id,
@@ -243,7 +243,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             "attrNames": schema.attr_names,
             "seqNo": None,
         }
-        LOGGER.debug("schema value: %s", indy_schema)
+        LOGGER.debug(f"schema value: {indy_schema}")
 
         endorser_did = None
         create_transaction = options.get("create_transaction_for_endorser", False)
@@ -403,7 +403,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 ) from err
 
         # Translate anoncreds object to indy object
-        LOGGER.debug("Registering credential definition: %s", cred_def_id)
+        LOGGER.debug(f"Registering credential definition: {cred_def_id}")
         indy_cred_def = {
             "id": cred_def_id,
             "schemaId": str(schema.schema_metadata["seqNo"]),
@@ -412,7 +412,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             "value": credential_definition.value.serialize(),
             "ver": "1.0",
         }
-        LOGGER.debug("Cred def value: %s", indy_cred_def)
+        LOGGER.debug(f"Cred def value: {indy_cred_def}")
 
         endorser_did = None
         create_transaction = options.get("create_transaction_for_endorser", False)
@@ -545,7 +545,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     {"ledger_id": ledger_id},
                 )
 
-            LOGGER.debug("Retrieved revocation registry definition: %s", rev_reg_def)
+            LOGGER.debug(f"Retrieved revocation registry definition: {rev_reg_def}")
             rev_reg_def_value = RevRegDefValue.deserialize(rev_reg_def["value"])
             anoncreds_rev_reg_def = RevRegDef(
                 issuer_id=rev_reg_def["id"].split(":")[0],
@@ -752,7 +752,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     f"Revocation list not found for rev reg def: {rev_reg_def_id}",
                     {"ledger_id": ledger_id},
                 )
-        LOGGER.debug("Retrieved delta: %s", delta)
+        LOGGER.debug(f"Retrieved delta: {delta}")
         return delta, timestamp
 
     async def get_revocation_list(
@@ -777,7 +777,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 delta["value"]["revoked"], max_cred_num
             )
             LOGGER.debug(
-                "Index list to full state bit array: %s", revocation_list_from_indexes
+                f"Index list to full state bit array: {revocation_list_from_indexes}"
             )
             rev_list = RevList(
                 issuer_id=rev_reg_def_id.split(":")[0],

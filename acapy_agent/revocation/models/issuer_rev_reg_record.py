@@ -203,7 +203,7 @@ class IssuerRevRegRecord(BaseRecord):
         issuer = profile.inject(IndyIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
-        LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
+        LOGGER.debug(f"Creating revocation registry with size: {self.max_cred_num}")
 
         try:
             (

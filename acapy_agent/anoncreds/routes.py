@@ -715,7 +715,7 @@ async def rev_list_post(request: web.BaseRequest):
                 options,
             )
         )
-        LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
+        LOGGER.debug(f"published revocation list for: {rev_reg_def_id}")
         return web.json_response(result.serialize())
     except ValueError as e:
         handle_value_error(e)

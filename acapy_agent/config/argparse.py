@@ -919,10 +919,10 @@ class LedgerGroup(ArgumentGroup):
 
             single_configured = True
             if args.genesis_url:
-                LOGGER.debug("Setting ledger.genesis_url = %s", args.genesis_url)
+                LOGGER.debug(f"Setting ledger.genesis_url = {args.genesis_url}")
                 settings["ledger.genesis_url"] = args.genesis_url
             elif args.genesis_file:
-                LOGGER.debug("Setting ledger.genesis_file = %s", args.genesis_file)
+                LOGGER.debug(f"Setting ledger.genesis_file = {args.genesis_file}")
                 settings["ledger.genesis_file"] = args.genesis_file
             elif args.genesis_transactions:
                 LOGGER.debug("Setting ledger.genesis_transactions")

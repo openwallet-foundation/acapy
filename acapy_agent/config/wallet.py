@@ -107,9 +107,7 @@ async def _replace_public_did_if_seed_mismatch(
     )
     await wallet.set_public_did(replace_did_info.did)
     LOGGER.info(
-        "Created new public DID: %s, with verkey: %s",
-        replace_did_info.did,
-        replace_did_info.verkey,
+        f"Created new public DID: {replace_did_info.did}, with verkey: {replace_did_info.verkey}"
     )
     return replace_did_info
 
@@ -144,10 +142,7 @@ async def _initialize_with_seed(
         did_info = await wallet.create_public_did(method=SOV, key_type=ED25519, seed=seed)
 
     LOGGER.info(
-        "Created new %s DID: %s, Verkey: %s",
-        "local" if create_local_did else "public",
-        did_info.did,
-        did_info.verkey,
+        f"Created new {"local" if create_local_did else "public"} DID: {did_info.did}, Verkey: {did_info.verkey}"
     )
     return did_info
 
@@ -172,10 +167,7 @@ async def wallet_config(
         )
 
     LOGGER.info(
-        "%s Profile name: %s, backend: %s",
-        "Created new profile -" if profile.created else "Opened existing profile -",
-        profile.name,
-        profile.backend,
+        f"{"Created new profile -" if profile.created else "Opened existing profile -"} Profile name: {profile.name}, backend: {profile.backend}"
     )
 
     txn = await profile.transaction()
