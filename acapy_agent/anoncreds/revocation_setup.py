@@ -292,14 +292,16 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             )
 
             # Check if resource already exists; recover by fetching existing registry
-            if "Resource already exists" in error_info.error_msg:
+            if "already exists" in error_info.error_msg:
                 LOGGER.error(
-                    "Resource already exists for %s registry, "
-                    "attempting to fetch existing resource",
+                    "Resource already exists for %s registry",
                     registry_type_name,
                 )
 
-                # TODO: Implement recovery
+                # Note: It's possible to recover by fetching the existing registry def
+                # but if we don't have the rev-reg-def-id, we don't know which to fetch
+                # Cheqd already recovers from this automatically in the plugin
+                error_info.should_retry = False
 
             # Handle retry with structured data
             if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
@@ -345,7 +347,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="registry_create",
+                    identifier=payload.rev_reg_def.cred_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
         else:
             # Handle success - emit store request event
             revoc = AnonCredsRevocation(profile)
@@ -464,7 +473,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="registry_store",
+                    identifier=payload.rev_reg_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
         else:
             # Handle success
             LOGGER.info(
@@ -648,7 +664,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_TAILS_UPLOAD_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="tails_upload",
+                    identifier=payload.rev_reg_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
         else:
             # Handle success
             LOGGER.info("Tails upload succeeded for: %s", payload.rev_reg_def_id)
@@ -849,7 +872,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="rev_list_create",
+                    identifier=payload.rev_reg_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
         else:
             # Handle success
             LOGGER.info(
@@ -985,7 +1015,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="rev_list_store",
+                    identifier=payload.rev_reg_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
         else:
             # Handle success
             LOGGER.info("Revocation list store succeeded for: %s", payload.rev_reg_def_id)
@@ -1118,7 +1155,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="registry_activation",
+                    identifier=payload.rev_reg_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
         else:
             # Handle success
             LOGGER.info("Registry activation succeeded for: %s", payload.rev_reg_def_id)
@@ -1275,7 +1319,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                             correlation_id=correlation_id,
                         )
-                # TODO: Implement notification to issuer about failure
+
+                self._notify_issuer_about_failure(
+                    profile=profile,
+                    failure_type="full_registry_handling",
+                    identifier=payload.old_rev_reg_def_id,
+                    error_msg=error_info.error_msg,
+                    options=payload.options,
+                )
 
         else:
             LOGGER.info(
