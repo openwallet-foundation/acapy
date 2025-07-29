@@ -19,7 +19,7 @@ class PresentationProblemReportHandler(BaseHandler):
             responder: responder callback
         """
         self._logger.debug(
-            "Present-proof v1.0 problem report handler called with context {context}",
+            f"Present-proof v1.0 problem report handler called with context {context}",
         )
         assert isinstance(context.message, PresentationProblemReport)
 

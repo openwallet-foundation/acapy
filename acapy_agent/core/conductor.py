@@ -165,7 +165,7 @@ class Conductor:
             if not context.settings.get("ledger.genesis_transactions"):
                 ledger = context.injector.inject(BaseLedger)
                 LOGGER.debug(
-                    "Ledger backend: {ledger.BACKEND_NAME}, Profile backend: {self.root_profile.BACKEND_NAME}"
+                    f"Ledger backend: {ledger.BACKEND_NAME}, Profile backend: {self.root_profile.BACKEND_NAME}"
                 )
                 if (
                     self.root_profile.BACKEND_NAME == "askar"

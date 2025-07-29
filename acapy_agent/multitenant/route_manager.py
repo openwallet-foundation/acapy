@@ -67,12 +67,12 @@ class MultitenantRouteManager(RouteManager):
 
                 # If no error is thrown, it means there is already a record
                 LOGGER.debug(
-                    "Route record already exists for recipient {recipient_key} to wallet {wallet_id}. Skipping"
+                    f"Route record already exists for recipient {recipient_key} to wallet {wallet_id}. Skipping"
                 )
                 return None
             except StorageNotFoundError:
                 LOGGER.debug(
-                    "Route record does not exist for recipient {recipient_key} to wallet {wallet_id}. Creating"
+                    f"Route record does not exist for recipient {recipient_key} to wallet {wallet_id}. Creating"
                 )
 
         await routing_mgr.create_route_record(

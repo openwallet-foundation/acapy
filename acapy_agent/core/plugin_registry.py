@@ -385,7 +385,7 @@ class PluginRegistry:
                     try:
                         mod = ClassLoader.load_module(version_path)
                     except ModuleLoadError as e:
-                        LOGGER.error("Error loading routes from {version_path}: {e}")
+                        LOGGER.error(f"Error loading routes from {version_path}: {e}")
                         continue
 
                     if mod and hasattr(mod, "post_process_routes"):
@@ -396,7 +396,7 @@ class PluginRegistry:
                 try:
                     mod = ClassLoader.load_module(routes_path)
                 except ModuleLoadError as e:
-                    LOGGER.error("Error loading routes from {routes_path}: {e}")
+                    LOGGER.error(f"Error loading routes from {routes_path}: {e}")
                     continue
 
                 if mod and hasattr(mod, "post_process_routes"):

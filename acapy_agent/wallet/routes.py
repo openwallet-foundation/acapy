@@ -865,7 +865,7 @@ async def promote_wallet_public_did(
 
         async with ledger:
             if not await ledger.get_key_for_did(did):
-                LOGGER.info("Cannot promote DID {did}; it is not posted to the ledger")
+                LOGGER.info(f"Cannot promote DID {did}; it is not posted to the ledger")
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
         is_author_profile = (

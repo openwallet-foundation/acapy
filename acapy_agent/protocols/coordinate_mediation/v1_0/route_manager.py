@@ -52,7 +52,7 @@ class RouteManager(ABC):
                 wallet = session.inject(BaseWallet)
 
                 LOGGER.debug(
-                    "Creating new DID for connection {conn_record.connection_id}"
+                    f"Creating new DID for connection {conn_record.connection_id}"
                 )
                 my_info = await wallet.create_local_did(SOV, ED25519)
                 conn_record.my_did = my_info.did
@@ -330,7 +330,7 @@ class CoordinateMediationV1RouteManager(RouteManager):
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
     ) -> Optional[KeylistUpdate]:
-        LOGGER.debug("Routing for key {recipient_key} using coordinate mediation")
+        LOGGER.debug(f"Routing for key {recipient_key} using coordinate mediation")
         if not mediation_record:
             return None
 

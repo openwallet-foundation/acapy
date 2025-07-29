@@ -586,7 +586,7 @@ class CredentialManager:
 
         if cred_ex_record.credential:
             LOGGER.warning(
-                "issue_credential called multiple times for v1.0 credential exchange {cred_ex_record.credential_exchange_id}",
+                f"issue_credential called multiple times for v1.0 credential exchange {cred_ex_record.credential_exchange_id}",
             )
             credential_ser = cred_ex_record._credential.ser
 
@@ -631,7 +631,7 @@ class CredentialManager:
                 if attempt > 0:
                     LOGGER.info(
                         "Waiting 2s before retrying credential issuance "
-                        "for cred def '{cred_def_id}'",
+                        f"for cred def '{cred_def_id}'",
                     )
                     await asyncio.sleep(2)
 
@@ -884,7 +884,7 @@ class CredentialManager:
                     )
                 except StorageNotFoundError:
                     LOGGER.warning(
-                        "Skipping credential exchange ack, record not found: '{cred_ex_record.credential_exchange_id}'",
+                        f"Skipping credential exchange ack, record not found: '{cred_ex_record.credential_exchange_id}'",
                     )
                     return (cred_ex_record, None)
 
@@ -945,7 +945,7 @@ class CredentialManager:
                 )
             except StorageNotFoundError:
                 LOGGER.warning(
-                    "Skip ack message on credential exchange, record not found {message._thread_id}",
+                    f"Skip ack message on credential exchange, record not found {message._thread_id}",
                 )
                 return None
 

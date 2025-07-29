@@ -1229,7 +1229,7 @@ class DemoAgent:
                 "DELETE", path, data, text, params, headers=headers
             )
             EVENT_LOGGER.debug(
-                "Response from DELETE {path} received: \n{repr_json(response)}"
+                f"Response from DELETE {path} received: \n{repr_json(response)}"
             )
             return response
         except ClientError as e:

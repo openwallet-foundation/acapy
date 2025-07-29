@@ -238,8 +238,8 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                             f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::{uuid}"
                         )
                         LOGGER.info(
-                            "Timestamp {timestamp} from ledger for item {uuid} falls outside "
-                            "non-revocation interval {non_revoc_intervals[uuid]}"
+                            f"Timestamp {timestamp} from ledger for item {uuid} falls outside "
+                            f"non-revocation interval {non_revoc_intervals[uuid]}"
                         )
 
         for uuid, req_pred in pres_req["requested_predicates"].items():

@@ -74,10 +74,10 @@ class StaticCacheJsonLdDownloader:
         cached = self.cache.get(url)
 
         if cached is not None:
-            logger.info("Local cache hit for context: {url}")
+            logger.info(f"Local cache hit for context: {url}")
             return cached
 
-        logger.debug("Context {url} not in static cache, resolving from URL.")
+        logger.debug(f"Context {url} not in static cache, resolving from URL.")
         return self._live_load(url, options)
 
     def _live_load(self, url: str, options: Optional[Dict] = None):

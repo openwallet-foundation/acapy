@@ -127,12 +127,12 @@ class ClassLoader:
             )
         if not isinstance(resolved, type):
             LOGGER.warning(
-                "Resolved attribute {class_name} in module {mod_path} is not a class"
+                f"Resolved attribute {class_name} in module {mod_path} is not a class"
             )
             raise ClassNotFoundError(
                 f"Resolved value is not a class: {mod_path}.{class_name}"
             )
-        LOGGER.debug("Successfully loaded class {class_name} from module {mod_path}")
+        LOGGER.debug(f"Successfully loaded class {class_name} from module {mod_path}")
         return resolved
 
     @classmethod
