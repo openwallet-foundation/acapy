@@ -133,7 +133,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         uri = askar_store.get_uri()
         assert uri.startswith("postgres://user:pass@localhost/testname")
 
-    async def test_postgres_config_missing_fields(self):
+    def test_postgres_config_missing_fields(self):
         config = {
             "storage_type": "postgres",
             "storage_config": json.dumps({}),  # missing url
