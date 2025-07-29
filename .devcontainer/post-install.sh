@@ -31,4 +31,5 @@ markers = [
     "postgres: Tests relating to the postgres storage plugin for Indy"]
 junit_family = "xunit1"
 asyncio_mode = auto
+asyncio_default_fixture_loop_scope = module
 EOF

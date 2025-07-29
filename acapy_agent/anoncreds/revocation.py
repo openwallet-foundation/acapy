@@ -20,12 +20,15 @@ from anoncreds import (
     RevocationStatusList,
     W3cCredential,
 )
+
+#ideally both AskarError and DBStoreError should inherit from a shared base class,
+# so the business layer doesn't need to care about the storage choice. 
 from aries_askar import Entry
 from aries_askar.error import AskarError
+from ..database_manager.dbstore import Entry, DBStoreError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
@@ -90,13 +93,15 @@ class AnonCredsRevocation:
         """
         self._profile = profile
 
+    
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
+        if not isinstance(self._profile, Profile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
+    
 
     async def notify(self, event: Event) -> None:
         """Emit an event on the event bus."""
@@ -105,7 +110,7 @@ class AnonCredsRevocation:
 
     async def _finish_registration(
         self,
-        txn: AskarAnonCredsProfileSession,
+        txn: ProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -164,7 +169,7 @@ class AnonCredsRevocation:
         try:
             async with self.profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error retrieving credential definition"
             ) from err
@@ -251,7 +256,7 @@ class AnonCredsRevocation:
                 await self.notify(
                     RevRegDefFinishedEvent.with_payload(identifier, rev_reg_def, options)
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error saving new revocation registry"
             ) from err
@@ -401,7 +406,7 @@ class AnonCredsRevocation:
                 rev_reg_def_private_entry = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error retrieving required revocation registry definition data"
             ) from err
@@ -422,7 +427,7 @@ class AnonCredsRevocation:
                 cred_def_entry = await session.handle.fetch(
                     CATEGORY_CRED_DEF, rev_reg_def_entry.value_json["credDefId"]
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 f"Error retrieving cred def {rev_reg_def_entry.value_json['credDefId']}"
             ) from err
@@ -490,7 +495,7 @@ class AnonCredsRevocation:
                     )
                 )
 
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error saving new revocation registry"
             ) from err
@@ -532,7 +537,7 @@ class AnonCredsRevocation:
                 rev_reg_def_entry = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF, rev_reg_def_id
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error retrieving revocation registry definition"
             ) from err
@@ -547,7 +552,7 @@ class AnonCredsRevocation:
                 rev_list_entry = await session.handle.fetch(
                     CATEGORY_REV_LIST, rev_reg_def_id
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if not rev_list_entry:
@@ -582,7 +587,7 @@ class AnonCredsRevocation:
                     value=rev_list_entry_upd.value,
                     tags=tags,
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error saving new revocation registry"
             ) from err
@@ -596,7 +601,7 @@ class AnonCredsRevocation:
                 rev_list_entry = await session.handle.fetch(
                     CATEGORY_REV_LIST, rev_reg_def_id
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if rev_list_entry:
@@ -612,7 +617,7 @@ class AnonCredsRevocation:
                     CATEGORY_REV_LIST,
                     {"pending": "true"},
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if rev_list_entries:
@@ -921,7 +926,7 @@ class AnonCredsRevocation:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                 )
-        except AskarError as err:
+        except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
                 "Error retrieving credential definition"
             ) from err
@@ -1249,7 +1254,7 @@ class AnonCredsRevocation:
                     rev_reg_def_private_entry = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
-            except AskarError as err:
+            except (DBStoreError, AskarError) as err:
                 LOGGER.error(
                     "Failed to retrieve revocation registry data for %s: %s",
                     revoc_reg_id,
@@ -1287,7 +1292,7 @@ class AnonCredsRevocation:
                     cred_def_entry = await session.handle.fetch(
                         CATEGORY_CRED_DEF, cred_def_id
                     )
-            except AskarError as err:
+            except (DBStoreError, AskarError) as err:
                 LOGGER.error(
                     "Failed to retrieve credential definition %s: %s",
                     cred_def_id,
@@ -1433,7 +1438,7 @@ class AnonCredsRevocation:
                         "Successfully updated revocation list for registry %s",
                         revoc_reg_id,
                     )
-            except AskarError as err:
+            except (DBStoreError, AskarError) as err:
                 LOGGER.error("Failed to save revocation registry: %s", str(err))
                 raise AnonCredsRevocationError(
                     "Error saving revocation registry"

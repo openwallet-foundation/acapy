@@ -354,9 +354,11 @@ class ProfileSession(ABC):
 class ProfileManagerProvider(BaseProvider):
     """The standard profile manager provider which keys off the selected wallet type."""
 
+
     MANAGER_TYPES = {
         "askar": "acapy_agent.askar.profile.AskarProfileManager",
         "askar-anoncreds": "acapy_agent.askar.profile_anon.AskarAnonProfileManager",
+        "kanon-anoncreds": "acapy_agent.kanon.profile_anon_kanon.KanonAnonProfileManager"
     }
 
     def __init__(self):

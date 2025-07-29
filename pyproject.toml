@@ -69,6 +69,16 @@ ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 # didcommv2
 didcomm-messaging = { version = "^0.1.1a0", optional = true }
 
+# database_manager
+#sudo apt-get install -y libpq-dev postgresql-client
+#poetry add psycopg@^3.2.1 --extras "pool" --extras "binary"
+psycopg = {version = "^3.2.1", extras = ["pool", "binary"]}  # Add Psycopg with pooling
+
+#sudo apt install libsqlcipher-dev
+#poetry add pysqlcipher3@1.2.0
+pysqlcipher3 = ">=1.2.0"
+
+
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
 ruff = ">=0.11.4,<0.13.0"
@@ -81,7 +91,7 @@ pydevd-pycharm = ">=251.17181.23,<253.0.0"
 
 # testing
 pytest = "^8.3.4"
-pytest-asyncio = "^1.0.0"
+pytest-asyncio = ">=0.25.3,<0.27.0"
 pytest-cov = "^6.0.0"
 pytest-ruff = ">=0.4.1,<0.6.0"
 pytest-xdist = "^3.6.1"
@@ -143,6 +153,7 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "module"
 
 [tool.coverage.run]
 

@@ -62,7 +62,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         # Temporary shim while the new anoncreds library integration is in progress
         wallet_type = profile.settings.get_value("wallet.type")
-        if wallet_type == "askar-anoncreds":
+        if wallet_type in ("askar-anoncreds", "kanon-anoncreds"):
             self.anoncreds_handler = AnonCredsCredFormatHandler(profile)
 
     @classmethod

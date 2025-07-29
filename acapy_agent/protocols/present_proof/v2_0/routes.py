@@ -597,7 +597,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     extra_query = json.loads(encoded_extra_query)
 
     wallet_type = profile.settings.get_value("wallet.type")
-    if wallet_type == "askar-anoncreds":
+    if wallet_type in ("askar-anoncreds", "kanon-anoncreds"):
         holder = AnonCredsHolder(profile)
     else:
         holder = profile.inject(IndyHolder)

@@ -21,9 +21,16 @@ class MultitenantManagerProvider(BaseProvider):
         "acapy_agent.multitenant."
         "single_wallet_askar_manager.SingleWalletAskarMultitenantManager"
     )
+
+    single_wallet_kanon_manager_path = (
+        "acapy_agent.multitenant."
+        "single_wallet_kanon_manager.SingleWalletKanonMultitenantManager"
+    )
+
     MANAGER_TYPES = {
         "basic": "acapy_agent.multitenant.manager.MultitenantManager",
         "single-wallet-askar": single_wallet_askar_manager_path,
+        "single-wallet-kanon": single_wallet_kanon_manager_path,
     }
 
     def __init__(self, root_profile):
