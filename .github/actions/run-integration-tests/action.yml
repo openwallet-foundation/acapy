@@ -27,6 +27,7 @@ runs:
         PUBLIC_TAILS_URL: ${{ inputs.IN_PUBLIC_TAILS_URL }}
         LOG_LEVEL: warning
         NO_TTY: "1"
+        ACAPY_DEBUG_WEBHOOKS: true
       working-directory: ./demo
 branding:
   icon: "mic"
