@@ -287,10 +287,10 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
             did = did[8:]
         try:
             doc, _ = await conn_mgr.fetch_did_document(did)
-            LOGGER.debug("Fetched doc %s", doc)
+            LOGGER.debug(f"Fetched doc {doc}")
             to_cache = RetrieveResult(True, doc=doc)
         except StorageNotFoundError:
-            LOGGER.debug("Failed to fetch doc for did %s", did)
+            LOGGER.debug(f"Failed to fetch doc for did {did}")
             to_cache = RetrieveResult(False)
 
         return to_cache
@@ -333,9 +333,9 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
         attempt a lookup in the wallet for a document. If found, return True.
         Else, return False.
         """
-        LOGGER.debug("Checking if resolver supports DID %s", did)
+        LOGGER.debug(f"Checking if resolver supports DID {did}")
         if IndyDID.PATTERN.match(did):
-            LOGGER.debug("DID is valid IndyDID %s", did)
+            LOGGER.debug(f"DID is valid IndyDID {did}")
             result = await self.fetch_did_document(profile, did)
             return result.is_local
         else:

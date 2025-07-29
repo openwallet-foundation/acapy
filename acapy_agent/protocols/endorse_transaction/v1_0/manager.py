@@ -919,4 +919,4 @@ class TransactionManager:
             await notify_endorse_did_attrib_event(self._profile, did, meta_data)
 
         else:
-            self._logger.debug("Unhandled ledger transaction type: %s", txn_type)
+            self._logger.debug(f"Unhandled ledger transaction type: {txn_type}")

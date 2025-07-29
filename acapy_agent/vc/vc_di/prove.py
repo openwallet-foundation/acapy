@@ -314,7 +314,7 @@ async def prepare_data_for_presentation(
                 # issuer_id = field["filter"]["const"]
                 pass
             else:
-                LOGGER.info("... skipping: %s", path)
+                LOGGER.info(f"... skipping: {path}")
 
     return anoncreds_proofrequest, w3c_creds_metadata
 

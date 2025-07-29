@@ -17,7 +17,7 @@ class HangupHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("HangupHandler called with context %s", context)
+        self._logger.debug(f"HangupHandler called with context {context}")
         assert isinstance(context.message, Hangup)
 
         if not context.connection_ready:

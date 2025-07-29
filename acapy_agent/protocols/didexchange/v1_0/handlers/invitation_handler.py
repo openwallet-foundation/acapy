@@ -16,7 +16,7 @@ class InvitationHandler(BaseHandler):
             responder: Responder callback
         """
 
-        self._logger.debug("InvitationHandler called with context %s", context)
+        self._logger.debug(f"InvitationHandler called with context {context}")
         assert isinstance(context.message, InvitationMessage)
 
         report = DIDXProblemReport(

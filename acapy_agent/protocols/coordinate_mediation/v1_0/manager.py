@@ -556,10 +556,7 @@ class MediationManager:
                 if updated.result != KeylistUpdated.RESULT_SUCCESS:
                     # TODO better handle different results?
                     LOGGER.warning(
-                        "Keylist update failure: %s(%s): %s",
-                        updated.action,
-                        updated.recipient_key,
-                        updated.result,
+                        f"Keylist update failure: {updated.action}({updated.recipient_key}): {updated.result}"
                     )
                     continue
                 if updated.action == KeylistUpdateRule.RULE_ADD:
@@ -590,8 +587,7 @@ class MediationManager:
                         )
                     except StorageNotFoundError as err:
                         LOGGER.error(
-                            "No route found while processing keylist update response: %s",
-                            err,
+                            f"No route found while processing keylist update response: {err}"
                         )
                     else:
                         if len(records) > 1:

@@ -76,7 +76,7 @@ class IndyCredxHolder(IndyHolder):
                         CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
                     )
                 except AskarError as err:
-                    LOGGER.error("Error fetching link secret: %s", err)
+                    LOGGER.error(f"Error fetching link secret: {err}")
                     raise IndyHolderError("Error fetching link secret") from err
 
                 if record:
@@ -86,8 +86,7 @@ class IndyCredxHolder(IndyHolder):
                         LOGGER.debug("Loaded existing link secret.")
                     except CredxError as err:
                         LOGGER.info(
-                            "Attempt fallback method after error loading link secret: %s",
-                            err,
+                            f"Attempt fallback method after error loading link secret: {err}"
                         )
                         try:
                             ms_string = record.value.decode("ascii")
@@ -95,7 +94,7 @@ class IndyCredxHolder(IndyHolder):
                             secret = LinkSecret.load(link_secret_dict)
                             LOGGER.debug("Loaded LinkSecret from AnonCreds secret.")
                         except CredxError as decode_err:
-                            LOGGER.error("Error loading link secret: %s", decode_err)
+                            LOGGER.error(f"Error loading link secret: {decode_err}")
                             raise IndyHolderError("Error loading link secret") from err
                     break
                 else:
@@ -103,7 +102,7 @@ class IndyCredxHolder(IndyHolder):
                         secret = LinkSecret.create()
                         LOGGER.debug("Created new link secret.")
                     except CredxError as err:
-                        LOGGER.error("Error creating link secret: %s", err)
+                        LOGGER.error(f"Error creating link secret: {err}")
                         raise IndyHolderError("Error creating link secret") from err
 
                     try:
@@ -115,7 +114,7 @@ class IndyCredxHolder(IndyHolder):
                         LOGGER.debug("Saved new link secret.")
                     except AskarError as err:
                         if err.code != AskarErrorCode.DUPLICATE:
-                            LOGGER.error("Error saving link secret: %s", err)
+                            LOGGER.error(f"Error saving link secret: {err}")
                             raise IndyHolderError("Error saving link secret") from err
                         # else: lost race to create record, retry
                     else:
@@ -160,9 +159,7 @@ class IndyCredxHolder(IndyHolder):
 
         LOGGER.debug(
             "Created credential request. "
-            "credential_request_json=%s credential_request_metadata_json=%s",
-            cred_req_json,
-            cred_req_metadata_json,
+            f"credential_request_json={cred_req_json} credential_request_metadata_json={cred_req_metadata_json}"
         )
 
         return cred_req_json, cred_req_metadata_json

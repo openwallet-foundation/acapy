@@ -16,7 +16,7 @@ class ForwardInvitationHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("ForwardInvitationHandler called with context %s", context)
+        self._logger.debug(f"ForwardInvitationHandler called with context {context}")
         assert isinstance(context.message, ForwardInvitation)
 
         if not context.connection_ready:

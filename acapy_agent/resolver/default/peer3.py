@@ -97,7 +97,7 @@ class PeerDID3Resolver(BaseDIDResolver):
             ),
         ]
         if dids:
-            LOGGER.debug("Removing peer 2 to 3 mapping for deleted connection: %s", dids)
+            LOGGER.debug(f"Removing peer 2 to 3 mapping for deleted connection: {dids}")
         async with profile.session() as session:
             storage = session.inject(BaseStorage)
             for did in dids:
@@ -105,4 +105,4 @@ class PeerDID3Resolver(BaseDIDResolver):
                     record = StorageRecord(self.RECORD_TYPE_3_TO_2, None, None, did)
                     await storage.delete_record(record)
                 except StorageNotFoundError:
-                    LOGGER.debug("No peer 2 to 3 mapping found for: %s", did)
+                    LOGGER.debug(f"No peer 2 to 3 mapping found for: {did}")

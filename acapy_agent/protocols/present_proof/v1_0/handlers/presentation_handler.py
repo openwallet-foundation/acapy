@@ -27,11 +27,10 @@ class PresentationHandler(BaseHandler):
         """
         r_time = get_timer()
         profile = context.profile
-        self._logger.debug("PresentationHandler called with context %s", context)
+        self._logger.debug(f"PresentationHandler called with context {context}")
         assert isinstance(context.message, Presentation)
         self._logger.debug(
-            "Received presentation message: %s",
-            context.message.serialize(as_string=True),
+            f"Received presentation message: {context.message.serialize(as_string=True)}",
         )
 
         # If connection is present it must be ready for use

@@ -15,7 +15,7 @@ class QueryHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("QueryHandler called with context %s", context)
+        self._logger.debug(f"QueryHandler called with context {context}")
         assert isinstance(context.message, Query)
 
         if not context.connection_ready:

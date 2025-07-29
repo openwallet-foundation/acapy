@@ -123,9 +123,7 @@ class InvitationCreator:
 
         if create_unique_did and not use_did_method:
             LOGGER.error(
-                "create_unique_did: `%s`, use_did_method: `%s`",
-                create_unique_did,
-                use_did_method,
+                f"create_unique_did: `{create_unique_did}`, use_did_method: `{use_did_method}`"
             )
             raise OutOfBandManagerError(
                 "create_unique_did can only be used with use_did_method"
@@ -311,19 +309,19 @@ class InvitationCreator:
             connection_protocol=connection_protocol,
         )
 
-        LOGGER.debug("Creating connection record for invitation %s", self.msg_id)
+        LOGGER.debug(f"Creating connection record for invitation {self.msg_id}")
         async with self.profile.transaction() as session:
             await conn_rec.save(session, reason="Created new invitation")
             await conn_rec.attach_invitation(session, msg)
 
             if self.metadata:
-                LOGGER.debug("Setting metadata for connection %s", conn_rec.connection_id)
+                LOGGER.debug(f"Setting metadata for connection {conn_rec.connection_id}")
                 for key, value in self.metadata.items():
                     await conn_rec.metadata_set(session, key, value)
 
             await session.commit()
 
-        LOGGER.debug("Routing invitation %s", conn_rec.connection_id)
+        LOGGER.debug(f"Routing invitation {conn_rec.connection_id}")
         await self.route_manager.route_invitation(
             self.profile, conn_rec, mediation_record
         )
@@ -347,7 +345,7 @@ class InvitationCreator:
         mediation_record: Optional[MediationRecord],
     ) -> CreateResult:
         """Handle use_did invitation creation."""
-        LOGGER.debug("Handling invitation using DID %s", did_info.did)
+        LOGGER.debug(f"Handling invitation using DID {did_info.did}")
         invi_msg = InvitationMessage(
             _id=self.msg_id,
             label=self.my_label,
@@ -365,8 +363,7 @@ class InvitationCreator:
 
         if self.handshake_protocols:
             LOGGER.debug(
-                "Handshake protocols given: %s. Creating connection",
-                self.handshake_protocols,
+                f"Handshake protocols given: {self.handshake_protocols}. Creating connection"
             )
             conn_rec = await self.handle_handshake_protos(
                 did_info.verkey, invi_msg, mediation_record
@@ -374,7 +371,7 @@ class InvitationCreator:
             our_service = None
         else:
             conn_rec = None
-            LOGGER.debug("No handshake protocols. Routing verkey %s", did_info.verkey)
+            LOGGER.debug(f"No handshake protocols. Routing verkey {did_info.verkey}")
             await self.route_manager.route_verkey(
                 self.profile, did_info.verkey, mediation_record
             )
@@ -411,7 +408,7 @@ class InvitationCreator:
                 "Cannot create public invitation with no public DID"
             )
 
-        LOGGER.debug("Public DID found: %s", public_did.did)
+        LOGGER.debug(f"Public DID found: {public_did.did}")
         if bool(IndyDID.PATTERN.match(public_did.did)):
             public_did = DIDInfo(
                 did=f"did:sov:{public_did.did}",
@@ -533,14 +530,14 @@ class InvitationCreator:
         )
 
         if self.handshake_protocols:
-            LOGGER.debug("Handshake protocols given: %s", self.handshake_protocols)
+            LOGGER.debug(f"Handshake protocols given: {self.handshake_protocols}")
             conn_rec = await self.handle_handshake_protos(
                 connection_key.verkey, invi_msg, mediation_record
             )
             our_service = None
         else:
             LOGGER.debug(
-                "No handshake protocols. Routing verkey %s", connection_key.verkey
+                f"No handshake protocols. Routing verkey {connection_key.verkey}"
             )
             await self.route_manager.route_verkey(
                 self.profile, connection_key.verkey, mediation_record
@@ -688,7 +685,7 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
-                LOGGER.debug("Getting mediation record for %s", mediation_id)
+                LOGGER.debug(f"Getting mediation record for {mediation_id}")
                 await self._route_manager.mediation_record_if_id(
                     self.profile, mediation_id
                 )
@@ -731,8 +728,7 @@ class OutOfBandManager(BaseConnectionManager):
                 search_public_did = public_did
 
             LOGGER.debug(
-                "Trying to find existing connection for oob invitation with did %s",
-                search_public_did,
+                f"Trying to find existing connection for oob invitation with did {search_public_did}",
             )
 
             async with self._profile.session() as session:
@@ -755,7 +751,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
             LOGGER.warning(
-                "Connection reuse request finished with state %s", oob_record.state
+                f"Connection reuse request finished with state {oob_record.state}"
             )
 
             if oob_record.state == OobRecord.STATE_ACCEPTED:
@@ -776,7 +772,7 @@ class OutOfBandManager(BaseConnectionManager):
                 service_accept=service_accept,
             )
             LOGGER.debug(
-                "Performed handshake with connection %s", oob_record.connection_id
+                f"Performed handshake with connection {oob_record.connection_id}"
             )
             # re-fetch connection record
             async with self.profile.session() as session:
@@ -800,9 +796,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Handle any attachments
         if invitation.requests_attach:
             LOGGER.debug(
-                "Process attached messages for oob exchange %s (connection_id %s)",
-                oob_record.oob_id,
-                oob_record.connection_id,
+                f"Process attached messages for oob exchange {oob_record.oob_id} (connection_id {oob_record.connection_id})",
             )
 
             # FIXME: this should ideally be handled using an event handler. Once the
@@ -852,9 +846,9 @@ class OutOfBandManager(BaseConnectionManager):
             service = oob_record.invitation.services[0]
             their_service = await self._service_decorator_from_service(service)
             if their_service:
-                LOGGER.debug("Found service for oob record %s", their_service)
+                LOGGER.debug(f"Found service for oob record {their_service}")
             else:
-                LOGGER.debug("No service decorator obtained from %s", service)
+                LOGGER.debug(f"No service decorator obtained from {service}")
 
         await message_processor.handle_message(
             self.profile, messages, oob_record=oob_record, their_service=their_service
@@ -900,8 +894,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
         else:
             LOGGER.warning(
-                "Unexpected type `%s` passed to `_service_decorator_from_service`",
-                type(service),
+                f"Unexpected type `{type(service)}` passed to `_service_decorator_from_service`",
             )
             return None
 
@@ -943,7 +936,7 @@ class OutOfBandManager(BaseConnectionManager):
                     ]:
                         return oob_record
 
-                LOGGER.debug("Wait for oob %s to receive reuse accepted message", oob_id)
+                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted message")
                 event = await await_event
                 LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
@@ -967,7 +960,7 @@ class OutOfBandManager(BaseConnectionManager):
             "^acapy::record::connections::(active|completed|response)$"
         )
 
-        LOGGER.debug("Wait for connection %s to become active", connection_id)
+        LOGGER.debug(f"Wait for connection {connection_id} to become active")
 
         async def _wait_for_state() -> ConnRecord:
             event = self.profile.inject(EventBus)
@@ -984,7 +977,7 @@ class OutOfBandManager(BaseConnectionManager):
                     if conn_record.is_ready:
                         return conn_record
 
-                LOGGER.debug("Wait for connection %s to become active", connection_id)
+                LOGGER.debug(f"Wait for connection {connection_id} to become active")
                 # Wait for connection record to be in state
                 event = await await_event
                 return ConnRecord.deserialize(event.payload)
@@ -996,7 +989,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         except asyncio.TimeoutError:
-            LOGGER.warning("Connection for connection_id %s not ready", connection_id)
+            LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
             return None
 
     async def _handle_handshake_reuse(
@@ -1010,10 +1003,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Wait for the reuse accepted message
         oob_record = await self._wait_for_reuse_response(oob_record.oob_id)
         LOGGER.debug(
-            "Oob reuse for oob id %s with connection %s finished with state %s",
-            oob_record.oob_id,
-            oob_record.connection_id,
-            oob_record.state,
+            f"Oob reuse for oob id {oob_record.oob_id} with connection {oob_record.connection_id} finished with state {oob_record.state}"
         )
 
         if oob_record.state != OobRecord.STATE_ACCEPTED:
@@ -1098,9 +1088,9 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         if public_did:
-            LOGGER.debug("Creating connection with public did %s", public_did)
+            LOGGER.debug(f"Creating connection with public did {public_did}")
         else:
-            LOGGER.debug("Creating connection with service %s", service)
+            LOGGER.debug(f"Creating connection with service {service}")
 
         conn_record = None
         for protocol in supported_handshake_protocols:

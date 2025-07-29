@@ -19,8 +19,7 @@ class CredentialProblemReportHandler(BaseHandler):
             responder: responder callback
         """
         self._logger.debug(
-            "Issue-credential v1.0 problem report handler called with context %s",
-            context,
+            f"Issue-credential v1.0 problem report handler called with context {context}",
         )
         assert isinstance(context.message, CredentialProblemReport)
 

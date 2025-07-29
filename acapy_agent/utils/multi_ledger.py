@@ -28,8 +28,7 @@ def get_write_ledger_config_for_profile(settings: BaseSettings) -> dict:
             non_prod_write_ledger_pool[ledger_id] = ledger_config
         else:
             LOGGER.warning(
-                "Ledger config %s is not a write ledger nor a read-only ledger",
-                ledger_id,
+                f"Ledger config {ledger_id} is not a write ledger nor a read-only ledger",
             )
 
     write_ledger = settings.get("ledger.write_ledger")

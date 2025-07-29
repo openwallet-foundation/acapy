@@ -20,7 +20,7 @@ class PerformHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("PerformHandler called with context %s", context)
+        self._logger.debug(f"PerformHandler called with context {context}")
         assert isinstance(context.message, Perform)
 
         if not context.connection_ready:

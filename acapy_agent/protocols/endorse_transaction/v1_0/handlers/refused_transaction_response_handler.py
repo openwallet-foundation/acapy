@@ -22,7 +22,7 @@ class RefusedTransactionResponseHandler(BaseHandler):
         """
 
         self._logger.debug(
-            "RefusedTransactionResponseHandler called with context %s", context
+            f"RefusedTransactionResponseHandler called with context {context}"
         )
         assert isinstance(context.message, RefusedTransactionResponse)
 

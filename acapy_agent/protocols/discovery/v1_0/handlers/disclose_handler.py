@@ -15,7 +15,7 @@ class DiscloseHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("DiscloseHandler called with context %s", context)
+        self._logger.debug(f"DiscloseHandler called with context {context}")
         assert isinstance(context.message, Disclose)
 
         if not context.connection_ready:

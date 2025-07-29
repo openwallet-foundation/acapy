@@ -107,10 +107,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         if len(records) > 1:
             LOGGER.warning(
-                "Cred ex id %s has %d %s detail records: should be 1",
-                cred_ex_id,
-                len(records),
-                IndyCredFormatHandler.format.api,
+                f"Cred ex id {cred_ex_id} has {len(records)} {IndyCredFormatHandler.format.api} detail records: should be 1"
             )
         return records[0] if records else None
 
@@ -410,8 +407,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 return result, rev_reg_id, cred_rev_id
 
             LOGGER.info(
-                "Waiting 2s before retrying credential issuance for cred def '%s'",
-                cred_def_id,
+                f"Waiting 2s before retrying credential issuance for cred def '{cred_def_id}'",
             )
             await asyncio.sleep(2)
 

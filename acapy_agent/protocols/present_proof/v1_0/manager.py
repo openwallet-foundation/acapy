@@ -497,8 +497,7 @@ class PresentationManager:
                     await presentation_exchange_record.delete_record(session)
         else:
             LOGGER.warning(
-                "Configuration has no BaseResponder: cannot ack presentation on %s",
-                presentation_exchange_record.thread_id,
+                f"Configuration has no BaseResponder: cannot ack presentation on {presentation_exchange_record.thread_id}",
             )
 
     async def receive_presentation_ack(

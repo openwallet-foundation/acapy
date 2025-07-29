@@ -52,7 +52,7 @@ class RouteManager(ABC):
                 wallet = session.inject(BaseWallet)
 
                 LOGGER.debug(
-                    "Creating new DID for connection %s", conn_record.connection_id
+                    "Creating new DID for connection {conn_record.connection_id}"
                 )
                 my_info = await wallet.create_local_did(SOV, ED25519)
                 conn_record.my_did = my_info.did
@@ -61,7 +61,7 @@ class RouteManager(ABC):
             async with profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 LOGGER.debug(
-                    "Getting DID info for connection %s", conn_record.connection_id
+                    f"Getting DID info for connection {conn_record.connection_id}"
                 )
                 my_info = await wallet.get_local_did(conn_record.my_did)
 
@@ -71,8 +71,7 @@ class RouteManager(ABC):
         """Perform mediation state validation."""
         if mediation_record.state != MediationRecord.STATE_GRANTED:
             LOGGER.error(
-                "Mediation is not granted for mediation identified by %s",
-                mediation_record.mediation_id,
+                f"Mediation is not granted for mediation identified by {mediation_record.mediation_id}"
             )
             raise RouteManagerError(
                 "Mediation is not granted for mediation identified by "
@@ -224,7 +223,7 @@ class RouteManager(ABC):
         await self.save_mediator_for_connection(profile, conn_record, mediation_record)
 
         if conn_record.invitation_key:
-            LOGGER.debug("Routing invitation key %s", conn_record.invitation_key)
+            LOGGER.debug(f"Routing invitation key {conn_record.invitation_key}")
             return await self._route_for_key(
                 profile,
                 conn_record.invitation_key,
@@ -242,7 +241,7 @@ class RouteManager(ABC):
     ):
         """Establish routing for a public DID."""
         LOGGER.debug(
-            "Routing verkey %s%s", verkey, " with mediation" if mediation_record else ""
+            f"Routing verkey {verkey}{" with mediation" if mediation_record else ""}"
         )
         return await self._route_for_key(
             profile, verkey, mediation_record, skip_if_exists=True
@@ -331,7 +330,7 @@ class CoordinateMediationV1RouteManager(RouteManager):
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
     ) -> Optional[KeylistUpdate]:
-        LOGGER.debug("Routing for key %s using coordinate mediation", recipient_key)
+        LOGGER.debug("Routing for key {recipient_key} using coordinate mediation")
         if not mediation_record:
             return None
 

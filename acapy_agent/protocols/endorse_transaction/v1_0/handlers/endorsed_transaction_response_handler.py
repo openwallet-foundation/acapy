@@ -24,7 +24,7 @@ class EndorsedTransactionResponseHandler(BaseHandler):
         """
 
         self._logger.debug(
-            "EndorsedTransactionResponseHandler called with context %s", context
+            f"EndorsedTransactionResponseHandler called with context {context}"
         )
         assert isinstance(context.message, EndorsedTransactionResponse)
 

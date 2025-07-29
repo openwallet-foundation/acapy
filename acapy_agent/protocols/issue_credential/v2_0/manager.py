@@ -695,8 +695,7 @@ class V20CredManager:
             )
         else:
             LOGGER.warning(
-                "Configuration has no BaseResponder: cannot ack credential on %s",
-                cred_ex_record.thread_id,
+                "Configuration has no BaseResponder: cannot ack credential on {cred_ex_record.thread_id}"
             )
 
         return cred_ex_record, cred_ack_message

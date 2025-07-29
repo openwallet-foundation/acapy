@@ -31,7 +31,7 @@ def register_events(event_bus: EventBus):
 
 async def on_revocation_published(profile: Profile, event: Event):
     """Handle issuer revoke event."""
-    LOGGER.debug("Received notification of revocation publication: %s", event.payload)
+    LOGGER.debug(f"Received notification of revocation publication: {event.payload}")
 
     should_notify = profile.settings.get("revocation.notify", False)
     responder = profile.inject(BaseResponder)
@@ -55,8 +55,7 @@ async def on_revocation_published(profile: Profile, event: Event):
                         record.to_message(), connection_id=record.connection_id
                     )
                     LOGGER.info(
-                        "Sent revocation notification for credential to %s",
-                        record.connection_id,
+                        f"Sent revocation notification for credential to {record.connection_id}"
                     )
 
     except StorageNotFoundError:

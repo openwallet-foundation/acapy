@@ -20,10 +20,8 @@ class RevokeHandler(BaseHandler):
             raise HandlerException("No connection established")
 
         self._logger.debug(
-            "Received notification of revocation for cred issued in thread %s "
-            "with comment: %s",
-            context.message.thread_id,
-            context.message.comment,
+            f"Received notification of revocation for cred issued in thread {context.message.thread_id} "
+            f"with comment: {context.message.comment}"
         )
         # Emit a webhook
         if context.settings.get("revocation.monitor_notification"):

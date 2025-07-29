@@ -63,7 +63,7 @@ class SecretsAdapter(SecretsManager[AskarSecretKey]):
                 "ACA-Py's implementation of DMP only supports an Askar backend"
             )
 
-        LOGGER.debug("GETTING SECRET BY KID: %s", kid)
+        LOGGER.debug(f"GETTING SECRET BY KID: {kid}")
         key_entries = await self.session.handle.fetch_all_keys(
             tag_filter={"kid": kid}, limit=2
         )

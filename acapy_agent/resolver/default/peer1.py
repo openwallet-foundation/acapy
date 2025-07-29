@@ -103,10 +103,10 @@ class PeerDID1Resolver(BaseDIDResolver):
         conn_mgr = BaseConnectionManager(profile)
         try:
             doc, _ = await conn_mgr.fetch_did_document(did)
-            LOGGER.debug("Fetched doc %s", doc)
+            LOGGER.debug(f"Fetched doc {doc}")
             return doc
         except StorageNotFoundError:
-            LOGGER.debug("Failed to fetch doc for did %s", did)
+            LOGGER.debug(f"Failed to fetch doc for did {did}")
 
         return None
 
@@ -125,7 +125,7 @@ class PeerDID1Resolver(BaseDIDResolver):
         if result:
             # Apply corrections?
             result = contextualize(did, result)
-            LOGGER.debug("Resolved %s to %s", did, result)
+            LOGGER.debug(f"Resolved {did} to {result}")
             return result
         else:
             raise DIDNotFound(f"DID not found: {did}")

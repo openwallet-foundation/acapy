@@ -98,7 +98,7 @@ class EventBus:
         # TODO trigger each processor but don't await?
         # TODO log errors but otherwise ignore?
 
-        LOGGER.debug("Notifying subscribers: %s", event)
+        LOGGER.debug(f"Notifying subscribers: {event}")
 
         partials = []
         for pattern, subscribers in self.topic_patterns_to_subscribers.items():
@@ -130,7 +130,7 @@ class EventBus:
             processor (Callable): async callable accepting profile and event
 
         """
-        LOGGER.debug("Subscribed: topic %s, processor %s", pattern, processor)
+        LOGGER.debug(f"Subscribed: topic {pattern}, processor {processor}")
         if pattern not in self.topic_patterns_to_subscribers:
             self.topic_patterns_to_subscribers[pattern] = []
         self.topic_patterns_to_subscribers[pattern].append(processor)
@@ -154,7 +154,7 @@ class EventBus:
             del self.topic_patterns_to_subscribers[pattern][index]
             if not self.topic_patterns_to_subscribers[pattern]:
                 del self.topic_patterns_to_subscribers[pattern]
-            LOGGER.debug("Unsubscribed: topic %s, processor %s", pattern, processor)
+            LOGGER.debug(f"Unsubscribed: topic {pattern}, processor {processor}")
 
     @contextmanager
     def wait_for_event(
@@ -169,9 +169,7 @@ class EventBus:
         async def _handle_single_event(profile, event):
             """Handle the single event."""
             LOGGER.debug(
-                "wait_for_event event listener with event %s and profile %s",
-                event,
-                profile,
+                f"wait_for_event event listener with event {event} and profile {profile}"
             )
             if cond is not None and not cond(event):
                 return

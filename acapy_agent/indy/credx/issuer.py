@@ -454,25 +454,19 @@ class IndyCredxIssuer(IndyIssuer):
                 if rev_id < 1 or rev_id > max_cred_num:
                     LOGGER.error(
                         "Skipping requested credential revocation"
-                        "on rev reg id %s, cred rev id=%s not in range",
-                        revoc_reg_id,
-                        rev_id,
+                        f"on rev reg id {revoc_reg_id}, cred rev id={rev_id} not in range"
                     )
                     failed_crids.add(rev_id)
                 elif rev_id > rev_info["curr_id"]:
                     LOGGER.warning(
                         "Skipping requested credential revocation"
-                        "on rev reg id %s, cred rev id=%s not yet issued",
-                        revoc_reg_id,
-                        rev_id,
+                        f"on rev reg id {revoc_reg_id}, cred rev id={rev_id} not yet issued"
                     )
                     failed_crids.add(rev_id)
                 elif rev_id in used_ids:
                     LOGGER.warning(
                         "Skipping requested credential revocation"
-                        "on rev reg id %s, cred rev id=%s already revoked",
-                        revoc_reg_id,
-                        rev_id,
+                        f"on rev reg id {revoc_reg_id}, cred rev id={rev_id} already revoked"
                     )
                     failed_crids.add(rev_id)
                 else:

@@ -17,7 +17,7 @@ class InvitationHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("InvitationHandler called with context %s", context)
+        self._logger.debug(f"InvitationHandler called with context {context}")
         assert isinstance(context.message, IntroInvitation)
 
         if not context.connection_ready:

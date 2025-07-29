@@ -93,8 +93,7 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         result = await cls.query(session, tag_filter)
         if len(result) > 1:
             LOGGER.warning(
-                "More than one disclosure record found for connection: %s",
-                connection_id,
+                f"More than one disclosure record found for connection: {connection_id}"
             )
 
         return result[0] if result else None

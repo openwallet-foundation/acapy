@@ -17,7 +17,7 @@ class ProblemReportHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("ProblemReportHandler called with context %s", context)
+        self._logger.debug(f"ProblemReportHandler called with context {context}")
         assert isinstance(context.message, RotateProblemReport)
 
         if not context.connection_ready:

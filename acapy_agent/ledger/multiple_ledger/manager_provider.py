@@ -50,7 +50,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
             manager_class = self.MANAGER_TYPES.get(manager_type)
             pool_class = self.LEDGER_TYPES[manager_type]["pool"]
             ledger_class = self.LEDGER_TYPES[manager_type]["ledger"]
-            LOGGER.info("Create multiple Indy ledger manager: %s", manager_type)
+            LOGGER.info(f"Create multiple Indy ledger manager: {manager_type}")
             try:
                 indy_vdr_production_ledgers = OrderedDict()
                 indy_vdr_non_production_ledgers = OrderedDict()

@@ -85,7 +85,7 @@ class Dispatcher:
         if task.exc_info and not issubclass(task.exc_info[0], HTTPException):
             # skip errors intentionally returned to HTTP clients
             self.logger.exception(
-                "Handler error: %s", task.ident or "", exc_info=task.exc_info
+                f"Handler error: {task.ident or ""}", exc_info=task.exc_info
             )
         if self.collector:
             timing = task.timing

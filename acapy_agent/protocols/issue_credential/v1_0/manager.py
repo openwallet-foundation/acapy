@@ -438,8 +438,7 @@ class CredentialManager:
 
         if cred_ex_record.state == V10CredentialExchange.STATE_REQUEST_SENT:
             LOGGER.warning(
-                "create_request called multiple times for v1.0 credential exchange: %s",
-                cred_ex_record.credential_exchange_id,
+                f"create_request called multiple times for v1.0 credential exchange: {cred_ex_record.credential_exchange_id}",
             )
             cred_req_ser = cred_ex_record._credential_request.ser
             cred_req_meta = cred_ex_record.credential_request_metadata
@@ -549,9 +548,7 @@ class CredentialManager:
                 raise ex
             if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_SENT:
                 LOGGER.error(
-                    "Skipping credential request; exchange state is %s (id=%s)",
-                    cred_ex_record.state,
-                    cred_ex_record.credential_exchange_id,
+                    f"Skipping credential request; exchange state is {cred_ex_record.state} (id={cred_ex_record.credential_exchange_id})"
                 )
                 return None
 
@@ -589,8 +586,7 @@ class CredentialManager:
 
         if cred_ex_record.credential:
             LOGGER.warning(
-                "issue_credential called multiple times for v1.0 credential exchange %s",
-                cred_ex_record.credential_exchange_id,
+                "issue_credential called multiple times for v1.0 credential exchange {cred_ex_record.credential_exchange_id}",
             )
             credential_ser = cred_ex_record._credential.ser
 
@@ -635,8 +631,7 @@ class CredentialManager:
                 if attempt > 0:
                     LOGGER.info(
                         "Waiting 2s before retrying credential issuance "
-                        "for cred def '%s'",
-                        cred_def_id,
+                        "for cred def '{cred_def_id}'",
                     )
                     await asyncio.sleep(2)
 
@@ -834,7 +829,7 @@ class CredentialManager:
                 rev_reg_def=revoc_reg_def,
             )
         except IndyHolderError as e:
-            LOGGER.error("Error storing credential: %s: %s", e.error_code, e.message)
+            LOGGER.error(f"Error storing credential: {e.error_code}: {e.message}")
             raise e
 
         credential_json = await holder.get_credential(credential_id)
@@ -889,8 +884,7 @@ class CredentialManager:
                     )
                 except StorageNotFoundError:
                     LOGGER.warning(
-                        "Skipping credential exchange ack, record not found: '%s'",
-                        cred_ex_record.credential_exchange_id,
+                        "Skipping credential exchange ack, record not found: '{cred_ex_record.credential_exchange_id}'",
                     )
                     return (cred_ex_record, None)
 
@@ -899,9 +893,7 @@ class CredentialManager:
                     != V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
                 ):
                     LOGGER.warning(
-                        "Skipping credential exchange ack, state is '%s' for record '%s'",
-                        cred_ex_record.state,
-                        cred_ex_record.credential_exchange_id,
+                        f"Skipping credential exchange ack, state is '{cred_ex_record.state}' for record '{cred_ex_record.credential_exchange_id}'"
                     )
                     return (cred_ex_record, None)
 
@@ -926,8 +918,7 @@ class CredentialManager:
             )
         else:
             LOGGER.warning(
-                "Configuration has no BaseResponder: cannot ack credential on %s",
-                cred_ex_record.thread_id,
+                f"Configuration has no BaseResponder: cannot ack credential on {cred_ex_record.thread_id}",
             )
 
         return (cred_ex_record, credential_ack_message)
@@ -954,8 +945,7 @@ class CredentialManager:
                 )
             except StorageNotFoundError:
                 LOGGER.warning(
-                    "Skip ack message on credential exchange, record not found %s",
-                    message._thread_id,
+                    "Skip ack message on credential exchange, record not found {message._thread_id}",
                 )
                 return None
 
@@ -989,8 +979,7 @@ class CredentialManager:
                 )
             except StorageNotFoundError:
                 LOGGER.warning(
-                    "Skip problem report on credential exchange, record not found %s",
-                    message._thread_id,
+                    f"Skip problem report on credential exchange, record not found {message._thread_id}",
                 )
                 return None
 

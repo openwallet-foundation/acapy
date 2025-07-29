@@ -19,13 +19,13 @@ class BasicMessageHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("BasicMessageHandler called with context %s", context)
+        self._logger.debug(f"BasicMessageHandler called with context {context}")
         assert isinstance(context.message, BasicMessage)
 
         if not context.connection_ready:
             raise HandlerException("No connection established")
 
-        self._logger.debug("Received basic message: %s", context.message.content)
+        self._logger.debug(f"Received basic message: {context.message.content}")
 
         body = context.message.content
         meta = {"content": body}

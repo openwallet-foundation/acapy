@@ -17,7 +17,7 @@ class RotateAckHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("RotateAckHandler called with context %s", context)
+        self._logger.debug(f"RotateAckHandler called with context {context}")
         assert isinstance(context.message, RotateAck)
 
         if not context.connection_ready:

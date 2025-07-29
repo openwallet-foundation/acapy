@@ -371,7 +371,7 @@ class ProfileManagerProvider(BaseProvider):
         mgr_class = self.MANAGER_TYPES.get(mgr_type.lower(), mgr_type)
 
         if mgr_class not in self._inst:
-            LOGGER.info("Create profile manager: %s", mgr_type)
+            LOGGER.info(f"Create profile manager: {mgr_type}")
             try:
                 self._inst[mgr_class] = ClassLoader.load_class(mgr_class)()
             except ClassNotFoundError as err:

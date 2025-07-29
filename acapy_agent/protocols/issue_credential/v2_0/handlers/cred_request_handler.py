@@ -29,11 +29,10 @@ class V20CredRequestHandler(BaseHandler):
         """
         r_time = get_timer()
 
-        self._logger.debug("V20CredRequestHandler called with context %s", context)
+        self._logger.debug(f"V20CredRequestHandler called with context {context}")
         assert isinstance(context.message, V20CredRequest)
         self._logger.debug(
-            "Received v2.0 credential request message: %s",
-            context.message.serialize(as_string=True),
+            f"Received v2.0 credential request message: {context.message.serialize(as_string=True)}"
         )
 
         # If connection is present it must be ready for use

@@ -55,22 +55,22 @@ class RoutingManager:
         record = None
         while not record:
             try:
-                LOGGER.debug("Fetching routing record for verkey: %s", recip_verkey)
+                LOGGER.debug(f"Fetching routing record for verkey: {recip_verkey}")
                 async with self._profile.session() as session:
                     record = await RouteRecord.retrieve_by_recipient_key(
                         session, recip_verkey
                     )
-                LOGGER.debug("Found routing record for verkey: %s", recip_verkey)
+                LOGGER.debug(f"Found routing record for verkey: {recip_verkey}")
                 return record
             except StorageDuplicateError:
                 LOGGER.info(
-                    "Duplicate routing records found for verkey: %s", recip_verkey
+                    f"Duplicate routing records found for verkey: {recip_verkey}"
                 )
                 raise RouteNotFoundError(
                     f"More than one route record found with recipient key: {recip_verkey}"
                 )
             except StorageNotFoundError:
-                LOGGER.debug("No routing record found for verkey: %s", recip_verkey)
+                LOGGER.debug(f"No routing record found for verkey: {recip_verkey}")
                 i += 1
                 if i > RECIP_ROUTE_RETRY:
                     raise RouteNotFoundError(
@@ -144,7 +144,7 @@ class RoutingManager:
             )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
-        LOGGER.debug("Creating routing record for verkey: %s", recipient_key)
+        LOGGER.debug(f"Creating routing record for verkey: {recipient_key}")
         route = RouteRecord(
             connection_id=client_connection_id,
             wallet_id=internal_wallet_id,
@@ -152,5 +152,5 @@ class RoutingManager:
         )
         async with self._profile.session() as session:
             await route.save(session, reason="Created new route")
-        LOGGER.info("Created routing record for verkey: %s", recipient_key)
+        LOGGER.info(f"Created routing record for verkey: {recipient_key}")
         return route

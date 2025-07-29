@@ -609,7 +609,7 @@ async def upgrade_wallet_to_anoncreds_if_requested(
             return
 
         try:
-            LOGGER.info("Upgrade in process for wallet: %s", profile.name)
+            LOGGER.info(f"Upgrade in process for wallet: {profile.name}")
             await convert_records_to_anoncreds(profile)
             await finish_upgrade_by_updating_profile_or_shutting_down(
                 profile, is_subwallet
@@ -675,14 +675,12 @@ async def finish_upgrade_by_updating_profile_or_shutting_down(
         await upgrade_subwallet(profile)
         await finish_upgrade(profile)
         LOGGER.info(
-            "Upgrade of subwallet %s has completed. Profile is now askar-anoncreds",
-            profile.settings.get("wallet.name"),
+            f"Upgrade of subwallet {profile.settings.get("wallet.name")} has completed. Profile is now askar-anoncreds"
         )
     else:
         await finish_upgrade(profile)
         LOGGER.info(
-            "Upgrade of base wallet %s to anoncreds has completed. Shutting down agent.",
-            profile.settings.get("wallet.name"),
+            f"Upgrade of base wallet {profile.settings.get("wallet.name")} to anoncreds has completed. Shutting down agent."
         )
         asyncio.get_event_loop().stop()
 
@@ -692,7 +690,7 @@ async def check_upgrade_completion_loop(profile: Profile, is_subwallet=False):
     async with profile.session() as session:
         while True:
             storage = session.inject(BaseStorage)
-            LOGGER.debug("Checking upgrade completion for wallet: %s", profile.name)
+            LOGGER.debug(f"Checking upgrade completion for wallet: {profile.name}")
             try:
                 upgrading_record = await storage.find_record(
                     RECORD_TYPE_ACAPY_UPGRADING, tag_query={}
@@ -704,14 +702,12 @@ async def check_upgrade_completion_loop(profile: Profile, is_subwallet=False):
                         await upgrade_subwallet(profile)
                         await finish_upgrade(profile)
                         LOGGER.info(
-                            "Upgrade of subwallet %s has completed. "
+                            f"Upgrade of subwallet {profile.settings.get("wallet.name")} has completed. "
                             "Profile is now askar-anoncreds",
-                            profile.settings.get("wallet.name"),
                         )
                         return
                     LOGGER.info(
-                        "Upgrade complete for wallet: %s, shutting down agent.",
-                        profile.name,
+                        f"Upgrade complete for wallet: {profile.name}, shutting down agent.",
                     )
                     # Shut down agent if base wallet
                     asyncio.get_event_loop().stop()

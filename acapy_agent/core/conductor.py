@@ -165,9 +165,7 @@ class Conductor:
             if not context.settings.get("ledger.genesis_transactions"):
                 ledger = context.injector.inject(BaseLedger)
                 LOGGER.debug(
-                    "Ledger backend: %s, Profile backend: %s",
-                    ledger.BACKEND_NAME,
-                    self.root_profile.BACKEND_NAME,
+                    "Ledger backend: {ledger.BACKEND_NAME}, Profile backend: {self.root_profile.BACKEND_NAME}"
                 )
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
@@ -287,7 +285,7 @@ class Conductor:
                     self.get_stats,
                 )
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
-                LOGGER.debug("Admin server registered on %s:%s", admin_host, admin_port)
+                LOGGER.debug(f"Admin server registered on {admin_host}:{admin_port}")
             except Exception:
                 LOGGER.exception("Unable to register admin server.")
                 raise
@@ -361,7 +359,7 @@ class Conductor:
 
         # Get agent label
         default_label = context.settings.get("default_label")
-        LOGGER.debug("Agent label: %s", default_label)
+        LOGGER.debug(f"Agent label: {default_label}")
 
         if context.settings.get("transport.disabled"):
             LoggingConfigurator.print_banner(
@@ -396,8 +394,7 @@ class Conductor:
                 )
                 from_version_storage = record.value
                 LOGGER.info(
-                    "Existing acapy_version storage record found, version set to %s",
-                    from_version_storage,
+                    f"Existing acapy_version storage record found, version set to {from_version_storage}"
                 )
             except StorageNotFoundError:
                 LOGGER.info("Wallet version storage record not found.")
@@ -407,9 +404,7 @@ class Conductor:
             self.root_profile.settings.get("upgrade.force_upgrade") or False
         )
         LOGGER.debug(
-            "Force upgrade flag: %s, From version config: %s",
-            force_upgrade_flag,
-            from_version_config,
+            f"Force upgrade flag: {force_upgrade_flag}, From version config: {from_version_config}"
         )
 
         if force_upgrade_flag and from_version_config:
@@ -423,27 +418,26 @@ class Conductor:
             else:
                 from_version = from_version_config
             LOGGER.debug(
-                "Determined from_version based on force_upgrade: %s", from_version
+                f"Determined from_version based on force_upgrade: {from_version}"
             )
         else:
             from_version = from_version_storage or from_version_config
-            LOGGER.debug("Determined from_version: %s", from_version)
+            LOGGER.debug(f"Determined from_version: {from_version}")
 
         if not from_version:
             LOGGER.info(
                 "No upgrade from version was found from wallet or via"
-                " --from-version startup argument. Defaulting to %s.",
-                DEFAULT_ACAPY_VERSION,
+                f" --from-version startup argument. Defaulting to {DEFAULT_ACAPY_VERSION}."
             )
             from_version = DEFAULT_ACAPY_VERSION
             self.root_profile.settings.set_value("upgrade.from_version", from_version)
-            LOGGER.debug("Set upgrade.from_version to default: %s", from_version)
+            LOGGER.debug(f"Set upgrade.from_version to default: {from_version}")
 
         config_available_list = get_upgrade_version_list(
             config_path=self.root_profile.settings.get("upgrade.config_path"),
             from_version=from_version,
         )
-        LOGGER.debug("Available upgrade versions: %s", config_available_list)
+        LOGGER.debug(f"Available upgrade versions: {config_available_list}")
 
         if len(config_available_list) >= 1:
             LOGGER.info("Upgrade configurations available. Initiating upgrade.")
@@ -468,12 +462,9 @@ class Conductor:
             )
             LOGGER.info(
                 "Created static connection for test suite\n"
-                " - My DID: %s\n"
-                " - Their DID: %s\n"
-                " - Their endpoint: %s\n",
-                test_conn.my_did,
-                test_conn.their_did,
-                their_endpoint,
+                f" - My DID: {test_conn.my_did}\n"
+                f" - Their DID: {test_conn.their_did}\n"
+                f" - Their endpoint: {their_endpoint}\n"
             )
             del mgr
             LOGGER.debug("Static connection for test suite created and manager deleted.")
@@ -488,11 +479,11 @@ class Conductor:
         # Set default mediator by id
         default_mediator_id = context.settings.get("mediation.default_id")
         if default_mediator_id:
-            LOGGER.debug("Setting default mediator to ID: %s", default_mediator_id)
+            LOGGER.debug(f"Setting default mediator to ID: {default_mediator_id}")
             mediation_mgr = MediationManager(self.root_profile)
             try:
                 await mediation_mgr.set_default_mediator_by_id(default_mediator_id)
-                LOGGER.info("Default mediator set to %s", default_mediator_id)
+                LOGGER.info(f"Default mediator set to {default_mediator_id}")
             except Exception:
                 LOGGER.exception("Error updating default mediator.")
 
@@ -514,7 +505,7 @@ class Conductor:
                 )
                 base_url = context.settings.get("invite_base_url")
                 invite_url = invi_rec.invitation.to_url(base_url)
-                LOGGER.info("Invitation URL:\n%s", invite_url)
+                LOGGER.info(f"Invitation URL:\n{invite_url}")
                 qr = QRCode(border=1)
                 qr.add_data(invite_url)
                 qr.print_ascii(invert=True)
@@ -524,7 +515,7 @@ class Conductor:
 
         # mediation connection establishment
         provided_invite: str = context.settings.get("mediation.invite")
-        LOGGER.debug("Mediation invite provided: %s", provided_invite)
+        LOGGER.debug(f"Mediation invite provided: {provided_invite}")
 
         try:
             async with self.root_profile.session() as session:
@@ -629,12 +620,12 @@ class Conductor:
             if multitenant_mgr:
                 LOGGER.debug("Closing multitenant profiles.")
                 for profile in multitenant_mgr.open_profiles:
-                    LOGGER.debug("Closing profile: %s", profile.name)
+                    LOGGER.debug(f"Closing profile: {profile.name}")
                     shutdown.run(profile.close())
             LOGGER.debug("Closing root profile.")
             shutdown.run(self.root_profile.close())
 
-        LOGGER.debug("Waiting for shutdown tasks to complete with timeout=%f.", timeout)
+        LOGGER.debug(f"Waiting for shutdown tasks to complete with timeout={timeout}.")
         await shutdown.complete(timeout)
         LOGGER.info("Conductor agent stopped successfully.")
 
@@ -655,8 +646,7 @@ class Conductor:
 
         if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
-                "Direct response requested, but not supported by transport: %s",
-                message.transport_type,
+                f"Direct response requested, but not supported by transport: {message.transport_type}"
             )
 
         # Note: at this point we could send the message to a shared queue
@@ -670,7 +660,7 @@ class Conductor:
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Ledger error occurred in message handler: %s", str(e))
+            LOGGER.error(f"Ledger error occurred in message handler: {str(e)}")
             raise
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
@@ -679,15 +669,12 @@ class Conductor:
             exc_class, exc, _ = completed.exc_info
             if isinstance(exc, (LedgerConfigError, LedgerTransactionError)):
                 LOGGER.error(
-                    "Ledger error occurred in message handler: %s",
-                    str(exc),
+                    f"Ledger error occurred in message handler: {str(exc)}",
                     exc_info=completed.exc_info,
                 )
             elif isinstance(exc, (ProfileError, StorageNotFoundError)):
                 LOGGER.error(
-                    "Storage error occurred in message handler: %s: %s",
-                    exc_class.__name__,
-                    str(exc),
+                    f"Storage error occurred in message handler: {exc_class.__name__}: {str(exc)}",
                     exc_info=completed.exc_info,
                 )
             else:
@@ -768,7 +755,7 @@ class Conductor:
             self.dispatcher.run_task(self.queue_outbound(profile, outbound))
         except (LedgerConfigError, LedgerTransactionError) as e:
             LOGGER.error(
-                "Ledger error occurred while handling failed delivery: %s", str(e)
+                f"Ledger error occurred while handling failed delivery: {str(e)}"
             )
             raise
 
@@ -800,7 +787,7 @@ class Conductor:
                 return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
                 LOGGER.error(
-                    "Ledger error occurred while preparing outbound message: %s", str(e)
+                    f"Ledger error occurred while preparing outbound message: {str(e)}"
                 )
                 raise
             del conn_mgr
@@ -886,8 +873,7 @@ class Conductor:
                 if acapy_version:
                     storage_type_from_storage = STORAGE_TYPE_VALUE_ASKAR
                     LOGGER.info(
-                        "Existing agent found. Setting wallet type to %s.",
-                        storage_type_from_storage,
+                        f"Existing agent found. Setting wallet type to {storage_type_from_storage}."
                     )
                     await storage.add_record(
                         StorageRecord(
@@ -898,7 +884,7 @@ class Conductor:
                 else:
                     storage_type_from_storage = storage_type_from_config
                     LOGGER.info(
-                        "New agent. Setting wallet type to %s.", storage_type_from_config
+                        f"New agent. Setting wallet type to {storage_type_from_config}."
                     )
                     await storage.add_record(
                         StorageRecord(

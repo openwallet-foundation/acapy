@@ -76,13 +76,10 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                         )
                         LOGGER.info(
                             (
-                                "Amended presentation request (nonce=%s): removed "
-                                "non-revocation interval at %s referent "
-                                "%s; corresponding credential in proof is irrevocable"
-                            ),
-                            pres_req["nonce"],
-                            pres_key,
-                            uuid,
+                                f"Amended presentation request (nonce={pres_req["nonce"]}): removed "
+                                f"non-revocation interval at {pres_key} referent "
+                                f"{uuid}; corresponding credential in proof is irrevocable"
+                            )
                         )
 
         if all(
@@ -96,10 +93,9 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             msgs.append(PresVerifyMsg.RMV_GLOBAL_NON_REVOC_INTERVAL.value)
             LOGGER.warning(
                 (
-                    "Amended presentation request (nonce=%s); removed global "
+                    f"Amended presentation request (nonce={pres_req["nonce"]}); removed global "
                     "non-revocation interval; no revocable credentials in proof"
-                ),
-                pres_req["nonce"],
+                )
             )
         return msgs
 
@@ -205,11 +201,8 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                                 f"{uuid}"
                             )
                             LOGGER.info(
-                                "Timestamp %s from ledger for item %s falls outside "
-                                "non-revocation interval %s",
-                                timestamp,
-                                uuid,
-                                non_revoc_intervals[uuid],
+                                f"Timestamp {timestamp} from ledger for item {uuid} falls outside "
+                                f"non-revocation interval {non_revoc_intervals[uuid]}",
                             )
                 elif uuid in unrevealed_attrs:
                     # nothing to do, attribute value is not revealed
@@ -245,11 +238,8 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                             f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::{uuid}"
                         )
                         LOGGER.info(
-                            "Timestamp %s from ledger for item %s falls outside "
-                            "non-revocation interval %s",
-                            timestamp,
-                            uuid,
-                            non_revoc_intervals[uuid],
+                            "Timestamp {timestamp} from ledger for item {uuid} falls outside "
+                            "non-revocation interval {non_revoc_intervals[uuid]}"
                         )
 
         for uuid, req_pred in pres_req["requested_predicates"].items():

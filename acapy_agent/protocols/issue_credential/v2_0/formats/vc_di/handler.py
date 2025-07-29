@@ -109,10 +109,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         if len(records) > 1:
             LOGGER.warning(
-                "Cred ex id %s has %d %s detail records: should be 1",
-                cred_ex_id,
-                len(records),
-                VCDICredFormatHandler.format.api,
+                f"Cred ex id {cred_ex_id} has {len(records)} {VCDICredFormatHandler.format.api} detail records: should be 1"
             )
         return records[0] if records else None
 

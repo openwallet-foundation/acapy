@@ -58,7 +58,7 @@ def load_resource(path: str, encoding: Optional[str] = None):
                 return io.TextIOWrapper(bstream, encoding=encoding)
             return bstream
     except IOError:
-        LOGGER.warning("Resource not found: %s", path)
+        LOGGER.warning(f"Resource not found: {path}")
         return None
 
 

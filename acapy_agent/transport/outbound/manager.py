@@ -345,8 +345,7 @@ class OutboundTransportManager:
                 if queued.state == QueuedOutboundMessage.STATE_DONE:
                     if queued.error:
                         LOGGER.exception(
-                            "Outbound message could not be delivered to %s",
-                            queued.endpoint,
+                            f"Outbound message could not be delivered to {queued.endpoint}",
                             exc_info=queued.error,
                         )
                         if self.handle_not_delivered and queued.message:
@@ -476,13 +475,10 @@ class OutboundTransportManager:
         if retry:
             LOGGER.debug(
                 (
-                    ">>> Error when posting to: %s; "
-                    "Error: %s; "
-                    "Payload: %s; Re-queue failed message ..."
-                ),
-                queued.endpoint,
-                queued.error,
-                queued.payload,
+                    f">>> Error when posting to: {queued.endpoint}; "
+                    f"Error: {queued.error}; "
+                    f"Payload: {queued.payload}; Re-queue failed message ..."
+                )
             )
         else:
             err_msg = ">>> Outbound message failed to deliver, NOT Re-queued."

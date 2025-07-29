@@ -18,13 +18,13 @@ class ForwardHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("ForwardHandler called with context %s", context)
+        self._logger.debug(f"ForwardHandler called with context {context}")
         assert isinstance(context.message, Forward)
 
         if not context.message_receipt.recipient_verkey:
             raise HandlerException("Cannot forward message: unknown recipient")
         self._logger.debug(
-            "Received forward for: %s", context.message_receipt.recipient_verkey
+            f"Received forward for: {context.message_receipt.recipient_verkey}"
         )
 
         packed = context.message.msg

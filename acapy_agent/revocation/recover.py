@@ -39,7 +39,7 @@ async def fetch_txns(genesis_txns, registry_id):
     pool = await vdr_module.open_pool(transactions=genesis_txns)
     LOGGER.debug("Connected to pool")
 
-    LOGGER.debug("Fetch registry: %s", registry_id)
+    LOGGER.debug(f"Fetch registry: {registry_id}")
     fetch = vdr_module.ledger.build_get_revoc_reg_def_request(None, registry_id)
     result = await pool.submit_request(fetch)
     if not result["data"]:
@@ -47,7 +47,7 @@ async def fetch_txns(genesis_txns, registry_id):
     data = result["data"]
     data["ver"] = "1.0"
     defn = credx_module.RevocationRegistryDefinition.load(data)
-    LOGGER.debug("Tails URL: %s", defn.tails_location)
+    LOGGER.debug(f"Tails URL: {defn.tails_location}")
 
     async with aiohttp.ClientSession() as session:
         data = await session.get(defn.tails_location)
@@ -58,7 +58,7 @@ async def fetch_txns(genesis_txns, registry_id):
                 f"Tails hash mismatch {tails_hash} {defn.tails_hash}"
             )
         else:
-            LOGGER.debug("Checked tails hash: %s", tails_hash)
+            LOGGER.debug(f"Checked tails hash: {tails_hash}")
         tails_temp = tempfile.NamedTemporaryFile(delete=False)
         tails_temp.write(tails_data)
         tails_temp.close()
@@ -75,9 +75,9 @@ async def fetch_txns(genesis_txns, registry_id):
     accum_to["ver"] = "1.0"
     delta = credx_module.RevocationRegistryDelta.load(accum_to)
     registry = credx_module.RevocationRegistry.load(accum_to)
-    LOGGER.debug("Ledger registry state: %s", registry.to_json())
+    LOGGER.debug(f"Ledger registry state: {registry.to_json()}")
     revoked = set(result["data"]["value"]["revoked"])
-    LOGGER.debug("Ledger revoked indexes: %s", revoked)
+    LOGGER.debug(f"Ledger revoked indexes: {revoked}")
 
     return defn, registry, delta, revoked, tails_temp
 
@@ -98,17 +98,16 @@ async def generate_ledger_rrrecovery_txn(
     mismatch = prev_revoked - set_revoked
     if mismatch:
         LOGGER.warning(
-            "Credential index(es) revoked on the ledger, but not in wallet: %s",
-            mismatch,
+            f"Credential index(es) revoked on the ledger, but not in wallet: {mismatch}",
         )
 
     updates = set_revoked - prev_revoked
     if not updates:
         LOGGER.debug("No updates to perform")
     else:
-        LOGGER.debug("New revoked indexes: %s", updates)
+        LOGGER.debug(f"New revoked indexes: {updates}")
 
-        LOGGER.debug("tails_temp: %s", tails_temp.name)
+        LOGGER.debug(f"tails_temp: {tails_temp.name}")
         update_registry = registry.copy()
         new_delta = update_registry.update(
             cred_def, defn, rev_reg_def_private, [], updates

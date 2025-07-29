@@ -201,7 +201,7 @@ class DIDDoc:
                         pubkey = self.pubkey[canon_key]
                     else:  # service key refers to another DID doc
                         LOGGER.debug(
-                            "DID document %s has no public key %s", self.did, svc_key
+                            f"DID document {self.did} has no public key {svc_key}"
                         )
                         raise ValueError(
                             "DID document {} has no public key {}".format(

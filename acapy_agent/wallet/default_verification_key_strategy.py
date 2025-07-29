@@ -207,13 +207,9 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
         if len(suitable_methods) > 1:
             LOGGER.info(
                 (
-                    "More than 1 verification method matched for did %s with proof "
-                    "type %s and purpose %s; returning the first: %s"
-                ),
-                did,
-                proof_type,
-                proof_purpose,
-                suitable_methods[0].id,
+                    f"More than 1 verification method matched for did {did} with proof "
+                    f"type {proof_type} and purpose {proof_purpose}; returning the first: {suitable_methods[0].id}"
+                )
             )
 
         return suitable_methods[0].id

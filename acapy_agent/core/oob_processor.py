@@ -82,8 +82,7 @@ class OobMessageProcessor:
                 )
 
                 LOGGER.debug(
-                    "extracting their service from oob record %s",
-                    oob_record.their_service,
+                    f"extracting their service from oob record {oob_record.their_service}"
                 )
 
                 their_service = oob_record.their_service
@@ -94,8 +93,7 @@ class OobMessageProcessor:
                 message = json.loads(outbound_message.payload)
                 if not message.get("~service") and oob_record.our_service:
                     LOGGER.debug(
-                        "Setting our service on the message ~service %s",
-                        oob_record.our_service,
+                        f"Setting our service on the message ~service {oob_record.our_service}"
                     )
                     message["~service"] = oob_record.our_service.serialize()
 
@@ -106,7 +104,7 @@ class OobMessageProcessor:
 
                 outbound_message.payload = json.dumps(message)
 
-                LOGGER.debug("Sending oob message payload %s", outbound_message.payload)
+                LOGGER.debug(f"Sending oob message payload {outbound_message.payload}")
 
                 return ConnectionTarget(
                     endpoint=their_service.endpoint,
@@ -273,8 +271,7 @@ class OobMessageProcessor:
         # can reply to this message
         if context._message._service:
             LOGGER.debug(
-                "Storing service decorator in oob record %s",
-                context.message._service.serialize(),
+                f"Storing service decorator in oob record {context.message._service.serialize()}",
             )
             oob_record.their_service = context.message._service.serialize()
 
@@ -340,7 +337,7 @@ class OobMessageProcessor:
             if not oob_record.connection_id:
                 oob_record.attach_thread_id = self.get_thread_id(message)
                 if their_service:
-                    LOGGER.debug("Storing their service in oob record %s", their_service)
+                    LOGGER.debug(f"Storing their service in oob record {their_service}")
                     oob_record.their_service = their_service
 
                 await oob_record.save(session)

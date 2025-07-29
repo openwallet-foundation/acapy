@@ -362,8 +362,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                     if schema_info:
                         LOGGER.warning(
                             "Schema already exists on ledger. Returning details."
-                            " Error: %s",
-                            e,
+                            f" Error: {e}"
                         )
                         schema_id, schema_def = schema_info
                 else:
@@ -464,9 +463,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             )
             if ledger_cred_def:
                 LOGGER.warning(
-                    "Credential definition %s already exists on ledger %s",
-                    credential_definition_id,
-                    self.pool_name,
+                    f"Credential definition {credential_definition_id} already exists on ledger {self.pool_name}"
                 )
 
                 try:
@@ -693,8 +690,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                 )
                 if schema_info:
                     LOGGER.warning(
-                        "Schema already exists on ledger. Returning details. Error: %s",
-                        e,
+                        f"Schema already exists on ledger. Returning details. Error: {e}"
                     )
                     raise LedgerObjectAlreadyExistsError(
                         f"Schema already exists on ledger (Error: {e})", *schema_info

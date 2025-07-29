@@ -59,7 +59,7 @@ class DIDResolver:
             DID.validate(did)
         for resolver in await self._match_did_to_resolver(profile, did):
             try:
-                LOGGER.debug("Resolving DID %s with %s", did, resolver)
+                LOGGER.debug(f"Resolving DID {did} with {resolver}")
                 document = await asyncio.wait_for(
                     resolver.resolve(
                         profile,
@@ -68,10 +68,10 @@ class DIDResolver:
                     ),
                     timeout if timeout is not None else self.DEFAULT_TIMEOUT,
                 )
-                LOGGER.debug("Resolved DID %s with %s: %s", did, resolver, document)
+                LOGGER.debug(f"Resolved DID {did} with {resolver}: {document}")
                 return resolver, document
             except DIDNotFound:
-                LOGGER.debug("DID %s not found by resolver %s", did, resolver)
+                LOGGER.debug(f"DID {did} not found by resolver {resolver}")
 
         raise DIDNotFound(f"DID {did} could not be resolved")
 
@@ -116,7 +116,7 @@ class DIDResolver:
             for resolver in self.resolvers
             if await resolver.supports(profile, did)
         ]
-        LOGGER.debug("Valid resolvers for DID %s: %s", did, valid_resolvers)
+        LOGGER.debug(f"Valid resolvers for DID {did}: {valid_resolvers}")
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.native, valid_resolvers

@@ -28,11 +28,10 @@ class V20CredProposalHandler(BaseHandler):
         """
         r_time = get_timer()
 
-        self._logger.debug("V20CredProposalHandler called with context %s", context)
+        self._logger.debug(f"V20CredProposalHandler called with context {context}")
         assert isinstance(context.message, V20CredProposal)
         self._logger.debug(
-            "Received v2.0 credential proposal message: %s",
-            context.message.serialize(as_string=True),
+            f"Received v2.0 credential proposal message: {context.message.serialize(as_string=True)}",
         )
 
         # If connection is present it must be ready for use

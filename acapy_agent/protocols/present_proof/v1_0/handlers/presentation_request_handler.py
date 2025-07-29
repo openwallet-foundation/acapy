@@ -32,11 +32,10 @@ class PresentationRequestHandler(BaseHandler):
         r_time = get_timer()
         profile = context.profile
 
-        self._logger.debug("PresentationRequestHandler called with context %s", context)
+        self._logger.debug(f"PresentationRequestHandler called with context {context}")
         assert isinstance(context.message, PresentationRequest)
         self._logger.debug(
-            "Received presentation request message: %s",
-            context.message.serialize(as_string=True),
+            f"Received presentation request message: {context.message.serialize(as_string=True)}",
         )
 
         # If connection is present it must be ready for use

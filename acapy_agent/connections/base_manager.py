@@ -370,7 +370,7 @@ class BaseConnectionManager:
         if did.startswith("did:sov:"):
             did = did[8:]
 
-        self._logger.debug("Storing DID document for %s: %s", did, doc)
+        self._logger.debug(f"Storing DID document for {did}: {doc}")
 
         try:
             stored_doc, record = await self.fetch_did_document(did)
@@ -403,9 +403,8 @@ class BaseConnectionManager:
                 await storage.add_record(record)
             except StorageDuplicateError:
                 self._logger.warning(
-                    "Key already associated with DID: %s; this is likely caused by "
-                    "routing keys being erroneously stored in the past",
-                    key,
+                    f"Key already associated with DID: {key}; this is likely caused by "
+                    "routing keys being erroneously stored in the past"
                 )
 
     async def find_did_for_key(self, key: str) -> str:
@@ -467,7 +466,7 @@ class BaseConnectionManager:
         key material.
         """
         self._logger.debug(
-            "Getting recipient and routing keys for service %s", service.id
+            f"Getting recipient and routing keys for service {service.id}"
         )
         resolver = self._profile.inject(DIDResolver)
         recipient_keys: List[VerificationMethod] = [
@@ -501,16 +500,16 @@ class BaseConnectionManager:
             BaseConnectionManagerError: If the public DID has no associated
                 DIDComm services.
         """
-        self._logger.debug("Resolving invitation for DID %s", did)
+        self._logger.debug(f"Resolving invitation for DID {did}")
         doc, didcomm_services = await self.resolve_didcomm_services(did, service_accept)
         if not didcomm_services:
-            self._logger.warning("No DIDComm services found for DID %s", did)
+            self._logger.warning(f"No DIDComm services found for DID {did}")
             raise BaseConnectionManagerError(
                 "Cannot connect via public DID that has no associated DIDComm services"
             )
         first_didcomm_service, *_ = didcomm_services
         self._logger.debug(
-            "DIDComm service (id %s) found for DID %s", first_didcomm_service.id, did
+            f"DIDComm service (id {first_didcomm_service.id}) found for DID {did}"
         )
 
         endpoint = str(first_didcomm_service.service_endpoint)
@@ -518,10 +517,7 @@ class BaseConnectionManager:
             doc, first_didcomm_service
         )
         self._logger.debug(
-            "DID %s has recipient keys %s and routing keys %s",
-            did,
-            recipient_keys,
-            routing_keys,
+            f"DID {did} has recipient keys {recipient_keys} and routing keys {routing_keys}"
         )
         return (
             endpoint,
@@ -549,10 +545,10 @@ class BaseConnectionManager:
         their_label: Optional[str] = None,
     ) -> List[ConnectionTarget]:
         """Resolve connection targets for a DID."""
-        self._logger.debug("Resolving connection targets for DID %s", did)
+        self._logger.debug(f"Resolving connection targets for DID {did}")
         doc, didcomm_services = await self.resolve_didcomm_services(did)
-        self._logger.debug("Resolved DID document: %s", doc)
-        self._logger.debug("Resolved DIDComm services: %s", didcomm_services)
+        self._logger.debug(f"Resolved DID document: {doc}")
+        self._logger.debug(f"Resolved DIDComm services: {didcomm_services}")
         targets = []
         for service in didcomm_services:
             try:
@@ -615,7 +611,7 @@ class BaseConnectionManager:
             codec, key = multicodec.unwrap(multibase.decode(method.material))
             if codec != multicodec.multicodec("ed25519-pub"):
                 raise BaseConnectionManagerError(
-                    "Expected ed25519 multicodec, got: %s", codec
+                    f"Expected ed25519 multicodec, got: {codec}"
                 )
             return bytes_to_b58(key)
         else:
@@ -800,8 +796,7 @@ class BaseConnectionManager:
                         await entry.set_result([row.serialize() for row in targets], 3600)
                     else:
                         self._logger.debug(
-                            "Not caching connection targets for connection in state %s",
-                            connection.state,
+                            f"Not caching connection targets for connection in state {connection.state}",
                         )
         else:
             if not connection:
@@ -1020,13 +1015,11 @@ class BaseConnectionManager:
                     receipt.recipient_did_public = True
             except InjectionError:
                 self._logger.warning(
-                    "Cannot resolve recipient verkey, no wallet defined by context: %s",
-                    receipt.recipient_verkey,
+                    f"Cannot resolve recipient verkey, no wallet defined by context: {receipt.recipient_verkey}"
                 )
             except WalletNotFoundError:
                 self._logger.debug(
-                    "No corresponding DID found for recipient verkey: %s",
-                    receipt.recipient_verkey,
+                    f"No corresponding DID found for recipient verkey: {receipt.recipient_verkey}"
                 )
 
         return await self.find_connection(

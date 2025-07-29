@@ -26,11 +26,10 @@ class PresentationProposalHandler(BaseHandler):
         """
         r_time = get_timer()
         profile = context.profile
-        self._logger.debug("PresentationProposalHandler called with context %s", context)
+        self._logger.debug(f"PresentationProposalHandler called with context {context}")
         assert isinstance(context.message, PresentationProposal)
         self._logger.debug(
-            "Received presentation proposal message: %s",
-            context.message.serialize(as_string=True),
+            f"Received presentation proposal message: {context.message.serialize(as_string=True)}"
         )
 
         if not context.connection_record:

@@ -73,7 +73,7 @@ class ClassLoader:
         try:
             return import_module(mod_path, package)
         except ModuleNotFoundError as e:
-            LOGGER.warning("Module %s not found during import", full_path)
+            LOGGER.warning(f"Module {full_path} not found during import")
             raise ModuleLoadError(f"Unable to import module {full_path}: {str(e)}") from e
 
     @classmethod
@@ -106,7 +106,7 @@ class ClassLoader:
             mod_path = default_module
         else:
             LOGGER.warning(
-                "Cannot resolve class name %s with no default module", class_name
+                f"Cannot resolve class name {class_name} with no default module"
             )
             raise ClassNotFoundError(
                 f"Cannot resolve class name with no default module: {class_name}"
@@ -115,24 +115,24 @@ class ClassLoader:
         mod = cls.load_module(mod_path, package)
         if not mod:
             LOGGER.warning(
-                "Module %s not found when loading class %s", mod_path, class_name
+                f"Module {mod_path} not found when loading class {class_name}"
             )
             raise ClassNotFoundError(f"Module '{mod_path}' not found")
 
         resolved = getattr(mod, class_name, None)
         if not resolved:
-            LOGGER.warning("Class %s not found in module %s", class_name, mod_path)
+            LOGGER.warning(f"Class {class_name} not found in module {mod_path}")
             raise ClassNotFoundError(
                 f"Class '{class_name}' not defined in module: {mod_path}"
             )
         if not isinstance(resolved, type):
             LOGGER.warning(
-                "Resolved attribute %s in module %s is not a class", class_name, mod_path
+                "Resolved attribute {class_name} in module {mod_path} is not a class"
             )
             raise ClassNotFoundError(
                 f"Resolved value is not a class: {mod_path}.{class_name}"
             )
-        LOGGER.debug("Successfully loaded class %s from module %s", class_name, mod_path)
+        LOGGER.debug("Successfully loaded class {class_name} from module {mod_path}")
         return resolved
 
     @classmethod
@@ -158,9 +158,7 @@ class ClassLoader:
         mod = cls.load_module(mod_path, package)
         if not mod:
             LOGGER.warning(
-                "Module %s not found when loading subclass of %s",
-                mod_path,
-                base_class.__name__,
+                f"Module {mod_path} not found when loading subclass of {base_class.__name__}"
             )
             raise ClassNotFoundError(f"Module '{mod_path}' not found")
 
@@ -173,9 +171,7 @@ class ClassLoader:
             )
         except StopIteration:
             LOGGER.debug(
-                "No subclass of %s found in module %s",
-                base_class.__name__,
-                mod_path,
+                f"No subclass of {base_class.__name__} found in module {mod_path}"
             )
             raise ClassNotFoundError(
                 f"Could not resolve a class that inherits from {base_class}"
@@ -185,22 +181,22 @@ class ClassLoader:
     @classmethod
     def scan_subpackages(cls, package: str) -> Sequence[str]:
         """Return a list of sub-packages defined under a named package."""
-        LOGGER.debug("Scanning subpackages under package %s", package)
+        LOGGER.debug(f"Scanning subpackages under package {package}")
         if "." in package:
             package, sub_pkg = package.split(".", 1)
-            LOGGER.debug("Extracted main package: %s, sub-package: %s", package, sub_pkg)
+            LOGGER.debug(f"Extracted main package: {package}, sub-package: {sub_pkg}")
         else:
             sub_pkg = "."
-            LOGGER.debug("No sub-package provided, defaulting to %s", sub_pkg)
+            LOGGER.debug(f"No sub-package provided, defaulting to {sub_pkg}")
 
         try:
             package_path = resources.files(package)
         except FileNotFoundError:
-            LOGGER.warning("Package %s not found during subpackage scan", package)
+            LOGGER.warning(f"Package {package} not found during subpackage scan")
             raise ModuleLoadError(f"Undefined package {package}")
 
         if not (package_path / sub_pkg).is_dir():
-            LOGGER.warning("Sub-package %s is not a directory under %s", sub_pkg, package)
+            LOGGER.warning(f"Sub-package {sub_pkg} is not a directory under {package}")
             raise ModuleLoadError(f"Undefined package {package}")
 
         found = []
@@ -210,7 +206,7 @@ class ClassLoader:
             if (item / "__init__.py").exists():
                 subpackage = f"{package}.{joiner}{item.name}"
                 found.append(subpackage)
-        LOGGER.debug("%d sub-packages found under %s: %s", len(found), package, found)
+        LOGGER.debug(f"{len(found)} sub-packages found under {package}: {found}")
         return found
 
 

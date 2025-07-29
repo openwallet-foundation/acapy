@@ -30,11 +30,10 @@ class V20CredOfferHandler(BaseHandler):
         """
         r_time = get_timer()
 
-        self._logger.debug("V20CredOfferHandler called with context %s", context)
+        self._logger.debug(f"V20CredOfferHandler called with context {context}")
         assert isinstance(context.message, V20CredOffer)
         self._logger.debug(
-            "Received v2.0 credential offer message: %s",
-            context.message.serialize(as_string=True),
+            f"Received v2.0 credential offer message: {context.message.serialize(as_string=True)}"
         )
 
         # If connection is present it must be ready for use

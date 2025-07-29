@@ -17,7 +17,7 @@ class KeylistHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle keylist message."""
-        self._logger.debug("%s called with context %s", self.__class__.__name__, context)
+        self._logger.debug(f"{self.__class__.__name__} called with context {context}")
         assert isinstance(context.message, Keylist)
 
         if not context.connection_ready:
@@ -30,10 +30,9 @@ class KeylistHandler(BaseHandler):
                 )
         except StorageNotFoundError as err:
             self._logger.warning(
-                "Received keylist from connection that is not acting as mediator: %s",
-                err,
+                f"Received keylist from connection that is not acting as mediator: {err}",
             )
             return
 
         # TODO verify our keylist matches?
-        self._logger.info("Keylist received: %s", context.message)
+        self._logger.info(f"Keylist received: {context.message}")

@@ -656,7 +656,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
-    LOGGER.info(">>> accepting TAA with: %s", accept_input)
+    LOGGER.info(f">>> accepting TAA with: {accept_input}")
     async with ledger:
         try:
             taa_info = await ledger.get_txn_author_agreement()
@@ -684,7 +684,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
                 ),
             }
             taa_record_digest = taa_record["digest"]
-            LOGGER.info(">>> accepting with digest: %s", taa_record_digest)
+            LOGGER.info(f">>> accepting with digest: {taa_record_digest}")
             await ledger.accept_txn_author_agreement(
                 taa_record, accept_input["mechanism"]
             )

@@ -51,7 +51,7 @@ class MultitenantRouteManager(RouteManager):
     ) -> Optional[KeylistUpdate]:
         wallet_id = profile.settings["wallet.id"]
         LOGGER.debug(
-            "Add route record for recipient %s to wallet %s", recipient_key, wallet_id
+            f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
         )
         routing_mgr = RoutingManager(self.root_profile)
         mediation_mgr = MediationManager(self.root_profile)
@@ -67,16 +67,12 @@ class MultitenantRouteManager(RouteManager):
 
                 # If no error is thrown, it means there is already a record
                 LOGGER.debug(
-                    "Route record already exists for recipient %s to wallet %s. Skipping",
-                    recipient_key,
-                    wallet_id,
+                    "Route record already exists for recipient {recipient_key} to wallet {wallet_id}. Skipping"
                 )
                 return None
             except StorageNotFoundError:
                 LOGGER.debug(
-                    "Route record does not exist for recipient %s to wallet %s. Creating",
-                    recipient_key,
-                    wallet_id,
+                    "Route record does not exist for recipient {recipient_key} to wallet {wallet_id}. Creating"
                 )
 
         await routing_mgr.create_route_record(
@@ -86,11 +82,11 @@ class MultitenantRouteManager(RouteManager):
         # External mediation
         keylist_updates = None
         if mediation_record:
-            LOGGER.debug("Adding key to mediation record for recipient %s", recipient_key)
+            LOGGER.debug("Adding key to mediation record for recipient {recipient_key}")
             keylist_updates = await mediation_mgr.add_key(recipient_key)
             if replace_key:
                 LOGGER.debug(
-                    "Replacing key %s in mediation record %s", replace_key, recipient_key
+                    f"Replacing key {replace_key} in mediation record {recipient_key}"
                 )
                 keylist_updates = await mediation_mgr.remove_key(
                     replace_key, keylist_updates
@@ -104,7 +100,7 @@ class MultitenantRouteManager(RouteManager):
             profile = self.root_profile if base_mediation_record else profile
             responder = profile.inject(BaseResponder)
             LOGGER.debug(
-                "Sending keylist updates to mediator %s", mediation_record.connection_id
+                f"Sending keylist updates to mediator {mediation_record.connection_id}"
             )
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
@@ -137,7 +133,7 @@ class MultitenantRouteManager(RouteManager):
     ) -> RoutingInfo:
         """Return routing info."""
         LOGGER.debug(
-            "Getting routing info for profile %s", profile.settings.get("wallet.id", "")
+            f"Getting routing info for profile {profile.settings.get("wallet.id", "")}"
         )
         routing_keys = []
 

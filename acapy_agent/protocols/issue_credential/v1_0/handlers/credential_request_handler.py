@@ -28,11 +28,10 @@ class CredentialRequestHandler(BaseHandler):
         """
         r_time = get_timer()
         profile = context.profile
-        self._logger.debug("CredentialRequestHandler called with context %s", context)
+        self._logger.debug(f"CredentialRequestHandler called with context {context}")
         assert isinstance(context.message, CredentialRequest)
         self._logger.debug(
-            "Received credential request message: %s",
-            context.message.serialize(as_string=True),
+            f"Received credential request message: {context.message.serialize(as_string=True)}"
         )
 
         # If connection is present it must be ready for use

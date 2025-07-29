@@ -830,7 +830,7 @@ async def promote_wallet_public_did(
     mediator_endpoint: Optional[str] = None,
 ) -> Tuple[DIDInfo, Optional[dict]]:
     """Promote supplied DID to the wallet public DID."""
-    LOGGER.debug("Starting promotion of DID %s to wallet public DID", did)
+    LOGGER.debug(f"Starting promotion of DID {did} to wallet public DID")
     info: Optional[DIDInfo] = None
     endorser_did = None
 
@@ -860,12 +860,12 @@ async def promote_wallet_public_did(
             reason = "No ledger available"
             if not context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
-            LOGGER.info("Cannot promote DID %s to public DID: %s", did, reason)
+            LOGGER.info(f"Cannot promote DID {did} to public DID: {reason}")
             raise PermissionError(reason)
 
         async with ledger:
             if not await ledger.get_key_for_did(did):
-                LOGGER.info("Cannot promote DID %s; it is not posted to the ledger", did)
+                LOGGER.info("Cannot promote DID {did}; it is not posted to the ledger")
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
         is_author_profile = (
@@ -887,7 +887,7 @@ async def promote_wallet_public_did(
                     else await get_endorser_connection_id(profile)
                 )
             if not connection_id:
-                LOGGER.info("Cannot promote DID %s; no endorser connection found", did)
+                LOGGER.info(f"Cannot promote DID {did}; no endorser connection found")
                 raise web.HTTPBadRequest(reason="No endorser connection found")
         if not write_ledger:
             async with (
@@ -898,10 +898,10 @@ async def promote_wallet_public_did(
                         session, connection_id
                     )
                 except StorageNotFoundError as err:
-                    LOGGER.info("Connection record not found: %s", err.roll_up)
+                    LOGGER.info(f"Connection record not found: {err.roll_up}")
                     raise web.HTTPNotFound(reason=err.roll_up) from err
                 except BaseModelError as err:
-                    LOGGER.error("Base model error: %s", err.roll_up)
+                    LOGGER.error(f"Base model error: {err.roll_up}")
                     raise web.HTTPBadRequest(reason=err.roll_up) from err
                 endorser_info = await connection_record.metadata_get(
                     session, "endorser_info"
@@ -909,8 +909,7 @@ async def promote_wallet_public_did(
 
             if not endorser_info:
                 LOGGER.info(
-                    "Cannot promote %s; endorser info not set up in connection metadata",
-                    did,
+                    f"Cannot promote {did}; endorser info not set up in connection metadata",
                 )
                 raise web.HTTPForbidden(
                     reason=(
@@ -920,8 +919,7 @@ async def promote_wallet_public_did(
                 )
             if "endorser_did" not in endorser_info.keys():
                 LOGGER.info(
-                    'Cannot promote DID %s; "endorser_did" not set in "endorser_info"',
-                    did,
+                    f'Cannot promote DID {did}; "endorser_did" not set in "endorser_info"',
                 )
                 raise web.HTTPForbidden(
                     reason=(
@@ -930,7 +928,7 @@ async def promote_wallet_public_did(
                     )
                 )
             endorser_did = endorser_info["endorser_did"]
-            LOGGER.debug("Endorser DID %s found in connection metadata", endorser_did)
+            LOGGER.debug(f"Endorser DID {endorser_did} found in connection metadata")
 
     did_info: Optional[DIDInfo] = None
     attrib_def = None
@@ -940,7 +938,7 @@ async def promote_wallet_public_did(
         wallet = session.inject(BaseWallet)
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
-        LOGGER.info("DID %s set as public DID", info.did)
+        LOGGER.info(f"DID {info.did} set as public DID")
 
         if info:
             # Publish endpoint if necessary
@@ -948,7 +946,7 @@ async def promote_wallet_public_did(
 
             if is_indy_did and not endpoint:
                 endpoint = mediator_endpoint or context.settings.get("default_endpoint")
-                LOGGER.debug("Setting endpoint for DID %s to %s", info.did, endpoint)
+                LOGGER.debug(f"Setting endpoint for DID {info.did} to {endpoint}")
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
                     endpoint,
@@ -957,19 +955,19 @@ async def promote_wallet_public_did(
                     endorser_did=endorser_did,
                     routing_keys=routing_keys,
                 )
-                LOGGER.debug("Endpoint set for DID %s: %s", info.did, endpoint)
+                LOGGER.debug(f"Endpoint set for DID {info.did}: {endpoint}")
 
     if info:
-        LOGGER.debug("Routing public DID %s", info.did)
+        LOGGER.debug(f"Routing public DID {info.did}")
         if is_ctx_admin_request:
             profile = context.profile
         route_manager = profile.inject(RouteManager)
         await route_manager.route_verkey(profile, info.verkey)
         LOGGER.info(
-            "Routing set up for public DID %s with verkey %s", info.did, info.verkey
+            f"Routing set up for public DID {info.did} with verkey {info.verkey}"
         )
 
-    LOGGER.debug("Completed promotion of DID %s", did)
+    LOGGER.debug("Completed promotion of DID {did}")
     return info, attrib_def
 
 
@@ -1015,7 +1013,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         profile,
         mediation_record,
     )
-    LOGGER.debug("Mediation info: %s, %s", routing_keys, mediator_endpoint)
+    LOGGER.debug(f"Mediation info: {routing_keys}, {mediator_endpoint}")
 
     # check if we need to endorse
     if is_author_role(context.profile):
@@ -1431,8 +1429,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
         except Exception as err:
             # log the error, but continue
             LOGGER.exception(
-                "Error promoting to public DID: %s",
-                err,
+                f"Error promoting to public DID: {err}",
             )
             return
 
@@ -1444,8 +1441,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
         except StorageError as err:
             # log the error, but continue
             LOGGER.exception(
-                "Error accepting endorser invitation/configuring endorser connection: %s",
-                err,
+                f"Error accepting endorser invitation/configuring endorser connection: {err}",
             )
             return
 
@@ -1460,8 +1456,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
             except (StorageError, TransactionManagerError) as err:
                 # log the error, but continue
                 LOGGER.exception(
-                    "Error creating endorser transaction request: %s",
-                    err,
+                    f"Error creating endorser transaction request: {err}",
                 )
 
             # TODO not sure how to get outbound_handler in an event ...
@@ -1475,8 +1470,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
             else:
                 LOGGER.warning(
                     "Configuration has no BaseResponder: cannot update "
-                    "ATTRIB record on DID: %s",
-                    did,
+                    f"ATTRIB record on DID: {did}",
                 )
 
 

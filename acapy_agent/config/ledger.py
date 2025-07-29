@@ -185,7 +185,7 @@ async def ledger_config(
             profile_endpoint = session.settings.get("profile_endpoint")
             if profile_endpoint and not ledger.read_only:
                 LOGGER.debug(
-                    "Publishing profile endpoint: {profile_endpoint} for DID: {public_did}"
+                    f"Publishing profile endpoint: {profile_endpoint} for DID: {public_did}"
                 )
                 await ledger.update_endpoint_for_did(
                     public_did, profile_endpoint, EndpointType.PROFILE

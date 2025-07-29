@@ -21,11 +21,10 @@ class CredentialAckHandler(BaseHandler):
         """
         r_time = get_timer()
 
-        self._logger.debug("CredentialAckHandler called with context %s", context)
+        self._logger.debug(f"CredentialAckHandler called with context {context}")
         assert isinstance(context.message, CredentialAck)
         self._logger.debug(
-            "Received credential ack message: %s",
-            context.message.serialize(as_string=True),
+            f"Received credential ack message: {context.message.serialize(as_string=True)}"
         )
 
         # If connection is present it must be ready for use

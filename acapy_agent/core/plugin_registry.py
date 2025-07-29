@@ -125,28 +125,28 @@ class PluginRegistry:
 
         mod = self._load_module(module_name)
         if not mod:
-            LOGGER.error("Module doesn't exist: %s", module_name)
+            LOGGER.error(f"Module doesn't exist: {module_name}")
             return None
 
         if self._is_valid_plugin(mod, module_name):
             self._plugins[module_name] = mod
-            LOGGER.debug("Registered plugin: %s", module_name)
+            LOGGER.debug(f"Registered plugin: {module_name}")
             return mod
 
-        LOGGER.warning("Failed to register plugin: %s", module_name)
+        LOGGER.warning(f"Failed to register plugin: {module_name}")
         return None
 
     def _is_already_registered(self, module_name: str) -> bool:
         """Check if the plugin is already registered."""
         if module_name in self._plugins:
-            LOGGER.debug("Plugin %s is already registered.", module_name)
+            LOGGER.debug(f"Plugin {module_name} is already registered.")
             return True
         return False
 
     def _is_blocked(self, module_name: str) -> bool:
         """Check if the plugin is in the blocklist."""
         if module_name in self._blocklist:
-            LOGGER.debug("Blocked %s from loading due to blocklist.", module_name)
+            LOGGER.debug(f"Blocked {module_name} from loading due to blocklist.")
             return True
         return False
 
@@ -156,7 +156,7 @@ class PluginRegistry:
             mod = ClassLoader.load_module(module_name)
             return mod
         except ModuleLoadError as e:
-            LOGGER.error("Error loading plugin module '%s': %s", module_name, e)
+            LOGGER.error(f"Error loading plugin module '{module_name}': {e}")
         return None
 
     def _is_valid_plugin(self, mod: ModuleType, module_name: str) -> bool:
@@ -179,16 +179,14 @@ class PluginRegistry:
         # definition.py must exist in protocol
         if not definition:
             LOGGER.error(
-                "Protocol does not include 'definition.py' for module: %s",
-                module_name,
+                f"Protocol does not include 'definition.py' for module: {module_name}"
             )
             return False
 
         # definition.py must include versions attribute
         if not hasattr(definition, "versions"):
             LOGGER.error(
-                "Protocol definition does not include versions attribute for module: %s",
-                module_name,
+                f"Protocol definition does not include versions attribute for module: {module_name}"
             )
             return False
 
@@ -198,19 +196,17 @@ class PluginRegistry:
             return True
         except ProtocolDefinitionValidationError as e:
             LOGGER.error(
-                "Protocol versions definition is malformed for module '%s': %s",
-                module_name,
-                e,
+                f"Protocol versions definition is malformed for module '{module_name}': {e}"
             )
             return False
 
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
         """Register all modules (sub-packages) under a given package name."""
-        LOGGER.debug("Registering package: %s", package_name)
+        LOGGER.debug(f"Registering package: {package_name}")
         try:
             module_names = ClassLoader.scan_subpackages(package_name)
         except ModuleLoadError:
-            LOGGER.error("Plugin module package not found: %s", package_name)
+            LOGGER.error(f"Plugin module package not found: {package_name}")
             module_names = []
 
         registered_plugins = []
@@ -224,14 +220,14 @@ class PluginRegistry:
                 registered_plugins.append(plugin)
             else:
                 LOGGER.warning(
-                    "Failed to register %s under %s", module_name, package_name
+                    f"Failed to register {module_name} under {package_name}"
                 )
 
         return registered_plugins
 
     async def init_context(self, context: InjectionContext) -> None:
         """Call plugin setup methods on the current context."""
-        LOGGER.debug("Initializing plugin context for %d plugins", len(self._plugins))
+        LOGGER.debug(f"Initializing plugin context for {len(self._plugins)} plugins")
 
         for plugin in self._plugins.values():
             if hasattr(plugin, "setup"):
@@ -271,7 +267,7 @@ class PluginRegistry:
             message_types_path = f"{plugin_name}.message_types"
             mod = ClassLoader.load_module(message_types_path)
         except ModuleLoadError as e:
-            LOGGER.error("Error loading plugin module message types: %s", e)
+            LOGGER.error(f"Error loading plugin module message types: {e}")
             return
 
         if mod:
@@ -282,7 +278,7 @@ class PluginRegistry:
                 definition_path = f"{plugin_name}.definition"
                 definition = ClassLoader.load_module(definition_path)
             except ModuleLoadError as e:
-                LOGGER.error("Error loading plugin definition module: %s", e)
+                LOGGER.error(f"Error loading plugin definition module: {e}")
                 return
 
             if definition:
@@ -294,20 +290,18 @@ class PluginRegistry:
                         mod = ClassLoader.load_module(version_path)
                     except ModuleLoadError as e:
                         LOGGER.error(
-                            "Error loading plugin module message types from %s: %s",
-                            version_path,
-                            e,
+                            f"Error loading plugin module message types from {version_path}: {e}"
                         )
                         return
 
                     if mod:
                         await self.load_protocol_version(context, mod, protocol_version)
                     else:
-                        LOGGER.debug("Failed to load %s", version_path)
+                        LOGGER.debug(f"Failed to load {version_path}")
 
     async def register_admin_routes(self, app) -> None:
         """Call route registration methods on the current context."""
-        LOGGER.debug("Registering admin routes for %d plugins", len(self._plugins))
+        LOGGER.debug(f"Registering admin routes for {len(self._plugins)} plugins")
 
         for plugin in self._plugins.values():
             plugin_name = plugin.__name__
@@ -321,7 +315,7 @@ class PluginRegistry:
                         mod = ClassLoader.load_module(version_path)
                     except ModuleLoadError as e:
                         LOGGER.error(
-                            "Error loading admin routes from %s: %s", version_path, e
+                            f"Error loading admin routes from {version_path}: {e}"
                         )
                         continue
 
@@ -333,7 +327,7 @@ class PluginRegistry:
                 try:
                     mod = ClassLoader.load_module(routes_path)
                 except ModuleLoadError as e:
-                    LOGGER.error("Error loading admin routes from %s: %s", routes_path, e)
+                    LOGGER.error(f"Error loading admin routes from {routes_path}: {e}")
                     continue
 
                 if mod and hasattr(mod, "register"):
@@ -341,7 +335,7 @@ class PluginRegistry:
 
     def register_protocol_events(self, context: InjectionContext) -> None:
         """Call route register_events methods on the current context."""
-        LOGGER.debug("Registering protocol events for %d plugins", len(self._plugins))
+        LOGGER.debug(f"Registering protocol events for {len(self._plugins)} plugins")
 
         event_bus = context.inject_or(EventBus)
         if not event_bus:
@@ -359,7 +353,7 @@ class PluginRegistry:
                     try:
                         mod = ClassLoader.load_module(version_path)
                     except ModuleLoadError as e:
-                        LOGGER.error("Error loading events from %s: %s", version_path, e)
+                        LOGGER.error(f"Error loading events from {version_path}: {e}")
                         continue
 
                     if mod and hasattr(mod, "register_events"):
@@ -370,7 +364,7 @@ class PluginRegistry:
                 try:
                     mod = ClassLoader.load_module(routes_path)
                 except ModuleLoadError as e:
-                    LOGGER.error("Error loading events from %s: %s", routes_path, e)
+                    LOGGER.error(f"Error loading events from {routes_path}: {e}")
                     continue
 
                 if mod and hasattr(mod, "register_events"):
@@ -378,7 +372,7 @@ class PluginRegistry:
 
     def post_process_routes(self, app) -> None:
         """Call route binary file response OpenAPI fixups if applicable."""
-        LOGGER.debug("Post-processing routes for %d plugins", len(self._plugins))
+        LOGGER.debug(f"Post-processing routes for {len(self._plugins)} plugins")
 
         for plugin in self._plugins.values():
             plugin_name = plugin.__name__
@@ -391,7 +385,7 @@ class PluginRegistry:
                     try:
                         mod = ClassLoader.load_module(version_path)
                     except ModuleLoadError as e:
-                        LOGGER.error("Error loading routes from %s: %s", version_path, e)
+                        LOGGER.error("Error loading routes from {version_path}: {e}")
                         continue
 
                     if mod and hasattr(mod, "post_process_routes"):
@@ -402,7 +396,7 @@ class PluginRegistry:
                 try:
                     mod = ClassLoader.load_module(routes_path)
                 except ModuleLoadError as e:
-                    LOGGER.error("Error loading routes from %s: %s", routes_path, e)
+                    LOGGER.error("Error loading routes from {routes_path}: {e}")
                     continue
 
                 if mod and hasattr(mod, "post_process_routes"):

@@ -343,7 +343,7 @@ class TaskQueue:
         if exc_info:
             self.total_failed += 1
             if not task_complete and not self._trace_fn:
-                LOGGER.exception("Error running task %s", ident or "", exc_info=exc_info)
+                LOGGER.exception(f"Error running task {ident or ""}", exc_info=exc_info)
         else:
             self.total_done += 1
         if task_complete or self._trace_fn:
@@ -354,7 +354,7 @@ class TaskQueue:
                 if self._trace_fn:
                     self._trace_fn(completed)
             except Exception:
-                LOGGER.exception("Error finalizing task %s", completed)
+                LOGGER.exception(f"Error finalizing task {completed}")
         try:
             self.active_tasks.remove(task)
         except ValueError:

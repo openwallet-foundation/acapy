@@ -1032,11 +1032,7 @@ class DemoAgent:
             method = getattr(self, handler, None)
             if method:
                 EVENT_LOGGER.debug(
-                    "Agent called controller webhook: %s%s%s%s",
-                    handler,
-                    f"\nPOST {self.webhook_url}/topic/{topic}/",
-                    (f" for wallet: {wallet_id}" if wallet_id else ""),
-                    (f" with payload: \n{repr_json(payload)}\n" if payload else ""),
+                    f"Agent called controller webhook: {handler}{f"\nPOST {self.webhook_url}/topic/{topic}/"}{(f" for wallet: {wallet_id}" if wallet_id else "")}{(f" with payload: \n{repr_json(payload)}\n" if payload else "")}"
                 )
                 asyncio.get_event_loop().create_task(method(payload))
             else:
@@ -1108,16 +1104,14 @@ class DemoAgent:
         if not self.multitenant:
             raise Exception("Error can't call agency admin unless in multitenant mode")
         try:
-            EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
+            EVENT_LOGGER.debug(f"Controller GET {path} request to Agent")
             if not headers:
                 headers = {}
             response = await self.admin_request(
                 "GET", path, None, text, params, headers=headers
             )
             EVENT_LOGGER.debug(
-                "Response from GET %s received: \n%s",
-                path,
-                repr_json(response),
+                f"Response from GET {path} received: \n{repr_json(response)}"
             )
             return response
         except ClientError as e:
@@ -1128,7 +1122,7 @@ class DemoAgent:
         self, path, text=False, params=None, headers=None
     ) -> ClientResponse:
         try:
-            EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
+            EVENT_LOGGER.debug(f"Controller GET {path} request to Agent")
             if self.multitenant:
                 if not headers:
                     headers = {}
@@ -1137,9 +1131,7 @@ class DemoAgent:
                 "GET", path, None, text, params, headers=headers
             )
             EVENT_LOGGER.debug(
-                "Response from GET %s received: \n%s",
-                path,
-                repr_json(response),
+                f"Response from GET {path} received: \n{repr_json(response)}"
             )
             return response
         except ClientError as e:
@@ -1153,9 +1145,7 @@ class DemoAgent:
             raise Exception("Error can't call agency admin unless in multitenant mode")
         try:
             EVENT_LOGGER.debug(
-                "Controller POST %s request to Agent%s",
-                path,
-                (" with data: \n{}".format(repr_json(data)) if data else ""),
+                f"Controller POST {path} request to Agent{(" with data: \n{}".format(repr_json(data)) if data else "")}"
             )
             if not headers:
                 headers = {}
@@ -1163,9 +1153,7 @@ class DemoAgent:
                 "POST", path, data, text, params, headers=headers
             )
             EVENT_LOGGER.debug(
-                "Response from POST %s received: \n%s",
-                path,
-                repr_json(response),
+                f"Response from POST {path} received: \n{repr_json(response)}"
             )
             return response
         except ClientError as e:
@@ -1177,9 +1165,7 @@ class DemoAgent:
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
-                "Controller POST %s request to Agent%s",
-                path,
-                (" with data: \n{}".format(repr_json(data)) if data else ""),
+                f"Controller POST {path} request to Agent{(" with data: \n{}".format(repr_json(data)) if data else "")}"
             )
             if self.multitenant:
                 if not headers:
@@ -1189,9 +1175,7 @@ class DemoAgent:
                 "POST", path, data, text, params, headers=headers
             )
             EVENT_LOGGER.debug(
-                "Response from POST %s received: \n%s",
-                path,
-                repr_json(response),
+                f"Response from POST {path} received: \n{repr_json(response)}"
             )
             return response
         except ClientError as e:
@@ -1235,9 +1219,7 @@ class DemoAgent:
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
-                "Controller DELETE %s request to Agent%s",
-                path,
-                (" with data: \n{}".format(repr_json(data)) if data else ""),
+                f"Controller DELETE {path} request to Agent{(" with data: \n{}".format(repr_json(data)) if data else "")}"
             )
             if self.multitenant:
                 if not headers:
@@ -1247,9 +1229,7 @@ class DemoAgent:
                 "DELETE", path, data, text, params, headers=headers
             )
             EVENT_LOGGER.debug(
-                "Response from DELETE %s received: \n%s",
-                path,
-                repr_json(response),
+                "Response from DELETE {path} received: \n{repr_json(response)}"
             )
             return response
         except ClientError as e:

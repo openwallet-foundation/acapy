@@ -127,7 +127,7 @@ class IndyVdrLedgerPool:
                 path = self.cfg_path.joinpath(self.name, "genesis")
                 self.genesis_txns_cache = _normalize_txns(open(path).read())
             except FileNotFoundError:
-                raise LedgerConfigError("Pool config '%s' not found", self.name) from None
+                raise LedgerConfigError(f"Pool config '{self.name}' not found") from None
         return self.genesis_txns_cache
 
     async def create_pool_config(self, genesis_transactions: str, recreate: bool = False):
@@ -144,8 +144,7 @@ class IndyVdrLedgerPool:
             cmp_genesis = open(genesis_path).read()
             if _normalize_txns(cmp_genesis) == genesis:
                 LOGGER.debug(
-                    "Pool ledger config '%s' is consistent, skipping write",
-                    self.name,
+                    f"Pool ledger config '{self.name}' is consistent, skipping write",
                 )
                 return
             elif not recreate:
@@ -160,7 +159,7 @@ class IndyVdrLedgerPool:
             _write_safe(genesis_path, genesis)
         except OSError as err:
             raise LedgerConfigError("Error writing genesis transactions") from err
-        LOGGER.debug("Wrote pool ledger config '%s'", self.name)
+        LOGGER.debug(f"Wrote pool ledger config '{self.name}'")
 
         self.genesis_txns_cache = genesis
 

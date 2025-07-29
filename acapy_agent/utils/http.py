@@ -191,7 +191,7 @@ async def put_file(
                         if parsed_to.hostname != parsed_from.hostname:
                             raise PutError("Redirect denied: hostname mismatch")
                         url = to_url
-                        LOGGER.info("Upload redirect: %s", to_url)
+                        LOGGER.info(f"Upload redirect: {to_url}")
                     elif (response.status < 200 or response.status >= 300) and (
                         response.status != HTTPConflict.status_code
                     ):
@@ -203,7 +203,7 @@ async def put_file(
                         return await (response.json() if json else response.text())
             except (ClientError, asyncio.TimeoutError) as e:
                 if isinstance(e, ClientError):
-                    LOGGER.warning("Upload error: %s", e)
+                    LOGGER.warning(f"Upload error: {e}")
                 else:
                     LOGGER.warning("Upload error: request timed out")
                 if attempt.final:

@@ -238,7 +238,7 @@ def trace_event(
             elif context["trace.target"] == TRACE_LOG_TARGET:
                 # write to standard log file
                 LOGGER.setLevel(logging.INFO)
-                LOGGER.info(" %s %s", context["trace.tag"], event_str)
+                LOGGER.info(f" {context["trace.tag"]} {event_str}")
             else:
                 # should be an http endpoint
                 _ = requests.post(
@@ -251,10 +251,7 @@ def trace_event(
             if raise_errors:
                 raise
             LOGGER.error(
-                "Error logging trace target: %s tag: %s event: %s",
-                context.get("trace.target"),
-                context.get("trace.tag"),
-                event_str,
+                f"Error logging trace target: {context.get("trace.target")} tag: {context.get("trace.tag")} event: {event_str}"
             )
             LOGGER.exception(e)
 

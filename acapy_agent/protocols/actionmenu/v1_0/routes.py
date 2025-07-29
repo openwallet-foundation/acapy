@@ -187,7 +187,7 @@ async def actionmenu_request(request: web.BaseRequest):
         async with context.profile.session() as session:
             connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
-        LOGGER.debug("Connection not found for action menu request: %s", connection_id)
+        LOGGER.debug(f"Connection not found for action menu request: {connection_id}")
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
@@ -214,11 +214,11 @@ async def actionmenu_send(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     menu_json = await request.json()
-    LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
+    LOGGER.debug(f"Received send-menu request: {connection_id} {menu_json}")
     try:
         msg = Menu.deserialize(menu_json["menu"])
     except BaseModelError as err:
-        LOGGER.exception("Exception deserializing menu: %s", err.roll_up)
+        LOGGER.exception(f"Exception deserializing menu: {err.roll_up}")
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
@@ -226,7 +226,7 @@ async def actionmenu_send(request: web.BaseRequest):
             connection = await ConnRecord.retrieve_by_id(session, connection_id)
     except StorageNotFoundError as err:
         LOGGER.debug(
-            "Connection not found for action menu send request: %s", connection_id
+            f"Connection not found for action menu send request: {connection_id}"
         )
         raise web.HTTPNotFound(reason=err.roll_up) from err
 

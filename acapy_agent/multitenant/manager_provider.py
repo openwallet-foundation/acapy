@@ -41,7 +41,7 @@ class MultitenantManagerProvider(BaseProvider):
         manager_class = self.MANAGER_TYPES.get(manager_type, manager_type)
 
         if manager_class not in self._inst:
-            LOGGER.info("Create multitenant manager: %s", manager_type)
+            LOGGER.info(f"Create multitenant manager: {manager_type}")
             try:
                 self._inst[manager_class] = ClassLoader.load_class(manager_class)(
                     self.root_profile

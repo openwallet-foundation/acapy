@@ -409,11 +409,5 @@ class RevocationManager:
                     except StorageNotFoundError:
                         # Credential Exchange records may have been deleted, which is fine
                         self._logger.debug(
-                            "%s not found for cred_ex_id=%s / cred_rev_id=%s.%s",
-                            record_type.__name__,
-                            cred_ex_id,
-                            cred_rev_record.cred_rev_id,
-                            " Checking next record type."
-                            if not known_record_type
-                            else "",
+                            f"{record_type.__name__} not found for cred_ex_id={cred_ex_id} / cred_rev_id={red_rev_record.cred_rev_id}.{" Checking next record type." if not known_record_type else ""}"
                         )

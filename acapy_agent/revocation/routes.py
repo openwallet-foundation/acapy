@@ -1009,9 +1009,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
     LOGGER.debug(
-        "Update revocation state request for rev_reg_id = %s, apply_ledger_update = %s",
-        rev_reg_id,
-        apply_ledger_update,
+        f"Update revocation state request for rev_reg_id = {rev_reg_id}, apply_ledger_update = {apply_ledger_update}"
     )
 
     rev_reg_record = None
@@ -1031,9 +1029,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             available_write_ledgers = await ledger_manager.get_write_ledgers()
             pool = write_ledger.pool
             genesis_transactions = pool.genesis_txns
-            LOGGER.debug("available write_ledgers = %s", available_write_ledgers)
-            LOGGER.debug("write_ledger = %s", write_ledger)
-            LOGGER.debug("write_ledger pool = %s", pool)
+            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
+            LOGGER.debug(f"write_ledger = {write_ledger}")
+            LOGGER.debug(f"write_ledger pool = {pool}")
 
         if not genesis_transactions:
             raise web.HTTPInternalServerError(
@@ -1304,7 +1302,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
             write_ledger=write_ledger,
             endorser_did=endorser_did,
         )
-        LOGGER.debug("published rev reg definition: %s", rev_reg_id)
+        LOGGER.debug(f"published rev reg definition: {rev_reg_id}")
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except RevocationError as err:
@@ -1421,7 +1419,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
             write_ledger=write_ledger,
             endorser_did=endorser_did,
         )
-        LOGGER.debug("published registry entry: %s", rev_reg_id)
+        LOGGER.debug(f"published registry entry: {rev_reg_id}")
 
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -1530,7 +1528,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
         async with profile.session() as session:
             await rev_reg.set_state(session, state)
 
-        LOGGER.debug("set registry %s state: %s", rev_reg_id, state)
+        LOGGER.debug(f"set registry {rev_reg_id} state: {state}")
 
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -1628,8 +1626,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
                 else:
                     LOGGER.warning(
                         "Configuration has no BaseResponder: cannot update "
-                        "revocation on registry ID: %s",
-                        record_id,
+                        f"revocation on registry ID: {record_id}"
                     )
 
     record_id = meta_data["context"]["issuer_rev_id"]
@@ -1707,8 +1704,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             else:
                 LOGGER.warning(
                     "Configuration has no BaseResponder: cannot update "
-                    "revocation on cred def %s",
-                    meta_data["endorser"]["cred_def_id"],
+                    f"revocation on cred def {meta_data["endorser"]["cred_def_id"]}"
                 )
 
 

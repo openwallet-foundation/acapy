@@ -120,7 +120,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)
                 found = True
-                LOGGER.info("Forwarded fwd-invitation to %s", init_connection_id)
+                LOGGER.info(f"Forwarded fwd-invitation to {init_connection_id}")
                 break
 
         if not found:

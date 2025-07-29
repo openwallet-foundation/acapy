@@ -438,8 +438,7 @@ class V20PresManager:
                     await pres_ex_record.delete_record(session)
         else:
             LOGGER.warning(
-                "Configuration has no BaseResponder: cannot ack presentation on %s",
-                pres_ex_record.thread_id,
+                f"Configuration has no BaseResponder: cannot ack presentation on {pres_ex_record.thread_id}",
             )
 
     async def receive_pres_ack(self, message: V20PresAck, conn_record: ConnRecord):

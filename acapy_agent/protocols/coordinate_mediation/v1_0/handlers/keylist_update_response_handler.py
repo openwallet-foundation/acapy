@@ -16,7 +16,7 @@ class KeylistUpdateResponseHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle keylist-update-response message."""
-        self._logger.debug("%s called with context %s", self.__class__.__name__, context)
+        self._logger.debug("{self.__class__.__name__} called with context {context}")
         assert isinstance(context.message, KeylistUpdateResponse)
 
         if not context.connection_ready:
@@ -36,8 +36,7 @@ class KeylistUpdateResponseHandler(BaseHandler):
         """Notify of keylist update response received."""
         route_manager = profile.inject(RouteManager)
         self._logger.debug(
-            "Retrieving connection ID from route manager of type %s",
-            type(route_manager).__name__,
+            f"Retrieving connection ID from route manager of type {type(route_manager).__name__}",
         )
         try:
             key_to_connection = {

@@ -19,15 +19,14 @@ class V10AckHandler(BaseHandler):
         """
         r_time = get_timer()
 
-        self._logger.debug("V20PresAckHandler called with context %s", context)
+        self._logger.debug(f"V20PresAckHandler called with context {context}")
         assert isinstance(context.message, V10Ack)
 
         if not context.connection_ready:
             raise HandlerException("No connection established")
 
         self._logger.info(
-            "Received v1.0 notification ack message: %s",
-            context.message.serialize(as_string=True),
+            f"Received v1.0 notification ack message: {context.message.serialize(as_string=True)}",
         )
 
         trace_event(

@@ -15,13 +15,11 @@ class ProblemReportHandler(BaseHandler):
             responder: Responder used to reply
 
         """
-        self._logger.debug("ProblemReportHandler called with context %s", context)
+        self._logger.debug(f"ProblemReportHandler called with context {context}")
         assert isinstance(context.message, ProblemReport)
 
         self._logger.info(
-            "Received problem report from: %s, %r",
-            context.message_receipt.sender_did,
-            context.message,
+            f"Received problem report from: {context.message_receipt.sender_did}, {context.message}"
         )
 
         await context.profile.notify("acapy::problem_report", context.message.serialize())
