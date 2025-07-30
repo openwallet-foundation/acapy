@@ -1071,8 +1071,10 @@ class OutOfBandManager(BaseConnectionManager):
                 public_did = service
                 if public_did.startswith("did:peer:4"):
                     public_did = self.long_did_peer_to_short(public_did)
-            else:
+            elif service.startswith("did:sov"):
                 public_did = service.split(":")[-1]
+            else:
+                public_did = service
 
             # TODO: resolve_invitation should resolve key_info objects
             # or something else that includes the key type. We now assume
