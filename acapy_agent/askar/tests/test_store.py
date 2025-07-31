@@ -1,3 +1,4 @@
+import json
 from unittest import IsolatedAsyncioTestCase
 
 from aries_askar import AskarError, AskarErrorCode, Store
@@ -106,3 +107,75 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
 
         assert isinstance(store, AskarOpenStore)
         assert mock_rekey.called
+
+    def test_unsupported_storage_type(self):
+        with self.assertRaises(ProfileError) as ctx:
+            AskarStoreConfig({"storage_type": "invalid"})
+        assert "Unsupported storage type" in str(ctx.exception)
+
+    def test_get_uri_sqlite_memory(self):
+        config = {
+            "storage_type": "sqlite",
+            "name": "test",
+        }
+        askar_store = AskarStoreConfig(config)
+        uri = askar_store.get_uri(in_memory=True)
+        assert uri == "sqlite://:memory:"
+
+    def test_get_uri_postgres(self):
+        config = {
+            "storage_type": "postgres",
+            "name": "testname",
+            "storage_config": json.dumps({"url": "localhost", "connection_timeout": 5}),
+            "storage_creds": json.dumps({"account": "user", "password": "pass"}),
+        }
+        askar_store = AskarStoreConfig(config)
+        uri = askar_store.get_uri()
+        assert uri.startswith("postgres://user:pass@localhost/testname")
+
+    def test_postgres_config_missing_fields(self):
+        config = {
+            "storage_type": "postgres",
+            "storage_config": json.dumps({}),  # missing url
+            "storage_creds": json.dumps({"account": "user", "password": "pass"}),
+        }
+
+        with self.assertRaises(ProfileError) as ctx:
+            AskarStoreConfig(config)._validate_postgres_config()
+        assert "Missing 'url'" in str(ctx.exception)
+
+    @mock.patch(
+        "aries_askar.Store.remove",
+        side_effect=AskarError(AskarErrorCode.NOT_FOUND, message="Store not found"),
+    )
+    async def test_remove_store_not_found(self, _):
+        config = {"storage_type": "sqlite", "name": "nonexistent"}
+        store_config = AskarStoreConfig(config)
+        with self.assertRaises(ProfileNotFoundError):
+            await store_config.remove_store()
+
+    @mock.patch(
+        "aries_askar.Store.remove",
+        side_effect=AskarError(AskarErrorCode.UNEXPECTED, message="Some error"),
+    )
+    async def test_remove_store_other_error(self, _):
+        config = {"storage_type": "sqlite", "name": "badstore"}
+        store_config = AskarStoreConfig(config)
+        with self.assertRaises(ProfileError):
+            await store_config.remove_store()
+
+    def test_askar_open_store_name_property(self):
+        config = AskarStoreConfig({"storage_type": "sqlite", "name": "teststore"})
+        store = mock.AsyncMock()
+        open_store = AskarOpenStore(config=config, created=True, store=store)
+        assert open_store.name == "teststore"
+
+    async def test_askar_open_store_close(self):
+        config = AskarStoreConfig({"storage_type": "sqlite", "auto_remove": True})
+        store = mock.AsyncMock()
+        open_store = AskarOpenStore(config=config, created=True, store=store)
+
+        await open_store.close()
+
+        store.close.assert_awaited_with(remove=True)
+        assert open_store.store is None

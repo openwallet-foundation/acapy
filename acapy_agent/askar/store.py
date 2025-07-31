@@ -1,8 +1,10 @@
-"""Aries-Askar backend store configuration."""
+"""Askar store configuration and management."""
 
+import asyncio
 import json
 import logging
-import urllib
+import urllib.parse
+from dataclasses import dataclass
 from typing import Optional
 
 from aries_askar import AskarError, AskarErrorCode, Store
@@ -15,26 +17,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AskarStoreConfig:
-    """A helper class for handling Askar store configuration."""
+    """Helper for handling Askar store configuration."""
 
     DEFAULT_KEY = ""
     DEFAULT_KEY_DERIVATION = "kdf:argon2i:mod"
-    DEFAULT_STORAGE_TYPE = None
-
-    KEY_DERIVATION_RAW = "RAW"
-    KEY_DERIVATION_ARGON2I_INT = "kdf:argon2i:int"
-    KEY_DERIVATION_ARGON2I_MOD = "kdf:argon2i:mod"
+    SUPPORTED_STORAGE_TYPES = ("sqlite", "postgres")
 
     def __init__(self, config: Optional[dict] = None):
-        """Initialize a `AskarWallet` instance.
+        """Initialize store configuration."""
+        config = config or {}
 
-        Args:
-            config: {name, key, seed, did, auto_recreate, auto_remove,
-                     storage_type, storage_config, storage_creds}
-
-        """
-        if not config:
-            config = {}
         self.auto_recreate = config.get("auto_recreate", False)
         self.auto_remove = config.get("auto_remove", False)
 
@@ -42,165 +34,156 @@ class AskarStoreConfig:
         self.key_derivation_method = (
             config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVATION
         )
-
         self.rekey = config.get("rekey")
         self.rekey_derivation_method = (
             config.get("rekey_derivation_method") or self.DEFAULT_KEY_DERIVATION
         )
-
         self.name = config.get("name") or Profile.DEFAULT_NAME
 
-        self.storage_config = config.get("storage_config", None)
-        self.storage_creds = config.get("storage_creds", None)
+        self.storage_config = config.get("storage_config")
+        self.storage_creds = config.get("storage_creds")
 
-        storage_type = config.get("storage_type")
-        if not storage_type or storage_type == "default":
+        storage_type = config.get("storage_type") or "sqlite"
+        if storage_type == "default":
             storage_type = "sqlite"
         elif storage_type == "postgres_storage":
             storage_type = "postgres"
-        if storage_type not in ("postgres", "sqlite"):
+        if storage_type not in self.SUPPORTED_STORAGE_TYPES:
             raise ProfileError(f"Unsupported storage type: {storage_type}")
         self.storage_type = storage_type
 
     def get_uri(self, create: bool = False, in_memory: Optional[bool] = False) -> str:
-        """Accessor for the storage URI."""
-        uri = f"{self.storage_type}://"
+        """Construct the storage URI."""
         if self.storage_type == "sqlite":
-            if in_memory:
-                uri += ":memory:"
-                return uri
-            path = storage_path("wallet", self.name, create=create).as_posix()
-            uri += urllib.parse.quote(f"{path}/sqlite.db")
+            return self._build_sqlite_uri(in_memory, create)
         elif self.storage_type == "postgres":
-            if not self.storage_config:
-                raise ProfileError("No 'storage_config' provided for postgres store")
-            if not self.storage_creds:
-                raise ProfileError("No 'storage_creds' provided for postgres store")
-            config = json.loads(self.storage_config)
-            creds = json.loads(self.storage_creds)
-            config_url = config.get("url")
-            if not config_url:
-                raise ProfileError("No 'url' provided for postgres store")
-            if "account" not in creds:
-                raise ProfileError("No 'account' provided for postgres store")
-            if "password" not in creds:
-                raise ProfileError("No 'password' provided for postgres store")
-            account = urllib.parse.quote(creds["account"])
-            password = urllib.parse.quote(creds["password"])
-            db_name = urllib.parse.quote(self.name)
-            # FIXME parse the URL, check for parameters, remove postgres:// prefix, etc
-            # config url expected to be in the form "host:port"
-            uri += f"{account}:{password}@{config_url}/{db_name}"
-            params = {}
-            if "connection_timeout" in config:
-                params["connect_timeout"] = config["connection_timeout"]
-            if "max_connections" in config:
-                params["max_connections"] = config["max_connections"]
-            if "min_idle_count" in config:
-                params["min_connections"] = config["min_idle_count"]
-            # FIXME handle 'tls' config parameter
-            if "admin_account" in creds:
-                params["admin_account"] = creds["admin_account"]
-            if "admin_password" in creds:
-                params["admin_password"] = creds["admin_password"]
-            if params:
-                uri += "?" + urllib.parse.urlencode(params)
+            return self._build_postgres_uri()
+        raise ProfileError(f"Unsupported storage type: {self.storage_type}")
+
+    def _build_sqlite_uri(self, in_memory: Optional[bool], create: bool) -> str:
+        if in_memory:
+            return "sqlite://:memory:"
+        path = storage_path("wallet", self.name, create=create).as_posix()
+        return f"sqlite://{urllib.parse.quote(f'{path}/sqlite.db')}"
+
+    def _build_postgres_uri(self) -> str:
+        config, creds = self._validate_postgres_config()
+
+        account = urllib.parse.quote(creds["account"])
+        password = urllib.parse.quote(creds["password"])
+        db_name = urllib.parse.quote(self.name)
+
+        uri = f"postgres://{account}:{password}@{config['url']}/{db_name}"
+
+        params = {}
+        if "connection_timeout" in config:
+            params["connect_timeout"] = config["connection_timeout"]
+        if "max_connections" in config:
+            params["max_connections"] = config["max_connections"]
+        if "min_idle_count" in config:
+            params["min_connections"] = config["min_idle_count"]
+        if "admin_account" in creds:
+            params["admin_account"] = creds["admin_account"]
+        if "admin_password" in creds:
+            params["admin_password"] = creds["admin_password"]
+
+        if params:
+            uri += "?" + urllib.parse.urlencode(params)
+
         return uri
 
+    def _validate_postgres_config(self):
+        if not self.storage_config:
+            raise ProfileError("No 'storage_config' provided for postgres store")
+        if not self.storage_creds:
+            raise ProfileError("No 'storage_creds' provided for postgres store")
+
+        try:
+            config = json.loads(self.storage_config)
+            creds = json.loads(self.storage_creds)
+        except json.JSONDecodeError as e:
+            raise ProfileError("Invalid JSON in storage config or creds") from e
+
+        if "url" not in config:
+            raise ProfileError("Missing 'url' in postgres storage_config")
+        if "account" not in creds:
+            raise ProfileError("Missing 'account' in postgres storage_creds")
+        if "password" not in creds:
+            raise ProfileError("Missing 'password' in postgres storage_creds")
+
+        return config, creds
+
     async def remove_store(self):
-        """Remove an existing store.
-
-        Raises:
-            ProfileNotFoundError: If the wallet could not be found
-            ProfileError: If there was another aries_askar error
-
-        """
+        """Remove the store if it exists."""
         try:
             await Store.remove(self.get_uri())
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
-                raise ProfileNotFoundError(
-                    f"Store '{self.name}' not found",
-                )
+                raise ProfileNotFoundError(f"Store '{self.name}' not found")
             raise ProfileError("Error removing store") from err
 
-    def _handle_open_error(self, err: AskarError, retry=False):
-        if err.code == AskarErrorCode.DUPLICATE:
-            raise ProfileDuplicateError(
-                f"Duplicate store '{self.name}'",
+    async def _handle_open_error(self, err: AskarError, retry=False):
+        if err.code == AskarErrorCode.BACKEND:
+            LOGGER.warning(
+                "Askar backend error: %s. This may indicate multiple instances "
+                "attempting to create the same store at the same time or a misconfigured "
+                "backend.",
+                err,
             )
-        if err.code == AskarErrorCode.NOT_FOUND:
-            raise ProfileNotFoundError(
-                f"Store '{self.name}' not found",
-            )
-        if retry and self.rekey:
+            await asyncio.sleep(0.5)  # Wait before retrying
             return
-
+        elif err.code == AskarErrorCode.DUPLICATE:
+            raise ProfileDuplicateError(f"Duplicate store '{self.name}'")
+        elif err.code == AskarErrorCode.NOT_FOUND:
+            raise ProfileNotFoundError(f"Store '{self.name}' not found")
+        elif retry and self.rekey:
+            return
         raise ProfileError("Error opening store") from err
+
+    async def _attempt_store_open(self, uri: str, provision: bool):
+        if provision:
+            return await Store.provision(
+                uri,
+                self.key_derivation_method,
+                self.key,
+                recreate=self.auto_recreate,
+            )
+        store = await Store.open(uri, self.key_derivation_method, self.key)
+        if self.rekey:
+            await Store.rekey(store, self.rekey_derivation_method, self.rekey)
+        return store
+
+    def _finalize_open(self, store, provision: bool) -> "AskarOpenStore":
+        return AskarOpenStore(self, provision, store)
 
     async def open_store(
         self, provision: bool = False, in_memory: Optional[bool] = False
     ) -> "AskarOpenStore":
-        """Open a store, removing and/or creating it if so configured.
+        """Open or provision the store based on configuration."""
+        uri = self.get_uri(create=provision, in_memory=in_memory)
 
-        Raises:
-            ProfileNotFoundError: If the store is not found
-            ProfileError: If there is another aries_askar error
-
-        """
-
-        try:
-            if provision:
-                store = await Store.provision(
-                    self.get_uri(create=True, in_memory=in_memory),
-                    self.key_derivation_method,
-                    self.key,
-                    recreate=self.auto_recreate,
+        for attempt in range(1, 4):
+            LOGGER.debug("Store open attempt %d/3", attempt)
+            try:
+                store = await self._attempt_store_open(uri, provision)
+                LOGGER.debug("Store opened successfully on attempt %d", attempt)
+                return self._finalize_open(store, provision)
+            except AskarError as err:
+                LOGGER.debug(
+                    "AskarError during store open attempt %d/3: %s", attempt, err
                 )
-            else:
-                store = await Store.open(
-                    self.get_uri(),
-                    self.key_derivation_method,
-                    self.key,
-                )
-                if self.rekey:
-                    await Store.rekey(store, self.rekey_derivation_method, self.rekey)
+                await self._handle_open_error(err, retry=True)
 
-        except AskarError as err:
-            self._handle_open_error(err, retry=True)
-
-            if self.rekey:
-                # Attempt to rekey the store with a default key in the case the key
-                # was created with a blank key before version 0.12.0. This can be removed
-                # in a future version or when 0.11.0 is no longer supported.
-                try:
-                    store = await Store.open(
-                        self.get_uri(),
-                        self.key_derivation_method,
-                        AskarStoreConfig.DEFAULT_KEY,
-                    )
-                except AskarError as err:
-                    self._handle_open_error(err)
-
-                await Store.rekey(store, self.rekey_derivation_method, self.rekey)
-                return AskarOpenStore(self, provision, store)
-
-        return AskarOpenStore(self, provision, store)
+        raise ProfileError("Failed to open or provision store after retries")
 
 
+@dataclass
 class AskarOpenStore:
     """Handle and metadata for an opened Askar store."""
 
-    def __init__(
-        self,
-        config: AskarStoreConfig,
-        created,
-        store: Store,
-    ):
-        """Create a new AskarOpenStore instance."""
-        self.config = config
-        self.created = created
-        self.store = store
+    config: AskarStoreConfig
+    created: bool
+    store: Store
 
     @property
     def name(self) -> str:
@@ -208,7 +191,7 @@ class AskarOpenStore:
         return self.config.name
 
     async def close(self):
-        """Close previously-opened store, removing it if so configured."""
+        """Close and optionally remove the store."""
         if self.store:
             await self.store.close(remove=self.config.auto_remove)
             self.store = None
