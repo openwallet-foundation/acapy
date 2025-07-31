@@ -281,9 +281,7 @@ class BaseMultitenantManager(ABC):
 
         """
 
-    async def create_auth_token(
-        self, wallet_record: WalletRecord, wallet_key: Optional[str] = None
-    ) -> str:
+    async def create_auth_token(self, wallet_record: WalletRecord) -> str:
         """Create JWT auth token for specified wallet record.
 
         Args:
@@ -305,10 +303,7 @@ class BaseMultitenantManager(ABC):
         jwt_secret = self._profile.settings.get("multitenant.jwt_secret")
 
         if wallet_record.requires_external_key:
-            if not wallet_key:
-                raise WalletKeyMissingError()
-
-            jwt_payload["wallet_key"] = wallet_key
+            jwt_payload["wallet_key"] = wallet_record.wallet_key
 
         token = jwt.encode(jwt_payload, jwt_secret, algorithm="HS256")
 

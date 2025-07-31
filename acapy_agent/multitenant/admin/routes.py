@@ -10,8 +10,12 @@ from aiohttp_apispec import (
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from ...admin.decorators.auth import admin_authentication
+from ...admin.decorators.auth import (
+    admin_authentication,
+    tenant_administration_authentication,
+)
 from ...admin.request_context import AdminRequestContext
+from ...askar.store import AskarStoreConfig
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
@@ -92,11 +96,6 @@ def format_wallet_record(wallet_record: WalletRecord):
     """Serialize a WalletRecord object."""
 
     wallet_info = wallet_record.serialize()
-
-    # Hide wallet wallet key
-    if "wallet.key" in wallet_info["settings"]:
-        del wallet_info["settings"]["wallet.key"]
-
     return wallet_info
 
 
@@ -316,7 +315,7 @@ class RemoveWalletRequestSchema(OpenAPISchema):
     wallet_key = fields.Str(
         metadata={
             "description": (
-                "Master key used for key derivation. Only required for unmanaged wallets."
+                "Master key used for key derivation and get token authorization."
             ),
             "example": "MySecretKey123",
         }
@@ -329,10 +328,46 @@ class CreateWalletTokenRequestSchema(OpenAPISchema):
     wallet_key = fields.Str(
         metadata={
             "description": (
-                "Master key used for key derivation. Only required for unmanaged wallets."
+                "Master key used for key derivation and get token authorization."
             ),
             "example": "MySecretKey123",
         }
+    )
+
+
+class RekeyWalletRequestSchema(OpenAPISchema):
+    """Request schema for rekeying a wallet."""
+
+    wallet_key = fields.Str(
+        metadata={
+            "description": (
+                "Master key used for key derivation and get token authorization."
+            ),
+            "example": "MySecretKey123",
+        }
+    )
+    rekey = fields.Str(
+        metadata={
+            "description": (
+                "Master key used for key derivation and get token authorization."
+            ),
+            "example": "MySecretKey123",
+        }
+    )
+    key_derivation_method = fields.Str(
+        required=False,
+        default=AskarStoreConfig.KEY_DERIVATION_ARGON2I_MOD,
+        validate=validate.OneOf(
+            [
+                AskarStoreConfig.KEY_DERIVATION_ARGON2I_MOD,
+                AskarStoreConfig.KEY_DERIVATION_ARGON2I_INT,
+                AskarStoreConfig.KEY_DERIVATION_RAW,
+            ]
+        ),
+        metadata={
+            "description": "Key derivation. Defaults to ",
+            "example": "kdf:argon2i:mod",
+        },
     )
 
 
@@ -483,7 +518,7 @@ async def wallet_create(request: web.BaseRequest):
 
         wallet_record = await multitenant_mgr.create_wallet(settings, key_management_mode)
 
-        token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        token = await multitenant_mgr.create_auth_token(wallet_record)
 
         wallet_profile = await multitenant_mgr.get_wallet_profile(
             context, wallet_record, extra_settings=settings
@@ -565,47 +600,6 @@ async def wallet_update(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["multitenancy"], summary="Get auth token for a subwallet")
-@request_schema(CreateWalletTokenRequestSchema)
-@response_schema(CreateWalletTokenResponseSchema(), 200, description="")
-@admin_authentication
-async def wallet_create_token(request: web.BaseRequest):
-    """Request handler for creating an authorization token for a specific subwallet.
-
-    Args:
-        request: aiohttp request object
-    """
-
-    context: AdminRequestContext = request["context"]
-    wallet_id = request.match_info["wallet_id"]
-    wallet_key = None
-
-    if request.has_body:
-        body = await request.json()
-        wallet_key = body.get("wallet_key")
-
-    profile = context.profile
-    try:
-        multitenant_mgr = profile.inject(BaseMultitenantManager)
-        async with profile.session() as session:
-            wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
-
-        if (not wallet_record.requires_external_key) and wallet_key:
-            raise web.HTTPBadRequest(
-                reason=(
-                    f"Wallet {wallet_id} doesn't require the wallet key to be provided"
-                )
-            )
-
-        token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except WalletKeyMissingError as err:
-        raise web.HTTPUnauthorized(reason=err.roll_up) from err
-
-    return web.json_response({"token": token})
-
-
 @docs(
     tags=["multitenancy"],
     summary="Remove a subwallet",
@@ -652,6 +646,85 @@ async def wallet_remove(request: web.BaseRequest):
     return web.json_response({})
 
 
+@docs(tags=["multitenancy - tenant"], summary="Get auth token for a tenant")
+@request_schema(CreateWalletTokenRequestSchema)
+@response_schema(CreateWalletTokenResponseSchema(), 200, description="")
+@tenant_administration_authentication
+async def wallet_create_token(request: web.BaseRequest):
+    """Request handler for creating an authorization token for a specific tenant.
+
+    Args:
+        request: aiohttp request object
+    """
+
+    context: AdminRequestContext = request["context"]
+    wallet_id = request.match_info["wallet_id"]
+
+    profile = context.profile
+    try:
+        multitenant_mgr = profile.inject(BaseMultitenantManager)
+        async with profile.session() as session:
+            wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
+
+        token = await multitenant_mgr.create_auth_token(wallet_record)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletKeyMissingError as err:
+        raise web.HTTPUnauthorized(reason=err.roll_up) from err
+
+    return web.json_response({"token": token})
+
+
+@docs(tags=["multitenancy - tenant"], summary="Rekey a tenant")
+@request_schema(RekeyWalletRequestSchema)
+@response_schema(CreateWalletTokenResponseSchema(), 200, description="")
+@tenant_administration_authentication
+async def wallet_rekey(request: web.BaseRequest):
+    """Request handler for rekeying a tenant.
+
+    Args:
+        request: aiohttp request object
+    """
+
+    context: AdminRequestContext = request["context"]
+    wallet_id = request.match_info["wallet_id"]
+    wallet_key = None
+
+    body = await request.json()
+    if not body.get("wallet_key") or not body.get("rekey"):
+        raise web.HTTPBadRequest(
+            reason=("The wallet key and rekey must be provided for rekeying a wallet.")
+        )
+
+    wallet_key = body["wallet_key"]
+    rekey = body["rekey"]
+    key_derivation_method = (
+        body.get("key_derivation_method") or AskarStoreConfig.KEY_DERIVATION_ARGON2I_MOD
+    )
+
+    profile = context.profile
+    try:
+        multitenant_mgr = profile.inject(BaseMultitenantManager)
+        _, profile = await multitenant_mgr.get_wallet_and_profile(
+            context=profile.context,
+            wallet_id=wallet_id,
+            wallet_key=wallet_key,
+        )
+        async with multitenant_mgr._profile.transaction() as txn:
+            wallet_record = await WalletRecord.retrieve_by_id(txn, wallet_id)
+            wallet_record.update_settings({"wallet.key": rekey})
+            await wallet_record.save(txn)
+            await profile.store.rekey(key_derivation_method, rekey)
+            await txn.commit()
+
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletKeyMissingError as err:
+        raise web.HTTPUnauthorized(reason=err.roll_up) from err
+
+    return web.json_response({"success": "tenant rekeyed successfully"})
+
+
 # MTODO: add wallet import route
 # MTODO: add wallet export route
 # MTODO: add rotate wallet key route
@@ -666,8 +739,9 @@ async def register(app: web.Application):
             web.post("/multitenancy/wallet", wallet_create),
             web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
             web.put("/multitenancy/wallet/{wallet_id}", wallet_update),
-            web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
             web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove),
+            web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
+            web.post("/multitenancy/wallet/{wallet_id}/rekey", wallet_rekey),
         ]
     )
 
@@ -680,4 +754,10 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {"name": "multitenancy", "description": "Multitenant wallet management"}
+    )
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "multitenancy - tenant",
+            "description": "Multitenant tenant management",
+        }
     )

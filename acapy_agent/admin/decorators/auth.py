@@ -6,7 +6,10 @@ from typing import List, Optional, Pattern
 
 from aiohttp import web
 
+from ...multitenant.error import WalletKeyMissingError
+from ...storage.error import StorageNotFoundError
 from ...utils import general as general_utils
+from ...wallet.models.wallet_record import WalletRecord
 from ..request_context import AdminRequestContext
 
 
@@ -90,6 +93,44 @@ def tenant_authentication(handler):
             )
 
     return tenant_auth
+
+
+def tenant_administration_authentication(handler):
+    """Decorator to enable non-admin authentication for tenant administration.
+
+    The decorator will:
+    - check for a valid bearer token in the Authorization header if running
+    in multi-tenant mode
+    - check for a valid x-api-key header if running in single-tenant mode
+    """
+
+    @functools.wraps(handler)
+    async def tenant_administration_authentication(request):
+        context: AdminRequestContext = request["context"]
+        wallet_id = request.match_info["wallet_id"]
+        wallet_key = None
+
+        body = await request.json()
+        if not body.get("wallet_key"):
+            raise web.HTTPBadRequest(
+                reason=("The wallet key must be provided for creating a token.")
+            )
+
+        wallet_key = body["wallet_key"]
+
+        profile = context.profile
+        try:
+            async with profile.session() as session:
+                wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
+                if wallet_key != wallet_record.wallet_key:
+                    raise web.HTTPBadRequest(reason=("The wallet key is invalid."))
+                return await handler(request)
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except WalletKeyMissingError as err:
+            raise web.HTTPUnauthorized(reason=err.roll_up) from err
+
+    return tenant_administration_authentication
 
 
 def _base_wallet_route_access(additional_routes: List[str], request_path: str) -> bool:
