@@ -19,7 +19,6 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-    RECORD_TYPE_TAILS_UPLOAD_EVENT,
 )
 from .event_recovery import EventRecoveryManager
 
@@ -78,7 +77,6 @@ async def has_in_progress_revocation_events(profile: Profile) -> bool:
             event_types = [
                 RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                 RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-                RECORD_TYPE_TAILS_UPLOAD_EVENT,
                 RECORD_TYPE_REV_LIST_CREATE_EVENT,
                 RECORD_TYPE_REV_LIST_STORE_EVENT,
                 RECORD_TYPE_REV_REG_ACTIVATION_EVENT,

@@ -12,7 +12,6 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-    RECORD_TYPE_TAILS_UPLOAD_EVENT,
 )
 from .event_storage import EventStorageManager, deserialize_event_payload
 from .events import (
@@ -28,8 +27,6 @@ from .events import (
     RevRegDefStoreRequestedPayload,
     RevRegFullDetectedEvent,
     RevRegFullDetectedPayload,
-    TailsUploadRequestedEvent,
-    TailsUploadRequestedPayload,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -113,8 +110,6 @@ class EventRecoveryManager:
             await self._recover_rev_reg_def_create_event(event_data, recovery_options)
         elif event_type == RECORD_TYPE_REV_REG_DEF_STORE_EVENT:
             await self._recover_rev_reg_def_store_event(event_data, recovery_options)
-        elif event_type == RECORD_TYPE_TAILS_UPLOAD_EVENT:
-            await self._recover_tails_upload_event(event_data, recovery_options)
         elif event_type == RECORD_TYPE_REV_LIST_CREATE_EVENT:
             await self._recover_rev_list_create_event(event_data, recovery_options)
         elif event_type == RECORD_TYPE_REV_LIST_STORE_EVENT:
@@ -167,24 +162,6 @@ class EventRecoveryManager:
         )
 
         event = RevRegDefStoreRequestedEvent(new_payload)
-        await self.event_bus.notify(self.profile, event)
-
-    async def _recover_tails_upload_event(self, event_data: Dict, options: Dict) -> None:
-        """Recover a tails upload event."""
-        payload = deserialize_event_payload(event_data, TailsUploadRequestedPayload)
-
-        # Update options with recovery context
-        payload_options = payload.options.copy()
-        payload_options.update(options)
-
-        # Create new payload with updated options
-        new_payload = TailsUploadRequestedPayload(
-            rev_reg_def_id=payload.rev_reg_def_id,
-            rev_reg_def=payload.rev_reg_def,
-            options=payload_options,
-        )
-
-        event = TailsUploadRequestedEvent(new_payload)
         await self.event_bus.notify(self.profile, event)
 
     async def _recover_rev_list_create_event(

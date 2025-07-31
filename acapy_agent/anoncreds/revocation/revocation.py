@@ -48,8 +48,6 @@ from ..events import (
     RevRegDefStoreResponseEvent,
     RevRegFullDetectedEvent,
     RevRegFullHandlingResponseEvent,
-    TailsUploadRequestedEvent,
-    TailsUploadResponseEvent,
 )
 from ..issuer import (
     CATEGORY_CRED_DEF,
@@ -1128,29 +1126,6 @@ class AnonCredsRevocation:
         tails_dir = indy_client_dir("tails", create=False)
         return os.path.join(tails_dir, rev_reg_def.value.tails_hash)
 
-    async def emit_upload_tails_file_event(
-        self,
-        rev_reg_def_id: str,
-        rev_reg_def: RevRegDef,
-        options: Optional[dict] = None,
-    ) -> None:
-        """Emit event to request tails file upload.
-
-        Args:
-            rev_reg_def_id (str): revocation registry definition ID
-            rev_reg_def (RevRegDef): revocation registry definition
-            options (dict): upload options
-
-        """
-        options = options or {}
-
-        event = TailsUploadRequestedEvent.with_payload(
-            rev_reg_def_id=rev_reg_def_id,
-            rev_reg_def=rev_reg_def,
-            options=options,
-        )
-        await self.notify(event)
-
     async def upload_tails_file(self, rev_reg_def: RevRegDef) -> None:
         """Upload the local tails file to the tails server."""
         tails_server = AnonCredsTailsServer()
@@ -1178,48 +1153,6 @@ class AnonCredsRevocation:
                 f"uploaded to wrong location: {result} "
                 f"(should have been {rev_reg_def.value.tails_location})"
             )
-
-    async def handle_tails_upload_request(
-        self,
-        rev_reg_def_id: str,
-        rev_reg_def: RevRegDef,
-        options: Optional[dict] = None,
-    ) -> None:
-        """Handle tails upload request event.
-
-        Args:
-            rev_reg_def_id (str): revocation registry definition ID
-            rev_reg_def (RevRegDef): revocation registry definition
-            options (dict): upload options
-
-        """
-        options = options or {}
-        retry_count = options.pop("retry_count", 0)
-
-        try:
-            # Perform tails upload
-            await self.upload_tails_file(rev_reg_def)
-
-            # Emit success event
-            event = TailsUploadResponseEvent.with_payload(
-                rev_reg_def_id=rev_reg_def_id,
-                rev_reg_def=rev_reg_def,
-                options=options,
-            )
-            await self.notify(event)
-
-        except Exception as err:
-            # Emit failure event
-            error_msg = f"Tails upload failed: {str(err)}"
-
-            event = TailsUploadResponseEvent.with_failure(
-                rev_reg_def_id=rev_reg_def_id,
-                rev_reg_def=rev_reg_def,
-                error_msg=error_msg,
-                retry_count=retry_count,
-                options=options,
-            )
-            await self.notify(event)
 
     async def get_or_fetch_local_tails_path(self, rev_reg_def: RevRegDef) -> str:
         """Return path to local tails file.
