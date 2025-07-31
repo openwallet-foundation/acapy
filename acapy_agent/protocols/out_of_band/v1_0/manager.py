@@ -1061,18 +1061,20 @@ class OutOfBandManager(BaseConnectionManager):
         # Get the single service item
         service = invitation.services[0]
         public_did = None
-        if isinstance(service, str):
-            # If it's in the did format, we need to convert to a full service block
-            # An existing connection can only be reused based on a public DID
-            # in an out-of-band message (RFC 0434).
-            # OR did:peer:2 or did:peer:4.
 
-            if service.startswith("did:peer"):
-                public_did = service
-                if public_did.startswith("did:peer:4"):
-                    public_did = self.long_did_peer_to_short(public_did)
-            else:
+        if isinstance(service, str):
+            # Acceptable service formats: public DID for reuse in out-of-band messages
+            # (RFC 0434), such as did:sov, did:peer:2, did:peer:4, etc.
+
+            # did:peer:4 we need to convert the long form to the short form
+            if service.startswith("did:peer:4"):
+                public_did = self.long_did_peer_to_short(service)
+            # did:sov we need to strip the did:sov: prefix
+            elif service.startswith("did:sov"):
                 public_did = service.split(":")[-1]
+            # Leave did:peer:2, did:web, or any other DID format as is
+            else:
+                public_did = service
 
             # TODO: resolve_invitation should resolve key_info objects
             # or something else that includes the key type. We now assume
