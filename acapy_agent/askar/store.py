@@ -162,7 +162,7 @@ class AskarStoreConfig:
             await self._handle_open_error(err)
             return None
 
-    async def _finalize_open(self, store, provision: bool) -> "AskarOpenStore":
+    def _finalize_open(self, store, provision: bool) -> "AskarOpenStore":
         return AskarOpenStore(self, provision, store)
 
     async def open_store(
@@ -176,7 +176,7 @@ class AskarStoreConfig:
             try:
                 store = await self._attempt_store_open(uri, provision)
                 LOGGER.debug("Store opened successfully on attempt %d", attempt)
-                return await self._finalize_open(store, provision)
+                return self._finalize_open(store, provision)
             except AskarError as err:
                 LOGGER.debug(
                     "AskarError during store open (attempt %d): %s", attempt, err
@@ -190,7 +190,7 @@ class AskarStoreConfig:
                         LOGGER.debug(
                             "Store opened and rekeyed using default key fallback"
                         )
-                        return await self._finalize_open(store, provision)
+                        return self._finalize_open(store, provision)
 
         raise ProfileError("Failed to open or provision store after retries")
 
