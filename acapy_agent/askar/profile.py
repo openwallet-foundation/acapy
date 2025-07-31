@@ -335,7 +335,7 @@ class AskarProfileManager(ProfileManager):
     ) -> Profile:
         """Provision a new instance of a profile."""
         store_config = AskarStoreConfig(config)
-        opened = await store_config.open_or_provision_store(
+        opened = await store_config.open_store(
             provision=True, in_memory=config.get("test")
         )
         return AskarProfile(opened, context)
@@ -345,7 +345,7 @@ class AskarProfileManager(ProfileManager):
     ) -> Profile:
         """Open an instance of an existing profile."""
         store_config = AskarStoreConfig(config)
-        opened = await store_config.open_or_provision_store(
+        opened = await store_config.open_store(
             provision=False, in_memory=config.get("test")
         )
         return AskarProfile(opened, context)

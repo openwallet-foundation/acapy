@@ -125,9 +125,9 @@ class AskarStoreConfig:
     async def _handle_open_error(self, err: AskarError, retry=False):
         if err.code == AskarErrorCode.BACKEND:
             LOGGER.warning(
-                """Askar backend error: %s. This may indicate multiple instances
-                attempting to create the same store at the same time or a misconfigured 
-                backend.""",
+                "Askar backend error: %s. This may indicate multiple instances "
+                "attempting to create the same store at the same time or a misconfigured "
+                "backend.",
                 err,
             )
             await asyncio.sleep(0.5)  # Wait before retrying
@@ -140,38 +140,57 @@ class AskarStoreConfig:
             return
         raise ProfileError("Error opening store") from err
 
-    async def open_or_provision_store(
+    async def _attempt_store_open(self, uri: str, provision: bool):
+        if provision:
+            return await Store.provision(
+                uri,
+                self.key_derivation_method,
+                self.key,
+                recreate=self.auto_recreate,
+            )
+        store = await Store.open(uri, self.key_derivation_method, self.key)
+        if self.rekey:
+            await Store.rekey(store, self.rekey_derivation_method, self.rekey)
+        return store
+
+    async def _try_open_with_default_key(self, uri: str):
+        try:
+            store = await Store.open(uri, self.key_derivation_method, self.DEFAULT_KEY)
+            await Store.rekey(store, self.rekey_derivation_method, self.rekey)
+            return store
+        except AskarError as err:
+            await self._handle_open_error(err)
+            return None
+
+    async def _finalize_open(self, store, provision: bool) -> "AskarOpenStore":
+        return AskarOpenStore(self, provision, store)
+
+    async def open_store(
         self, provision: bool = False, in_memory: Optional[bool] = False
     ) -> "AskarOpenStore":
         """Open or provision the store based on configuration."""
         uri = self.get_uri(create=provision, in_memory=in_memory)
 
-        for _ in range(3):
+        for attempt in range(1, 4):
+            LOGGER.debug("Store open attempt %d/3", attempt)
             try:
-                if provision:
-                    store = await Store.provision(
-                        uri,
-                        self.key_derivation_method,
-                        self.key,
-                        recreate=self.auto_recreate,
-                    )
-                else:
-                    store = await Store.open(uri, self.key_derivation_method, self.key)
-                    if self.rekey:
-                        await Store.rekey(store, self.rekey_derivation_method, self.rekey)
-                return AskarOpenStore(self, provision, store)
+                store = await self._attempt_store_open(uri, provision)
+                LOGGER.debug("Store opened successfully on attempt %d", attempt)
+                return await self._finalize_open(store, provision)
             except AskarError as err:
+                LOGGER.debug(
+                    "AskarError during store open (attempt %d): %s", attempt, err
+                )
                 await self._handle_open_error(err, retry=True)
 
                 if self.rekey:
-                    try:
-                        store = await Store.open(
-                            uri, self.key_derivation_method, self.DEFAULT_KEY
+                    LOGGER.debug("Retrying with default key for rekey scenario")
+                    store = await self._try_open_with_default_key(uri)
+                    if store:
+                        LOGGER.debug(
+                            "Store opened and rekeyed using default key fallback"
                         )
-                    except AskarError as err:
-                        await self._handle_open_error(err)
-                    await Store.rekey(store, self.rekey_derivation_method, self.rekey)
-                    return AskarOpenStore(self, provision, store)
+                        return await self._finalize_open(store, provision)
 
         raise ProfileError("Failed to open or provision store after retries")
 
