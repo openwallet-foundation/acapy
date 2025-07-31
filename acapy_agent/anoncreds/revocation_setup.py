@@ -18,7 +18,6 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-    RECORD_TYPE_TAILS_UPLOAD_EVENT,
 )
 from .event_storage import (
     EventStorageManager,
@@ -42,8 +41,6 @@ from .events import (
     RevRegDefStoreResponseEvent,
     RevRegFullDetectedEvent,
     RevRegFullHandlingResponseEvent,
-    TailsUploadRequestedEvent,
-    TailsUploadResponseEvent,
 )
 from .models.revocation import GetRevListResult, RevListResult, RevListState
 from .registry import AnonCredsRegistry
@@ -135,15 +132,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # On rev reg def finished, emit tails upload request event
         event_bus.subscribe(RevRegDefFinishedEvent.event_topic, self.on_rev_reg_def)
-
-        # On tails upload requested, upload tails file
-        event_bus.subscribe(
-            TailsUploadRequestedEvent.event_topic, self.on_tails_upload_requested
-        )
-        # On tails upload response, emit rev list create requested event
-        event_bus.subscribe(
-            TailsUploadResponseEvent.event_topic, self.on_tails_upload_response
-        )
 
         # On rev list create requested, create and register a revocation list
         event_bus.subscribe(
@@ -552,145 +540,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             except AnonCredsRevocationError as err:
                 LOGGER.warning(f"Failed to create revocation list: {err}")
                 payload.options["failed_to_create_rev_list"] = True
-
-    async def on_tails_upload_requested(
-        self, profile: Profile, event: TailsUploadRequestedEvent
-    ) -> None:
-        """Handle tails upload request."""
-        payload = event.payload
-        revoc = AnonCredsRevocation(profile)
-
-        # Check if this is a retry with existing correlation_id
-        correlation_id = payload.options.get("correlation_id")
-        if not correlation_id:
-            # Generate new correlation_id for new requests
-            correlation_id = generate_correlation_id()
-
-            # Persist the request event only for new requests
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                await event_storage.store_event_request(
-                    event_type=RECORD_TYPE_TAILS_UPLOAD_EVENT,
-                    event_data=serialize_event_payload(payload),
-                    correlation_id=correlation_id,
-                    options=payload.options,
-                )
-
-        LOGGER.debug(
-            "Handling tails upload request for: %s, correlation_id: %s",
-            payload.rev_reg_def_id,
-            correlation_id,
-        )
-
-        # Store correlation_id in options for response tracking
-        options_with_correlation = payload.options.copy()
-        options_with_correlation["correlation_id"] = correlation_id
-
-        await revoc.handle_tails_upload_request(
-            rev_reg_def_id=payload.rev_reg_def_id,
-            rev_reg_def=payload.rev_reg_def,
-            options=options_with_correlation,
-        )
-
-    async def on_tails_upload_response(
-        self, profile: Profile, event: TailsUploadResponseEvent
-    ) -> None:
-        """Handle tails upload response."""
-        payload = event.payload
-
-        # Update the persisted event with response information
-        correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_TAILS_UPLOAD_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_TAILS_UPLOAD_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
-            LOGGER.warning("No correlation_id found for tails upload response")
-
-        if payload.failure:
-            # Handle failure
-            failure = payload.failure
-            error_info = failure.error_info
-
-            LOGGER.error(
-                "Tails upload failed for: %s, error: %s",
-                payload.rev_reg_def_id,
-                error_info.error_msg,
-            )
-
-            # Implement retry logic
-            if error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
-
-                LOGGER.info(
-                    "Retrying tails upload, attempt %d", error_info.retry_count + 1
-                )
-
-                new_options = payload.options.copy()
-                new_options["retry_count"] = error_info.retry_count + 1
-
-                revoc = AnonCredsRevocation(profile)
-                await revoc.emit_upload_tails_file_event(
-                    rev_reg_def_id=payload.rev_reg_def_id,
-                    rev_reg_def=payload.rev_reg_def,
-                    options=new_options,
-                )
-            else:
-                LOGGER.error(
-                    "Max retries exceeded for tails upload: %s", payload.rev_reg_def_id
-                )
-                # Mark the event as completed since we won't retry
-                if correlation_id:
-                    async with profile.session() as session:
-                        event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
-                            event_type=RECORD_TYPE_TAILS_UPLOAD_EVENT,
-                            correlation_id=correlation_id,
-                        )
-
-                self._notify_issuer_about_failure(
-                    profile=profile,
-                    failure_type="tails_upload",
-                    identifier=payload.rev_reg_def_id,
-                    error_msg=error_info.error_msg,
-                    options=payload.options,
-                )
-        else:
-            # Handle success
-            LOGGER.info("Tails upload succeeded for: %s", payload.rev_reg_def_id)
-
-            # Mark the event as completed on success
-            if correlation_id:
-                async with profile.session() as session:
-                    event_storage = EventStorageManager(session)
-                    await event_storage.mark_event_completed(
-                        event_type=RECORD_TYPE_TAILS_UPLOAD_EVENT,
-                        correlation_id=correlation_id,
-                    )
-
-            # Request revocation list creation
-            revoc = AnonCredsRevocation(profile)
-            await revoc.emit_create_and_register_revocation_list_event(
-                rev_reg_def_id=payload.rev_reg_def_id,
-                options=self._clean_options_for_new_request(payload.options),
-            )
 
     async def on_rev_list_create_requested(
         self, profile: Profile, event: RevListCreateRequestedEvent
