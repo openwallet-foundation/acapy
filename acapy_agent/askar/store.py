@@ -153,15 +153,6 @@ class AskarStoreConfig:
             await Store.rekey(store, self.rekey_derivation_method, self.rekey)
         return store
 
-    async def _try_open_with_default_key(self, uri: str):
-        try:
-            store = await Store.open(uri, self.key_derivation_method, self.DEFAULT_KEY)
-            await Store.rekey(store, self.rekey_derivation_method, self.rekey)
-            return store
-        except AskarError as err:
-            await self._handle_open_error(err)
-            return None
-
     def _finalize_open(self, store, provision: bool) -> "AskarOpenStore":
         return AskarOpenStore(self, provision, store)
 
@@ -179,18 +170,9 @@ class AskarStoreConfig:
                 return self._finalize_open(store, provision)
             except AskarError as err:
                 LOGGER.debug(
-                    "AskarError during store open (attempt %d): %s", attempt, err
+                    "AskarError during store open attempt %d/3: %s", attempt, err
                 )
                 await self._handle_open_error(err, retry=True)
-
-                if self.rekey:
-                    LOGGER.debug("Retrying with default key for rekey scenario")
-                    store = await self._try_open_with_default_key(uri)
-                    if store:
-                        LOGGER.debug(
-                            "Store opened and rekeyed using default key fallback"
-                        )
-                        return self._finalize_open(store, provision)
 
         raise ProfileError("Failed to open or provision store after retries")
 
