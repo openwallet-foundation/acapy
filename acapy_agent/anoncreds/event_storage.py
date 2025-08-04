@@ -2,12 +2,14 @@
 
 import json
 import logging
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, NamedTuple, Optional, Type
 
 from anoncreds import RevocationRegistryDefinitionPrivate
 from uuid_utils import uuid4
 
 from ..core.profile import ProfileSession
+from ..messaging.util import datetime_to_str, str_to_datetime
 from ..messaging.models.base import BaseModel
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
@@ -193,12 +195,16 @@ class EventStorageManager:
         Returns:
             The storage record ID
         """
+        # Add creation timestamp for recovery delay logic
+        created_at = datetime_to_str(datetime.now(timezone.utc))
+
         record_data = {
             "event_type": event_type,
             "event_data": event_data,
             "correlation_id": correlation_id,
             "state": EVENT_STATE_REQUESTED,
             "options": options or {},
+            "created_at": created_at,
         }
 
         # Use correlation_id as the record ID for easy lookup
@@ -334,14 +340,16 @@ class EventStorageManager:
     async def get_in_progress_events(
         self,
         event_type: Optional[str] = None,
+        min_age_seconds: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Get all in-progress events for recovery.
 
         Args:
             event_type: Filter by specific event type, or None for all types
+            min_age_seconds: Only return events older than this many seconds
 
         Returns:
-            List of event records that are in progress
+            List of event records that are in progress and older than min_age_seconds
         """
         all_event_types = [
             RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
@@ -355,6 +363,11 @@ class EventStorageManager:
         event_types_to_search = [event_type] if event_type else all_event_types
         in_progress_events = []
 
+        # Calculate cutoff time for recovery delay filtering
+        cutoff_time = None
+        if min_age_seconds is not None:
+            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=min_age_seconds)
+
         for etype in event_types_to_search:
             try:
                 # Search for events that are not completed
@@ -365,6 +378,27 @@ class EventStorageManager:
 
                 for record in records:
                     record_data = json.loads(record.value)
+
+                    # Apply recovery delay filtering if specified
+                    if cutoff_time and "created_at" in record_data:
+                        try:
+                            event_created_at = str_to_datetime(record_data["created_at"])
+                            if event_created_at > cutoff_time:
+                                LOGGER.debug(
+                                    "Skipping recent event %s (created: %s, cutoff: %s)",
+                                    record_data["correlation_id"],
+                                    record_data["created_at"],
+                                    datetime_to_str(cutoff_time),
+                                )
+                                continue  # Skip this event - it's too recent
+                        except (ValueError, KeyError) as e:
+                            LOGGER.warning(
+                                "Failed to parse created_at for event %s: %s",
+                                record_data.get("correlation_id", "unknown"),
+                                str(e),
+                            )
+                            # For events without valid timestamps, recover them
+
                     in_progress_events.append(
                         {
                             "record_id": record.id,
@@ -373,6 +407,7 @@ class EventStorageManager:
                             "event_data": record_data["event_data"],
                             "state": record_data["state"],
                             "options": record_data.get("options", {}),
+                            "created_at": record_data.get("created_at"),
                         }
                     )
 
