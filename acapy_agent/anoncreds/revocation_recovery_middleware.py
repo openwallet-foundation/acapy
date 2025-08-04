@@ -2,7 +2,8 @@
 
 import asyncio
 import logging
-from typing import Coroutine, Set
+import os
+from typing import Coroutine, Optional, Set
 
 from aiohttp import web
 
@@ -10,17 +11,8 @@ from acapy_agent.core.profile import Profile
 
 from ..admin.request_context import AdminRequestContext
 from ..core.event_bus import EventBus
-from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
-from ..storage.type import (
-    RECORD_TYPE_REV_LIST_CREATE_EVENT,
-    RECORD_TYPE_REV_LIST_STORE_EVENT,
-    RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-    RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-    RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-    RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-)
 from .event_recovery import EventRecoveryManager
+from .event_storage import EventStorageManager
 
 LOGGER = logging.getLogger(__name__)
 
@@ -60,62 +52,43 @@ class RevocationRecoveryTracker:
 recovery_tracker = RevocationRecoveryTracker()
 
 
-async def has_in_progress_revocation_events(profile: Profile) -> bool:
+async def has_in_progress_revocation_events(
+    profile: Profile, min_age_seconds: Optional[int] = None
+) -> bool:
     """Check if profile has any in-progress revocation events.
 
     Args:
         profile: The profile to check
+        min_age_seconds: Only consider events older than this many seconds
 
     Returns:
-        True if there are in-progress events, False otherwise
+        True if there are in-progress events (filtered by age), False otherwise
     """
     try:
         async with profile.session() as session:
-            storage = session.inject(BaseStorage)
+            event_storage = EventStorageManager(session)
 
-            # Check each event type for in-progress records
-            event_types = [
-                RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-                RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-                RECORD_TYPE_REV_LIST_CREATE_EVENT,
-                RECORD_TYPE_REV_LIST_STORE_EVENT,
-                RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-                RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-            ]
+            # Use EventStorageManager to get in-progress events with age filtering
+            in_progress_events = await event_storage.get_in_progress_events(
+                min_age_seconds=min_age_seconds
+            )
 
-            for event_type in event_types:
-                try:
-                    records = await storage.find_all_records(
-                        type_filter=event_type, tag_query={"state": "requested"}
-                    )
-                    if records:
-                        return True
-                except StorageNotFoundError:
-                    # No records of this type, continue
-                    pass
-                except Exception as e:
-                    LOGGER.warning(
-                        "Error checking for in-progress events of type %s: %s",
-                        event_type,
-                        str(e),
-                    )
+            return len(in_progress_events) > 0
 
-                LOGGER.debug(
-                    "No records of type %s found with tag state=requested", event_type
-                )
-
-            return False
     except Exception as e:
         LOGGER.error("Error checking for in-progress revocation events: %s", str(e))
         return False
 
 
-async def recover_profile_events(profile: Profile, event_bus: EventBus) -> None:
+async def recover_profile_events(
+    profile: Profile, event_bus: EventBus, recovery_delay_seconds: int = 30
+) -> None:
     """Recover in-progress events for a specific profile.
 
     Args:
         profile: The profile to recover events for
         event_bus: The event bus to re-emit events on
+        recovery_delay_seconds: Only recover events older than this many seconds
     """
     # Get recovery timeout from settings
     recovery_timeout = profile.settings.get_int(
@@ -127,7 +100,10 @@ async def recover_profile_events(profile: Profile, event_bus: EventBus) -> None:
 
         # Use asyncio.wait_for to implement timeout
         recovered_count = await asyncio.wait_for(
-            recovery_manager.recover_in_progress_events(), timeout=recovery_timeout
+            recovery_manager.recover_in_progress_events(
+                min_age_seconds=recovery_delay_seconds
+            ),
+            timeout=recovery_timeout,
         )
 
         if recovered_count > 0:
@@ -192,6 +168,14 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         LOGGER.debug("Auto recovery disabled for profile %s", profile_name)
         return await handler(request)
 
+    # Get recovery delay setting
+    recovery_delay_seconds = int(
+        os.getenv("ANONCREDS_REVOCATION_RECOVERY_DELAY_SECONDS", "30")
+    )
+    LOGGER.debug(
+        "Recovery delay for profile %s: %d seconds", profile_name, recovery_delay_seconds
+    )
+
     # Check if we've already recovered this profile
     if recovery_tracker.is_recovered(profile_name):
         LOGGER.debug(
@@ -207,14 +191,18 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         )
         return await handler(request)
 
-    # Check if profile has any in-progress revocation events
+    # Check if profile has any in-progress revocation events (older than delay)
     LOGGER.debug(
-        "Checking for in-progress revocation events for profile %s", profile_name
+        "Checking for in-progress revocation events for profile %s (older than %d secs)",
+        profile_name,
+        recovery_delay_seconds,
     )
     try:
-        if not await has_in_progress_revocation_events(profile):
+        if not await has_in_progress_revocation_events(profile, recovery_delay_seconds):
             # No events to recover, mark as recovered
-            LOGGER.debug("No in-progress events found for profile %s", profile_name)
+            LOGGER.debug(
+                "No recoverable in-progress events found for profile %s", profile_name
+            )
             recovery_tracker.mark_recovery_completed(profile_name)
             return await handler(request)
     except Exception as e:
@@ -246,7 +234,7 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         # Perform recovery with timeout protection
         LOGGER.debug("Beginning event recovery for profile %s", profile_name)
         try:
-            await recover_profile_events(profile, event_bus)
+            await recover_profile_events(profile, event_bus, recovery_delay_seconds)
             LOGGER.debug(
                 "Event recovery completed successfully for profile %s", profile_name
             )
