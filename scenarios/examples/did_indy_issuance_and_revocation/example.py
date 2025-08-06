@@ -13,9 +13,9 @@ from acapy_controller.logging import logging_to_stdout
 from acapy_controller.models import V20PresExRecord
 from acapy_controller.protocols import (
     DIDResult,
+    anoncreds_publish_revocation,
     didexchange,
     indy_anoncred_credential_artifacts,
-    indy_anoncreds_publish_revocation,
     indy_anoncreds_revoke,
     indy_issue_credential_v2,
     indy_present_proof_v2,
@@ -113,7 +113,7 @@ async def main():
             holder_connection_id=alice_conn.connection_id,
             notify=True,
         )
-        await indy_anoncreds_publish_revocation(alice, cred_ex=alice_cred_ex)
+        await anoncreds_publish_revocation(alice, cred_ex=alice_cred_ex)
         await bob.record(topic="revocation-notification")
 
 

@@ -15,9 +15,9 @@ from acapy_controller.models import V10PresentationExchange
 from acapy_controller.protocols import (
     DIDResult,
     IndyCredPrecis,
+    anoncreds_auto_select_credentials_for_presentation_request,
     didexchange,
     indy_anoncred_credential_artifacts,
-    indy_auto_select_credentials_for_presentation_request,
     indy_issue_credential_v2,
     params,
 )
@@ -139,7 +139,7 @@ async def main():
             f"/present-proof/records/{bob_pres_ex_id}/credentials",
             response=List[IndyCredPrecis],
         )
-        pres_spec = indy_auto_select_credentials_for_presentation_request(
+        pres_spec = anoncreds_auto_select_credentials_for_presentation_request(
             bob_pres_ex.presentation_request.serialize(), relevant_creds
         )
         pres_spec.self_attested_attributes = {self_uuid: "self-attested data goes here"}

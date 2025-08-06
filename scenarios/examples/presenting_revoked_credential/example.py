@@ -13,10 +13,10 @@ from acapy_controller.logging import logging_to_stdout
 from acapy_controller.models import V20PresExRecord, V20PresExRecordList
 from acapy_controller.protocols import (
     DIDResult,
+    anoncreds_publish_revocation,
+    anoncreds_revoke,
     didexchange,
     indy_anoncred_credential_artifacts,
-    indy_anoncreds_publish_revocation,
-    indy_anoncreds_revoke,
     indy_issue_credential_v2,
     indy_present_proof_v2,
     params,
@@ -102,13 +102,13 @@ async def main():
         )
 
         # Revoke credential
-        await indy_anoncreds_revoke(
+        await anoncreds_revoke(
             alice,
             cred_ex=alice_cred_ex,
             holder_connection_id=alice_conn.connection_id,
             notify=True,
         )
-        await indy_anoncreds_publish_revocation(alice, cred_ex=alice_cred_ex)
+        await anoncreds_publish_revocation(alice, cred_ex=alice_cred_ex)
         # TODO: Make this into a helper in protocols.py?
         await bob.record(topic="revocation-notification")
         revoked_time = int(time.time())
