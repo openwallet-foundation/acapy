@@ -16,7 +16,7 @@ from acapy_controller.protocols import (
     anoncreds_publish_revocation,
     didexchange,
     indy_anoncred_credential_artifacts,
-    indy_anoncreds_revoke,
+    anoncreds_revoke,
     indy_issue_credential_v2,
     indy_present_proof_v2,
     params,
@@ -107,7 +107,7 @@ async def main():
         )
 
         # Revoke credential
-        await indy_anoncreds_revoke(
+        await anoncreds_revoke(
             alice,
             cred_ex=alice_cred_ex,
             holder_connection_id=alice_conn.connection_id,
