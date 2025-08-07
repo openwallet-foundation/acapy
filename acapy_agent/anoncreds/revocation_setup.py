@@ -8,7 +8,7 @@ from acapy_agent.anoncreds.issuer import STATE_FINISHED
 from acapy_agent.protocols.endorse_transaction.v1_0.util import is_author_role
 
 from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
-from ..core.event_bus import EventBus
+from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
 from ..revocation.util import notify_revocation_published_event
 from ..storage.type import (
@@ -26,7 +26,9 @@ from .event_storage import (
 )
 from .events import (
     FIRST_REGISTRY_TAG,
+    INTERVENTION_REQUIRED_EVENT,
     CredDefFinishedEvent,
+    InterventionRequiredPayload,
     RevListCreateRequestedEvent,
     RevListCreateResponseEvent,
     RevListFinishedEvent,
@@ -1212,20 +1214,30 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             options (dict): Options context
 
         """
-        # This is a placeholder for future implementation
-        # In a real implementation, this could:
-        # 1. Send webhook notifications
-        # 2. Log to a persistent failure tracking system
-        # 3. Send admin notifications
-        # 4. Create manual intervention tasks
 
-        LOGGER.critical(
+        LOGGER.error(
             f"MANUAL INTERVENTION REQUIRED: {failure_type} failed for {identifier} "
-            f"after maximum retries. Error: {error_msg}"
+            f"after maximum retries. Error: {error_msg}. Options: {options}"
         )
 
-        # TODO: Implement actual notification mechanisms:
-        # - Webhook notifications to issuer
-        # - Admin dashboard alerts
-        # - Email notifications
-        # - Persistent failure tracking
+        event_bus = profile.inject_or(EventBus)
+        if event_bus:
+            await event_bus.notify(
+                profile=profile,
+                event=Event(
+                    topic=INTERVENTION_REQUIRED_EVENT,
+                    payload=InterventionRequiredPayload(
+                        point_of_failure=failure_type,
+                        error_msg=error_msg,
+                        identifier=identifier,
+                        options=options,
+                    ),
+                ),
+            )
+        else:
+            LOGGER.error(
+                "Could not notify issuer %s about failure %s for %s",
+                profile.name,
+                failure_type,
+                identifier,
+            )
