@@ -63,6 +63,9 @@ REV_REG_FULL_HANDLING_COMPLETED_EVENT = (
     "anoncreds::revocation-registry::full-handling-completed"
 )
 
+# If retries continue to fail, this will notify the issuer that intervention is required
+INTERVENTION_REQUIRED_EVENT = "anoncreds::revocation-registry::intervention-required"
+
 
 class ErrorInfoPayload(NamedTuple):
     """Common error information for all response events."""
@@ -950,3 +953,12 @@ class RevRegFullHandlingResponseEvent(Event):
     def payload(self) -> RevRegFullHandlingResponsePayload:
         """Return payload."""
         return self._payload
+
+
+class InterventionRequiredPayload(NamedTuple):
+    """Payload for intervention required event."""
+
+    point_of_failure: str
+    error_msg: str
+    identifier: str
+    options: dict
