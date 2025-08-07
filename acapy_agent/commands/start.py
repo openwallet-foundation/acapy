@@ -99,8 +99,8 @@ def execute(argv: Sequence[str] = None):
 
 def main():
     """Execute the main line."""
-    if __name__ == "__main__":
-        execute()
+    execute()
 
 
-main()
+if __name__ == "__main__":
+    main()
