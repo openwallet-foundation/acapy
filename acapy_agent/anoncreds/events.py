@@ -15,6 +15,7 @@ CRED_DEF_FINISHED_EVENT = "anoncreds::credential-definition::finished"
 REV_REG_DEF_CREATE_REQUESTED_EVENT = (
     "anoncreds::revocation-registry-definition::create-requested"
 )
+# Response triggers the "store" event
 REV_REG_DEF_CREATE_RESPONSE_EVENT = (
     "anoncreds::revocation-registry-definition::create-response"
 )
@@ -23,32 +24,41 @@ REV_REG_DEF_CREATE_RESPONSE_EVENT = (
 REV_REG_DEF_STORE_REQUESTED_EVENT = (
     "anoncreds::revocation-registry-definition::store-requested"
 )
+# Response triggers the "Finished" event, as well as backup creation, if first registry
 REV_REG_DEF_STORE_RESPONSE_EVENT = (
     "anoncreds::revocation-registry-definition::store-response"
 )
 
-# Successful storage of rev reg def, triggers upload tails file event
+# The above successful storage of rev reg def event, triggers create rev list event
+# TODO: superfluous event, can be merged with above rev-reg-def-store response
+# Just exists for backwards compatibility with old code
 REV_REG_DEF_FINISHED_EVENT = "anoncreds::revocation-registry-definition::finished"
-
-# Tails upload events
-TAILS_UPLOAD_REQUESTED_EVENT = "anoncreds::tails-upload::requested"
-TAILS_UPLOAD_RESPONSE_EVENT = "anoncreds::tails-upload::response"
 
 # Revocation list events
 REV_LIST_CREATE_REQUESTED_EVENT = "anoncreds::revocation-list::create-requested"
 REV_LIST_CREATE_RESPONSE_EVENT = "anoncreds::revocation-list::create-response"
+
+# The above rev-list-create-response triggers the rev-list store event:
 REV_LIST_STORE_REQUESTED_EVENT = "anoncreds::revocation-list::store-requested"
+# Store response triggers the activation event, if it's for the first registry
 REV_LIST_STORE_RESPONSE_EVENT = "anoncreds::revocation-list::store-response"
+
+# TODO: Just exists for backwards compatibility with old code. Not used in state machine
 REV_LIST_FINISHED_EVENT = "anoncreds::revocation-list::finished"
 
-# Revocation registry activation events
+# Rev reg activation events. Triggered for first registry, and then during full handling
 REV_REG_ACTIVATION_REQUESTED_EVENT = (
     "anoncreds::revocation-registry::activation-requested"
 )
 REV_REG_ACTIVATION_RESPONSE_EVENT = "anoncreds::revocation-registry::activation-response"
 
-# Revocation registry full events
+# Revocation registry full events:
+# - Sets current registry to full,
+# - Emits event to activate backup,
+# - And emits event to create new backup
 REV_REG_FULL_DETECTED_EVENT = "anoncreds::revocation-registry::full-detected"
+# Full handling completed is emitted after current registry is set to full -
+# (not after backup is activated or new one is created, those are queued asynchronously)
 REV_REG_FULL_HANDLING_COMPLETED_EVENT = (
     "anoncreds::revocation-registry::full-handling-completed"
 )
