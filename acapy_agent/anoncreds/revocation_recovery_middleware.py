@@ -3,7 +3,8 @@
 import asyncio
 import logging
 import os
-from typing import Coroutine, Optional, Set
+from datetime import datetime, timedelta, timezone
+from typing import Coroutine, Optional, Set, Tuple
 
 from aiohttp import web
 
@@ -11,6 +12,7 @@ from acapy_agent.core.profile import Profile
 
 from ..admin.request_context import AdminRequestContext
 from ..core.event_bus import EventBus
+from ..messaging.util import str_to_datetime
 from .event_recovery import EventRecoveryManager
 from .event_storage import EventStorageManager
 
@@ -52,32 +54,79 @@ class RevocationRecoveryTracker:
 recovery_tracker = RevocationRecoveryTracker()
 
 
-async def has_in_progress_revocation_events(
+async def get_revocation_event_counts(
     profile: Profile, min_age_seconds: Optional[int] = None
-) -> bool:
-    """Check if profile has any in-progress revocation events.
+) -> Tuple[int, int]:
+    """Get counts of pending and recoverable revocation events.
+
+    This function fetches all in-progress events once and calculates both
+    pending events (all events) and recoverable events (events older than
+    min_age_seconds) from the same dataset.
 
     Args:
         profile: The profile to check
-        min_age_seconds: Only consider events older than this many seconds
+        min_age_seconds: Only consider events older than this many seconds as recoverable
 
     Returns:
-        True if there are in-progress events (filtered by age), False otherwise
+        Tuple of (pending_count, recoverable_count) where:
+        - pending_count: Total number of in-progress events (regardless of age)
+        - recoverable_count: Number of in-progress events older than min_age_seconds
     """
     try:
         async with profile.session() as session:
             event_storage = EventStorageManager(session)
 
-            # Use EventStorageManager to get in-progress events with age filtering
-            in_progress_events = await event_storage.get_in_progress_events(
-                min_age_seconds=min_age_seconds
-            )
+            # Get all in-progress events without age filtering
+            all_events = await event_storage.get_in_progress_events(min_age_seconds=None)
+            pending_count = len(all_events)
 
-            return len(in_progress_events) > 0
+            if min_age_seconds is not None and pending_count > 0:
+                # Calculate recoverable count by filtering the already-fetched events
+                # This is more efficient than making another database query
+                cutoff_time = datetime.now(timezone.utc) - timedelta(
+                    seconds=min_age_seconds
+                )
+                recoverable_count = 0
+
+                for event in all_events:
+                    if event.get("created_at"):
+                        try:
+                            event_created_at = str_to_datetime(event["created_at"])
+                            if event_created_at <= cutoff_time:
+                                recoverable_count += 1
+                        except (ValueError, KeyError) as e:
+                            LOGGER.warning(
+                                "Failed to parse created_at for event %s: %s",
+                                event.get("correlation_id", "unknown"),
+                                str(e),
+                            )
+                            # For events without valid timestamps, consider them
+                            # recoverable
+                            recoverable_count += 1
+                    else:
+                        # For events without timestamps, consider them recoverable
+                        LOGGER.warning(
+                            "Event %s has no created_at, considering it recoverable",
+                            event.get("correlation_id", "unknown"),
+                        )
+                        recoverable_count += 1
+            else:
+                # If no age filter, all pending events are recoverable
+                recoverable_count = pending_count
+
+            if pending_count > 0:
+                LOGGER.debug(
+                    "Found %d pending revocation events (%d recoverable) for profile %s",
+                    pending_count,
+                    recoverable_count,
+                    profile.name,
+                )
+
+            return pending_count, recoverable_count
 
     except Exception as e:
-        LOGGER.error("Error checking for in-progress revocation events: %s", str(e))
-        return False
+        LOGGER.error("Error checking for revocation events: %s", str(e))
+        return 0, 0
 
 
 async def recover_profile_events(
@@ -191,20 +240,39 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         )
         return await handler(request)
 
-    # Check if profile has any in-progress revocation events (older than delay)
+    # Check if profile has any in-progress revocation events
     LOGGER.debug(
-        "Checking for in-progress revocation events for profile %s (older than %d secs)",
+        "Checking for revocation events for profile %s (recovery delay: %d secs)",
         profile_name,
         recovery_delay_seconds,
     )
     try:
-        if not await has_in_progress_revocation_events(profile, recovery_delay_seconds):
-            # No events to recover, mark as recovered
-            LOGGER.debug(
-                "No recoverable in-progress events found for profile %s", profile_name
-            )
-            recovery_tracker.mark_recovery_completed(profile_name)
-            return await handler(request)
+        pending_count, recoverable_count = await get_revocation_event_counts(
+            profile, recovery_delay_seconds
+        )
+
+        if recoverable_count == 0:
+            # No recoverable events found
+            if pending_count == 0:
+                # No events at all - mark as recovered
+                LOGGER.debug(
+                    "No pending or recoverable events found for profile %s, "
+                    "marking as recovered",
+                    profile_name,
+                )
+                recovery_tracker.mark_recovery_completed(profile_name)
+                return await handler(request)
+            else:
+                # There are pending events within the delay period
+                # - don't mark as recovered yet
+                LOGGER.debug(
+                    "Found %d pending events within recovery delay for profile %s, "
+                    "not marking as recovered yet",
+                    pending_count,
+                    profile_name,
+                )
+                return await handler(request)
+
     except Exception as e:
         LOGGER.error(
             "Error checking for in-progress events for profile %s: %s",
@@ -232,11 +300,16 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
             return await handler(request)
 
         # Perform recovery with timeout protection
-        LOGGER.debug("Beginning event recovery for profile %s", profile_name)
+        LOGGER.debug(
+            "Beginning recovery of events older than %d seconds for profile %s",
+            recovery_delay_seconds,
+            profile_name,
+        )
         try:
             await recover_profile_events(profile, event_bus, recovery_delay_seconds)
             LOGGER.debug(
-                "Event recovery completed successfully for profile %s", profile_name
+                "Recovery of recoverable events completed successfully for profile %s",
+                profile_name,
             )
         except asyncio.TimeoutError:
             LOGGER.error(
