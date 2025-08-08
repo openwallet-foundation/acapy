@@ -776,6 +776,8 @@ class RevocationGroup(ArgumentGroup):
             settings["tails_server_upload_url"] = args.tails_server_base_url
         if args.tails_server_upload_url:
             settings["tails_server_upload_url"] = args.tails_server_upload_url
+        if args.tails_server_upload_url and not args.tails_server_base_url:
+            settings["args.tails_server_base_url"] = args.tails_server_upload_url
         if args.notify_revocation:
             settings["revocation.notify"] = args.notify_revocation
         if args.monitor_revocation_notification:
