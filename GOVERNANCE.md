@@ -1,6 +1,6 @@
 ACA-py Maintainers:
 
-Please review the following [technical charter draft for ACA-py](https://docs.google.com/document/d/1fNndB1G-P5KcKbpPROrVGWI7U5Yt7rf5vphssNokn9o/edit?tab=t.0)
+Please review the following [draft technical charter for ACA-py](https://docs.google.com/document/d/1fNndB1G-P5KcKbpPROrVGWI7U5Yt7rf5vphssNokn9o/edit?tab=t.0)
 
 Anywhere you would like to make a change, please add a comment **in the google doc linked above**.
 
