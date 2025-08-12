@@ -11,14 +11,21 @@ if ! command -v jq 2>&1 >/dev/null; then
 fi
 
 if [ $# -eq 0 ]; then
-    echo ${0}: Generate a list of PRs to include in the Changelog for a release.
-    echo "You must supply a date argument in the format '2024-08-12'"
+    echo ${0} \<date\> \[\<branch\>\]: Generate a list of PRs to include in the Changelog for a release.
+    echo "You must supply the date argument in the format '2024-08-12'"
     echo "The date must be the date of the day before the last ACA-Py release -- to make sure you get all of the relevant PRs."
     echo "The output is the list of non-dependabot PRs, plus some markdown to reference the dependabot PRs"
+    echo "The branch argument is optional, and defaults to 'main'."
     exit 1
 fi
 
-gh pr list -S "merged:>${1}"  -L 1000 --state merged --json number,title,author | \
+if [ $# -eq 1 ]; then
+    BRANCH=main
+else
+    BRANCH=$2
+fi
+
+gh pr list -S "merged:>${1}"  -L 1000 -B ${BRANCH} --state merged --json number,title,author | \
    jq ' .[] | ["  -",.title,"WwW",.number,"XxX",.number,"YyY",.author.login,"ZzZ",.author.login] | @tsv' | \
    sed -e "s/\\\t/ /g" \
       -e "s/\"//g" \

@@ -1,5 +1,52 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.3.2rc0
+
+### August 12, 2025
+
+ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the [Categorized List of Changes]() below for more details about the changes in this release.
+
+### 1.3.2 Deprecation Notices
+
+In an upcoming ACA-Py release, we will be dropping from the core ACA-Py repository the [AIP 1.0] [RFC 0037 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
+
+[ACA-Py Plugins]: https://plugins.aca-py.org
+[RFC 0160 Connections]: https://identity.foundation/aries-rfcs/latest/features/0160-connection-protocol/
+[RFC 0037 Issue Credentials v1.0]: https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/
+[RFC 0037 Present Proof v1.0]: https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/
+[AIP 1.0]: https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10
+[AIP 2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/
+[RFC 0434 Out of Band]: https://identity.foundation/aries-rfcs/latest/aip2/0434-outofband/
+[RFC 0023 DID Exchange]: https://identity.foundation/aries-rfcs/latest/aip2/0023-did-exchange/
+[RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
+[RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
+[Connections Protocol Plugin]: https://plugins.aca-py.org/latest/connections/
+
+### 1.3.2 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.3.2 Categorized List of Pull Requests
+
+- **Bug Fixes and Behavior Changes**
+  - fix: update tails server upload methods to return public file URIs #3852 TheTechmage
+  - Only strip did:sov dids to unqualified did in oob receive invitation requests (holder) #3846 jamshale
+  - Remove by_format from standard webhook payloads #3837 jamshale
+  - Fixed debug port setting #3828 Gavinok
+  - Fix: Some asyncio task management and modernization #3818 jamshale
+- **Operational and Dependency Updates**
+  - :heavy_minus_sign: Remove unused dependency: ecdsa #3847 ff137
+  - Add retries when opening the askar store / Refactor store.py #3811 jamshale
+  - Upgrade pytest-asyncio to major version 1.0.0 #3810 jamshale
+- **Documentation and README Updates**
+  - Add DeepWiki AI Docs Badge and revise the README intro #3853 swcurran
+  - Update README with latest on LTS Release Status #3833 swcurran
+  - Update scenarios to openwallet acapy-minimal-example repo #3851 jamshale
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-07-02..2025-08-12+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.3.2rc0 [\#3858](https://github.com/openwallet-foundation/acapy/pull/3858) [swcurran](https://github.com/swcurran)
+
 ## 1.3.1
 
 ### July 02, 2025

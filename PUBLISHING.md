@@ -6,7 +6,7 @@ a major, minor or patch release, per [semver](https://semver.org/) rules.
 
 Once ready to do a release, create a local branch that includes the following updates:
 
-1. Create a local PR branch from an updated `main` branch, e.g. "1.3.1".
+1. Create a local PR branch from an updated `main` branch, e.g. "1.3.2rc0".
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
@@ -48,10 +48,10 @@ Once ready to do a release, create a local branch that includes the following up
 From the root of the repository folder, run:
 
 ```bash
-./scripts/genChangeLog.sh <date>
+./scripts/genChangeLog.sh <date> [<branch>]
 ```
 
-Leave off the date argument to get usage information.
+Leave off the arguments to get usage information. Date format is `YYYY-MM-DD`, and the branch defaults to `main` if not specified. The date should be the day before the last release, so that you get all of the PRs merged since the last release.
 
 The output should look like this -- and what you see in [CHANGELOG.md](CHANGELOG.md):
 
@@ -88,6 +88,11 @@ Once you have the list of PRs:
    necessary, create an issue with the errors and assign it to the appropriate
    developer. Experience has demonstrated to use that documentation generation
    errors should be fixed in the code.
+
+```sh
+cd docs; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../acapy_agent/ $(find ../acapy_agent/ -name '*tests*'); cd ..
+cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
+```
 
 3. Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md entry for the previous release
@@ -140,7 +145,7 @@ Once you have the list of PRs:
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
 
 1.    When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format `docs-v<version>`, for example, `docs-v1.3.1`.
+    the branch name in the format `docs-v<version>`, for example, `docs-v1.3.2rc0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
     publishing it at [https://aca-py.org]. The GitHub Action also executes when
