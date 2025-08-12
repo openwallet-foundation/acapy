@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+import os
 
 from acapy_agent.anoncreds.issuer import STATE_FINISHED
 from acapy_agent.protocols.endorse_transaction.v1_0.util import is_author_role
@@ -82,8 +83,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     """
 
     REGISTRY_TYPE = "CL_ACCUM"
-    MAX_RETRY_COUNT = 3
-    RETRY_SLEEP_TIME = 3  # seconds
+    MAX_RETRY_COUNT = int(os.getenv("ANONCREDS_REVOCATION_SETUP_MAX_RETRY_COUNT", "3"))
+    RETRY_SLEEP_TIME = int(os.getenv("ANONCREDS_REVOCATION_SETUP_RETRY_SLEEP_TIME", "3"))
 
     def __init__(self):
         """Init manager."""
