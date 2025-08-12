@@ -2406,7 +2406,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <p>Once ready to do a release, create a local branch that includes the following updates:</p>
 <ol>
 <li>
-<p>Create a local PR branch from an updated <code>main</code> branch, e.g. "1.3.1".</p>
+<p>Create a local PR branch from an updated <code>main</code> branch, e.g. "1.3.2rc0".</p>
 </li>
 <li>
 <p>See if there are any Document Site <code>mkdocs</code> changes needed. Run the script
@@ -2445,9 +2445,9 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
    be the day before the last non-RC release, which won't be generated correctly
    in this release.</p>
 <p>From the root of the repository folder, run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./scripts/genChangeLog.sh<span class="w"> </span>&lt;date&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./scripts/genChangeLog.sh<span class="w"> </span>&lt;date&gt;<span class="w"> </span><span class="o">[</span>&lt;branch&gt;<span class="o">]</span>
 </code></pre></div>
-<p>Leave off the date argument to get usage information.</p>
+<p>Leave off the arguments to get usage information. Date format is <code>YYYY-MM-DD</code>, and the branch defaults to <code>main</code> if not specified. The date should be the day before the last release, so that you get all of the PRs merged since the last release.</p>
 <p>The output should look like this -- and what you see in <a href="../CHANGELOG/">CHANGELOG.md</a>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  - Only change interop testing fork on pull requests [\#3218](https://github.com/openwallet-foundation/acapy/pull/3218) [jamshale](https://github.com/jamshale)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  - Remove the RC from the versions table [\#3213](https://github.com/openwallet-foundation/acapy/pull/3213) [swcurran](https://github.com/swcurran)
@@ -2481,6 +2481,11 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
    developer. Experience has demonstrated to use that documentation generation
    errors should be fixed in the code.</p>
 </li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>docs<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>generated<span class="p">;</span><span class="w"> </span>sphinx-apidoc<span class="w"> </span>-f<span class="w"> </span>-M<span class="w"> </span>-o<span class="w">  </span>./generated<span class="w"> </span>../acapy_agent/<span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>../acapy_agent/<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*tests*&#39;</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>docs<span class="p">;</span><span class="w"> </span>sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>-a<span class="w"> </span>-E<span class="w"> </span>-c<span class="w"> </span>./<span class="w"> </span>./<span class="w"> </span>./_build<span class="p">;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
+</code></pre></div>
+<ol>
 <li>
 <p>Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md entry for the previous release
@@ -2499,7 +2504,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <p>Regenerate openapi.json and swagger.json by running
    <code>scripts/generate-open-api-spec</code> from within the <code>acapy_agent</code> folder.</p>
 </li>
-</ul>
+</ol>
 <p>Command: <code>cd acapy_agent;../scripts/generate-open-api-spec;cd ..</code></p>
 <p>Folders may not be cleaned up by the script, so the following can be run, likely with <code>sudo</code> -- <code>rm -rf open-api/.build</code>. The folder is <code>.gitignore</code>d, so there is not a danger they will be pushed, even if they are not deleted.</p>
 <ol>
@@ -2536,7 +2541,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <ol>
 <li>
 <p>When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.3.1</code>.
+    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.3.2rc0</code>.
     The creation of the branch triggers the execution of the <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml">publish-docs</a>
     GitHub Action which generates the documentation for the new release,
     publishing it at <a href="https://aca-py.org">https://aca-py.org</a>. The GitHub Action also executes when
