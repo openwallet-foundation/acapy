@@ -7,27 +7,21 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/openwallet-foundation/acapy/badge)](https://scorecard.dev/viewer/?uri=github.com/openwallet-foundation/acapy)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/openwallet-foundation/acapy)
 
-> **ACA-Py is now part of the [OpenWallet Foundation](https://openwallet.foundation/) (OWF)!**
-
-The move of ACA-Py to the OWF is now complete. If you haven't done so already, please update your ACA-Py deployment to use:
-
-- the [ACA-Py OWF repository](https://github.com/openwallet-foundation/acapy),
-- the new [acapy-agent in PyPi](https://pypi.org/project/acapy-agent/), and
-- the container images for ACA-Py hosted by the OpenWallet Foundation GitHub organization within the GitHub Container Repository (GHCR).
-
-___
-
-ACA-Py is an easy to use enterprise SSI agent for building decentralized trust services using any language that supports sending/receiving HTTP requests.
+ACA-Py is a production-ready, open-source self-sovereign identity (SSI) agent for building non-mobile decentralized trust services—such as verifiable credential issuers, holders, and verifiers—using any language capable of sending and receiving HTTP requests. Maintained by the OpenWallet Foundation, ACA-Py began in the Hyperledger Indy/AnonCreds/Aries ecosystem and has evolved to include support multiple verifiable credential formats and exchange protocols. It serves as a foundational building block for Trust Over IP-based ecosystems.
 
 Full access to an organized set of all of the ACA-Py documents is available at [https://aca-py.org](https://aca-py.org).
-Check it out! It's much easier to navigate than the ACA-Py GitHub repo for reading the documentation.
+Check it out! It's much easier to navigate than the ACA-Py GitHub repo for reading the documentation. ACA-Py documentation is also AI-generated on the [DeepWiki] website at [DeepWiki ACA-Py]. DeepWiki provides a chatbot interface that can be used to ask questions about ACA-Py and get answers based on the documentation.
 
-:new: ACA-Py Plugins have their own store! Visit [https://plugins.aca-py.org](https://plugins.aca-py.org) to find ready-to-use functionality to add to your ACA-Py deployment, and to learn how to build your own plugins.
+[DeepWiki]: https://deepwiki.com
+[DeepWiki ACA-Py]: https://deepwiki.com/openwallet-foundation/acapy
+
+Visit the ACA-Py Plugins Store at [https://plugins.aca-py.org](https://plugins.aca-py.org) to find ready-to-use functionality to add to your ACA-Py deployment, and to learn how to build your own plugins.
 
 ## Overview
 
-ACA-Py is a foundation for building Verifiable Credential (VC) ecosystems. It operates in the second and third layers of the [Trust Over IP framework (PDF)](https://trustoverip.org/wp-content/uploads/2020/05/toip_050520_primer.pdf) using a variety of verifiable credential formats and protocols. ACA-Py runs on servers (cloud, enterprise, IoT devices, and so forth), and is not designed to run on mobile devices.
+ACA-Py is a foundation for building Verifiable Credential (VC) ecosystems. It operates in the second and third layers of the [Trust Over IP Model](https://trustoverip.org/wp-content/uploads/model-panel-full-2048x1146.png) using a variety of verifiable credential formats and protocols. ACA-Py runs on servers (cloud, enterprise, IoT devices, and so forth), and is not designed to run on mobile devices.
 
 ACA-Py includes support for the concepts and features that make up [Aries Interop Profile (AIP) 2.0](https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20). [ACA-Py’s supported features](./docs/features/SupportedRFCs.md) include, most importantly, protocols for issuing, verifying, and holding verifiable credentials using both [Hyperledger AnonCreds] verifiable credential format, and the [W3C Standard Verifiable Credential Data Model] format using JSON-LD with LD-Signatures and BBS+ Signatures. Coming soon -- issuing and presenting [Hyperledger AnonCreds] verifiable credentials using the [W3C Standard Verifiable Credential Data Model] format.
 
