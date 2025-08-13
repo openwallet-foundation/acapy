@@ -3,8 +3,7 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta, timezone
-from typing import Coroutine, Optional, Set, Tuple
+from typing import Coroutine, Set, Tuple
 
 from aiohttp import web
 
@@ -12,9 +11,9 @@ from acapy_agent.core.profile import Profile
 
 from ..admin.request_context import AdminRequestContext
 from ..core.event_bus import EventBus
-from ..messaging.util import str_to_datetime
 from .event_recovery import EventRecoveryManager
 from .event_storage import EventStorageManager
+from .retry_utils import is_event_expired
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,63 +54,48 @@ recovery_tracker = RevocationRecoveryTracker()
 
 
 async def get_revocation_event_counts(
-    profile: Profile, min_age_seconds: Optional[int] = None
+    profile: Profile, check_expiry: bool = True
 ) -> Tuple[int, int]:
     """Get counts of pending and recoverable revocation events.
 
     This function fetches all in-progress events once and calculates both
-    pending events (all events) and recoverable events (events older than
-    min_age_seconds) from the same dataset.
+    pending events (all events) and recoverable events (events past their expiry).
 
     Args:
         profile: The profile to check
-        min_age_seconds: Only consider events older than this many seconds as recoverable
+        check_expiry: If True, separate expired from non-expired events
 
     Returns:
         Tuple of (pending_count, recoverable_count) where:
-        - pending_count: Total number of in-progress events (regardless of age)
-        - recoverable_count: Number of in-progress events older than min_age_seconds
+        - pending_count: Total number of in-progress events
+        - recoverable_count: Number of in-progress events past their expiry timestamp
     """
     try:
         async with profile.session() as session:
             event_storage = EventStorageManager(session)
 
-            # Get all in-progress events without age filtering
-            all_events = await event_storage.get_in_progress_events(min_age_seconds=None)
+            # Get all in-progress events
+            all_events = await event_storage.get_in_progress_events(only_expired=False)
             pending_count = len(all_events)
 
-            if min_age_seconds is not None and pending_count > 0:
-                # Calculate recoverable count by filtering the already-fetched events
-                # This is more efficient than making another database query
-                cutoff_time = datetime.now(timezone.utc) - timedelta(
-                    seconds=min_age_seconds
-                )
+            if check_expiry and pending_count > 0:
+                # Calculate recoverable count by checking expiry timestamps
                 recoverable_count = 0
 
                 for event in all_events:
-                    if event.get("created_at"):
-                        try:
-                            event_created_at = str_to_datetime(event["created_at"])
-                            if event_created_at <= cutoff_time:
-                                recoverable_count += 1
-                        except (ValueError, KeyError) as e:
-                            LOGGER.warning(
-                                "Failed to parse created_at for event %s: %s",
-                                event.get("correlation_id", "unknown"),
-                                str(e),
-                            )
-                            # For events without valid timestamps, consider them
-                            # recoverable
+                    expiry_timestamp = event.get("expiry_timestamp")
+                    if expiry_timestamp:
+                        if is_event_expired(expiry_timestamp):
                             recoverable_count += 1
                     else:
-                        # For events without timestamps, consider them recoverable
+                        # For events without expiry timestamps, consider them recoverable
                         LOGGER.warning(
-                            "Event %s has no created_at, considering it recoverable",
+                            "Event %s has no expiry time, considering it recoverable",
                             event.get("correlation_id", "unknown"),
                         )
                         recoverable_count += 1
             else:
-                # If no age filter, all pending events are recoverable
+                # If not checking expiry, all pending events are recoverable
                 recoverable_count = pending_count
 
             if pending_count > 0:
@@ -149,9 +133,7 @@ async def recover_profile_events(
 
         # Use asyncio.wait_for to implement timeout
         recovered_count = await asyncio.wait_for(
-            recovery_manager.recover_in_progress_events(
-                min_age_seconds=recovery_delay_seconds
-            ),
+            recovery_manager.recover_in_progress_events(),
             timeout=recovery_timeout,
         )
 
@@ -248,7 +230,7 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
     )
     try:
         pending_count, recoverable_count = await get_revocation_event_counts(
-            profile, recovery_delay_seconds
+            profile, check_expiry=True
         )
 
         if recoverable_count == 0:
