@@ -20,6 +20,7 @@ from ...storage.type import (
 from ..event_storage import (
     EventStorageManager,
     generate_correlation_id,
+    generate_request_id,
     serialize_event_payload,
 )
 from ..events import (
@@ -179,6 +180,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         if payload.support_revocation:
             revoc = AnonCredsRevocation(profile)
+
+            # Generate a new request_id for this revocation registry workflow
+            request_id = generate_request_id()
+            options = self._clean_options_for_new_request(payload.options)
+            options["request_id"] = request_id
+
+            LOGGER.info(
+                "Starting revocation registry workflow for cred_def_id: %s, request_id: %s",
+                payload.cred_def_id,
+                request_id,
+            )
+
             # Emit event to request creation and registration of a revocation registry
             # This automates the creation of a backup registry and accompanying resources
             await revoc.emit_create_revocation_registry_definition_event(
@@ -187,7 +200,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 registry_type=self.REGISTRY_TYPE,
                 max_cred_num=payload.max_cred_num,
                 tag=FIRST_REGISTRY_TAG,
-                options=self._clean_options_for_new_request(payload.options),
+                options=options,
             )
 
     async def on_registry_create_requested(  # ✅
@@ -210,6 +223,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
+                    request_id=payload.options.get("request_id"),
                     options=payload.options,
                 )
 
@@ -374,6 +388,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
+                    request_id=payload.options.get("request_id"),
                     options=payload.options,
                 )
 
@@ -511,13 +526,25 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     "requesting creation of backup registry for cred_def_id: %s",
                     payload.rev_reg_def.cred_def_id,
                 )
+
+                # Generate new request_id for backup registry workflow
+                backup_request_id = generate_request_id()
+                backup_options = self._clean_options_for_new_request(payload.options)
+                backup_options["request_id"] = backup_request_id
+
+                LOGGER.info(
+                    "Starting backup registry workflow for cred_def_id: %s, request_id: %s",
+                    payload.rev_reg_def.cred_def_id,
+                    backup_request_id,
+                )
+
                 await revoc.emit_create_revocation_registry_definition_event(
                     issuer_id=payload.rev_reg_def.issuer_id,
                     cred_def_id=payload.rev_reg_def.cred_def_id,
                     registry_type=payload.rev_reg_def.type,
                     tag=revoc._generate_backup_registry_tag(),
                     max_cred_num=payload.rev_reg_def.value.max_cred_num,
-                    options=self._clean_options_for_new_request(payload.options),
+                    options=backup_options,
                 )
 
     async def on_rev_reg_def(
@@ -563,6 +590,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
+                    request_id=payload.options.get("request_id"),
                     options=payload.options,
                 )
 
@@ -773,6 +801,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
+                    request_id=payload.options.get("request_id"),
                     options=payload.options,
                 )
 
@@ -917,6 +946,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
+                    request_id=payload.options.get("request_id"),
                     options=payload.options,
                 )
 
@@ -1038,10 +1068,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
                 if rev_reg_def:
-                    # Create new backup registry
+                    # Create new backup registry with new request_id
+                    new_backup_request_id = generate_request_id()
+                    backup_options = self._clean_options_for_new_request(payload.options)
+                    backup_options["request_id"] = new_backup_request_id
+
                     LOGGER.debug(
-                        "Emitting event to create new backup registry for cred def id %s",
+                        "Emitting event to create new backup registry for cred def id %s, request_id: %s",
                         payload.options["cred_def_id"],
+                        new_backup_request_id,
                     )
                     await revoc.emit_create_revocation_registry_definition_event(
                         issuer_id=rev_reg_def.issuer_id,
@@ -1049,7 +1084,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         registry_type=rev_reg_def.type,
                         tag=revoc._generate_backup_registry_tag(),
                         max_cred_num=rev_reg_def.value.max_cred_num,
-                        options=self._clean_options_for_new_request(payload.options),
+                        options=backup_options,
                     )
                 else:
                     LOGGER.error(
@@ -1067,8 +1102,19 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         # Check if this is a retry with existing correlation_id
         correlation_id = payload.options.get("correlation_id")
         if not correlation_id:
-            # Generate new correlation_id for new requests
+            # Generate new correlation_id and request_id for new full registry handling
             correlation_id = generate_correlation_id()
+
+            # Generate new request_id for full registry handling workflow
+            if "request_id" not in payload.options:
+                full_handling_request_id = generate_request_id()
+                payload.options["request_id"] = full_handling_request_id
+
+                LOGGER.info(
+                    "Starting full registry handling workflow for rev_reg_def_id: %s, request_id: %s",
+                    payload.rev_reg_def_id,
+                    full_handling_request_id,
+                )
 
             # Persist the request event only for new requests
             async with profile.session() as session:
@@ -1077,13 +1123,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
+                    request_id=payload.options.get("request_id"),
                     options=payload.options,
                 )
 
         LOGGER.info(
-            "Full registry detected: %s, correlation_id: %s",
+            "Full registry detected: %s, correlation_id: %s, request_id: %s",
             payload.rev_reg_def_id,
             correlation_id,
+            payload.options.get("request_id"),
         )
 
         # Store correlation_id in options for response tracking
