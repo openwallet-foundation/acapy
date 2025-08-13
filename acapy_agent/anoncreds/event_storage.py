@@ -2,15 +2,15 @@
 
 import json
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Any, Dict, List, NamedTuple, Optional, Type
 
 from anoncreds import RevocationRegistryDefinitionPrivate
 from uuid_utils import uuid4
 
 from ..core.profile import ProfileSession
-from ..messaging.util import datetime_to_str, str_to_datetime
 from ..messaging.models.base import BaseModel
+from ..messaging.util import datetime_to_str
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
@@ -27,8 +27,21 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
 )
 from ..utils.classloader import ClassLoader
+from .retry_utils import (
+    calculate_event_expiry_timestamp,
+    get_retry_metadata_for_storage,
+)
 
 LOGGER = logging.getLogger(__name__)
+
+all_event_types = [
+    RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
+    RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
+    RECORD_TYPE_REV_LIST_CREATE_EVENT,
+    RECORD_TYPE_REV_LIST_STORE_EVENT,
+    RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
+    RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
+]
 
 
 def generate_correlation_id() -> str:
@@ -189,6 +202,7 @@ class EventStorageManager:
         correlation_id: str,
         request_id: Optional[str] = None,
         options: Optional[Dict[str, Any]] = None,
+        expiry_timestamp: Optional[str] = None,
     ) -> str:
         """Store a request event to the database.
 
@@ -198,12 +212,19 @@ class EventStorageManager:
             correlation_id: Unique identifier to correlate request/response
             request_id: Unique identifier to trace related events across workflow
             options: Additional options for the event
+            expiry_timestamp: When this event expires and becomes eligible for recovery
 
         Returns:
             The storage record ID
         """
         # Add creation timestamp for recovery delay logic
         created_at = datetime_to_str(datetime.now(timezone.utc))
+
+        # If no expiry timestamp provided, calculate default based on recovery delay
+        if not expiry_timestamp:
+            from .retry_utils import calculate_event_expiry_timestamp
+
+            expiry_timestamp = calculate_event_expiry_timestamp(0)  # First attempt
 
         record_data = {
             "event_type": event_type,
@@ -213,6 +234,7 @@ class EventStorageManager:
             "state": EVENT_STATE_REQUESTED,
             "options": options or {},
             "created_at": created_at,
+            "expiry_timestamp": expiry_timestamp,
         }
 
         # Use correlation_id as the record ID for easy lookup
@@ -245,6 +267,9 @@ class EventStorageManager:
         success: bool,
         response_data: Optional[Dict[str, Any]] = None,
         error_msg: Optional[str] = None,
+        retry_metadata: Optional[Dict[str, Any]] = None,
+        updated_expiry_timestamp: Optional[str] = None,
+        updated_options: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Update an event with response information.
 
@@ -254,6 +279,9 @@ class EventStorageManager:
             success: Whether the response indicates success
             response_data: Response payload data
             error_msg: Error message if response indicates failure
+            retry_metadata: Metadata for retry behavior and classification
+            updated_expiry_timestamp: New expiry timestamp for retry scenarios
+            updated_options: Updated options dictionary for retry scenarios
         """
         try:
             record = await self.storage.get_record(event_type, correlation_id)
@@ -263,6 +291,18 @@ class EventStorageManager:
             record_data["response_success"] = success
             record_data["response_data"] = response_data or {}
             record_data["error_msg"] = error_msg
+
+            # Add retry metadata if provided
+            if retry_metadata:
+                record_data["retry_metadata"] = retry_metadata
+
+            # Update expiry timestamp and options if provided (for retry scenarios)
+            if updated_expiry_timestamp is not None:
+                record_data["expiry_timestamp"] = updated_expiry_timestamp
+
+            if updated_options is not None:
+                record_data["options"] = updated_options
+
             record_data["state"] = (
                 EVENT_STATE_RESPONSE_SUCCESS if success else EVENT_STATE_RESPONSE_FAILURE
             )
@@ -273,10 +313,14 @@ class EventStorageManager:
             await self.storage.update_record(record, json.dumps(record_data), new_tags)
 
             LOGGER.info(
-                "Updated event response: %s with correlation_id: %s, success: %s",
+                "Updated event response: %s with correlation_id: %s, success: %s%s%s",
                 event_type,
                 correlation_id,
                 success,
+                f", updated_expiry: {updated_expiry_timestamp}"
+                if updated_expiry_timestamp
+                else "",
+                ", updated_options: True" if updated_options else "",
             )
 
         except StorageNotFoundError:
@@ -285,6 +329,46 @@ class EventStorageManager:
                 event_type,
                 correlation_id,
             )
+
+    async def update_event_for_retry(
+        self,
+        event_type: str,
+        correlation_id: str,
+        error_msg: str,
+        retry_count: int,
+        updated_options: Dict[str, Any],
+        response_data: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Update an event for retry with exponential backoff logic.
+
+        This is a convenience method that handles the common retry scenario by:
+        1. Calculating new expiry timestamp based on retry count
+        2. Generating retry metadata
+        3. Updating the event record in one atomic operation
+
+        Args:
+            event_type: The type of event
+            correlation_id: Unique identifier to correlate request/response
+            error_msg: Error message from the failed attempt
+            retry_count: Current retry count (will be used for next attempt)
+            updated_options: Updated options dictionary with new retry_count
+            response_data: Optional response payload data
+        """
+        # Calculate new expiry timestamp and retry metadata
+        new_expiry = calculate_event_expiry_timestamp(retry_count)
+        retry_metadata = get_retry_metadata_for_storage(retry_count)
+
+        # Update the event in one atomic operation
+        await self.update_event_response(
+            event_type=event_type,
+            correlation_id=correlation_id,
+            success=False,
+            response_data=response_data,
+            error_msg=error_msg,
+            retry_metadata=retry_metadata,
+            updated_expiry_timestamp=new_expiry,
+            updated_options=updated_options,
+        )
 
     async def mark_event_completed(
         self,
@@ -353,33 +437,19 @@ class EventStorageManager:
     async def get_in_progress_events(
         self,
         event_type: Optional[str] = None,
-        min_age_seconds: Optional[int] = None,
+        only_expired: bool = False,
     ) -> List[Dict[str, Any]]:
         """Get all in-progress events for recovery.
 
         Args:
             event_type: Filter by specific event type, or None for all types
-            min_age_seconds: Only return events older than this many seconds
+            only_expired: If True, only return events past their expiry timestamp
 
         Returns:
-            List of event records that are in progress and older than min_age_seconds
+            List of event records that are in-progress
         """
-        all_event_types = [
-            RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-            RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-            RECORD_TYPE_REV_LIST_CREATE_EVENT,
-            RECORD_TYPE_REV_LIST_STORE_EVENT,
-            RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-            RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-        ]
-
         event_types_to_search = [event_type] if event_type else all_event_types
         in_progress_events = []
-
-        # Calculate cutoff time for recovery delay filtering
-        cutoff_time = None
-        if min_age_seconds is not None:
-            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=min_age_seconds)
 
         for etype in event_types_to_search:
             try:
@@ -392,35 +462,31 @@ class EventStorageManager:
                 for record in records:
                     record_data = json.loads(record.value)
 
-                    # Apply recovery delay filtering if specified
-                    if cutoff_time and "created_at" in record_data:
-                        try:
-                            event_created_at = str_to_datetime(record_data["created_at"])
-                            if event_created_at > cutoff_time:
-                                LOGGER.debug(
-                                    "Skipping recent event %s (created: %s, cutoff: %s)",
-                                    record_data["correlation_id"],
-                                    record_data["created_at"],
-                                    datetime_to_str(cutoff_time),
-                                )
-                                continue  # Skip this event - it's too recent
-                        except (ValueError, KeyError) as e:
-                            LOGGER.warning(
-                                "Failed to parse created_at for event %s: %s",
+                    # Apply expiry timestamp filtering if requested
+                    if only_expired and "expiry_timestamp" in record_data:
+                        from .retry_utils import is_event_expired
+
+                        if not is_event_expired(record_data["expiry_timestamp"]):
+                            LOGGER.debug(
+                                "Skipping non-expired event %s (expires: %s)",
                                 record_data.get("correlation_id", "unknown"),
-                                str(e),
+                                record_data["expiry_timestamp"],
                             )
-                            # For events without valid timestamps, recover them
+                            continue  # Skip this event - it hasn't expired yet
 
                     in_progress_events.append(
                         {
                             "record_id": record.id,
                             "event_type": etype,
-                            "correlation_id": record_data["correlation_id"],
-                            "event_data": record_data["event_data"],
-                            "state": record_data["state"],
+                            "correlation_id": record_data.get("correlation_id"),
+                            "request_id": record_data.get("request_id"),
+                            "event_data": record_data.get("event_data"),
+                            "state": record_data.get("state"),
                             "options": record_data.get("options", {}),
                             "created_at": record_data.get("created_at"),
+                            "expiry_timestamp": record_data.get("expiry_timestamp"),
+                            "response_data": record_data.get("response_data"),
+                            "error_msg": record_data.get("error_msg"),
                         }
                     )
 
@@ -451,15 +517,6 @@ class EventStorageManager:
         Returns:
             List of event records that failed
         """
-        all_event_types = [
-            RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-            RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-            RECORD_TYPE_REV_LIST_CREATE_EVENT,
-            RECORD_TYPE_REV_LIST_STORE_EVENT,
-            RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-            RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-        ]
-
         event_types_to_search = [event_type] if event_type else all_event_types
         failed_events = []
 
@@ -514,15 +571,6 @@ class EventStorageManager:
         Returns:
             Number of events cleaned up
         """
-        all_event_types = [
-            RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-            RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-            RECORD_TYPE_REV_LIST_CREATE_EVENT,
-            RECORD_TYPE_REV_LIST_STORE_EVENT,
-            RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-            RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-        ]
-
         event_types_to_search = [event_type] if event_type else all_event_types
         cleaned_up = 0
 

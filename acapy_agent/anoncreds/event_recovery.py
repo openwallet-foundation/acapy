@@ -1,7 +1,7 @@
 """Event recovery manager for anoncreds revocation registry management."""
 
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 from ..core.event_bus import EventBus
 from ..core.profile import Profile
@@ -45,13 +45,8 @@ class EventRecoveryManager:
         self.profile = profile
         self.event_bus = event_bus
 
-    async def recover_in_progress_events(
-        self, min_age_seconds: Optional[int] = None
-    ) -> int:
+    async def recover_in_progress_events(self) -> int:
         """Recover all in-progress events by re-emitting them.
-
-        Args:
-            min_age_seconds: Only recover events older than this many seconds
 
         Returns:
             Number of events recovered
@@ -61,14 +56,12 @@ class EventRecoveryManager:
         async with self.profile.session() as session:
             event_storage = EventStorageManager(session)
 
-            # Get all in-progress events (filtered by age if specified)
-            in_progress_events = await event_storage.get_in_progress_events(
-                min_age_seconds=min_age_seconds
-            )
+            # Get only expired in-progress events
+            expired_events = await event_storage.get_in_progress_events(only_expired=True)
 
-            LOGGER.info("Found %d in-progress events to recover", len(in_progress_events))
+            LOGGER.info("Found %d expired events to recover", len(expired_events))
 
-            for event_record in in_progress_events:
+            for event_record in expired_events:
                 LOGGER.debug(
                     "Recovering %s event: %s", event_record["event_type"], event_record
                 )
@@ -299,20 +292,15 @@ class EventRecoveryManager:
             return status
 
 
-async def recover_revocation_events(
-    profile: Profile, event_bus: EventBus, min_age_seconds: Optional[int] = None
-) -> int:
+async def recover_revocation_events(profile: Profile, event_bus: EventBus) -> int:
     """Convenience function to recover revocation events.
 
     Args:
         profile: The profile to use for recovery
         event_bus: The event bus to re-emit events on
-        min_age_seconds: Only recover events older than this many seconds
 
     Returns:
         Number of events recovered
     """
     recovery_manager = EventRecoveryManager(profile, event_bus)
-    return await recovery_manager.recover_in_progress_events(
-        min_age_seconds=min_age_seconds
-    )
+    return await recovery_manager.recover_in_progress_events()

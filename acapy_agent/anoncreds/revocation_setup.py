@@ -3,14 +3,12 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-import os
 
-from acapy_agent.anoncreds.issuer import STATE_FINISHED
-from acapy_agent.protocols.endorse_transaction.v1_0.util import is_author_role
-
+from ..anoncreds.issuer import STATE_FINISHED
 from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
+from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from ..revocation.util import notify_revocation_published_event
 from ..storage.type import (
     RECORD_TYPE_REV_LIST_CREATE_EVENT,
@@ -48,6 +46,10 @@ from .events import (
 )
 from .models.revocation import GetRevListResult, RevListResult, RevListState
 from .registry import AnonCredsRegistry
+from .retry_utils import (
+    calculate_event_expiry_timestamp,
+    calculate_exponential_backoff_delay,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,8 +86,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     """
 
     REGISTRY_TYPE = "CL_ACCUM"
-    MAX_RETRY_COUNT = int(os.getenv("ANONCREDS_REVOCATION_SETUP_MAX_RETRY_COUNT", "3"))
-    RETRY_SLEEP_TIME = int(os.getenv("ANONCREDS_REVOCATION_SETUP_RETRY_SLEEP_TIME", "3"))
 
     def __init__(self):
         """Init manager."""
@@ -188,7 +188,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             options["request_id"] = request_id
 
             LOGGER.info(
-                "Starting revocation registry workflow for cred_def_id: %s, request_id: %s",
+                "Starting revocation registry workflow for cred_def_id: %s, "
+                "request_id: %s",
                 payload.cred_def_id,
                 request_id,
             )
@@ -220,12 +221,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
+
+                # Calculate expiry timestamp based on current retry count
+                retry_count = payload.options.get("retry_count", 0)
+                expiry_timestamp = calculate_event_expiry_timestamp(retry_count)
+
                 await event_storage.store_event_request(
                     event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
                     request_id=payload.options.get("request_id"),
                     options=payload.options,
+                    expiry_timestamp=expiry_timestamp,
                 )
 
         LOGGER.debug(
@@ -308,21 +315,36 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 # Cheqd already recovers from this automatically in the plugin
                 error_info.should_retry = False
 
-            # Handle retry with structured data
-            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+            # Handle retry with exponential backoff
+            if error_info.should_retry:
+                retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying %s registry creation, attempt %d",
+                    "Retrying %s registry creation with exponential backoff: "
+                    "attempt %d, delay %d seconds",
                     registry_type_name,
                     error_info.retry_count + 1,
+                    retry_delay,
                 )
 
+                await asyncio.sleep(retry_delay)
+
+                # Update options with new retry count and calculate new expiry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
+
+                if correlation_id:
+                    async with profile.session() as session:
+                        event_storage = EventStorageManager(session)
+                        # Update the event for retry in one atomic operation
+                        await event_storage.update_event_for_retry(
+                            event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
+                            correlation_id=correlation_id,
+                            error_msg=error_info.error_msg,
+                            retry_count=error_info.retry_count + 1,
+                            updated_options=new_options,
+                            response_data=serialize_event_payload(payload),
+                        )
 
                 revoc = AnonCredsRevocation(profile)
 
@@ -337,10 +359,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             else:
                 # Not retryable, so notify issuer about failure
                 LOGGER.error(
-                    "%s %s registry creation for cred def: %s",
-                    "Max retries exceeded for"
-                    if error_info.should_retry
-                    else "Won't retry",
+                    "Won't retry %s registry creation for cred def: %s",
                     registry_type_name,
                     failure.cred_def_id,
                 )
@@ -385,12 +404,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
+
+                # Calculate expiry timestamp based on current retry count
+                retry_count = payload.options.get("retry_count", 0)
+                expiry_timestamp = calculate_event_expiry_timestamp(retry_count)
+
                 await event_storage.store_event_request(
                     event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
                     request_id=payload.options.get("request_id"),
                     options=payload.options,
+                    expiry_timestamp=expiry_timestamp,
                 )
 
         # Store correlation_id in options for response tracking
@@ -443,19 +468,35 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 error_info.error_msg,
             )
 
-            # Implement retry logic
-            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+            # Implement exponential backoff retry logic
+            if error_info.should_retry:
+                retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying registry store, attempt %d", error_info.retry_count + 1
+                    "Retrying registry store with exponential backoff: "
+                    "attempt %d, delay %d seconds",
+                    error_info.retry_count + 1,
+                    retry_delay,
                 )
 
+                await asyncio.sleep(retry_delay)
+
+                # Update options with new retry count and calculate new expiry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
+
+                if correlation_id:
+                    async with profile.session() as session:
+                        event_storage = EventStorageManager(session)
+                        # Update the event for retry in one atomic operation
+                        await event_storage.update_event_for_retry(
+                            event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
+                            correlation_id=correlation_id,
+                            error_msg=error_info.error_msg,
+                            retry_count=error_info.retry_count + 1,
+                            updated_options=new_options,
+                            response_data=serialize_event_payload(payload),
+                        )
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_store_revocation_registry_definition_request(
@@ -464,10 +505,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "%s registry store for: %s, tag: %s",
-                    "Max retries exceeded for"
-                    if error_info.should_retry
-                    else "Won't retry",
+                    "Won't retry registry store for: %s, tag: %s",
                     payload.rev_reg_def_id,
                     payload.tag,
                 )
@@ -534,7 +572,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 backup_options["request_id"] = backup_request_id
 
                 LOGGER.info(
-                    "Starting backup registry workflow for cred_def_id: %s, request_id: %s",
+                    "Starting backup registry workflow for cred_def_id: %s, "
+                    "request_id: %s",
                     payload.rev_reg_def.cred_def_id,
                     backup_request_id,
                 )
@@ -587,12 +626,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
+
+                # Calculate expiry timestamp based on current retry count
+                retry_count = payload.options.get("retry_count", 0)
+                expiry_timestamp = calculate_event_expiry_timestamp(retry_count)
+
                 await event_storage.store_event_request(
                     event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
                     request_id=payload.options.get("request_id"),
                     options=payload.options,
+                    expiry_timestamp=expiry_timestamp,
                 )
 
         LOGGER.debug(
@@ -720,20 +765,34 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     )
                     # Fall through to retry logic or mark as failed
 
-            # Implement retry logic
-            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+            if error_info.should_retry:
+                retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying revocation list creation, attempt %d",
+                    "Retrying revocation list creation with exponential backoff: "
+                    "attempt %d, delay %d seconds",
                     error_info.retry_count + 1,
+                    retry_delay,
                 )
 
+                await asyncio.sleep(retry_delay)
+
+                # Update options with new retry count and calculate new expiry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
+
+                if correlation_id:
+                    async with profile.session() as session:
+                        event_storage = EventStorageManager(session)
+                        # Update the event for retry in one atomic operation
+                        await event_storage.update_event_for_retry(
+                            event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
+                            correlation_id=correlation_id,
+                            error_msg=error_info.error_msg,
+                            retry_count=error_info.retry_count + 1,
+                            updated_options=new_options,
+                            response_data=serialize_event_payload(payload),
+                        )
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.emit_create_and_register_revocation_list_event(
@@ -741,7 +800,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Max retries exceeded for revocation list creation: %s",
+                    "Won't retry revocation list creation: %s",
                     payload.rev_reg_def_id,
                 )
                 # Mark the event as completed since we won't retry
@@ -798,12 +857,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
+
+                # Calculate expiry timestamp based on current retry count
+                retry_count = payload.options.get("retry_count", 0)
+                expiry_timestamp = calculate_event_expiry_timestamp(retry_count)
+
                 await event_storage.store_event_request(
                     event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
                     request_id=payload.options.get("request_id"),
                     options=payload.options,
+                    expiry_timestamp=expiry_timestamp,
                 )
 
         LOGGER.debug(
@@ -862,20 +927,35 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 error_info.error_msg,
             )
 
-            # Implement retry logic
-            if error_info.should_retry and error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+            # Implement exponential backoff retry logic
+            if error_info.should_retry:
+                retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying revocation list store, attempt %d",
+                    "Retrying revocation list store with exponential backoff: "
+                    "attempt %d, delay %d seconds",
                     error_info.retry_count + 1,
+                    retry_delay,
                 )
 
+                await asyncio.sleep(retry_delay)
+
+                # Update options with new retry count and calculate new expiry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
+
+                if correlation_id:
+                    async with profile.session() as session:
+                        event_storage = EventStorageManager(session)
+                        # Update the event for retry in one atomic operation
+                        await event_storage.update_event_for_retry(
+                            event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
+                            correlation_id=correlation_id,
+                            error_msg=error_info.error_msg,
+                            retry_count=error_info.retry_count + 1,
+                            updated_options=new_options,
+                            response_data=serialize_event_payload(payload),
+                        )
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_store_revocation_list_request(
@@ -885,7 +965,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Max retries exceeded for revocation list store: %s",
+                    "Won't retry revocation list store: %s",
                     payload.rev_reg_def_id,
                 )
                 # Mark the event as completed since we won't retry
@@ -943,12 +1023,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
+
+                # Calculate expiry timestamp based on current retry count
+                retry_count = payload.options.get("retry_count", 0)
+                expiry_timestamp = calculate_event_expiry_timestamp(retry_count)
+
                 await event_storage.store_event_request(
                     event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
                     request_id=payload.options.get("request_id"),
                     options=payload.options,
+                    expiry_timestamp=expiry_timestamp,
                 )
 
         LOGGER.debug(
@@ -1006,45 +1092,39 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 error_info.error_msg,
             )
 
-            # Implement retry logic
-            if error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+            # Implement exponential backoff retry logic
+            retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
-                LOGGER.info(
-                    "Retrying registry activation, attempt %d", error_info.retry_count + 1
-                )
+            LOGGER.info(
+                "Retrying registry activation with exponential backoff: "
+                "attempt %d, delay %d seconds",
+                error_info.retry_count + 1,
+                retry_delay,
+            )
 
-                new_options = payload.options.copy()
-                new_options["retry_count"] = error_info.retry_count + 1
+            await asyncio.sleep(retry_delay)
 
-                revoc = AnonCredsRevocation(profile)
-                await revoc.emit_set_active_registry_event(
-                    payload.rev_reg_def_id, new_options
-                )
-            else:
-                LOGGER.error(
-                    "Max retries exceeded for registry activation: %s",
-                    payload.rev_reg_def_id,
-                )
-                # Mark the event as completed since we won't retry
-                if correlation_id:
-                    async with profile.session() as session:
-                        event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
-                            event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-                            correlation_id=correlation_id,
-                        )
+            # Update options with new retry count and calculate new expiry
+            new_options = payload.options.copy()
+            new_options["retry_count"] = error_info.retry_count + 1
 
-                self._notify_issuer_about_failure(
-                    profile=profile,
-                    failure_type="registry_activation",
-                    identifier=payload.rev_reg_def_id,
-                    error_msg=error_info.error_msg,
-                    options=payload.options,
-                )
+            if correlation_id:
+                async with profile.session() as session:
+                    event_storage = EventStorageManager(session)
+                    # Update the event for retry in one atomic operation
+                    await event_storage.update_event_for_retry(
+                        event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
+                        correlation_id=correlation_id,
+                        error_msg=error_info.error_msg,
+                        retry_count=error_info.retry_count + 1,
+                        updated_options=new_options,
+                        response_data=serialize_event_payload(payload),
+                    )
+
+            revoc = AnonCredsRevocation(profile)
+            await revoc.emit_set_active_registry_event(
+                payload.rev_reg_def_id, new_options
+            )
         else:
             # Handle success
             LOGGER.info("Registry activation succeeded for: %s", payload.rev_reg_def_id)
@@ -1075,7 +1155,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     backup_options["request_id"] = new_backup_request_id
 
                     LOGGER.debug(
-                        "Emitting event to create new backup registry for cred def id %s, request_id: %s",
+                        "Emitting event to create new backup registry for "
+                        "cred def id %s, request_id: %s",
                         payload.options["cred_def_id"],
                         new_backup_request_id,
                     )
@@ -1112,7 +1193,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.options["request_id"] = full_handling_request_id
 
                 LOGGER.info(
-                    "Starting full registry handling workflow for rev_reg_def_id: %s, request_id: %s",
+                    "Starting full registry handling workflow for rev_reg_def_id: %s, "
+                    "request_id: %s",
                     payload.rev_reg_def_id,
                     full_handling_request_id,
                 )
@@ -1120,12 +1202,18 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             # Persist the request event only for new requests
             async with profile.session() as session:
                 event_storage = EventStorageManager(session)
+
+                # Calculate expiry timestamp based on current retry count
+                retry_count = payload.options.get("retry_count", 0)
+                expiry_timestamp = calculate_event_expiry_timestamp(retry_count)
+
                 await event_storage.store_event_request(
                     event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                     event_data=serialize_event_payload(payload),
                     correlation_id=correlation_id,
                     request_id=payload.options.get("request_id"),
                     options=payload.options,
+                    expiry_timestamp=expiry_timestamp,
                 )
 
         LOGGER.info(
@@ -1185,20 +1273,34 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 error_info.error_msg,
             )
 
-            # Implement retry logic
-            if error_info.retry_count < self.MAX_RETRY_COUNT:
-                LOGGER.debug(
-                    "Sleeping for %d seconds before retrying", self.RETRY_SLEEP_TIME
-                )
-                await asyncio.sleep(self.RETRY_SLEEP_TIME)
+            # Implement exponential backoff retry logic
+            retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
-                LOGGER.info(
-                    "Retrying full registry handling, attempt %d",
-                    error_info.retry_count + 1,
-                )
+            LOGGER.info(
+                "Retrying full registry handling with exponential backoff: "
+                "attempt %d, delay %d seconds",
+                error_info.retry_count + 1,
+                retry_delay,
+            )
 
-                new_options = payload.options.copy()
-                new_options["retry_count"] = error_info.retry_count + 1
+            await asyncio.sleep(retry_delay)
+
+            # Update options with new retry count and calculate new expiry
+            new_options = payload.options.copy()
+            new_options["retry_count"] = error_info.retry_count + 1
+
+            if correlation_id:
+                async with profile.session() as session:
+                    event_storage = EventStorageManager(session)
+                    # Update the event for retry in one atomic operation
+                    await event_storage.update_event_for_retry(
+                        event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
+                        correlation_id=correlation_id,
+                        error_msg=error_info.error_msg,
+                        retry_count=error_info.retry_count + 1,
+                        updated_options=new_options,
+                        response_data=serialize_event_payload(payload),
+                    )
 
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_full_registry_event(
@@ -1208,7 +1310,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Max retries exceeded for full registry handling: %s",
+                    "Won't retry full registry handling: %s",
                     payload.old_rev_reg_def_id,
                 )
                 # Mark the event as completed since we won't retry
