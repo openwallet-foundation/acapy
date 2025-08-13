@@ -1507,6 +1507,7 @@ class AnonCredsRevocation:
             options (dict): handling options
 
         """
+        options = options or {}
         LOGGER.info(
             "Emitting full registry event for cred def id: %s, rev reg def id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -1515,7 +1516,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
 
         # Emit event to indicate full registry detected
         event = RevRegFullDetectedEvent.with_payload(
