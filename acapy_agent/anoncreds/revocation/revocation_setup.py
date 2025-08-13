@@ -43,8 +43,6 @@ from ..events import (
     RevRegFullHandlingResponseEvent,
 )
 from ..issuer import STATE_FINISHED
-from ..models.revocation import GetRevListResult, RevListResult, RevListState
-from ..registry import AnonCredsRegistry
 from ..retry_utils import (
     calculate_event_expiry_timestamp,
     calculate_exponential_backoff_delay,
@@ -237,9 +235,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         LOGGER.debug(
             "Handling registry creation request for cred_def_id: %s, tag: %s, "
-            "correlation_id: %s",
+            "request_id: %s, correlation_id: %s",
             payload.cred_def_id,
             payload.tag,
+            payload.options.get("request_id"),
             correlation_id,
         )
 
@@ -297,32 +296,26 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             )
 
             LOGGER.warning(
-                "%s registry creation failed for cred_def_id: %s, error: %s",
+                "%s registry creation failed for cred_def_id: %s, request_id: %s, "
+                "correlation_id: %s, error: %s",
                 registry_type_name.title(),
                 failure.cred_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.error_msg,
             )
-
-            # Check if resource already exists; recover by fetching existing registry
-            if "already exists" in error_info.error_msg:
-                LOGGER.error(
-                    "Resource already exists for %s registry",
-                    registry_type_name,
-                )
-
-                # Note: It's possible to recover by fetching the existing registry def
-                # but if we don't have the rev-reg-def-id, we don't know which to fetch
-                # Cheqd already recovers from this automatically in the plugin
-                error_info.should_retry = False
 
             # Handle retry with exponential backoff
             if error_info.should_retry:
                 retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying %s registry creation with exponential backoff: "
-                    "attempt %d, delay %d seconds",
+                    "Retrying %s registry creation for cred_def_id: %s, "
+                    "request_id: %s, correlation_id: %s. Attempt %d, delay %d seconds",
                     registry_type_name,
+                    failure.cred_def_id,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                     error_info.retry_count + 1,
                     retry_delay,
                 )
@@ -359,9 +352,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             else:
                 # Not retryable, so notify issuer about failure
                 LOGGER.error(
-                    "Won't retry %s registry creation for cred def: %s",
+                    "Won't retry %s registry creation for cred def: %s, "
+                    "request_id: %s, correlation_id: %s",
                     registry_type_name,
                     failure.cred_def_id,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                 )
                 # Mark the event as completed since we won't retry
                 if correlation_id:
@@ -462,9 +458,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             error_info = failure.error_info
 
             LOGGER.warning(
-                "Registry store failed for: %s, tag: %s, error: %s",
+                "Registry store failed for rev_reg_def_id: %s, tag: %s, "
+                "request_id: %s, correlation_id: %s, error: %s",
                 payload.rev_reg_def_id,
                 payload.tag,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.error_msg,
             )
 
@@ -473,8 +472,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying registry store with exponential backoff: "
-                    "attempt %d, delay %d seconds",
+                    "Retrying registry store for rev_reg_def_id: %s, tag: %s, "
+                    "request_id: %s, correlation_id: %s. Attempt %d, delay %d seconds",
+                    payload.rev_reg_def_id,
+                    payload.tag,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                     error_info.retry_count + 1,
                     retry_delay,
                 )
@@ -505,9 +508,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Won't retry registry store for: %s, tag: %s",
+                    "Won't retry registry store for rev_reg_def_id: %s, tag: %s, "
+                    "request_id: %s, correlation_id: %s",
                     payload.rev_reg_def_id,
                     payload.tag,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                 )
                 # Mark the event as completed since we won't retry
                 if correlation_id:
@@ -528,9 +534,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         else:
             # Handle success
             LOGGER.info(
-                "Registry store succeeded for: %s, tag: %s",
+                "Registry store succeeded for rev_reg_def_id: %s, tag: %s, "
+                "request_id: %s, correlation_id: %s",
                 payload.rev_reg_def_id,
                 payload.tag,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
             )
 
             # Mark the event as completed on success
@@ -553,28 +562,27 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.warning(
-                    "Revocation registry definition %s not finished; has state %s",
+                    "Revocation registry definition %s not finished; has state %s, "
+                    "request_id: %s, correlation_id: %s",
                     payload.rev_reg_def_id,
                     state,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                 )
 
             # If this is the first registry, trigger creation of backup registry
             if payload.tag == FIRST_REGISTRY_TAG:
-                LOGGER.info(
-                    "First registry stored successfully, "
-                    "requesting creation of backup registry for cred_def_id: %s",
-                    payload.rev_reg_def.cred_def_id,
-                )
-
                 # Generate new request_id for backup registry workflow
                 backup_request_id = generate_request_id()
                 backup_options = self._clean_options_for_new_request(payload.options)
                 backup_options["request_id"] = backup_request_id
 
                 LOGGER.info(
-                    "Starting backup registry workflow for cred_def_id: %s, "
-                    "request_id: %s",
+                    "First registry stored successfully, "
+                    "requesting creation of backup registry for cred_def_id: %s, "
+                    "original request_id: %s, new backup request_id: %s",
                     payload.rev_reg_def.cred_def_id,
+                    payload.options.get("request_id"),
                     backup_request_id,
                 )
 
@@ -641,8 +649,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
         LOGGER.debug(
-            "Handling revocation list creation request for: %s, correlation_id: %s",
+            "Handling revocation list creation request for rev_reg_def_id: %s, "
+            "request_id: %s, correlation_id: %s",
             payload.rev_reg_def_id,
+            payload.options.get("request_id"),
             correlation_id,
         )
 
@@ -692,78 +702,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             error_info = failure.error_info
 
             LOGGER.error(
-                "Revocation list creation failed for: %s, error: %s",
+                "Revocation list creation failed for rev_reg_def_id: %s, "
+                "request_id: %s, correlation_id: %s, error: %s",
                 payload.rev_reg_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.error_msg,
             )
-
-            # Check if resource already exists and try to recover by fetching it
-            if "Resource already exists" in error_info.error_msg:
-                LOGGER.info(
-                    "Resource already exists for revocation list: %s, "
-                    "attempting to fetch existing resource",
-                    payload.rev_reg_def_id,
-                )
-
-                try:
-                    # Get the existing revocation list from the registry
-                    anoncreds_registry = profile.inject(AnonCredsRegistry)
-                    get_rev_list_result: GetRevListResult = (
-                        await anoncreds_registry.get_revocation_list(
-                            profile=profile,
-                            rev_reg_def_id=payload.rev_reg_def_id,
-                        )
-                    )
-
-                    # Convert GetRevListResult to RevListResult for downstream processing
-                    rev_list_state = RevListState(
-                        state=STATE_FINISHED,  # Assume existing rev list is finished
-                        revocation_list=get_rev_list_result.revocation_list,
-                    )
-
-                    rev_list_result = RevListResult(
-                        job_id=None,  # No job_id for existing resource
-                        revocation_list_state=rev_list_state,
-                        registration_metadata={},
-                        revocation_list_metadata={},
-                    )
-
-                    LOGGER.info(
-                        "Successfully recovered existing revocation list for: %s",
-                        payload.rev_reg_def_id,
-                    )
-
-                    # Mark the event as completed since we recovered
-                    if correlation_id:
-                        async with profile.session() as session:
-                            event_storage = EventStorageManager(session)
-                            await event_storage.update_event_response(
-                                event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
-                                correlation_id=correlation_id,
-                                success=True,
-                                response_data=serialize_event_payload(payload),
-                            )
-                            await event_storage.mark_event_completed(
-                                event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
-                                correlation_id=correlation_id,
-                            )
-
-                    # Emit store request event with recovered result
-                    revoc = AnonCredsRevocation(profile)
-                    await revoc.emit_store_revocation_list_event(
-                        rev_reg_def_id=payload.rev_reg_def_id,
-                        result=rev_list_result,
-                        options=self._clean_options_for_new_request(payload.options),
-                    )
-                    return  # Successfully recovered, exit early
-
-                except Exception as recovery_err:
-                    LOGGER.error(
-                        "Failed to recover existing revocation list for: %s, error: %s",
-                        payload.rev_reg_def_id,
-                        str(recovery_err),
-                    )
-                    # Fall through to retry logic or mark as failed
 
             if error_info.should_retry:
                 retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
@@ -800,8 +745,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Won't retry revocation list creation: %s",
+                    "Won't retry revocation list creation for rev_reg_def_id: %s, "
+                    "request_id: %s, correlation_id: %s",
                     payload.rev_reg_def_id,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                 )
                 # Mark the event as completed since we won't retry
                 if correlation_id:
@@ -822,7 +770,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         else:
             # Handle success
             LOGGER.info(
-                "Revocation list creation succeeded for: %s", payload.rev_reg_def_id
+                "Revocation list creation succeeded for rev_reg_def_id: %s, "
+                "request_id: %s, correlation_id: %s",
+                payload.rev_reg_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
             )
 
             # Emit store request event
@@ -872,8 +824,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
         LOGGER.debug(
-            "Handling revocation list store request for: %s, correlation_id: %s",
+            "Handling revocation list store request for rev_reg_def_id: %s, "
+            "request_id: %s, correlation_id: %s",
             payload.rev_reg_def_id,
+            payload.options.get("request_id"),
             correlation_id,
         )
 
@@ -922,8 +876,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             error_info = failure.error_info
 
             LOGGER.error(
-                "Revocation list store failed for: %s, error: %s",
+                "Revocation list store failed for rev_reg_def_id: %s, "
+                "cred_def_id: %s, request_id: %s, correlation_id: %s, error: %s",
                 payload.rev_reg_def_id,
+                payload.options.get("cred_def_id"),
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.error_msg,
             )
 
@@ -932,8 +890,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
                 LOGGER.info(
-                    "Retrying revocation list store with exponential backoff: "
-                    "attempt %d, delay %d seconds",
+                    "Retrying revocation list store for rev_reg_def_id: %s, "
+                    "cred_def_id: %s, request_id: %s, correlation_id: %s. "
+                    "Attempt %d, delay %d seconds",
+                    payload.rev_reg_def_id,
+                    payload.options.get("cred_def_id"),
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                     error_info.retry_count + 1,
                     retry_delay,
                 )
@@ -965,8 +928,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Won't retry revocation list store: %s",
+                    "Won't retry revocation list store for rev_reg_def_id: %s, "
+                    "request_id: %s, correlation_id: %s",
                     payload.rev_reg_def_id,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                 )
                 # Mark the event as completed since we won't retry
                 if correlation_id:
@@ -986,7 +952,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
         else:
             # Handle success
-            LOGGER.info("Revocation list store succeeded for: %s", payload.rev_reg_def_id)
+            LOGGER.info(
+                "Revocation list store succeeded for rev_reg_def_id: %s, "
+                "request_id: %s, correlation_id: %s",
+                payload.rev_reg_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
+            )
 
             # Mark the event as completed on success
             if correlation_id:
@@ -1038,8 +1010,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
         LOGGER.debug(
-            "Handling registry activation request for: %s, correlation_id: %s",
+            "Handling registry activation request for rev_reg_def_id: %s, "
+            "cred_def_id: %s, request_id: %s, correlation_id: %s",
             payload.rev_reg_def_id,
+            payload.options.get("cred_def_id"),
+            payload.options.get("request_id"),
             correlation_id,
         )
 
@@ -1087,8 +1062,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             error_info = failure.error_info
 
             LOGGER.error(
-                "Registry activation failed for: %s, error: %s",
+                "Registry activation failed for rev_reg_def_id: %s, "
+                "request_id: %s, correlation_id: %s, error: %s",
                 payload.rev_reg_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.error_msg,
             )
 
@@ -1096,8 +1074,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
             LOGGER.info(
-                "Retrying registry activation with exponential backoff: "
-                "attempt %d, delay %d seconds",
+                "Retrying registry activation for rev_reg_def_id: %s, cred_def_id: %s, "
+                "request_id: %s, correlation_id: %s. Attempt %d, delay %d seconds",
+                payload.rev_reg_def_id,
+                payload.options.get("cred_def_id"),
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.retry_count + 1,
                 retry_delay,
             )
@@ -1127,7 +1109,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             )
         else:
             # Handle success
-            LOGGER.info("Registry activation succeeded for: %s", payload.rev_reg_def_id)
+            LOGGER.info(
+                "Registry activation succeeded for rev_reg_def_id: %s, "
+                "cred_def_id: %s, request_id: %s, correlation_id: %s",
+                payload.rev_reg_def_id,
+                payload.options.get("cred_def_id"),
+                payload.options.get("request_id"),
+            )
 
             # Mark the event as completed on success
             if correlation_id:
@@ -1156,9 +1144,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                     LOGGER.debug(
                         "Emitting event to create new backup registry for "
-                        "cred def id %s, request_id: %s",
+                        "cred def id %s, request_id: %s, correlation_id: %s",
                         payload.options["cred_def_id"],
                         new_backup_request_id,
+                        payload.options.get("correlation_id"),
                     )
                     await revoc.emit_create_revocation_registry_definition_event(
                         issuer_id=rev_reg_def.issuer_id,
@@ -1194,8 +1183,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                 LOGGER.info(
                     "Starting full registry handling workflow for rev_reg_def_id: %s, "
-                    "request_id: %s",
+                    "cred_def_id: %s, request_id: %s",
                     payload.rev_reg_def_id,
+                    payload.cred_def_id,
                     full_handling_request_id,
                 )
 
@@ -1217,10 +1207,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
         LOGGER.info(
-            "Full registry detected: %s, correlation_id: %s, request_id: %s",
+            "Full registry detected for cred_def_id: %s. Full rev_reg_def_id: %s. "
+            "request_id: %s. correlation_id: %s",
+            payload.cred_def_id,
             payload.rev_reg_def_id,
-            correlation_id,
             payload.options.get("request_id"),
+            correlation_id,
         )
 
         # Store correlation_id in options for response tracking
@@ -1268,17 +1260,25 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             error_info = failure.error_info
 
             LOGGER.error(
-                "Full registry handling failed for: %s, error: %s",
+                "Full registry handling failed for: %s, error: %s. "
+                "cred_def_id: %s, request_id: %s, correlation_id: %s",
                 payload.old_rev_reg_def_id,
                 error_info.error_msg,
+                payload.cred_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
             )
 
             # Implement exponential backoff retry logic
             retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
 
             LOGGER.info(
-                "Retrying full registry handling with exponential backoff: "
-                "attempt %d, delay %d seconds",
+                "Retrying full registry handling for rev_reg_def_id %s, cred_def_id %s, "
+                "request_id %s, correlation_id %s. Attempt %d, delay %d seconds",
+                payload.old_rev_reg_def_id,
+                payload.cred_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
                 error_info.retry_count + 1,
                 retry_delay,
             )
@@ -1310,8 +1310,12 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
             else:
                 LOGGER.error(
-                    "Won't retry full registry handling: %s",
+                    "Won't retry full registry handling for rev_reg_def_id %s, "
+                    "cred_def_id %s, request_id %s, correlation_id %s",
                     payload.old_rev_reg_def_id,
+                    payload.cred_def_id,
+                    payload.options.get("request_id"),
+                    payload.options.get("correlation_id"),
                 )
                 # Mark the event as completed since we won't retry
                 if correlation_id:
@@ -1332,9 +1336,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         else:
             LOGGER.info(
-                "Full registry handling response. Old: %s, New Active: %s",
+                "Full registry handling response. Old rev reg def id: %s, "
+                "new active rev reg def id: %s, cred_def_id: %s, request_id: %s, "
+                "correlation_id: %s",
                 payload.old_rev_reg_def_id,
                 payload.new_active_rev_reg_def_id,
+                payload.cred_def_id,
+                payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
             )
 
             # Mark the event as completed on success
