@@ -33,7 +33,12 @@ LOGGER = logging.getLogger(__name__)
 
 def generate_correlation_id() -> str:
     """Generate a unique correlation ID for event tracking."""
-    return str(uuid4())
+    return f"CORR_{str(uuid4())[:16].upper()}"
+
+
+def generate_request_id() -> str:
+    """Generate a unique request ID for tracing related events across a workflow."""
+    return f"REQ_{str(uuid4())[:8].upper()}"
 
 
 def serialize_event_payload(payload: Any) -> Dict[str, Any]:
@@ -182,6 +187,7 @@ class EventStorageManager:
         event_type: str,
         event_data: Dict[str, Any],
         correlation_id: str,
+        request_id: Optional[str] = None,
         options: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Store a request event to the database.
@@ -190,6 +196,7 @@ class EventStorageManager:
             event_type: The type of event (e.g., RECORD_TYPE_REV_REG_DEF_CREATE_EVENT)
             event_data: The event payload data
             correlation_id: Unique identifier to correlate request/response
+            request_id: Unique identifier to trace related events across workflow
             options: Additional options for the event
 
         Returns:
@@ -202,25 +209,31 @@ class EventStorageManager:
             "event_type": event_type,
             "event_data": event_data,
             "correlation_id": correlation_id,
+            "request_id": request_id,
             "state": EVENT_STATE_REQUESTED,
             "options": options or {},
             "created_at": created_at,
         }
 
         # Use correlation_id as the record ID for easy lookup
+        tags = {"correlation_id": correlation_id, "state": EVENT_STATE_REQUESTED}
+        if request_id:
+            tags["request_id"] = request_id
+
         record = StorageRecord(
             event_type,
             json.dumps(record_data),
-            tags={"correlation_id": correlation_id, "state": EVENT_STATE_REQUESTED},
+            tags=tags,
             id=correlation_id,
         )
 
         await self.storage.add_record(record)
 
         LOGGER.info(
-            "Stored request event: %s with correlation_id: %s",
+            "Stored request event: %s with correlation_id: %s, request_id: %s",
             event_type,
             correlation_id,
+            request_id,
         )
 
         return correlation_id
