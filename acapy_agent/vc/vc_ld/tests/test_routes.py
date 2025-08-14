@@ -1,0 +1,63 @@
+import uuid
+from unittest import IsolatedAsyncioTestCase
+
+import copy
+import pytest
+
+from ...routes import store_credential_route
+from ....tests import mock
+from ....utils.testing import create_test_profile
+
+VALID_VC = {
+    "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://w3id.org/security/suites/ed25519-2020/v1",
+    ],
+    "type": ["VerifiableCredential"],
+    "issuer": "did:key:z6MksJQETYp2tT6PQhs1pmhqH8c77C8Ki6s23pWYPtC5Z2je",
+    "credentialSubject": {"name": "Alice"},
+    "proof": {
+        "type": "Ed25519Signature2020",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:key:z6MksJQETYp2tT6PQhs1pmhqH8c77C8Ki6s23pWYPtC5Z2je#z6MksJQETYp2tT6PQhs1pmhqH8c77C8Ki6s23pWYPtC5Z2je",
+        "created": "2025-07-16T15:20:23+00:00",
+        "proofValue": "z2uey5H4Bz9NHQezA6i2NNpvyrDNspHaFei3hcNTCqjAJi3ocs4DzzTbnXRGs5a6LMp9uNo7RyqtBcBmrstyAg1ML",
+    },
+}
+INVALID_VC = copy.deepcopy(VALID_VC)
+INVALID_VC["proof"]["proofValue"] = "unsecured"
+
+
+@pytest.mark.vc
+class TestVcApiRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.profile = await create_test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = self.profile.context
+        setattr(self.context, "profile", self.profile)
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
+        )
+
+    async def test_credentials_store(self):
+        self.request.match_info = {
+            "verifiableCredential": VALID_VC,
+            "options": {"credentialId": str(uuid.uuid4())},
+        }
+        response = store_credential_route(self.request)
+        assert response
+
+    async def test_credentials_store_unsecured(self):
+        self.request.match_info = {
+            "verifiableCredential": INVALID_VC,
+            "options": {"credentialId": str(uuid.uuid4()), "verify": False},
+        }
+        response = store_credential_route(self.request)
+        assert response
