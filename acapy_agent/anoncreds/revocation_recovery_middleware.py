@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import os
 from typing import Coroutine, Set, Tuple
 
 from aiohttp import web
@@ -113,29 +112,17 @@ async def get_revocation_event_counts(
         return 0, 0
 
 
-async def recover_profile_events(
-    profile: Profile, event_bus: EventBus, recovery_delay_seconds: int = 30
-) -> None:
+async def recover_profile_events(profile: Profile, event_bus: EventBus) -> None:
     """Recover in-progress events for a specific profile.
 
     Args:
         profile: The profile to recover events for
         event_bus: The event bus to re-emit events on
-        recovery_delay_seconds: Only recover events older than this many seconds
     """
-    # Get recovery timeout from settings
-    recovery_timeout = profile.settings.get_int(
-        "anoncreds.revocation.recovery_timeout_seconds", 30
-    )
-
     try:
         recovery_manager = EventRecoveryManager(profile, event_bus)
 
-        # Use asyncio.wait_for to implement timeout
-        recovered_count = await asyncio.wait_for(
-            recovery_manager.recover_in_progress_events(),
-            timeout=recovery_timeout,
-        )
+        recovered_count = await recovery_manager.recover_in_progress_events()
 
         if recovered_count > 0:
             LOGGER.info(
@@ -147,13 +134,6 @@ async def recover_profile_events(
             LOGGER.debug(
                 "No in-progress revocation events found for profile %s", profile.name
             )
-    except asyncio.TimeoutError:
-        LOGGER.error(
-            "Recovery timeout (%d seconds) exceeded for profile %s",
-            recovery_timeout,
-            profile.name,
-        )
-        raise
     except Exception as e:
         LOGGER.error(
             "Failed to recover revocation events for profile %s: %s", profile.name, str(e)
@@ -199,14 +179,6 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         LOGGER.debug("Auto recovery disabled for profile %s", profile_name)
         return await handler(request)
 
-    # Get recovery delay setting
-    recovery_delay_seconds = int(
-        os.getenv("ANONCREDS_REVOCATION_RECOVERY_DELAY_SECONDS", "30")
-    )
-    LOGGER.debug(
-        "Recovery delay for profile %s: %d seconds", profile_name, recovery_delay_seconds
-    )
-
     # Check if we've already recovered this profile
     if recovery_tracker.is_recovered(profile_name):
         LOGGER.debug(
@@ -223,11 +195,7 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         return await handler(request)
 
     # Check if profile has any in-progress revocation events
-    LOGGER.debug(
-        "Checking for revocation events for profile %s (recovery delay: %d secs)",
-        profile_name,
-        recovery_delay_seconds,
-    )
+    LOGGER.debug("Checking in-progress revocation events for profile %s", profile_name)
     try:
         pending_count, recoverable_count = await get_revocation_event_counts(
             profile, check_expiry=True
@@ -283,12 +251,11 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
 
         # Perform recovery with timeout protection
         LOGGER.debug(
-            "Beginning recovery of events older than %d seconds for profile %s",
-            recovery_delay_seconds,
+            "Beginning recovery of events older that have expired for profile %s",
             profile_name,
         )
         try:
-            await recover_profile_events(profile, event_bus, recovery_delay_seconds)
+            await recover_profile_events(profile, event_bus)
             LOGGER.debug(
                 "Recovery of recoverable events completed successfully for profile %s",
                 profile_name,

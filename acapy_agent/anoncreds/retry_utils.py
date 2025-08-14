@@ -24,6 +24,8 @@ retry_config: Dict[str, int] = {
 def calculate_exponential_backoff_delay(retry_count: int) -> int:
     """Calculate exponential backoff delay based on retry count.
 
+    With defaults, retry durations will be: 2, 4, 8, 16, etc, up to the max duration.
+
     Args:
         retry_count: Current retry count (0-based)
 
