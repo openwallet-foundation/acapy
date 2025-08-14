@@ -11,6 +11,7 @@ from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 import base58
+from acapy.acapy_agent.anoncreds.event_storage import generate_request_id
 from anoncreds import (
     AnoncredsError,
     Credential,
@@ -1506,25 +1507,24 @@ class AnonCredsRevocation:
         return result
 
     async def emit_full_registry_event(
-        self,
-        rev_reg_def_id: str,
-        cred_def_id: str,
-        options: Optional[dict] = None,
+        self, rev_reg_def_id: str, cred_def_id: str
     ) -> None:
         """Emit event to indicate full registry detected.
 
         Args:
             rev_reg_def_id (str): revocation registry definition ID that is full
             cred_def_id (str): credential definition ID
-            options (dict): handling options
 
         """
-        options = options or {}
+        request_id = generate_request_id()
         LOGGER.info(
-            "Emitting full registry event for cred def id: %s, rev reg def id: %s",
+            "Emitting full registry event for cred def id: %s, rev reg def id: %s, "
+            "request_id: %s",
             cred_def_id,
             rev_reg_def_id,
+            request_id,
         )
+        options = {"request_id": request_id}
 
         # Emit event to indicate full registry detected
         event = RevRegFullDetectedEvent.with_payload(
