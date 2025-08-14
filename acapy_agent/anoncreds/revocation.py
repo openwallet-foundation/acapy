@@ -43,7 +43,6 @@ from .events import (
     RevRegActivationResponseEvent,
     RevRegDefCreateRequestedEvent,
     RevRegDefCreateResponseEvent,
-    RevRegDefFinishedEvent,
     RevRegDefStoreRequestedEvent,
     RevRegDefStoreResponseEvent,
     RevRegFullDetectedEvent,
@@ -490,8 +489,6 @@ class AnonCredsRevocation:
     ) -> None:
         """Store a revocation registry definition.
 
-        Emits a RevRegDefFinishedEvent if the revocation registry definition is finished.
-
         Args:
             result (RevRegDefResult): revocation registry definition result
             options (dict): storage options
@@ -573,10 +570,13 @@ class AnonCredsRevocation:
             rev_reg_def_id,
         )
         async with self.profile.transaction() as txn:
-            entry = await self._finish_registration(
-                txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
+            await self._finish_registration(
+                txn,
+                CATEGORY_REV_REG_DEF,
+                job_id,
+                rev_reg_def_id,
+                state=STATE_FINISHED,
             )
-            rev_reg_def = RevRegDef.from_json(entry.value)
             await self._finish_registration(
                 txn,
                 CATEGORY_REV_REG_DEF_PRIVATE,
@@ -585,29 +585,10 @@ class AnonCredsRevocation:
             )
             await txn.commit()
 
-        await self.emit_rev_reg_def_finished_event(rev_reg_def_id, rev_reg_def, options)
-
-    async def emit_rev_reg_def_finished_event(  # ✅
-        self,
-        rev_reg_def_id: str,
-        rev_reg_def: RevRegDef,
-        options: Optional[dict] = None,
-    ) -> None:
-        """Emit event to indicate revocation registry definition is finished."""
-        options = options or {}
-        LOGGER.info(
-            "Emitting rev reg def finished event for rev reg def id: %s. "
-            "request_id: %s, correlation_id: %s",
-            rev_reg_def_id,
-            options.get("request_id"),
-            options.get("correlation_id"),
-        )
-        await self.notify(
-            RevRegDefFinishedEvent.with_payload(
-                rev_reg_def_id=rev_reg_def_id,
-                rev_reg_def=rev_reg_def,
-                options=options,
-            )
+        options.pop("correlation_id", None)  # Remove correlation id for new request
+        await self.emit_create_and_register_revocation_list_event(
+            rev_reg_def_id=rev_reg_def_id,
+            options=options,
         )
 
     async def get_created_revocation_registry_definitions(

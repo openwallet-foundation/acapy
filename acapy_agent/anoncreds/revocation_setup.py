@@ -5,10 +5,9 @@ import logging
 from abc import ABC, abstractmethod
 
 from ..anoncreds.issuer import STATE_FINISHED
-from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
+from ..anoncreds.revocation import AnonCredsRevocation
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from ..revocation.util import notify_revocation_published_event
 from ..storage.type import (
     RECORD_TYPE_REV_LIST_CREATE_EVENT,
@@ -38,7 +37,6 @@ from .events import (
     RevRegActivationResponseEvent,
     RevRegDefCreateRequestedEvent,
     RevRegDefCreateResponseEvent,
-    RevRegDefFinishedEvent,
     RevRegDefStoreRequestedEvent,
     RevRegDefStoreResponseEvent,
     RevRegFullDetectedEvent,
@@ -131,9 +129,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Rev list finished event will notify the issuer of successful revocations
         event_bus.subscribe(RevListFinishedEvent.event_topic, self.on_rev_list_finished)
-
-        # On rev reg def finished, emit tails upload request event
-        event_bus.subscribe(RevRegDefFinishedEvent.event_topic, self.on_rev_reg_def)
 
         # On rev list create requested, create and register a revocation list
         event_bus.subscribe(
@@ -555,10 +550,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             revoc = AnonCredsRevocation(profile)
             state = payload.rev_reg_def_result.revocation_registry_definition_state.state
             if state == STATE_FINISHED:
-                await revoc.emit_rev_reg_def_finished_event(
+                await revoc.emit_create_and_register_revocation_list_event(
                     rev_reg_def_id=payload.rev_reg_def_id,
-                    rev_reg_def=payload.rev_reg_def,
-                    options=payload.options,
+                    options=self._clean_options_for_new_request(payload.options),
                 )
             else:
                 LOGGER.warning(
@@ -594,29 +588,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     max_cred_num=payload.rev_reg_def.value.max_cred_num,
                     options=backup_options,
                 )
-
-    async def on_rev_reg_def(
-        self, profile: Profile, event: RevRegDefFinishedEvent
-    ) -> None:
-        """Handle rev reg def finished."""
-        payload = event.payload
-
-        auto_create_revocation = True
-        if is_author_role(profile):
-            auto_create_revocation = profile.settings.get(
-                "endorser.auto_create_rev_reg", False
-            )
-
-        if auto_create_revocation:
-            revoc = AnonCredsRevocation(profile)
-            try:
-                await revoc.emit_create_and_register_revocation_list_event(
-                    rev_reg_def_id=payload.rev_reg_def_id,
-                    options=self._clean_options_for_new_request(payload.options),
-                )
-            except AnonCredsRevocationError as err:
-                LOGGER.warning(f"Failed to create revocation list: {err}")
-                payload.options["failed_to_create_rev_list"] = True
 
     async def on_rev_list_create_requested(
         self, profile: Profile, event: RevListCreateRequestedEvent
