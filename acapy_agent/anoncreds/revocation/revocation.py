@@ -175,6 +175,7 @@ class AnonCredsRevocation:
             options (dict): revocation registry options
 
         """
+        options = options or {}
         LOGGER.info(
             "Emitting create revocation registry definition event for issuer: %s, "
             "cred_def_id: %s, registry_type: %s, tag: %s, max_cred_num: %s. "
@@ -220,6 +221,7 @@ class AnonCredsRevocation:
             options (dict): revocation registry options
 
         """
+        options = options or {}
         LOGGER.debug(
             "Creating and registering revocation registry definition for issuer: %s, "
             "cred_def_id: %s, registry_type: %s, tag: %s, max_cred_num: %s. "
@@ -232,7 +234,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
         retry_count = options.pop("retry_count", 0)
 
         try:
@@ -384,6 +385,7 @@ class AnonCredsRevocation:
             options (dict): storage options
 
         """
+        options = options or {}
         LOGGER.info(
             "Emitting store revocation registry definition event for rev_reg_def_id: %s, "
             "tag: %s. request_id: %s, correlation_id: %s",
@@ -392,7 +394,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
 
         event = RevRegDefStoreRequestedEvent.with_payload(
             rev_reg_def=rev_reg_def,
@@ -565,6 +566,11 @@ class AnonCredsRevocation:
     ) -> None:
         """Mark a rev reg def as finished."""
         options = options or {}
+        LOGGER.debug(
+            "Finishing revocation registry definition job_id=%s, rev_reg_def_id=%s",
+            job_id,
+            rev_reg_def_id,
+        )
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(
                 txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
@@ -587,6 +593,7 @@ class AnonCredsRevocation:
         options: Optional[dict] = None,
     ) -> None:
         """Emit event to indicate revocation registry definition is finished."""
+        options = options or {}
         LOGGER.info(
             "Emitting rev reg def finished event for rev reg def id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -728,6 +735,7 @@ class AnonCredsRevocation:
             options (dict): creation options
 
         """
+        options = options or {}
         LOGGER.info(
             "Emitting create and register revocation list event for rev_reg_def_id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -735,7 +743,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
 
         # Emit event to request revocation list creation
         event = RevListCreateRequestedEvent.with_payload(
@@ -757,6 +764,7 @@ class AnonCredsRevocation:
             options (dict): storage options
 
         """
+        options = options or {}
         LOGGER.info(
             "Emitting store revocation list event for rev_reg_def_id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -764,7 +772,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
 
         # Emit event to request revocation list storage
         event = RevListStoreRequestedEvent.with_payload(
@@ -900,6 +907,7 @@ class AnonCredsRevocation:
         self, result: RevListResult, options: Optional[dict] = None
     ) -> None:
         """Store a revocation registry list."""
+        options = options or {}
         LOGGER.debug(
             "Storing revocation registry list for rev_reg_def_id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -1075,6 +1083,12 @@ class AnonCredsRevocation:
     ) -> RevListResult:
         """Publish and update to a revocation list."""
         options = options or {}
+        LOGGER.debug(
+            "Updating revocation list for rev_reg_def_id=%s with %d revoked credentials",
+            rev_reg_def_id,
+            len(revoked),
+        )
+
         try:
             async with self.profile.session() as session:
                 rev_reg_def_entry = await session.handle.fetch(
@@ -1299,6 +1313,7 @@ class AnonCredsRevocation:
             options (dict): handling options
 
         """
+        options = options or {}
         LOGGER.debug(
             "Handling full registry event for cred def id: %s, rev reg def id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -1307,7 +1322,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
         retry_count = options.get("retry_count", 0)
 
         try:
@@ -1347,6 +1361,7 @@ class AnonCredsRevocation:
                 "cred_def_id: %s, request_id: %s, correlation_id: %s",
                 rev_reg_def_id,
                 backup_rev_reg_def_id,
+                cred_def_id,
                 options.get("request_id"),
                 options.get("correlation_id"),
             )
@@ -1537,6 +1552,7 @@ class AnonCredsRevocation:
             options (dict): activation options
 
         """
+        options = options or {}
         LOGGER.info(
             "Emitting set active registry event for rev reg def id: %s. "
             "request_id: %s, correlation_id: %s",
@@ -1544,7 +1560,6 @@ class AnonCredsRevocation:
             options.get("request_id"),
             options.get("correlation_id"),
         )
-        options = options or {}
 
         event = RevRegActivationRequestedEvent.with_payload(
             rev_reg_def_id=rev_reg_def_id,
@@ -1908,8 +1923,9 @@ class AnonCredsRevocation:
                     <= int(cred_rev_id) + 1
                 )
 
-            if rev_reg_def_id and _is_full_registry(rev_reg_def_result, cred_rev_id):
-                await self.emit_full_registry_event(rev_reg_def_id, cred_def_id)
+            if rev_reg_def_id and rev_reg_def_result:
+                if _is_full_registry(rev_reg_def_result, cred_rev_id):
+                    await self.emit_full_registry_event(rev_reg_def_id, cred_def_id)
 
             return cred_json, cred_rev_id, rev_reg_def_id
 

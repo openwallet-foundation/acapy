@@ -1137,16 +1137,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
                 if rev_reg_def:
-                    # Create new backup registry with new request_id
-                    new_backup_request_id = generate_request_id()
+                    # Create new backup registry with same request_id
                     backup_options = self._clean_options_for_new_request(payload.options)
-                    backup_options["request_id"] = new_backup_request_id
+                    backup_options["request_id"] = payload.options.get("request_id")
 
                     LOGGER.debug(
                         "Emitting event to create new backup registry for "
                         "cred def id %s, request_id: %s, correlation_id: %s",
                         payload.options["cred_def_id"],
-                        new_backup_request_id,
+                        payload.options.get("request_id"),
                         payload.options.get("correlation_id"),
                     )
                     await revoc.emit_create_revocation_registry_definition_event(
