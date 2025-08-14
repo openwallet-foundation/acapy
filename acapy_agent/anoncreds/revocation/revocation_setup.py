@@ -1115,6 +1115,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.rev_reg_def_id,
                 payload.options.get("cred_def_id"),
                 payload.options.get("request_id"),
+                payload.options.get("correlation_id"),
             )
 
             # Mark the event as completed on success
