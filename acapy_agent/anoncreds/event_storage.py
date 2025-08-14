@@ -497,11 +497,12 @@ class EventStorageManager:
                     str(e),
                 )
 
-        LOGGER.info(
-            "Found %d in-progress events%s",
-            len(in_progress_events),
-            f" of type {event_type}" if event_type else "",
-        )
+        if in_progress_events:
+            LOGGER.info(
+                "Found %d in-progress events%s",
+                len(in_progress_events),
+                f" of type {event_type}" if event_type else "",
+            )
 
         return in_progress_events
 

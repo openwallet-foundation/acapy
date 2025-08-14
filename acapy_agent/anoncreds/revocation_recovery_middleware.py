@@ -107,8 +107,8 @@ async def get_revocation_event_counts(
 
             return pending_count, recoverable_count
 
-    except Exception as e:
-        LOGGER.error("Error checking for revocation events: %s", str(e))
+    except Exception:
+        LOGGER.exception("Error checking for revocation events")
         return 0, 0
 
 
@@ -223,11 +223,9 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
                 )
                 return await handler(request)
 
-    except Exception as e:
-        LOGGER.error(
-            "Error checking for in-progress events for profile %s: %s",
-            profile_name,
-            str(e),
+    except Exception:
+        LOGGER.exception(
+            "Error checking for in-progress events for profile %s", profile_name
         )
         # Continue with request on error
         return await handler(request)
