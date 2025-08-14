@@ -194,6 +194,10 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
         )
         return await handler(request)
 
+    # Flag to determine if we should proceed with the handler early. This is to avoid
+    # calling handler within try/except blocks, which would catch handler HTTPExceptions
+    should_proceed_with_handler = False
+
     # Check if profile has any in-progress revocation events
     LOGGER.debug("Checking in-progress revocation events for profile %s", profile_name)
     try:
@@ -211,7 +215,7 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
                     profile_name,
                 )
                 recovery_tracker.mark_recovery_completed(profile_name)
-                return await handler(request)
+                should_proceed_with_handler = True
             else:
                 # There are pending events within the delay period
                 # - don't mark as recovered yet
@@ -221,13 +225,20 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
                     pending_count,
                     profile_name,
                 )
-                return await handler(request)
+                should_proceed_with_handler = True
 
-    except Exception:
-        LOGGER.exception(
-            "Error checking for in-progress events for profile %s", profile_name
+    except Exception as e:
+        LOGGER.error(
+            "Error checking for in-progress events for profile %s: %s",
+            profile_name,
+            str(e),
         )
         # Continue with request on error
+        should_proceed_with_handler = True
+
+    # If we should proceed with handler early, skip recovery process
+    if should_proceed_with_handler:
+        LOGGER.debug("Proceeding with original request for profile %s", profile_name)
         return await handler(request)
 
     # Mark recovery as started
@@ -236,65 +247,32 @@ async def revocation_recovery_middleware(request: web.BaseRequest, handler: Coro
 
     try:
         # Get event bus from profile context
-        LOGGER.debug("Injecting EventBus for profile %s", profile_name)
-        try:
-            event_bus = context.profile.inject(EventBus)
-            LOGGER.debug("Successfully injected EventBus for profile %s", profile_name)
-        except Exception as e:
-            LOGGER.error(
-                "Failed to inject EventBus for profile %s: %s", profile_name, str(e)
-            )
-            recovery_tracker.mark_recovery_failed(profile_name)
-            return await handler(request)
+        event_bus = context.profile.inject(EventBus)
 
         # Perform recovery with timeout protection
         LOGGER.debug(
             "Beginning recovery of events older that have expired for profile %s",
             profile_name,
         )
-        try:
-            await recover_profile_events(profile, event_bus)
-            LOGGER.debug(
-                "Recovery of recoverable events completed successfully for profile %s",
-                profile_name,
-            )
-        except asyncio.TimeoutError:
-            LOGGER.error(
-                "Revocation event recovery timed out for profile %s", profile_name
-            )
-            recovery_tracker.mark_recovery_failed(profile_name)
-            return await handler(request)
-        except Exception as e:
-            LOGGER.error(
-                "Revocation event recovery failed for profile %s: %s",
-                profile_name,
-                str(e),
-            )
-            recovery_tracker.mark_recovery_failed(profile_name)
-            return await handler(request)
+        await recover_profile_events(profile, event_bus)
+        LOGGER.debug(
+            "Recovery of recoverable events completed successfully for profile %s",
+            profile_name,
+        )
 
-        # Mark recovery as completed
+        # Mark recovery as completed on success
         LOGGER.debug("Marking recovery as completed for profile %s", profile_name)
         recovery_tracker.mark_recovery_completed(profile_name)
-
         LOGGER.info("Revocation event recovery completed for profile %s", profile_name)
-
+    except asyncio.TimeoutError:
+        LOGGER.error("Revocation event recovery timed out for profile %s", profile_name)
+        recovery_tracker.mark_recovery_failed(profile_name)
     except Exception as e:
-        # Catch-all for any unexpected errors
-        LOGGER.debug(
-            "Marking recovery as failed due to unexpected error for profile %s",
-            profile_name,
+        LOGGER.error(
+            "Revocation event recovery failed for profile %s: %s", profile_name, str(e)
         )
         recovery_tracker.mark_recovery_failed(profile_name)
 
-        LOGGER.error(
-            "Unexpected error in revocation event recovery for profile %s: %s",
-            profile_name,
-            str(e),
-        )
-
-        # Continue with request despite recovery failure
-        # This ensures recovery issues don't block normal operations
-
+    # Final handler call - outside all try blocks to avoid HTTPFound being caught
     LOGGER.debug("Proceeding with original request for profile %s", profile_name)
     return await handler(request)
