@@ -11,7 +11,6 @@ from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 import base58
-from acapy.acapy_agent.anoncreds.event_storage import generate_request_id
 from anoncreds import (
     AnoncredsError,
     Credential,
@@ -26,6 +25,7 @@ from aries_askar.error import AskarError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
+from ..anoncreds.event_storage import generate_request_id
 from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
