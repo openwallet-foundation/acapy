@@ -1524,12 +1524,9 @@ class AnonCredsRevocation:
         """
         options = options or {}
         LOGGER.info(
-            "Emitting full registry event for cred def id: %s, rev reg def id: %s. "
-            "request_id: %s, correlation_id: %s",
+            "Emitting full registry event for cred def id: %s, rev reg def id: %s",
             cred_def_id,
             rev_reg_def_id,
-            options.get("request_id"),
-            options.get("correlation_id"),
         )
 
         # Emit event to indicate full registry detected
