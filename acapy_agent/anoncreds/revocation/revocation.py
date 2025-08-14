@@ -12,7 +12,6 @@ from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urlparse
 
 import base58
-from acapy.acapy_agent.anoncreds.event_storage import generate_request_id
 from anoncreds import (
     AnoncredsError,
     Credential,
@@ -33,6 +32,7 @@ from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile, ProfileSession
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
 from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
+from ..event_storage import generate_request_id
 from ..events import (
     FIRST_REGISTRY_TAG,
     RevListCreateRequestedEvent,
