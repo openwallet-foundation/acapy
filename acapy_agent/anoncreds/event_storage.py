@@ -135,6 +135,7 @@ def deserialize_event_payload[T: BaseModel | NamedTuple](
     Returns:
         Instance of the payload class
     """
+    LOGGER.info("Deserializing %s event payload: %s", payload_class.__name__, event_data)
     # First, recursively deserialize nested objects
     deserialized_data = {}
     for key, value in event_data.items():
@@ -374,8 +375,6 @@ class EventStorageManager:
             updated_expiry_timestamp=new_expiry,
             updated_options=updated_options,
         )
-
-
 
     async def delete_event(
         self,
