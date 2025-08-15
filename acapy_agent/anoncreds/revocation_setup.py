@@ -260,25 +260,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Update the persisted event with response information
         correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
+        if not correlation_id:
             LOGGER.warning("No correlation_id found for rev reg def create response")
 
         if payload.failure:
@@ -317,14 +299,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                 await asyncio.sleep(retry_delay)
 
-                # Update options with new retry count and calculate new expiry
+                # Update options with new retry count and update event for retry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
 
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        # Update the event for retry in one atomic operation
+                        # Update the event for retry (sets state to REQUESTED)
                         await event_storage.update_event_for_retry(
                             event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                             correlation_id=correlation_id,
@@ -345,7 +327,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=new_options,
                 )
             else:
-                # Not retryable, so notify issuer about failure
+                # Not retryable, update event as failed and notify issuer
                 LOGGER.error(
                     "Won't retry %s registry creation for cred def: %s, "
                     "request_id: %s, correlation_id: %s",
@@ -354,13 +336,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     payload.options.get("request_id"),
                     payload.options.get("correlation_id"),
                 )
-                # Mark the event as completed since we won't retry
+
+                # Update event as failed and mark as completed
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
+                        await event_storage.update_event_response(
                             event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                             correlation_id=correlation_id,
+                            success=False,
+                            response_data=serialize_event_payload(payload),
+                            error_msg=error_info.error_msg,
                         )
 
                 self._notify_issuer_about_failure(
@@ -371,7 +357,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=payload.options,
                 )
         else:
-            # Handle success - emit store request event
+            # Handle success - update event and emit store request event
+            if correlation_id:
+                async with profile.session() as session:
+                    event_storage = EventStorageManager(session)
+                    await event_storage.update_event_response(
+                        event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
+                        correlation_id=correlation_id,
+                        success=True,
+                        response_data=serialize_event_payload(payload),
+                    )
+
             revoc = AnonCredsRevocation(profile)
             await revoc.emit_store_revocation_registry_definition_event(
                 rev_reg_def=payload.rev_reg_def,
@@ -426,25 +422,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Update the persisted event with response information
         correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
+        if not correlation_id:
             LOGGER.warning("No correlation_id found for rev reg def store response")
 
         if payload.failure:
@@ -479,14 +457,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                 await asyncio.sleep(retry_delay)
 
-                # Update options with new retry count and calculate new expiry
+                # Update options with new retry count and update event for retry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
 
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        # Update the event for retry in one atomic operation
+                        # Update the event for retry (sets state to REQUESTED)
                         await event_storage.update_event_for_retry(
                             event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                             correlation_id=correlation_id,
@@ -502,6 +480,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=new_options,
                 )
             else:
+                # Not retryable, update event as failed and notify issuer
                 LOGGER.error(
                     "Won't retry registry store for rev_reg_def_id: %s, tag: %s, "
                     "request_id: %s, correlation_id: %s",
@@ -510,13 +489,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     payload.options.get("request_id"),
                     payload.options.get("correlation_id"),
                 )
-                # Mark the event as completed since we won't retry
+
+                # Update event as failed and mark as completed
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
+                        await event_storage.update_event_response(
                             event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                             correlation_id=correlation_id,
+                            success=False,
+                            response_data=serialize_event_payload(payload),
+                            error_msg=error_info.error_msg,
                         )
 
                 self._notify_issuer_about_failure(
@@ -537,13 +520,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.options.get("correlation_id"),
             )
 
-            # Mark the event as completed on success
+            # Update event as successful and mark as completed
             if correlation_id:
                 async with profile.session() as session:
                     event_storage = EventStorageManager(session)
-                    await event_storage.mark_event_completed(
+                    await event_storage.update_event_response(
                         event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                         correlation_id=correlation_id,
+                        success=True,
+                        response_data=serialize_event_payload(payload),
                     )
 
             # Emit finished event
@@ -646,25 +631,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Update the persisted event with response information
         correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
+        if not correlation_id:
             LOGGER.warning("No correlation_id found for rev list create response")
 
         if payload.failure:
@@ -693,14 +660,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                 await asyncio.sleep(retry_delay)
 
-                # Update options with new retry count and calculate new expiry
+                # Update options with new retry count and update event for retry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
 
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        # Update the event for retry in one atomic operation
+                        # Update the event for retry (sets state to REQUESTED)
                         await event_storage.update_event_for_retry(
                             event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                             correlation_id=correlation_id,
@@ -715,6 +682,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     payload.rev_reg_def_id, new_options
                 )
             else:
+                # Not retryable, update event as failed and notify issuer
                 LOGGER.error(
                     "Won't retry revocation list creation for rev_reg_def_id: %s, "
                     "request_id: %s, correlation_id: %s",
@@ -722,13 +690,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     payload.options.get("request_id"),
                     payload.options.get("correlation_id"),
                 )
-                # Mark the event as completed since we won't retry
+
+                # Update event as failed and mark as completed
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
+                        await event_storage.update_event_response(
                             event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                             correlation_id=correlation_id,
+                            success=False,
+                            response_data=serialize_event_payload(payload),
+                            error_msg=error_info.error_msg,
                         )
 
                 self._notify_issuer_about_failure(
@@ -739,7 +711,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=payload.options,
                 )
         else:
-            # Handle success
+            # Handle success - update event and emit store request event
             LOGGER.info(
                 "Revocation list creation succeeded for rev_reg_def_id: %s, "
                 "request_id: %s, correlation_id: %s",
@@ -747,6 +719,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.options.get("request_id"),
                 payload.options.get("correlation_id"),
             )
+
+            # Update event as successful
+            if correlation_id:
+                async with profile.session() as session:
+                    event_storage = EventStorageManager(session)
+                    await event_storage.update_event_response(
+                        event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
+                        correlation_id=correlation_id,
+                        success=True,
+                        response_data=serialize_event_payload(payload),
+                    )
 
             # Emit store request event
             revoc = AnonCredsRevocation(profile)
@@ -820,25 +803,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Update the persisted event with response information
         correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
+        if not correlation_id:
             LOGGER.warning("No correlation_id found for rev list store response")
 
         if payload.failure:
@@ -874,14 +839,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
                 await asyncio.sleep(retry_delay)
 
-                # Update options with new retry count and calculate new expiry
+                # Update options with new retry count and update event for retry
                 new_options = payload.options.copy()
                 new_options["retry_count"] = error_info.retry_count + 1
 
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        # Update the event for retry in one atomic operation
+                        # Update the event for retry (sets state to REQUESTED)
                         await event_storage.update_event_for_retry(
                             event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                             correlation_id=correlation_id,
@@ -898,6 +863,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=new_options,
                 )
             else:
+                # Not retryable, update event as failed and notify issuer
                 LOGGER.error(
                     "Won't retry revocation list store for rev_reg_def_id: %s, "
                     "request_id: %s, correlation_id: %s",
@@ -905,13 +871,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     payload.options.get("request_id"),
                     payload.options.get("correlation_id"),
                 )
-                # Mark the event as completed since we won't retry
+
+                # Update event as failed and mark as completed
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
+                        await event_storage.update_event_response(
                             event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                             correlation_id=correlation_id,
+                            success=False,
+                            response_data=serialize_event_payload(payload),
+                            error_msg=error_info.error_msg,
                         )
 
                 self._notify_issuer_about_failure(
@@ -931,13 +901,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.options.get("correlation_id"),
             )
 
-            # Mark the event as completed on success
+            # Update event as successful and mark as completed
             if correlation_id:
                 async with profile.session() as session:
                     event_storage = EventStorageManager(session)
-                    await event_storage.mark_event_completed(
+                    await event_storage.update_event_response(
                         event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                         correlation_id=correlation_id,
+                        success=True,
+                        response_data=serialize_event_payload(payload),
                     )
 
             # If this is for the first registry, activate it
@@ -1006,25 +978,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Update the persisted event with response information
         correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
+        if not correlation_id:
             LOGGER.warning("No correlation_id found for rev reg def activation response")
 
         if payload.failure:
@@ -1057,14 +1011,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await asyncio.sleep(retry_delay)
 
-            # Update options with new retry count and calculate new expiry
+            # Update options with new retry count and update event for retry
             new_options = payload.options.copy()
             new_options["retry_count"] = error_info.retry_count + 1
 
             if correlation_id:
                 async with profile.session() as session:
                     event_storage = EventStorageManager(session)
-                    # Update the event for retry in one atomic operation
+                    # Update the event for retry (sets state to REQUESTED)
                     await event_storage.update_event_for_retry(
                         event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
                         correlation_id=correlation_id,
@@ -1089,13 +1043,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.options.get("correlation_id"),
             )
 
-            # Mark the event as completed on success
+            # Update event as successful and mark as completed
             if correlation_id:
                 async with profile.session() as session:
                     event_storage = EventStorageManager(session)
-                    await event_storage.mark_event_completed(
+                    await event_storage.update_event_response(
                         event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
                         correlation_id=correlation_id,
+                        success=True,
+                        response_data=serialize_event_payload(payload),
                     )
 
             # Check if this request was part of full registry handling; then create backup
@@ -1205,25 +1161,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
         # Update the persisted event with response information
         correlation_id = payload.options.get("correlation_id")
-        if correlation_id:
-            async with profile.session() as session:
-                event_storage = EventStorageManager(session)
-                if payload.failure:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-                        correlation_id=correlation_id,
-                        success=False,
-                        response_data=serialize_event_payload(payload),
-                        error_msg=payload.failure.error_info.error_msg,
-                    )
-                else:
-                    await event_storage.update_event_response(
-                        event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
-                        correlation_id=correlation_id,
-                        success=True,
-                        response_data=serialize_event_payload(payload),
-                    )
-        else:
+        if not correlation_id:
             LOGGER.warning("No correlation_id found for full registry handling response")
 
         if payload.failure:
@@ -1256,14 +1194,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await asyncio.sleep(retry_delay)
 
-            # Update options with new retry count and calculate new expiry
+            # Update options with new retry count and update event for retry
             new_options = payload.options.copy()
             new_options["retry_count"] = error_info.retry_count + 1
 
             if correlation_id:
                 async with profile.session() as session:
                     event_storage = EventStorageManager(session)
-                    # Update the event for retry in one atomic operation
+                    # Update the event for retry (sets state to REQUESTED)
                     await event_storage.update_event_for_retry(
                         event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                         correlation_id=correlation_id,
@@ -1280,6 +1218,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=new_options,
                 )
             else:
+                # Not retryable, update event as failed and notify issuer
                 LOGGER.error(
                     "Won't retry full registry handling for rev_reg_def_id %s, "
                     "cred_def_id %s, request_id %s, correlation_id %s",
@@ -1288,13 +1227,17 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     payload.options.get("request_id"),
                     payload.options.get("correlation_id"),
                 )
-                # Mark the event as completed since we won't retry
+
+                # Update event as failed and mark as completed
                 if correlation_id:
                     async with profile.session() as session:
                         event_storage = EventStorageManager(session)
-                        await event_storage.mark_event_completed(
+                        await event_storage.update_event_response(
                             event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                             correlation_id=correlation_id,
+                            success=False,
+                            response_data=serialize_event_payload(payload),
+                            error_msg=error_info.error_msg,
                         )
 
                 self._notify_issuer_about_failure(
@@ -1306,6 +1249,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 )
 
         else:
+            # Handle success
             LOGGER.info(
                 "Full registry handling response. Old rev reg def id: %s, "
                 "new active rev reg def id: %s, cred_def_id: %s, request_id: %s, "
@@ -1317,13 +1261,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 payload.options.get("correlation_id"),
             )
 
-            # Mark the event as completed on success
+            # Update event as successful and mark as completed
             if correlation_id:
                 async with profile.session() as session:
                     event_storage = EventStorageManager(session)
-                    await event_storage.mark_event_completed(
+                    await event_storage.update_event_response(
                         event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                         correlation_id=correlation_id,
+                        success=True,
+                        response_data=serialize_event_payload(payload),
                     )
 
     # Helper methods for error handling and notifications
