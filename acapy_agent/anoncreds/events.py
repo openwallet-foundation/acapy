@@ -645,8 +645,6 @@ class RevListStoreFailurePayload(NamedTuple):
     """Failure-specific payload for revocation list store."""
 
     error_info: ErrorInfoPayload
-    # Need result for retry
-    result: RevListResult
 
 
 class RevListStoreResponsePayload(NamedTuple):
@@ -701,7 +699,6 @@ class RevListStoreResponseEvent(Event):
         error_msg: str,
         should_retry: bool,
         retry_count: int,
-        result: RevListResult,
         options: Optional[dict] = None,
     ):
         """Convenience method for creating failure response."""
@@ -711,7 +708,6 @@ class RevListStoreResponseEvent(Event):
                 should_retry=should_retry,
                 retry_count=retry_count,
             ),
-            result=result,
         )
         return cls.with_payload(
             rev_reg_def_id=rev_reg_def_id,

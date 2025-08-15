@@ -313,7 +313,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             error_msg=error_info.error_msg,
                             retry_count=error_info.retry_count + 1,
                             updated_options=new_options,
-                            response_data=serialize_event_payload(payload),
                         )
 
                 revoc = AnonCredsRevocation(profile)
@@ -471,7 +470,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             error_msg=error_info.error_msg,
                             retry_count=error_info.retry_count + 1,
                             updated_options=new_options,
-                            response_data=serialize_event_payload(payload),
                         )
 
                 revoc = AnonCredsRevocation(profile)
@@ -674,7 +672,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             error_msg=error_info.error_msg,
                             retry_count=error_info.retry_count + 1,
                             updated_options=new_options,
-                            response_data=serialize_event_payload(payload),
                         )
 
                 revoc = AnonCredsRevocation(profile)
@@ -853,7 +850,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                             error_msg=error_info.error_msg,
                             retry_count=error_info.retry_count + 1,
                             updated_options=new_options,
-                            response_data=serialize_event_payload(payload),
                         )
 
                 revoc = AnonCredsRevocation(profile)
@@ -1025,7 +1021,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         error_msg=error_info.error_msg,
                         retry_count=error_info.retry_count + 1,
                         updated_options=new_options,
-                        response_data=serialize_event_payload(payload),
                     )
 
             revoc = AnonCredsRevocation(profile)
@@ -1208,7 +1203,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                         error_msg=error_info.error_msg,
                         retry_count=error_info.retry_count + 1,
                         updated_options=new_options,
-                        response_data=serialize_event_payload(payload),
                     )
 
                 revoc = AnonCredsRevocation(profile)
