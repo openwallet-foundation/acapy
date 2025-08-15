@@ -68,11 +68,12 @@ class EventRecoveryManager:
                 try:
                     await self._recover_single_event(event_record)
                     recovered_count += 1
-                except Exception:
+                except Exception as e:
                     LOGGER.exception(
                         "Failed to recover event %s (correlation_id: %s): %s",
                         event_record["event_type"],
                         event_record["correlation_id"],
+                        e,
                     )
 
         if recovered_count > 0:
@@ -98,7 +99,7 @@ class EventRecoveryManager:
         recovery_options["recovery"] = True
         recovery_options["correlation_id"] = correlation_id
 
-        LOGGER.debug(
+        LOGGER.info(
             "Recovering event %s with correlation_id: %s. Event data: %s",
             event_type,
             correlation_id,
