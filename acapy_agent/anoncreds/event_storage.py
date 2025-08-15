@@ -15,7 +15,6 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..storage.type import (
-    EVENT_STATE_COMPLETED,
     EVENT_STATE_REQUESTED,
     EVENT_STATE_RESPONSE_FAILURE,
     EVENT_STATE_RESPONSE_SUCCESS,
@@ -297,15 +296,21 @@ class EventStorageManager:
                 record_data["retry_metadata"] = retry_metadata
 
             # Update expiry timestamp and options if provided (for retry scenarios)
-            if updated_expiry_timestamp is not None:
+            # Determine new state based on success and retry scenario
+            if success:
+                new_state = EVENT_STATE_RESPONSE_SUCCESS
+            elif updated_expiry_timestamp is not None:
+                # Failure with retry - update expiry and keep in requested state
                 record_data["expiry_timestamp"] = updated_expiry_timestamp
+                new_state = EVENT_STATE_REQUESTED
+            else:
+                # Failure without retry - mark as failed
+                new_state = EVENT_STATE_RESPONSE_FAILURE
 
             if updated_options is not None:
                 record_data["options"] = updated_options
 
-            record_data["state"] = (
-                EVENT_STATE_RESPONSE_SUCCESS if success else EVENT_STATE_RESPONSE_FAILURE
-            )
+            record_data["state"] = new_state
 
             new_tags = record.tags.copy()
             new_tags["state"] = record_data["state"]
@@ -370,41 +375,7 @@ class EventStorageManager:
             updated_options=updated_options,
         )
 
-    async def mark_event_completed(
-        self,
-        event_type: str,
-        correlation_id: str,
-    ) -> None:
-        """Mark an event as completed and ready for cleanup.
 
-        Args:
-            event_type: The type of event
-            correlation_id: Unique identifier to correlate request/response
-        """
-        try:
-            record = await self.storage.get_record(event_type, correlation_id)
-            record_data = json.loads(record.value)
-
-            # Update the record state to completed
-            record_data["state"] = EVENT_STATE_COMPLETED
-
-            new_tags = record.tags.copy()
-            new_tags["state"] = EVENT_STATE_COMPLETED
-
-            await self.storage.update_record(record, json.dumps(record_data), new_tags)
-
-            LOGGER.info(
-                "Marked event completed: %s with correlation_id: %s",
-                event_type,
-                correlation_id,
-            )
-
-        except StorageNotFoundError:
-            LOGGER.warning(
-                "Event record not found for completion: %s with correlation_id: %s",
-                event_type,
-                correlation_id,
-            )
 
     async def delete_event(
         self,
@@ -563,7 +534,7 @@ class EventStorageManager:
         event_type: Optional[str] = None,
         max_age_hours: int = 24,
     ) -> int:
-        """Clean up completed events older than specified age.
+        """Clean up completed events (SUCCESS or FAILURE states) older than specified age.
 
         Args:
             event_type: Filter by specific event type, or None for all types
@@ -577,13 +548,17 @@ class EventStorageManager:
 
         for etype in event_types_to_search:
             try:
-                # Search for completed events
-                records = await self.storage.find_all_records(
+                # Search for completed events (SUCCESS and FAILURE states)
+                success_records = await self.storage.find_all_records(
                     type_filter=etype,
-                    tag_query={"state": EVENT_STATE_COMPLETED},
+                    tag_query={"state": EVENT_STATE_RESPONSE_SUCCESS},
+                )
+                failure_records = await self.storage.find_all_records(
+                    type_filter=etype,
+                    tag_query={"state": EVENT_STATE_RESPONSE_FAILURE},
                 )
 
-                for record in records:
+                for record in success_records + failure_records:
                     # TODO: Add timestamp-based cleanup logic
                     # For now, we'll clean up all completed events
                     await self.storage.delete_record(record)

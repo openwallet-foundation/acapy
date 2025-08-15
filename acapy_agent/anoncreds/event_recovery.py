@@ -242,7 +242,7 @@ class EventRecoveryManager:
         event = RevRegFullDetectedEvent(new_payload)
         await self.event_bus.notify(self.profile, event)
 
-    async def cleanup_old_events(self, max_age_hours: int = 24) -> int:
+    async def cleanup_old_events(self, max_age_hours: int = 24) -> int:  # TODO: use this
         """Clean up old completed events.
 
         Args:
