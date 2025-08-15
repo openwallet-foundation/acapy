@@ -343,7 +343,6 @@ class EventStorageManager:
         error_msg: str,
         retry_count: int,
         updated_options: Dict[str, Any],
-        response_data: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Update an event for retry with exponential backoff logic.
 
@@ -358,7 +357,6 @@ class EventStorageManager:
             error_msg: Error message from the failed attempt
             retry_count: Current retry count (will be used for next attempt)
             updated_options: Updated options dictionary with new retry_count
-            response_data: Optional response payload data
         """
         # Calculate new expiry timestamp and retry metadata
         new_expiry = calculate_event_expiry_timestamp(retry_count)
@@ -369,7 +367,7 @@ class EventStorageManager:
             event_type=event_type,
             correlation_id=correlation_id,
             success=False,
-            response_data=response_data,
+            response_data=None,
             error_msg=error_msg,
             retry_metadata=retry_metadata,
             updated_expiry_timestamp=new_expiry,

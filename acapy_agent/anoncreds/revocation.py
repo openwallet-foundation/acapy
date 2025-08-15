@@ -1016,7 +1016,6 @@ class AnonCredsRevocation:
                 error_msg=error_msg,
                 should_retry=should_retry,
                 retry_count=retry_count,
-                result=result,
                 options=options,
             )
             await self.notify(event)
