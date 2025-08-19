@@ -1,13 +1,5 @@
 FROM faber-alice-demo
 
-# Install build dependencies for pysqlcipher3 (needed for Kanon Storage)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libsqlcipher-dev \
-    libpq-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Install bdd dependencies
 RUN pip3 install --no-cache-dir -r demo/requirements.behave.txt
 
