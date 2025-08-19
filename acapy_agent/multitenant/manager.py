@@ -4,6 +4,7 @@ import logging
 from typing import Iterable, Optional
 
 from ..askar.profile_anon import AskarAnonCredsProfile
+from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
@@ -87,7 +88,13 @@ class MultitenantManager(BaseMultitenantManager):
             self._profiles.put(wallet_id, profile)
 
         # return anoncreds profile if explicitly set as wallet type
-        if profile.context.settings.get("wallet.type") == "askar-anoncreds":
+        if profile.context.settings.get("wallet.type") == "kanon-anoncreds":
+            return KanonAnonCredsProfile(
+                profile.opened,
+                profile.context,
+            )
+
+        elif profile.context.settings.get("wallet.type") == "askar-anoncreds":
             return AskarAnonCredsProfile(
                 profile.opened,
                 profile.context,

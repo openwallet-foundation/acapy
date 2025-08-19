@@ -1,0 +1,894 @@
+from .base_handler import BaseHandler
+from ....db_types import Entry
+from ....wql_normalized.tags import TagQuery, query_to_tagquery
+from ....wql_normalized.query import query_from_json
+from ....wql_normalized.encoders import encoder_factory
+from ...errors import DatabaseError, DatabaseErrorCode
+from psycopg import AsyncCursor, pq
+from typing import Optional, Sequence, Union, List, Tuple, Any, AsyncGenerator
+import json
+import logging
+from datetime import datetime, timedelta, timezone
+from ..schema_context import SchemaContext
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)  # Enable debug logging for troubleshooting
+
+
+class GenericHandler(BaseHandler):
+    """Handler for generic categories using items and a configurable tags table."""
+
+    ALLOWED_ORDER_BY_COLUMNS = {"id", "name", "value"}
+
+    def __init__(
+        self,
+        category: str = "default",
+        tags_table_name: Optional[str] = None,
+        schema_context: Optional[SchemaContext] = None,
+    ):
+        super().__init__(category)
+        self.schema_context = schema_context or SchemaContext()
+        self.tags_table = self.schema_context.qualify_table(
+            tags_table_name or "items_tags"
+        )
+        self.encoder = encoder_factory.get_encoder(
+            "postgresql",
+            lambda x: x,
+            lambda x: x,
+            normalized=False,
+            tags_table=self.tags_table,
+        )
+        LOGGER.debug(
+            "Initialized GenericHandler for category=%s, tags_table=%s [Version 2025-07-04]",
+            category,
+            self.tags_table,
+        )
+
+    async def insert(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        name: str,
+        value: Union[str, bytes],
+        tags: dict,
+        expiry_ms: int,
+    ) -> None:
+        operation_name = "insert"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags=%s, expiry_ms=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            name,
+            tags,
+            expiry_ms,
+            self.tags_table,
+        )
+
+        expiry = None
+        if expiry_ms:
+            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+            LOGGER.debug("[%s] Calculated expiry: %s", operation_name, expiry)
+
+        # Convert bytes to string if necessary, as items.value is TEXT
+        LOGGER.debug(
+            "[%s] Input value type: %s, value: %r", operation_name, type(value), value
+        )
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+            LOGGER.debug("[%s] Decoded input value from bytes: %s", operation_name, value)
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(
+                f"""
+                INSERT INTO {self.schema_context.qualify_table("items")} (profile_id, kind, category, name, value, expiry)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (profile_id, category, name) DO NOTHING
+                RETURNING id
+            """,
+                (profile_id, 0, category, name, value, expiry),
+            )
+            row = await cursor.fetchone()
+            if not row:
+                LOGGER.error(
+                    "[%s] Duplicate entry detected for category=%s, name=%s",
+                    operation_name,
+                    category,
+                    name,
+                )
+                raise DatabaseError(
+                    code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
+                    message=f"Duplicate entry for category '{category}' and name '{name}'",
+                )
+            item_id = row[0]
+            LOGGER.debug("[%s] Inserted item with item_id=%d", operation_name, item_id)
+
+            for tag_name, tag_value in tags.items():
+                if isinstance(tag_value, (list, dict)):
+                    tag_value = json.dumps(tag_value)
+                    LOGGER.debug(
+                        "[%s] Serialized tag %s to JSON: %s",
+                        operation_name,
+                        tag_name,
+                        tag_value,
+                    )
+                await cursor.execute(
+                    f"""
+                    INSERT INTO {self.tags_table} (item_id, name, value)
+                    VALUES (%s, %s, %s)
+                """,
+                    (item_id, tag_name, tag_value),
+                )
+                LOGGER.debug(
+                    "[%s] Inserted tag %s=%s for item_id=%d",
+                    operation_name,
+                    tag_name,
+                    tag_value,
+                    item_id,
+                )
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def replace(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        name: str,
+        value: Union[str, bytes],
+        tags: dict,
+        expiry_ms: Optional[int] = None,
+    ) -> None:
+        operation_name = "replace"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, value=%r, tags=%s, expiry_ms=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            name,
+            value,
+            tags,
+            expiry_ms,
+            self.tags_table,
+        )
+
+        expiry = None
+        if expiry_ms is not None:
+            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+            LOGGER.debug("[%s] Calculated expiry: %s", operation_name, expiry)
+
+        # Convert bytes to string if necessary, as items.value is TEXT
+        LOGGER.debug(
+            "[%s] Input value type: %s, value: %r", operation_name, type(value), value
+        )
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+            LOGGER.debug("[%s] Decoded input value from bytes: %s", operation_name, value)
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(
+                f"""
+                SELECT id FROM {self.schema_context.qualify_table("items")}
+                WHERE profile_id = %s AND category = %s AND name = %s
+            """,
+                (profile_id, category, name),
+            )
+            row = await cursor.fetchone()
+            if row:
+                item_id = row[0]
+                LOGGER.debug("[%s] Found item with item_id=%d", operation_name, item_id)
+
+                await cursor.execute(
+                    f"""
+                    UPDATE {self.schema_context.qualify_table("items")} SET value = %s, expiry = %s
+                    WHERE id = %s
+                """,
+                    (value, expiry, item_id),
+                )
+                LOGGER.debug(
+                    "[%s] Updated item value and expiry for item_id=%d",
+                    operation_name,
+                    item_id,
+                )
+
+                await cursor.execute(
+                    f"DELETE FROM {self.tags_table} WHERE item_id = %s", (item_id,)
+                )
+                LOGGER.debug(
+                    "[%s] Deleted existing tags for item_id=%d", operation_name, item_id
+                )
+
+                for tag_name, tag_value in tags.items():
+                    if isinstance(tag_value, (list, dict)):
+                        tag_value = json.dumps(tag_value)
+                        LOGGER.debug(
+                            "[%s] Serialized tag %s to JSON: %s",
+                            operation_name,
+                            tag_name,
+                            tag_value,
+                        )
+                    await cursor.execute(
+                        f"""
+                        INSERT INTO {self.tags_table} (item_id, name, value)
+                        VALUES (%s, %s, %s)
+                    """,
+                        (item_id, tag_name, tag_value),
+                    )
+                    LOGGER.debug(
+                        "[%s] Inserted tag %s=%s for item_id=%d",
+                        operation_name,
+                        tag_name,
+                        tag_value,
+                        item_id,
+                    )
+            else:
+                LOGGER.error(
+                    "[%s] Record not found for category=%s, name=%s",
+                    operation_name,
+                    category,
+                    name,
+                )
+                raise DatabaseError(
+                    code=DatabaseErrorCode.RECORD_NOT_FOUND,
+                    message=f"Record not found for category '{category}' and name '{name}'",
+                )
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def fetch(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        name: str,
+        tag_filter: Union[str, dict],
+        for_update: bool,
+    ) -> Optional[Entry]:
+        operation_name = "fetch"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tag_filter=%s, for_update=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            name,
+            tag_filter,
+            for_update,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            params = [profile_id, category, name]
+            query = f"""
+                SELECT id, value FROM {self.schema_context.qualify_table("items")}
+                WHERE profile_id = %s AND category = %s AND name = %s
+                AND (expiry IS NULL OR expiry > CURRENT_TIMESTAMP)
+            """
+            if for_update:
+                query += " FOR UPDATE"
+
+            await cursor.execute(query, params)
+            row = await cursor.fetchone()
+            if not row:
+                LOGGER.debug(
+                    "[%s] No item found for category=%s, name=%s",
+                    operation_name,
+                    category,
+                    name,
+                )
+                return None
+            item_id, item_value = row
+            # Explicitly decode item_value if it is bytes
+            LOGGER.debug(
+                "[%s] Raw item_value type: %s, value: %r",
+                operation_name,
+                type(item_value),
+                item_value,
+            )
+            if isinstance(item_value, bytes):
+                item_value = item_value.decode("utf-8")
+                LOGGER.debug(
+                    "[%s] Decoded item_value from bytes: %s", operation_name, item_value
+                )
+            elif item_value is None:
+                LOGGER.warning(
+                    "[%s] item_value is None for item_id=%d", operation_name, item_id
+                )
+                item_value = ""
+            LOGGER.debug("[%s] Found item with item_id=%d", operation_name, item_id)
+
+            if tag_filter:
+                LOGGER.debug(
+                    "[%s] Processing tag_filter: %s, type: %s",
+                    operation_name,
+                    tag_filter,
+                    type(tag_filter),
+                )
+                if isinstance(tag_filter, str):
+                    tag_filter = json.loads(tag_filter)
+                    LOGGER.debug(
+                        "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
+                    )
+                wql_query = query_from_json(tag_filter)
+                tag_query = query_to_tagquery(wql_query)
+                sql_clause, clause_params = self.get_sql_clause(tag_query)
+                LOGGER.debug(
+                    "[%s] Generated SQL clause for tag_query: %s, params: %s",
+                    operation_name,
+                    sql_clause,
+                    clause_params,
+                )
+
+                query = f"""
+                    SELECT i.id, i.value
+                    FROM {self.schema_context.qualify_table("items")} i
+                    WHERE i.id = %s AND {sql_clause}
+                """
+                await cursor.execute(query, [item_id] + clause_params)
+                row = await cursor.fetchone()
+                if not row:
+                    LOGGER.debug(
+                        "[%s] No item matches tag_filter for item_id=%d",
+                        operation_name,
+                        item_id,
+                    )
+                    return None
+                item_id, item_value = row
+                # Explicitly decode item_value if it is bytes
+                LOGGER.debug(
+                    "[%s] Raw item_value (tag_filter) type: %s, value: %r",
+                    operation_name,
+                    type(item_value),
+                    item_value,
+                )
+                if isinstance(item_value, bytes):
+                    item_value = item_value.decode("utf-8")
+                    LOGGER.debug(
+                        "[%s] Decoded item_value (tag_filter) from bytes: %s",
+                        operation_name,
+                        item_value,
+                    )
+                elif item_value is None:
+                    LOGGER.warning(
+                        "[%s] item_value (tag_filter) is None for item_id=%d",
+                        operation_name,
+                        item_id,
+                    )
+                    item_value = ""
+                LOGGER.debug(
+                    "[%s] Item matches tag_filter for item_id=%d", operation_name, item_id
+                )
+
+            await cursor.execute(
+                f"SELECT name, value FROM {self.tags_table} WHERE item_id = %s",
+                (item_id,),
+            )
+            tags = {name: value for name, value in await cursor.fetchall()}
+            LOGGER.debug(
+                "[%s] Fetched %d tags for item_id=%d: %s",
+                operation_name,
+                len(tags),
+                item_id,
+                tags,
+            )
+
+            entry = Entry(category=category, name=name, value=item_value, tags=tags)
+            LOGGER.debug("[%s] Returning entry: %s", operation_name, entry)
+            return entry
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def fetch_all(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        tag_filter: Union[str, dict],
+        limit: int,
+        for_update: bool,
+        order_by: Optional[str] = None,
+        descending: bool = False,
+    ) -> Sequence[Entry]:
+        operation_name = "fetch_all"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, limit=%s, for_update=%s, order_by=%s, descending=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            tag_filter,
+            limit,
+            for_update,
+            order_by,
+            descending,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
+                LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                )
+
+            sql_clause = "TRUE"
+            params = [profile_id, category]
+            if tag_filter:
+                if isinstance(tag_filter, str):
+                    tag_filter = json.loads(tag_filter)
+                    LOGGER.debug(
+                        "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
+                    )
+                wql_query = query_from_json(tag_filter)
+                tag_query = query_to_tagquery(wql_query)
+                sql_clause, clause_params = self.get_sql_clause(tag_query)
+                LOGGER.debug(
+                    "[%s] Generated SQL clause: %s, params: %s",
+                    operation_name,
+                    sql_clause,
+                    clause_params,
+                )
+                params.extend(clause_params)
+
+            order_column = order_by if order_by else "id"
+            order_direction = "DESC" if descending else "ASC"
+            subquery = f"""
+                SELECT i.id, i.category, i.name, i.value
+                FROM {self.schema_context.qualify_table("items")} i
+                WHERE i.profile_id = %s AND i.category = %s
+                AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                AND {sql_clause}
+                ORDER BY i.{order_column} {order_direction}
+            """
+            subquery_params = params
+            if limit is not None:
+                subquery += " LIMIT %s"
+                subquery_params.append(limit)
+
+            query = f"""
+                SELECT sub.id, sub.category, sub.name, sub.value, t.name, t.value
+                FROM ({subquery}) sub
+                LEFT JOIN {self.tags_table} t ON sub.id = t.item_id
+                ORDER BY sub.{order_column} {order_direction}
+            """
+            await cursor.execute(query, subquery_params)
+            LOGGER.debug("[%s] Query executed successfully", operation_name)
+
+            entries = []
+            current_item_id = None
+            current_entry = None
+            async for row in cursor:
+                item_id, category, name, value, tag_name, tag_value = row
+                # Explicitly decode value if it is bytes
+                LOGGER.debug(
+                    "[%s] Raw value type: %s, value: %r",
+                    operation_name,
+                    type(value),
+                    value,
+                )
+                if isinstance(value, bytes):
+                    value = value.decode("utf-8")
+                    LOGGER.debug(
+                        "[%s] Decoded value from bytes: %s", operation_name, value
+                    )
+                elif value is None:
+                    LOGGER.warning(
+                        "[%s] value is None for item_id=%d", operation_name, item_id
+                    )
+                    value = ""
+                if item_id != current_item_id:
+                    if current_entry:
+                        entries.append(current_entry)
+                    current_item_id = item_id
+                    current_entry = Entry(
+                        category=category, name=name, value=value, tags={}
+                    )
+                if tag_name is not None:
+                    current_entry.tags[tag_name] = tag_value
+            if current_entry:
+                entries.append(current_entry)
+            LOGGER.debug("[%s] Fetched %d entries", operation_name, len(entries))
+            return entries
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def count(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        tag_filter: Union[str, dict],
+    ) -> int:
+        operation_name = "count"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            tag_filter,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            sql_clause = "TRUE"
+            params = [profile_id, category]
+            if tag_filter:
+                if isinstance(tag_filter, str):
+                    tag_filter = json.loads(tag_filter)
+                wql_query = query_from_json(tag_filter)
+                tag_query = query_to_tagquery(wql_query)
+                sql_clause, clause_params = self.get_sql_clause(tag_query)
+                params.extend(clause_params)
+
+            query = f"""
+                SELECT COUNT(*) FROM {self.schema_context.qualify_table("items")} i
+                WHERE i.profile_id = %s AND i.category = %s
+                AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                AND {sql_clause}
+            """
+            await cursor.execute(query, params)
+            count = (await cursor.fetchone())[0]
+            LOGGER.debug("[%s] Counted %d entries", operation_name, count)
+            return count
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def remove(
+        self, cursor: AsyncCursor, profile_id: int, category: str, name: str
+    ) -> None:
+        operation_name = "remove"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            name,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(
+                f"""
+                DELETE FROM {self.schema_context.qualify_table("items")}
+                WHERE profile_id = %s AND category = %s AND name = %s
+            """,
+                (profile_id, category, name),
+            )
+            if cursor.rowcount == 0:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.RECORD_NOT_FOUND,
+                    message=f"Record not found for category '{category}' and name '{name}'",
+                )
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def remove_all(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        tag_filter: Union[str, dict],
+    ) -> int:
+        operation_name = "remove_all"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            tag_filter,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            sql_clause = "TRUE"
+            params = [profile_id, category]
+            if tag_filter:
+                if isinstance(tag_filter, str):
+                    tag_filter = json.loads(tag_filter)
+                wql_query = query_from_json(tag_filter)
+                tag_query = query_to_tagquery(wql_query)
+                sql_clause, clause_params = self.get_sql_clause(tag_query)
+                params.extend(clause_params)
+
+            query = f"""
+                DELETE FROM {self.schema_context.qualify_table("items")} WHERE id IN (
+                    SELECT i.id FROM {self.schema_context.qualify_table("items")} i
+                    WHERE i.profile_id = %s AND i.category = %s
+                    AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                    AND {sql_clause}
+                )
+            """
+            await cursor.execute(query, params)
+            rowcount = cursor.rowcount
+            LOGGER.debug("[%s] Removed %d entries", operation_name, rowcount)
+            return rowcount
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def scan(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        tag_query: Optional[TagQuery],
+        offset: Optional[int],
+        limit: Optional[int],
+        order_by: Optional[str] = None,
+        descending: bool = False,
+    ) -> AsyncGenerator[Entry, None]:
+        operation_name = "scan"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, offset=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            tag_query,
+            offset,
+            limit,
+            order_by,
+            descending,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                )
+
+            sql_clause = "TRUE"
+            params = [profile_id, category]
+            if tag_query:
+                sql_clause, clause_params = self.get_sql_clause(tag_query)
+                LOGGER.debug(
+                    "[%s] Generated SQL clause: %s, params: %s",
+                    operation_name,
+                    sql_clause,
+                    clause_params,
+                )
+                params.extend(clause_params)
+
+            order_column = order_by if order_by else "id"
+            order_direction = "DESC" if descending else "ASC"
+            subquery = f"""
+                SELECT i.id, i.category, i.name, i.value
+                FROM {self.schema_context.qualify_table("items")} i
+                WHERE i.profile_id = %s AND i.category = %s
+                AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                AND {sql_clause}
+            """
+            subquery_params = params
+            if limit is not None:
+                subquery += f" ORDER BY i.{order_column} {order_direction} LIMIT %s"
+                subquery_params.append(limit)
+            elif offset is not None:
+                subquery += f" ORDER BY i.{order_column} {order_direction} OFFSET %s"
+                subquery_params.append(offset)
+
+            query = f"""
+                SELECT sub.id, sub.category, sub.name, sub.value, t.name, t.value
+                FROM ({subquery}) sub
+                LEFT JOIN {self.tags_table} t ON sub.id = t.item_id
+                ORDER BY sub.{order_column} {order_direction}
+            """
+            LOGGER.debug(
+                "[%s] Executing query: %s with params: %s",
+                operation_name,
+                query,
+                subquery_params,
+            )
+            await cursor.execute(query, subquery_params)
+            current_item_id = None
+            current_entry = None
+            async for row in cursor:
+                item_id, category, name, value, tag_name, tag_value = row
+                # Explicitly decode value if it is bytes
+                LOGGER.debug(
+                    "[%s] Raw value type: %s, value: %r",
+                    operation_name,
+                    type(value),
+                    value,
+                )
+                if isinstance(value, bytes):
+                    value = value.decode("utf-8")
+                    LOGGER.debug(
+                        "[%s] Decoded value from bytes: %s", operation_name, value
+                    )
+                elif value is None:
+                    LOGGER.warning(
+                        "[%s] value is None for item_id=%d", operation_name, item_id
+                    )
+                    value = ""
+                if item_id != current_item_id:
+                    if current_entry:
+                        yield current_entry
+                    current_item_id = item_id
+                    current_entry = Entry(
+                        category=category, name=name, value=value, tags={}
+                    )
+                if tag_name is not None:
+                    current_entry.tags[tag_name] = tag_value
+            if current_entry:
+                yield current_entry
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    async def scan_keyset(
+        self,
+        cursor: AsyncCursor,
+        profile_id: int,
+        category: str,
+        tag_query: Optional[TagQuery],
+        last_id: Optional[int],
+        limit: int,
+        order_by: Optional[str] = None,
+        descending: bool = False,
+    ) -> AsyncGenerator[Entry, None]:
+        operation_name = "scan_keyset"
+        LOGGER.debug(
+            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, last_id=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
+            operation_name,
+            profile_id,
+            category,
+            tag_query,
+            last_id,
+            limit,
+            order_by,
+            descending,
+            self.tags_table,
+        )
+
+        try:
+            await cursor.execute("SET client_encoding = 'UTF8'")
+            if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                )
+
+            sql_clause = "TRUE"
+            params = [profile_id, category]
+            if tag_query:
+                sql_clause, clause_params = self.get_sql_clause(tag_query)
+                LOGGER.debug(
+                    "[%s] Generated SQL clause: %s, params: %s",
+                    operation_name,
+                    sql_clause,
+                    clause_params,
+                )
+                params.extend(clause_params)
+            if last_id is not None:
+                sql_clause += f" AND i.id {'<' if descending else '>'} %s"
+                params.append(last_id)
+
+            order_column = order_by if order_by else "id"
+            order_direction = "DESC" if descending else "ASC"
+            subquery = f"""
+                SELECT i.id, i.category, i.name, i.value
+                FROM {self.schema_context.qualify_table("items")} i
+                WHERE i.profile_id = %s AND i.category = %s
+                AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                AND {sql_clause}
+                ORDER BY i.{order_column} {order_direction}, i.id {order_direction}
+                LIMIT %s
+            """
+            subquery_params = params + [limit]
+
+            query = f"""
+                SELECT sub.id, sub.category, sub.name, sub.value, t.name, t.value
+                FROM ({subquery}) sub
+                LEFT JOIN {self.tags_table} t ON sub.id = t.item_id
+                ORDER BY sub.{order_column} {order_direction}, sub.id {order_direction}
+            """
+            LOGGER.debug(
+                "[%s] Executing query: %s with params: %s",
+                operation_name,
+                query,
+                subquery_params,
+            )
+            await cursor.execute(query, subquery_params)
+            current_item_id = None
+            current_entry = None
+            async for row in cursor:
+                item_id, category, name, value, tag_name, tag_value = row
+                # Explicitly decode value if it is bytes
+                LOGGER.debug(
+                    "[%s] Raw value type: %s, value: %r",
+                    operation_name,
+                    type(value),
+                    value,
+                )
+                if isinstance(value, bytes):
+                    value = value.decode("utf-8")
+                    LOGGER.debug(
+                        "[%s] Decoded value from bytes: %s", operation_name, value
+                    )
+                if item_id != current_item_id:
+                    if current_entry:
+                        yield current_entry
+                    current_item_id = item_id
+                    current_entry = Entry(
+                        category=category, name=name, value=value, tags={}
+                    )
+                if tag_name is not None:
+                    current_entry.tags[tag_name] = tag_value
+            if current_entry:
+                yield current_entry
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            await cursor.connection.rollback()
+            raise
+        finally:
+            if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+                await cursor.connection.commit()
+
+    def get_sql_clause(self, tag_query: TagQuery) -> Tuple[str, List[Any]]:
+        operation_name = "get_sql_clause"
+        LOGGER.debug(
+            "[%s] Starting with tag_query=%s, tags_table=%s",
+            operation_name,
+            tag_query,
+            self.tags_table,
+        )
+
+        try:
+            sql_clause, arguments = self.encoder.encode_query(tag_query)
+            LOGGER.debug(
+                "[%s] Generated SQL clause: %s, arguments: %s",
+                operation_name,
+                sql_clause,
+                arguments,
+            )
+            return sql_clause, arguments
+        except Exception as e:
+            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            raise

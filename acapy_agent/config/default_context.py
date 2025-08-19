@@ -171,7 +171,7 @@ class DefaultContextBuilder(ContextBuilder):
             # Register both askar and anoncreds plugins for multitenancy
             register_askar_plugins()
             register_anoncreds_plugins()
-        elif self.settings.get("wallet.type") == "askar-anoncreds":
+        elif self.settings.get("wallet.type") in ("askar-anoncreds", "kanon-anoncreds"):
             register_anoncreds_plugins()
         else:
             register_askar_plugins()

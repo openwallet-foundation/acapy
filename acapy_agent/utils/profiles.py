@@ -6,22 +6,27 @@ from aiohttp import web
 
 from ..anoncreds.error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from ..askar.profile_anon import AskarAnonCredsProfile
+from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
+
 from ..core.profile import Profile
 from ..multitenant.manager import MultitenantManager
+
 from ..multitenant.single_wallet_askar_manager import SingleWalletAskarMultitenantManager
+from ..multitenant.single_wallet_kanon_manager import SingleWalletKanonMultitenantManager
+
 from ..storage.base import BaseStorageSearch
 from ..wallet.models.wallet_record import WalletRecord
 
 
 def is_anoncreds_profile_raise_web_exception(profile: Profile) -> None:
     """Raise a web exception when the supplied profile is anoncreds."""
-    if isinstance(profile, AskarAnonCredsProfile):
+    if isinstance(profile, (AskarAnonCredsProfile, KanonAnonCredsProfile)):
         raise web.HTTPForbidden(reason="Interface not supported for an anoncreds profile")
 
 
 def is_not_anoncreds_profile_raise_web_exception(profile: Profile) -> None:
     """Raise a web exception when the supplied profile is anoncreds."""
-    if not isinstance(profile, AskarAnonCredsProfile):
+    if not isinstance(profile, (AskarAnonCredsProfile, KanonAnonCredsProfile)):
         raise web.HTTPForbidden(reason=ANONCREDS_PROFILE_REQUIRED_MSG)
 
 
@@ -32,10 +37,12 @@ async def get_subwallet_profiles_from_storage(root_profile: Profile) -> list[Pro
     search_session = base_storage_search.search_records(
         type_filter=WalletRecord.RECORD_TYPE, page_size=10
     )
-    if (
-        root_profile.context.settings.get("multitenant.wallet_type")
-        == "single-wallet-askar"
-    ):
+
+    wallet_type = root_profile.context.settings.get("multitenant.wallet_type")
+
+    if wallet_type == "single-wallet-kanon":
+        manager = SingleWalletKanonMultitenantManager(root_profile)
+    elif wallet_type == "single-wallet-askar":
         manager = SingleWalletAskarMultitenantManager(root_profile)
     else:
         manager = MultitenantManager(root_profile)

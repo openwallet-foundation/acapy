@@ -462,6 +462,7 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.type": sub_wallet_type,
         "wallet.name": body.get("wallet_name"),
         "wallet.key": wallet_key,
+        "dbstore.key": body.get("dbstore_key"),
         "wallet.webhook_urls": wallet_webhook_urls,
         "wallet.dispatch_type": wallet_dispatch_type,
     }

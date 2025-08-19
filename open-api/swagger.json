@@ -7284,7 +7284,7 @@
           "type" : "string",
           "example" : "askar",
           "description" : "Type of the wallet to create. Must be same as base wallet.",
-          "enum" : [ "askar", "askar-anoncreds" ]
+          "enum" : [ "askar", "askar-anoncreds", "kanon-anoncreds"]
         },
         "wallet_webhook_urls" : {
           "type" : "array",

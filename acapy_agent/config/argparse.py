@@ -1589,6 +1589,13 @@ class WalletGroup(ArgumentGroup):
             help="Specifies the master key value to use to open the wallet.",
         )
         parser.add_argument(
+            "--dbstore-key",
+            type=str,
+            metavar="<dbstore-key>",
+            env_var="ACAPY_DBSTORE_KEY",
+            help="Specifies the master key value to use to open the DB Store.",
+        )
+        parser.add_argument(
             "--wallet-rekey",
             type=str,
             metavar="<wallet-rekey>",
@@ -1596,6 +1603,16 @@ class WalletGroup(ArgumentGroup):
             help=(
                 "Specifies a new master key value to which to rotate and to "
                 "open the wallet next time."
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-rekey",
+            type=str,
+            metavar="<dbstore-rekey>",
+            env_var="ACAPY_DBSTORE_REKEY",
+            help=(
+                "Specifies a new master key value to which to rotate and to "
+                "open the DB Store next time."
             ),
         )
         parser.add_argument(
@@ -1635,6 +1652,19 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--dbstore-storage-type",
+            type=str,
+            metavar="<dbstore-storage-type>",
+            default="default",
+            env_var="ACAPY_DBSTORE_STORAGE_TYPE",
+            help=(
+                "Specifies the type of wallet backend to use. "
+                "Supported internal storage types are 'default' (sqlite), "
+                "and 'postgres_storage'.  The default, "
+                "if not specified, is 'default'."
+            ),
+        )
+        parser.add_argument(
             "--wallet-test",
             action="store_true",
             default=False,
@@ -1655,6 +1685,30 @@ class WalletGroup(ArgumentGroup):
                 "Specifies the storage configuration to use for the wallet. "
                 "This is required if you are for using 'postgres_storage' wallet "
                 'storage type. For example, \'{"url":"localhost:5432"}\'.'
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-storage-config",
+            type=str,
+            metavar="<dbstore-storage-config>",
+            env_var="ACAPY_DBSTORE_STORAGE_CONFIG",
+            help=(
+                "Specifies the storage configuration to use for the DB Store. "
+                "This is required if you are for using 'postgres_storage' DB Store "
+                'storage type. For example, \'{"url":"localhost:5432"}\'.'
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-schema-config",
+            type=str,
+            metavar="<dbstore-schema-config>",
+            env_var="ACAPY_DBSTORE_SCHEMA_CONFIG",
+            help=(
+                "Specifies the schema configuration to use for the DB Store during provision only "
+                "Optional when using the 'postgres_storage' or 'sqlite' DB Store type. "
+                "Accepted values are 'generic' or 'normalize'. "
+                "If not specified, the default is 'normalize'. "
+                "Example: --dbstore-schema-config generic"
             ),
         )
         parser.add_argument(
@@ -1682,6 +1736,21 @@ class WalletGroup(ArgumentGroup):
             help=(
                 "Specifies the storage credentials to use for the wallet. "
                 "This is required if you are for using 'postgres_storage' wallet "
+                'For example, \'{"account":"postgres","password": '
+                '"mysecretpassword","admin_account":"postgres", '
+                '"admin_password":"mysecretpassword"}\'.'
+                "NOTE: admin_user must have the CREATEDB role or else initialization "
+                "will fail."
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-storage-creds",
+            type=str,
+            metavar="<dbstore-storage-creds>",
+            env_var="ACAPY_DBSTORE_STORAGE_CREDS",
+            help=(
+                "Specifies the DB Store credentials to use for the DB Store. "
+                "This is required if you are for using 'postgres_storage' DB Store "
                 'For example, \'{"account":"postgres","password": '
                 '"mysecretpassword","admin_account":"postgres", '
                 '"admin_password":"mysecretpassword"}\'.'
@@ -1720,12 +1789,18 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.allow_insecure_seed"] = True
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
+        if args.dbstore_key:
+            settings["dbstore.key"] = args.dbstore_key
         if args.wallet_rekey:
             settings["wallet.rekey"] = args.wallet_rekey
+        if args.dbstore_rekey:
+            settings["dbstore.rekey"] = args.dbstore_rekey
         if args.wallet_name:
             settings["wallet.name"] = args.wallet_name
         if args.wallet_storage_type:
             settings["wallet.storage_type"] = args.wallet_storage_type
+        if args.dbstore_storage_type:
+            settings["dbstore.storage_type"] = args.dbstore_storage_type
         if args.wallet_type:
             settings["wallet.type"] = args.wallet_type
         if args.wallet_test:
@@ -1738,14 +1813,22 @@ class WalletGroup(ArgumentGroup):
             )
         if args.wallet_storage_config:
             settings["wallet.storage_config"] = args.wallet_storage_config
+        if args.dbstore_storage_config:
+            settings["dbstore.storage_config"] = args.dbstore_storage_config
         if args.wallet_storage_creds:
             settings["wallet.storage_creds"] = args.wallet_storage_creds
+        if args.dbstore_storage_creds:
+            settings["dbstore.storage_creds"] = args.dbstore_storage_creds
+
+        if args.dbstore_schema_config:
+            settings["dbstore.schema_config"] = args.dbstore_schema_config
+
         if args.replace_public_did:
             settings["wallet.replace_public_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
         # check required settings for persistent wallets
-        if settings["wallet.type"] in ["askar", "askar-anoncreds"]:
+        if settings["wallet.type"] in ["askar", "askar-anoncreds", "kanon-anoncreds"]:
             # requires name, key
             if not args.wallet_test and (not args.wallet_name or not args.wallet_key):
                 raise ArgsParseError(
@@ -1762,6 +1845,7 @@ class WalletGroup(ArgumentGroup):
                         "Parameters --wallet-storage-config and --wallet-storage-creds "
                         "must be provided for postgres wallets"
                     )
+
         return settings
 
 

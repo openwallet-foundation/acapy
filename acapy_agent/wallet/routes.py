@@ -1359,7 +1359,7 @@ class UpgradeResultSchema(OpenAPISchema):
 
 @docs(
     tags=[UPGRADE_TAG_TITLE],
-    summary="Upgrade the wallet from askar to askar-anoncreds. Be very careful with this!"
+    summary="Upgrade the wallet from askar to askar-anoncreds OR kanon to kanon-anoncreds. Be very careful with this!"
     " You cannot go back! See migration guide for more information.",
 )
 @querystring_schema(UpgradeVerificationSchema())
@@ -1383,7 +1383,7 @@ async def upgrade_anoncreds(request: web.BaseRequest):
             reason="Wallet name parameter does not match the agent which triggered the upgrade"  # noqa: E501
         )
 
-    if profile.settings.get("wallet.type") == "askar-anoncreds":
+    if profile.settings.get("wallet.type") in ("askar-anoncreds", "kanon-anoncreds"):
         raise web.HTTPBadRequest(reason="Wallet type is already anoncreds")
 
     async with profile.session() as session:

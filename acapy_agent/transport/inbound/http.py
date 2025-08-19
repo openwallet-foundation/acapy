@@ -75,7 +75,6 @@ class HttpTransport(BaseInboundTransport):
 
         Returns:
             The web response
-
         """
         ctype = request.headers.get("content-type", "")
         if ctype.split(";", 1)[0].lower() == "application/json":
@@ -90,45 +89,48 @@ class HttpTransport(BaseInboundTransport):
         )
 
         async with session:
+            # try -except block to catch all exceptions and ensure session closure
             try:
                 inbound = await session.receive(body)
-            except (MessageParseError, WireFormatParseError):
-                raise web.HTTPBadRequest()
 
-            if inbound.receipt.direct_response_requested:
-                # Wait for the message to be processed. Only send a response if a response
-                # buffer is present.
-                await inbound.wait_processing_complete()
-                response = (
-                    await session.wait_response() if session.response_buffer else None
-                )
+                # ensure responses are only sent on success
+                if inbound.receipt.direct_response_requested:
+                    await inbound.wait_processing_complete()
+                    response = (
+                        await session.wait_response() if session.response_buffer else None
+                    )
 
-                # no more responses
-                session.can_respond = False
-                session.clear_response()
+                    session.can_respond = False
+                    session.clear_response()
 
-                if response:
-                    if isinstance(response, bytes):
-                        return web.Response(
-                            body=response,
-                            status=200,
-                            headers={
-                                "Content-Type": (
-                                    DIDCOMM_V1_MIME_TYPE
-                                    if session.profile.settings.get(
-                                        "emit_new_didcomm_mime_type"
+                    if response:
+                        if isinstance(response, bytes):
+                            return web.Response(
+                                body=response,
+                                status=200,
+                                headers={
+                                    "Content-Type": (
+                                        DIDCOMM_V1_MIME_TYPE
+                                        if session.profile.settings.get(
+                                            "emit_new_didcomm_mime_type"
+                                        )
+                                        else DIDCOMM_V0_MIME_TYPE
                                     )
-                                    else DIDCOMM_V0_MIME_TYPE
-                                )
-                            },
-                        )
-                    else:
-                        return web.Response(
-                            text=response,
-                            status=200,
-                            headers={"Content-Type": "application/json"},
-                        )
-        return web.Response(status=200)
+                                },
+                            )
+                        else:
+                            return web.Response(
+                                text=response,
+                                status=200,
+                                headers={"Content-Type": "application/json"},
+                            )
+                return web.Response(status=200)
+            except (MessageParseError, WireFormatParseError) as e:
+                raise web.HTTPBadRequest(reason=str(e))
+            except Exception as e:
+                # add loogs
+                LOGGER.error("Unexpected error in inbound_message_handler: %s, stack=%s")
+                raise web.HTTPInternalServerError(reason=f"Unexpected error: {str(e)}")
 
     async def invite_message_handler(self, request: web.BaseRequest):
         """Message handler for invites.

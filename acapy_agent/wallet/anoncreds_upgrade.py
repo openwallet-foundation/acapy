@@ -55,6 +55,7 @@ from ..storage.type import (
     RECORD_TYPE_ACAPY_STORAGE_TYPE,
     RECORD_TYPE_ACAPY_UPGRADING,
     STORAGE_TYPE_VALUE_ANONCREDS,
+    STORAGE_TYPE_VALUE_KANON_ANONCREDS,
 )
 from .singletons import IsAnonCredsSingleton, UpgradeInProgressSingleton
 
@@ -627,17 +628,33 @@ async def finish_upgrade(profile: Profile):
             storage_type_record = await storage.find_record(
                 type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
             )
-            await storage.update_record(
-                storage_type_record, STORAGE_TYPE_VALUE_ANONCREDS, {}
-            )
+
+            if storage_type_record.value == STORAGE_TYPE_VALUE_KANON_ANONCREDS:
+                await storage.update_record(
+                    storage_type_record, STORAGE_TYPE_VALUE_KANON_ANONCREDS, {}
+                )
+            else:
+                await storage.update_record(
+                    storage_type_record, STORAGE_TYPE_VALUE_ANONCREDS, {}
+                )
+
         # This should only happen for subwallets
         except StorageNotFoundError:
-            await storage.add_record(
-                StorageRecord(
-                    RECORD_TYPE_ACAPY_STORAGE_TYPE,
-                    STORAGE_TYPE_VALUE_ANONCREDS,
+            if storage_type_record.value == STORAGE_TYPE_VALUE_KANON_ANONCREDS:
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                        STORAGE_TYPE_VALUE_KANON_ANONCREDS,
+                    )
                 )
-            )
+            else:
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                        STORAGE_TYPE_VALUE_ANONCREDS,
+                    )
+                )
+
     await finish_upgrading_record(profile)
     IsAnonCredsSingleton().set_wallet(profile.name)
     UpgradeInProgressSingleton().remove_wallet(profile.name)
