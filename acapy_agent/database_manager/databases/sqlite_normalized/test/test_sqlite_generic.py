@@ -1,4 +1,7 @@
-# poetry run python acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_generic.py
+"""Tests for SQLite generic database functionality."""
+
+# poetry run python \
+# acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_generic.py
 
 
 import asyncio
@@ -13,7 +16,7 @@ from acapy_agent.database_manager.databases.backends.backend_registration import
 )
 
 try:
-    from pysqlcipher3 import dbapi2 as sqlcipher
+    import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
 import logging
@@ -24,6 +27,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def run_tests(store, db_path, is_encrypted=True):
+    """Run database tests."""
     try:
         # Debug: Log current data state
         async with store.session() as session:
@@ -32,7 +36,9 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
+                    parsed_entries.append(
+                        f"{entry.name}: {entry.tags}, value={value}"
+                    )
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -58,7 +64,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             print(f" - {scanned_entries[0].name}: {value}")
         except json.JSONDecodeError:
             print(
-                f"Failed to parse JSON for {scanned_entries[0].name}: {scanned_entries[0].value}"
+                f"Failed to parse JSON for {scanned_entries[0].name}: "
+                f"{scanned_entries[0].value}"
             )
             raise
 
@@ -77,7 +84,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             print(f" - {scanned_entries[0].name}: {value}")
         except json.JSONDecodeError:
             print(
-                f"Failed to parse JSON for {scanned_entries[0].name}: {scanned_entries[0].value}"
+                f"Failed to parse JSON for {scanned_entries[0].name}: "
+                f"{scanned_entries[0].value}"
             )
             raise
 
@@ -123,7 +131,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             print(f" - {scanned_entries[0].name}: {value}")
         except json.JSONDecodeError:
             print(
-                f"Failed to parse JSON for {scanned_entries[0].name}: {scanned_entries[0].value}"
+                f"Failed to parse JSON for {scanned_entries[0].name}: "
+                f"{scanned_entries[0].value}"
             )
             raise
 
@@ -154,16 +163,19 @@ async def run_tests(store, db_path, is_encrypted=True):
                 },
             )
             updated_entry = await session.fetch(
-                category="people", name="person1" if is_encrypted else "person4"
+                category="people",
+                name="person1" if is_encrypted else "person4",
             )
             try:
                 value = json.loads(updated_entry.value)
                 print(
-                    f"Updated {'Alice' if is_encrypted else 'David'}: {updated_entry.name}, value={value}"
+                    f"Updated {'Alice' if is_encrypted else 'David'}: "
+                    f"{updated_entry.name}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(
-                    f"Failed to parse JSON for {updated_entry.name}: {updated_entry.value}"
+                    f"Failed to parse JSON for {updated_entry.name}: "
+                    f"{updated_entry.value}"
                 )
                 raise
             expected_value = json.dumps(
@@ -191,12 +203,14 @@ async def run_tests(store, db_path, is_encrypted=True):
                 },
             )
             new_entry = await session.fetch(
-                category="people", name="person4" if is_encrypted else "person7"
+                category="people",
+                name="person4" if is_encrypted else "person7",
             )
             try:
                 value = json.loads(new_entry.value)
                 print(
-                    f"Inserted {'David' if is_encrypted else 'Grace'}: {new_entry.name}, value={value}"
+                    f"Inserted {'David' if is_encrypted else 'Grace'}: "
+                    f"{new_entry.name}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(f"Failed to parse JSON for {new_entry.name}: {new_entry.value}")
@@ -219,16 +233,19 @@ async def run_tests(store, db_path, is_encrypted=True):
                 },
             )
             updated_entry = await session.fetch(
-                category="people", name="person4" if is_encrypted else "person7"
+                category="people",
+                name="person4" if is_encrypted else "person7",
             )
             try:
                 value = json.loads(updated_entry.value)
                 print(
-                    f"Updated {'David' if is_encrypted else 'Grace'}: {updated_entry.name}, value={value}"
+                    f"Updated {'David' if is_encrypted else 'Grace'}: "
+                    f"{updated_entry.name}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(
-                    f"Failed to parse JSON for {updated_entry.name}: {updated_entry.value}"
+                    f"Failed to parse JSON for {updated_entry.name}: "
+                    f"{updated_entry.value}"
                 )
                 raise
             expected_value = json.dumps(
@@ -248,7 +265,9 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
+                    parsed_entries.append(
+                        f"{entry.name}: {entry.tags}, value={value}"
+                    )
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -271,7 +290,9 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
+                    parsed_entries.append(
+                        f"{entry.name}: {entry.tags}, value={value}"
+                    )
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -281,14 +302,18 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             print(f"Deleted {deleted_count} inactive people born after 2000")
             assert deleted_count == (1 if is_encrypted else 2), (
-                f"Expected to delete {1 if is_encrypted else 2} person (Bob if encrypted; Eve, Grace if non-encrypted), got {deleted_count}"
+                f"Expected to delete {1 if is_encrypted else 2} person "
+                f"(Bob if encrypted; Eve, Grace if non-encrypted), "
+                f"got {deleted_count}"
             )
             entries = await session.fetch_all(category="people")
             parsed_entries = []
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
+                    parsed_entries.append(
+                        f"{entry.name}: {entry.tags}, value={value}"
+                    )
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -305,7 +330,9 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
+                    parsed_entries.append(
+                        f"{entry.name}: {entry.tags}, value={value}"
+                    )
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -368,7 +395,8 @@ async def run_tests(store, db_path, is_encrypted=True):
                 print(f" - {scanned_entries[0].name}: {value}")
             except json.JSONDecodeError:
                 print(
-                    f"Failed to parse JSON for {scanned_entries[0].name}: {scanned_entries[0].value}"
+                    f"Failed to parse JSON for {scanned_entries[0].name}: "
+                f"{scanned_entries[0].value}"
                 )
                 raise
 
@@ -379,7 +407,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             deleted_count_people = await session.remove_all(category="people")
             deleted_count_credentials = await session.remove_all(category="credential")
             print(
-                f"Wiped out {deleted_count_people} people and {deleted_count_credentials} credentials!"
+                f"Wiped out {deleted_count_people} people and "
+                f"{deleted_count_credentials} credentials!"
             )
             assert deleted_count_people == (3 if is_encrypted else 2), (
                 f"Expected to delete {3 if is_encrypted else 2} people after deletion"
@@ -394,6 +423,7 @@ async def run_tests(store, db_path, is_encrypted=True):
 
 
 async def main():
+    """Main function to run SQLite database tests."""
     register_backends()
     print("Starting the SQLite database test program")
     store = None
@@ -606,9 +636,8 @@ async def main():
         print("=== Testing Non-Encrypted Database ===")
         print("=======================================")
         non_enc_db_path = "test_non_enc.db"
-        os.makedirs(os.path.dirname(non_enc_db_path), exist_ok=True) if os.path.dirname(
-            non_enc_db_path
-        ) else None
+        if os.path.dirname(non_enc_db_path):
+            os.makedirs(os.path.dirname(non_enc_db_path), exist_ok=True)
         print(f"Provisioning non-encrypted database at {non_enc_db_path}...")
         non_enc_config = SqliteConfig(
             uri=f"sqlite://{non_enc_db_path}",
@@ -624,7 +653,8 @@ async def main():
                 pool, profile_name, path, effective_release_number
             )
             print(
-                f"Non-encrypted database ready! Profile name: {await non_enc_store.get_profile_name()}"
+                f"Non-encrypted database ready! Profile name: "
+                f"{await non_enc_store.get_profile_name()}"
             )
         except Exception as e:
             print(f"Oops! Failed to set up the non-encrypted database: {e}")

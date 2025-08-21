@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
@@ -24,9 +26,11 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         table_name: Optional[str] = None,
         schema_context: Optional[SchemaContext] = None,
     ):
+        """Initialize ConnectionMetadataCustomHandler."""
         super().__init__(category, columns, table_name, schema_context)
         LOGGER.debug(
-            f"Initialized ConnectionMetadataCustomHandler for category={category}, table={self.table}, columns={columns}, schema_context={schema_context}"
+            f"Initialized ConnectionMetadataCustomHandler for category={category}, "
+            f"table={self.table}, columns={columns}, schema_context={schema_context}"
         )
 
     def _extract_metadata(self, json_data: dict) -> str:
@@ -52,8 +56,10 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert a new connection metadata entry."""
         LOGGER.debug(
-            f"[insert] Inserting record with category={category}, name={name}, value={value}, tags={tags}"
+            f"[insert] Inserting record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -75,11 +81,13 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
                 )
 
         LOGGER.debug(
-            f"[insert] Inserting into items table with profile_id={profile_id}, category={category}, name={name}, value={value}, expiry={expiry}"
+            f"[insert] Inserting into items table with profile_id={profile_id}, "
+            f"category={category}, name={name}, value={value}, expiry={expiry}"
         )
         await cursor.execute(
             f"""
-            INSERT INTO {self.schema_context.qualify_table("items")} (profile_id, kind, category, name, value, expiry)
+            INSERT INTO {self.schema_context.qualify_table("items")} 
+            (profile_id, kind, category, name, value, expiry)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (profile_id, category, name) DO NOTHING
             RETURNING id
@@ -107,7 +115,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             elif col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"[insert] Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"[insert] Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -129,7 +138,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             elif col in tags:
                 val = tags[col]
                 LOGGER.debug(
-                    f"[insert] Column {col} found in tags with value {val} (type: {type(val)})"
+                    f"[insert] Column {col} found in tags with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -178,8 +188,10 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Replace an existing connection metadata entry."""
         LOGGER.debug(
-            f"[replace] Replacing record with category={category}, name={name}, value={value}, tags={tags}"
+            f"[replace] Replacing record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -203,11 +215,13 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         LOGGER.debug(f"[replace] Found item_id={item_id} for replacement")
 
         LOGGER.debug(
-            f"[replace] Updating items table with value={value}, expiry={expiry}, item_id={item_id}"
+            f"[replace] Updating items table with value={value}, expiry={expiry}, "
+            f"item_id={item_id}"
         )
         await cursor.execute(
             f"""
-            UPDATE {self.schema_context.qualify_table("items")} SET value = %s, expiry = %s
+            UPDATE {self.schema_context.qualify_table("items")} 
+            SET value = %s, expiry = %s
             WHERE id = %s
         """,
             (value, expiry, item_id),
@@ -243,7 +257,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             elif col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"[replace] Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"[replace] Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -265,7 +280,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             elif col in tags:
                 val = tags[col]
                 LOGGER.debug(
-                    f"[replace] Column {col} found in tags with value {val} (type: {type(val)})"
+                    f"[replace] Column {col} found in tags with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:

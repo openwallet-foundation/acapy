@@ -1,13 +1,20 @@
-# poetry run python acapy_agent/database_manager/test/test_db_store_scan_normalized_postgresql.py
+"""Tests for database store scan with normalized PostgreSQL."""
+
+# poetry run python \
+# acapy_agent/database_manager/test/test_db_store_scan_normalized_postgresql.py
 
 
 import asyncio
 import json
 import logging
+import os
+import pytest
 from acapy_agent.database_manager.dbstore import DBStore
 
 from acapy_agent.database_manager.databases.errors import DatabaseError
 
+# Skip all tests in this file if POSTGRES_URL env var is not set
+pytestmark = pytest.mark.postgres
 
 # Configure logging
 LOGGER = logging.getLogger(__name__)
@@ -18,8 +25,8 @@ logging.basicConfig(
 )
 
 # Define the PostgreSQL connection string
-conn_str = (
-    "postgres://myuser:mypass@192.168.2.172:5432/test_scan_normalize?sslmode=prefer"
+conn_str = os.environ.get(
+    "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_scan_normalize?sslmode=prefer"
 )
 profile_name = "test_profile"
 config = {
@@ -89,9 +96,12 @@ async def setup_data(store: DBStore, num_records: int = 50):
                 "verified_msgs": None,
             }
             LOGGER.debug(
-                f"[setup_data] Attempting to insert record {name} with expiry_ms={expiry_ms}"
+                f"[setup_data] Attempting to insert record {name} "
+                f"with expiry_ms={expiry_ms}"
             )
-            print(f"Attempting to insert record {name} with expiry_ms={expiry_ms}")
+            print(
+                f"Attempting to insert record {name} with expiry_ms={expiry_ms}"
+            )
             try:
                 await session.insert(
                     category="pres_ex_v20",
@@ -126,7 +136,7 @@ async def execute_custom_query(store: DBStore):
     """Debug: Print expiry values for pres_ex_v20 records."""
     print("Debugging: Printing expiry values for pres_ex_v20 records...")
     LOGGER.debug("[execute_custom_query] Fetching expiry values for pres_ex_v20 records")
-    async with store.session() as session:
+    async with store.session():
         rows = await store._db.execute_query("""
             SELECT name, expiry FROM items
             WHERE category = 'pres_ex_v20' ORDER BY name
@@ -164,7 +174,8 @@ async def test_scan_with_filter(store: DBStore):
     expected_count = 15  # 17 active records, 2 expired (indices 9, 39)
     print(f"Found {len(entries)} active pres_ex_v20 records")
     LOGGER.debug(
-        f"[test_scan_with_filter] Found {len(entries)} records: {[entry.name for entry in entries]}"
+        f"[test_scan_with_filter] Found {len(entries)} records: "
+        f"{[entry.name for entry in entries]}"
     )
     assert len(entries) == expected_count, (
         f"Expected {expected_count} active records, got {len(entries)}"
@@ -197,7 +208,8 @@ async def test_scan_with_complex_filter(store: DBStore):
     for entry in entries[:5]:
         print(f" - {entry.name}: {json.loads(entry.value)}")
         LOGGER.debug(
-            f"[test_scan_with_complex_filter] Entry {entry.name}: {json.loads(entry.value)}"
+            f"[test_scan_with_complex_filter] Entry {entry.name}: "
+            f"{json.loads(entry.value)}"
         )
     assert len(entries) == expected_count, (
         f"Expected {expected_count} records, got {len(entries)}"

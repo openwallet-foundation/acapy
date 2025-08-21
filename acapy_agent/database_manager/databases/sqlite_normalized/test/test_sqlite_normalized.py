@@ -1,6 +1,7 @@
-"""poetry run python acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_normalized.py
+"""SQLite normalized database test.
 
-This script tests the functionality of the SQLite database for the 'connection' category using ConnectionHandler.
+This script tests the functionality of the SQLite database for the
+'connection' category using ConnectionHandler.
 1. Database provisioning (encrypted and non-encrypted).
 2. Data insertion with JSON values and tags.
 3. Scanning with tag filters, offsets, and limits.
@@ -25,7 +26,7 @@ from acapy_agent.database_manager.databases.backends.backend_registration import
 )
 
 try:
-    from pysqlcipher3 import dbapi2 as sqlcipher
+    import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
 import logging
@@ -100,12 +101,16 @@ CONNECTION_JSON_3 = {
 
 
 async def run_tests(store, db_path, config_new, is_encrypted=True):
+    """Run test suite for the database store."""
     try:
         # Debug: Log current data state
         async with store.session() as session:
             entries = await session.fetch_all(category="connection")
             print(
-                f"Connections before tests: {[f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}' for entry in entries]}"
+                f"Connections before tests: {[
+                    f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}' 
+                    for entry in entries
+                ]}"
             )
 
         # Step 3: Test scan in database with offset and limit
@@ -185,7 +190,8 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
                 category="connection", name="conn_4" if not is_encrypted else "conn_1"
             )
             print(
-                f"Updated Connection {'4' if not is_encrypted else '1'}: {json.loads(updated_entry.value)}"
+                f"Updated Connection {'4' if not is_encrypted else '1'}: "
+                f"{json.loads(updated_entry.value)}"
             )
             assert json.loads(updated_entry.value)["state"] == "completed", (
                 "State not updated"
@@ -206,7 +212,8 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
                 category="connection", name="conn_4" if is_encrypted else "conn_7"
             )
             print(
-                f"Inserted Connection {'4' if is_encrypted else '7'}: {json.loads(new_entry.value)}"
+                f"Inserted Connection {'4' if is_encrypted else '7'}: "
+                f"{json.loads(new_entry.value)}"
             )
             assert new_entry is not None, "Insert failed"
 
@@ -225,7 +232,8 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
                 category="connection", name="conn_4" if is_encrypted else "conn_7"
             )
             print(
-                f"Updated Connection {'4' if not is_encrypted else '7'}: {json.loads(updated_conn4.value)}"
+                f"Updated Connection {'4' if not is_encrypted else '7'}: "
+                f"{json.loads(updated_conn4.value)}"
             )
             assert json.loads(updated_conn4.value)["state"] == "inactive", (
                 "State not updated"
@@ -291,12 +299,14 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
         if is_encrypted:
             print("\n### Testing the Key ###")
             print(
-                f"Trying to access the database with {'new_secure_key' if is_encrypted else 'no key'}..."
+                f"Trying to access the database with "
+                f"{'new_secure_key' if is_encrypted else 'no key'}..."
             )
             async with store.session() as session:
                 count = await session.count(category="connection")
                 print(
-                    f"Counted {count} connections with {'new key' if is_encrypted else 'no key'}"
+                    f"Counted {count} connections with "
+                    f"{'new key' if is_encrypted else 'no key'}"
                 )
             print("Success! The key works perfectly.")
 
@@ -358,9 +368,11 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
 
 
 async def main():
+    """Run the main test function."""
     register_backends()
     print(
-        "Starting the SQLite database test program for 'connection' category (Asyncio Version)..."
+        "Starting the SQLite database test program for 'connection' category "
+        "(Asyncio Version)..."
     )
     store = None
     non_enc_store = None
@@ -514,8 +526,9 @@ async def main():
             non_enc_store = SqliteDatabase(
                 pool, profile_name, path, effective_release_number
             )
+            profile_name = await non_enc_store.get_profile_name()
             print(
-                f"Non-encrypted database ready! Profile name: {await non_enc_store.get_profile_name()}"
+                f"Non-encrypted database ready! Profile name: {profile_name}"
             )
         except Exception as e:
             print(f"Oops! Failed to set up the non-encrypted database: {e}")
@@ -556,7 +569,8 @@ async def main():
             schema_config="normalize",
         )
         print(
-            f"Pool size configured for non-encrypted with key: {config_with_key.pool_size}"
+            f"Pool size configured for non-encrypted with key: "
+            f"{config_with_key.pool_size}"
         )
         try:
             pool, profile_name, path, effective_release_number = (

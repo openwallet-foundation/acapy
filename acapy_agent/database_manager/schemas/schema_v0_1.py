@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "schema"
 
 SCHEMAS = {
@@ -14,24 +16,30 @@ SCHEMAS = {
             attrNames TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT schema_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 ON schema_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 ON schema_v0_1 (issuer_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 ON schema_v0_1 (name, version);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 " +
+        "ON schema_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 " +
+        "ON schema_v0_1 (issuer_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 " +
+        "ON schema_v0_1 (name, version);",
         "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 ON schema_v0_1 (state);",
         """
         CREATE TABLE IF NOT EXISTS schema_attributes_v0_1 (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             schema_id INTEGER NOT NULL,
             attr_name TEXT NOT NULL,
-            FOREIGN KEY (schema_id) REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            FOREIGN KEY (schema_id) REFERENCES schema_v0_1(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 ON schema_attributes_v0_1 (attr_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 " +
+        "ON schema_attributes_v0_1 (attr_name);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_insert_schema_attributes_v0_1
         AFTER INSERT ON schema_v0_1
@@ -47,7 +55,8 @@ SCHEMAS = {
         CREATE TRIGGER IF NOT EXISTS trg_update_schema_attributes_v0_1
         AFTER UPDATE ON schema_v0_1
         FOR EACH ROW
-        WHEN NEW.attrNames IS NOT NULL AND json_valid(NEW.attrNames) AND NEW.attrNames != OLD.attrNames
+        WHEN NEW.attrNames IS NOT NULL AND json_valid(NEW.attrNames) 
+            AND NEW.attrNames != OLD.attrNames
         BEGIN
             DELETE FROM schema_attributes_v0_1 WHERE schema_id = OLD.id;
             INSERT INTO schema_attributes_v0_1 (schema_id, attr_name)
@@ -79,24 +88,30 @@ SCHEMAS = {
             attrNames TEXT,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT schema_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 ON schema_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 ON schema_v0_1 (issuer_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 ON schema_v0_1 (name, version);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 " +
+        "ON schema_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 " +
+        "ON schema_v0_1 (issuer_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 " +
+        "ON schema_v0_1 (name, version);",
         "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 ON schema_v0_1 (state);",
         """
         CREATE TABLE IF NOT EXISTS schema_attributes_v0_1 (
             id SERIAL PRIMARY KEY,
             schema_id INTEGER NOT NULL,
             attr_name TEXT NOT NULL,
-            CONSTRAINT fk_schema_id FOREIGN KEY (schema_id) REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_schema_id FOREIGN KEY (schema_id) 
+                REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 ON schema_attributes_v0_1 (attr_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 " +
+        "ON schema_attributes_v0_1 (attr_name);",
         """
         CREATE OR REPLACE FUNCTION insert_schema_attributes_v0_1()
         RETURNS TRIGGER AS $$
@@ -120,7 +135,8 @@ SCHEMAS = {
         CREATE OR REPLACE FUNCTION update_schema_attributes_v0_1()
         RETURNS TRIGGER AS $$
         BEGIN
-            IF NEW.attrNames IS NOT NULL AND NEW.attrNames::jsonb IS NOT NULL AND NEW.attrNames != OLD.attrNames THEN
+            IF NEW.attrNames IS NOT NULL AND NEW.attrNames::jsonb IS NOT NULL 
+                AND NEW.attrNames != OLD.attrNames THEN
                 DELETE FROM schema_attributes_v0_1 WHERE schema_id = OLD.id;
                 INSERT INTO schema_attributes_v0_1 (schema_id, attr_name)
                 SELECT NEW.id, value
@@ -167,24 +183,28 @@ SCHEMAS = {
             attrNames NVARCHAR(MAX),
             created_at DATETIME2 DEFAULT SYSDATETIME(),
             updated_at DATETIME2 DEFAULT SYSDATETIME(),
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT schema_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
         "CREATE NONCLUSTERED INDEX idx_schema_schema_id_v0_1 ON schema_v0_1 (item_name);",
         "CREATE NONCLUSTERED INDEX idx_schema_issuer_id_v0_1 ON schema_v0_1 (issuer_id);",
-        "CREATE NONCLUSTERED INDEX idx_schema_name_version_v0_1 ON schema_v0_1 (name, version);",
+        "CREATE NONCLUSTERED INDEX idx_schema_name_version_v0_1 " +
+        "ON schema_v0_1 (name, version);",
         "CREATE NONCLUSTERED INDEX idx_schema_state_v0_1 ON schema_v0_1 (state);",
         """
         CREATE TABLE schema_attributes_v0_1 (
             id INT IDENTITY(1,1) PRIMARY KEY,
             schema_id INT NOT NULL,
             attr_name NVARCHAR(MAX) NOT NULL,
-            CONSTRAINT fk_schema_id FOREIGN KEY (schema_id) REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_schema_id FOREIGN KEY (schema_id) 
+                REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_schema_attributes_attr_name_v0_1 ON schema_attributes_v0_1 (attr_name);",
+        "CREATE NONCLUSTERED INDEX idx_schema_attributes_attr_name_v0_1 " +
+        "ON schema_attributes_v0_1 (attr_name);",
         """
         CREATE TRIGGER trg_insert_schema_attributes_v0_1
         ON schema_v0_1
@@ -273,7 +293,8 @@ DROP_SCHEMAS = {
         "DROP TRIGGER IF EXISTS trg_update_schema_timestamp_v0_1;",
         "DROP TRIGGER IF EXISTS trg_update_schema_attributes_v0_1;",
         "DROP TRIGGER IF EXISTS trg_insert_schema_attributes_v0_1;",
-        "DROP INDEX IF EXISTS idx_schema_attributes_attr_name_v0_1 ON schema_attributes_v0_1;",
+        "DROP INDEX IF EXISTS idx_schema_attributes_attr_name_v0_1 " +
+        "ON schema_attributes_v0_1;",
         "DROP TABLE IF EXISTS schema_attributes_v0_1;",
         "DROP INDEX IF EXISTS idx_schema_state_v0_1 ON schema_v0_1;",
         "DROP INDEX IF EXISTS idx_schema_name_version_v0_1 ON schema_v0_1;",
@@ -288,5 +309,8 @@ COLUMNS = ["version", "name", "attrNames", "issuer_id", "state"]
 
 
 # category=schema, name=BacujJ3zNmAR9afs9hPryb:2:person-demo-schema:0.029,
-# value={"issuerId": "BacujJ3zNmAR9afs9hPryb", "attrNames": ["person.name.family", "person.name.given", "person.birthDate"], "name": "person-demo-schema", "version": "0.029"},
-#  tags={'name': 'person-demo-schema', 'version': '0.029', 'issuer_id': 'BacujJ3zNmAR9afs9hPryb', 'state': 'finished'}
+# value={"issuerId": "BacujJ3zNmAR9afs9hPryb", 
+#        "attrNames": ["person.name.family", "person.name.given", "person.birthDate"], 
+#        "name": "person-demo-schema", "version": "0.029"},
+#  tags={'name': 'person-demo-schema', 'version': '0.029', 
+#        'issuer_id': 'BacujJ3zNmAR9afs9hPryb', 'state': 'finished'}

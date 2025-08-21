@@ -64,7 +64,6 @@ class IndyPresPredSpec(BaseModel):
 
     def __eq__(self, other):
         """Equality comparator."""
-
         if canon(self.name) != canon(other.name):
             return False  # distinct attribute names modulo canonicalization
 
@@ -178,7 +177,6 @@ class IndyPresAttrSpec(BaseModel):
     @property
     def posture(self) -> "IndyPresAttrSpec.Posture":
         """Attribute posture: self-attested, revealed claim, or unrevealed claim."""
-
         if self.cred_def_id:
             if self.value:
                 return IndyPresAttrSpec.Posture.REVEALED_CLAIM
@@ -190,12 +188,10 @@ class IndyPresAttrSpec(BaseModel):
 
     def b64_decoded_value(self) -> str:
         """Value, base64-decoded if applicable."""
-
         return b64_to_str(self.value) if self.value and self.mime_type else self.value
 
     def satisfies(self, pred_spec: IndyPresPredSpec):
         """Whether current specified attribute satisfies input specified predicate."""
-
         return bool(
             self.value
             and not self.mime_type
@@ -209,7 +205,6 @@ class IndyPresAttrSpec(BaseModel):
 
     def __eq__(self, other):
         """Equality comparator."""
-
         if canon(self.name) != canon(other.name):
             return False  # distinct attribute names
 
@@ -290,7 +285,6 @@ class IndyPresPreview(BaseModel):
     @property
     def _type(self):
         """Accessor for message type."""
-
         return DIDCommPrefix.qualify_current(IndyPresPreview.Meta.message_type)
 
     def has_attr_spec(self, cred_def_id: str, name: str, value: str) -> bool:
@@ -305,7 +299,6 @@ class IndyPresPreview(BaseModel):
             Whether preview contains matching attribute specification.
 
         """
-
         return any(
             canon(a.name) == canon(name)
             and a.value in (value, None)
@@ -340,7 +333,6 @@ class IndyPresPreview(BaseModel):
 
         def non_revoc(cred_def_id: str) -> IndyNonRevocationInterval:
             """Non-revocation interval to use for input cred def id."""
-
             nonlocal epoch_now
             nonlocal non_revoc_intervals
 
@@ -467,7 +459,6 @@ class IndyPresPreview(BaseModel):
 
     def __eq__(self, other):
         """Equality comparator."""
-
         for part in vars(self):
             if getattr(self, part, None) != getattr(other, part, None):
                 return False

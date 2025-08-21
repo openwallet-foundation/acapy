@@ -191,6 +191,7 @@ class InvitationCreator:
     async def create_attachment(
         self, attachment: Mapping, pthid: str, session
     ) -> AttachDecorator:
+        """Create an attachment decorator from attachment mapping."""
         a_type = attachment.get("type")
         a_id = attachment.get("id")
         if not a_type or not a_id:
@@ -218,6 +219,7 @@ class InvitationCreator:
     async def create_attachments(
         self, invitation_msg_id: str, attachments: Optional[Sequence[Mapping]] = None
     ) -> List[AttachDecorator]:
+        """Create attachment decorators for an OOB invitation."""
         results = []
         if attachments:
             async with self.profile.session() as session:
@@ -557,6 +559,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         Args:
             profile: The profile for this out of band manager
+
         """
         self._profile = profile
         super().__init__(self._profile)

@@ -1,10 +1,18 @@
-# poetry run python acapy_agent/database_manager/test/test_db_store_scan_generic_postgresql.py
+"""Tests for database store scan with generic PostgreSQL."""
+
+# poetry run python \
+# acapy_agent/database_manager/test/test_db_store_scan_generic_postgresql.py
 
 
 import asyncio
 import json
 import logging
+import os
+import pytest
 from acapy_agent.database_manager.dbstore import DBStore
+
+# Skip all tests in this file if POSTGRES_URL env var is not set
+pytestmark = pytest.mark.postgres
 
 # Configure logging
 LOGGER = logging.getLogger(__name__)
@@ -15,8 +23,9 @@ logging.basicConfig(
 )
 
 # Define the PostgreSQL connection string
-conn_str = (
-    "postgresql://myuser:mypass@192.168.2.172:5432/test_scan_normalize?sslmode=prefer"
+conn_str = os.environ.get(
+    "POSTGRES_URL", 
+    "postgresql://myuser:mypass@localhost:5432/test_scan_normalize?sslmode=prefer"
 )
 profile_name = "test_profile"
 config = {
@@ -58,7 +67,8 @@ async def setup_data(store: DBStore, num_records: int = 50):
                 "issuer_did": "did:example:issuer",
             }
             LOGGER.debug(
-                f"[setup_data] Attempting to insert record {name} with expiry_ms={expiry_ms}"
+                f"[setup_data] Attempting to insert record {name} "
+                f"with expiry_ms={expiry_ms}"
             )
             print(f"Attempting to insert record {name} with expiry_ms={expiry_ms}")
             try:
@@ -117,7 +127,8 @@ async def test_scan_with_filter(store: DBStore):
     expected_count = 15  # 17 active records, 2 expired (indices 9, 39)
     print(f"Found {len(entries)} active credential_record entries")
     LOGGER.debug(
-        f"[test_scan_with_filter] Found {len(entries)} records: {[entry.name for entry in entries]}"
+        f"[test_scan_with_filter] Found {len(entries)} records: "
+        f"{[entry.name for entry in entries]}"
     )
     assert len(entries) == expected_count, (
         f"Expected {expected_count} active records, got {len(entries)}"
@@ -186,7 +197,8 @@ async def test_scan_keyset_with_filter(store: DBStore):
     expected_count = 5  # Up to 5 active records after ID 15
     print(f"Found {len(entries)} active records with scan_keyset")
     LOGGER.debug(
-        f"[test_scan_keyset_with_filter] Found {len(entries)} records: {[entry.name for entry in entries]}"
+        f"[test_scan_keyset_with_filter] Found {len(entries)} records: "
+        f"{[entry.name for entry in entries]}"
     )
     assert len(entries) <= expected_count, (
         f"Expected up to {expected_count} records, got {len(entries)}"

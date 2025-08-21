@@ -14,7 +14,6 @@ from .error import BadJWSHeaderError
 
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
-
     if verkey.startswith("did:key:"):
         return verkey
 
@@ -38,7 +37,6 @@ def create_jws(encoded_header: str, verify_data: bytes) -> bytes:
 
 async def jws_sign(session: ProfileSession, verify_data: bytes, verkey: str) -> str:
     """Sign JWS."""
-
     header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
 
     encoded_header = b64encode(json.dumps(header))
@@ -55,7 +53,6 @@ async def jws_sign(session: ProfileSession, verify_data: bytes, verkey: str) -> 
 
 def verify_jws_header(header: dict) -> None:
     """Check header requirements."""
-
     if header != {"alg": "EdDSA", "b64": False, "crit": ["b64"]}:
         raise BadJWSHeaderError("Invalid JWS header parameters for Ed25519Signature2018.")
 
@@ -64,7 +61,6 @@ async def jws_verify(
     session: ProfileSession, verify_data: bytes, signature: str, public_key: str
 ) -> bool:
     """Detached jws verify handling."""
-
     encoded_header, _, encoded_signature = signature.partition("..")
     decoded_header = json.loads(b64decode(encoded_header))
 
@@ -86,7 +82,6 @@ async def sign_credential(
     session: ProfileSession, credential: dict, signature_options: dict, verkey: str
 ) -> dict:
     """Sign Credential."""
-
     document_loader = session.profile.inject_or(DocumentLoader)
     _, verify_data_hex_string = create_verify_data(
         credential,
@@ -100,7 +95,6 @@ async def sign_credential(
 
 async def verify_credential(session: ProfileSession, doc: dict, verkey: str) -> bool:
     """Verify credential."""
-
     document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
         doc,

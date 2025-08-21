@@ -175,7 +175,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
-
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
@@ -333,7 +332,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self, profile: Profile, cred_def_id: str
     ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
-
         async with profile.session() as session:
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
@@ -1211,7 +1209,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         write_ledger: bool = True,
     ) -> str:
         """Submit a transaction to the ledger."""
-
         try:
             async with ledger:
                 return await shield(

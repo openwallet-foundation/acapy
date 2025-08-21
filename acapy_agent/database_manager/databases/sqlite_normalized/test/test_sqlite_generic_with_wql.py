@@ -1,4 +1,8 @@
-# poetry run python acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_generic_with_wql.py
+"""Tests for SQLite generic database with WQL support."""
+
+# poetry run python \
+# acapy_agent/database_manager/databases/sqlite_normalized/test/\
+# test_sqlite_generic_with_wql.py
 import asyncio
 import os
 import json
@@ -11,7 +15,7 @@ from acapy_agent.database_manager.databases.backends.backend_registration import
 )
 
 try:
-    from pysqlcipher3 import dbapi2 as sqlcipher
+    import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
 import logging
@@ -22,6 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def run_tests(store, db_path, is_encrypted=True):
+    """Run database tests with WQL."""
     try:
         # Debug: Log current data state
         async with store.session() as session:
@@ -40,7 +45,6 @@ async def run_tests(store, db_path, is_encrypted=True):
         print("\n### Testing Scan in Database with Offset, Limit, and Complex WQL ###")
         tag_filter = json.dumps({"attr::person.status": "active"})
         expected_first_person = "person1" if is_encrypted else "person4"
-        expected_second_person = "person3" if is_encrypted else "person6"
         scanned_entries = list(
             store.scan(
                 profile="test_profile", category="people", tag_filter=tag_filter, limit=1
@@ -56,7 +60,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             print(f" - {scanned_entries[0].name}: {value}")
         except json.JSONDecodeError:
             print(
-                f"Failed to parse JSON for {scanned_entries[0].name}: {scanned_entries[0].value}"
+                f"Failed to parse JSON for {scanned_entries[0].name}: "
+                f"{scanned_entries[0].value}"
             )
             raise
 
@@ -75,7 +80,8 @@ async def run_tests(store, db_path, is_encrypted=True):
         )
         print(f"Scanned with limit=2: {len(scanned_entries_complex)} entries")
         assert len(scanned_entries_complex) == (2 if is_encrypted else 0), (
-            f"Expected {2 if is_encrypted else 0} active females (Alice, Charlie if encrypted; none if non-encrypted)"
+            f"Expected {2 if is_encrypted else 0} active females "
+            f"(Alice, Charlie if encrypted; none if non-encrypted)"
         )
         for entry in scanned_entries_complex:
             try:
@@ -95,7 +101,8 @@ async def run_tests(store, db_path, is_encrypted=True):
         )
         print(f"Scanned not male: {len(scanned_entries_not_male)} entries")
         assert len(scanned_entries_not_male) == (2 if is_encrypted else 2), (
-            "Expected 2 not male (Alice, Charlie if encrypted; Eve, Frank if non-encrypted)"
+            "Expected 2 not male "
+            "(Alice, Charlie if encrypted; Eve, Frank if non-encrypted)"
         )
         for entry in scanned_entries_not_male:
             try:
@@ -121,7 +128,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             try:
                 value = json.loads(entry.value)
                 print(
-                    f"Fetched: {entry.name} with status={entry.tags['attr::person.status']}, value={value}"
+                    f"Fetched: {entry.name} with "
+                    f"status={entry.tags['attr::person.status']}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(f"Failed to parse JSON for {entry.name}: {entry.value}")
@@ -140,7 +148,8 @@ async def run_tests(store, db_path, is_encrypted=True):
 
             # Test fetch with complex WQL: Active and female
             print(
-                f"Fetching {'person1' if is_encrypted else 'person5'} with status='active' and gender='F'..."
+                f"Fetching {'person1' if is_encrypted else 'person5'} "
+                f"with status='active' and gender='F'..."
             )
             complex_filter = json.dumps(
                 {
@@ -156,13 +165,16 @@ async def run_tests(store, db_path, is_encrypted=True):
                 tag_filter=complex_filter,
             )
             assert entry is not None if is_encrypted else entry is None, (
-                f"Should {'fetch Alice' if is_encrypted else 'not fetch Eve'} with status='active' and gender='F'"
+                f"Should {'fetch Alice' if is_encrypted else 'not fetch Eve'} "
+                f"with status='active' and gender='F'"
             )
             if entry:
                 try:
                     value = json.loads(entry.value)
                     print(
-                        f"Fetched: {entry.name} with status={entry.tags['attr::person.status']} and gender={entry.tags['attr::person.gender']}, value={value}"
+                        f"Fetched: {entry.name} with "
+                        f"status={entry.tags['attr::person.status']} and "
+                        f"gender={entry.tags['attr::person.gender']}, value={value}"
                     )
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
@@ -186,7 +198,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             print(f"Found {len(entries)} active females")
             assert len(entries) == (2 if is_encrypted else 0), (
-                f"Expected {2 if is_encrypted else 0} active females (Alice, Charlie if encrypted; none if non-encrypted)"
+                f"Expected {2 if is_encrypted else 0} active females "
+            f"(Alice, Charlie if encrypted; none if non-encrypted)"
             )
             for entry in entries:
                 try:
@@ -228,12 +241,14 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             try:
                 value = json.loads(updated_entry.value)
+                name = 'Alice' if is_encrypted else 'David'
                 print(
-                    f"Updated {'Alice' if is_encrypted else 'David'}: {updated_entry.name}, value={value}"
+                    f"Updated {name}: {updated_entry.name}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(
-                    f"Failed to parse JSON for {updated_entry.name}: {updated_entry.value}"
+                    f"Failed to parse JSON for {updated_entry.name}: "
+                    f"{updated_entry.value}"
                 )
                 raise
             expected_value = json.dumps(
@@ -265,8 +280,9 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             try:
                 value = json.loads(new_entry.value)
+                name = 'David' if is_encrypted else 'Grace'
                 print(
-                    f"Inserted {'David' if is_encrypted else 'Grace'}: {new_entry.name}, value={value}"
+                    f"Inserted {name}: {new_entry.name}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(f"Failed to parse JSON for {new_entry.name}: {new_entry.value}")
@@ -293,12 +309,14 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             try:
                 value = json.loads(updated_entry.value)
+                name = 'David' if is_encrypted else 'Grace'
                 print(
-                    f"Updated {'David' if is_encrypted else 'Grace'}: {updated_entry.name}, value={value}"
+                    f"Updated {name}: {updated_entry.name}, value={value}"
                 )
             except json.JSONDecodeError:
                 print(
-                    f"Failed to parse JSON for {updated_entry.name}: {updated_entry.value}"
+                    f"Failed to parse JSON for {updated_entry.name}: "
+                    f"{updated_entry.value}"
                 )
                 raise
             expected_value = json.dumps(
@@ -341,8 +359,11 @@ async def run_tests(store, db_path, is_encrypted=True):
                 category="people", tag_filter=inactive_males_filter
             )
             print(f"Counted {count_inactive_males} inactive males")
-            assert count_inactive_males == (2 if is_encrypted else 1), (
-                f"Expected {2 if is_encrypted else 1} inactive males (Bob, David if encrypted; David if non-encrypted), got {count_inactive_males}"
+            expected = 2 if is_encrypted else 1
+            assert count_inactive_males == expected, (
+                f"Expected {expected} inactive males "
+                f"(Bob, David if encrypted; David if non-encrypted), "
+                f"got {count_inactive_males}"
             )
             if count_inactive_males > 0:
                 entries = await session.fetch_all(
@@ -385,7 +406,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             print(f"Deleted {deleted_count} inactive people born after 2000")
             assert deleted_count == (1 if is_encrypted else 2), (
-                f"Expected to delete {1 if is_encrypted else 2} person (Bob if encrypted; Eve, Grace if non-encrypted), got {deleted_count}"
+                f"Expected to delete {1 if is_encrypted else 2} person "
+                f"(Bob if encrypted; Eve, Grace if non-encrypted), got {deleted_count}"
             )
             entries = await session.fetch_all(category="people")
             parsed_entries = []
@@ -406,6 +428,7 @@ async def run_tests(store, db_path, is_encrypted=True):
 
 
 async def main():
+    """Run the main test function."""
     register_backends()
     print("Starting the SQLite database test program with WQL")
     store = None
@@ -421,7 +444,8 @@ async def main():
         # Step 1: Provision the database with an encryption key
         print("\n### Setting Up the Database ###")
         print(
-            "Provisioning the database at", db_path, "with encryption key 'strong_key'..."
+            "Provisioning the database at", db_path, 
+            "with encryption key 'strong_key'..."
         )
         config = SqliteConfig(
             uri=f"sqlite://{db_path}",
@@ -630,8 +654,9 @@ async def main():
             non_enc_store = SqliteDatabase(
                 pool, profile_name, path, effective_release_number
             )
+            profile_name = await non_enc_store.get_profile_name()
             print(
-                f"Non-encrypted database ready! Profile name: {await non_enc_store.get_profile_name()}"
+                f"Non-encrypted database ready! Profile name: {profile_name}"
             )
         except Exception as e:
             print(f"Oops! Failed to set up the non-encrypted database: {e}")

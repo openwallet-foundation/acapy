@@ -328,10 +328,7 @@ class IndyVdrLedger(BaseLedger):
             )
 
         if isinstance(request, str):
-            try:
-                request = ledger.build_custom_request(request)
-            except VdrError as err:
-                raise BadLedgerRequestError("Failed to build custom request") from err
+            request = ledger.build_custom_request(request)
         elif not isinstance(request, Request):
             raise BadLedgerRequestError("Expected str or Request")
 
@@ -341,44 +338,40 @@ class IndyVdrLedger(BaseLedger):
             if sign is None:
                 sign = bool(sign_did)
 
+        if sign:
+            if not sign_did:
+                raise BadLedgerRequestError(
+                    "Cannot sign request without a public DID"
+                )
+
+            if taa_accept or taa_accept is None:
+                acceptance = await self.get_latest_txn_author_acceptance()
+                if acceptance:
+                    acceptance = {
+                        "taaDigest": acceptance["digest"],
+                        "mechanism": acceptance["mechanism"],
+                        "time": acceptance["time"],
+                    }
+                    request.set_txn_author_agreement_acceptance(acceptance)
+
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                request.set_signature(
+                    await wallet.sign_message(
+                        request.signature_input, sign_did.verkey
+                    )
+                )
+                del wallet
+
+        if not write_ledger:
+            return json.loads(request.body)
+
         try:
-            if sign:
-                if not sign_did:
-                    raise BadLedgerRequestError(
-                        "Cannot sign request without a public DID"
-                    )
+            request_result = await self.pool.handle.submit_request(request)
+        except VdrError as err:
+            raise LedgerTransactionError("Ledger request error") from err
 
-                if taa_accept or taa_accept is None:
-                    acceptance = await self.get_latest_txn_author_acceptance()
-                    if acceptance:
-                        acceptance = {
-                            "taaDigest": acceptance["digest"],
-                            "mechanism": acceptance["mechanism"],
-                            "time": acceptance["time"],
-                        }
-                        request.set_txn_author_agreement_acceptance(acceptance)
-
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    request.set_signature(
-                        await wallet.sign_message(
-                            request.signature_input, sign_did.verkey
-                        )
-                    )
-                    del wallet
-
-            if not write_ledger:
-                return json.loads(request.body)
-
-            try:
-                request_result = await self.pool.handle.submit_request(request)
-            except VdrError as err:
-                raise LedgerTransactionError("Ledger request error") from err
-
-            return request_result
-
-        except (VdrError, asyncio.CancelledError, Exception) as e:
-            raise LedgerError(f"Failed to submit request: {str(e)}") from e
+        return request_result
 
     async def _create_schema_request(
         self,

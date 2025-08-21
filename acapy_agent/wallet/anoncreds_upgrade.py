@@ -150,7 +150,6 @@ async def get_schema_upgrade_object(
     profile: Profile, schema_id: str, askar_schema
 ) -> SchemaUpgradeObj:
     """Get schema upgrade object."""
-
     async with profile.session() as session:
         schema_id = askar_schema.tags.get("schema_id")
         issuer_did = askar_schema.tags.get("schema_issuer_did")
@@ -460,7 +459,6 @@ async def get_rev_reg_def_upgrade_objs(
     rev_list_upgrade_objs: list[RevListUpgradeObj],
 ) -> list[RevRegDefUpgradeObj]:
     """Get rev reg def upgrade objects."""
-
     rev_reg_def_upgrade_objs = []
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
@@ -640,7 +638,8 @@ async def finish_upgrade(profile: Profile):
 
         # This should only happen for subwallets
         except StorageNotFoundError:
-            if storage_type_record.value == STORAGE_TYPE_VALUE_KANON_ANONCREDS:
+            # Check if this is a Kanon-based profile to determine storage type
+            if hasattr(profile, 'backend') and 'kanon' in profile.backend.lower():
                 await storage.add_record(
                     StorageRecord(
                         RECORD_TYPE_ACAPY_STORAGE_TYPE,

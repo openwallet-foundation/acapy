@@ -92,6 +92,7 @@ async def update_profile_settings(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     root_profile = context.root_profile or context.profile
@@ -133,6 +134,7 @@ async def get_profile_settings(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     root_profile = context.root_profile or context.profile
@@ -158,7 +160,6 @@ async def get_profile_settings(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.put("/settings", update_profile_settings),
@@ -169,7 +170,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

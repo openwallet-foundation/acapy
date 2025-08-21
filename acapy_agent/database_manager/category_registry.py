@@ -1,4 +1,7 @@
+"""Category registry for database managers."""
+
 from typing import Tuple
+
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -82,7 +85,8 @@ def get_release(release_number: str, db_type: str = "sqlite") -> Tuple[dict, dic
                 release_number,
             )
             raise ValueError(
-                f"Database type {db_type} not supported for default handler in release {release_number}"
+                f"Database type {db_type} not supported for default handler "
+                f"in release {release_number}"
             )
         for category in release:
             handlers[category] = (
@@ -105,7 +109,8 @@ def get_release(release_number: str, db_type: str = "sqlite") -> Tuple[dict, dic
                         release_number,
                     )
                     raise ValueError(
-                        f"Database type {db_type} not supported for category {category} in release {release_number}"
+                        f"Database type {db_type} not supported for category "
+                        f"{category} in release {release_number}"
                     )
                 handlers[category] = info["handlers"][db_type]
                 schema_list = info["schemas"].get(db_type) if info["schemas"] else None
@@ -118,7 +123,8 @@ def get_release(release_number: str, db_type: str = "sqlite") -> Tuple[dict, dic
                 drop_schemas[category] = {db_type: drop_list} if drop_list else None
                 if schemas[category] is None and info["schemas"]:
                     LOGGER.warning(
-                        "No schema found for category=%s, db_type=%s, despite schemas being defined: %s",
+                        "No schema found for category=%s, db_type=%s, "
+                        "despite schemas being defined: %s",
                         category,
                         db_type,
                         info["schemas"],

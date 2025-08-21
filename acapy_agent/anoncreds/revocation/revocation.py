@@ -30,7 +30,7 @@ from ..database_manager.dbstore import DBStoreError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
+from ...askar.profile_anon import AskarAnonCredsProfileSession
 from ...core.error import BaseError
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile, ProfileSession

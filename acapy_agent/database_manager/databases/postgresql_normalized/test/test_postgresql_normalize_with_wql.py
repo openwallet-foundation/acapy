@@ -1,6 +1,6 @@
-"""poetry run python acapy_agent/database_manager/databases/postgresql_normalized/test/test_postgresql_normalize_with_wql.py
+"""PostgreSQL normalized database test with WQL queries.
 
-This script tests the functionality of the PostgreSQL database for the 'connection' category with WQL queries.
+Tests PostgreSQL database for 'connection' category with WQL queries.
 1. Database provisioning with a normalized schema.
 2. Data insertion with JSON values and tags.
 3. Scanning with WQL equality queries and limits.
@@ -15,6 +15,9 @@ This script tests the functionality of the PostgreSQL database for the 'connecti
 import asyncio
 import json
 import logging
+import os
+import pytest
+
 from acapy_agent.database_manager.databases.postgresql_normalized.backend import (
     PostgresqlBackend,
 )
@@ -25,6 +28,9 @@ from acapy_agent.database_manager.databases.backends.backend_registration import
     register_backends,
 )
 from acapy_agent.database_manager.databases.errors import DatabaseError
+
+# Skip all tests in this file if POSTGRES_URL env var is not set
+pytestmark = pytest.mark.postgres
 
 
 # Configure logging for debugging
@@ -97,13 +103,18 @@ CONNECTION_JSON_3 = {
 
 
 async def run_tests(store: PostgresDatabase, conn_str: str):
+    """Run normalized PostgreSQL tests with WQL queries."""
     try:
         # Debug: Log current data state
         session = await store.session(profile="test_profile")
         async with session:
             entries = await session.fetch_all(category="connection")
             print(
-                f"Connections before tests: {[f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}' for entry in entries]}"
+                "Connections before tests: "
+                f"{[
+                    f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}'
+                    for entry in entries
+                ]}"
             )
 
         # Step 3: Test scan with WQL equality query
@@ -254,7 +265,8 @@ async def run_tests(store: PostgresDatabase, conn_str: str):
                 "Should fetch conn_1 with created_at < '2025-05-08T00:00:00Z'"
             )
             print(
-                f"Fetched: {entry.name} with created_at={json.loads(entry.value)['created_at']}"
+                f"Fetched: {entry.name} with "
+                f"created_at={json.loads(entry.value)['created_at']}"
             )
 
             print("Fetching conn_3 with created_at < '2025-05-08T00:00:00Z'...")
@@ -320,14 +332,16 @@ async def run_tests(store: PostgresDatabase, conn_str: str):
 
 
 async def main():
+    """Main test function."""
     register_backends()
     print(
-        "=== Starting PostgreSQL Normalized Schema Test (Connection Category with WQL Queries) ==="
+        "=== Starting PostgreSQL Normalized Schema Test "
+        "(Connection Category with WQL Queries) ==="
     )
     store = None
     try:
         # Step 1: Provision the database
-        conn_str = "postgres://myuser:mypass@192.168.2.172:5432/mydb?sslmode=prefer&sslcert=/path/to/client.crt&sslkey=/path/to/client.key&sslrootcert=/path/to/ca.crt"
+        conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb?sslmode=prefer")
         print("\n### Setting Up the Database ###")
         print(f"Provisioning database at {conn_str} with normalized schema...")
         backend = PostgresqlBackend()

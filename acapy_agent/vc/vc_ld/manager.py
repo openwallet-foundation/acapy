@@ -389,7 +389,6 @@ class VcLdpManager:
         cred_id: Optional[str] = None,
     ) -> VCRecord:
         """Store a verifiable credential."""
-
         # Saving expanded type as a cred_tag
         document_loader = self.profile.inject(DocumentLoader)
         expanded = jsonld.expand(
@@ -456,7 +455,6 @@ class VcLdpManager:
         self, vp: VerifiablePresentation, options: LDProofVCOptions
     ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
-
         if not options.challenge:
             raise VcLdpManagerError("Challenge is required for verifying a VP")
 

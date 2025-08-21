@@ -77,6 +77,7 @@ def encode(value: bytes, encoding: Union[Encoding, EncodingStr]) -> str:
 
     Returns:
         The encoded string
+
     """
     if isinstance(encoding, str):
         encoder = Encoding.from_name(encoding)
@@ -96,6 +97,7 @@ def decode(value: str) -> bytes:
 
     Returns:
         The decoded byte string
+
     """
     encoding = value[0]
     encoded = value[1:]

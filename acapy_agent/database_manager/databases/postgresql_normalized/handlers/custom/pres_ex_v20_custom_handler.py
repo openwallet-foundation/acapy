@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
@@ -26,9 +28,11 @@ class PresExV20CustomHandler(NormalizedHandler):
         table_name: Optional[str] = None,
         schema_context: Optional[SchemaContext] = None,
     ):
+        """Initialize PresExV20CustomHandler."""
         super().__init__(category, columns, table_name, schema_context)
         LOGGER.debug(
-            f"Initialized PresExV20CustomHandler for category={category}, table={self.table}, columns={columns}, schema_context={schema_context}"
+            f"Initialized PresExV20CustomHandler for category={category}, "
+            f"table={self.table}, columns={columns}, schema_context={schema_context}"
         )
 
     def _extract_revealed_attrs(self, json_data: dict) -> str:
@@ -94,8 +98,10 @@ class PresExV20CustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert a new presentation exchange entry."""
         LOGGER.debug(
-            f"[insert] Inserting record with category={category}, name={name}, value={value}, tags={tags}"
+            f"[insert] Inserting record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -118,15 +124,19 @@ class PresExV20CustomHandler(NormalizedHandler):
 
         json_data["revealed_attr_groups"] = self._extract_revealed_attrs(json_data)
         LOGGER.debug(
-            f"[insert] Added revealed_attr_groups to json_data: {json_data['revealed_attr_groups']}"
+            f"[insert] Added revealed_attr_groups to json_data: "
+            f"{json_data['revealed_attr_groups']}"
         )
 
         LOGGER.debug(
-            f"[insert] Inserting into items table with profile_id={profile_id}, category={category}, name={name}, value={value}, expiry={expiry}"
+            f"[insert] Inserting into items table with profile_id={profile_id}, "
+            f"category={category}, name={name}, value={value}, expiry={expiry}"
         )
         await cursor.execute(
             f"""
-            INSERT INTO {self.schema_context.qualify_table("items")} (profile_id, kind, category, name, value, expiry)
+            INSERT INTO {self.schema_context.qualify_table("items")} (
+                profile_id, kind, category, name, value, expiry
+            )
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (profile_id, category, name) DO NOTHING
             RETURNING id
@@ -148,7 +158,8 @@ class PresExV20CustomHandler(NormalizedHandler):
             if col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"[insert] Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"[insert] Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if col == "pres_request":
                     if isinstance(val, str) and is_valid_json(val):
@@ -160,11 +171,14 @@ class PresExV20CustomHandler(NormalizedHandler):
                             )
                         except json.JSONDecodeError as e:
                             LOGGER.error(
-                                f"[insert] Failed to re-serialize pres_request: {str(e)}, raw value: {val}"
+                                f"[insert] Failed to re-serialize pres_request: "
+                                f"{str(e)}, raw value: {val}"
                             )
                             raise DatabaseError(
                                 code=DatabaseErrorCode.QUERY_ERROR,
-                                message=f"Failed to re-serialize pres_request: {str(e)}",
+                                message=(
+                                    f"Failed to re-serialize pres_request: {str(e)}"
+                                ),
                             )
                     elif isinstance(val, dict):
                         try:
@@ -172,7 +186,8 @@ class PresExV20CustomHandler(NormalizedHandler):
                             LOGGER.debug(f"[insert] Serialized {col} to JSON: {val}")
                         except DatabaseError as e:
                             LOGGER.error(
-                                f"[insert] Serialization failed for column {col}: {str(e)}"
+                                f"[insert] Serialization failed for column {col}: "
+                                f"{str(e)}"
                             )
                             raise
                 elif isinstance(val, (dict, list)):
@@ -195,7 +210,8 @@ class PresExV20CustomHandler(NormalizedHandler):
             elif col in tags:
                 val = tags[col]
                 LOGGER.debug(
-                    f"[insert] Column {col} found in tags with value {val} (type: {type(val)})"
+                    f"[insert] Column {col} found in tags with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -216,7 +232,8 @@ class PresExV20CustomHandler(NormalizedHandler):
                 LOGGER.debug(f"[insert] Added column {col} from tags: {val}")
             else:
                 LOGGER.debug(
-                    f"[insert] Column {col} not found in json_data or tags, setting to NULL"
+                    f"[insert] Column {col} not found in json_data or tags, "
+                    f"setting to NULL"
                 )
                 data[col] = None
 
@@ -247,8 +264,10 @@ class PresExV20CustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Replace an existing presentation exchange entry."""
         LOGGER.debug(
-            f"[replace] Replacing record with category={category}, name={name}, value={value}, tags={tags}"
+            f"[replace] Replacing record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -272,11 +291,13 @@ class PresExV20CustomHandler(NormalizedHandler):
         LOGGER.debug(f"[replace] Found item_id={item_id} for replacement")
 
         LOGGER.debug(
-            f"[replace] Updating items table with value={value}, expiry={expiry}, item_id={item_id}"
+            f"[replace] Updating items table with value={value}, expiry={expiry}, "
+            f"item_id={item_id}"
         )
         await cursor.execute(
             f"""
-            UPDATE {self.schema_context.qualify_table("items")} SET value = %s, expiry = %s
+            UPDATE {self.schema_context.qualify_table("items")} 
+            SET value = %s, expiry = %s
             WHERE id = %s
         """,
             (value, expiry, item_id),
@@ -297,7 +318,8 @@ class PresExV20CustomHandler(NormalizedHandler):
 
         json_data["revealed_attr_groups"] = self._extract_revealed_attrs(json_data)
         LOGGER.debug(
-            f"[replace] Added revealed_attr_groups to json_data: {json_data['revealed_attr_groups']}"
+            f"[replace] Added revealed_attr_groups to json_data: "
+            f"{json_data['revealed_attr_groups']}"
         )
 
         LOGGER.debug(
@@ -311,7 +333,8 @@ class PresExV20CustomHandler(NormalizedHandler):
             if col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"[replace] Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"[replace] Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if col == "pres_request":
                     if isinstance(val, str) and is_valid_json(val):
@@ -323,11 +346,15 @@ class PresExV20CustomHandler(NormalizedHandler):
                             )
                         except json.JSONDecodeError as e:
                             LOGGER.error(
-                                f"[replace] Failed to re-serialize pres_request: {str(e)}, raw value: {val}"
+                                f"[replace] Failed to re-serialize pres_request: "
+                                f"{str(e)}, "
+                                f"raw value: {val}"
                             )
                             raise DatabaseError(
                                 code=DatabaseErrorCode.QUERY_ERROR,
-                                message=f"Failed to re-serialize pres_request: {str(e)}",
+                                message=(
+                                    f"Failed to re-serialize pres_request: {str(e)}"
+                                ),
                             )
                     elif isinstance(val, dict):
                         try:
@@ -335,7 +362,8 @@ class PresExV20CustomHandler(NormalizedHandler):
                             LOGGER.debug(f"[replace] Serialized {col} to JSON: {val}")
                         except DatabaseError as e:
                             LOGGER.error(
-                                f"[replace] Serialization failed for column {col}: {str(e)}"
+                                f"[replace] Serialization failed for column {col}: "
+                                f"{str(e)}"
                             )
                             raise
                 elif isinstance(val, (dict, list)):
@@ -358,7 +386,8 @@ class PresExV20CustomHandler(NormalizedHandler):
             elif col in tags:
                 val = tags[col]
                 LOGGER.debug(
-                    f"[replace] Column {col} found in tags with value {val} (type: {type(val)})"
+                    f"[replace] Column {col} found in tags with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -379,7 +408,8 @@ class PresExV20CustomHandler(NormalizedHandler):
                 LOGGER.debug(f"[replace] Added column {col} from tags: {val}")
             else:
                 LOGGER.debug(
-                    f"[replace] Column {col} not found in json_data or tags, setting to NULL"
+                    f"[replace] Column {col} not found in json_data or tags, "
+                    f"setting to NULL"
                 )
                 data[col] = None
 
