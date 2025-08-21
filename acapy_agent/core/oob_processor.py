@@ -300,7 +300,6 @@ class OobMessageProcessor:
         their_service: Optional[ServiceDecorator] = None,
     ):
         """Message handler for inbound messages."""
-
         supported_types = [
             CREDENTIAL_OFFER,
             CRED_20_OFFER,

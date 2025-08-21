@@ -245,7 +245,6 @@ class ProofSet:
         in the suites lists. This means proofs that don't match on any of these
         WILL NOT be verified OR included in the proof result list.
         """
-
         # Matches proof purposes proof set to passed purpose.
         # Only proofs with a `proofPurpose` that match the purpose are verified
         # e.g.:

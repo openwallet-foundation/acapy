@@ -461,7 +461,6 @@ class AnonCredsRevocation:
 
     async def store_revocation_registry_list(self, result: RevListResult) -> None:
         """Store a revocation registry list."""
-
         identifier = result.job_id or result.rev_reg_def_id
         if not identifier:
             raise AnonCredsRevocationError(

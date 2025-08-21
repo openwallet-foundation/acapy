@@ -156,7 +156,6 @@ class VerifiablePresentation(BaseModel):
     @verifiable_credential.setter
     def verifiable_credential(self, verifiable_credential: List[dict]):
         """Setter for verifiable credential."""
-
         self._verifiable_credential = verifiable_credential
 
     @property
@@ -271,7 +270,6 @@ class PresentationSchema(BaseModelSchema):
     @post_dump(pass_original=True)
     def add_unknown_properties(self, data: dict, original, **kwargs):
         """Add back unknown properties before outputting."""
-
         data.update(original.extra)
 
         return data

@@ -40,7 +40,6 @@ class MultitenantManagerProvider(BaseProvider):
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the multitenant manager instance."""
-
         manager_type = settings.get_value(
             "multitenant.wallet_type", default="basic"
         ).lower()

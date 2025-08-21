@@ -1704,7 +1704,8 @@ class WalletGroup(ArgumentGroup):
             metavar="<dbstore-schema-config>",
             env_var="ACAPY_DBSTORE_SCHEMA_CONFIG",
             help=(
-                "Specifies the schema configuration to use for the DB Store during provision only "
+                "Specifies the schema configuration to use for the DB Store "
+                "during provision only "
                 "Optional when using the 'postgres_storage' or 'sqlite' DB Store type. "
                 "Accepted values are 'generic' or 'normalize'. "
                 "If not specified, the default is 'normalize'. "
@@ -2189,7 +2190,6 @@ class UpgradeGroup(ArgumentGroup):
 
     def add_arguments(self, parser: ArgumentParser):
         """Add ACA-Py upgrade process specific arguments to the parser."""
-
         parser.add_argument(
             "--upgrade-config-path",
             type=str,

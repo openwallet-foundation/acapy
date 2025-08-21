@@ -255,7 +255,6 @@ async def verify_presentation_route(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get("/vc/credentials", list_credentials_route, allow_head=False),
