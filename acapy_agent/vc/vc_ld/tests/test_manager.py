@@ -11,7 +11,7 @@ from ....did.did_key import DIDKey
 from ....resolver.default.key import KeyDIDResolver
 from ....resolver.did_resolver import DIDResolver
 from ....storage.vc_holder.base import VCHolder
-from ....utils.testing import create_test_profile
+from ....utils.testing import create_test_profile, skip_on_jsonld_url_error
 from ....wallet.base import BaseWallet
 from ....wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
@@ -210,6 +210,7 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
 
         assert SECURITY_CONTEXT_ED25519_2020_URL in self.vc.context_urls
 
+    @skip_on_jsonld_url_error
     async def test_issue(self):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -222,6 +223,7 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
         cred = await self.manager.issue(self.vc, self.options)
         assert cred
 
+    @skip_on_jsonld_url_error
     async def test_issue_ed25519_2020(self):
         """Ensure ed25519 2020 context added to issued cred."""
         async with self.profile.session() as session:
@@ -236,6 +238,7 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
         assert cred
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_issue_bbs(self):
         """Ensure BBS context is added to issued cred."""
         async with self.profile.session() as session:
@@ -262,6 +265,7 @@ class TestVcLdManager(IsolatedAsyncioTestCase):
         for suite in suites:
             assert isinstance(suite, types)
 
+    @skip_on_jsonld_url_error
     async def test_store(
         self,
     ):

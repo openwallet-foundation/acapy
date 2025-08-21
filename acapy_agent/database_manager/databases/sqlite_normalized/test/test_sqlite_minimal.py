@@ -1,4 +1,8 @@
-# poetry run python acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_minimal.py
+"""Tests for SQLite minimal database functionality."""
+
+# poetry run python \
+# acapy_agent/database_manager/databases/sqlite_normalized/test/\
+# test_sqlite_minimal.py
 
 import asyncio
 import logging
@@ -10,13 +14,9 @@ from acapy_agent.database_manager.databases.sqlite_normalized.database import (
 logging.basicConfig(level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-LOGGER = logging.getLogger(__name__)
-
 
 async def minimal_test():
+    """Test minimal SQLite database functionality."""
     store = None
     try:
         config = SqliteConfig(
@@ -62,7 +62,8 @@ async def minimal_test():
             try:
                 loop = asyncio.get_event_loop()
                 LOGGER.debug(
-                    f"Event loop state: running={loop.is_running()}, closed={loop.is_closed()}"
+                    f"Event loop state: running={loop.is_running()}, "
+                    f"closed={loop.is_closed()}"
                 )
                 if hasattr(store, "close") and callable(store.close):
                     LOGGER.debug("Calling store.close")
@@ -72,7 +73,8 @@ async def minimal_test():
                     LOGGER.error("Store.close is not callable or missing")
             except Exception as close_err:
                 LOGGER.error(
-                    f"Error closing store: {str(close_err)}, store={store}, type={type(store)}"
+                    f"Error closing store: {str(close_err)}, "
+                    f"store={store}, type={type(store)}"
                 )
         else:
             LOGGER.warning("Store is None, skipping close operation.")

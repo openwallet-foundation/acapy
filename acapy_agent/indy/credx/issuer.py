@@ -101,6 +101,7 @@ class IndyCredxIssuer(IndyIssuer):
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
         try:
             async with self._profile.session() as session:
@@ -379,7 +380,6 @@ class IndyCredxIssuer(IndyIssuer):
             Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
-
         delta = None
         failed_crids = set()
         max_attempt = 5
