@@ -1,9 +1,9 @@
 import unittest
 import logging
 from pymongo import MongoClient
-from ..tags import TagQuery, TagName, query_to_tagquery
-from ..encoders import encoder_factory
-from ..query import query_from_str
+from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName, query_to_tagquery
+from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
+from acapy_agent.database_manager.wql_nosql.query import query_from_str
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

@@ -1,8 +1,8 @@
 """Test cases for the TagSqlEncoder class handling deeply nested queries with NOT."""
 
 import unittest
-from ..tags import TagQuery, TagName
-from ..encoders import encoder_factory
+from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName
+from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
 
 
 def replace_placeholders(query, args):
@@ -115,7 +115,7 @@ class TestTagSqlEncoder(unittest.TestCase):
         ### Query Logic Explanation
         -- Query: NOT ((category = 'electronics' OR sale = 'yes') AND NOT (stock = 'out'))
         -- Equivalent to: (category != 'electronics' AND sale != 'yes') OR stock = 'out'
-        -- Item 1: 
+        -- Item 1:
         --   (category = 'electronics' OR sale = 'yes') -> true
         --   NOT (stock = 'out') -> true
         --   NOT (true AND true) -> false
@@ -127,7 +127,7 @@ class TestTagSqlEncoder(unittest.TestCase):
         --   (category = 'electronics' OR sale = 'yes') -> false OR true -> true
         --   NOT (stock = 'out') -> true
         --   NOT (true AND true) -> false
-        --   But: (category != 'electronics' AND sale != 'yes') 
+        --   But: (category != 'electronics' AND sale != 'yes')
         --   -> false OR stock = 'out' -> true
         -- Item 4:
         --   (category = 'electronics' OR sale = 'yes') -> true

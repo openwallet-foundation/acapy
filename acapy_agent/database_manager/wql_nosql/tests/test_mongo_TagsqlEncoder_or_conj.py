@@ -6,8 +6,8 @@
 
 import unittest
 import json
-from ..tags import TagQuery, TagName
-from ..encoders import encoder_factory
+from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName
+from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
 
 
 class TestMongoTagEncoder(unittest.TestCase):

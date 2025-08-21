@@ -1,12 +1,14 @@
 # pytest --maxfail=1 --disable-warnings --no-cov -s -vv acapy_agent/database_manager/wql_normalized/tests/test_postgres_TagsqlEncoder_All_normalized_A.py
 # python -m unittest acapy_agent/database_manager/wql_normalized/tests/test_postgres_TagsqlEncoder_All_normalized_A.py -v
 
+import os
 import unittest
 import psycopg
 import logging
-from ..tags import TagQuery, TagName, query_to_tagquery
-from ..encoders import encoder_factory
-from ..query import query_from_str
+import pytest
+from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName, query_to_tagquery
+from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
+from acapy_agent.database_manager.wql_normalized.query import query_from_str
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +28,7 @@ def replace_placeholders(query, args):
     return result
 
 
+@pytest.mark.postgres
 class TestPostgresTagEncoderNormalized(unittest.TestCase):
     """Test cases for the PostgresTagEncoder class in normalized mode (part A)."""
 
@@ -36,13 +39,20 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         """
         self.enc_name = lambda x: x  # No transformation for tag names
         self.enc_value = lambda x: x  # No transformation for tag values
+
+        # Get PostgreSQL connection from environment variable or use default
+        postgres_url = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb2")
+        # Parse the URL to extract connection parameters
+        import urllib.parse
+        parsed = urllib.parse.urlparse(postgres_url)
+
         try:
             self.conn = psycopg.connect(
-                host="192.168.2.172",
-                port=5432,
-                dbname="mydb2",
-                user="myuser",
-                password="mypass",
+                host=parsed.hostname or "localhost",
+                port=parsed.port or 5432,
+                dbname=parsed.path.lstrip('/') if parsed.path else "mydb2",
+                user=parsed.username or "myuser",
+                password=parsed.password or "mypass",
             )
             self.conn.autocommit = True  # Enable autocommit for setup/teardown
             self.cursor = self.conn.cursor()

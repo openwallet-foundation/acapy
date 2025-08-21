@@ -1,31 +1,43 @@
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.normalized_handler import (
+"""Module docstring."""
+
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
+    normalized_handler import (
     NormalizedHandler as SqliteNormalizedHandler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.generic_handler import (
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
+generic_handler import (
     GenericHandler as SqliteGenericHandler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom.cred_ex_v20_custom_handler import (
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
+custom.cred_ex_v20_custom_handler import (
     CredExV20CustomHandler as SqliteCredExV20CustomHandler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom.pres_ex_v20_custom_handler import (
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
+custom.pres_ex_v20_custom_handler import (
     PresExV20CustomHandler as SqlitePresExV20CustomHandler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom.connection_metadata_custom_handler import (
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
+custom.connection_metadata_custom_handler import (
     ConnectionMetadataCustomHandler as SqliteConnectionMetadataCustomHandler,
 )
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.normalized_handler import (
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
+normalized_handler import (
     NormalizedHandler as PostgresqlNormalizedHandler,
 )
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.generic_handler import (
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
+generic_handler import (
     GenericHandler as PostgresqlGenericHandler,
 )
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom.cred_ex_v20_custom_handler import (
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
+custom.cred_ex_v20_custom_handler import (
     CredExV20CustomHandler as PostgresqlCredExV20CustomHandler,
 )
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom.pres_ex_v20_custom_handler import (
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
+custom.pres_ex_v20_custom_handler import (
     PresExV20CustomHandler as PostgresqlPresExV20CustomHandler,
 )
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom.connection_metadata_custom_handler import (
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
+custom.connection_metadata_custom_handler import (
     ConnectionMetadataCustomHandler as PostgresqlConnectionMetadataCustomHandler,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (

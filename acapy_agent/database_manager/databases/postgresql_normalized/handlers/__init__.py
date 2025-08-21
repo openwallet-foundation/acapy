@@ -1,4 +1,6 @@
-from .generic_handler import GenericHandler
-from . import normalized_handler
+"""Module docstring."""
 
-__all__ = ["normalized_handler", "custom"]
+from .generic_handler import GenericHandler
+from .normalized_handler import NormalizedHandler
+
+__all__ = ["GenericHandler", "NormalizedHandler"]

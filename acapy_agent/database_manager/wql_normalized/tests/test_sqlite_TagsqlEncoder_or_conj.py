@@ -2,8 +2,8 @@
 # python -m unittest acapy_agent/database_manager/wql_normalized/tests/test_sqlite_TagsqlEncoder_or_conj.py
 
 import unittest
-from ..tags import TagQuery, TagName
-from ..encoders import encoder_factory
+from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName
+from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
 
 
 def replace_placeholders(query, args):
@@ -145,7 +145,7 @@ class TestTagSqlEncoder(unittest.TestCase):
         --   (tag_a = value_a) -> false -> false OR false -> false
         -- Item 4:
         --   (tag_a = value_a AND tag_b = value_b) -> false (no tag_b)
-        --   (tag_a = value_a AND NOT (tag_b = value_c)) -> true AND true 
+        --   (tag_a = value_a AND NOT (tag_b = value_c)) -> true AND true
         --   (no tag_b = value_c) -> true
         --   false OR true -> true
         -- Expected items selected: 1 and 4
