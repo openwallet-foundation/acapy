@@ -96,8 +96,25 @@ class AnonCredsIssuer:
     @property
     def profile(self) -> Profile:
         """Accessor for the profile instance."""
+        # Check if profile is AskarAnonCredsProfile or KanonAnonCredsProfile
+        # by checking the backend attribute
         if not isinstance(self._profile, Profile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        
+        # Check if it's a supported anoncreds profile type
+        if hasattr(self._profile, 'backend'):
+            backend = (
+                self._profile.backend.lower()
+                if isinstance(self._profile.backend, str)
+                else ''
+            )
+            if 'anoncreds' not in backend and 'kanon' not in backend:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        else:
+            # For AskarAnonCredsProfile, check the class name
+            class_name = self._profile.__class__.__name__
+            if 'AnonCreds' not in class_name and 'Kanon' not in class_name:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
 
@@ -275,6 +292,7 @@ class AnonCredsIssuer:
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
         try:
             async with self.profile.session() as session:
