@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import threading
 import asyncio
 from typing import Optional, Union, Sequence
@@ -15,6 +17,7 @@ LOGGER = logging.getLogger(__name__ + ".DBStore")
 
 
 class PostgresSession(AbstractDatabaseSession):
+    """PostgreSQL database session implementation."""
     def __init__(
         self,
         database: PostgresDatabase,
@@ -22,6 +25,7 @@ class PostgresSession(AbstractDatabaseSession):
         is_txn: bool,
         release_number: str = "release_1",
     ):
+        """Initialize PostgreSQL session."""
         self.lock = threading.RLock()
         self.database = database
         self.pool = database.pool
@@ -56,7 +60,10 @@ class PostgresSession(AbstractDatabaseSession):
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Failed to decode bytes value for '{name}' in category '{category}'",
+                        message=(
+                            f"Failed to decode bytes value for '{name}' in category "
+                            f"'{category}'"
+                        ),
                         actual_error=str(e),
                     )
             return value or ""
@@ -81,13 +88,17 @@ class PostgresSession(AbstractDatabaseSession):
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Failed to decode hex-encoded value for '{name}' in category '{category}'",
+                        message=(
+                            f"Failed to decode hex-encoded value for '{name}' in "
+                            f"category '{category}'"
+                        ),
                         actual_error=str(e),
                     )
             return value
         raise ValueError(f"Invalid operation: {operation}")
 
     def translate_error(self, error: Exception) -> DBStoreError:
+        """Translate database-specific errors to DBStoreError."""
         if self.database.backend:
             return self.database.backend.translate_error(error)
         LOGGER.debug("Translating error: %s, type=%s", str(error), type(error))
@@ -118,7 +129,8 @@ class PostgresSession(AbstractDatabaseSession):
         try:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"SELECT id FROM {self.schema_context.qualify_table('profiles')} WHERE name = %s",
+                    f"SELECT id FROM {self.schema_context.qualify_table('profiles')} "
+                    f"WHERE name = %s",
                     (profile_name,),
                 )
                 row = await cursor.fetchone()
@@ -143,6 +155,7 @@ class PostgresSession(AbstractDatabaseSession):
             await self.pool.putconn(conn)
 
     async def __aenter__(self):
+        """Enter async context manager."""
         max_retries = 5
         for attempt in range(max_retries):
             try:
@@ -165,7 +178,8 @@ class PostgresSession(AbstractDatabaseSession):
                 if self.is_txn:
                     await self.conn.execute("BEGIN")
                 LOGGER.debug(
-                    "[enter_session] Starting for profile=%s, is_txn=%s, release_number=%s",
+                    "[enter_session] Starting for profile=%s, is_txn=%s, "
+                    "release_number=%s",
                     self.profile,
                     self.is_txn,
                     self.release_number,
@@ -195,6 +209,7 @@ class PostgresSession(AbstractDatabaseSession):
                 )
 
     async def __aexit__(self, exc_type, exc, tb):
+        """Exit async context manager."""
         if self.conn:
             try:
                 if self.is_txn:
@@ -221,6 +236,7 @@ class PostgresSession(AbstractDatabaseSession):
                     pass
 
     async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+        """Count entries in a category."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         async with self.conn.cursor() as cursor:
@@ -256,6 +272,7 @@ class PostgresSession(AbstractDatabaseSession):
         tags: dict = None,
         expiry_ms: int = None,
     ):
+        """Insert an entry."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         value = self._process_value(value, "insert", name, category)
@@ -295,6 +312,7 @@ class PostgresSession(AbstractDatabaseSession):
         tag_filter: Union[str, dict] = None,
         for_update: bool = False,
     ) -> Optional[Entry]:
+        """Fetch a single entry."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         async with self.conn.cursor() as cursor:
@@ -343,6 +361,7 @@ class PostgresSession(AbstractDatabaseSession):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Sequence[Entry]:
+        """Fetch all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         async with self.conn.cursor() as cursor:
@@ -398,6 +417,7 @@ class PostgresSession(AbstractDatabaseSession):
         tags: dict = None,
         expiry_ms: int = None,
     ):
+        """Replace an entry."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         value = self._process_value(value, "replace", name, category)
@@ -431,6 +451,7 @@ class PostgresSession(AbstractDatabaseSession):
                 )
 
     async def remove(self, category: str, name: str):
+        """Remove a single entry."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         async with self.conn.cursor() as cursor:
@@ -461,6 +482,7 @@ class PostgresSession(AbstractDatabaseSession):
                 )
 
     async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+        """Remove all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
         async with self.conn.cursor() as cursor:
@@ -491,6 +513,7 @@ class PostgresSession(AbstractDatabaseSession):
                 )
 
     async def commit(self):
+        """Commit transaction."""
         if not self.is_txn:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Not a transaction")
         try:
@@ -506,6 +529,7 @@ class PostgresSession(AbstractDatabaseSession):
             )
 
     async def rollback(self):
+        """Rollback transaction."""
         if not self.is_txn:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Not a transaction")
         try:
@@ -521,6 +545,7 @@ class PostgresSession(AbstractDatabaseSession):
             )
 
     async def close(self):
+        """Close session."""
         if self.conn:
             try:
                 async with self.conn.cursor() as cursor:

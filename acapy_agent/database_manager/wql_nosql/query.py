@@ -1,7 +1,7 @@
 """Askar WQL (Wallet Query Language) parsing and optimization."""
 
-from typing import List, Optional, Callable, Union
 import json
+from typing import List, Optional, Callable, Union
 
 # JSONValue represents a parsed JSON value, which can be a dict, list, str, or None
 JSONValue = Union[dict, list, str, None]
@@ -33,6 +33,7 @@ class Query:
         raise NotImplementedError
 
     def __eq__(self, other):
+        """Check equality with another query."""
         raise NotImplementedError
 
 
@@ -40,9 +41,11 @@ class AndQuery(Query):
     """Logical AND of multiple clauses."""
 
     def __init__(self, subqueries: List[Query]):
+        """Initialize AndQuery."""
         self.subqueries = subqueries
 
     def optimise(self) -> Optional[Query]:
+        """Optimize the AND query by simplifying its structure."""
         optimised = [
             q for q in (sq.optimise() for sq in self.subqueries) if q is not None
         ]
@@ -54,14 +57,17 @@ class AndQuery(Query):
             return AndQuery(optimised)
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the AND query."""
         return AndQuery([sq.map(key_func, value_func) for sq in self.subqueries])
 
     def to_dict(self):
+        """Convert the AND query to a JSON-compatible dictionary."""
         if not self.subqueries:
             return {}
         return {"$and": [sq.to_dict() for sq in self.subqueries]}
 
     def __eq__(self, other):
+        """Check equality with another AND query."""
         return isinstance(other, AndQuery) and self.subqueries == other.subqueries
 
 
@@ -69,9 +75,11 @@ class OrQuery(Query):
     """Logical OR of multiple clauses."""
 
     def __init__(self, subqueries: List[Query]):
+        """Initialize OR query with subqueries."""
         self.subqueries = subqueries
 
     def optimise(self) -> Optional[Query]:
+        """Optimize the OR query by simplifying its structure."""
         optimised = [
             q for q in (sq.optimise() for sq in self.subqueries) if q is not None
         ]
@@ -83,14 +91,17 @@ class OrQuery(Query):
             return OrQuery(optimised)
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the OR query."""
         return OrQuery([sq.map(key_func, value_func) for sq in self.subqueries])
 
     def to_dict(self):
+        """Convert the OR query to a JSON-compatible dictionary."""
         if not self.subqueries:
             return {}
         return {"$or": [sq.to_dict() for sq in self.subqueries]}
 
     def __eq__(self, other):
+        """Check equality with another OR query."""
         return isinstance(other, OrQuery) and self.subqueries == other.subqueries
 
 
@@ -98,9 +109,11 @@ class NotQuery(Query):
     """Negation of a clause."""
 
     def __init__(self, subquery: Query):
+        """Initialize NOT query with a subquery."""
         self.subquery = subquery
 
     def optimise(self) -> Optional[Query]:
+        """Optimize the NOT query by simplifying its structure."""
         opt_sub = self.subquery.optimise()
         if opt_sub is None:
             return None
@@ -110,12 +123,15 @@ class NotQuery(Query):
             return NotQuery(opt_sub)
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the NOT query."""
         return NotQuery(self.subquery.map(key_func, value_func))
 
     def to_dict(self):
+        """Convert the NOT query to a JSON-compatible dictionary."""
         return {"$not": self.subquery.to_dict()}
 
     def __eq__(self, other):
+        """Check equality with another NOT query."""
         return isinstance(other, NotQuery) and self.subquery == other.subquery
 
 
@@ -123,19 +139,24 @@ class EqQuery(Query):
     """Equality comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize equality query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform key and value in the equality query."""
         return EqQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: self.value}
 
     def __eq__(self, other):
+        """Check equality with another EqQuery."""
         return (
             isinstance(other, EqQuery)
             and self.key == other.key
@@ -147,19 +168,24 @@ class NeqQuery(Query):
     """Inequality comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize inequality query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform key and value in the inequality query."""
         return NeqQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$neq": self.value}}
 
     def __eq__(self, other):
+        """Check equality with another NeqQuery."""
         return (
             isinstance(other, NeqQuery)
             and self.key == other.key
@@ -171,19 +197,24 @@ class GtQuery(Query):
     """Greater-than comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize gt-than query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the gt query."""
         return GtQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$gt": self.value}}
 
     def __eq__(self, other):
+        """Check equality with another GtQuery."""
         return (
             isinstance(other, GtQuery)
             and self.key == other.key
@@ -195,19 +226,24 @@ class GteQuery(Query):
     """Greater-than-or-equal comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize gte-than query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the gte query."""
         return GteQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$gte": self.value}}
 
     def __eq__(self, other):
+        """Check equality with another GteQuery."""
         return (
             isinstance(other, GteQuery)
             and self.key == other.key
@@ -219,19 +255,24 @@ class LtQuery(Query):
     """Less-than comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize lt-than query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the lt query."""
         return LtQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$lt": self.value}}
 
     def __eq__(self, other):
+        """Check equality with another LtQuery."""
         return (
             isinstance(other, LtQuery)
             and self.key == other.key
@@ -243,19 +284,24 @@ class LteQuery(Query):
     """Less-than-or-equal comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize lte-than query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the lte query."""
         return LteQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$lte": self.value}}
 
     def __eq__(self, other):
+        """Check equality with another LteQuery."""
         return (
             isinstance(other, LteQuery)
             and self.key == other.key
@@ -267,19 +313,24 @@ class LikeQuery(Query):
     """SQL 'LIKE'-compatible string comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize like-than query."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the like query."""
         return LikeQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$like": self.value}}
 
     def __eq__(self, other):
+        """Check equality with another LikeQuery."""
         return (
             isinstance(other, LikeQuery)
             and self.key == other.key
@@ -291,21 +342,26 @@ class InQuery(Query):
     """Match one of multiple field values in a set."""
 
     def __init__(self, key: str, values: List[str]):
+        """Initialize IN query."""
         self.key = key
         self.values = values
 
     def optimise(self):
+        """Optimize by converting single value to EqQuery."""
         if len(self.values) == 1:
             return EqQuery(self.key, self.values[0])
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the in query."""
         return InQuery(key_func(self.key), [value_func(self.key, v) for v in self.values])
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {self.key: {"$in": self.values}}
 
     def __eq__(self, other):
+        """Check equality with another InQuery."""
         return (
             isinstance(other, InQuery)
             and self.key == other.key
@@ -317,18 +373,23 @@ class ExistQuery(Query):
     """Match any non-null field value of the given field names."""
 
     def __init__(self, keys: List[str]):
+        """Initialize EXIST query."""
         self.keys = keys
 
     def optimise(self):
+        """Return self as no optimization is needed."""
         return self
 
     def map(self, key_func, value_func):
+        """Transform keys and values in the exist query."""
         return ExistQuery([key_func(k) for k in self.keys])
 
     def to_dict(self):
+        """Convert to dictionary representation."""
         return {"$exist": self.keys}
 
     def __eq__(self, other):
+        """Check equality with another ExistQuery."""
         return isinstance(other, ExistQuery) and self.keys == other.keys
 
 
@@ -463,8 +524,10 @@ def query_from_json(json_value: JSONValue) -> Query:
 
 
 # Need to support 3 kinds of query
-# simple query  {'cred_def_id': 'WgWxqztrNooG92RXvxSTWv:3:CL:20:tag'} this will become $and
-# older format where the query is an array of objects ([{"field1": "value1"}, {"field2": "value2"}]). this will become $or.
+# simple query  {'cred_def_id': 'WgWxqztrNooG92RXvxSTWv:3:CL:20:tag'}
+# this will become $and
+# older format where the query is an array of objects
+# ([{"field1": "value1"}, {"field2": "value2"}]). this will become $or.
 # complex query like, and, in etc..
 tag_filter = '{"attr::person.gender": {"$like": "F"}}'
 

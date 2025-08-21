@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
@@ -25,10 +27,20 @@ class CredExV20CustomHandler(NormalizedHandler):
         table_name: Optional[str] = None,
         schema_context: Optional[SchemaContext] = None,
     ):
+        """Initialize the CredExV20CustomHandler.
+        
+        Args:
+            category: The category of credentials to handle
+            columns: List of columns for the credential exchange table
+            table_name: Optional table name override
+            schema_context: Optional schema context for table naming
+        """
         super().__init__(category, columns, table_name, schema_context)
         self.version = self._get_version()
         LOGGER.debug(
-            f"Initialized CredExV20CustomHandler for category={category}, table={self.table}, columns={columns}, version={self.version}, schema_context={schema_context}"
+            f"Initialized CredExV20CustomHandler for category={category}, "
+            f"table={self.table}, columns={columns}, version={self.version}, "
+            f"schema_context={schema_context}"
         )
 
     def _get_version(self) -> str:
@@ -40,7 +52,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 )
                 return table_suffix
             LOGGER.warning(
-                f"Table name {self.table} does not match expected format, defaulting to version 1"
+                f"Table name {self.table} does not match expected format, "
+                f"defaulting to version 1"
             )
             return "1"
         except Exception as e:
@@ -121,7 +134,10 @@ class CredExV20CustomHandler(NormalizedHandler):
         )
         try:
             await cursor.execute(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = %s AND table_schema = %s)",
+                (
+                    "SELECT EXISTS (SELECT FROM information_schema.tables "
+                    "WHERE table_name = %s AND table_schema = %s)"
+                ),
                 (f"cred_ex_v20_attributes_v{self.version}", str(self.schema_context)),
             )
             if not (await cursor.fetchone())[0]:
@@ -133,13 +149,15 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if "name" in attr and "value" in attr:
                     await cursor.execute(
                         f"""
-                        INSERT INTO {attributes_table} (cred_ex_v20_id, attr_name, attr_value)
+                        INSERT INTO {attributes_table} 
+                        (cred_ex_v20_id, attr_name, attr_value)
                         VALUES (%s, %s, %s)
                     """,
                         (cred_ex_id, attr["name"], attr["value"]),
                     )
                     LOGGER.debug(
-                        f"[extract] Inserted attribute: name={attr['name']}, value={attr['value']} for cred_ex_v20_id={cred_ex_id}"
+                        f"[extract] Inserted attribute: name={attr['name']}, "
+                        f"value={attr['value']} for cred_ex_v20_id={cred_ex_id}"
                     )
         except Exception as e:
             LOGGER.error(
@@ -175,7 +193,10 @@ class CredExV20CustomHandler(NormalizedHandler):
         )
         try:
             await cursor.execute(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = %s AND table_schema = %s)",
+                (
+                    "SELECT EXISTS (SELECT FROM information_schema.tables "
+                    "WHERE table_name = %s AND table_schema = %s)"
+                ),
                 (f"cred_ex_v20_formats_v{self.version}", str(self.schema_context)),
             )
             if not (await cursor.fetchone())[0]:
@@ -187,13 +208,15 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if "attach_id" in fmt:
                     await cursor.execute(
                         f"""
-                        INSERT INTO {formats_table} (cred_ex_v20_id, format_id, format_type)
+                        INSERT INTO {formats_table}
+                        (cred_ex_v20_id, format_id, format_type)
                         VALUES (%s, %s, %s)
                     """,
                         (cred_ex_id, fmt["attach_id"], fmt.get("format")),
                     )
                     LOGGER.debug(
-                        f"[extract] Inserted format: attach_id={fmt['attach_id']}, format_type={fmt.get('format')} for cred_ex_v20_id={cred_ex_id}"
+                        f"[extract] Inserted format: attach_id={fmt['attach_id']}, "
+                        f"format_type={fmt.get('format')} for cred_ex_v20_id={cred_ex_id}"
                     )
         except Exception as e:
             LOGGER.error(
@@ -214,8 +237,22 @@ class CredExV20CustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert a credential exchange record with custom data extraction.
+        
+        Args:
+            cursor: Database cursor for executing queries
+            profile_id: Profile ID for the credential exchange
+            category: Category of the credential exchange
+            name: Name/identifier of the credential exchange
+            value: JSON data containing credential exchange details
+            tags: Additional tags for the credential exchange
+            expiry_ms: Expiration time in milliseconds
+        """
         LOGGER.debug(
-            f"[insert] Starting with category={category}, name={name}, value={value}, tags={tags}"
+            (
+                f"[insert] Starting with category={category}, name={name}, "
+                f"value={value}, tags={tags}"
+            )
         )
 
         expiry = None
@@ -257,7 +294,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             if existing_item:
                 item_id = existing_item[0]
                 LOGGER.debug(
-                    f"[insert] Found existing item_id={item_id} for category={category}, name={name}"
+                    f"[insert] Found existing item_id={item_id} for "
+                    f"category={category}, name={name}"
                 )
                 await cursor.execute(
                     f"SELECT id, thread_id FROM {self.table} WHERE item_id = %s",
@@ -266,15 +304,21 @@ class CredExV20CustomHandler(NormalizedHandler):
                 existing_cred = await cursor.fetchone()
                 if existing_cred:
                     LOGGER.error(
-                        f"[insert] Duplicate cred_ex_v20 record for item_id={item_id}, thread_id={existing_cred[1]}"
+                        f"[insert] Duplicate cred_ex_v20 record for item_id={item_id}, "
+                        f"thread_id={existing_cred[1]}"
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                        message=f"Duplicate cred_ex_v20 record for item_id={item_id}, existing thread_id={existing_cred[1]}",
+                        message=(
+                            f"Duplicate cred_ex_v20 record for item_id={item_id}, "
+                            f"existing thread_id={existing_cred[1]}"
+                        ),
                     )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=f"Duplicate entry for category '{category}' and name '{name}'",
+                    message=(
+                        f"Duplicate entry for category '{category}' and name '{name}'"
+                    ),
                 )
 
             if tags.get("thread_id"):
@@ -285,7 +329,10 @@ class CredExV20CustomHandler(NormalizedHandler):
                 duplicates = await cursor.fetchall()
                 if duplicates:
                     LOGGER.error(
-                        f"[insert] Duplicate thread_id found in {self.table}: {duplicates}"
+                        (
+                            f"[insert] Duplicate thread_id found in {self.table}: "
+                            f"{duplicates}"
+                        )
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
@@ -294,7 +341,8 @@ class CredExV20CustomHandler(NormalizedHandler):
 
             await cursor.execute(
                 f"""
-                INSERT INTO {self.schema_context.qualify_table("items")} (profile_id, kind, category, name, value, expiry)
+                INSERT INTO {self.schema_context.qualify_table("items")}
+                (profile_id, kind, category, name, value, expiry)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
             """,
@@ -309,7 +357,10 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if col == "cred_def_id" and cred_def_id:
                     data[col] = cred_def_id
                     LOGGER.debug(
-                        f"[insert] Added column {col} from custom extraction: {cred_def_id}"
+                        (
+                            f"[insert] Added column {col} from custom extraction: "
+                            f"{cred_def_id}"
+                        )
                     )
                 elif col in json_data:
                     val = json_data[col]
@@ -338,23 +389,29 @@ class CredExV20CustomHandler(NormalizedHandler):
                 else:
                     data[col] = None
                     LOGGER.debug(
-                        f"[insert] Column {col} not found in json_data or tags, setting to NULL"
+                        f"[insert] Column {col} not found in json_data or tags, "
+                        f"setting to NULL"
                     )
 
             columns = list(data.keys())
             placeholders = ", ".join(["%s" for _ in columns])
-            sql = f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders}) RETURNING id"
+            sql = (
+                f"INSERT INTO {self.table} ({', '.join(columns)}) "
+                f"VALUES ({placeholders}) RETURNING id"
+            )
             await cursor.execute(sql, list(data.values()))
             cred_ex_id = (await cursor.fetchone())[0]
             LOGGER.debug(
-                f"[insert] Inserted cred_ex_v20 record with id={cred_ex_id}, item_id={item_id}, thread_id={tags.get('thread_id')}"
+                f"[insert] Inserted cred_ex_v20 record with id={cred_ex_id}, "
+                f"item_id={item_id}, thread_id={tags.get('thread_id')}"
             )
 
             await self._extract_attributes_and_formats(json_data, cred_ex_id, cursor)
 
         except Exception as e:
             LOGGER.error(
-                f"[insert] Database error during insert for item_id={item_id}, thread_id={tags.get('thread_id')}: {str(e)}"
+                f"[insert] Database error during insert for item_id={item_id}, "
+                f"thread_id={tags.get('thread_id')}: {str(e)}"
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
@@ -371,8 +428,10 @@ class CredExV20CustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Replace an existing credential exchange record."""
         LOGGER.debug(
-            f"[replace] Starting with category={category}, name={name}, thread_id={tags.get('thread_id')}"
+            f"[replace] Starting with category={category}, name={name}, "
+            f"thread_id={tags.get('thread_id')}"
         )
 
         expiry = None
@@ -391,27 +450,34 @@ class CredExV20CustomHandler(NormalizedHandler):
             if not row:
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = row[0]
             LOGGER.debug(f"[replace] Found item_id={item_id} for replacement")
 
             if tags.get("thread_id"):
                 await cursor.execute(
-                    f"SELECT id, item_id FROM {self.table} WHERE thread_id = %s AND item_id != %s",
+                    f"SELECT id, item_id FROM {self.table} "
+                    f"WHERE thread_id = %s AND item_id != %s",
                     (tags.get("thread_id"), item_id),
                 )
                 duplicates = await cursor.fetchall()
                 if duplicates:
                     LOGGER.warning(
-                        f"[replace] Duplicate thread_id found in {self.table}: {duplicates}"
+                        f"[replace] Duplicate thread_id found in {self.table}: "
+                        f"{duplicates}"
                     )
                     for dup_id, dup_item_id in duplicates:
                         await cursor.execute(
                             f"DELETE FROM {self.table} WHERE id = %s", (dup_id,)
                         )
                         LOGGER.debug(
-                            f"[replace] Deleted duplicate record id={dup_id}, thread_id={tags.get('thread_id')}"
+                            (
+                                f"[replace] Deleted duplicate record id={dup_id}, "
+                                f"thread_id={tags.get('thread_id')}"
+                            )
                         )
 
             json_data = {}
@@ -456,17 +522,24 @@ class CredExV20CustomHandler(NormalizedHandler):
                         )
                 elif isinstance(cred_issue, dict):
                     LOGGER.debug(
-                        "[replace] cred_issue is already a dict, no further validation needed"
+                        (
+                            "[replace] cred_issue is already a dict, "
+                            "no further validation needed"
+                        )
                     )
                 else:
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Invalid cred_issue type: expected str or dict, got {type(cred_issue)}",
+                        message=(
+                            f"Invalid cred_issue type: expected str or dict, "
+                            f"got {type(cred_issue)}"
+                        ),
                     )
 
             await cursor.execute(
                 f"""
-                UPDATE {self.schema_context.qualify_table("items")} SET value = %s, expiry = %s
+                UPDATE {self.schema_context.qualify_table("items")}
+                SET value = %s, expiry = %s
                 WHERE id = %s
             """,
                 (value_to_store, expiry, item_id),
@@ -481,7 +554,10 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if col == "cred_def_id" and cred_def_id:
                     data[col] = cred_def_id
                     LOGGER.debug(
-                        f"[replace] Added column {col} from custom extraction: {cred_def_id}"
+                        (
+                            f"[replace] Added column {col} from custom extraction: "
+                            f"{cred_def_id}"
+                        )
                     )
                 elif col in json_data:
                     val = json_data[col]
@@ -510,23 +586,35 @@ class CredExV20CustomHandler(NormalizedHandler):
                 else:
                     data[col] = None
                     LOGGER.debug(
-                        f"[replace] Column {col} not found in json_data or tags, setting to NULL"
+                        (
+                            f"[replace] Column {col} not found in json_data or tags, "
+                            "setting to NULL"
+                        )
                     )
 
             columns = list(data.keys())
             placeholders = ", ".join(["%s" for _ in columns])
-            sql = f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders}) RETURNING id"
+            sql = (
+                f"INSERT INTO {self.table} ({', '.join(columns)}) "
+                f"VALUES ({placeholders}) RETURNING id"
+            )
             await cursor.execute(sql, list(data.values()))
             cred_ex_id = (await cursor.fetchone())[0]
             LOGGER.debug(
-                f"[replace] Inserted cred_ex_v20 record with id={cred_ex_id}, item_id={item_id}, thread_id={tags.get('thread_id')}"
+                (
+                    f"[replace] Inserted cred_ex_v20 record with id={cred_ex_id}, "
+                    f"item_id={item_id}, thread_id={tags.get('thread_id')}"
+                )
             )
 
             await self._extract_attributes_and_formats(json_data, cred_ex_id, cursor)
 
         except Exception as e:
             LOGGER.error(
-                f"[replace] Database error during replace for item_id={item_id}, thread_id={tags.get('thread_id')}: {str(e)}"
+                (
+                    f"[replace] Database error during replace for item_id={item_id}, "
+                    f"thread_id={tags.get('thread_id')}: {str(e)}"
+                )
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,

@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import logging
 from typing import Optional
 import urllib.parse
@@ -12,6 +14,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PostgresqlBackend:
+    """PostgreSQL backend implementation for database manager."""
+
     async def provision(
         self,
         uri: str,
@@ -23,8 +27,10 @@ class PostgresqlBackend:
         schema_config: Optional[str] = None,
         config: Optional[dict] = None,
     ):
+        """Provision a new PostgreSQL database."""
         LOGGER.debug(
-            "[provision_backend] Starting with uri=%s, profile=%s, recreate=%s, release_number=%s, schema_config=%s, config=%s",
+            "[provision_backend] uri=%s, profile=%s, recreate=%s, "
+            "release_number=%s, schema_config=%s, config=%s",
             uri,
             profile,
             recreate,
@@ -82,7 +88,7 @@ class PostgresqlBackend:
             timeout=timeout,
             max_idle=max_idle,
             max_lifetime=max_lifetime,
-            schema_context=config_obj.schema_context,  # Use schema_context instead of schema_name
+            schema_context=config_obj.schema_context,
             backend=self,
         )
 
@@ -96,8 +102,10 @@ class PostgresqlBackend:
         target_schema_release_number: Optional[str] = None,
         config: Optional[dict] = None,
     ):
+        """Open an existing PostgreSQL database."""
         LOGGER.debug(
-            "[open_backend] Starting with uri=%s, profile=%s, schema_migration=%s, target_schema_release_number=%s, config=%s, "
+            "[open_backend] uri=%s, profile=%s, schema_migration=%s, "
+            "target_schema_release_number=%s, config=%s, "
             "schema_config will be retrieved from database",
             uri,
             profile,
@@ -151,11 +159,12 @@ class PostgresqlBackend:
             timeout=timeout,
             max_idle=max_idle,
             max_lifetime=max_lifetime,
-            schema_context=config_obj.schema_context,  # Use schema_context instead of schema_name
+            schema_context=config_obj.schema_context,
             backend=self,
         )
 
     async def remove(self, uri: str, config: Optional[dict] = None):
+        """Remove a PostgreSQL database."""
         LOGGER.debug("[remove_backend] Starting with uri=%s, config=%s", uri, config)
         config = config or {}
         parsed_uri = urllib.parse.urlparse(uri)
@@ -186,6 +195,7 @@ class PostgresqlBackend:
         return result
 
     def translate_error(self, error: Exception) -> DBStoreError:
+        """Translate database errors to DBStoreError."""
         LOGGER.debug("Translating error: %s, type=%s", str(error), type(error))
         if isinstance(error, DatabaseError):
             if error.code == DatabaseErrorCode.DATABASE_NOT_FOUND:

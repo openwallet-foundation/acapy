@@ -1,3 +1,5 @@
+"""SQLite normalized database implementation."""
+
 import threading
 import logging
 import asyncio
@@ -6,7 +8,8 @@ import sqlite3
 from typing import Optional, Generator, Union
 
 try:
-    from pysqlcipher3 import dbapi2 as sqlcipher
+    # Try new sqlcipher3 first (SQLite 3.46+)
+    import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
 from ..errors import DatabaseError, DatabaseErrorCode
@@ -21,14 +24,31 @@ LOGGER = logging.getLogger(__name__)
 
 
 def enc_name(name: str) -> str:
+    """Encode name for database storage.
+    
+    Args:
+        name: Name to encode
+        
+    Returns:
+        Encoded name
+    """
     return name
 
 
 def enc_value(value: str) -> str:
+    """Encode value for database storage.
+    
+    Args:
+        value: Value to encode
+        
+    Returns:
+        Encoded value
+    """
     return value
 
 
 class SqliteDatabase(AbstractDatabaseStore):
+    """SQLite database implementation for normalized storage."""
     def __init__(
         self,
         pool: ConnectionPool,
@@ -36,11 +56,13 @@ class SqliteDatabase(AbstractDatabaseStore):
         path: str,
         release_number: str = "release_0",
     ):
+        """Initialize SQLite database."""
         self.lock = threading.RLock()
         self.pool = pool
         self.default_profile = default_profile
         self.path = path
-        self.release_number = release_number  # The self.release_number comes from the schema_release_number stored in the config table
+        self.release_number = release_number  # The self.release_number comes
+        # from the schema_release_number stored in the config table
         self.active_sessions = []
         self.session_creation_times = {}
         self.max_sessions = int(pool.pool_size * 0.75)  # need load test
@@ -55,11 +77,14 @@ class SqliteDatabase(AbstractDatabaseStore):
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.PROFILE_NOT_FOUND,
-                message=f"Failed to initialize default profile ID for '{default_profile}'",
+                message=(
+                    f"Failed to initialize default profile ID for '{default_profile}'"
+                ),
                 actual_error=str(e),
             )
 
     async def start_monitoring(self):
+        """Start monitoring active database sessions."""
         asyncio.create_task(self._monitor_active_sessions())
 
     async def _monitor_active_sessions(self):
@@ -105,6 +130,14 @@ class SqliteDatabase(AbstractDatabaseStore):
                 self.pool.return_connection(conn)
 
     async def create_profile(self, name: str = None) -> str:
+        """Create a new profile in the database.
+        
+        Args:
+            name: Profile name to create
+            
+        Returns:
+            str: The created profile name
+        """
         name = name or "new_profile"
 
         def _create():
@@ -113,7 +146,8 @@ class SqliteDatabase(AbstractDatabaseStore):
                 try:
                     cursor = conn.cursor()
                     cursor.execute(
-                        "INSERT OR IGNORE INTO profiles (name, profile_key) VALUES (?, NULL)",
+                        "INSERT OR IGNORE INTO profiles (name, profile_key) "
+                        "VALUES (?, NULL)",
                         (name,),
                     )
                     if cursor.rowcount == 0:
@@ -140,9 +174,22 @@ class SqliteDatabase(AbstractDatabaseStore):
         return await asyncio.to_thread(_create)
 
     async def get_profile_name(self) -> str:
+        """Get the default profile name.
+        
+        Returns:
+            str: Default profile name
+        """
         return self.default_profile
 
     async def remove_profile(self, name: str) -> bool:
+        """Remove a profile from the database.
+        
+        Args:
+            name: Profile name to remove
+            
+        Returns:
+            bool: True if removed successfully
+        """
         def _remove():
             with self.lock:
                 conn = self.pool.get_connection()
@@ -168,6 +215,12 @@ class SqliteDatabase(AbstractDatabaseStore):
         return await asyncio.to_thread(_remove)
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
+        """Rekey the database with new encryption.
+        
+        Args:
+            key_method: Key method to use
+            pass_key: Password key for encryption
+        """
         def _rekey():
             with self.lock:
                 conn = self.pool.get_connection()
@@ -208,6 +261,20 @@ class SqliteDatabase(AbstractDatabaseStore):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Generator[Entry, None, None]:
+        """Scan entries in the database with filtering and pagination.
+        
+        Args:
+            profile: Profile name to scan
+            category: Category to scan
+            tag_filter: Tag filter criteria
+            offset: Offset for pagination
+            limit: Limit for pagination
+            order_by: Column to order by
+            descending: Whether to sort descending
+            
+        Yields:
+            Entry: Database entries matching criteria
+        """
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
         profile_id = self._get_profile_id(profile or self.default_profile)
@@ -253,6 +320,20 @@ class SqliteDatabase(AbstractDatabaseStore):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Generator[Entry, None, None]:
+        """Scan entries using keyset pagination.
+        
+        Args:
+            profile: Profile name to scan
+            category: Category to scan
+            tag_filter: Tag filter criteria
+            last_id: Last ID for cursor-based pagination
+            limit: Limit for pagination
+            order_by: Column to order by
+            descending: Whether to sort descending
+            
+        Yields:
+            Entry: Database entries
+        """
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
         profile_id = self._get_profile_id(profile or self.default_profile)
@@ -288,7 +369,15 @@ class SqliteDatabase(AbstractDatabaseStore):
             finally:
                 self.pool.return_connection(conn)
 
-    def session(self, profile: str = None) -> "SqliteSession":
+    def session(self, profile: str = None):
+        """Create a context manager for database session.
+        
+        Args:
+            profile: Profile name to use
+            
+        Returns:
+            SqliteSession: Database session context manager
+        """
         from .session import SqliteSession
 
         with self.lock:
@@ -313,7 +402,15 @@ class SqliteDatabase(AbstractDatabaseStore):
         )
         return sess
 
-    def transaction(self, profile: str = None) -> "SqliteSession":
+    def transaction(self, profile: str = None):
+        """Create a transaction context manager.
+        
+        Args:
+            profile: Profile name to use
+            
+        Returns:
+            SqliteSession: Database transaction context manager
+        """
         from .session import SqliteSession
 
         with self.lock:
@@ -339,6 +436,11 @@ class SqliteDatabase(AbstractDatabaseStore):
         return sess
 
     def close(self, remove: bool = False):
+        """Close the database and optionally remove the file.
+        
+        Args:
+            remove: Whether to remove the database file
+        """
         try:
             if self.pool:
                 checkpoint_conn = None

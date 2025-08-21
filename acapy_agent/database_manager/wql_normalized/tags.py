@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import json
 from enum import Enum
 from typing import List, Union, Optional, Tuple
@@ -19,20 +21,27 @@ from .query import (
 
 
 class TagName:
+    """Represents a tag name."""
+
     def __init__(self, value):
+        """Initialize TagName with a value."""
         self.value = value
 
     def to_string(self):
+        """Perform the action."""
         return self.value
 
     def __eq__(self, other):
+        """Magic method description."""
         return self.value == other.value
 
     def __repr__(self):
+        """Magic method description."""
         return f"TagName(value='{self.value}')"
 
 
 class CompareOp(Enum):
+    """Class description."""
     Eq = "="
     Neq = "!="
     Gt = ">"
@@ -42,9 +51,11 @@ class CompareOp(Enum):
     Like = "LIKE"
 
     def as_sql_str(self):
+        """Perform the action."""
         return self.value
 
     def as_sql_str_for_prefix(self):
+        """Perform the action."""
         if self in [
             CompareOp.Eq,
             CompareOp.Neq,
@@ -58,13 +69,16 @@ class CompareOp(Enum):
 
 
 class ConjunctionOp(Enum):
+    """Class description."""
     And = " AND "
     Or = " OR "
 
     def as_sql_str(self):
+        """Perform the action."""
         return self.value
 
     def negate(self):
+        """Perform the action."""
         if self == ConjunctionOp.And:
             return ConjunctionOp.Or
         elif self == ConjunctionOp.Or:
@@ -72,15 +86,18 @@ class ConjunctionOp(Enum):
 
 
 class TagQuery:
+    """Class description."""
     def __init__(
         self,
         variant: str,
         data: Union["TagQuery", List["TagQuery"], TagName, str, List[str]],
     ):
+        """Initialize TagQuery."""
         self.variant = variant
         self.data = data
 
     def __repr__(self):
+        """Magic method description."""
         if isinstance(self.data, list):
             data_repr = [repr(d) for d in self.data]
             data_str = "[" + ", ".join(data_repr) + "]"
@@ -92,50 +109,62 @@ class TagQuery:
 
     @staticmethod
     def Eq(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Eq", (name, value))
 
     @staticmethod
     def Neq(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Neq", (name, value))
 
     @staticmethod
     def Gt(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Gt", (name, value))
 
     @staticmethod
     def Gte(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Gte", (name, value))
 
     @staticmethod
     def Lt(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Lt", (name, value))
 
     @staticmethod
     def Lte(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Lte", (name, value))
 
     @staticmethod
     def Like(name: TagName, value: str):
+        """Perform the action."""
         return TagQuery("Like", (name, value))
 
     @staticmethod
     def In(name: TagName, values: List[str]):
+        """Perform the action."""
         return TagQuery("In", (name, values))
 
     @staticmethod
     def Exist(names: List[TagName]):
+        """Perform the action."""
         return TagQuery("Exist", names)
 
     @staticmethod
     def And(subqueries: List["TagQuery"]):
+        """Perform the action."""
         return TagQuery("And", subqueries)
 
     @staticmethod
     def Or(subqueries: List["TagQuery"]):
+        """Perform the action."""
         return TagQuery("Or", subqueries)
 
     @staticmethod
     def Not(subquery: "TagQuery"):
+        """Perform the action."""
         return TagQuery("Not", subquery)
 
     def to_wql_dict(self):
@@ -197,7 +226,9 @@ class TagQuery:
             Tuple[str, list]: SQL condition string and list of parameters.
 
         Raises:
-            ValueError: If an invalid column name is used or an unsupported query type is encountered.
+            ValueError: If an invalid column name is used or an unsupported 
+                query type is encountered.
+
         """
         if self.variant in ["Eq", "Neq", "Gt", "Gte", "Lt", "Lte", "Like"]:
             name, value = self.data
@@ -247,35 +278,43 @@ class TagQuery:
 
 
 class TagQueryEncoder(ABC):
+    """Class description."""
     @abstractmethod
     def encode_name(self, name: TagName) -> bytes:
+        """Perform the action."""
         pass
 
     @abstractmethod
     def encode_value(self, value: str) -> bytes:
+        """Perform the action."""
         pass
 
     @abstractmethod
     def encode_op_clause(
         self, op: CompareOp, enc_name: bytes, enc_value: bytes, negate: bool
     ) -> str:
+        """Perform the action."""
         pass
 
     @abstractmethod
     def encode_in_clause(
         self, enc_name: bytes, enc_values: List[bytes], negate: bool
     ) -> str:
+        """Perform the action."""
         pass
 
     @abstractmethod
     def encode_exist_clause(self, enc_name: bytes, negate: bool) -> str:
+        """Perform the action."""
         pass
 
     @abstractmethod
     def encode_conj_clause(self, op: ConjunctionOp, clauses: List[str]) -> str:
+        """Perform the action."""
         pass
 
     def encode_query(self, query: TagQuery, negate: bool = False) -> str:
+        """Perform the action."""
         if query.variant == "Eq":
             return self.encode_op(CompareOp.Eq, *query.data, negate)
         elif query.variant == "Neq":
@@ -303,16 +342,19 @@ class TagQueryEncoder(ABC):
             raise ValueError("Unknown query variant")
 
     def encode_op(self, op: CompareOp, name: TagName, value: str, negate: bool):
+        """Perform the action."""
         enc_name = self.encode_name(name)
         enc_value = self.encode_value(value)
         return self.encode_op_clause(op, enc_name, enc_value, negate)
 
     def encode_in(self, name: TagName, values: List[str], negate: bool):
+        """Perform the action."""
         enc_name = self.encode_name(name)
         enc_values = [self.encode_value(v) for v in values]
         return self.encode_in_clause(enc_name, enc_values, negate)
 
     def encode_exist(self, names: List[TagName], negate: bool):
+        """Perform the action."""
         if not names:
             return None
         elif len(names) == 1:
@@ -323,6 +365,7 @@ class TagQueryEncoder(ABC):
             return self.encode_conj_clause(ConjunctionOp.And, [c for c in clauses if c])
 
     def encode_conj(self, op: ConjunctionOp, subqueries: List[TagQuery], negate: bool):
+        """Perform the action."""
         op = op.negate() if negate else op
         clauses = []
         for q in subqueries:
@@ -334,6 +377,7 @@ class TagQueryEncoder(ABC):
 
 def query_to_tagquery(q):
     """Convert a Query object from query.py to a TagQuery object from tags.py.
+    
     Strips '~' from keys as it is no longer used to determine tag type.
     NOTE: this is for backward compatibility as the caller will continue to
     provide the ~ character for plaintext.

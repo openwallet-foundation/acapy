@@ -1,8 +1,10 @@
+"""PostgreSQL normalized database implementation."""
+
 import threading
 import logging
 import asyncio
 import time
-from typing import Optional, Union, AsyncGenerator
+from typing import Optional, Union, AsyncGenerator, TYPE_CHECKING
 import urllib.parse
 
 from psycopg_pool import AsyncConnectionPool
@@ -16,10 +18,14 @@ from ...category_registry import get_release
 from .connection_pool import PostgresConnectionPool
 from .schema_context import SchemaContext
 
+if TYPE_CHECKING:
+    from .backend import PostgresqlBackend
+
 LOGGER = logging.getLogger(__name__)
 
 
 class PostgresDatabase(AbstractDatabaseStore):
+    """PostgreSQL database implementation for normalized storage."""
     def __init__(
         self,
         pool: AsyncConnectionPool,
@@ -35,6 +41,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         schema_context: Optional[SchemaContext] = None,
         backend: Optional["PostgresqlBackend"] = None,
     ):
+        """Initialize PostgreSQL database."""
         self.lock = threading.RLock()
         self.pool = pool
         self.default_profile = default_profile
@@ -59,6 +66,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         self.backend = backend
 
     async def initialize(self):
+        """Initialize the database connection."""
         try:
             self.default_profile_id = await self._get_profile_id(self.default_profile)
         except Exception as e:
@@ -69,11 +77,15 @@ class PostgresDatabase(AbstractDatabaseStore):
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.PROFILE_NOT_FOUND,
-                message=f"Failed to initialize default profile ID for '{self.default_profile}'",
+                message=(
+                    f"Failed to initialize default profile ID for "
+                    f"'{self.default_profile}'"
+                ),
                 actual_error=str(e),
             )
 
     async def start_monitoring(self):
+        """Start monitoring active sessions."""
         asyncio.create_task(self._monitor_active_sessions())
 
     async def _monitor_active_sessions(self):
@@ -97,7 +109,11 @@ class PostgresDatabase(AbstractDatabaseStore):
         try:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"SELECT id FROM {self.schema_context.qualify_table('profiles')} WHERE name = %s",
+                    (
+                        f"SELECT id FROM "
+                        f"{self.schema_context.qualify_table('profiles')} "
+                        f"WHERE name = %s"
+                    ),
                     (profile_name,),
                 )
                 row = await cursor.fetchone()
@@ -122,12 +138,18 @@ class PostgresDatabase(AbstractDatabaseStore):
             await self.pool.putconn(conn)
 
     async def create_profile(self, name: str = None) -> str:
+        """Create a new profile."""
         name = name or "new_profile"
         conn = await self.pool.getconn()
         try:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"INSERT INTO {self.schema_context.qualify_table('profiles')} (name, profile_key) VALUES (%s, NULL) ON CONFLICT (name) DO NOTHING",
+                    (
+                        f"INSERT INTO "
+                        f"{self.schema_context.qualify_table('profiles')} "
+                        f"(name, profile_key) VALUES (%s, NULL) "
+                        f"ON CONFLICT (name) DO NOTHING"
+                    ),
                     (name,),
                 )
                 if cursor.rowcount == 0:
@@ -150,14 +172,20 @@ class PostgresDatabase(AbstractDatabaseStore):
             await self.pool.putconn(conn)
 
     async def get_profile_name(self) -> str:
+        """Get the default profile name."""
         return self.default_profile
 
     async def remove_profile(self, name: str) -> bool:
+        """Remove a profile."""
         conn = await self.pool.getconn()
         try:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"DELETE FROM {self.schema_context.qualify_table('profiles')} WHERE name = %s",
+                    (
+                        f"DELETE FROM "
+                        f"{self.schema_context.qualify_table('profiles')} "
+                        f"WHERE name = %s"
+                    ),
                     (name,),
                 )
                 result = cursor.rowcount > 0
@@ -175,6 +203,7 @@ class PostgresDatabase(AbstractDatabaseStore):
             await self.pool.putconn(conn)
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
+        """Rekey the database (not supported for PostgreSQL)."""
         LOGGER.error("Rekey not supported for PostgreSQL")
         raise DatabaseError(
             code=DatabaseErrorCode.UNSUPPORTED_OPERATION,
@@ -191,6 +220,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> AsyncGenerator[Entry, None]:
+        """Scan for entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
 
         handler = handlers.get(category, handlers["default"])
@@ -237,6 +267,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> AsyncGenerator[Entry, None]:
+        """Scan using keyset pagination."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
 
         handler = handlers.get(category, handlers["default"])
@@ -273,7 +304,8 @@ class PostgresDatabase(AbstractDatabaseStore):
         finally:
             await self.pool.putconn(conn)
 
-    async def session(self, profile: str = None) -> "PostgresSession":
+    async def session(self, profile: str = None):
+        """Create a new database session."""
         from .session import PostgresSession
 
         with self.lock:
@@ -298,7 +330,8 @@ class PostgresDatabase(AbstractDatabaseStore):
         )
         return sess
 
-    async def transaction(self, profile: str = None) -> "PostgresSession":
+    async def transaction(self, profile: str = None):
+        """Create a new database transaction."""
         from .session import PostgresSession
 
         with self.lock:
@@ -324,6 +357,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         return sess
 
     async def close(self, remove: bool = False):
+        """Close the database connection."""
         try:
             if remove:
                 parsed = urllib.parse.urlparse(self.conn_str)
@@ -347,7 +381,12 @@ class PostgresDatabase(AbstractDatabaseStore):
                         await conn.set_autocommit(True)
                         async with conn.cursor() as cursor:
                             await cursor.execute(
-                                "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = %s AND pid <> pg_backend_pid()",
+                                (
+                                "SELECT pg_terminate_backend(pg_stat_activity.pid) "
+                                "FROM pg_stat_activity "
+                                "WHERE pg_stat_activity.datname = %s "
+                                "AND pid <> pg_backend_pid()"
+                            ),
                                 (target_db,),
                             )
                             await cursor.execute(f"DROP DATABASE IF EXISTS {target_db}")

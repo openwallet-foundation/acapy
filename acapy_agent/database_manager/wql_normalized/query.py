@@ -1,7 +1,7 @@
 """Askar WQL (Wallet Query Language) parsing and optimization."""
 
-from typing import List, Optional, Callable, Union, Tuple, Set
 import json
+from typing import List, Optional, Callable, Union, Tuple, Set
 
 # JSONValue represents a parsed JSON value, which can be a dict, list, str, or None
 JSONValue = Union[dict, list, str, None]
@@ -41,11 +41,14 @@ class Query:
             table_columns (Optional[Set[str]]): Set of valid column names for validation.
 
         Returns:
-            Tuple[str, List[Union[str, int, float]]]: SQL condition string and list of parameters.
+            Tuple[str, List[Union[str, int, float]]]: SQL condition string and
+                list of parameters.
+
         """
         raise NotImplementedError
 
     def __eq__(self, other):
+        """Check equality with another Query object."""
         raise NotImplementedError
 
 
@@ -53,9 +56,11 @@ class AndQuery(Query):
     """Logical AND of multiple clauses."""
 
     def __init__(self, subqueries: List[Query]):
+        """Initialize AndQuery."""
         self.subqueries = subqueries
 
     def optimise(self) -> Optional[Query]:
+        """Perform the action."""
         optimised = [
             q for q in (sq.optimise() for sq in self.subqueries) if q is not None
         ]
@@ -67,9 +72,11 @@ class AndQuery(Query):
             return AndQuery(optimised)
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return AndQuery([sq.map(key_func, value_func) for sq in self.subqueries])
 
     def to_dict(self):
+        """Perform the action."""
         if not self.subqueries:
             return {}
         return {"$and": [sq.to_dict() for sq in self.subqueries]}
@@ -77,6 +84,7 @@ class AndQuery(Query):
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if not self.subqueries:
             return "1=1", []  # True for empty AND
         sub_sqls = [sq.to_sql(table_columns) for sq in self.subqueries]
@@ -85,6 +93,7 @@ class AndQuery(Query):
         return "(" + " AND ".join(conditions) + ")", params
 
     def __eq__(self, other):
+        """Magic method description."""
         return isinstance(other, AndQuery) and self.subqueries == other.subqueries
 
 
@@ -92,9 +101,11 @@ class OrQuery(Query):
     """Logical OR of multiple clauses."""
 
     def __init__(self, subqueries: List[Query]):
+        """Initialize OrQuery."""
         self.subqueries = subqueries
 
     def optimise(self) -> Optional[Query]:
+        """Perform the action."""
         optimised = [
             q for q in (sq.optimise() for sq in self.subqueries) if q is not None
         ]
@@ -106,9 +117,11 @@ class OrQuery(Query):
             return OrQuery(optimised)
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return OrQuery([sq.map(key_func, value_func) for sq in self.subqueries])
 
     def to_dict(self):
+        """Perform the action."""
         if not self.subqueries:
             return {}
         return {"$or": [sq.to_dict() for sq in self.subqueries]}
@@ -116,6 +129,7 @@ class OrQuery(Query):
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if not self.subqueries:
             return "1=0", []  # False for empty OR
         sub_sqls = [sq.to_sql(table_columns) for sq in self.subqueries]
@@ -124,6 +138,7 @@ class OrQuery(Query):
         return "(" + " OR ".join(conditions) + ")", params
 
     def __eq__(self, other):
+        """Magic method description."""
         return isinstance(other, OrQuery) and self.subqueries == other.subqueries
 
 
@@ -131,9 +146,11 @@ class NotQuery(Query):
     """Negation of a clause."""
 
     def __init__(self, subquery: Query):
+        """Initialize NotQuery."""
         self.subquery = subquery
 
     def optimise(self) -> Optional[Query]:
+        """Perform the action."""
         opt_sub = self.subquery.optimise()
         if opt_sub is None:
             return None
@@ -143,18 +160,22 @@ class NotQuery(Query):
             return NotQuery(opt_sub)
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return NotQuery(self.subquery.map(key_func, value_func))
 
     def to_dict(self):
+        """Perform the action."""
         return {"$not": self.subquery.to_dict()}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         sub_sql, sub_params = self.subquery.to_sql(table_columns)
         return f"NOT ({sub_sql})", sub_params
 
     def __eq__(self, other):
+        """Magic method description."""
         return isinstance(other, NotQuery) and self.subquery == other.subquery
 
 
@@ -162,26 +183,32 @@ class EqQuery(Query):
     """Equality comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize EqQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return EqQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: self.value}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} = ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, EqQuery)
             and self.key == other.key
@@ -193,26 +220,32 @@ class NeqQuery(Query):
     """Inequality comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize NeqQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return NeqQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$neq": self.value}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} != ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, NeqQuery)
             and self.key == other.key
@@ -224,26 +257,32 @@ class GtQuery(Query):
     """Greater-than comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize GtQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return GtQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$gt": self.value}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} > ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, GtQuery)
             and self.key == other.key
@@ -255,26 +294,32 @@ class GteQuery(Query):
     """Greater-than-or-equal comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize GteQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return GteQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$gte": self.value}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} >= ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, GteQuery)
             and self.key == other.key
@@ -286,26 +331,32 @@ class LtQuery(Query):
     """Less-than comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize LtQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return LtQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$lt": self.value}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} < ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, LtQuery)
             and self.key == other.key
@@ -317,26 +368,32 @@ class LteQuery(Query):
     """Less-than-or-equal comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize LteQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return LteQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$lte": self.value}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} <= ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, LteQuery)
             and self.key == other.key
@@ -348,26 +405,32 @@ class LikeQuery(Query):
     """SQL 'LIKE'-compatible string comparison for a field value."""
 
     def __init__(self, key: str, value: str):
+        """Initialize LikeQuery."""
         self.key = key
         self.value = value
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return LikeQuery(key_func(self.key), value_func(self.key, self.value))
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$like": self.value}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         return f"{self.key} LIKE ?", [self.value]
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, LikeQuery)
             and self.key == other.key
@@ -379,29 +442,36 @@ class InQuery(Query):
     """Match one of multiple field values in a set."""
 
     def __init__(self, key: str, values: List[str]):
+        """Initialize InQuery."""
         self.key = key
         self.values = values
 
     def optimise(self):
+        """Perform the action."""
         if len(self.values) == 1:
             return EqQuery(self.key, self.values[0])
         return self
 
     def map(self, key_func, value_func):
-        return InQuery(key_func(self.key), [value_func(self.key, v) for v in self.values])
+        """Perform the action."""
+        new_values = [value_func(self.key, v) for v in self.values]
+        return InQuery(key_func(self.key), new_values)
 
     def to_dict(self):
+        """Perform the action."""
         return {self.key: {"$in": self.values}}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if table_columns and self.key not in table_columns:
             raise ValueError(f"Invalid column name: {self.key}")
         placeholders = ", ".join(["?" for _ in self.values])
         return f"{self.key} IN ({placeholders})", self.values
 
     def __eq__(self, other):
+        """Magic method description."""
         return (
             isinstance(other, InQuery)
             and self.key == other.key
@@ -413,20 +483,25 @@ class ExistQuery(Query):
     """Match any non-null field value of the given field names."""
 
     def __init__(self, keys: List[str]):
+        """Initialize ExistQuery."""
         self.keys = keys
 
     def optimise(self):
+        """Perform the action."""
         return self
 
     def map(self, key_func, value_func):
+        """Perform the action."""
         return ExistQuery([key_func(k) for k in self.keys])
 
     def to_dict(self):
+        """Perform the action."""
         return {"$exist": self.keys}
 
     def to_sql(
         self, table_columns: Optional[Set[str]] = None
     ) -> Tuple[str, List[Union[str, int, float]]]:
+        """Perform the action."""
         if len(self.keys) != 1:
             raise ValueError("Exist query must have exactly one key")
         key = self.keys[0]
@@ -435,6 +510,7 @@ class ExistQuery(Query):
         return f"{key} IS NOT NULL", []
 
     def __eq__(self, other):
+        """Magic method description."""
         return isinstance(other, ExistQuery) and self.keys == other.keys
 
 
@@ -465,7 +541,9 @@ def parse_single_operator(op_name: str, key: str, value: JSONValue) -> Query:
             raise ValueError("$like must be used with string")
         return LikeQuery(key, value)
     elif op_name == "$in":
-        if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        if not isinstance(value, list) or not all(
+            isinstance(v, str) for v in value
+        ):
             raise ValueError("$in must be used with array of strings")
         return InQuery(key, value)
     else:
@@ -478,7 +556,9 @@ def parse_operator(key: str, value: JSONValue) -> Optional[Query]:
         if not isinstance(value, list):
             raise ValueError("$and must be an array")
         subqueries = [
-            parse_query(sub_dict) for sub_dict in value if isinstance(sub_dict, dict)
+            parse_query(sub_dict)
+            for sub_dict in value
+            if isinstance(sub_dict, dict)
         ]
         if not subqueries:
             return None
@@ -487,7 +567,9 @@ def parse_operator(key: str, value: JSONValue) -> Optional[Query]:
         if not isinstance(value, list):
             raise ValueError("$or must be an array")
         subqueries = [
-            parse_query(sub_dict) for sub_dict in value if isinstance(sub_dict, dict)
+            parse_query(sub_dict)
+            for sub_dict in value
+            if isinstance(sub_dict, dict)
         ]
         if not subqueries:
             return None

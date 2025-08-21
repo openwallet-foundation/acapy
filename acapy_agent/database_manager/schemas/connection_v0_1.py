@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "connection"
 
 SCHEMAS = {
@@ -28,9 +30,18 @@ SCHEMAS = {
             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_connection_item_id_v0_1 ON connection_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_state_v0_1 ON connection_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_created_at_v0_1 ON connection_v0_1 (created_at);",
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_item_id_v0_1
+        ON connection_v0_1 (item_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_state_v0_1
+        ON connection_v0_1 (state);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_created_at_v0_1
+        ON connection_v0_1 (created_at);
+        """,
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_connection_timestamp_v0_1
         AFTER UPDATE ON connection_v0_1
@@ -66,12 +77,22 @@ SCHEMAS = {
             their_public_did TEXT,
             connection_protocol TEXT,
             rfc23_state TEXT,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id)
+            REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_connection_item_id_v0_1 ON connection_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_state_v0_1 ON connection_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_created_at_v0_1 ON connection_v0_1 (created_at);",
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_item_id_v0_1
+        ON connection_v0_1 (item_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_state_v0_1
+        ON connection_v0_1 (state);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_created_at_v0_1
+        ON connection_v0_1 (created_at);
+        """,
         """
         CREATE OR REPLACE FUNCTION update_connection_timestamp_v0_1()
         RETURNS TRIGGER AS $$
@@ -114,12 +135,22 @@ SCHEMAS = {
             their_public_did NVARCHAR(255),
             connection_protocol NVARCHAR(255),
             rfc23_state NVARCHAR(255),
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id)
+            REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_connection_item_id_v0_1 ON connection_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_connection_state_v0_1 ON connection_v0_1 (state);",
-        "CREATE NONCLUSTERED INDEX idx_connection_created_at_v0_1 ON connection_v0_1 (created_at);",
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_item_id_v0_1
+        ON connection_v0_1 (item_id);
+        """,
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_state_v0_1
+        ON connection_v0_1 (state);
+        """,
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_created_at_v0_1
+        ON connection_v0_1 (created_at);
+        """,
         """
         CREATE TRIGGER trg_update_connection_timestamp_v0_1
         ON connection_v0_1

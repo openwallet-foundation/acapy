@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
@@ -19,19 +21,32 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
     def __init__(
         self, category: str, columns: List[str], table_name: Optional[str] = None
     ):
+        """Initialize the ConnectionMetadataCustomHandler.
+        
+        Args:
+            category: Category name
+            columns: List of column names
+            table_name: Optional table name override
+        """
         super().__init__(category, columns, table_name)
         LOGGER.debug(
-            f"Initialized ConnectionMetadataCustomHandler for category={category}, table={table_name or category}, columns={columns}"
+            f"Initialized ConnectionMetadataCustomHandler for "
+            f"category={category}, table={table_name or category}, "
+            f"columns={columns}"
         )
 
     def _extract_metadata(self, json_data: dict) -> str:
-        """Extract key-value pairs from JSON data and serialize them as a JSON string for the metadata field.
+        """Extract key-value pairs from JSON data and serialize as JSON string.
+        
+        Extract key-value pairs from JSON data and serialize them as a JSON string
+        for the metadata field.
 
         Args:
             json_data: The parsed JSON data from the value field
 
         Returns:
             The serialized JSON string of key-value pairs or None if not found
+
         """
         try:
             if not json_data or not isinstance(json_data, dict):
@@ -56,9 +71,21 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert a connection metadata record.
+        
+        Args:
+            cursor: Database cursor
+            profile_id: Profile identifier
+            category: Record category
+            name: Record name
+            value: Record value data
+            tags: Associated tags
+            expiry_ms: Expiry time in milliseconds
+        """
         # insert a new entry with custom metadata extraction.
         LOGGER.debug(
-            f"Inserting record with category={category}, name={name}, value={value}, tags={tags}"
+            f"Inserting record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -82,7 +109,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
                 )
 
         LOGGER.debug(
-            f"Inserting into items table with profile_id={profile_id}, category={category}, name={name}, value={value}, expiry={expiry}"
+            f"Inserting into items table with profile_id={profile_id}, "
+            f"category={category}, name={name}, value={value}, expiry={expiry}"
         )
         cursor.execute(
             """
@@ -111,7 +139,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             elif col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -177,9 +206,21 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Replace a connection metadata record.
+        
+        Args:
+            cursor: Database cursor
+            profile_id: Profile identifier
+            category: Record category
+            name: Record name
+            value: Record value data
+            tags: Associated tags
+            expiry_ms: Expiry time in milliseconds
+        """
         # replace an existing entry with custom metadata extraction."""
         LOGGER.debug(
-            f"Replacing record with category={category}, name={name}, value={value}, tags={tags}"
+            f"Replacing record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -243,7 +284,8 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             elif col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:

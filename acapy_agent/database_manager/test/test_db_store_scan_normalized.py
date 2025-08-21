@@ -1,25 +1,13 @@
-# poetry run python acapy_agent/database_manager/test/test_db_store_scan_normalized.py
-import asyncio
-import os
+"""Test SQLite database store scan operations with normalized schema."""
+
 import json
-import logging
+import tempfile
+from pathlib import Path
+
+import pytest
+
 from acapy_agent.database_manager.dbstore import DBStore
 
-# Configure logging
-LOGGER = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-
-
-# Define the database path and ensure the directory exists
-db_path = "test_scan.db"
-os.makedirs(os.path.dirname(db_path), exist_ok=True) if os.path.dirname(db_path) else None
-
-uri = f"sqlite://{db_path}"
-profile_name = "test_profile"
 
 # Sample pres_ex_v20 JSON data
 PRES_REQUEST_JSON = {
@@ -39,36 +27,51 @@ PRES_JSON = {
 }
 
 
-async def setup_data(store: DBStore, num_records: int = 50):
-    """Insert a large number of pres_ex_v20 records for testing."""
-    print(f"Inserting {num_records} pres_ex_v20 records...")
-    LOGGER.debug(f"[setup_data] Starting insertion of {num_records} pres_ex_v20 records")
-    inserted_names = []
-    for i in range(num_records):
-        async with store.transaction() as session:
+@pytest.fixture
+async def test_db_path():
+    """Create a temporary database path for testing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test_scan_normalized.db"
+        yield str(db_path)
+
+
+@pytest.fixture
+async def populated_store(test_db_path):
+    """Create a database store with test presentation exchange records."""
+    uri = f"sqlite://{test_db_path}"
+    store = await DBStore.provision(
+        uri=uri,
+        pass_key="",
+        profile="test_profile",
+        recreate=True,
+        release_number="release_0_1",
+        schema_config="normalize",
+    )
+
+    # Insert test presentation exchange records in a single transaction for speed
+    async with store.transaction() as session:
+        for i in range(50):
             state = "active" if i % 3 == 0 else "pending" if i % 3 == 1 else "completed"
             connection_id = f"conn_{i:03d}"
             thread_id = f"thread_{i:03d}"
             name = f"pres_ex_{i:03d}"
-            expiry_ms = 3600000 if i % 10 != 9 else -1000
-            value = json.dumps(
-                {
-                    "state": state,
-                    "connection_id": connection_id,
-                    "thread_id": thread_id,
-                    "pres_request": PRES_REQUEST_JSON,
-                    "pres": PRES_JSON,
-                    "initiator": "self",
-                    "role": "prover",
-                    "verified": "true" if i % 2 == 0 else "false",
-                    "verified_msgs": None,
-                    "auto_present": "true",
-                    "auto_verify": "false",
-                    "auto_remove": "false",
-                    "error_msg": None,
-                    "trace": "false",
-                }
-            )
+            expiry_ms = 3600000 if i % 10 != 9 else -1000  # 5 expired records
+            value = json.dumps({
+                "state": state,
+                "connection_id": connection_id,
+                "thread_id": thread_id,
+                "pres_request": PRES_REQUEST_JSON,
+                "pres": PRES_JSON,
+                "initiator": "self",
+                "role": "prover",
+                "verified": "true" if i % 2 == 0 else "false",
+                "verified_msgs": None,
+                "auto_present": "true",
+                "auto_verify": "false",
+                "auto_remove": "false",
+                "error_msg": None,
+                "trace": "false",
+            })
             tags = {
                 "state": state,
                 "connection_id": connection_id,
@@ -78,413 +81,360 @@ async def setup_data(store: DBStore, num_records: int = 50):
                 "role": "prover",
                 "verified_msgs": None,
             }
-            LOGGER.debug(
-                f"[setup_data] Attempting to insert record {name} with expiry_ms={expiry_ms}"
+            await session.insert(
+                category="pres_ex_v20",
+                name=name,
+                value=value,
+                tags=tags,
+                expiry_ms=expiry_ms,
             )
-            print(f"Attempting to insert record {name} with expiry_ms={expiry_ms}")
-            try:
-                await session.insert(
-                    category="pres_ex_v20",
-                    name=name,
-                    value=value,
-                    tags=tags,
-                    expiry_ms=expiry_ms,
-                )
-                inserted_names.append(name)
-                LOGGER.debug(f"[setup_data] Successfully inserted record {name}")
-                print(f"Successfully inserted record {name}")
-            except Exception as e:
-                LOGGER.error(f"[setup_data] Failed to insert record {name}: {str(e)}")
-                print(f"Failed to insert record {name}: {str(e)}")
-                raise
-    async with store.session() as session:
-        count = await session.count(category="pres_ex_v20")
-        print(f"Inserted {count} pres_ex_v20 records: {inserted_names}")
-        LOGGER.debug(
-            f"[setup_data] Inserted {count} non-expired records: {inserted_names}"
-        )
-        expected_count = num_records - 5  # Expect 5 expired records to be filtered out
-        assert count == expected_count, (
-            f"Expected {expected_count} non-expired records, got {count}"
-        )
-        assert len(inserted_names) == num_records, (
-            f"Expected {num_records} total insertions, got {len(inserted_names)}"
-        )
+
+    yield store
+    await store.close()
 
 
-async def debug_print_expiry(store: DBStore):
-    """Debug: Print expiry values for pres_ex_v20 records."""
-    print("Debugging: Printing expiry values for pres_ex_v20 records...")
-    LOGGER.debug("[debug_print_expiry] Fetching expiry values for pres_ex_v20 records")
-    async with store.session() as session:
-        cursor = store._db.pool.get_connection().cursor()
-        try:
-            cursor.execute(
-                """
-                SELECT name, expiry FROM items
-                WHERE category = ? ORDER BY name
-            """,
-                ("pres_ex_v20",),
-            )
-            rows = cursor.fetchall()
-            for name, expiry in rows:
-                print(f" - {name}: expiry={expiry}")
-                LOGGER.debug(f"[debug_print_expiry] {name}: expiry={expiry}")
-            print(f"Total records: {len(rows)}")
-            LOGGER.debug(f"[debug_print_expiry] Total records: {len(rows)}")
-            return len(rows)
-        finally:
-            store._db.pool.return_connection(cursor.connection)
-
-
-async def test_scan_basic(store: DBStore):
-    """Test basic scanning of pres_ex_v20 records without filters."""
-    print("Testing basic scan (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_basic] Starting scan")
-    scan = store.scan(category="pres_ex_v20", profile=profile_name)
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} pres_ex_v20 records")
-    LOGGER.debug(f"[test_scan_basic] Found {len(entries)} records")
-    for entry in entries[:5]:
-        print(f" - {entry.name}: {json.loads(entry.value)}")
-        LOGGER.debug(f"[test_scan_basic] Entry {entry.name}: {json.loads(entry.value)}")
-    assert len(entries) == 45, "Expected 45 non-expired records"
-
-
-async def test_scan_with_filter(store: DBStore):
-    """Test scanning with a simple tag filter (state=active)."""
-    print("Testing scan with simple tag filter (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_with_filter] Starting scan with filter")
-    tag_filter = json.dumps({"state": "active"})
-    scan = store.scan(category="pres_ex_v20", tag_filter=tag_filter, profile=profile_name)
-    entries = [entry async for entry in scan]
-    expected_count = 15  # 17 active records, 2 expired (indices 9, 39)
-    print(f"Found {len(entries)} active pres_ex_v20 records")
-    LOGGER.debug(
-        f"[test_scan_with_filter] Found {len(entries)} records: {[entry.name for entry in entries]}"
-    )
-    assert len(entries) == expected_count, (
-        f"Expected {expected_count} active records, got {len(entries)}"
-    )
-    for entry in entries:
-        assert json.loads(entry.value)["state"] == "active", (
-            f"Entry {entry.name} should have state=active"
-        )
-
-
-async def test_scan_with_complex_filter(store: DBStore):
-    """Test scanning with a complex WQL tag filter."""
-    print("Testing scan with complex WQL filter (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_with_complex_filter] Starting scan with complex filter")
-    complex_tag_filter = json.dumps(
-        {
-            "$or": [
-                {"state": "active"},
-                {"$and": [{"state": "pending"}, {"verified": "true"}]},
-            ]
-        }
-    )
-    scan = store.scan(
-        category="pres_ex_v20", tag_filter=complex_tag_filter, profile=profile_name
-    )
-    entries = [entry async for entry in scan]
-    expected_count = 15 + 8  # 15 active + 8 pending & verified
-    print(f"Found {len(entries)} records with complex filter")
-    LOGGER.debug(f"[test_scan_with_complex_filter] Found {len(entries)} records")
-    for entry in entries[:5]:
-        print(f" - {entry.name}: {json.loads(entry.value)}")
-        LOGGER.debug(
-            f"[test_scan_with_complex_filter] Entry {entry.name}: {json.loads(entry.value)}"
-        )
-    assert len(entries) == expected_count, (
-        f"Expected {expected_count} records, got {len(entries)}"
-    )
-    for entry in entries:
-        value = json.loads(entry.value)
-        assert value["state"] == "active" or (
-            value["state"] == "pending" and value["verified"] == "true"
-        ), f"Entry {entry.name} does not match filter"
-
-
-async def test_scan_paginated(store: DBStore):
-    """Test scanning with pagination (limit and offset)."""
-    print("Testing paginated scan (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_paginated] Starting paginated scan")
-    tag_filter = json.dumps({"state": "active"})
-    limit = 5
-    offset = 10
-    scan = store.scan(
-        category="pres_ex_v20",
-        tag_filter=tag_filter,
-        limit=limit,
-        offset=offset,
-        profile=profile_name,
-    )
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} active records with limit={limit}, offset={offset}")
-    LOGGER.debug(f"[test_scan_paginated] Found {len(entries)} records")
-    assert len(entries) == 5, f"Expected 5 records, got {len(entries)}"
-    for entry in entries:
-        assert json.loads(entry.value)["state"] == "active", (
-            f"Entry {entry.name} should have state=active"
-        )
-
-
-async def test_scan_sorted(store: DBStore):
-    """Test scanning with sorting by thread_id and state."""
-    print("Testing sorted scan (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_sorted] Starting sorted scan")
-    scan = store.scan(
-        category="pres_ex_v20",
-        profile=profile_name,
-        order_by="thread_id",
-        descending=False,
-    )
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} records sorted by thread_id ascending")
-    LOGGER.debug(f"[test_scan_sorted] Found {len(entries)} records by thread_id")
-    assert len(entries) == 45, "Expected 45 non-expired records"
-    thread_ids = [json.loads(entry.value)["thread_id"] for entry in entries]
-    assert thread_ids == sorted(thread_ids), "Entries not sorted by thread_id ascending"
-
-    scan = store.scan(
-        category="pres_ex_v20", profile=profile_name, order_by="state", descending=True
-    )
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} records sorted by state descending")
-    LOGGER.debug(f"[test_scan_sorted] Found {len(entries)} records by state")
-    assert len(entries) == 45, "Expected 45 non-expired records"
-    states = [json.loads(entry.value)["state"] for entry in entries]
-    assert states == sorted(states, reverse=True), (
-        "Entries not sorted by state descending"
-    )
-
-
-async def test_scan_invalid_order_by(store: DBStore):
-    """Test scanning with an invalid order_by column."""
-    print("Testing scan with invalid order_by (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_invalid_order_by] Starting scan with invalid order_by")
-    try:
-        scan = store.scan(
-            category="pres_ex_v20", profile=profile_name, order_by="invalid_column"
-        )
-        async for _ in scan:
-            pass
-        assert False, "Should raise DatabaseError for invalid order_by"
-    except Exception as e:
-        print(f"Correctly raised error for invalid order_by: {e}")
-        LOGGER.debug(f"[test_scan_invalid_order_by] Caught error: {str(e)}")
-        assert "Invalid order_by column" in str(e), (
-            "Expected DatabaseError for invalid order_by"
-        )
-
-
-async def test_scan_keyset_basic(store: DBStore):
-    """Test basic keyset pagination."""
-    print("Testing basic scan_keyset (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_keyset_basic] Starting keyset scan")
-    async with store.session() as session:
-        entries = await session.fetch_all(category="pres_ex_v20", limit=1)
-        assert len(entries) == 1, "Expected 1 entry to get last_id"
-        first_id = (await session.count(category="pres_ex_v20")) - len(entries) + 1
-
-    scan = store.scan_keyset(
-        category="pres_ex_v20", last_id=first_id, limit=10, profile=profile_name
-    )
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} records with scan_keyset, last_id={first_id}, limit=10")
-    LOGGER.debug(f"[test_scan_keyset_basic] Found {len(entries)} records")
-    assert len(entries) <= 10, f"Expected up to 10 records, got {len(entries)}"
-    for i, entry in enumerate(entries[1:], 1):
-        assert (
-            json.loads(entry.value)["thread_id"]
-            > json.loads(entries[i - 1].value)["thread_id"]
-        ), "Entries not in order"
-
-
-async def test_scan_keyset_with_filter(store: DBStore):
-    """Test scan_keyset with a tag filter."""
-    print("Testing scan_keyset with tag filter (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_keyset_with_filter] Starting keyset scan with filter")
-    tag_filter = json.dumps({"state": "pending"})
-    async with store.session() as session:
-        entries = await session.fetch_all(
-            category="pres_ex_v20", tag_filter=tag_filter, limit=1
-        )
-        assert len(entries) == 1, "Expected 1 pending entry to get last_id"
-        first_id = (await session.count(category="pres_ex_v20")) - len(entries) + 1
-
-    scan = store.scan_keyset(
-        category="pres_ex_v20",
-        tag_filter=tag_filter,
-        last_id=first_id,
-        limit=5,
-        profile=profile_name,
-    )
-    entries = [entry async for entry in scan]
-    expected_count = 5
-    print(f"Found {len(entries)} pending records with scan_keyset")
-    LOGGER.debug(f"[test_scan_keyset_with_filter] Found {len(entries)} records")
-    assert len(entries) <= expected_count, (
-        f"Expected up to {expected_count} records, got {len(entries)}"
-    )
-    for entry in entries:
-        assert json.loads(entry.value)["state"] == "pending", (
-            f"Entry {entry.name} should have state=pending"
-        )
-
-
-async def test_scan_keyset_sorted(store: DBStore):
-    """Test scan_keyset with sorting by connection_id."""
-    print("Testing scan_keyset sorted by connection_id (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_keyset_sorted] Starting keyset scan with sort")
-    async with store.session() as session:
-        entries = await session.fetch_all(category="pres_ex_v20", limit=1)
-        assert len(entries) == 1, "Expected 1 entry to get last_id"
-        first_id = (await session.count(category="pres_ex_v20")) - len(entries) + 1
-
-    scan = store.scan_keyset(
-        category="pres_ex_v20",
-        last_id=first_id,
-        limit=5,
-        order_by="connection_id",
-        descending=False,
-        profile=profile_name,
-    )
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} records sorted by connection_id ascending")
-    LOGGER.debug(f"[test_scan_keyset_sorted] Found {len(entries)} records ascending")
-    assert len(entries) <= 5, f"Expected up to 5 records, got {len(entries)}"
-    conn_ids = [json.loads(entry.value)["connection_id"] for entry in entries]
-    assert conn_ids == sorted(conn_ids), "Entries not sorted by connection_id ascending"
-
-    scan = store.scan_keyset(
-        category="pres_ex_v20",
-        last_id=first_id,
-        limit=5,
-        order_by="connection_id",
-        descending=True,
-        profile=profile_name,
-    )
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} records sorted by connection_id descending")
-    LOGGER.debug(f"[test_scan_keyset_sorted] Found {len(entries)} records descending")
-    assert len(entries) <= 5, f"Expected up to 5 records, got {len(entries)}"
-    conn_ids = [json.loads(entry.value)["connection_id"] for entry in entries]
-    assert conn_ids == sorted(conn_ids, reverse=True), (
-        "Entries not sorted by connection_id descending"
-    )
-
-
-async def test_scan_keyset_invalid_order_by(store: DBStore):
-    """Test scan_keyset with an invalid order_by column."""
-    print("Testing scan_keyset with invalid order_by (pres_ex_v20)...")
-    LOGGER.debug(
-        "[test_scan_keyset_invalid_order_by] Starting keyset scan with invalid order_by"
-    )
-    try:
-        scan = store.scan_keyset(
-            category="pres_ex_v20",
-            last_id=1,
-            limit=5,
-            order_by="invalid_column",
-            profile=profile_name,
-        )
-        async for _ in scan:
-            pass
-        assert False, "Should raise DatabaseError for invalid order_by"
-    except Exception as e:
-        print(f"Correctly raised error for invalid order_by: {e}")
-        LOGGER.debug(f"[test_scan_keyset_invalid_order_by] Caught error: {str(e)}")
-        assert "Invalid order_by column" in str(e), (
-            "Expected DatabaseError for invalid order_by"
-        )
-
-
-async def test_scan_expired_records(store: DBStore):
-    """Test scanning excludes expired records."""
-    print("Testing scan excludes expired records (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_expired_records] Starting scan for expired records")
-    scan = store.scan(category="pres_ex_v20", profile=profile_name)
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} non-expired records")
-    LOGGER.debug(f"[test_scan_expired_records] Found {len(entries)} records")
-    assert len(entries) == 45, "Expected 45 non-expired records (5 expired)"
-    for entry in entries:
-        assert "expiry" not in json.loads(entry.value), (
-            "Expired records should not be returned"
-        )
-
-
-async def test_scan_profile_isolation(store: DBStore):
-    """Test scanning with a different profile."""
-    print("Testing scan with different profile (pres_ex_v20)...")
-    LOGGER.debug("[test_scan_profile_isolation] Starting profile isolation scan")
-    new_profile = "other_profile"
-    await store.create_profile(new_profile)
-    async with store.transaction(profile=new_profile) as session:
-        await session.insert(
-            category="pres_ex_v20",
-            name="pres_ex_other",
-            value=json.dumps(
-                {
-                    "state": "active",
-                    "connection_id": "conn_other",
-                    "thread_id": "thread_other",
-                    "pres_request": PRES_REQUEST_JSON,
-                    "pres": PRES_JSON,
-                }
-            ),
-            tags={"state": "active", "connection_id": "conn_other"},
-        )
-    scan = store.scan(category="pres_ex_v20", profile=new_profile)
-    entries = [entry async for entry in scan]
-    print(f"Found {len(entries)} records in profile {new_profile}")
-    LOGGER.debug(f"[test_scan_profile_isolation] Found {len(entries)} records")
-    assert len(entries) == 1, "Expected 1 record in new profile"
-    assert entries[0].name == "pres_ex_other", "Expected pres_ex_other in new profile"
-
-
-async def main():
-    """Main test function executing all test scenarios for scan and scan_keyset."""
-    print("Starting scan and scan_keyset test program for pres_ex_v20...")
-    LOGGER.debug("[main] Starting test program")
-
+@pytest.fixture
+async def store_with_profiles(test_db_path):
+    """Create a database store with multiple profiles."""
+    uri = f"sqlite://{test_db_path}"
     store = await DBStore.provision(
         uri=uri,
         pass_key="",
-        profile=profile_name,
+        profile="test_profile",
         recreate=True,
         release_number="release_0_1",
         schema_config="normalize",
     )
-    print(f"Database provisioned at {db_path}")
-    LOGGER.debug(f"[main] Database provisioned at {db_path}")
 
-    await setup_data(store, num_records=50)
-    await debug_print_expiry(store)
+    # Create additional profile
+    await store.create_profile("other_profile")
 
-    await test_scan_basic(store)
-    await test_scan_with_filter(store)
-    await test_scan_with_complex_filter(store)
-    await test_scan_paginated(store)
-    await test_scan_sorted(store)
-    await test_scan_invalid_order_by(store)
-    await test_scan_keyset_basic(store)
-    await test_scan_keyset_with_filter(store)
-    await test_scan_keyset_sorted(store)
-    await test_scan_keyset_invalid_order_by(store)
-    await test_scan_expired_records(store)
-    await test_scan_profile_isolation(store)
+    # Add data to other profile
+    async with store.transaction(profile="other_profile") as session:
+        await session.insert(
+            category="pres_ex_v20",
+            name="pres_ex_other",
+            value=json.dumps({
+                "state": "active",
+                "connection_id": "conn_other",
+                "thread_id": "thread_other",
+                "pres_request": PRES_REQUEST_JSON,
+                "pres": PRES_JSON,
+            }),
+            tags={"state": "active", "connection_id": "conn_other"},
+        )
 
+    yield store
     await store.close()
-    await DBStore.remove(uri)
-    print("Database file removed")
-    LOGGER.debug("[main] Database file removed")
-
-    print("All scan and scan_keyset tests passed successfully!")
-    LOGGER.debug("[main] All tests passed")
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+class TestDBStoreScanNormalized:
+    """Test suite for scan operations on normalized database store."""
+
+    @pytest.mark.asyncio
+    async def test_scan_basic(self, populated_store):
+        """Test basic scanning of pres_ex_v20 records without filters."""
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        # 50 total records - 5 expired = 45 non-expired records
+        assert len(entries) == 45, f"Expected 45 non-expired records, got {len(entries)}"
+
+    @pytest.mark.asyncio
+    async def test_scan_with_filter(self, populated_store):
+        """Test scanning with a simple tag filter (state=active)."""
+        tag_filter = json.dumps({"state": "active"})
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            tag_filter=tag_filter,
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        # 17 active records total, 2 expired (indices 9, 39) = 15 non-expired active
+        expected_count = 15
+        assert len(entries) == expected_count, (
+            f"Expected {expected_count} active records, got {len(entries)}"
+        )
+        for entry in entries:
+            value = json.loads(entry.value)
+            assert value["state"] == "active", (
+                f"Entry {entry.name} should have state=active"
+            )
+
+    @pytest.mark.asyncio
+    async def test_scan_with_complex_filter(self, populated_store):
+        """Test scanning with a complex WQL tag filter."""
+        complex_tag_filter = json.dumps({
+            "$or": [
+                {"state": "active"},
+                {"$and": [{"state": "pending"}, {"verified": "true"}]},
+            ]
+        })
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            tag_filter=complex_tag_filter,
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        # 15 active + 8 pending & verified = 23 total
+        expected_count = 23
+        assert len(entries) == expected_count, (
+            f"Expected {expected_count} records, got {len(entries)}"
+        )
+        for entry in entries:
+            value = json.loads(entry.value)
+            is_active = value["state"] == "active"
+            is_pending_verified = (
+                value["state"] == "pending" and value["verified"] == "true"
+            )
+            assert is_active or is_pending_verified, (
+                f"Entry {entry.name} does not match complex filter"
+            )
+
+    @pytest.mark.asyncio
+    async def test_scan_paginated(self, populated_store):
+        """Test scanning with pagination (limit and offset)."""
+        tag_filter = json.dumps({"state": "active"})
+        limit = 5
+        offset = 10
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            tag_filter=tag_filter,
+            limit=limit,
+            offset=offset,
+            profile="test_profile",
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) == 5, f"Expected {limit} records, got {len(entries)}"
+        for entry in entries:
+            value = json.loads(entry.value)
+            assert value["state"] == "active", (
+                f"Entry {entry.name} should have state=active"
+            )
+
+    @pytest.mark.asyncio
+    async def test_scan_sorted(self, populated_store):
+        """Test scanning with sorting by thread_id and state."""
+        # Sort by thread_id ascending
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            profile="test_profile",
+            order_by="thread_id",
+            descending=False,
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) == 45, "Expected 45 non-expired records"
+        thread_ids = [json.loads(entry.value)["thread_id"] for entry in entries]
+        assert (
+            thread_ids == sorted(thread_ids)
+        ), "Entries not sorted by thread_id ascending"
+
+        # Sort by state descending
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            profile="test_profile",
+            order_by="state",
+            descending=True
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) == 45, "Expected 45 non-expired records"
+        states = [json.loads(entry.value)["state"] for entry in entries]
+        assert states == sorted(states, reverse=True), (
+            "Entries not sorted by state descending"
+        )
+
+    @pytest.mark.asyncio
+    async def test_scan_invalid_order_by(self, populated_store):
+        """Test scanning with an invalid order_by column."""
+        with pytest.raises(Exception) as exc_info:
+            scan = populated_store.scan(
+                category="pres_ex_v20",
+                profile="test_profile",
+                order_by="invalid_column"
+            )
+            # Consume the scan to trigger the error
+            _ = [entry async for entry in scan]
+        assert "Invalid order_by column" in str(exc_info.value), (
+            "Expected error for invalid order_by column"
+        )
+
+    @pytest.mark.asyncio
+    async def test_scan_keyset_basic(self, populated_store):
+        """Test basic keyset pagination."""
+        # Get starting point
+        async with populated_store.session() as session:
+            entries = await session.fetch_all(category="pres_ex_v20", limit=1)
+            assert len(entries) == 1, "Expected 1 entry to get last_id"
+            count = await session.count(category="pres_ex_v20")
+            first_id = count - len(entries) + 1
+
+        scan = populated_store.scan_keyset(
+            category="pres_ex_v20",
+            last_id=first_id,
+            limit=10,
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) <= 10, f"Expected up to 10 records, got {len(entries)}"
+
+        # Verify ordering
+        for i in range(1, len(entries)):
+            prev_thread_id = json.loads(entries[i-1].value)["thread_id"]
+            curr_thread_id = json.loads(entries[i].value)["thread_id"]
+            assert curr_thread_id > prev_thread_id, "Entries not in order"
+
+    @pytest.mark.asyncio
+    async def test_scan_keyset_with_filter(self, populated_store):
+        """Test scan_keyset with a tag filter."""
+        tag_filter = json.dumps({"state": "pending"})
+
+        # Get starting point for pending records
+        async with populated_store.session() as session:
+            pending_entries = await session.fetch_all(
+                category="pres_ex_v20",
+                tag_filter=tag_filter,
+                limit=1
+            )
+            assert len(pending_entries) == 1, "Expected 1 pending entry"
+            count = await session.count(category="pres_ex_v20")
+            first_id = count - len(pending_entries) + 1
+
+        scan = populated_store.scan_keyset(
+            category="pres_ex_v20",
+            tag_filter=tag_filter,
+            last_id=first_id,
+            limit=5,
+            profile="test_profile",
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) <= 5, f"Expected up to 5 records, got {len(entries)}"
+
+        for entry in entries:
+            value = json.loads(entry.value)
+            assert value["state"] == "pending", (
+                f"Entry {entry.name} should have state=pending"
+            )
+
+    @pytest.mark.asyncio
+    async def test_scan_keyset_sorted(self, populated_store):
+        """Test scan_keyset with sorting by connection_id."""
+        # Get starting point
+        async with populated_store.session() as session:
+            entries = await session.fetch_all(category="pres_ex_v20", limit=1)
+            count = await session.count(category="pres_ex_v20")
+            first_id = count - len(entries) + 1
+
+        # Sort ascending
+        scan = populated_store.scan_keyset(
+            category="pres_ex_v20",
+            last_id=first_id,
+            limit=5,
+            order_by="connection_id",
+            descending=False,
+            profile="test_profile",
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) <= 5, f"Expected up to 5 records, got {len(entries)}"
+        conn_ids = [json.loads(entry.value)["connection_id"] for entry in entries]
+        assert conn_ids == sorted(conn_ids), (
+            "Entries not sorted by connection_id ascending"
+        )
+
+        # Sort descending
+        scan = populated_store.scan_keyset(
+            category="pres_ex_v20",
+            last_id=first_id,
+            limit=5,
+            order_by="connection_id",
+            descending=True,
+            profile="test_profile",
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) <= 5, f"Expected up to 5 records, got {len(entries)}"
+        conn_ids = [json.loads(entry.value)["connection_id"] for entry in entries]
+        assert conn_ids == sorted(conn_ids, reverse=True), (
+            "Entries not sorted by connection_id descending"
+        )
+
+    @pytest.mark.asyncio
+    async def test_scan_keyset_invalid_order_by(self, populated_store):
+        """Test scan_keyset with an invalid order_by column."""
+        with pytest.raises(Exception) as exc_info:
+            scan = populated_store.scan_keyset(
+                category="pres_ex_v20",
+                last_id=1,
+                limit=5,
+                order_by="invalid_column",
+                profile="test_profile",
+            )
+            # Consume the scan to trigger the error
+            _ = [entry async for entry in scan]
+        assert "Invalid order_by column" in str(exc_info.value), (
+            "Expected error for invalid order_by column"
+        )
+
+    @pytest.mark.asyncio
+    async def test_scan_expired_records(self, populated_store):
+        """Test scanning excludes expired records."""
+        scan = populated_store.scan(
+            category="pres_ex_v20",
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        # Should have 45 non-expired records (50 total - 5 expired)
+        assert len(entries) == 45, f"Expected 45 non-expired records, got {len(entries)}"
+
+        # Verify no expired records (indices 9, 19, 29, 39, 49)
+        expired_names = {f"pres_ex_{i:03d}" for i in range(50) if i % 10 == 9}
+        found_names = {entry.name for entry in entries}
+        assert len(expired_names & found_names) == 0, (
+            "Expired records should not be in scan results"
+        )
+
+    @pytest.mark.asyncio
+    async def test_scan_profile_isolation(self, store_with_profiles):
+        """Test scanning with different profiles shows isolation."""
+        # Scan default profile - should be empty
+        scan = store_with_profiles.scan(
+            category="pres_ex_v20",
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) == 0, "Expected 0 records in test_profile"
+
+        # Scan other profile - should have 1 record
+        scan = store_with_profiles.scan(
+            category="pres_ex_v20",
+            profile="other_profile"
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) == 1, "Expected 1 record in other_profile"
+        assert entries[0].name == "pres_ex_other", (
+            "Expected pres_ex_other in other_profile"
+        )
+
+    @pytest.mark.asyncio
+    async def test_scan_empty_category(self, populated_store):
+        """Test scanning an empty category returns no results."""
+        scan = populated_store.scan(
+            category="non_existent_category",
+            profile="test_profile"
+        )
+        entries = [entry async for entry in scan]
+        assert len(entries) == 0, "Expected no entries for non-existent category"
+
+    @pytest.mark.asyncio
+    async def test_scan_keyset_fetch_all(self, populated_store):
+        """Test scan_keyset's fetch_all method."""
+        scan = populated_store.scan_keyset(
+            category="pres_ex_v20",
+            limit=10,
+            profile="test_profile"
+        )
+        entries = await scan.fetch_all()
+        assert len(entries) == 10, f"Expected 10 entries, got {len(entries)}"
+        assert all(hasattr(entry, 'name') for entry in entries), (
+            "All entries should have name attribute"
+        )

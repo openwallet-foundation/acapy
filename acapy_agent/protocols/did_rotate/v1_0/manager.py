@@ -72,8 +72,8 @@ class DIDRotateManager:
 
         Args:
             conn (ConnRecord): The connection to hangup.
-        """
 
+        """
         hangup = Hangup()
 
         responder = self.profile.inject(BaseResponder)
@@ -90,8 +90,8 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             new_did (str): The new DID to use for the connection.
-        """
 
+        """
         record = RotateRecord(
             role=RotateRecord.ROLE_ROTATING,
             state=RotateRecord.STATE_ROTATE_SENT,
@@ -115,6 +115,7 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             rotate (Rotate): The received rotate message.
+
         """
         record = RotateRecord(
             role=RotateRecord.ROLE_OBSERVING,
@@ -142,6 +143,7 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             record (RotateRecord): The rotate record.
+
         """
         record.state = RotateRecord.STATE_ACK_SENT
         if not record.new_did:
@@ -180,6 +182,7 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             ack (RotateAck): The received rotate ack message.
+
         """
         async with self.profile.session() as session:
             record = await RotateRecord.retrieve_by_thread_id(session, ack._thread_id)
@@ -208,6 +211,7 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             problem_report (ProblemReport): The received problem report message.
+
         """
         async with self.profile.session() as session:
             record = await RotateRecord.retrieve_by_thread_id(
@@ -227,6 +231,7 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             hangup (Hangup): The received hangup message.
+
         """
         async with self.profile.session() as session:
             await conn.delete_record(session)

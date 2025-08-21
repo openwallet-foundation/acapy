@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "connection_request"
 
 SCHEMAS = {
@@ -20,10 +22,22 @@ SCHEMAS = {
             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_item_id_v0_1 ON connection_request_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_message_id_v0_1 ON connection_request_v0_1 (message_id);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_did_v0_1 ON connection_request_v0_1 (did);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_thread_pthid_v0_1 ON connection_request_v0_1 (thread_pthid);",
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_item_id_v0_1
+        ON connection_request_v0_1 (item_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_message_id_v0_1
+        ON connection_request_v0_1 (message_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_did_v0_1
+        ON connection_request_v0_1 (did);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_thread_pthid_v0_1
+        ON connection_request_v0_1 (thread_pthid);
+        """,
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_connection_request_timestamp_v0_1
         AFTER UPDATE ON connection_request_v0_1
@@ -51,13 +65,26 @@ SCHEMAS = {
             did_doc TEXT,  -- JSON string of did_doc~attach
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id)
+            REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_item_id_v0_1 ON connection_request_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_message_id_v0_1 ON connection_request_v0_1 (message_id);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_did_v0_1 ON connection_request_v0_1 (did);",
-        "CREATE INDEX IF NOT EXISTS idx_connection_request_thread_pthid_v0_1 ON connection_request_v0_1 (thread_pthid);",
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_item_id_v0_1
+        ON connection_request_v0_1 (item_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_message_id_v0_1
+        ON connection_request_v0_1 (message_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_did_v0_1
+        ON connection_request_v0_1 (did);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_connection_request_thread_pthid_v0_1
+        ON connection_request_v0_1 (thread_pthid);
+        """,
         """
         CREATE OR REPLACE FUNCTION update_connection_request_timestamp_v0_1()
         RETURNS TRIGGER AS $$
@@ -92,13 +119,26 @@ SCHEMAS = {
             did_doc NVARCHAR(MAX),  -- JSON string of did_doc~attach
             created_at DATETIME2 DEFAULT SYSDATETIME(),
             updated_at DATETIME2 DEFAULT SYSDATETIME(),
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id)
+            REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_connection_request_item_id_v0_1 ON connection_request_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_connection_request_message_id_v0_1 ON connection_request_v0_1 (message_id);",
-        "CREATE NONCLUSTERED INDEX idx_connection_request_did_v0_1 ON connection_request_v0_1 (did);",
-        "CREATE NONCLUSTERED INDEX idx_connection_request_thread_pthid_v0_1 ON connection_request_v0_1 (thread_pthid);",
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_request_item_id_v0_1
+        ON connection_request_v0_1 (item_id);
+        """,
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_request_message_id_v0_1
+        ON connection_request_v0_1 (message_id);
+        """,
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_request_did_v0_1
+        ON connection_request_v0_1 (did);
+        """,
+        """
+        CREATE NONCLUSTERED INDEX idx_connection_request_thread_pthid_v0_1
+        ON connection_request_v0_1 (thread_pthid);
+        """,
         """
         CREATE TRIGGER trg_update_connection_request_timestamp_v0_1
         ON connection_request_v0_1
@@ -126,7 +166,10 @@ DROP_SCHEMAS = {
         "DROP TABLE IF EXISTS connection_request_v0_1;",
     ],
     "postgresql": [
-        "DROP TRIGGER IF EXISTS trg_update_connection_request_timestamp_v0_1 ON connection_request_v0_1;",
+        """
+        DROP TRIGGER IF EXISTS trg_update_connection_request_timestamp_v0_1
+        ON connection_request_v0_1;
+        """,
         "DROP FUNCTION IF EXISTS update_connection_request_timestamp_v0_1 CASCADE;",
         "DROP INDEX IF EXISTS idx_connection_request_thread_pthid_v0_1;",
         "DROP INDEX IF EXISTS idx_connection_request_did_v0_1;",
@@ -136,10 +179,22 @@ DROP_SCHEMAS = {
     ],
     "mssql": [
         "DROP TRIGGER IF EXISTS trg_update_connection_request_timestamp_v0_1;",
-        "DROP INDEX IF EXISTS idx_connection_request_thread_pthid_v0_1 ON connection_request_v0_1;",
-        "DROP INDEX IF EXISTS idx_connection_request_did_v0_1 ON connection_request_v0_1;",
-        "DROP INDEX IF EXISTS idx_connection_request_message_id_v0_1 ON connection_request_v0_1;",
-        "DROP INDEX IF EXISTS idx_connection_request_item_id_v0_1 ON connection_request_v0_1;",
+        """
+        DROP INDEX IF EXISTS idx_connection_request_thread_pthid_v0_1
+        ON connection_request_v0_1;
+        """,
+        """
+        DROP INDEX IF EXISTS idx_connection_request_did_v0_1
+        ON connection_request_v0_1;
+        """,
+        """
+        DROP INDEX IF EXISTS idx_connection_request_message_id_v0_1
+        ON connection_request_v0_1;
+        """,
+        """
+        DROP INDEX IF EXISTS idx_connection_request_item_id_v0_1
+        ON connection_request_v0_1;
+        """
         "DROP TABLE IF EXISTS connection_request_v0_1;",
     ],
 }
@@ -157,5 +212,23 @@ COLUMNS = [
 ]
 
 
-# sample
-# {"@type": "https://didcomm.org/didexchange/1.1/request", "@id": "b7958c6e-b5fd-46cb-9214-bb2490e97c9e", "~thread": {"pthid": "c314ba37-b375-4022-a2d2-3e44eee7eb75"}, "label": "My Wallet - 0655", "did": "did:peer:1zQmdGpc4Tc6gvYvEy1HtDzaXaRGetXTvMki6jm6DLSsK62L", "did_doc~attach": {"@id": "6864e554-658f-4b79-a6d4-9e27477d53cc", "mime-type": "application/json", "data": {"base64": "eyJAY29udGV4dCI6WyJodHRwczovL3czaWQub3JnL2RpZC92MSJdLCJpZCI6ImRpZDpwZWVyOjF6UW1kR3BjNFRjNmd2WXZFeTFIdER6YVhhUkdldFhUdk1raTZqbTZETFNzSzYyTCIsInNlcnZpY2UiOlt7ImlkIjoiI2lubGluZS0wIiwic2VydmljZUVuZHBvaW50IjoiaHR0cHM6Ly9hcmllcy1tZWRpYXRvci1hZ2VudC52b254LmlvIiwidHlwZSI6ImRpZC1jb21tdW5pY2F0aW9uIiwicHJpb3JpdHkiOjAsInJlY2lwaWVudEtleXMiOlsiI2tleS0xIl0sInJvdXRpbmdLZXlzIjpbImRpZDprZXk6ejZNa2Y0YUFHQnZCQThFcTJReTcxNHNzcENQb2o4dVV1cEpwZWFITERrcTNhVUYxI3o2TWtmNGFBR0J2QkE4RXEyUXk3MTRzc3BDUG9qOHVVdXBKcGVhSExEa3EzYVVGMSJdfV0sImF1dGhlbnRpY2F0aW9uIjpbeyJpZCI6IiNrZXktMSIsInR5cGUiOiJFZDI1NTE5VmVyaWZpY2F0aW9uS2V5MjAxOCIsImNvbnRyb2xsZXIiOiIjaWQiLCJwdWJsaWNLZXlCYXNlNTgiOiJIaWVIM1A1blBKa2c0aHlyWGtnY2lSd1Z5RlFYanp3Sjl6eHVadzdtNVY0USJ9XSwia2V5QWdyZWVtZW50IjpbeyJpZCI6IiNrZXktMiIsInR5cGUiOiJYMjU1MTlLZXlBZ3JlZW1lbnRLZXkyMDE5IiwiY29udHJvbGxlciI6IiNpZCIsInB1YmxpY0tleUJhc2U1OCI6IjJhRHc1TkY5bXVaV1ZnblVITm9Ka2N5cTJ1WThSeXUyMU15Wmc0YmJRaVF2In1dfQ==", "jws": {"header": {"kid": "did:key:z6MkwAuKddLDirF9BCpZDKeTZXVVnpgP9tBer1sqQD5mzhqn"}, "protected": "eyJhbGciOiJFZERTQSIsImp3ayI6eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5IiwieCI6Ii1HWHo1eUdnOVc4dm16SDRMaUNYaGdsSHpnemUxX09VaWw4Q043ekVlVlUifX0", "signature": "R1Cu4JlCvkJg_ToJrd3aRBfOjPFaJ9ue5Oit37hBR0cWfd7SokAwLVuvew3xossb4MtYyf9JA0VNNy2VBAq8BA"}}}}
+# Sample data structure:
+# {
+#     "@type": "https://didcomm.org/didexchange/1.1/request",
+#     "@id": "b7958c6e-b5fd-46cb-9214-bb2490e97c9e",
+#     "~thread": {"pthid": "c314ba37-b375-4022-a2d2-3e44eee7eb75"},
+#     "label": "My Wallet - 0655",
+#     "did": "did:peer:1zQmdGpc4Tc6gvYvEy1HtDzaXaRGetXTvMki6jm6DLSsK62L",
+#     "did_doc~attach": {
+#         "@id": "6864e554-658f-4b79-a6d4-9e27477d53cc",
+#         "mime-type": "application/json",
+#         "data": {
+#             "base64": "eyJAY29udGV4dCI6WyJodHRwczovL3czaWQub3JnL2RpZC92...",
+#             "jws": {
+#                 "header": {"kid": "did:key:z6MkwAuKddLDirF9BCpZDKeTZXVVnpg..."},
+#                 "protected": "eyJhbGciOiJFZERTQSIsImp3ayI6eyJrdHk...",
+#                 "signature": "R1Cu4JlCvkJg_ToJrd3aRBfOjPFaJ9ue5Oit37hBR0c..."
+#             }
+#         }
+#     }
+# }}

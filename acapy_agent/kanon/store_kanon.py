@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import json
 import logging
 import urllib
@@ -26,9 +28,12 @@ class KanonStoreConfig:
     DEFAULT_STORAGE_TYPE = None
     DEFAULT_SCHEMA_CONFIG = "normalize"
 
-    # Current schema release number refers to the schema version currently supported by this ACA-Py release.
-    # If the schema version in the database is lower than the current release version,
-    # then during store opening, the system will halt and prompt the user to perform an upgrade.
+    # Current schema release number refers to the schema version currently
+    # supported by this ACA-Py release.
+    # If the schema version in the database is lower than the current
+    # release version,
+    # then during store opening, the system will halt and prompt the user to
+    # perform an upgrade.
     CURRENT_SCHEMA_RELEASE_NUMBER = "release_0_1"
 
     KEY_DERIVATION_RAW = "RAW"
@@ -148,6 +153,7 @@ class KanonStoreConfig:
 
     @staticmethod
     def validate_base58_key(key: str):
+        """Validate base58 key."""
         try:
             decoded = base58.b58decode(key)
             print(f"Decoded length: {len(decoded)}")
@@ -157,8 +163,9 @@ class KanonStoreConfig:
     def get_dbstore_uri(
         self, create: bool = False, in_memory: Optional[bool] = False
     ) -> str:
+        """Get DBStore URI."""
         LOGGER.debug(
-            "Generating DBStore URI with dbstore_storage_type=%s, create=%s, in_memory=%s",
+            "DBStore URI: dbstore_storage_type=%s, create=%s, in_memory=%s",
             self.dbstore_storage_type,
             create,
             in_memory,
@@ -229,6 +236,7 @@ class KanonStoreConfig:
     def get_askar_uri(
         self, create: bool = False, in_memory: Optional[bool] = False
     ) -> str:
+        """Get Askar URI."""
         uri = f"{self.storage_type}://"
         if self.storage_type == "sqlite":
             if in_memory:
@@ -273,6 +281,7 @@ class KanonStoreConfig:
         return uri
 
     async def remove_store(self):
+        """Remove store."""
         try:
             if self.store_class == "askar":
                 await Store.remove(self.get_askar_uri())
@@ -393,9 +402,11 @@ class KanonStoreConfig:
 
 
 class KanonOpenStore:
+    """Kanon open store."""
     def __init__(
         self, config: KanonStoreConfig, created, db_store: DBStore, askar_store: Store
     ):
+        """Initialize KanonOpenStore with configuration and stores."""
         self.config = config
         self.created = created
         self.db_store = db_store
@@ -403,9 +414,11 @@ class KanonOpenStore:
 
     @property
     def name(self) -> str:
+        """Get store name."""
         return self.config.name
 
     async def close(self):
+        """Close store."""
         if self.db_store:
             await self.db_store.close(remove=self.config.auto_remove)
         if self.askar_store:

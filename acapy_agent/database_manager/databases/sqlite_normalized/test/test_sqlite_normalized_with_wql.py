@@ -1,6 +1,7 @@
-"""poetry run python acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_normalized_with_wql.py
+"""SQLite normalized database test with WQL queries.
 
-This script tests the functionality of the SQLite database for the 'connection' category with WQL queries.
+This script tests the functionality of the SQLite database for the 
+'connection' category with WQL queries.
 1. Database provisioning (encrypted and non-encrypted).
 2. Data insertion with JSON values and tags.
 3. Scanning with WQL equality queries, offsets, and limits.
@@ -25,7 +26,7 @@ from acapy_agent.database_manager.databases.backends.backend_registration import
 )
 
 try:
-    from pysqlcipher3 import dbapi2 as sqlcipher
+    import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
 import logging
@@ -100,12 +101,23 @@ CONNECTION_JSON_3 = {
 
 
 async def run_tests(store, db_path, config_new, is_encrypted=True):
+    """Run database tests with WQL queries.
+    
+    Args:
+        store: Database store instance
+        db_path: Path to database file
+        config_new: Database configuration
+        is_encrypted: Whether database is encrypted
+    """
     try:
         # Debug: Log current data state
         async with store.session() as session:
             entries = await session.fetch_all(category="connection")
             print(
-                f"Connections before tests: {[f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}' for entry in entries]}"
+                f"Connections before tests: {[
+                    f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}' 
+                    for entry in entries
+                ]}"
             )
 
         # Step 3: Test scan with WQL equality query
@@ -158,7 +170,8 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
                 category="connection", name="conn_4" if not is_encrypted else "conn_1"
             )
             print(
-                f"Updated Connection {'4' if not is_encrypted else '1'}: {json.loads(updated_entry.value)}"
+                f"Updated Connection {'4' if not is_encrypted else '1'}: "
+                f"{json.loads(updated_entry.value)}"
             )
             assert json.loads(updated_entry.value)["state"] == "completed", (
                 "State not updated"
@@ -181,8 +194,9 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
             new_entry = await session.fetch(
                 category="connection", name="conn_4" if is_encrypted else "conn_7"
             )
+            conn_num = '4' if is_encrypted else '7'
             print(
-                f"Inserted Connection {'4' if is_encrypted else '7'}: {json.loads(new_entry.value)}"
+                f"Inserted Connection {conn_num}: {json.loads(new_entry.value)}"
             )
             assert new_entry is not None, "Insert failed"
 
@@ -200,8 +214,10 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
             updated_conn4 = await session.fetch(
                 category="connection", name="conn_4" if is_encrypted else "conn_7"
             )
+            conn_num = '4' if not is_encrypted else '7'
+            value = json.loads(updated_conn4.value)
             print(
-                f"Updated Connection {'4' if not is_encrypted else '7'}: {json.loads(updated_conn4.value)}"
+                f"Updated Connection {conn_num}: {value}"
             )
             assert json.loads(updated_conn4.value)["state"] == "inactive", (
                 "State not updated"
@@ -253,7 +269,8 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
             LOGGER.debug("Result for conn_2 $exist query: %s", entry)
 
             print(
-                f"Fetching {'conn_3' if is_encrypted else 'conn_6'} with {json.dumps({'$exist': ['alias']})}..."
+                f"Fetching {'conn_3' if is_encrypted else 'conn_6'} "
+                f"with {json.dumps({'$exist': ['alias']})}..."
             )
             LOGGER.debug(
                 "Executing WQL query: %s for %s",
@@ -278,12 +295,14 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
             assert entry is not None, (
                 "Should fetch conn_1 with created_at < '2025-05-08T00:00:00Z'"
             )
+            created_at = json.loads(entry.value)['created_at']
             print(
-                f"Fetched: {entry.name} with created_at={json.loads(entry.value)['created_at']}"
+                f"Fetched: {entry.name} with created_at={created_at}"
             )
 
             print(
-                f"Fetching {'conn_3' if is_encrypted else 'conn_6'} with created_at < '2025-05-08T00:00:00Z'..."
+                f"Fetching {'conn_3' if is_encrypted else 'conn_6'} "
+                f"with created_at < '2025-05-08T00:00:00Z'..."
             )
             entry = await session.fetch(
                 category="connection",
@@ -325,13 +344,15 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
         # Step 9: Check if the key works (only for encrypted database)
         if is_encrypted:
             print("\n### Testing the Key ###")
+            key_desc = 'new_secure_key' if is_encrypted else 'no key'
             print(
-                f"Trying to access the database with {'new_secure_key' if is_encrypted else 'no key'}..."
+                f"Trying to access the database with {key_desc}..."
             )
             async with store.session() as session:
                 count = await session.count(category="connection")
+                key_type = 'new key' if is_encrypted else 'no key'
                 print(
-                    f"Counted {count} connections with {'new key' if is_encrypted else 'no key'}"
+                    f"Counted {count} connections with {key_type}"
                 )
             print("Success! The key works perfectly.")
 
@@ -393,9 +414,11 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
 
 
 async def main():
+    """Run the main test function."""
     register_backends()
     print(
-        "Starting the SQLite database test program for 'connection' category with WQL queries (Asyncio Version)..."
+        "Starting the SQLite database test program for 'connection' category "
+        "with WQL queries (Asyncio Version)..."
     )
     store = None
     non_enc_store = None
@@ -579,8 +602,9 @@ async def main():
             non_enc_store = SqliteDatabase(
                 pool, profile_name, path, effective_release_number
             )
+            profile_name = await non_enc_store.get_profile_name()
             print(
-                f"Non-encrypted database ready! Profile name: {await non_enc_store.get_profile_name()}"
+                f"Non-encrypted database ready! Profile name: {profile_name}"
             )
         except Exception as e:
             print(f"Oops! Failed to set up the non-encrypted database: {e}")
@@ -644,8 +668,9 @@ async def main():
             pool_size=5,
             schema_config="normalize",
         )
+        pool_size = config_with_key.pool_size
         print(
-            f"Pool size configured for non-encrypted with key: {config_with_key.pool_size}"
+            f"Pool size configured for non-encrypted with key: {pool_size}"
         )
         try:
             pool, profile_name, path, effective_release_number = (

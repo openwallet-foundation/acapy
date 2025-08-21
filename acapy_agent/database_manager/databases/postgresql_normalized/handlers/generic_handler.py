@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from .base_handler import BaseHandler
 from ....db_types import Entry
 from ....wql_normalized.tags import TagQuery, query_to_tagquery
@@ -26,6 +28,7 @@ class GenericHandler(BaseHandler):
         tags_table_name: Optional[str] = None,
         schema_context: Optional[SchemaContext] = None,
     ):
+        """Initialize GenericHandler with category and database configuration."""
         super().__init__(category)
         self.schema_context = schema_context or SchemaContext()
         self.tags_table = self.schema_context.qualify_table(
@@ -39,7 +42,10 @@ class GenericHandler(BaseHandler):
             tags_table=self.tags_table,
         )
         LOGGER.debug(
-            "Initialized GenericHandler for category=%s, tags_table=%s [Version 2025-07-04]",
+            (
+                "Initialized GenericHandler for category=%s, tags_table=%s "
+                "[Version 2025-07-04]"
+            ),
             category,
             self.tags_table,
         )
@@ -54,9 +60,13 @@ class GenericHandler(BaseHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert a new item into the database."""
         operation_name = "insert"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags=%s, expiry_ms=%s, tags_table=%s",
+            (
+                "[%s] Starting with profile_id=%d, category=%s, name=%s, "
+                "tags=%s, expiry_ms=%s, tags_table=%s"
+            ),
             operation_name,
             profile_id,
             category,
@@ -83,7 +93,8 @@ class GenericHandler(BaseHandler):
             await cursor.execute("SET client_encoding = 'UTF8'")
             await cursor.execute(
                 f"""
-                INSERT INTO {self.schema_context.qualify_table("items")} (profile_id, kind, category, name, value, expiry)
+                INSERT INTO {self.schema_context.qualify_table("items")}
+                (profile_id, kind, category, name, value, expiry)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (profile_id, category, name) DO NOTHING
                 RETURNING id
@@ -100,7 +111,9 @@ class GenericHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=f"Duplicate entry for category '{category}' and name '{name}'",
+                    message=(
+                        f"Duplicate entry for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = row[0]
             LOGGER.debug("[%s] Inserted item with item_id=%d", operation_name, item_id)
@@ -146,9 +159,13 @@ class GenericHandler(BaseHandler):
         tags: dict,
         expiry_ms: Optional[int] = None,
     ) -> None:
+        """Replace an existing item in the database."""
         operation_name = "replace"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, value=%r, tags=%s, expiry_ms=%s, tags_table=%s",
+            (
+                "[%s] Starting with profile_id=%d, category=%s, name=%s, "
+                "value=%r, tags=%s, expiry_ms=%s, tags_table=%s"
+            ),
             operation_name,
             profile_id,
             category,
@@ -188,7 +205,8 @@ class GenericHandler(BaseHandler):
 
                 await cursor.execute(
                     f"""
-                    UPDATE {self.schema_context.qualify_table("items")} SET value = %s, expiry = %s
+                    UPDATE {self.schema_context.qualify_table("items")}
+                    SET value = %s, expiry = %s
                     WHERE id = %s
                 """,
                     (value, expiry, item_id),
@@ -238,7 +256,9 @@ class GenericHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
         except Exception as e:
             LOGGER.error("[%s] Failed: %s", operation_name, str(e))
@@ -257,9 +277,13 @@ class GenericHandler(BaseHandler):
         tag_filter: Union[str, dict],
         for_update: bool,
     ) -> Optional[Entry]:
+        """Fetch a single item from the database."""
         operation_name = "fetch"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, tag_filter=%s, for_update=%s, tags_table=%s",
+            (
+                "[%s] Starting with profile_id=%d, category=%s, name=%s, "
+                "tag_filter=%s, for_update=%s, tags_table=%s"
+            ),
             operation_name,
             profile_id,
             category,
@@ -376,7 +400,7 @@ class GenericHandler(BaseHandler):
                 f"SELECT name, value FROM {self.tags_table} WHERE item_id = %s",
                 (item_id,),
             )
-            tags = {name: value for name, value in await cursor.fetchall()}
+            tags = dict(await cursor.fetchall())
             LOGGER.debug(
                 "[%s] Fetched %d tags for item_id=%d: %s",
                 operation_name,
@@ -407,9 +431,13 @@ class GenericHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Sequence[Entry]:
+        """Fetch all items matching the given criteria."""
         operation_name = "fetch_all"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, limit=%s, for_update=%s, order_by=%s, descending=%s, tags_table=%s",
+            (
+                "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
+                "limit=%s, for_update=%s, order_by=%s, descending=%s, tags_table=%s"
+            ),
             operation_name,
             profile_id,
             category,
@@ -427,7 +455,10 @@ class GenericHandler(BaseHandler):
                 LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "TRUE"
@@ -523,6 +554,7 @@ class GenericHandler(BaseHandler):
         category: str,
         tag_filter: Union[str, dict],
     ) -> int:
+        """Count items matching the given criteria."""
         operation_name = "count"
         LOGGER.debug(
             "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
@@ -566,6 +598,7 @@ class GenericHandler(BaseHandler):
     async def remove(
         self, cursor: AsyncCursor, profile_id: int, category: str, name: str
     ) -> None:
+        """Remove a single item from the database."""
         operation_name = "remove"
         LOGGER.debug(
             "[%s] Starting with profile_id=%d, category=%s, name=%s, tags_table=%s",
@@ -588,7 +621,9 @@ class GenericHandler(BaseHandler):
             if cursor.rowcount == 0:
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
         except Exception as e:
             LOGGER.error("[%s] Failed: %s", operation_name, str(e))
@@ -605,6 +640,7 @@ class GenericHandler(BaseHandler):
         category: str,
         tag_filter: Union[str, dict],
     ) -> int:
+        """Remove all items matching the given criteria."""
         operation_name = "remove_all"
         LOGGER.debug(
             "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
@@ -658,9 +694,13 @@ class GenericHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> AsyncGenerator[Entry, None]:
+        """Scan items matching the given criteria."""
         operation_name = "scan"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, offset=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
+            (
+                "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, "
+                "offset=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s"
+            ),
             operation_name,
             profile_id,
             category,
@@ -677,7 +717,10 @@ class GenericHandler(BaseHandler):
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "TRUE"
@@ -773,9 +816,13 @@ class GenericHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> AsyncGenerator[Entry, None]:
+        """Scan items using keyset pagination."""
         operation_name = "scan_keyset"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, last_id=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
+            (
+                "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, "
+                "last_id=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s"
+            ),
             operation_name,
             profile_id,
             category,
@@ -792,7 +839,10 @@ class GenericHandler(BaseHandler):
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "TRUE"
@@ -872,6 +922,7 @@ class GenericHandler(BaseHandler):
                 await cursor.connection.commit()
 
     def get_sql_clause(self, tag_query: TagQuery) -> Tuple[str, List[Any]]:
+        """Generate SQL clause for tag queries."""
         operation_name = "get_sql_clause"
         LOGGER.debug(
             "[%s] Starting with tag_query=%s, tags_table=%s",

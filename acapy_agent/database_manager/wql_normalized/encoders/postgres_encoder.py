@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from typing import List, Tuple
 from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp, TagQuery
 import logging
@@ -6,9 +8,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PostgresTagEncoder(TagQueryEncoder):
+    """PostgreSQL tag query encoder."""
     """Encoder for generating PostgreSQL-compatible SQL queries from TagQuery objects.
+
     Uses '%s' placeholders for parameters, compatible with psycopg 3.2.9.
-    Supports both normalized and non-normalized modes with a configurable tags table for non-normalized mode.
+    Supports both normalized and non-normalized modes with a configurable tags 
+    table for non-normalized mode.
     """
 
     def __init__(
@@ -19,15 +24,20 @@ class PostgresTagEncoder(TagQueryEncoder):
         table_alias: str = "t",
         tags_table: str = "items_tags",
     ):
-        """Initialize the encoder with functions to encode tag names and values, a mode flag,
-        an optional table alias, and an optional tags table name for non-normalized mode.
+        """Initialize the encoder with functions to encode tag names and values.
+        
+        A mode flag, an optional table alias, and an optional tags table name for
+        non-normalized mode.
 
         Args:
             enc_name (callable): Function to encode tag names (str -> str).
             enc_value (callable): Function to encode tag values (str -> str).
-            normalized (bool): Flag to indicate if the encoder should use normalized mode (default: False).
+            normalized (bool): Flag to indicate if the encoder should use
+                normalized mode (default: False).
             table_alias (str): Table alias to use in normalized mode (default: 't').
-            tags_table (str): Name of the tags table for non-normalized mode (default: 'items_tags').
+            tags_table (str): Name of the tags table for non-normalized mode
+                (default: 'items_tags').
+
         """
         self.enc_name = enc_name
         self.enc_value = enc_value
@@ -35,23 +45,17 @@ class PostgresTagEncoder(TagQueryEncoder):
         self.table_alias = table_alias if normalized else None
         self.tags_table = tags_table
         self.arguments = []  # List to store parameter values
-        # LOGGER.debug("Initialized PostgresTagEncoder with normalized=%s, table_alias=%s, tags_table=%s",
-        #             normalized, table_alias, tags_table)
 
     def encode_name(self, name: TagName) -> str:
         """Encode the tag name using the provided enc_name function."""
-        operation_name = "encode_name"
         result = self.enc_name(name.value)
         encoded_name = result if isinstance(result, str) else str(result)
-        # LOGGER.debug("[%s] Encoded name %s to %s", operation_name, name.value, encoded_name)
         return encoded_name
 
     def encode_value(self, value: str) -> str:
         """Encode the tag value using the provided enc_value function."""
-        operation_name = "encode_value"
         result = self.enc_value(value)
         encoded_value = result if isinstance(result, str) else str(result)
-        # LOGGER.debug("[%s] Encoded value %s to %s", operation_name, value, encoded_value)
         return encoded_value
 
     def encode_query(
@@ -65,12 +69,11 @@ class PostgresTagEncoder(TagQueryEncoder):
             top_level (bool): Whether this is a top-level query.
 
         Returns:
-            Tuple[str, List[str]] | str: SQL clause and list of parameters for top-level queries,
+            Tuple[str, List[str]] | str: SQL clause and list of parameters 
+                for top-level queries,
                                         or SQL clause string for subqueries.
+
         """
-        operation_name = "encode_query"
-        # LOGGER.debug("[%s] Starting with query=%s, negate=%s, top_level=%s, tags_table=%s",
-        #             operation_name, query, negate, top_level, self.tags_table)
 
         if top_level:
             self.arguments = []  # Reset arguments only for top-level query
@@ -127,14 +130,14 @@ class PostgresTagEncoder(TagQueryEncoder):
                 sql_clause = self.encode_conj(op, query.data, negate)
             else:
                 LOGGER.error(
-                    "[%s] Unknown query variant: %s", operation_name, query.variant
+                    "[%s] Unknown query variant: %s", "encode_operation", query.variant
                 )
                 raise ValueError(f"Unknown query variant: {query.variant}")
             if top_level:
                 return sql_clause, self.arguments
             return sql_clause
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error("[%s] Failed: %s", "encode_operation", str(e))
             raise
 
     def encode_op_clause(
@@ -143,12 +146,10 @@ class PostgresTagEncoder(TagQueryEncoder):
         """Encode a comparison operation clause for PostgreSQL.
 
         In normalized mode, generates direct column comparisons (e.g., "t.column = %s").
-        In non-normalized mode, generates subqueries using the configured tags table (e.g., "i.id IN (SELECT item_id FROM tags_table ...)").
+        In non-normalized mode, generates subqueries using the configured tags 
+        table (e.g., "i.id IN (SELECT item_id FROM tags_table ...)").
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
-        operation_name = "encode_op_clause"
-        # LOGGER.debug("[%s] Encoding op=%s, enc_name=%s, enc_value=%s, negate=%s, normalized=%s, tags_table=%s",
-        #             operation_name, op, enc_name, enc_value, negate, self.normalized, self.tags_table)
 
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
@@ -166,27 +167,25 @@ class PostgresTagEncoder(TagQueryEncoder):
                 sql_op = negate_map.get(sql_op, sql_op)
             self.arguments.append(enc_value)
             sql_clause = f"{column} {sql_op} %s"
-            # LOGGER.debug("[%s] Generated normalized clause: %s", operation_name, sql_clause)
             return sql_clause
         else:
             self.arguments.append(enc_name)
             self.arguments.append(enc_value)
             subquery_op = "NOT IN" if negate else "IN"
-            sql_clause = f"i.id {subquery_op} (SELECT item_id FROM {self.tags_table} WHERE name = %s AND value {op.as_sql_str()} %s)"
-            # LOGGER.debug("[%s] Generated non-normalized clause: %s", operation_name, sql_clause)
+            sql_clause = (
+                f"i.id {subquery_op} (SELECT item_id FROM {self.tags_table} "
+                f"WHERE name = %s AND value {op.as_sql_str()} %s)"
+            )
             return sql_clause
 
     def encode_in_clause(self, enc_name: str, enc_values: List[str], negate: bool) -> str:
         """Encode an 'IN' clause for multiple values in PostgreSQL.
+        
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
-        operation_name = "encode_in_clause"
-        # LOGGER.debug("[%s] Encoding enc_name=%s, enc_values=%s, negate=%s, normalized=%s, tags_table=%s",
-        #             operation_name, enc_name, enc_values, negate, self.normalized, self.tags_table)
 
         if not enc_values:  # Handle empty value list
             sql_clause = "FALSE" if not negate else "TRUE"
-            # LOGGER.debug("[%s] Generated empty IN clause: %s", operation_name, sql_clause)
             return sql_clause
 
         if self.normalized:
@@ -194,68 +193,62 @@ class PostgresTagEncoder(TagQueryEncoder):
             self.arguments.extend(enc_values)
             placeholders = ", ".join(["%s" for _ in enc_values])
             sql_clause = f"{column} {'NOT IN' if negate else 'IN'} ({placeholders})"
-            # LOGGER.debug("[%s] Generated normalized clause: %s", operation_name, sql_clause)
             return sql_clause
         else:
             self.arguments.append(enc_name)
             self.arguments.extend(enc_values)
             value_placeholders = ", ".join(["%s" for _ in enc_values])
-            sql_clause = f"i.id IN (SELECT item_id FROM {self.tags_table} WHERE name = %s AND value {'NOT IN' if negate else 'IN'} ({value_placeholders}))"
-            # LOGGER.debug("[%s] Generated non-normalized clause: %s", operation_name, sql_clause)
+            sql_clause = (
+                f"i.id IN (SELECT item_id FROM {self.tags_table} "
+                f"WHERE name = %s AND value {'NOT IN' if negate else 'IN'} "
+                f"({value_placeholders}))"
+            )
             return sql_clause
 
     def encode_exist_clause(self, enc_name: str, negate: bool) -> str:
         """Encode an 'EXISTS' clause for tag or column existence in PostgreSQL.
+        
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
-        operation_name = "encode_exist_clause"
-        # LOGGER.debug("[%s] Encoding enc_name=%s, negate=%s, normalized=%s, tags_table=%s",
-        #             operation_name, enc_name, negate, self.normalized, self.tags_table)
 
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             sql_clause = f"{column} {'IS NULL' if negate else 'IS NOT NULL'}"
-            # LOGGER.debug("[%s] Generated normalized clause: %s", operation_name, sql_clause)
             return sql_clause
         else:
             self.arguments.append(enc_name)
             subquery_op = "NOT IN" if negate else "IN"
-            sql_clause = f"i.id {subquery_op} (SELECT item_id FROM {self.tags_table} WHERE name = %s)"
-            # LOGGER.debug("[%s] Generated non-normalized clause: %s", operation_name, sql_clause)
+            sql_clause = (
+                f"i.id {subquery_op} (SELECT item_id FROM {self.tags_table} "
+                f"WHERE name = %s)"
+            )
             return sql_clause
 
     def encode_conj_clause(self, op: ConjunctionOp, clauses: List[str]) -> str:
         """Encode a conjunction clause (AND/OR) for PostgreSQL."""
-        operation_name = "encode_conj_clause"
-        # LOGGER.debug("[%s] Encoding op=%s, clauses=%s", operation_name, op, clauses)
 
         if not clauses:
             if op == ConjunctionOp.Or:
                 return "FALSE"  # False for empty OR -- need to build a test for this
             return "TRUE"  # True for empty AND
         sql_clause = "(" + op.as_sql_str().join(clauses) + ")"
-        # LOGGER.debug("[%s] Generated clause: %s", operation_name, sql_clause)
         return sql_clause
 
     def encode_op(self, op: CompareOp, name: TagName, value: str, negate: bool):
-        operation_name = "encode_op"
-        # LOGGER.debug("[%s] Encoding op=%s, name=%s, value=%s, negate=%s", operation_name, op, name, value, negate)
+        """Encode a comparison operation."""
         enc_name = self.encode_name(name)
         enc_value = self.encode_value(value)
         return self.encode_op_clause(op, enc_name, enc_value, negate)
 
     def encode_in(self, name: TagName, values: List[str], negate: bool):
-        operation_name = "encode_in"
-        # LOGGER.debug("[%s] Encoding name=%s, values=%s, negate=%s", operation_name, name, values, negate)
+        """Encode an IN operation."""
         enc_name = self.encode_name(name)
         enc_values = [self.encode_value(v) for v in values]
         return self.encode_in_clause(enc_name, enc_values, negate)
 
     def encode_exist(self, names: List[TagName], negate: bool):
-        operation_name = "encode_exist"
-        # LOGGER.debug("[%s] Encoding names=%s, negate=%s", operation_name, names, negate)
+        """Encode an existence check."""
         if not names:
-            # LOGGER.debug("[%s] No names provided, returning None", operation_name)
             return None
         elif len(names) == 1:
             enc_name = self.encode_name(names[0])
@@ -265,8 +258,7 @@ class PostgresTagEncoder(TagQueryEncoder):
             return self.encode_conj_clause(ConjunctionOp.And, [c for c in clauses if c])
 
     def encode_conj(self, op: ConjunctionOp, subqueries: List[TagQuery], negate: bool):
-        operation_name = "encode_conj"
-        # LOGGER.debug("[%s] Encoding op=%s, subqueries=%s, negate=%s", operation_name, op, subqueries, negate)
+        """Encode a conjunction operation."""
         op = op.negate() if negate else op
         clauses = []
         for q in subqueries:

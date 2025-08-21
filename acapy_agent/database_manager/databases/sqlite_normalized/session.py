@@ -1,3 +1,5 @@
+"""SQLite database session implementation."""
+
 import threading
 import asyncio
 from typing import Optional, Union, Sequence
@@ -13,6 +15,8 @@ LOGGER = logging.getLogger(__name__ + ".DBStore")
 
 
 class SqliteSession(AbstractDatabaseSession):
+    """SQLite database session implementation."""
+
     def __init__(
         self,
         database: SqliteDatabase,
@@ -20,6 +24,7 @@ class SqliteSession(AbstractDatabaseSession):
         is_txn: bool,
         release_number: str = "release_0_1",
     ):
+        """Initialize SQLite session."""
         self.lock = threading.RLock()
         self.database = database
         self.pool = database.pool
@@ -56,10 +61,12 @@ class SqliteSession(AbstractDatabaseSession):
                 self.pool.return_connection(conn)
 
     async def __aenter__(self):
+        """Enter async context manager."""
         max_retries = 5
         for attempt in range(max_retries):
             try:
-                # Limits the time spent waiting to acquire a connection from the pool during session initialization.
+                # Limits the time spent waiting to acquire a connection from the pool
+                # during session initialization.
                 self.conn = await asyncio.to_thread(
                     self.pool.get_connection, timeout=60.0
                 )
@@ -88,7 +95,8 @@ class SqliteSession(AbstractDatabaseSession):
                 if self.is_txn:
                     await asyncio.to_thread(self.conn.execute, "BEGIN")
                 LOGGER.debug(
-                    "[enter_session] Starting for profile=%s, is_txn=%s, release_number=%s",
+                    "[enter_session] Starting for profile=%s, is_txn=%s, "
+                    "release_number=%s",
                     self.profile,
                     self.is_txn,
                     self.release_number,
@@ -116,6 +124,7 @@ class SqliteSession(AbstractDatabaseSession):
                 )
 
     async def __aexit__(self, exc_type, exc, tb):
+        """Exit async context manager."""
         if self.conn:
             try:
                 if self.is_txn:
@@ -138,6 +147,7 @@ class SqliteSession(AbstractDatabaseSession):
                     pass
 
     async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+        """Count entries in a category."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
 
         handler = handlers.get(category, handlers["default"])
@@ -169,6 +179,7 @@ class SqliteSession(AbstractDatabaseSession):
         tags: dict = None,
         expiry_ms: int = None,
     ):
+        """Insert an entry."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
 
@@ -202,7 +213,9 @@ class SqliteSession(AbstractDatabaseSession):
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Failed to insert item '{name}' in category '{category}'",
+                        message=(
+                            f"Failed to insert item '{name}' in category '{category}'"
+                        ),
                         actual_error=str(e),
                     )
 
@@ -215,6 +228,7 @@ class SqliteSession(AbstractDatabaseSession):
         tag_filter: Union[str, dict] = None,
         for_update: bool = False,
     ) -> Optional[Entry]:
+        """Fetch a single entry."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
 
@@ -251,6 +265,7 @@ class SqliteSession(AbstractDatabaseSession):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Sequence[Entry]:
+        """Fetch all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
 
@@ -272,7 +287,9 @@ class SqliteSession(AbstractDatabaseSession):
                     raise
                 except Exception as e:
                     LOGGER.error(
-                        "Failed to fetch all items in category '%s': %s", category, str(e)
+                        "Failed to fetch all items in category '%s': %s",
+                        category,
+                        str(e)
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
@@ -290,6 +307,7 @@ class SqliteSession(AbstractDatabaseSession):
         tags: dict = None,
         expiry_ms: int = None,
     ):
+        """Replace an entry."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
 
@@ -323,13 +341,16 @@ class SqliteSession(AbstractDatabaseSession):
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Failed to replace item '{name}' in category '{category}'",
+                        message=(
+                            f"Failed to replace item '{name}' in category '{category}'"
+                        ),
                         actual_error=str(e),
                     )
 
         await asyncio.to_thread(_replace)
 
     async def remove(self, category: str, name: str):
+        """Remove a single entry."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
 
@@ -355,13 +376,18 @@ class SqliteSession(AbstractDatabaseSession):
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Failed to remove item '{name}' in category '{category}'",
+                        message=(
+                            f"Failed to remove item '{name}' in category '{category}'"
+                        ),
                         actual_error=str(e),
                     )
 
         await asyncio.to_thread(_remove)
 
-    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def remove_all(
+        self, category: str, tag_filter: Union[str, dict] = None
+    ) -> int:
+        """Remove all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
 
@@ -396,6 +422,7 @@ class SqliteSession(AbstractDatabaseSession):
         return await asyncio.to_thread(_remove_all)
 
     async def commit(self):
+        """Commit transaction."""
         if not self.is_txn:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Not a transaction")
         try:
@@ -411,6 +438,7 @@ class SqliteSession(AbstractDatabaseSession):
             )
 
     async def rollback(self):
+        """Rollback transaction."""
         if not self.is_txn:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Not a transaction")
         try:
@@ -426,6 +454,7 @@ class SqliteSession(AbstractDatabaseSession):
             )
 
     async def close(self):
+        """Close session."""
         if self.conn:
             try:
                 cursor = await asyncio.to_thread(self.conn.cursor)

@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import logging
 from typing import Optional
 
@@ -12,6 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class SqliteBackend(DatabaseBackend):
+    """SQLite backend implementation for database manager."""
     def provision(
         self,
         uri: str,
@@ -23,9 +26,13 @@ class SqliteBackend(DatabaseBackend):
         schema_config: str = "generic",
         config: Optional[dict] = None,
     ):
-        """Provision a new SQLite database instance with the specified release number and schema config."""
+        """Provision a new SQLite database instance.
+        
+        Uses specified release number and schema config.
+        """
         LOGGER.debug(
-            "[provision_backend] Starting with uri=%s, profile=%s, recreate=%s, release_number=%s, schema_config=%s, config=%s",
+            "[provision_backend] Starting with uri=%s, profile=%s, recreate=%s, "
+            "release_number=%s, schema_config=%s, config=%s",
             uri,
             profile,
             recreate,
@@ -54,7 +61,8 @@ class SqliteBackend(DatabaseBackend):
     ):
         """Open an existing SQLite database instance with optional migration."""
         LOGGER.debug(
-            "[open_backend] Starting with uri=%s, profile=%s, schema_migration=%s, target_schema_release_number=%s, config=%s",
+            "[open_backend] Starting with uri=%s, profile=%s, schema_migration=%s, "
+            "target_schema_release_number=%s, config=%s",
             uri,
             profile,
             schema_migration,

@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from .base_handler import BaseHandler
 from ....db_types import Entry
 from ....wql_normalized.tags import TagQuery, query_to_tagquery
@@ -25,14 +27,22 @@ def is_valid_json(value: str) -> bool:
 
 
 def serialize_json_with_bool_strings(data: Any) -> str:
-    """Serialize data to JSON, converting booleans to string 'true'/'false' and replacing '~' with '_'."""
+    """Serialize data to JSON, converting booleans to strings and replacing '~' with '_'.
+    
+    Args:
+        data: Data to serialize.
+        
+    Returns:
+        JSON string representation.
+    """
 
     def convert_bools_and_keys(obj: Any) -> Any:
         if isinstance(obj, bool):
             return str(obj).lower()
         elif isinstance(obj, dict):
             return {
-                k.replace("~", "_"): convert_bools_and_keys(v) for k, v in obj.items()
+                k.replace("~", "_"): convert_bools_and_keys(v)
+                for k, v in obj.items()
             }
         elif isinstance(obj, list):
             return [convert_bools_and_keys(item) for item in obj]
@@ -76,6 +86,7 @@ class NormalizedHandler(BaseHandler):
         table_name: Optional[str] = None,
         schema_context: Optional[SchemaContext] = None,
     ):
+        """Initialize NormalizedHandler."""
         super().__init__(category)
         self.schema_context = schema_context or SchemaContext()
         self.table = self.schema_context.qualify_table(table_name or category)
@@ -85,7 +96,8 @@ class NormalizedHandler(BaseHandler):
             "postgresql", lambda x: x, lambda x: x, normalized=True
         )
         LOGGER.debug(
-            "[init] Initialized NormalizedHandler for category=%s, table=%s, columns=%s, schema_context=%s",
+            "[init] Initialized NormalizedHandler for category=%s, table=%s, "
+            "columns=%s, schema_context=%s",
             category,
             self.table,
             columns,
@@ -102,9 +114,11 @@ class NormalizedHandler(BaseHandler):
         tags: dict,
         expiry_ms: Optional[int] = None,
     ) -> None:
+        """Insert a new entry."""
         operation_name = "insert"
         LOGGER.debug(
-            "[%s] Starting with category=%s, name=%s, value=%r, tags=%s, expiry_ms=%s, table=%s",
+            "[%s] Starting with category=%s, name=%s, value=%r, tags=%s, "
+            "expiry_ms=%s, table=%s",
             operation_name,
             category,
             name,
@@ -145,7 +159,8 @@ class NormalizedHandler(BaseHandler):
                     )
 
             LOGGER.debug(
-                "[%s] Inserting into items table with profile_id=%s, category=%s, name=%s, value=%s, expiry=%s",
+                "[%s] Inserting into items table with profile_id=%s, category=%s, "
+                "name=%s, value=%s, expiry=%s",
                 operation_name,
                 profile_id,
                 category,
@@ -155,7 +170,9 @@ class NormalizedHandler(BaseHandler):
             )
             await cursor.execute(
                 f"""
-                INSERT INTO {self.schema_context.qualify_table("items")} (profile_id, kind, category, name, value, expiry)
+                INSERT INTO {self.schema_context.qualify_table("items")} (
+                    profile_id, kind, category, name, value, expiry
+                )
                 VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (profile_id, category, name) DO NOTHING
                 RETURNING id
@@ -172,7 +189,9 @@ class NormalizedHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=f"Duplicate entry for category '{category}' and name '{name}'",
+                    message=(
+                        f"Duplicate entry for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = row[0]
             LOGGER.debug(
@@ -252,9 +271,11 @@ class NormalizedHandler(BaseHandler):
         tags: dict,
         expiry_ms: Optional[int] = None,
     ) -> None:
+        """Replace an existing entry."""
         operation_name = "replace"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, name=%s, value=%r, tags=%s, expiry_ms=%s, table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, name=%s, value=%r, "
+            "tags=%s, expiry_ms=%s, table=%s",
             operation_name,
             profile_id,
             category,
@@ -295,14 +316,17 @@ class NormalizedHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = row[0]
             LOGGER.debug("[%s] Found item_id=%s for replacement", operation_name, item_id)
 
             await cursor.execute(
                 f"""
-                UPDATE {self.schema_context.qualify_table("items")} SET value = %s, expiry = %s
+                UPDATE {self.schema_context.qualify_table("items")} 
+                SET value = %s, expiry = %s
                 WHERE id = %s
             """,
                 (value, expiry, item_id),
@@ -405,9 +429,11 @@ class NormalizedHandler(BaseHandler):
         tag_filter: Union[str, dict],
         for_update: bool,
     ) -> Optional[Entry]:
+        """Fetch a single entry."""
         operation_name = "fetch"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, name=%s, tag_filter=%s, for_update=%s, table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, name=%s, "
+            "tag_filter=%s, for_update=%s, table=%s",
             operation_name,
             profile_id,
             category,
@@ -529,9 +555,11 @@ class NormalizedHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Sequence[Entry]:
+        """Fetch all entries matching criteria."""
         operation_name = "fetch_all"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_filter=%s, limit=%s, for_update=%s, order_by=%s, descending=%s, table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, tag_filter=%s, "
+            "limit=%s, for_update=%s, order_by=%s, descending=%s, table=%s",
             operation_name,
             profile_id,
             category,
@@ -549,7 +577,10 @@ class NormalizedHandler(BaseHandler):
                 LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "TRUE"
@@ -648,6 +679,7 @@ class NormalizedHandler(BaseHandler):
         category: str,
         tag_filter: Union[str, dict],
     ) -> int:
+        """Count entries matching criteria."""
         operation_name = "count"
         LOGGER.debug(
             "[%s] Starting with profile_id=%s, category=%s, tag_filter=%s, table=%s",
@@ -713,6 +745,7 @@ class NormalizedHandler(BaseHandler):
     async def remove(
         self, cursor: AsyncCursor, profile_id: int, category: str, name: str
     ) -> None:
+        """Remove a single entry."""
         operation_name = "remove"
         LOGGER.debug(
             "[%s] Starting with profile_id=%s, category=%s, name=%s, table=%s",
@@ -742,7 +775,9 @@ class NormalizedHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = row[0]
             LOGGER.debug("[%s] Found item_id=%s for removal", operation_name, item_id)
@@ -751,7 +786,8 @@ class NormalizedHandler(BaseHandler):
                 f"DELETE FROM {self.table} WHERE item_id = %s", (item_id,)
             )
             await cursor.execute(
-                f"DELETE FROM {self.schema_context.qualify_table('items')} WHERE id = %s",
+                f"DELETE FROM {self.schema_context.qualify_table('items')} "
+                f"WHERE id = %s",
                 (item_id,),
             )
             LOGGER.debug("[%s] Removed record with item_id=%s", operation_name, item_id)
@@ -770,6 +806,7 @@ class NormalizedHandler(BaseHandler):
         category: str,
         tag_filter: Union[str, dict],
     ) -> int:
+        """Remove all entries matching criteria."""
         operation_name = "remove_all"
         LOGGER.debug(
             "[%s] Starting with profile_id=%s, category=%s, tag_filter=%s, table=%s",
@@ -807,7 +844,8 @@ class NormalizedHandler(BaseHandler):
                 )
 
             query = f"""
-                DELETE FROM {self.schema_context.qualify_table("items")} WHERE id IN (
+                DELETE FROM {self.schema_context.qualify_table("items")} 
+                WHERE id IN (
                     SELECT i.id FROM {self.schema_context.qualify_table("items")} i
                     JOIN {self.table} t ON i.id = t.item_id
                     WHERE i.profile_id = %s AND i.category = %s
@@ -844,9 +882,11 @@ class NormalizedHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> AsyncGenerator[Entry, None]:
+        """Scan entries with pagination."""
         operation_name = "scan"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, offset=%s, limit=%s, order_by=%s, descending=%s, table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, "
+            "offset=%s, limit=%s, order_by=%s, descending=%s, table=%s",
             operation_name,
             profile_id,
             category,
@@ -864,7 +904,10 @@ class NormalizedHandler(BaseHandler):
                 LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "TRUE"
@@ -964,9 +1007,11 @@ class NormalizedHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> AsyncGenerator[Entry, None]:
+        """Scan entries using keyset pagination."""
         operation_name = "scan_keyset"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, last_id=%s, limit=%s, order_by=%s, descending=%s, table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, "
+            "last_id=%s, limit=%s, order_by=%s, descending=%s, table=%s",
             operation_name,
             profile_id,
             category,
@@ -984,7 +1029,10 @@ class NormalizedHandler(BaseHandler):
                 LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "TRUE"
@@ -1066,6 +1114,7 @@ class NormalizedHandler(BaseHandler):
                 await cursor.connection.commit()
 
     def get_sql_clause(self, tag_query: TagQuery) -> Tuple[str, List[Any]]:
+        """Generate SQL clause from tag query."""
         operation_name = "get_sql_clause"
         LOGGER.debug(
             "[%s] Starting with tag_query=%s, table=%s",

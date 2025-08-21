@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
@@ -20,19 +22,31 @@ class PresExV20CustomHandler(NormalizedHandler):
     def __init__(
         self, category: str, columns: List[str], table_name: Optional[str] = None
     ):
+        """Initialize the PresExV20CustomHandler.
+        
+        Args:
+            category: Category name
+            columns: List of column names
+            table_name: Optional table name override
+        """
         super().__init__(category, columns, table_name)
         LOGGER.debug(
-            f"Initialized PresExV20CustomHandler for category={category}, table={table_name or category}, columns={columns}"
+            f"Initialized PresExV20CustomHandler for category={category}, "
+            f"table={table_name or category}, columns={columns}"
         )
 
     def _extract_revealed_attrs(self, json_data: dict) -> str:
-        """Extract revealed attribute groups from the presentations~attach base64 data in pres and return as JSON string.
+        """Extract revealed attribute groups from presentations~attach base64 data.
+        
+        Extract revealed attribute groups from the presentations~attach base64 data
+        in pres and return as JSON string.
 
         Args:
             json_data: The parsed JSON data from the value field
 
         Returns:
             JSON string containing list of attr_name and attr_value pairs
+
         """
         try:
             if "pres" not in json_data or not json_data["pres"]:
@@ -102,7 +116,8 @@ class PresExV20CustomHandler(NormalizedHandler):
     ) -> None:
         """Insert a new entry with custom data extraction."""
         LOGGER.debug(
-            f"Inserting record with category={category}, name={name}, value={value}, tags={tags}"
+            f"Inserting record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -128,11 +143,13 @@ class PresExV20CustomHandler(NormalizedHandler):
         # Extract revealed attributes and add to json_data
         json_data["revealed_attr_groups"] = self._extract_revealed_attrs(json_data)
         LOGGER.debug(
-            f"Added revealed_attr_groups to json_data: {json_data['revealed_attr_groups']}"
+            f"Added revealed_attr_groups to json_data: "
+            f"{json_data['revealed_attr_groups']}"
         )
 
         LOGGER.debug(
-            f"Inserting into items table with profile_id={profile_id}, category={category}, name={name}, value={value}, expiry={expiry}"
+            f"Inserting into items table with profile_id={profile_id}, "
+            f"category={category}, name={name}, value={value}, expiry={expiry}"
         )
         cursor.execute(
             """
@@ -155,7 +172,8 @@ class PresExV20CustomHandler(NormalizedHandler):
             if col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if col == "pres_request":
                     if isinstance(val, str) and is_valid_json(val):
@@ -165,7 +183,8 @@ class PresExV20CustomHandler(NormalizedHandler):
                             LOGGER.debug(f"Force serialized {col} to JSON: {val}")
                         except json.JSONDecodeError as e:
                             LOGGER.error(
-                                f"Failed to re-serialize pres_request: {str(e)}, raw value: {val}"
+                                f"Failed to re-serialize pres_request: {str(e)}, "
+                                f"raw value: {val}"
                             )
                             raise DatabaseError(
                                 code=DatabaseErrorCode.QUERY_ERROR,
@@ -246,7 +265,8 @@ class PresExV20CustomHandler(NormalizedHandler):
     ) -> None:
         """Replace an existing entry with custom data extraction."""
         LOGGER.debug(
-            f"Replacing record with category={category}, name={name}, value={value}, tags={tags}"
+            f"Replacing record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -298,7 +318,8 @@ class PresExV20CustomHandler(NormalizedHandler):
         # Extract revealed attributes and add to json_data
         json_data["revealed_attr_groups"] = self._extract_revealed_attrs(json_data)
         LOGGER.debug(
-            f"Added revealed_attr_groups to json_data: {json_data['revealed_attr_groups']}"
+            f"Added revealed_attr_groups to json_data: "
+            f"{json_data['revealed_attr_groups']}"
         )
 
         LOGGER.debug(f"Deleting existing entry from {self.table} for item_id={item_id}")
@@ -310,7 +331,8 @@ class PresExV20CustomHandler(NormalizedHandler):
             if col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if col == "pres_request":
                     if isinstance(val, str) and is_valid_json(val):
@@ -320,7 +342,8 @@ class PresExV20CustomHandler(NormalizedHandler):
                             LOGGER.debug(f"Force serialized {col} to JSON: {val}")
                         except json.JSONDecodeError as e:
                             LOGGER.error(
-                                f"Failed to re-serialize pres_request: {str(e)}, raw value: {val}"
+                                f"Failed to re-serialize pres_request: {str(e)}, "
+                                f"raw value: {val}"
                             )
                             raise DatabaseError(
                                 code=DatabaseErrorCode.QUERY_ERROR,

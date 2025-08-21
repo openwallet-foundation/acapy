@@ -30,6 +30,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class KanonAnonCredsProfile(Profile):
+    """Kanon AnonCreds profile implementation."""
+
     BACKEND_NAME = "kanon-anoncreds"
     TEST_PROFILE_NAME = "test-profile"
 
@@ -40,6 +42,7 @@ class KanonAnonCredsProfile(Profile):
         *,
         profile_id: Optional[str] = None,
     ):
+        """Initialize the KanonAnonCredsProfile with a store and context."""
         super().__init__(
             context=context, name=profile_id or opened.name, created=opened.created
         )
@@ -60,6 +63,7 @@ class KanonAnonCredsProfile(Profile):
         return self.opened.db_store
 
     async def remove(self):
+        """Remove profile."""
         if not self.profile_id:
             return  # Nothing to remove
 
@@ -178,9 +182,11 @@ class KanonAnonCredsProfile(Profile):
             )
 
     def session(self, context: Optional[InjectionContext] = None) -> ProfileSession:
+        """Create a new session."""
         return KanonAnonCredsProfileSession(self, False, context=context)
 
     def transaction(self, context: Optional[InjectionContext] = None) -> ProfileSession:
+        """Create a new transaction."""
         return KanonAnonCredsProfileSession(self, True, context=context)
 
     async def close(self):
@@ -220,7 +226,8 @@ class KanonAnonCredsProfileSession(ProfileSession):
         self._acquire_start: Optional[float] = None
         self._acquire_end: Optional[float] = None
 
-    # THIS IS ONLY USED BY acapy_agent.wallet.anoncreds_upgrade.  it needs a handle for dbstore only.
+    # THIS IS ONLY USED BY acapy_agent.wallet.anoncreds_upgrade.
+    # It needs a handle for dbstore only.
     @property
     def handle(self) -> Session:
         """Accessor for the Session instance."""
@@ -238,10 +245,12 @@ class KanonAnonCredsProfileSession(ProfileSession):
 
     @property
     def store(self) -> DBStore:
+        """Get store instance."""
         return self._profile and self._profile.store
 
     @property
     def is_transaction(self) -> bool:
+        """Check if this is a transaction."""
         if self._dbstore_handle and self._askar_handle:
             return (
                 self._dbstore_handle.is_transaction and self._askar_handle.is_transaction
@@ -297,6 +306,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
         pass
 
     def __del__(self):
+        """Clean up resources."""
         if hasattr(self, "_dbstore_handle") and self._dbstore_handle:
             self._check_duration()
 
@@ -307,6 +317,7 @@ class KanonAnonProfileManager(ProfileManager):
     async def provision(
         self, context: InjectionContext, config: Mapping[str, Any] = None
     ) -> Profile:
+        """Provision a new profile."""
         print(f"KanonProfileManager Provision store with config: {config}")
 
         # Provision both stores with a single config

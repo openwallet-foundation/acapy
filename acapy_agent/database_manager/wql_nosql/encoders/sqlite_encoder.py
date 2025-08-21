@@ -1,9 +1,12 @@
+"""Module docstring."""
+
 from typing import List
 from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp
 
 
 class SqliteTagEncoder(TagQueryEncoder):
     """Encoder for generating SQLite-compatible SQL queries from TagQuery objects.
+
     Uses '?' placeholders for parameters.
     """
 
@@ -13,6 +16,7 @@ class SqliteTagEncoder(TagQueryEncoder):
         Args:
             enc_name (callable): Function to encode tag names (str -> bytes).
             enc_value (callable): Function to encode tag values (str -> bytes).
+
         """
         self.enc_name = enc_name
         self.enc_value = enc_value
@@ -39,6 +43,7 @@ class SqliteTagEncoder(TagQueryEncoder):
 
         Returns:
             str: SQL clause string.
+
         """
         self.arguments.append(enc_name)
         self.arguments.append(enc_value)
@@ -60,6 +65,7 @@ class SqliteTagEncoder(TagQueryEncoder):
 
         Returns:
             str: SQL clause string.
+
         """
         self.arguments.append(enc_name)
         self.arguments.extend(enc_values)
@@ -80,6 +86,7 @@ class SqliteTagEncoder(TagQueryEncoder):
 
         Returns:
             str: SQL clause string.
+
         """
         self.arguments.append(enc_name)
         query = (
@@ -97,6 +104,7 @@ class SqliteTagEncoder(TagQueryEncoder):
 
         Returns:
             str: Combined SQL clause string.
+
         """
         if not clauses:
             if op == ConjunctionOp.Or:

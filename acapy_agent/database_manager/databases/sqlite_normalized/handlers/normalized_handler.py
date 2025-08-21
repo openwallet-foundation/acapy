@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from .base_handler import BaseHandler
 from ....db_types import Entry
 from ....wql_normalized.tags import TagQuery, query_to_tagquery
@@ -24,7 +26,7 @@ def is_valid_json(value: str) -> bool:
 
 
 def serialize_json_with_bool_strings(data: Any) -> str:
-    """Serialize data to JSON, converting booleans to string 'true'/'false' and replacing '~' with '_'."""
+    """Serialize data to JSON, converting booleans to string 'true'/'false' and '~'."""
 
     def convert_bools_and_keys(obj: Any) -> Any:
         if isinstance(obj, bool):
@@ -71,6 +73,7 @@ class NormalizedHandler(BaseHandler):
     def __init__(
         self, category: str, columns: List[str], table_name: Optional[str] = None
     ):
+        """Initialize the normalized handler."""
         super().__init__(category)
         self.table = table_name or category
         self.columns = columns
@@ -79,7 +82,8 @@ class NormalizedHandler(BaseHandler):
             "sqlite", lambda x: x, lambda x: x, normalized=True
         )
         LOGGER.debug(
-            f"[init] Initialized NormalizedHandler for category={category}, table={self.table}, columns={columns}"
+            f"[init] Initialized NormalizedHandler for category={category}, "
+            f"table={self.table}, columns={columns}"
         )
 
     def insert(
@@ -92,8 +96,10 @@ class NormalizedHandler(BaseHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert an entry into the database."""
         LOGGER.debug(
-            f"[insert] Starting with category={category}, name={name}, value={value}, tags={tags}, expiry_ms={expiry_ms}"
+            f"[insert] Starting with category={category}, name={name}, "
+            f"value={value}, tags={tags}, expiry_ms={expiry_ms}"
         )
 
         expiry = None
@@ -110,14 +116,17 @@ class NormalizedHandler(BaseHandler):
                 json_data = json.loads(value)
                 LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
             except json.JSONDecodeError as e:
-                LOGGER.error(f"[insert] Invalid JSON value: {str(e)}, raw value: {value}")
+                LOGGER.error(
+                    f"[insert] Invalid JSON value: {str(e)}, raw value: {value}"
+                )
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
                     message=f"Invalid JSON value: {str(e)}",
                 )
 
         LOGGER.debug(
-            f"[insert] Inserting into items table with profile_id={profile_id}, category={category}, name={name}, value={value}, expiry={expiry}"
+            f"[insert] Inserting into items table with profile_id={profile_id}, "
+            f"category={category}, name={name}, value={value}, expiry={expiry}"
         )
         cursor.execute(
             """
@@ -141,7 +150,8 @@ class NormalizedHandler(BaseHandler):
             if col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"[insert] Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"[insert] Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if col == "pres_request":
                     LOGGER.debug(f"[insert] Raw pres_request value: {val}")
@@ -154,7 +164,8 @@ class NormalizedHandler(BaseHandler):
                             )
                         except json.JSONDecodeError as e:
                             LOGGER.error(
-                                f"[insert] Failed to re-serialize pres_request: {str(e)}, raw value: {val}"
+                                f"[insert] Failed to re-serialize pres_request: "
+                                f"{str(e)}, raw value: {val}"
                             )
                             raise DatabaseError(
                                 code=DatabaseErrorCode.QUERY_ERROR,
@@ -166,7 +177,8 @@ class NormalizedHandler(BaseHandler):
                             LOGGER.debug(f"[insert] Serialized {col} to JSON: {val}")
                         except DatabaseError as e:
                             LOGGER.error(
-                                f"[insert] Serialization failed for column {col}: {str(e)}"
+                                f"[insert] Serialization failed for column {col}: "
+                                f"{str(e)}"
                             )
                             raise
                 elif isinstance(val, (dict, list)):
@@ -189,7 +201,8 @@ class NormalizedHandler(BaseHandler):
             elif col in tags:
                 val = tags[col]
                 LOGGER.debug(
-                    f"[insert] Column {col} found in tags with value {val} (type: {type(val)})"
+                    f"[insert] Column {col} found in tags with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -210,7 +223,8 @@ class NormalizedHandler(BaseHandler):
                 LOGGER.debug(f"[insert] Added column {col} from tags: {val}")
             else:
                 LOGGER.warning(
-                    f"[insert] Column {col} not found in json_data or tags, setting to NULL"
+                    f"[insert] Column {col} not found in json_data or tags, "
+                    f"setting to NULL"
                 )
                 data[col] = None
 
@@ -247,7 +261,8 @@ class NormalizedHandler(BaseHandler):
     ) -> None:
         """Replace an existing entry in the database."""
         LOGGER.debug(
-            f"[replace] Replacing record with category={category}, name={name}, value={value}, tags={tags}"
+            f"[replace] Replacing record with category={category}, name={name}, "
+            f"value={value}, tags={tags}"
         )
 
         expiry = None
@@ -276,7 +291,8 @@ class NormalizedHandler(BaseHandler):
         LOGGER.debug(f"[replace] Found item_id={item_id} for replacement")
 
         LOGGER.debug(
-            f"[replace] Updating items table with value={value}, expiry={expiry}, item_id={item_id}"
+            f"[replace] Updating items table with value={value}, expiry={expiry}, "
+            f"item_id={item_id}"
         )
         cursor.execute(
             """
@@ -311,7 +327,8 @@ class NormalizedHandler(BaseHandler):
             if col in json_data:
                 val = json_data[col]
                 LOGGER.debug(
-                    f"[replace] Column {col} found in json_data with value {val} (type: {type(val)})"
+                    f"[replace] Column {col} found in json_data with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if col == "pres_request":
                     LOGGER.debug(f"[replace] Raw pres_request value: {val}")
@@ -324,7 +341,8 @@ class NormalizedHandler(BaseHandler):
                             )
                         except json.JSONDecodeError as e:
                             LOGGER.error(
-                                f"[replace] Failed to re-serialize pres_request: {str(e)}, raw value: {val}"
+                                f"[replace] Failed to re-serialize pres_request: "
+                                f"{str(e)}, raw value: {val}"
                             )
                             raise DatabaseError(
                                 code=DatabaseErrorCode.QUERY_ERROR,
@@ -336,7 +354,8 @@ class NormalizedHandler(BaseHandler):
                             LOGGER.debug(f"[replace] Serialized {col} to JSON: {val}")
                         except DatabaseError as e:
                             LOGGER.error(
-                                f"[replace] Serialization failed for column {col}: {str(e)}"
+                                f"[replace] Serialization failed for column {col}: "
+                                f"{str(e)}"
                             )
                             raise
                 elif isinstance(val, (dict, list)):
@@ -359,7 +378,8 @@ class NormalizedHandler(BaseHandler):
             elif col in tags:
                 val = tags[col]
                 LOGGER.debug(
-                    f"[replace] Column {col} found in tags with value {val} (type: {type(val)})"
+                    f"[replace] Column {col} found in tags with value {val} "
+                    f"(type: {type(val)})"
                 )
                 if isinstance(val, (dict, list)):
                     try:
@@ -380,7 +400,8 @@ class NormalizedHandler(BaseHandler):
                 LOGGER.debug(f"[replace] Added column {col} from tags: {val}")
             else:
                 LOGGER.warning(
-                    f"[replace] Column {col} not found in json_data or tags, setting to NULL"
+                    f"[replace] Column {col} not found in json_data or tags, "
+                    f"setting to NULL"
                 )
                 data[col] = None
 
@@ -480,7 +501,8 @@ class NormalizedHandler(BaseHandler):
         """Fetch all entries matching the specified criteria with ordering."""
         operation_name = "fetch_all"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, limit=%s, for_update=%s, order_by=%s, descending=%s",
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
+            "limit=%s, for_update=%s, order_by=%s, descending=%s",
             operation_name,
             profile_id,
             category,
@@ -495,7 +517,10 @@ class NormalizedHandler(BaseHandler):
             LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
-                message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                message=(
+                    f"Invalid order_by column: {order_by}. Allowed columns: "
+                    f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                ),
             )
 
         sql_clause = "1=1"
@@ -586,7 +611,8 @@ class NormalizedHandler(BaseHandler):
             AND {sql_clause}
         """
         LOGGER.debug(
-            f"[count] Executing SQL: {query.strip()} | Params: {[profile_id, category] + params}"
+            f"[count] Executing SQL: {query.strip()} | "
+            f"Params: {[profile_id, category] + params}"
         )
         cursor.execute(query, [profile_id, category] + params)
         count = cursor.fetchone()[0]
@@ -630,7 +656,8 @@ class NormalizedHandler(BaseHandler):
     ) -> int:
         """Remove all entries matching the specified criteria."""
         LOGGER.debug(
-            f"[remove_all] Removing all records with category={category}, tag_filter={tag_filter}"
+            f"[remove_all] Removing all records with category={category}, "
+            f"tag_filter={tag_filter}"
         )
         sql_clause = "1=1"
         params = []
@@ -657,7 +684,8 @@ class NormalizedHandler(BaseHandler):
             )
         """
         LOGGER.debug(
-            f"[remove_all] Executing SQL: {query.strip()} | Params: {[profile_id, category] + params}"
+            f"[remove_all] Executing SQL: {query.strip()} | "
+            f"Params: {[profile_id, category] + params}"
         )
         cursor.execute(query, [profile_id, category] + params)
         rowcount = cursor.rowcount
@@ -678,13 +706,18 @@ class NormalizedHandler(BaseHandler):
         """Scan the database for entries matching the criteria."""
         operation_name = "scan"
         LOGGER.debug(
-            f"[{operation_name}] Scanning records with category={category}, offset={offset}, limit={limit}, order_by={order_by}, descending={descending}"
+            f"[{operation_name}] Scanning records with category={category}, "
+            f"offset={offset}, limit={limit}, order_by={order_by}, "
+            f"descending={descending}"
         )
         if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
             LOGGER.error(f"[{operation_name}] Invalid order_by column: {order_by}")
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
-                message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                message=(
+                    f"Invalid order_by column: {order_by}. Allowed columns: "
+                    f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                ),
             )
 
         try:
@@ -697,7 +730,8 @@ class NormalizedHandler(BaseHandler):
             table_prefix = "t" if order_by in self.columns else "i"
             order_direction = "DESC" if descending else "ASC"
             LOGGER.debug(
-                f"[{operation_name}] Using ORDER BY {table_prefix}.{order_column} {order_direction}"
+                f"[{operation_name}] Using ORDER BY {table_prefix}.{order_column} "
+                f"{order_direction}"
             )
 
             subquery = f"""
@@ -759,14 +793,20 @@ class NormalizedHandler(BaseHandler):
         """Scan the database using keyset pagination based on the last seen item ID."""
         operation_name = "scan_keyset"
         LOGGER.debug(
-            f"[{operation_name}] Starting with profile_id={profile_id}, category={category}, tag_query={tag_query}, last_id={last_id}, limit={limit}, order_by={order_by}, descending={descending}, table={self.table}"
+            f"[{operation_name}] Starting with profile_id={profile_id}, "
+            f"category={category}, tag_query={tag_query}, last_id={last_id}, "
+            f"limit={limit}, order_by={order_by}, descending={descending}, "
+            f"table={self.table}"
         )
 
         try:
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "1=1"
@@ -827,6 +867,7 @@ class NormalizedHandler(BaseHandler):
         sql_clause = self.encoder.encode_query(tag_query)
         arguments = self.encoder.arguments
         LOGGER.debug(
-            f"[get_sql_clause] Generated SQL clause: {sql_clause} with arguments: {arguments}"
+            f"[get_sql_clause] Generated SQL clause: {sql_clause} with "
+            f"arguments: {arguments}"
         )
         return sql_clause, arguments

@@ -1,3 +1,5 @@
+"""Kanon storage implementation for non-secrets storage."""
+
 from typing import Mapping, Optional, Sequence
 
 from ..database_manager.dbstore import DBStoreError, DBStoreErrorCode, DBStoreSession
@@ -26,10 +28,12 @@ class KanonStorage(BaseStorage):
     """Kanon Non-Secrets interface."""
 
     def __init__(self, session: Profile):
+        """Initialize KanonStorage with a profile session."""
         self._session = session
 
     @property
     def session(self) -> DBStoreSession:
+        """Get the database session."""
         return self._session.dbstore_handle
 
     async def add_record(
@@ -192,7 +196,9 @@ class KanonStorage(BaseStorage):
     ) -> Sequence[StorageRecord]:
         """Retrieve paginated records using DBStore.scan."""
         LOGGER.debug(
-            f"KanonStorage.find_paginated_records called with type_filter={type_filter}, tag_query={tag_query}, limit={limit}, offset={offset}, order_by={order_by}, descending={descending}"
+            "find_paginated_records: type=%s, tags=%s, limit=%s, "
+            "offset=%s, order=%s, desc=%s",
+            type_filter, tag_query, limit, offset, order_by, descending
         )
         results = []
         scan = self._session.store.scan(
@@ -226,7 +232,9 @@ class KanonStorage(BaseStorage):
     ) -> Sequence[StorageRecord]:
         """Retrieve paginated records using DBStore.scan_keyset."""
         LOGGER.debug(
-            f"KanonStorage.find_paginated_records_keyset called with type_filter={type_filter}, tag_query={tag_query}, last_id={last_id}, limit={limit}, order_by={order_by}, descending={descending}"
+            "find_paginated_records_keyset: type=%s, tags=%s, last_id=%s, "
+            "limit=%s, order=%s, desc=%s",
+            type_filter, tag_query, last_id, limit, order_by, descending
         )
         results = []
         scan = self._session.store.scan_keyset(
@@ -322,7 +330,10 @@ class KanonStorage(BaseStorage):
 
 
 class KanonStorageSearch(BaseStorageSearch):
+    """Kanon storage search interface."""
+    
     def __init__(self, profile: Profile):
+        """Initialize KanonStorageSearch with a profile."""
         self._profile = profile
 
     def search_records(
@@ -332,12 +343,15 @@ class KanonStorageSearch(BaseStorageSearch):
         page_size: Optional[int] = None,
         options: Optional[Mapping] = None,
     ) -> "KanonStorageSearchSession":
+        """Search for records."""
         return KanonStorageSearchSession(
             self._profile, type_filter, tag_query, page_size, options
         )
 
 
 class KanonStorageSearchSession(BaseStorageSearchSession):
+    """Kanon storage search session."""
+    
     def __init__(
         self,
         profile,
@@ -346,6 +360,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
         page_size: Optional[int] = None,
         options: Optional[Mapping] = None,
     ):
+        """Initialize search session with filter parameters."""
         self.tag_query = tag_query
         self.type_filter = type_filter
         self.page_size = page_size or DEFAULT_PAGE_SIZE
@@ -356,16 +371,20 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
 
     @property
     def opened(self) -> bool:
+        """Check if search is opened."""
         return self._scan is not None
 
     @property
     def handle(self):
+        """Get search handle."""
         return self._scan
 
     def __aiter__(self):
+        """Return async iterator."""
         return self
 
     async def __anext__(self):
+        """Get next item from search."""
         if self._done:
             raise StorageSearchError("Search query is complete")
         await self._open()
@@ -388,6 +407,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
     async def fetch(
         self, max_count: Optional[int] = None, offset: Optional[int] = None
     ) -> Sequence[StorageRecord]:
+        """Fetch records."""
         if self._done:
             raise StorageSearchError("Search query is complete")
         limit = max_count or self.page_size
@@ -447,6 +467,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
             await self.close()
 
     async def close(self):
+        """Close search session."""
         if self._timeout_task:
             self._timeout_task.cancel()
             self._timeout_task = None
@@ -461,6 +482,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
         self._done = True
 
     async def __aexit__(self, exc_type, exc, tb):
+        """Exit async context manager."""
         await self.close()
         if exc_type:
             LOGGER.error("Exception in KanonStorageSearchSession: %s", exc)

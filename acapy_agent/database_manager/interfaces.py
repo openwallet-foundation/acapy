@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from abc import ABC, abstractmethod
 from typing import Optional, Sequence, Union, Generator
 
@@ -25,7 +27,9 @@ class DatabaseBackend(ABC):
             pass_key: Optional encryption key.
             profile: Optional profile name.
             recreate: If True, recreate the database.
-            release_number: Release number to use (e.g., 'release_1'). Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_1').
+                Defaults to 'release_1'.
+
         """
         pass
 
@@ -38,7 +42,9 @@ class DatabaseBackend(ABC):
             key_method: Optional key method for encryption.
             pass_key: Optional encryption key.
             profile: Optional profile name.
-            release_number: Release number to use (e.g., 'release_1'). Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_1').
+                Defaults to 'release_1'.
+
         """
         pass
 
@@ -48,7 +54,9 @@ class DatabaseBackend(ABC):
 
         Args:
             uri: The database URI.
-            release_number: Release number to use (e.g., 'release_1'). Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_1').
+                Defaults to 'release_1'.
+
         """
         pass
 
@@ -63,18 +71,22 @@ class AbstractDatabaseStore(ABC):
 
     @abstractmethod
     async def create_profile(self, name: str = None) -> str:
+        """Create a new profile."""
         pass
 
     @abstractmethod
     async def get_profile_name(self) -> str:
+        """Get the profile name."""
         pass
 
     @abstractmethod
     async def remove_profile(self, name: str) -> bool:
+        """Remove a profile."""
         pass
 
     @abstractmethod
     async def rekey(self, key_method: str = None, pass_key: str = None):
+        """Re-key the database."""
         pass
 
     @abstractmethod
@@ -86,6 +98,7 @@ class AbstractDatabaseStore(ABC):
         offset: int = None,
         limit: int = None,
     ) -> Generator[Entry, None, None]:
+        """Scan database entries."""
         pass
 
     @abstractmethod
@@ -96,10 +109,12 @@ class AbstractDatabaseStore(ABC):
 
         Args:
             profile: Optional profile name.
-            release_number: Release number to use (e.g., 'release_1'). Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_1').
+                Defaults to 'release_1'.
 
         Returns:
             AbstractDatabaseSession: The session instance.
+
         """
         pass
 
@@ -111,15 +126,18 @@ class AbstractDatabaseStore(ABC):
 
         Args:
             profile: Optional profile name.
-            release_number: Release number to use (e.g., 'release_1'). Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_1').
+                Defaults to 'release_1'.
 
         Returns:
             AbstractDatabaseSession: The transaction instance.
+
         """
         pass
 
     @abstractmethod
     async def close(self, remove: bool = False) -> bool:
+        """Close the database store."""
         pass
 
 
@@ -128,12 +146,14 @@ class AbstractDatabaseSession(ABC):
 
     @abstractmethod
     async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+        """Count entries."""
         pass
 
     @abstractmethod
     async def fetch(
         self, category: str, name: str, for_update: bool = False
     ) -> Optional[Entry]:
+        """Fetch a single entry."""
         pass
 
     @abstractmethod
@@ -144,6 +164,7 @@ class AbstractDatabaseSession(ABC):
         limit: int = None,
         for_update: bool = False,
     ) -> Sequence[Entry]:
+        """Fetch all matching entries."""
         pass
 
     @abstractmethod
@@ -156,6 +177,7 @@ class AbstractDatabaseSession(ABC):
         expiry_ms: int = None,
         value_json=None,
     ):
+        """Insert a new entry."""
         pass
 
     @abstractmethod
@@ -168,24 +190,30 @@ class AbstractDatabaseSession(ABC):
         expiry_ms: int = None,
         value_json=None,
     ):
+        """Replace an existing entry."""
         pass
 
     @abstractmethod
     async def remove(self, category: str, name: str):
+        """Remove an entry."""
         pass
 
     @abstractmethod
     async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+        """Remove all matching entries."""
         pass
 
     @abstractmethod
     async def commit(self):
+        """Commit the transaction."""
         pass
 
     @abstractmethod
     async def rollback(self):
+        """Rollback the transaction."""
         pass
 
     @abstractmethod
     async def close(self):
+        """Close the session."""
         pass

@@ -268,6 +268,7 @@ async def register_ledger_nym(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
@@ -428,6 +429,7 @@ async def get_nym_role(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
 
@@ -475,6 +477,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     async with context.profile.session() as session:
@@ -505,6 +508,7 @@ async def get_did_verkey(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
 
@@ -554,6 +558,7 @@ async def get_did_endpoint(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
 
@@ -819,7 +824,6 @@ async def get_ledger_config(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.post("/ledger/register-nym", register_ledger_nym),
@@ -843,7 +847,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

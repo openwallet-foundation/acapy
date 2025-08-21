@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import queue
 import threading
 import sqlite3
@@ -6,7 +8,8 @@ from typing import Optional
 import time
 
 try:
-    from pysqlcipher3 import dbapi2 as sqlcipher
+    # Use sqlcipher3 binary (SQLite 3.46+)
+    import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
 
@@ -16,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ConnectionPool:
+    """Connection pool manager for SQLite databases."""
     def __init__(
         self,
         db_path: str,
@@ -27,6 +31,7 @@ class ConnectionPool:
         synchronous: str = "FULL",
         shared_cache: bool = True,
     ):
+        """Initialize SQLite connection pool."""
         self.db_path = db_path
         self.pool_size = pool_size
         self.busy_timeout = busy_timeout
@@ -56,8 +61,15 @@ class ConnectionPool:
             )
 
     def _keep_alive(self):
+        # Allow configuring keep-alive interval for tests
+        import os
+        keep_alive_interval = int(os.environ.get('SQLITE_KEEPALIVE_INTERVAL', '10'))
         while self._keep_alive_running.is_set():
-            time.sleep(10)
+            # Check every second but only do work at intervals
+            for _ in range(keep_alive_interval):
+                if not self._keep_alive_running.is_set():
+                    return
+                time.sleep(1)
             with self.lock:
                 temp_conns = []
                 checkpoint_conn = None
@@ -69,12 +81,18 @@ class ConnectionPool:
                     )
                     if self.encryption_key:
                         checkpoint_conn.execute(f"PRAGMA key = '{self.encryption_key}'")
-                        checkpoint_conn.execute("PRAGMA cipher_migrate")
+                        # Skip migration for checkpoint connection - not needed
                         checkpoint_conn.execute("PRAGMA cipher_compatibility = 4")
                     cursor = checkpoint_conn.cursor()
                     cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
                 except Exception as e:
-                    LOGGER.error("Keep-alive WAL checkpoint failed: %s", str(e))
+                    # Only log at debug level for in-memory databases (common in tests)
+                    if ":memory:" in self.db_path:
+                        LOGGER.debug(
+                            "Keep-alive WAL checkpoint failed (in-memory db): %s", str(e)
+                        )
+                    else:
+                        LOGGER.error("Keep-alive WAL checkpoint failed: %s", str(e))
                 finally:
                     if checkpoint_conn:
                         checkpoint_conn.close()
@@ -82,7 +100,7 @@ class ConnectionPool:
                 while not self.pool.empty():
                     try:
                         conn = self.pool.get_nowait()
-                        conn_id = self.connection_ids.get(id(conn), -1)
+                        _ = self.connection_ids.get(id(conn), -1)  # Track for debugging
                         try:
                             cursor = conn.cursor()
                             cursor.execute("SELECT 1")
@@ -93,7 +111,7 @@ class ConnectionPool:
                             try:
                                 conn.close()
                                 del self.connection_ids[id(conn)]
-                            except:
+                            except Exception:
                                 pass
                             try:
                                 new_conn = self._create_connection()
@@ -127,7 +145,7 @@ class ConnectionPool:
                         try:
                             conn.close()
                             del self.connection_ids[id(conn)]
-                        except:
+                        except Exception:
                             pass
 
     def _create_connection(self):
@@ -135,17 +153,19 @@ class ConnectionPool:
             if self.encryption_key:
                 if sqlcipher is None:
                     raise ImportError(
-                        "pysqlcipher3 is required for encryption but not installed."
+                        "sqlcipher3 is required for encryption but not installed."
                     )
                 conn = sqlcipher.connect(
                     self.db_path, timeout=self.busy_timeout, check_same_thread=False
                 )
                 try:
                     conn.execute(f"PRAGMA key = '{self.encryption_key}'")
-                    conn.execute("PRAGMA cipher_migrate")
+                    # Set compatibility first
                     conn.execute("PRAGMA cipher_compatibility = 4")
+                    # Try to set WAL mode first (must be done before any transactions)
                     conn.execute("PRAGMA journal_mode = WAL")
                     conn.execute("PRAGMA foreign_keys = ON;")
+                    # Now test if we can read the database
                     cursor = conn.cursor()
                     cursor.execute("SELECT count(*) FROM sqlite_master")
                 except Exception as e:
@@ -179,23 +199,28 @@ class ConnectionPool:
             )
 
     def get_connection(self, timeout: float = 30.0):
+        """Get a connection from the pool."""
         with self.lock:
             try:
                 start_time = time.time()
                 while time.time() - start_time < timeout:
                     try:
                         conn = self.pool.get(block=False)
-                        conn_id = self.connection_ids.get(id(conn), -1)
+                        _ = self.connection_ids.get(id(conn), -1)  # Track for debugging
                         try:
                             cursor = conn.cursor()
                             cursor.execute("SELECT 1")
-                            # LOGGER.debug("Connection ID=%d retrieved from pool. Pool size: %d/%d", conn_id, self.pool.qsize(), self.pool_size)
+                            # LOGGER.debug(
+                            #     "Connection ID=%d retrieved from pool. "
+                            #     "Pool size: %d/%d",
+                            #     conn_id, self.pool.qsize(), self.pool_size
+                            # )
                             return conn
                         except sqlite3.OperationalError:
                             try:
                                 conn.close()
                                 del self.connection_ids[id(conn)]
-                            except:
+                            except Exception:
                                 pass
                             try:
                                 new_conn = self._create_connection()
@@ -207,7 +232,7 @@ class ConnectionPool:
                             try:
                                 conn.close()
                                 del self.connection_ids[id(conn)]
-                            except:
+                            except Exception:
                                 pass
                             try:
                                 new_conn = self._create_connection()
@@ -231,6 +256,7 @@ class ConnectionPool:
                 )
 
     def return_connection(self, conn):
+        """Return a connection to the pool."""
         with self.lock:
             try:
                 cursor = conn.cursor()
@@ -246,7 +272,7 @@ class ConnectionPool:
                 try:
                     conn.close()
                     del self.connection_ids[id(conn)]
-                except:
+                except Exception:
                     pass
                 try:
                     new_conn = self._create_connection()
@@ -260,6 +286,7 @@ class ConnectionPool:
                     )
 
     def drain_all_connections(self):
+        """Drain all connections from the pool."""
         connections = []
         with self.lock:
             while not self.pool.empty():
@@ -271,9 +298,13 @@ class ConnectionPool:
         return connections
 
     def close(self):
+        """Close the connection pool."""
+        import os
+        # Allow configuring close timeout for tests (default 15s for production)
+        close_timeout = float(os.environ.get('SQLITE_CLOSE_TIMEOUT', '15.0'))
         with self.lock:
             self._keep_alive_running.clear()
-            self.keep_alive_thread.join(timeout=15.0)
+            self.keep_alive_thread.join(timeout=close_timeout)
             checkpoint_conn = None
             try:
                 checkpoint_conn = (
@@ -283,7 +314,7 @@ class ConnectionPool:
                 )
                 if self.encryption_key:
                     checkpoint_conn.execute(f"PRAGMA key = '{self.encryption_key}'")
-                    checkpoint_conn.execute("PRAGMA cipher_migrate")
+                    # Skip migration for checkpoint connection - not needed
                     checkpoint_conn.execute("PRAGMA cipher_compatibility = 4")
                     checkpoint_conn.execute("PRAGMA cipher_memory_security = OFF")
                 cursor = checkpoint_conn.cursor()
@@ -299,7 +330,7 @@ class ConnectionPool:
             while not self.pool.empty():
                 try:
                     conn = self.pool.get_nowait()
-                    conn_id = self.connection_ids.get(id(conn), -1)
+                    _ = self.connection_ids.get(id(conn), -1)  # Track for debugging
                     try:
                         conn.close()
                         del self.connection_ids[id(conn)]

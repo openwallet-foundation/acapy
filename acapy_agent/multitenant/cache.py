@@ -19,8 +19,8 @@ class ProfileCache:
         Args:
             capacity: The capacity of the cache. If capacity is exceeded
                       profiles are closed.
-        """
 
+        """
         LOGGER.debug(f"Profile cache initialized with capacity {capacity}")
 
         self._cache: OrderedDict[str, Profile] = OrderedDict()
@@ -86,8 +86,8 @@ class ProfileCache:
         Args:
             key (str): the key to set
             value (Profile): the profile to set
-        """
 
+        """
         # Profiles are responsible for cleaning up after themselves when they
         # fall out of scope. Previously the cache needed to create a finalizer.
         # value.finalzer()
@@ -108,6 +108,7 @@ class ProfileCache:
 
         Args:
             key (str): The key to remove from the cache.
+
         """
         del self.profiles[key]
         del self._cache[key]

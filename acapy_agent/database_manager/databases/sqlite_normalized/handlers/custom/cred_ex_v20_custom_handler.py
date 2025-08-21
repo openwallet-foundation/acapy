@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
@@ -25,10 +27,22 @@ class CredExV20CustomHandler(NormalizedHandler):
         release_number: str = "release_1",
         db_type: str = "sqlite",
     ):
+        """Initialize the CredExV20CustomHandler.
+        
+        Args:
+            category: Category name
+            columns: List of column names
+            table_name: Optional table name override
+            release_number: Schema release number
+            db_type: Database type
+        """
         super().__init__(category, columns, table_name)
         self.version = self._get_version()
         LOGGER.debug(
-            f"Initialized CredExV20CustomHandler for category={category}, table={self.table}, columns={columns}, release_number={release_number}, db_type={db_type}, version={self.version}"
+            f"Initialized CredExV20CustomHandler for category={category}, "
+            f"table={self.table}, columns={columns}, "
+            f"release_number={release_number}, db_type={db_type}, "
+            f"version={self.version}"
         )
 
     def _get_version(self) -> str:
@@ -41,7 +55,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 return version
             # Fallback to default version if table name doesn't match expected format
             LOGGER.warning(
-                f"Table name {self.table} does not match expected format, defaulting to version 1"
+                f"Table name {self.table} does not match expected format, "
+                f"defaulting to version 1"
             )
             return "1"
         except Exception as e:
@@ -49,6 +64,14 @@ class CredExV20CustomHandler(NormalizedHandler):
             return "1"  # Fallback to default version
 
     def _extract_cred_def_id(self, json_data: dict) -> str:
+        """Extract credential definition ID from JSON data.
+        
+        Args:
+            json_data: Dictionary containing credential data
+            
+        Returns:
+            Credential definition ID if found, None otherwise
+        """
         try:
             if "cred_offer" not in json_data or not json_data["cred_offer"]:
                 return None
@@ -134,13 +157,15 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if "name" in attr and "value" in attr:
                     cursor.execute(
                         f"""
-                        INSERT INTO {attributes_table} (cred_ex_v20_id, attr_name, attr_value)
+                        INSERT INTO {attributes_table} 
+                        (cred_ex_v20_id, attr_name, attr_value)
                         VALUES (?, ?, ?)
                     """,
                         (cred_ex_id, attr["name"], attr["value"]),
                     )
                     LOGGER.debug(
-                        f"[extract] Inserted attribute: name={attr['name']}, value={attr['value']} for cred_ex_v20_id={cred_ex_id}"
+                        f"[extract] Inserted attribute: name={attr['name']}, "
+                        f"value={attr['value']} for cred_ex_v20_id={cred_ex_id}"
                     )
         except sqlite3.OperationalError as e:
             LOGGER.error(
@@ -188,13 +213,15 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if "attach_id" in fmt:
                     cursor.execute(
                         f"""
-                        INSERT INTO {formats_table} (cred_ex_v20_id, format_id, format_type)
+                        INSERT INTO {formats_table} 
+                        (cred_ex_v20_id, format_id, format_type)
                         VALUES (?, ?, ?)
                     """,
                         (cred_ex_id, fmt["attach_id"], fmt.get("format")),
                     )
                     LOGGER.debug(
-                        f"[extract] Inserted format: attach_id={fmt['attach_id']}, format_type={fmt.get('format')} for cred_ex_v20_id={cred_ex_id}"
+                        f"[extract] Inserted format: attach_id={fmt['attach_id']}, "
+                        f"format_type={fmt.get('format')} for cred_ex_v20_id={cred_ex_id}"
                     )
         except sqlite3.OperationalError as e:
             LOGGER.error(
@@ -215,11 +242,24 @@ class CredExV20CustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert a new credential exchange record.
+        
+        Args:
+            cursor: Database cursor
+            profile_id: Profile identifier
+            category: Record category
+            name: Record name
+            value: Record value data
+            tags: Associated tags
+            expiry_ms: Expiry time in milliseconds
+        """
         import traceback
 
         LOGGER.setLevel(logging.DEBUG)
         LOGGER.debug(
-            f"[insert] Starting with category={category}, name={name}, thread_id={tags.get('thread_id')}, stack={''.join(traceback.format_stack(limit=5))}"
+            f"[insert] Starting with category={category}, name={name}, "
+            f"thread_id={tags.get('thread_id')}, "
+            f"stack={''.join(traceback.format_stack(limit=5))}"
         )
 
         expiry = None
@@ -265,7 +305,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             if existing_item:
                 item_id = existing_item[0]
                 LOGGER.debug(
-                    f"[insert] Found existing item_id={item_id} for category={category}, name={name}"
+                    f"[insert] Found existing item_id={item_id} for "
+                    f"category={category}, name={name}"
                 )
                 cursor.execute(
                     f"SELECT id, thread_id FROM {self.table} WHERE item_id = ?",
@@ -274,15 +315,21 @@ class CredExV20CustomHandler(NormalizedHandler):
                 existing_cred = cursor.fetchone()
                 if existing_cred:
                     LOGGER.error(
-                        f"[insert] Duplicate cred_ex_v20 record for item_id={item_id}, thread_id={existing_cred[1]}"
+                        f"[insert] Duplicate cred_ex_v20 record for "
+                        f"item_id={item_id}, thread_id={existing_cred[1]}"
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                        message=f"Duplicate cred_ex_v20 record for item_id={item_id}, existing thread_id={existing_cred[1]}",
+                        message=(
+                            f"Duplicate cred_ex_v20 record for item_id={item_id}, "
+                            f"existing thread_id={existing_cred[1]}"
+                        ),
                     )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=f"Duplicate entry for category '{category}' and name '{name}'",
+                    message=(
+                        f"Duplicate entry for category '{category}' and name '{name}'"
+                    ),
                 )
 
             # Check for duplicate thread_id
@@ -294,7 +341,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 duplicates = cursor.fetchall()
                 if duplicates:
                     LOGGER.error(
-                        f"[insert] Duplicate thread_id found in {self.table}: {duplicates}"
+                        f"[insert] Duplicate thread_id found in {self.table}: "
+                        f"{duplicates}"
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
@@ -319,7 +367,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if col == "cred_def_id" and cred_def_id:
                     data[col] = cred_def_id
                     LOGGER.debug(
-                        f"[insert] Added column {col} from custom extraction: {cred_def_id}"
+                        f"[insert] Added column {col} from custom extraction: "
+                        f"{cred_def_id}"
                     )
                 elif col in json_data:
                     val = json_data[col]
@@ -348,7 +397,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 else:
                     data[col] = None
                     LOGGER.debug(
-                        f"[insert] Column {col} not found in json_data or tags, setting to NULL"
+                        f"[insert] Column {col} not found in json_data or tags, "
+                        f"setting to NULL"
                     )
 
             columns = list(data.keys())
@@ -359,7 +409,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             cursor.execute(sql, list(data.values()))
             cred_ex_id = cursor.lastrowid
             LOGGER.debug(
-                f"[insert] Inserted cred_ex_v20 record with id={cred_ex_id}, item_id={item_id}, thread_id={tags.get('thread_id')}"
+                f"[insert] Inserted cred_ex_v20 record with id={cred_ex_id}, "
+                f"item_id={item_id}, thread_id={tags.get('thread_id')}"
             )
 
             # Extract and insert attributes and formats
@@ -371,7 +422,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             sqlite3.DatabaseError,
         ) as e:
             LOGGER.error(
-                f"[insert] SQLite error during insert for item_id={item_id}, thread_id={tags.get('thread_id')}: {str(e)}"
+                f"[insert] SQLite error during insert for item_id={item_id}, "
+                f"thread_id={tags.get('thread_id')}: {str(e)}"
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
@@ -379,7 +431,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             )
         except Exception as e:
             LOGGER.error(
-                f"[insert] Unexpected error during insert for item_id={item_id}, thread_id={tags.get('thread_id')}: {str(e)}"
+                f"[insert] Unexpected error during insert for item_id={item_id}, "
+                f"thread_id={tags.get('thread_id')}: {str(e)}"
             )
             raise
 
@@ -393,11 +446,24 @@ class CredExV20CustomHandler(NormalizedHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Replace an existing credential exchange record.
+        
+        Args:
+            cursor: Database cursor
+            profile_id: Profile identifier
+            category: Record category
+            name: Record name
+            value: Record value data
+            tags: Associated tags
+            expiry_ms: Expiry time in milliseconds
+        """
         import traceback
 
         LOGGER.setLevel(logging.DEBUG)
         LOGGER.debug(
-            f"[replace] Starting with category={category}, name={name}, thread_id={tags.get('thread_id')}, stack={''.join(traceback.format_stack(limit=5))}"
+            f"[replace] Starting with category={category}, name={name}, "
+            f"thread_id={tags.get('thread_id')}, "
+            f"stack={''.join(traceback.format_stack(limit=5))}"
         )
 
         expiry = None
@@ -419,7 +485,9 @@ class CredExV20CustomHandler(NormalizedHandler):
             if not row:
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = row[0]
             LOGGER.debug(f"[replace] Found item_id={item_id} for replacement")
@@ -427,20 +495,23 @@ class CredExV20CustomHandler(NormalizedHandler):
             # Check for duplicate thread_id, excluding current item_id
             if tags.get("thread_id"):
                 cursor.execute(
-                    f"SELECT id, item_id FROM {self.table} WHERE thread_id = ? AND item_id != ?",
+                    f"SELECT id, item_id FROM {self.table} "
+                    f"WHERE thread_id = ? AND item_id != ?",
                     (tags.get("thread_id"), item_id),
                 )
                 duplicates = cursor.fetchall()
                 if duplicates:
                     LOGGER.warning(
-                        f"[replace] Duplicate thread_id found in {self.table}: {duplicates}"
+                        f"[replace] Duplicate thread_id found in {self.table}: "
+                        f"{duplicates}"
                     )
                     for dup_id, dup_item_id in duplicates:
                         cursor.execute(
                             f"DELETE FROM {self.table} WHERE id = ?", (dup_id,)
                         )
                         LOGGER.debug(
-                            f"[replace] Deleted duplicate record id={dup_id}, thread_id={tags.get('thread_id')}"
+                            f"[replace] Deleted duplicate record id={dup_id}, "
+                            f"thread_id={tags.get('thread_id')}"
                         )
 
             # Handle value as either a dict or a JSON string
@@ -487,12 +558,16 @@ class CredExV20CustomHandler(NormalizedHandler):
                         )
                 elif isinstance(cred_issue, dict):
                     LOGGER.debug(
-                        "[replace] cred_issue is already a dict, no further validation needed"
+                        "[replace] cred_issue is already a dict, no further "
+                        "validation needed"
                     )
                 else:
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Invalid cred_issue type: expected str or dict, got {type(cred_issue)}",
+                        message=(
+                            f"Invalid cred_issue type: expected str or dict, "
+                            f"got {type(cred_issue)}"
+                        ),
                     )
 
             cursor.execute(
@@ -510,7 +585,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 if col == "cred_def_id" and cred_def_id:
                     data[col] = cred_def_id
                     LOGGER.debug(
-                        f"[replace] Added column {col} from custom extraction: {cred_def_id}"
+                        f"[replace] Added column {col} from custom extraction: "
+                        f"{cred_def_id}"
                     )
                 elif col in json_data:
                     val = json_data[col]
@@ -539,7 +615,8 @@ class CredExV20CustomHandler(NormalizedHandler):
                 else:
                     data[col] = None
                     LOGGER.debug(
-                        f"[replace] Column {col} not found in json_data or tags, setting to NULL"
+                        f"[replace] Column {col} not found in json_data or tags, "
+                        f"setting to NULL"
                     )
 
             columns = list(data.keys())
@@ -550,7 +627,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             cursor.execute(sql, list(data.values()))
             cred_ex_id = cursor.lastrowid
             LOGGER.debug(
-                f"[replace] Inserted cred_ex_v20 record with id={cred_ex_id}, item_id={item_id}, thread_id={tags.get('thread_id')}"
+                f"[replace] Inserted cred_ex_v20 record with id={cred_ex_id}, "
+                f"item_id={item_id}, thread_id={tags.get('thread_id')}"
             )
 
             # Extract and insert attributes and formats
@@ -562,7 +640,8 @@ class CredExV20CustomHandler(NormalizedHandler):
             sqlite3.DatabaseError,
         ) as e:
             LOGGER.error(
-                f"[replace] SQLite error during replace for item_id={item_id}, thread_id={tags.get('thread_id')}: {str(e)}"
+                f"[replace] SQLite error during replace for item_id={item_id}, "
+                f"thread_id={tags.get('thread_id')}: {str(e)}"
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
@@ -570,6 +649,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             )
         except Exception as e:
             LOGGER.error(
-                f"[replace] Unexpected error during replace for item_id={item_id}, thread_id={tags.get('thread_id')}: {str(e)}"
+                f"[replace] Unexpected error during replace for item_id={item_id}, "
+                f"thread_id={tags.get('thread_id')}: {str(e)}"
             )
             raise

@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from .base_handler import BaseHandler
 from ....db_types import Entry
 from ....wql_normalized.tags import TagQuery, query_to_tagquery
@@ -20,6 +22,7 @@ class GenericHandler(BaseHandler):
     ALLOWED_ORDER_BY_COLUMNS = {"id", "name", "value"}
 
     def __init__(self, category: str = "default", tags_table_name: Optional[str] = None):
+        """Initialize the generic handler."""
         super().__init__(category)
         self.tags_table = tags_table_name or "items_tags"
         self.encoder = encoder_factory.get_encoder(
@@ -45,9 +48,11 @@ class GenericHandler(BaseHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Insert an entry into the database."""
         operation_name = "insert"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags=%s, expiry_ms=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags=%s, "
+            "expiry_ms=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -67,7 +72,9 @@ class GenericHandler(BaseHandler):
         try:
             cursor.execute(
                 """
-                INSERT OR IGNORE INTO items (profile_id, kind, category, name, value, expiry)
+                INSERT OR IGNORE INTO items (
+                    profile_id, kind, category, name, value, expiry
+                )
                 VALUES (?, 0, ?, ?, ?, ?)
             """,
                 (profile_id, category, name, value, expiry),
@@ -81,7 +88,7 @@ class GenericHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=f"Duplicate entry for category '{category}' and name '{name}'",
+                    message=f"Duplicate entry for category '{category}' and name '{name}'"
                 )
             item_id = cursor.lastrowid
             LOGGER.debug("[%s] Inserted item with item_id=%d", operation_name, item_id)
@@ -125,9 +132,11 @@ class GenericHandler(BaseHandler):
         tags: dict,
         expiry_ms: int,
     ) -> None:
+        """Replace an existing entry in the database."""
         operation_name = "replace"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags=%s, expiry_ms=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags=%s, "
+            "expiry_ms=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -209,7 +218,9 @@ class GenericHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
         except Exception as e:
             LOGGER.error("[%s] Failed: %s", operation_name, str(e))
@@ -226,9 +237,11 @@ class GenericHandler(BaseHandler):
         tag_filter: Union[str, dict],
         for_update: bool,
     ) -> Optional[Entry]:
+        """Fetch a single entry from the database."""
         operation_name = "fetch"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, tag_filter=%s, for_update=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tag_filter=%s, "
+            "for_update=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -303,7 +316,7 @@ class GenericHandler(BaseHandler):
             cursor.execute(
                 f"SELECT name, value FROM {self.tags_table} WHERE item_id = ?", (item_id,)
             )
-            tags = {name: value for name, value in cursor.fetchall()}
+            tags = dict(cursor.fetchall())
             LOGGER.debug(
                 "[%s] Fetched %d tags for item_id=%d: %s",
                 operation_name,
@@ -332,9 +345,11 @@ class GenericHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Sequence[Entry]:
+        """Fetch all entries matching criteria from the database."""
         operation_name = "fetch_all"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, limit=%s, for_update=%s, order_by=%s, descending=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
+            "limit=%s, for_update=%s, order_by=%s, descending=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -351,7 +366,10 @@ class GenericHandler(BaseHandler):
                 LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. "
+                        f"Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             if tag_filter:
@@ -435,9 +453,11 @@ class GenericHandler(BaseHandler):
         category: str,
         tag_filter: Union[str, dict],
     ) -> int:
+        """Count entries matching criteria in the database."""
         operation_name = "count"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
+            "tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -471,9 +491,11 @@ class GenericHandler(BaseHandler):
     def remove(
         self, cursor: sqlite3.Cursor, profile_id: int, category: str, name: str
     ) -> None:
+        """Remove a single entry from the database."""
         operation_name = "remove"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, "
+            "tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -492,7 +514,9 @@ class GenericHandler(BaseHandler):
             if cursor.rowcount == 0:
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
-                    message=f"Record not found for category '{category}' and name '{name}'",
+                    message=(
+                        f"Record not found for category '{category}' and name '{name}'"
+                    ),
                 )
         except Exception as e:
             LOGGER.error("[%s] Failed: %s", operation_name, str(e))
@@ -505,9 +529,11 @@ class GenericHandler(BaseHandler):
         category: str,
         tag_filter: Union[str, dict],
     ) -> int:
+        """Remove all entries matching criteria from the database."""
         operation_name = "remove_all"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
+            "tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -551,9 +577,11 @@ class GenericHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Generator[Entry, None, None]:
+        """Scan entries with pagination from the database."""
         operation_name = "scan"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, offset=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, "
+            "offset=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -569,7 +597,10 @@ class GenericHandler(BaseHandler):
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. "
+                        f"Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "1=1"
@@ -637,9 +668,11 @@ class GenericHandler(BaseHandler):
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> Generator[Entry, None, None]:
+        """Scan entries using keyset pagination from the database."""
         operation_name = "scan_keyset"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, last_id=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
+            "[%s] Starting with profile_id=%s, category=%s, tag_query=%s, "
+            "last_id=%s, limit=%s, order_by=%s, descending=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -655,7 +688,10 @@ class GenericHandler(BaseHandler):
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid order_by column: {order_by}. Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}",
+                    message=(
+                        f"Invalid order_by column: {order_by}. "
+                        f"Allowed columns: {', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                    ),
                 )
 
             sql_clause = "1=1"

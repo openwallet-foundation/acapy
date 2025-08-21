@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import logging
 from psycopg_pool import AsyncConnectionPool
 from ..errors import DatabaseError, DatabaseErrorCode
@@ -6,6 +8,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PostgresConnectionPool:
+    """Connection pool manager for PostgreSQL databases."""
     def __init__(
         self,
         conn_str: str,
@@ -15,6 +18,7 @@ class PostgresConnectionPool:
         max_idle: float = 5.0,
         max_lifetime: float = 3600.0,
     ):
+        """Initialize PostgreSQL connection pool."""
         self.conn_str = conn_str
         self.min_size = min_size
         self.max_size = max_size
@@ -26,6 +30,7 @@ class PostgresConnectionPool:
         self.connection_ids = {}
 
     async def initialize(self):
+        """Initialize the connection pool."""
         try:
             self.pool = AsyncConnectionPool(
                 conninfo=self.conn_str,
@@ -48,6 +53,7 @@ class PostgresConnectionPool:
             )
 
     async def getconn(self, timeout: float = 60.0):
+        """Get a connection from the pool."""
         try:
             conn = await self.pool.getconn(timeout=timeout)
             # Rollback any existing transaction to ensure clean state
@@ -73,15 +79,21 @@ class PostgresConnectionPool:
             )
 
     # async def getconn(self, timeout: float = 60.0):
-    #     LOGGER.debug("Attempting to retrieve connection from pool with timeout=%s", timeout)
+    #     LOGGER.debug(
+    #         "Attempting to retrieve connection from pool with timeout=%s", timeout
+    #     )
     #     try:
     #         conn = await self.pool.getconn(timeout=timeout)
     #         # Check and reset transaction status
-    #         LOGGER.debug("Checking transaction status for connection ID=%d, initial status=%s",
-    #                     id(conn), conn.pgconn.transaction_status)
+    #         LOGGER.debug(
+    #             "Checking transaction status for connection ID=%d, initial status=%s",
+    #             id(conn), conn.pgconn.transaction_status
+    #         )
     #         if conn.pgconn.transaction_status != pq.TransactionStatus.IDLE:
-    #             LOGGER.debug("Connection in non-IDLE transaction status: %s, attempting rollback",
-    #                         conn.pgconn.transaction_status)
+    #             LOGGER.debug(
+    #                 "Connection in non-IDLE status: %s, attempting rollback",
+    #                 conn.pgconn.transaction_status
+    #             )
     #             try:
     #                 await conn.rollback()
     #                 LOGGER.debug("Rollback completed, new transaction status=%s",
@@ -100,16 +112,24 @@ class PostgresConnectionPool:
     #             await self.pool.putconn(conn)
     #             raise DatabaseError(
     #                 code=DatabaseErrorCode.CONNECTION_ERROR,
-    #                 message=f"Connection in invalid transaction state: {conn.pgconn.transaction_status}"
+    #                 message=(
+    #                     f"Connection in invalid transaction state: "
+    #                     f"{conn.pgconn.transaction_status}"
+    #                 )
     #             )
     #         # Ensure client encoding is set to UTF-8
-    #         LOGGER.debug("Setting client_encoding to UTF8 for connection ID=%d", id(conn))
+    #         LOGGER.debug(
+    #             "Setting client_encoding to UTF8 for connection ID=%d", id(conn)
+    #         )
     #         await conn.execute("SET client_encoding = 'UTF8'")
     #         conn_id = self.connection_count
     #         self.connection_ids[id(conn)] = conn_id
     #         self.connection_count += 1
     #         LOGGER.debug("Connection ID=%d retrieved from pool. Pool size: %d/%d",
-    #                     conn_id, self.pool.get_stats().get("pool_available", 0), self.max_size)
+    #                     conn_id,
+    #                     self.pool.get_stats().get("pool_available", 0),
+    #                     self.max_size
+    #         )
     #         return conn
     #     except Exception as e:
     #         LOGGER.error("Failed to retrieve connection from pool: %s", str(e))
@@ -120,6 +140,7 @@ class PostgresConnectionPool:
     #         )
 
     async def putconn(self, conn):
+        """Return a connection to the pool."""
         try:
             # Roll back any open transactions to ensure clean state
             await conn.rollback()
@@ -141,6 +162,7 @@ class PostgresConnectionPool:
             )
 
     async def close(self):
+        """Close the connection pool."""
         try:
             await self.pool.close()
             self.connection_ids.clear()

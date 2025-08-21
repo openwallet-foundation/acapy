@@ -1,22 +1,31 @@
+"""Database store module for managing different database backends."""
+
 import json
 import asyncio
 import inspect
 import importlib
+import threading
 from typing import Optional, Sequence, Union
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import AsyncIterator
+# anext is a builtin in Python 3.10+
 
 import logging
 
 from .error import DBStoreError, DBStoreErrorCode
 from .db_types import Entry, EntryList
-from .interfaces import AbstractDatabaseStore, AbstractDatabaseSession, DatabaseBackend
+from .interfaces import (
+    AbstractDatabaseStore,
+    AbstractDatabaseSession,
+    DatabaseBackend
+)
 
 # Logging setup
 LOGGER = logging.getLogger(__name__)
 
-# Registry for backends
+# Registry for backends with thread safety
 _backend_registry = {}
+_registry_lock = threading.Lock()
 
 
 def register_backend(db_type: str, backend: DatabaseBackend):
@@ -26,9 +35,20 @@ def register_backend(db_type: str, backend: DatabaseBackend):
 
 
 class Scan(AsyncIterator):
+    """Async iterator for database scanning."""
+
     def __init__(
-        self, store, profile, category, tag_filter, offset, limit, order_by, descending
+        self,
+        store,
+        profile,
+        category,
+        tag_filter,
+        offset,
+        limit,
+        order_by,
+        descending
     ):
+        """Initialize DBStoreScan with scan parameters."""
         self._store = store
         self._profile = profile
         self._category = category
@@ -46,9 +66,10 @@ class Scan(AsyncIterator):
         ) or inspect.isasyncgenfunction(self._store._db.scan)
 
     async def __anext__(self):
+        """Get next item from async scan."""
         if self._generator is None:
             if self._is_async:
-                # For async backends (e.g., PostgreSQL), get the async generator directly
+                # For async backends (e.g., PostgreSQL), get async generator
                 self._generator = self._store._db.scan(
                     self._profile,
                     self._category,
@@ -59,7 +80,7 @@ class Scan(AsyncIterator):
                     self._descending,
                 )
             else:
-                # For sync backends (e.g., SQLite), run the scan method in the executor
+                # For sync backends (e.g., SQLite), run in executor
                 def create_generator():
                     return self._store._db.scan(
                         self._profile,
@@ -79,7 +100,7 @@ class Scan(AsyncIterator):
         if self._is_async:
             # Handle async generators
             try:
-                return await anext(self._generator)
+                return await anext(self._generator)  # noqa: F821
             except StopAsyncIteration:
                 raise
         else:
@@ -97,11 +118,14 @@ class Scan(AsyncIterator):
             return result
 
     def __del__(self):
+        """Clean up resources."""
         # Shut down the executor to clean up resources
         self._executor.shutdown(wait=False)
 
 
 class ScanKeyset(AsyncIterator):
+    """Keyset-based scan iterator."""
+
     def __init__(
         self,
         store: "DBStore",
@@ -113,10 +137,13 @@ class ScanKeyset(AsyncIterator):
         order_by: Optional[str] = None,
         descending: bool = False,
     ):
-        """Initialize the ScanKeyset iterator with store, profile, category, and optional filters and sorting."""
+        """Initialize the ScanKeyset iterator with filters and sorting."""
         LOGGER.debug(
-            f"ScanKeyset initialized with store={store}, profile={profile}, category={category}, "
-            f"tag_filter={tag_filter}, last_id={last_id}, limit={limit}, order_by={order_by}, descending={descending}"
+            f"ScanKeyset initialized with store={store}, "
+            f"profile={profile}, category={category}, "
+            f"tag_filter={tag_filter}, last_id={last_id}, "
+            f"limit={limit}, order_by={order_by}, "
+            f"descending={descending}"
         )
         self._store = store
         self._profile = profile
@@ -134,9 +161,10 @@ class ScanKeyset(AsyncIterator):
         ) or inspect.isasyncgenfunction(self._store._db.scan_keyset)
 
     async def __anext__(self):
+        """Get next item from async keyset scan."""
         if self._generator is None:
             if self._is_async:
-                # For async backends (e.g., PostgreSQL), get the async generator directly
+                # For async backends (e.g., PostgreSQL), get async generator
                 self._generator = self._store._db.scan_keyset(
                     self._profile,
                     self._category,
@@ -147,7 +175,7 @@ class ScanKeyset(AsyncIterator):
                     self._descending,
                 )
             else:
-                # For sync backends (e.g., SQLite), run scan_keyset in an executor
+                # For sync backends (e.g., SQLite), run scan_keyset in executor
                 def create_generator():
                     return self._store._db.scan_keyset(
                         self._profile,
@@ -167,7 +195,7 @@ class ScanKeyset(AsyncIterator):
         if self._is_async:
             # Handle async generators
             try:
-                return await anext(self._generator)
+                return await anext(self._generator)  # noqa: F821
             except StopAsyncIteration:
                 raise
         else:
@@ -185,9 +213,11 @@ class ScanKeyset(AsyncIterator):
             return result
 
     def __del__(self):
+        """Clean up resources."""
         self._executor.shutdown(wait=False)
 
     async def fetch_all(self) -> Sequence[Entry]:
+        """Perform the action."""
         rows = []
         async for row in self:
             rows.append(row)
@@ -195,11 +225,18 @@ class ScanKeyset(AsyncIterator):
 
 
 class DBStore:
+    """Database store class."""
+
     def __init__(
-        self, db: AbstractDatabaseStore, uri: str, release_number: str = "release_0"
+        self,
+        db: AbstractDatabaseStore,
+        uri: str,
+        release_number: str = "release_0"
     ):
+        """Initialize DBStore."""
         LOGGER.debug(
-            f"Store initialized with db={db}, uri={uri}, release_number={release_number}"
+            f"Store initialized with db={db}, uri={uri}, "
+            f"release_number={release_number}"
         )
         self._db = db
         self._uri = uri
@@ -208,6 +245,7 @@ class DBStore:
 
     @classmethod
     def generate_raw_key(cls, seed: Union[str, bytes] = None) -> str:
+        """Perform the action."""
         LOGGER.debug(f"generate_raw_key called with seed={seed}")
         from . import bindings
 
@@ -215,14 +253,17 @@ class DBStore:
 
     @property
     def handle(self):
+        """Perform the action."""
         return id(self)
 
     @property
     def uri(self) -> str:
+        """Perform the action."""
         return self._uri
 
     @property
     def release_number(self) -> str:
+        """Perform the action."""
         return self._release_number
 
     @classmethod
@@ -238,17 +279,21 @@ class DBStore:
         schema_config: Optional[str] = None,
         config: Optional[dict] = None,
     ) -> "DBStore":
-        """Provision a new database store with the specified release number and schema config."""
+        """Provision a new database store with specified release and schema."""
         LOGGER.debug(
-            f"provision called with uri={uri}, key_method={key_method}, pass_key={pass_key}, "
-            f"profile={profile}, recreate={recreate}, release_number={release_number}, "
+            f"provision called with uri={uri}, key_method={key_method}, "
+            f"pass_key={pass_key}, "
+            f"profile={profile}, recreate={recreate}, "
+            f"release_number={release_number}, "
             f"schema_config={schema_config}, config={config}"
         )
-        if not _backend_registry:  # Register backends if not already done
-            backend_registration = importlib.import_module(
-                ".databases.backends.backend_registration", package=__package__
-            )
-            backend_registration.register_backends()
+        # Thread-safe backend registration
+        with _registry_lock:
+            if not _backend_registry:  # Register backends if not already done
+                backend_registration = importlib.import_module(
+                    ".databases.backends.backend_registration", package=__package__
+                )
+                backend_registration.register_backends()
         db_type = uri.split(":")[0]
         backend = _backend_registry.get(db_type)
         if not backend:
@@ -296,17 +341,22 @@ class DBStore:
         target_schema_release_number: Optional[str] = None,
         config: Optional[dict] = None,
     ) -> "DBStore":
+        """Perform the action."""
         LOGGER.debug(
-            f"open called with uri={uri}, key_method={key_method}, pass_key={pass_key}, "
+            f"open called with uri={uri}, key_method={key_method}, "
+            f"pass_key={pass_key}, "
             f"profile={profile}, schema_migration={schema_migration}, "
-            f"target_schema_release_number={target_schema_release_number}, config={config}, "
+            f"target_schema_release_number={target_schema_release_number}, "
+            f"config={config}, "
             f"schema_config will be retrieved from database"
         )
-        if not _backend_registry:  # Register backends if not already done
-            backend_registration = importlib.import_module(
-                ".databases.backends.backend_registration", package=__package__
-            )
-            backend_registration.register_backends()
+        # Thread-safe backend registration
+        with _registry_lock:
+            if not _backend_registry:  # Register backends if not already done
+                backend_registration = importlib.import_module(
+                    ".databases.backends.backend_registration", package=__package__
+                )
+                backend_registration.register_backends()
         db_type = uri.split(":")[0]
         backend = _backend_registry.get(db_type)
         if not backend:
@@ -342,17 +392,23 @@ class DBStore:
 
     @classmethod
     async def remove(
-        cls, uri: str, release_number: str = "release_0", config: Optional[dict] = None
+        cls,
+        uri: str,
+        release_number: str = "release_0",
+        config: Optional[dict] = None
     ) -> bool:
         """Remove the database store."""
         LOGGER.debug(
-            f"remove called with uri={uri}, release_number={release_number}, config={config}"
+            f"remove called with uri={uri}, release_number={release_number}, "
+            f"config={config}"
         )
-        if not _backend_registry:  # Register backends if not already done
-            backend_registration = importlib.import_module(
-                ".databases.backends.backend_registration", package=__package__
-            )
-            backend_registration.register_backends()
+        # Thread-safe backend registration
+        with _registry_lock:
+            if not _backend_registry:  # Register backends if not already done
+                backend_registration = importlib.import_module(
+                    ".databases.backends.backend_registration", package=__package__
+                )
+                backend_registration.register_backends()
         db_type = uri.split(":")[0]
         backend = _backend_registry.get(db_type)
         if not backend:
@@ -381,6 +437,7 @@ class DBStore:
             raise self._db.translate_error(e)
 
     async def create_profile(self, name: str = None) -> str:
+        """Perform the action."""
         LOGGER.debug(f"create_profile called with name={name}")
         try:
             return await self._db.create_profile(name)
@@ -389,6 +446,7 @@ class DBStore:
             raise self._db.translate_error(e)
 
     async def get_profile_name(self) -> str:
+        """Perform the action."""
         LOGGER.debug("get_profile_name called")
         try:
             return await self._db.get_profile_name()
@@ -397,6 +455,7 @@ class DBStore:
             raise self._db.translate_error(e)
 
     async def remove_profile(self, name: str) -> bool:
+        """Perform the action."""
         LOGGER.debug(f"remove_profile called with name={name}")
         try:
             return await self._db.remove_profile(name)
@@ -405,7 +464,10 @@ class DBStore:
             raise self._db.translate_error(e)
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
-        LOGGER.debug(f"rekey called with key_method={key_method}, pass_key={pass_key}")
+        """Perform the action."""
+        LOGGER.debug(
+            f"rekey called with key_method={key_method}, pass_key={pass_key}"
+        )
         try:
             await self._db.rekey(key_method, pass_key)
         except Exception as e:
@@ -424,8 +486,10 @@ class DBStore:
     ) -> Scan:
         """Scan the database for entries matching the criteria."""
         LOGGER.debug(
-            f"scan called with category={category}, tag_filter={tag_filter}, offset={offset}, "
-            f"limit={limit}, profile={profile}, order_by={order_by}, descending={descending}"
+            f"scan called with category={category}, tag_filter={tag_filter}, "
+            f"offset={offset}, "
+            f"limit={limit}, profile={profile}, order_by={order_by}, "
+            f"descending={descending}"
         )
         return Scan(
             self, profile, category, tag_filter, offset, limit, order_by, descending
@@ -443,22 +507,27 @@ class DBStore:
     ) -> ScanKeyset:
         """Scan the database using keyset pagination."""
         LOGGER.debug(
-            f"scan_keyset called with category={category}, tag_filter={tag_filter}, last_id={last_id}, "
-            f"limit={limit}, profile={profile}, order_by={order_by}, descending={descending}"
+            f"scan_keyset called with category={category}, "
+            f"tag_filter={tag_filter}, last_id={last_id}, "
+            f"limit={limit}, profile={profile}, order_by={order_by}, "
+            f"descending={descending}"
         )
         return ScanKeyset(
             self, profile, category, tag_filter, last_id, limit, order_by, descending
         )
 
     def session(self, profile: str = None) -> "DBOpenSession":
+        """Perform the action."""
         LOGGER.debug(f"session called with profile={profile}")
         return DBOpenSession(self._db, profile, False, self._release_number)
 
     def transaction(self, profile: str = None) -> "DBOpenSession":
+        """Perform the action."""
         LOGGER.debug(f"transaction called with profile={profile}")
         return DBOpenSession(self._db, profile, True, self._release_number)
 
     async def close(self, *, remove: bool = False) -> bool:
+        """Perform the action."""
         LOGGER.debug(f"close called with remove={remove}")
         try:
             if self._db:
@@ -473,37 +542,54 @@ class DBStore:
             raise DBStoreError(DBStoreErrorCode.UNEXPECTED, str(e)) from e
 
     async def __aenter__(self) -> "DBStoreSession":
+        """Enter async context manager."""
         LOGGER.debug("__aenter__ called")
         if not self._opener:
-            self._opener = DBOpenSession(self._db, None, False, self._release_number)
+            self._opener = DBOpenSession(
+                self._db, None, False, self._release_number
+            )
         return await self._opener.__aenter__()
 
     async def __aexit__(self, exc_type, exc, tb):
-        LOGGER.debug(f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}")
+        """Exit async context manager."""
+        LOGGER.debug(
+            f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}"
+        )
         opener = self._opener
         self._opener = None
         return await opener.__aexit__(exc_type, exc, tb)
 
     def __repr__(self) -> str:
+        """Magic method description."""
         return f"<Store(handle={self.handle})>"
 
 
 class DBStoreSession:
+    """Database store session class."""
+
     def __init__(self, db_session: AbstractDatabaseSession, is_txn: bool):
-        LOGGER.debug(f"Session initialized with db_session={db_session}, is_txn={is_txn}")
+        """Initialize DBStoreSession."""
+        LOGGER.debug(
+            f"Session initialized with db_session={db_session}, is_txn={is_txn}"
+        )
         self._db_session = db_session
         self._is_txn = is_txn
 
     @property
     def is_transaction(self) -> bool:
+        """Perform the action."""
         return self._is_txn
 
     @property
     def handle(self):
+        """Perform the action."""
         return id(self)
 
     async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
-        LOGGER.debug(f"count called with category={category}, tag_filter={tag_filter}")
+        """Perform the action."""
+        LOGGER.debug(
+            f"count called with category={category}, tag_filter={tag_filter}"
+        )
         try:
             return await self._db_session.count(category, tag_filter)
         except Exception as e:
@@ -513,8 +599,10 @@ class DBStoreSession:
     async def fetch(
         self, category: str, name: str, *, for_update: bool = False
     ) -> Optional[Entry]:
+        """Perform the action."""
         LOGGER.debug(
-            f"fetch called with category={category}, name={name}, for_update={for_update}"
+            f"fetch called with category={category}, name={name}, "
+            f"for_update={for_update}"
         )
         try:
             return await self._db_session.fetch(
@@ -533,9 +621,12 @@ class DBStoreSession:
         order_by: Optional[str] = None,
         descending: bool = False,
     ) -> EntryList:
+        """Perform the action."""
         LOGGER.debug(
-            f"fetch_all called with category={category}, tag_filter={tag_filter}, limit={limit}, "
-            f"for_update={for_update}, order_by={order_by}, descending={descending}"
+            f"fetch_all called with category={category}, "
+            f"tag_filter={tag_filter}, limit={limit}, "
+            f"for_update={for_update}, order_by={order_by}, "
+            f"descending={descending}"
         )
         try:
             entries = await self._db_session.fetch_all(
@@ -555,8 +646,10 @@ class DBStoreSession:
         expiry_ms: int = None,
         value_json=None,
     ):
+        """Perform the action."""
         LOGGER.debug(
-            f"insert called with category={category}, name={name}, value={value}, "
+            f"insert called with category={category}, name={name}, "
+            f"value={value}, "
             f"tags={tags}, expiry_ms={expiry_ms}, value_json={value_json}"
         )
         try:
@@ -576,8 +669,10 @@ class DBStoreSession:
         expiry_ms: int = None,
         value_json=None,
     ):
+        """Perform the action."""
         LOGGER.debug(
-            f"replace called with category={category}, name={name}, value={value}, "
+            f"replace called with category={category}, name={name}, "
+            f"value={value}, "
             f"tags={tags}, expiry_ms={expiry_ms}, value_json={value_json}"
         )
         try:
@@ -589,6 +684,7 @@ class DBStoreSession:
             raise self._db_session.translate_error(e)
 
     async def remove(self, category: str, name: str):
+        """Perform the action."""
         LOGGER.debug(f"remove called with category={category}, name={name}")
         try:
             await self._db_session.remove(category, name)
@@ -596,9 +692,13 @@ class DBStoreSession:
             LOGGER.error("remove error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def remove_all(
+        self, category: str, tag_filter: Union[str, dict] = None
+    ) -> int:
+        """Perform the action."""
         LOGGER.debug(
-            f"remove_all called with category={category}, tag_filter={tag_filter}"
+            f"remove_all called with category={category}, "
+            f"tag_filter={tag_filter}"
         )
         try:
             return await self._db_session.remove_all(category, tag_filter)
@@ -607,9 +707,12 @@ class DBStoreSession:
             raise self._db_session.translate_error(e)
 
     async def commit(self):
+        """Perform the action."""
         LOGGER.debug("commit called")
         if not self._is_txn:
-            raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session is not a transaction")
+            raise DBStoreError(
+                DBStoreErrorCode.WRAPPER, "Session is not a transaction"
+            )
         try:
             await self._db_session.commit()
         except Exception as e:
@@ -617,9 +720,12 @@ class DBStoreSession:
             raise self._db_session.translate_error(e)
 
     async def rollback(self):
+        """Perform the action."""
         LOGGER.debug("rollback called")
         if not self._is_txn:
-            raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session is not a transaction")
+            raise DBStoreError(
+                DBStoreErrorCode.WRAPPER, "Session is not a transaction"
+            )
         try:
             await self._db_session.rollback()
         except Exception as e:
@@ -627,6 +733,7 @@ class DBStoreSession:
             raise self._db_session.translate_error(e)
 
     async def close(self):
+        """Perform the action."""
         LOGGER.debug("close called")
         try:
             await self._db_session.close()
@@ -635,10 +742,13 @@ class DBStoreSession:
             raise self._db_session.translate_error(e)
 
     def __repr__(self) -> str:
+        """Magic method description."""
         return f"<Session(handle={self.handle}, is_transaction={self._is_txn})>"
 
 
 class DBOpenSession:
+    """Database open session class."""
+
     def __init__(
         self,
         db: AbstractDatabaseStore,
@@ -646,8 +756,10 @@ class DBOpenSession:
         is_txn: bool,
         release_number: str,
     ):
+        """Initialize DBOpenSession."""
         LOGGER.debug(
-            f"OpenSession initialized with db={db}, profile={profile}, is_txn={is_txn}, release_number={release_number}"
+            f"OpenSession initialized with db={db}, profile={profile}, "
+            f"is_txn={is_txn}, release_number={release_number}"
         )
         self._db = db
         self._profile = profile
@@ -657,9 +769,11 @@ class DBOpenSession:
 
     @property
     def is_transaction(self) -> bool:
+        """Perform the action."""
         return self._is_txn
 
     async def _open(self) -> DBStoreSession:
+        """Perform the action."""
         LOGGER.debug("_open called")
         if self._session:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session already opened")
@@ -674,15 +788,20 @@ class DBOpenSession:
         return self._session
 
     def __await__(self) -> DBStoreSession:
+        """Magic method description."""
         return self._open().__await__()
 
     async def __aenter__(self) -> DBStoreSession:
+        """Magic method description."""
         LOGGER.debug("__aenter__ called")
         self._session = await self._open()
         return self._session
 
     async def __aexit__(self, exc_type, exc, tb):
-        LOGGER.debug(f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}")
+        """Magic method description."""
+        LOGGER.debug(
+            f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}"
+        )
         session = self._session
         self._session = None
         if self._is_txn and exc_type is None:
