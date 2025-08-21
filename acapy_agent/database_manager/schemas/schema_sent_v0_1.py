@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "schema_sent"
 
 SCHEMAS = {
@@ -12,12 +14,15 @@ SCHEMAS = {
             schema_name TEXT NOT NULL,
             schema_version TEXT NOT NULL,
             epoch TEXT NOT NULL,
-            FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE,
             UNIQUE(item_id)
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 ON schema_sent_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 ON schema_sent_v0_1 (schema_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 " +
+        "ON schema_sent_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 " +
+        "ON schema_sent_v0_1 (schema_id);",
     ],
     "postgresql": [
         """
@@ -30,12 +35,15 @@ SCHEMAS = {
             schema_name TEXT NOT NULL,
             schema_version TEXT NOT NULL,
             epoch TEXT NOT NULL,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT schema_sent_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 ON schema_sent_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 ON schema_sent_v0_1 (schema_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 " +
+        "ON schema_sent_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 " +
+        "ON schema_sent_v0_1 (schema_id);",
     ],
     "mssql": [
         """
@@ -48,12 +56,15 @@ SCHEMAS = {
             schema_name NVARCHAR(MAX) NOT NULL,
             schema_version NVARCHAR(50) NOT NULL,
             epoch NVARCHAR(50) NOT NULL,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT schema_sent_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_schema_sent_item_id_v0_1 ON schema_sent_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_schema_sent_schema_id_v0_1 ON schema_sent_v0_1 (schema_id);",
+        "CREATE NONCLUSTERED INDEX idx_schema_sent_item_id_v0_1 " +
+        "ON schema_sent_v0_1 (item_id);",
+        "CREATE NONCLUSTERED INDEX idx_schema_sent_schema_id_v0_1 " +
+        "ON schema_sent_v0_1 (schema_id);",
     ],
 }
 

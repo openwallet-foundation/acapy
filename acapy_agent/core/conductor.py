@@ -610,8 +610,9 @@ class Conductor:
 
         LOGGER.info("Listening...")
 
-    # The increased timeout (e.g., 6.0 seconds) provides a larger window for Kanon Profile.close to finish,
-    # especially if it involves database persistence or other slow operations.
+    # The increased timeout (e.g., 6.0 seconds) provides a larger window for
+    # Kanon Profile.close to finish, especially if it involves database
+    # persistence or other slow operations.
     async def stop(self, timeout=30.0):
         """Stop the agent."""
         LOGGER.info("Stopping the Conductor agent.")
@@ -664,7 +665,6 @@ class Conductor:
             can_respond: If the session supports return routing
 
         """
-
         if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
@@ -744,6 +744,7 @@ class Conductor:
             profile: The active profile for the request
             outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         status: OutboundSendStatus = await self._outbound_message_router(
             profile=profile, outbound=outbound, inbound=inbound
@@ -763,6 +764,7 @@ class Conductor:
             profile: The active profile for the request
             outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
@@ -796,6 +798,7 @@ class Conductor:
             profile: The active profile
             outbound: The outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         has_target = outbound.target or outbound.target_list
 
@@ -863,6 +866,7 @@ class Conductor:
             endpoint: The endpoint of the webhook target
             max_attempts: The maximum number of attempts
             metadata: Additional metadata associated with the payload
+
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(

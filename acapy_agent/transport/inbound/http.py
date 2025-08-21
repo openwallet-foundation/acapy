@@ -75,6 +75,7 @@ class HttpTransport(BaseInboundTransport):
 
         Returns:
             The web response
+
         """
         ctype = request.headers.get("content-type", "")
         if ctype.split(";", 1)[0].lower() == "application/json":

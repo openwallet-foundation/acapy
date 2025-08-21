@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "did_key"
 
 SCHEMAS = {
@@ -37,7 +39,8 @@ SCHEMAS = {
             key TEXT,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_did_key_item_id_v0_1 ON did_key_v0_1 (item_id);",
@@ -70,7 +73,8 @@ SCHEMAS = {
             key NVARCHAR(MAX),
             created_at DATETIME2 DEFAULT SYSDATETIME(),
             updated_at DATETIME2 DEFAULT SYSDATETIME(),
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_did_key_item_id_v0_1 ON did_key_v0_1 (item_id);",
@@ -116,5 +120,7 @@ DROP_SCHEMAS = {
 COLUMNS = ["did", "key", "created_at", "updated_at"]
 
 # sample
-# category=did_key, name=6e91cade598d4440b1d6becfab997914, value=2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx
-# , tags={'did': '3hQMdP4sNb1iQKN1L1VqLe', 'key': '2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx'}
+# category=did_key, name=6e91cade598d4440b1d6becfab997914,
+# value=2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx
+# tags={'did': '3hQMdP4sNb1iQKN1L1VqLe',
+#       'key': '2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx'}

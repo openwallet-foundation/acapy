@@ -1,10 +1,16 @@
-# poetry run python acapy_agent/database_manager/test/test_db_store_postgresql_normalized.py
+"""Test PostgreSQL database store with normalized schema."""
+# Run: poetry run python <path>/test_db_store_postgresql_normalized.py
 
 
 import asyncio
 import json
 import logging
+import os
+import pytest
 from acapy_agent.database_manager.dbstore import DBStore
+
+# Skip all tests in this file if POSTGRES_URL env var is not set
+pytestmark = pytest.mark.postgres
 
 # Configure logging
 logging.basicConfig(
@@ -14,7 +20,7 @@ logging.basicConfig(
 )
 
 # Define the PostgreSQL connection string
-conn_str = "postgres://myuser:mypass@192.168.2.172:5432/test_normalize"
+conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_normalize")
 profile_name = "test_normalize"
 config = {
     "min_connections": 4,

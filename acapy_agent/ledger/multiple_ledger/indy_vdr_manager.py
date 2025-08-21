@@ -106,6 +106,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
 
         Return:
             (str, IndyVdrLedger, bool) or None
+
         """
         try:
             indy_vdr_ledger = None

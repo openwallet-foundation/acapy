@@ -34,6 +34,7 @@ class RevocationManager:
 
         Args:
             profile: The profile instance for this revocation manager
+
         """
         self._profile = profile
         self._logger = logging.getLogger(__name__)
@@ -248,6 +249,7 @@ class RevocationManager:
             options: Additional options for the revocation registry publish
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
+
         """
         options = options or {}
         published_crids = {}

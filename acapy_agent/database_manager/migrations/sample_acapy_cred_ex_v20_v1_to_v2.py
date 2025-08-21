@@ -1,5 +1,8 @@
+"""Module docstring."""
+
 def migrate_sqlite(conn, category="anoncreds_cred_ex_v20"):
     """Migrate SQLite anoncreds_cred_ex_v20 schema from v1 to v2.
+    
     Example: Add a new_field column.
     """
     cursor = conn.cursor()
@@ -14,6 +17,7 @@ def migrate_sqlite(conn, category="anoncreds_cred_ex_v20"):
 
 def migrate_postgresql(conn, category="anoncreds_cred_ex_v20"):
     """Migrate PostgreSQL anoncreds_cred_ex_v20 schema from v1 to v2.
+    
     Example: Add a new_field column.
     """
     cursor = conn.cursor()
@@ -28,6 +32,7 @@ def migrate_postgresql(conn, category="anoncreds_cred_ex_v20"):
 
 def migrate_mssql(conn, category="anoncreds_cred_ex_v20"):
     """Migrate MSSQL anoncreds_cred_ex_v20 schema from v1 to v2.
+    
     Example: Add a new_field column.
     """
     cursor = conn.cursor()

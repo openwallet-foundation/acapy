@@ -120,6 +120,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             pres_req: indy proof request
             pres: indy proof request
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
+
         """
         msgs = []
         now = int(time())
@@ -396,4 +397,5 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
+
         """

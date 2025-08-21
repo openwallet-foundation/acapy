@@ -1,6 +1,10 @@
+"""Tests for PostgreSQL generic database with WQL support."""
+
 import json
 import asyncio
 import logging
+import os
+import pytest
 from acapy_agent.database_manager.databases.postgresql_normalized.backend import (
     PostgresqlBackend,
 )
@@ -9,14 +13,18 @@ from acapy_agent.database_manager.databases.postgresql_normalized.config import 
 )
 from acapy_agent.database_manager.databases.errors import DatabaseError
 
+# Skip all tests in this file if POSTGRES_URL env var is not set
+pytestmark = pytest.mark.postgres
+
 logging.basicConfig(level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
 
 
 async def main():
+    """Run test main function."""
     # Define configuration using PostgresConfig
-    conn_str = "postgres://myuser:mypass@192.168.2.172:5432/mydb?sslmode=prefer&sslcert=/path/to/client.crt&sslkey=/path/to/client.key&sslrootcert=/path/to/ca.crt"
-    config = PostgresConfig(
+    conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb?sslmode=prefer")
+    _ = PostgresConfig(  # Config validation test
         uri=conn_str,
         min_size=4,
         max_size=10,
@@ -104,6 +112,7 @@ async def main():
 
 
 async def run_tests(store, conn_str):
+    """Run PostgreSQL tests with WQL queries."""
     async with await store.session(profile="test_profile") as session:
         entries = []
         async for entry in store.scan(profile="test_profile", category="people"):

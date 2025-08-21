@@ -45,6 +45,7 @@ class EndorsedTransactionResponse(AgentMessage):
             endorser_did: The public did of the endorser who endorses the transaction
             ledger_response: The response from the ledger
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
 

@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from abc import ABC, abstractmethod
 from typing import Optional, Sequence, Union, List, Tuple, Any, AsyncGenerator
 from psycopg import AsyncCursor
@@ -6,7 +8,10 @@ from ....wql_normalized.tags import TagQuery
 
 
 class BaseHandler(ABC):
-    """Abstract base class for handlers managing CRUD and query operations for a specific category."""
+    """Abstract base class for handlers managing CRUD operations.
+    
+    Handles CRUD and query operations for a specific category.
+    """
 
     def __init__(self, category: str):
         """Initialize the handler with a specific category."""

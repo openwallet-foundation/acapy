@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from enum import Enum
 
 
@@ -22,6 +24,7 @@ class DatabaseError(Exception):
     """Custom exception class for database-related errors."""
 
     def __init__(self, code: DatabaseErrorCode, message: str, actual_error: str = None):
+        """Initialize DatabaseError with code, message and optional actual error."""
         super().__init__(message)
         self.code = code
         self.actual_error = actual_error

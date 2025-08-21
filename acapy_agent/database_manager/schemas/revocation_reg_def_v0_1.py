@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "revocation_reg_def"
 
 SCHEMAS = {
@@ -15,14 +17,20 @@ SCHEMAS = {
             revoc_def_type TEXT,
             value TEXT,
             active INTEGER,
-            FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_id_v0_1 ON revocation_reg_def_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_name_v0_1 ON revocation_reg_def_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_cred_def_id_v0_1 ON revocation_reg_def_v0_1 (cred_def_id);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_state_v0_1 ON revocation_reg_def_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_issuerId_v0_1 ON revocation_reg_def_v0_1 (issuerId);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_id_v0_1 "
+        "ON revocation_reg_def_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_name_v0_1 "
+        "ON revocation_reg_def_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_cred_def_id_v0_1 "
+        "ON revocation_reg_def_v0_1 (cred_def_id);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_state_v0_1 "
+        "ON revocation_reg_def_v0_1 (state);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_issuerId_v0_1 "
+        "ON revocation_reg_def_v0_1 (issuerId);",
         """
         CREATE TABLE IF NOT EXISTS revocation_reg_def_values_v0_1 (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,10 +39,13 @@ SCHEMAS = {
             max_cred_num INTEGER NOT NULL,
             tails_location TEXT NOT NULL,
             tails_hash TEXT NOT NULL,
-            FOREIGN KEY (rev_reg_def_id) REFERENCES revocation_reg_def_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            FOREIGN KEY (rev_reg_def_id) 
+                REFERENCES revocation_reg_def_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_values_rev_reg_def_id_v0_1 ON revocation_reg_def_values_v0_1 (rev_reg_def_id);",
+        "CREATE INDEX IF NOT EXISTS "
+        "idx_revocation_reg_def_values_rev_reg_def_id_v0_1 "
+        "ON revocation_reg_def_values_v0_1 (rev_reg_def_id);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_insert_revocation_reg_def_values_v0_1
         AFTER INSERT ON revocation_reg_def_v0_1
@@ -105,14 +116,20 @@ SCHEMAS = {
             revoc_def_type TEXT,
             value TEXT,
             active BOOLEAN,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_id_v0_1 ON revocation_reg_def_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_name_v0_1 ON revocation_reg_def_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_cred_def_id_v0_1 ON revocation_reg_def_v0_1 (cred_def_id);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_state_v0_1 ON revocation_reg_def_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_issuerId_v0_1 ON revocation_reg_def_v0_1 (issuerId);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_id_v0_1 "
+        "ON revocation_reg_def_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_item_name_v0_1 "
+        "ON revocation_reg_def_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_cred_def_id_v0_1 "
+        "ON revocation_reg_def_v0_1 (cred_def_id);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_state_v0_1 "
+        "ON revocation_reg_def_v0_1 (state);",
+        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_issuerId_v0_1 "
+        "ON revocation_reg_def_v0_1 (issuerId);",
         """
         CREATE TABLE IF NOT EXISTS revocation_reg_def_values_v0_1 (
             id SERIAL PRIMARY KEY,
@@ -121,10 +138,13 @@ SCHEMAS = {
             max_cred_num INTEGER NOT NULL,
             tails_location TEXT NOT NULL,
             tails_hash TEXT NOT NULL,
-            CONSTRAINT fk_rev_reg_def_id FOREIGN KEY (rev_reg_def_id) REFERENCES revocation_reg_def_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_rev_reg_def_id FOREIGN KEY (rev_reg_def_id) 
+                REFERENCES revocation_reg_def_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_revocation_reg_def_values_rev_reg_def_id_v0_1 ON revocation_reg_def_values_v0_1 (rev_reg_def_id);",
+        "CREATE INDEX IF NOT EXISTS "
+        "idx_revocation_reg_def_values_rev_reg_def_id_v0_1 "
+        "ON revocation_reg_def_values_v0_1 (rev_reg_def_id);",
         """
         CREATE OR REPLACE FUNCTION insert_revocation_reg_def_values_v0_1()
         RETURNS TRIGGER AS $$
@@ -136,14 +156,20 @@ SCHEMAS = {
                 SELECT
                     NEW.id,
                     jsonb_extract_path_text(NEW.value::jsonb, 'publicKeys'),
-                    (jsonb_extract_path_text(NEW.value::jsonb, 'maxCredNum'))::INTEGER,
-                    jsonb_extract_path_text(NEW.value::jsonb, 'tailsLocation'),
-                    jsonb_extract_path_text(NEW.value::jsonb, 'tailsHash')
+                    (jsonb_extract_path_text(NEW.value::jsonb, 
+                                             'maxCredNum'))::INTEGER,
+                    jsonb_extract_path_text(NEW.value::jsonb, 
+                                            'tailsLocation'),
+                    jsonb_extract_path_text(NEW.value::jsonb, 
+                                            'tailsHash')
                 WHERE
                     jsonb_extract_path_text(NEW.value::jsonb, 'publicKeys') IS NOT NULL
-                    AND jsonb_extract_path_text(NEW.value::jsonb, 'maxCredNum') IS NOT NULL
-                    AND jsonb_extract_path_text(NEW.value::jsonb, 'tailsLocation') IS NOT NULL
-                    AND jsonb_extract_path_text(NEW.value::jsonb, 'tailsHash') IS NOT NULL;
+                    AND jsonb_extract_path_text(NEW.value::jsonb, 
+                                                 'maxCredNum') IS NOT NULL
+                    AND jsonb_extract_path_text(NEW.value::jsonb, 
+                                                 'tailsLocation') IS NOT NULL
+                    AND jsonb_extract_path_text(NEW.value::jsonb, 
+                                                 'tailsHash') IS NOT NULL;
             END IF;
             RETURN NEW;
         END;
@@ -159,7 +185,8 @@ SCHEMAS = {
         CREATE OR REPLACE FUNCTION update_revocation_reg_def_values_v0_1()
         RETURNS TRIGGER AS $$
         BEGIN
-            IF NEW.value IS NOT NULL AND NEW.value::jsonb IS NOT NULL AND NEW.value != OLD.value THEN
+            IF NEW.value IS NOT NULL AND NEW.value::jsonb IS NOT NULL 
+               AND NEW.value != OLD.value THEN
                 DELETE FROM revocation_reg_def_values_v0_1 WHERE rev_reg_def_id = OLD.id;
                 INSERT INTO revocation_reg_def_values_v0_1 (
                     rev_reg_def_id, public_keys, max_cred_num, tails_location, tails_hash
@@ -167,14 +194,20 @@ SCHEMAS = {
                 SELECT
                     NEW.id,
                     jsonb_extract_path_text(NEW.value::jsonb, 'publicKeys'),
-                    (jsonb_extract_path_text(NEW.value::jsonb, 'maxCredNum'))::INTEGER,
-                    jsonb_extract_path_text(NEW.value::jsonb, 'tailsLocation'),
-                    jsonb_extract_path_text(NEW.value::jsonb, 'tailsHash')
+                    (jsonb_extract_path_text(NEW.value::jsonb, 
+                                             'maxCredNum'))::INTEGER,
+                    jsonb_extract_path_text(NEW.value::jsonb, 
+                                            'tailsLocation'),
+                    jsonb_extract_path_text(NEW.value::jsonb, 
+                                            'tailsHash')
                 WHERE
                     jsonb_extract_path_text(NEW.value::jsonb, 'publicKeys') IS NOT NULL
-                    AND jsonb_extract_path_text(NEW.value::jsonb, 'maxCredNum') IS NOT NULL
-                    AND jsonb_extract_path_text(NEW.value::jsonb, 'tailsLocation') IS NOT NULL
-                    AND jsonb_extract_path_text(NEW.value::jsonb, 'tailsHash') IS NOT NULL;
+                    AND jsonb_extract_path_text(NEW.value::jsonb, 
+                                                 'maxCredNum') IS NOT NULL
+                    AND jsonb_extract_path_text(NEW.value::jsonb, 
+                                                 'tailsLocation') IS NOT NULL
+                    AND jsonb_extract_path_text(NEW.value::jsonb, 
+                                                 'tailsHash') IS NOT NULL;
             END IF;
             RETURN NEW;
         END;
@@ -218,14 +251,20 @@ SCHEMAS = {
             revoc_def_type NVARCHAR(255),
             value NVARCHAR(MAX),
             active BIT,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_item_id_v0_1 ON revocation_reg_def_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_item_name_v0_1 ON revocation_reg_def_v0_1 (item_name);",
-        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_cred_def_id_v0_1 ON revocation_reg_def_v0_1 (cred_def_id);",
-        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_state_v0_1 ON revocation_reg_def_v0_1 (state);",
-        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_issuerId_v0_1 ON revocation_reg_def_v0_1 (issuerId);",
+        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_item_id_v0_1 "
+        "ON revocation_reg_def_v0_1 (item_id);",
+        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_item_name_v0_1 "
+        "ON revocation_reg_def_v0_1 (item_name);",
+        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_cred_def_id_v0_1 "
+        "ON revocation_reg_def_v0_1 (cred_def_id);",
+        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_state_v0_1 "
+        "ON revocation_reg_def_v0_1 (state);",
+        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_issuerId_v0_1 "
+        "ON revocation_reg_def_v0_1 (issuerId);"
         """
         CREATE TABLE revocation_reg_def_values_v0_1 (
             id INT IDENTITY(1,1) PRIMARY KEY,
@@ -234,10 +273,13 @@ SCHEMAS = {
             max_cred_num INT NOT NULL,
             tails_location NVARCHAR(MAX) NOT NULL,
             tails_hash NVARCHAR(MAX) NOT NULL,
-            CONSTRAINT fk_rev_reg_def_id FOREIGN KEY (rev_reg_def_id) REFERENCES revocation_reg_def_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_rev_reg_def_id FOREIGN KEY (rev_reg_def_id) 
+                REFERENCES revocation_reg_def_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_revocation_reg_def_values_rev_reg_def_id_v0_1 ON revocation_reg_def_values_v0_1 (rev_reg_def_id);",
+        "CREATE NONCLUSTERED INDEX "
+        "idx_revocation_reg_def_values_rev_reg_def_id_v0_1 "
+        "ON revocation_reg_def_values_v0_1 (rev_reg_def_id);"
         """
         CREATE TRIGGER trg_insert_revocation_reg_def_values_v0_1
         ON revocation_reg_def_v0_1
@@ -329,11 +371,14 @@ DROP_SCHEMAS = {
         "DROP TABLE IF EXISTS revocation_reg_def_v0_1;",
     ],
     "postgresql": [
-        "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_timestamp_v0_1 ON revocation_reg_def_v0_1;",
+        "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_timestamp_v0_1 "
+        "ON revocation_reg_def_v0_1;",
         "DROP FUNCTION IF EXISTS update_revocation_reg_def_timestamp_v0_1 CASCADE;",
-        "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_values_v0_1 ON revocation_reg_def_v0_1;",
+        "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_values_v0_1 "
+        "ON revocation_reg_def_v0_1;",
         "DROP FUNCTION IF EXISTS update_revocation_reg_def_values_v0_1 CASCADE;",
-        "DROP TRIGGER IF EXISTS trg_insert_revocation_reg_def_values_v0_1 ON revocation_reg_def_v0_1;",
+        "DROP TRIGGER IF EXISTS trg_insert_revocation_reg_def_values_v0_1 "
+        "ON revocation_reg_def_v0_1;"
         "DROP FUNCTION IF EXISTS insert_revocation_reg_def_values_v0_1 CASCADE;",
         "DROP INDEX IF EXISTS idx_revocation_reg_def_values_rev_reg_def_id_v0_1;",
         "DROP TABLE IF EXISTS revocation_reg_def_values_v0_1 CASCADE;",
@@ -348,13 +393,20 @@ DROP_SCHEMAS = {
         "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_timestamp_v0_1;",
         "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_values_v0_1;",
         "DROP TRIGGER IF EXISTS trg_insert_revocation_reg_def_values_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_reg_def_values_rev_reg_def_id_v0_1 ON revocation_reg_def_values_v0_1;",
+        "DROP INDEX IF EXISTS "
+        "idx_revocation_reg_def_values_rev_reg_def_id_v0_1 "
+        "ON revocation_reg_def_values_v0_1;",
         "DROP TABLE IF EXISTS revocation_reg_def_values_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_reg_def_issuerId_v0_1 ON revocation_reg_def_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_reg_def_state_v0_1 ON revocation_reg_def_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_reg_def_cred_def_id_v0_1 ON revocation_reg_def_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_reg_def_item_name_v0_1 ON revocation_reg_def_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_reg_def_item_id_v0_1 ON revocation_reg_def_v0_1;",
+        "DROP INDEX IF EXISTS idx_revocation_reg_def_issuerId_v0_1 "
+        "ON revocation_reg_def_v0_1;",
+        "DROP INDEX IF EXISTS idx_revocation_reg_def_state_v0_1 "
+        "ON revocation_reg_def_v0_1;",
+        "DROP INDEX IF EXISTS idx_revocation_reg_def_cred_def_id_v0_1 "
+        "ON revocation_reg_def_v0_1;",
+        "DROP INDEX IF EXISTS idx_revocation_reg_def_item_name_v0_1 "
+        "ON revocation_reg_def_v0_1;",
+        "DROP INDEX IF EXISTS idx_revocation_reg_def_item_id_v0_1 "
+        "ON revocation_reg_def_v0_1;"
         "DROP TABLE IF EXISTS revocation_reg_def_v0_1;",
     ],
 }
@@ -363,6 +415,23 @@ DROP_SCHEMAS = {
 COLUMNS = ["state", "issuerId", "cred_def_id", "revoc_def_type", "value", "active"]
 
 # sample
-# revocation_reg_def, name=BacujJ3zNmAR9afs9hPryb:4:BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29:CL_ACCUM:1,
-# value={"issuerId": "BacujJ3zNmAR9afs9hPryb", "revocDefType": "CL_ACCUM", "credDefId": "BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29", "tag": "1", "value": {"publicKeys": {"accumKey": {"z": "1 25043DD188BAB8BBB637AD19A3E8FBC4D209E5F7A4882E41E6E20ADB6078629E 1 1788C6ADA6B3927D744BEB948E85C9356ED75E1643046210AFB339AED10D7AA8 1 0BD161DE331B3250F53476A75E0F706A3D7B5A53F973E68A627F47FACD3F4E26 1 203CA0B21812504534825A5D5A60F9A4FF53CED6A048990BE7D25B0D93695C7C 1 097A674EF34F7D07D0FDB24D98C916968D0F842B1A7004F22BCFDF0E3F2DAD5D 1 12B359710423AAC2560E892C94D7626B636E9C8A7E74813BD89F020E1CEC7B13 1 17039AC638FEC1CB84623CC45A6E4A9A752D111EB5479F46F1CAC2F5AE330969 1 02ECBADABE309528218FB9EB2B7CC141548DD74102DB8BB9CA106BE4190892B9 1 179D99E3EA76B83F8E0EBFE3087598B042D8C50112B7B47A542492992BDB5CC6 1 013091B1F527BA55DA63BC90B43AB54FC3A4555CC1448BAF53DD56CC442834F9 1 106B44DE3668186BEFBCAB3B528067DE827C199E17982AD15C8A225A63899CD9 1 1EC33A78D252EE6786C9EA8D507C1915CDD8C7274672106830F7F984F6069E96"}}, "maxCredNum": 5, "tailsLocation": "http://tails-server.digicred.services:6543/hash/62pgdbNRRhDsBkhmUx4FdCEqrcczEdQ4jumm4rQK1K2K", "tailsHash": "62pgdbNRRhDsBkhmUx4FdCEqrcczEdQ4jumm4rQK1K2K"}}
-# tags={'cred_def_id': 'BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29', 'state': 'finished', 'active': 'false'}
+# Sample revocation registry definition:
+# revocation_reg_def, 
+# name=BacujJ3zNmAR9afs9hPryb:4:BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29:CL_ACCUM:1,
+# value={
+#   "issuerId": "BacujJ3zNmAR9afs9hPryb",
+#   "revocDefType": "CL_ACCUM",
+#   "credDefId": "BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29",
+#   "tag": "1",
+#   "value": {
+#     "publicKeys": { "accumKey": { "z": "<very_long_key>" } },
+#     "maxCredNum": 5,
+#     "tailsLocation": "http://tails-server.digicred.services:6543/hash/...",
+#     "tailsHash": "62pgdbNRRhDsBkhmUx4FdCEqrcczEdQ4jumm4rQK1K2K"
+#   }
+# }
+# tags={
+#   'cred_def_id': 'BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29',
+#   'state': 'finished',
+#   'active': 'false'
+# }

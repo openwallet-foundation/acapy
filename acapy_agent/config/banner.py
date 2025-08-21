@@ -56,6 +56,7 @@ class _Banner:
 
         Args:
             content: String content to pad
+
         """
         return f"{self.border}{self.border} {content} {self.border}{self.border}"
 

@@ -23,6 +23,7 @@ class MultitenantManager(BaseMultitenantManager):
 
         Args:
             profile: The profile for this manager
+
         """
         super().__init__(profile)
         self._profiles = ProfileCache(

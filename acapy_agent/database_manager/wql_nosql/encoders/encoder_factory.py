@@ -1,15 +1,18 @@
+"""Module docstring."""
+
 # encoders/factory.py
 from .sqlite_encoder import SqliteTagEncoder
-from .postgres_encoder import PostgresTagEncoder
 from .mongo_encoder import MongoTagEncoder
-from .mssql_encoder import MssqlTagEncoder
+from acapy_agent.database_manager.wql_normalized.encoders.postgres_encoder import (
+    PostgresTagEncoder,
+)
 
 
 def get_encoder(db_type: str, enc_name, enc_value):
     """Returns an encoder object based on the database type.
 
     Args:
-        db_type (str): The type of database (e.g., 'sqlite', 'postgresql', 'mongodb', 'mssql').
+        db_type (str): The type of database (e.g., 'sqlite', 'postgresql', 'mongodb').
         enc_name (callable): Function to encode tag names.
         enc_value (callable): Function to encode tag values.
 
@@ -18,12 +21,12 @@ def get_encoder(db_type: str, enc_name, enc_value):
 
     Raises:
         ValueError: If the database type is not supported.
+
     """
     encoders = {
         "sqlite": SqliteTagEncoder,
         "postgresql": PostgresTagEncoder,
         "mongodb": MongoTagEncoder,
-        "mssql": MssqlTagEncoder,
     }
     encoder_class = encoders.get(db_type.lower())
     if encoder_class is None:

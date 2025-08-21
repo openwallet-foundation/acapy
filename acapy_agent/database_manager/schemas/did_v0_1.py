@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "did"
 
 SCHEMAS = {
@@ -12,10 +14,12 @@ SCHEMAS = {
             verkey_type TEXT,
             epoch TEXT,
             metadata TEXT,
-            endpoint TEXT GENERATED ALWAYS AS (json_extract(metadata, '$.endpoint')) STORED,
+            endpoint TEXT GENERATED ALWAYS AS 
+                (json_extract(metadata, '$.endpoint')) STORED,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            FOREIGN KEY (item_id) REFERENCES items(id)
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT did_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
@@ -43,10 +47,13 @@ SCHEMAS = {
             verkey_type TEXT,
             epoch TEXT,
             metadata TEXT,
-            endpoint TEXT GENERATED ALWAYS AS (jsonb_extract_path_text(metadata::jsonb, 'endpoint')) STORED,
+            endpoint TEXT GENERATED ALWAYS AS (
+                jsonb_extract_path_text(metadata::jsonb, 'endpoint')
+            ) STORED,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id)
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT did_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
@@ -84,7 +91,8 @@ SCHEMAS = {
             endpoint AS JSON_VALUE(metadata, '$.endpoint'),
             created_at DATETIME2 DEFAULT SYSDATETIME(),
             updated_at DATETIME2 DEFAULT SYSDATETIME(),
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id)
+                ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT did_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
@@ -130,5 +138,9 @@ DROP_SCHEMAS = {
 
 COLUMNS = ["method", "verkey", "verkey_type", "epoch", "metadata"]
 
-# category=did, name=did:peer:4zQmd7eCxTFjMLb9XFsmDqPXKKd862HusooDmJGKkg1HjGWM, value={"did": "did:peer:4zQmd7eCxTFjMLb9XFsmDqPXKKd862HusooDmJGKkg1HjGWM", "method": "did:peer:4", "verkey": "Ge9ZwM26zcfkSRKT85VhqXtFYLLou56nuDoWBynEdfV3", "verkey_type": "ed25519", "metadata": {}},
-# tags={'method': 'did:peer:4', 'verkey': 'Ge9ZwM26zcfkSRKT85VhqXtFYLLou56nuDoWBynEdfV3', 'verkey_type': 'ed25519'}
+# category=did, name=did:peer:4zQmd7eCxTFjMLb9XFsmDqPXKKd862HusooDmJGKkg1HjGWM,
+# value={"did": "did:peer:4zQmd7eCxTFjMLb9XFsmDqPXKKd862HusooDmJGKkg1HjGWM",
+#        "method": "did:peer:4", "verkey": "Ge9ZwM26zcfkSRKT85VhqXtFYLLou56nuDoWBynEdfV3",
+#        "verkey_type": "ed25519", "metadata": {}},
+# tags={'method': 'did:peer:4', 'verkey': 'Ge9ZwM26zcfkSRKT85VhqXtFYLLou56nuDoWBynEdfV3',
+#       'verkey_type': 'ed25519'}

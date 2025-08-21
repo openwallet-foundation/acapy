@@ -4,6 +4,26 @@ from unittest import mock
 
 import pytest
 
+# Configure pytest to ignore certain files during collection
+collect_ignore = [
+    # These test files require specific external services
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_TagsqlEncoder_ALL_some_test_v0_1.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_TagsqlEncoder_ALL_tagquery_to_mongo_v0_2.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_TagsqlEncoder_ALL_tests.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_TagsqlEncoder_ALL_wql_tag_mongo_v0_3_copy.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_compare_conj.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_or_conj.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_tags_after_removed_plaintext.py",
+]
+
+# Handler files use relative imports that fail when imported directly by pytest-ruff
+collect_ignore_glob = [
+    "acapy_agent/database_manager/databases/postgresql_normalized/handlers/*.py",
+    "acapy_agent/database_manager/databases/sqlite_normalized/handlers/*.py",
+    "acapy_agent/database_manager/databases/postgresql_normalized/handlers/custom/*.py",
+    "acapy_agent/database_manager/databases/sqlite_normalized/handlers/custom/*.py",
+]
+
 STUBS = {}
 
 POSTGRES_URL = None

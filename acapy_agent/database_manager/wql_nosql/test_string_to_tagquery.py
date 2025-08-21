@@ -1,3 +1,5 @@
+"""Tests for string to TagQuery conversion."""
+
 # pytest --maxfail=1 --disable-warnings --no-cov -vv
 # acapy_agent/database_manager/wql/test_string_to_tagquery.py
 

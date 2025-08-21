@@ -16,6 +16,7 @@ class HangupHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug("HangupHandler called with context %s", context)
         assert isinstance(context.message, Hangup)

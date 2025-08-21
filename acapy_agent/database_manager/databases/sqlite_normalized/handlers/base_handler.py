@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from abc import ABC, abstractmethod
 from typing import Optional, Sequence, Union, List, Tuple, Any, Generator
 import sqlite3
@@ -8,7 +10,7 @@ from ....wql_normalized.tags import (
 
 
 class BaseHandler(ABC):
-    """Abstract base class for handlers managing CRUD and query operations for a specific category."""
+    """Abstract base class for handlers managing CRUD/query operations for a category."""
 
     def __init__(self, category: str):
         """Initialize the handler with a specific category."""

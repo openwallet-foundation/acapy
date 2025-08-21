@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "oob_record"
 
 SCHEMAS = {
@@ -7,7 +9,8 @@ SCHEMAS = {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_id INTEGER NOT NULL,
             item_name TEXT NOT NULL,
-            state TEXT CHECK (state IN ('await-response', 'done', 'failed', 'sent', NULL)),
+            state TEXT CHECK 
+                (state IN ('await-response', 'done', 'failed', 'sent', NULL)),
             created_at TEXT NOT NULL,
             updated_at TEXT,
             trace INTEGER,
@@ -24,12 +27,18 @@ SCHEMAS = {
             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 ON oob_record_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 ON oob_record_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 ON oob_record_v0_1 (invi_msg_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 ON oob_record_v0_1 (connection_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 ON oob_record_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 ON oob_record_v0_1 (created_at);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 " 
+        "ON oob_record_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 " 
+        "ON oob_record_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 " 
+        "ON oob_record_v0_1 (invi_msg_id);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 " 
+        "ON oob_record_v0_1 (connection_id);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 " 
+        "ON oob_record_v0_1 (state);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 " 
+        "ON oob_record_v0_1 (created_at);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_oob_record_timestamp_v0_1
         AFTER UPDATE ON oob_record_v0_1
@@ -47,7 +56,8 @@ SCHEMAS = {
             id SERIAL PRIMARY KEY,
             item_id INTEGER NOT NULL,
             item_name TEXT NOT NULL,
-            state TEXT CHECK (state IN ('await-response', 'done', 'failed', 'sent', NULL)),
+            state TEXT CHECK 
+                (state IN ('await-response', 'done', 'failed', 'sent', NULL)),
             created_at TEXT NOT NULL,
             updated_at TEXT,
             trace BOOLEAN,
@@ -61,21 +71,31 @@ SCHEMAS = {
             our_recipient_key TEXT,
             our_service TEXT,
             multi_use BOOLEAN DEFAULT FALSE,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id)
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 ON oob_record_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 ON oob_record_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 ON oob_record_v0_1 (invi_msg_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 ON oob_record_v0_1 (connection_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 ON oob_record_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 ON oob_record_v0_1 (created_at);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 " 
+        "ON oob_record_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 " 
+        "ON oob_record_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 " 
+        "ON oob_record_v0_1 (invi_msg_id);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 " 
+        "ON oob_record_v0_1 (connection_id);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 " 
+        "ON oob_record_v0_1 (state);",
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 " 
+        "ON oob_record_v0_1 (created_at);",
         """
         CREATE OR REPLACE FUNCTION update_oob_record_timestamp_v0_1()
         RETURNS TRIGGER AS $$
         BEGIN
             IF NEW.updated_at IS NULL THEN
-                NEW.updated_at = TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+                NEW.updated_at = TO_CHAR(
+                    NOW() AT TIME ZONE 'UTC', 
+                    'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+                );
             END IF;
             RETURN NEW;
         END;
@@ -94,7 +114,9 @@ SCHEMAS = {
             id INT IDENTITY(1,1) PRIMARY KEY,
             item_id INT NOT NULL,
             item_name NVARCHAR(MAX) NOT NULL,
-            state NVARCHAR(50) CHECK (state IN ('await-response', 'done', 'failed', 'sent', NULL)),
+            state NVARCHAR(50) CHECK (
+                state IN ('await-response', 'done', 'failed', 'sent', NULL)
+            ),
             created_at NVARCHAR(50) NOT NULL,
             updated_at NVARCHAR(50),
             trace BIT,
@@ -108,15 +130,21 @@ SCHEMAS = {
             our_recipient_key NVARCHAR(255),
             our_service NVARCHAR(MAX),
             multi_use BIT DEFAULT 0,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id)
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 ON oob_record_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 ON oob_record_v0_1 (item_name);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_invi_msg_id_v0_1 ON oob_record_v0_1 (invi_msg_id);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_connection_id_v0_1 ON oob_record_v0_1 (connection_id);",
+        "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 " 
+        "ON oob_record_v0_1 (item_id);",
+        "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 " 
+        "ON oob_record_v0_1 (item_name);",
+        "CREATE NONCLUSTERED INDEX idx_oob_record_invi_msg_id_v0_1 " 
+        "ON oob_record_v0_1 (invi_msg_id);",
+        "CREATE NONCLUSTERED INDEX idx_oob_record_connection_id_v0_1 " 
+        "ON oob_record_v0_1 (connection_id);",
         "CREATE NONCLUSTERED INDEX idx_oob_record_state_v0_1 ON oob_record_v0_1 (state);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_created_at_v0_1 ON oob_record_v0_1 (created_at);",
+        "CREATE NONCLUSTERED INDEX idx_oob_record_created_at_v0_1 " 
+        "ON oob_record_v0_1 (created_at);",
         """
         CREATE TRIGGER trg_update_oob_record_timestamp_v0_1
         ON oob_record_v0_1
@@ -189,5 +217,24 @@ COLUMNS = [
 
 # sample
 # category=oob_record, name=c08c5e31-fcb1-484b-9c81-7020e878e0a9,
-# json={"our_recipient_key": "8UgXwq4s7uXLg9f6ZxSexvyPPsMqMjxHnamtPdtUMPdo", "invi_msg_id": "0ccaf2f7-771b-4ec0-a29f-2f7e71aecc94", "connection_id": "110af30c-8711-42e0-baa3-b93f7918f72b", "created_at": "2025-06-17T19:54:10.918294Z", "updated_at": "2025-06-17T19:54:10.918294Z", "state": "await-response", "their_service": null, "role": "sender", "multi_use": false, "invitation": {"@type": "https://didcomm.org/out-of-band/1.1/invitation", "@id": "0ccaf2f7-771b-4ec0-a29f-2f7e71aecc94", "label": "alice.agent", "handshake_protocols": ["https://didcomm.org/didexchange/1.0"], "services": [{"id": "#inline", "type": "did-communication", "recipientKeys": ["did:key:z6MkmvwaY5KJTT1oneVoFXQVp2XPDSdgmdCeUbgpDurVGcRB#z6MkmvwaY5KJTT1oneVoFXQVp2XPDSdgmdCeUbgpDurVGcRB"], "serviceEndpoint": "https://6fb8-70-49-2-61.ngrok-free.app"}], "goal_code": "issue-vc", "goal": "To issue a Faber College Graduate credential"}},
-# tags={'our_recipient_key': '8UgXwq4s7uXLg9f6ZxSexvyPPsMqMjxHnamtPdtUMPdo', 'invi_msg_id': '0ccaf2f7-771b-4ec0-a29f-2f7e71aecc94', 'connection_id': '110af30c-8711-42e0-baa3-b93f7918f72b'}
+# json={"our_recipient_key": "8UgXwq4s7uXLg9f6ZxSexvyPPsMqMjxHnamtPdtUMPdo",
+#       "invi_msg_id": "0ccaf2f7-771b-4ec0-a29f-2f7e71aecc94",
+#       "connection_id": "110af30c-8711-42e0-baa3-b93f7918f72b",
+#       "created_at": "2025-06-17T19:54:10.918294Z",
+#       "updated_at": "2025-06-17T19:54:10.918294Z",
+#       "state": "await-response", "their_service": null, "role": "sender",
+#       "multi_use": false, "invitation": {"@type":
+#       "https://didcomm.org/out-of-band/1.1/invitation",
+#       "@id": "0ccaf2f7-771b-4ec0-a29f-2f7e71aecc94",
+#       "label": "alice.agent",
+#       "handshake_protocols": ["https://didcomm.org/didexchange/1.0"],
+#       "services": [{"id": "#inline", "type": "did-communication",
+#       "recipientKeys":
+#       ["did:key:z6MkmvwaY5KJTT1oneVoFXQVp2XPDSdgmdCeUbgpDurVGcRB"
+#        "#z6MkmvwaY5KJTT1oneVoFXQVp2XPDSdgmdCeUbgpDurVGcRB"],
+#       "serviceEndpoint": "https://6fb8-70-49-2-61.ngrok-free.app"}],
+#       "goal_code": "issue-vc",
+#       "goal": "To issue a Faber College Graduate credential"}},
+# tags={'our_recipient_key': '8UgXwq4s7uXLg9f6ZxSexvyPPsMqMjxHnamtPdtUMPdo',
+#       'invi_msg_id': '0ccaf2f7-771b-4ec0-a29f-2f7e71aecc94',
+#       'connection_id': '110af30c-8711-42e0-baa3-b93f7918f72b'}

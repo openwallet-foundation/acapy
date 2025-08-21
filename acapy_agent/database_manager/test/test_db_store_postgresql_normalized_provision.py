@@ -1,10 +1,17 @@
-# poetry run python acapy_agent/database_manager/test/test_db_store_postgresql_normalized_provision.py
+"""Tests for PostgreSQL normalized database provisioning."""
+# poetry run python \
+# acapy_agent/database_manager/test/test_db_store_postgresql_normalized_provision.py
 
 
 import asyncio
 import json
 import logging
+import os
+import pytest
 from acapy_agent.database_manager.dbstore import DBStore
+
+# Skip all tests in this file if POSTGRES_URL env var is not set
+pytestmark = pytest.mark.postgres
 
 # Configure logging
 logging.basicConfig(
@@ -14,7 +21,9 @@ logging.basicConfig(
 )
 
 # Define the PostgreSQL connection string
-conn_str = "postgres://myuser:mypass@192.168.2.172:5432/test_normalize"
+conn_str = os.environ.get(
+    "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_normalize"
+)
 profile_name = "test_normalize"
 config = {
     "min_connections": 4,
@@ -400,7 +409,7 @@ async def cleanup():
 async def main():
     """Main test function executing all test scenarios."""
     print("Starting PostgreSQL db_store.py test program...")
-    store = await test_provision()
+    await test_provision()
     # await test_insert(store)
     # await test_scan(store)
     # await test_replace(store)

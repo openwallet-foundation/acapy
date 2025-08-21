@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 CATEGORY = "did_doc"
 
 SCHEMAS = {
@@ -14,7 +16,8 @@ SCHEMAS = {
             service TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            FOREIGN KEY (item_id) REFERENCES items(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_did_doc_item_id_v0_1 ON did_doc_v0_1 (item_id);",
@@ -24,32 +27,40 @@ SCHEMAS = {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             did_doc_id INTEGER NOT NULL,
             key_value TEXT,
-            key_type TEXT CHECK (key_type IN ('public_key', 'recipient_key', 'service_endpoint')),
+            key_type TEXT CHECK (key_type IN 
+                ('public_key', 'recipient_key', 'service_endpoint')),
             service_id TEXT,
-            FOREIGN KEY (did_doc_id) REFERENCES did_doc_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            FOREIGN KEY (did_doc_id) REFERENCES did_doc_v0_1(id) 
+                ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_key_value_v0_1 ON did_doc_keys_services_v0_1 (key_value);",
-        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_service_id_v0_1 ON did_doc_keys_services_v0_1 (service_id);",
+        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_key_value_v0_1 "
+        "ON did_doc_keys_services_v0_1 (key_value);",
+        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_service_id_v0_1 "
+        "ON did_doc_keys_services_v0_1 (service_id);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_insert_did_doc_keys_services_v0_1
         AFTER INSERT ON did_doc_v0_1
         FOR EACH ROW
         WHEN NEW.publickey IS NOT NULL OR NEW.service IS NOT NULL
         BEGIN
-            INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+            INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
             SELECT NEW.id, json_extract(p.value, '$.publicKeyBase58'), 'public_key', NULL
             FROM json_each(NEW.publickey) p
             WHERE NEW.publickey IS NOT NULL AND json_valid(NEW.publickey)
               AND json_extract(p.value, '$.publicKeyBase58') IS NOT NULL;
 
-            INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
-            SELECT NEW.id, json_extract(s.value, '$.serviceEndpoint'), 'service_endpoint', json_extract(s.value, '$.id')
+            INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
+            SELECT NEW.id, json_extract(s.value, '$.serviceEndpoint'), 
+                'service_endpoint', json_extract(s.value, '$.id')
             FROM json_each(NEW.service) s
             WHERE NEW.service IS NOT NULL AND json_valid(NEW.service)
               AND json_extract(s.value, '$.serviceEndpoint') IS NOT NULL;
 
-            INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+            INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
             SELECT NEW.id, r.value, 'recipient_key', json_extract(s.value, '$.id')
             FROM json_each(NEW.service) s
             CROSS JOIN json_each(json_extract(s.value, '$.recipientKeys')) r
@@ -82,7 +93,8 @@ SCHEMAS = {
             service TEXT,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) 
+                REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_did_doc_item_id_v0_1 ON did_doc_v0_1 (item_id);",
@@ -92,19 +104,24 @@ SCHEMAS = {
             id SERIAL PRIMARY KEY,
             did_doc_id INTEGER NOT NULL,
             key_value TEXT,
-            key_type TEXT CHECK (key_type IN ('public_key', 'recipient_key', 'service_endpoint')),
+            key_type TEXT CHECK (key_type IN 
+                ('public_key', 'recipient_key', 'service_endpoint')),
             service_id TEXT,
-            CONSTRAINT fk_did_doc_id FOREIGN KEY (did_doc_id) REFERENCES did_doc_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_did_doc_id FOREIGN KEY (did_doc_id) 
+                REFERENCES did_doc_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_key_value_v0_1 ON did_doc_keys_services_v0_1 (key_value);",
-        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_service_id_v0_1 ON did_doc_keys_services_v0_1 (service_id);",
+        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_key_value_v0_1 "
+        "ON did_doc_keys_services_v0_1 (key_value);",
+        "CREATE INDEX IF NOT EXISTS idx_did_doc_keys_services_service_id_v0_1 "
+        "ON did_doc_keys_services_v0_1 (service_id);",
         """
         CREATE OR REPLACE FUNCTION insert_did_doc_keys_services_v0_1()
         RETURNS TRIGGER AS $$
         BEGIN
             IF NEW.publickey IS NOT NULL AND NEW.publickey::jsonb IS NOT NULL THEN
-                INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+                INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
                 SELECT
                     NEW.id,
                     jsonb_extract_path_text(p.value, 'publicKeyBase58'),
@@ -115,7 +132,8 @@ SCHEMAS = {
             END IF;
 
             IF NEW.service IS NOT NULL AND NEW.service::jsonb IS NOT NULL THEN
-                INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+                INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
                 SELECT
                     NEW.id,
                     jsonb_extract_path_text(s.value, 'serviceEndpoint'),
@@ -124,14 +142,16 @@ SCHEMAS = {
                 FROM jsonb_array_elements(NEW.service::jsonb) s
                 WHERE jsonb_extract_path_text(s.value, 'serviceEndpoint') IS NOT NULL;
 
-                INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+                INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
                 SELECT
                     NEW.id,
                     r.value,
                     'recipient_key',
                     jsonb_extract_path_text(s.value, 'id')
                 FROM jsonb_array_elements(NEW.service::jsonb) s
-                CROSS JOIN jsonb_array_elements(jsonb_extract_path(s.value, 'recipientKeys')) r
+                CROSS JOIN jsonb_array_elements(
+                    jsonb_extract_path(s.value, 'recipientKeys')) r
                 WHERE jsonb_extract_path(s.value, 'recipientKeys') IS NOT NULL
                   AND r.value IS NOT NULL;
             END IF;
@@ -176,7 +196,8 @@ SCHEMAS = {
             service NVARCHAR(MAX),
             created_at DATETIME2 DEFAULT SYSDATETIME(),
             updated_at DATETIME2 DEFAULT SYSDATETIME(),
-            CONSTRAINT fk_item_id FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_item_id FOREIGN KEY (item_id) 
+                REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_did_doc_item_id_v0_1 ON did_doc_v0_1 (item_id);",
@@ -186,20 +207,25 @@ SCHEMAS = {
             id INT IDENTITY(1,1) PRIMARY KEY,
             did_doc_id INT NOT NULL,
             key_value NVARCHAR(MAX),
-            key_type NVARCHAR(50) CHECK (key_type IN ('public_key', 'recipient_key', 'service_endpoint')),
+            key_type NVARCHAR(50) CHECK (key_type IN 
+                ('public_key', 'recipient_key', 'service_endpoint')),
             service_id NVARCHAR(255),
-            CONSTRAINT fk_did_doc_id FOREIGN KEY (did_doc_id) REFERENCES did_doc_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
+            CONSTRAINT fk_did_doc_id FOREIGN KEY (did_doc_id) 
+                REFERENCES did_doc_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_did_doc_keys_services_key_value_v0_1 ON did_doc_keys_services_v0_1 (key_value);",
-        "CREATE NONCLUSTERED INDEX idx_did_doc_keys_services_service_id_v0_1 ON did_doc_keys_services_v0_1 (service_id);",
+        "CREATE NONCLUSTERED INDEX idx_did_doc_keys_services_key_value_v0_1 "
+        "ON did_doc_keys_services_v0_1 (key_value);",
+        "CREATE NONCLUSTERED INDEX idx_did_doc_keys_services_service_id_v0_1 "
+        "ON did_doc_keys_services_v0_1 (service_id);",
         """
         CREATE TRIGGER trg_insert_did_doc_keys_services_v0_1
         ON did_doc_v0_1
         AFTER INSERT
         AS
         BEGIN
-            INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+            INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
             SELECT
                 i.id,
                 JSON_VALUE(p.value, '$.publicKeyBase58'),
@@ -210,7 +236,8 @@ SCHEMAS = {
             WHERE i.publickey IS NOT NULL AND ISJSON(i.publickey) = 1
               AND JSON_VALUE(p.value, '$.publicKeyBase58') IS NOT NULL;
 
-            INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+            INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
             SELECT
                 i.id,
                 JSON_VALUE(s.value, '$.serviceEndpoint'),
@@ -221,7 +248,8 @@ SCHEMAS = {
             WHERE i.service IS NOT NULL AND ISJSON(i.service) = 1
               AND JSON_VALUE(s.value, '$.serviceEndpoint') IS NOT NULL;
 
-            INSERT INTO did_doc_keys_services_v0_1 (did_doc_id, key_value, key_type, service_id)
+            INSERT INTO did_doc_keys_services_v0_1 
+                (did_doc_id, key_value, key_type, service_id)
             SELECT
                 i.id,
                 r.value,
@@ -278,8 +306,10 @@ DROP_SCHEMAS = {
     "mssql": [
         "DROP TRIGGER IF EXISTS trg_update_did_doc_timestamp_v0_1;",
         "DROP TRIGGER IF EXISTS trg_insert_did_doc_keys_services_v0_1;",
-        "DROP INDEX IF EXISTS idx_did_doc_keys_services_service_id_v0_1 ON did_doc_keys_services_v0_1;",
-        "DROP INDEX IF EXISTS idx_did_doc_keys_services_key_value_v0_1 ON did_doc_keys_services_v0_1;",
+        "DROP INDEX IF EXISTS idx_did_doc_keys_services_service_id_v0_1 "
+        "ON did_doc_keys_services_v0_1;",
+        "DROP INDEX IF EXISTS idx_did_doc_keys_services_key_value_v0_1 "
+        "ON did_doc_keys_services_v0_1;",
         "DROP TABLE IF EXISTS did_doc_keys_services_v0_1;",
         "DROP INDEX IF EXISTS idx_did_doc_did_v0_1 ON did_doc_v0_1;",
         "DROP INDEX IF EXISTS idx_did_doc_item_id_v0_1 ON did_doc_v0_1;",
@@ -299,5 +329,13 @@ COLUMNS = [
 
 # sample
 # category=did_doc, name=32e953b1a11a468da3500e9b12655b5d
-# json={"@context": "https://w3id.org/did/v1", "id": "did:sov:3hQMdP4sNb1iQKN1L1VqLe", "publicKey": [{"id": "did:sov:3hQMdP4sNb1iQKN1L1VqLe#1", "type": "Ed25519VerificationKey2018", "controller": "did:sov:3hQMdP4sNb1iQKN1L1VqLe", "publicKeyBase58": "2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx"}], "authentication": [{"type": "Ed25519SignatureAuthentication2018", "publicKey": "did:sov:3hQMdP4sNb1iQKN1L1VqLe#1"}], "service": [{"id": "did:sov:3hQMdP4sNb1iQKN1L1VqLe;indy", "type": "IndyAgent", "priority": 0, "recipientKeys": ["2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx"], "serviceEndpoint": "https://477e-70-49-2-61.ngrok-free.app"}]}
+# json={"@context": "https://w3id.org/did/v1", "id": "did:sov:3hQMdP4sNb1iQKN1L1VqLe",
+#  "publicKey": [{"id": "did:sov:3hQMdP4sNb1iQKN1L1VqLe#1", "type":
+#  "Ed25519VerificationKey2018", "controller": "did:sov:3hQMdP4sNb1iQKN1L1VqLe",
+#  "publicKeyBase58": "2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx"}],
+#  "authentication": [{"type": "Ed25519SignatureAuthentication2018",
+#  "publicKey": "did:sov:3hQMdP4sNb1iQKN1L1VqLe#1"}], "service":
+#  [{"id": "did:sov:3hQMdP4sNb1iQKN1L1VqLe;indy", "type": "IndyAgent",
+#  "priority": 0, "recipientKeys": ["2UFCSELfEF7tsBLJU5uhnDAyhDxe1vgaWqJiyBDhXvAx"],
+#  "serviceEndpoint": "https://477e-70-49-2-61.ngrok-free.app"}]}
 #  tags={'did': '3hQMdP4sNb1iQKN1L1VqLe'}
