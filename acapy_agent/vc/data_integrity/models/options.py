@@ -33,7 +33,6 @@ class DataIntegrityProofOptions(BaseModel):
         **kwargs,
     ) -> None:
         """Initialize the DataIntegrityProofOptions instance."""
-
         self.id = id
         self.type = type
         self.proof_purpose = proof_purpose
@@ -210,7 +209,6 @@ class DataIntegrityProofOptionsSchema(BaseModelSchema):
     @post_dump(pass_original=True)
     def add_unknown_properties(self, data: dict, original, **kwargs):
         """Add back unknown properties before outputting."""
-
         data.update(original.extra)
 
         return data

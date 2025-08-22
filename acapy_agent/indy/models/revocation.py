@@ -29,7 +29,6 @@ class IndyRevRegDefValuePublicKeysAccumKey(BaseModel):
 
     def __init__(self, z: Optional[str] = None):
         """Initialize."""
-
         self.z = z
 
 
@@ -60,7 +59,6 @@ class IndyRevRegDefValuePublicKeys(BaseModel):
 
     def __init__(self, accum_key: Optional[IndyRevRegDefValuePublicKeysAccumKey] = None):
         """Initialize."""
-
         self.accum_key = accum_key
 
 
@@ -161,7 +159,6 @@ class IndyRevRegDef(BaseModel):
         value: Optional[IndyRevRegDefValue] = None,
     ):
         """Initialize."""
-
         self.ver = ver
         self.id_ = id_
         self.revoc_def_type = revoc_def_type
@@ -279,7 +276,6 @@ class IndyRevRegEntry(BaseModel):
         self, ver: Optional[str] = None, value: Optional[IndyRevRegEntryValue] = None
     ):
         """Initialize."""
-
         self.ver = ver
         self.value = value
 

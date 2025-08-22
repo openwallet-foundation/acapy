@@ -354,14 +354,14 @@ async def schemas_created(request: web.BaseRequest):
 
     is_anoncreds_profile_raise_web_exception(context.profile)
 
-    session = await context.session()
-    storage = session.inject(BaseStorage)
-    found = await storage.find_all_records(
-        type_filter=SCHEMA_SENT_RECORD_TYPE,
-        tag_query={
-            tag: request.query[tag] for tag in SCHEMA_TAGS if tag in request.query
-        },
-    )
+    async with context.session() as session:
+        storage = session.inject(BaseStorage)
+        found = await storage.find_all_records(
+            type_filter=SCHEMA_SENT_RECORD_TYPE,
+            tag_query={
+                tag: request.query[tag] for tag in SCHEMA_TAGS if tag in request.query
+            },
+        )
 
     return web.json_response({"schema_ids": [record.value for record in found]})
 
@@ -528,7 +528,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

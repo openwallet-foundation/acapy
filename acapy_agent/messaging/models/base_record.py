@@ -43,6 +43,7 @@ def match_post_filter(
         positive: whether matching all filter criteria positively or negatively
         alt: set to match any (positive=True) value or miss all (positive=False)
             values in post_filter
+
     """
     if not post_filter:
         return True
@@ -113,6 +114,7 @@ class BaseRecord(BaseModel):
         Args:
             record_id: The unique record identifier
             record: The stored representation
+
         """
         record_id_name = cls.RECORD_ID_NAME
         if record_id_name in record:
@@ -124,13 +126,11 @@ class BaseRecord(BaseModel):
     @classmethod
     def get_tag_map(cls) -> Mapping[str, str]:
         """Accessor for the set of defined tags."""
-
         return {tag.lstrip("~"): tag for tag in cls.TAG_NAMES or ()}
 
     @property
     def storage_record(self) -> StorageRecord:
         """Accessor for a `StorageRecord` representing this record."""
-
         return StorageRecord(
             self.RECORD_TYPE, json.dumps(self.value), self.tags, self._id
         )
@@ -138,13 +138,11 @@ class BaseRecord(BaseModel):
     @property
     def record_value(self) -> dict:
         """Accessor to define custom properties for the JSON record value."""
-
         return {}
 
     @property
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
-
         ret = self.strip_tag_prefix(self.tags)
         ret.update({"created_at": self.created_at, "updated_at": self.updated_at})
         ret.update(self.record_value)
@@ -153,7 +151,6 @@ class BaseRecord(BaseModel):
     @property
     def record_tags(self) -> dict:
         """Accessor to define implementation-specific tags."""
-
         return {
             tag: getattr(self, prop)
             for (prop, tag) in self.get_tag_map().items()
@@ -163,7 +160,6 @@ class BaseRecord(BaseModel):
     @property
     def tags(self) -> dict:
         """Accessor for the record tags generated for this record."""
-
         tags = self.record_tags
         return tags
 
@@ -174,6 +170,7 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             cache_key: The unique cache identifier
+
         """
         if not cache_key:
             return
@@ -192,8 +189,8 @@ class BaseRecord(BaseModel):
             cache_key: The unique cache identifier
             value: The value to cache
             ttl: The cache ttl
-        """
 
+        """
         if not cache_key:
             return
         cache = session.inject_or(BaseCache)
@@ -207,8 +204,8 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             cache_key: The unique cache identifier
-        """
 
+        """
         if not cache_key:
             return
         cache = session.inject_or(BaseCache)
@@ -229,8 +226,8 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             record_id: The ID of the record to find
             for_update: Whether to lock the record for update
-        """
 
+        """
         storage = session.inject(BaseStorage)
         result = await storage.get_record(
             cls.RECORD_TYPE, record_id, options={"forUpdate": for_update}
@@ -256,8 +253,8 @@ class BaseRecord(BaseModel):
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
             for_update: Whether to lock the record for update
-        """
 
+        """
         storage = session.inject(BaseStorage)
         rows = await storage.find_all_records(
             cls.RECORD_TYPE,
@@ -312,8 +309,8 @@ class BaseRecord(BaseModel):
             post_filter_negative: Additional value filters to apply matching negatively
             alt: set to match any (positive=True) value or miss all (positive=False)
                 values in post_filter
-        """
 
+        """
         storage = session.inject(BaseStorage)
 
         tag_query = cls.prefix_tag_filter(tag_filter)
@@ -392,8 +389,8 @@ class BaseRecord(BaseModel):
             log_params: Additional parameters to log
             log_override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
-        """
 
+        """
         new_record = None
         log_reason = reason or ("Updated record" if self._id else "Created record")
         try:
@@ -439,8 +436,8 @@ class BaseRecord(BaseModel):
             new_record: Flag indicating if the record was just created
             last_state: The previous state value
             event: Flag to override whether the event is sent
-        """
 
+        """
         if event is None:
             event = new_record or (last_state != self.state)
         if event:
@@ -451,8 +448,8 @@ class BaseRecord(BaseModel):
 
         Args:
             session: The profile session to use
-        """
 
+        """
         if self._id:
             storage = session.inject(BaseStorage)
             if self.state:
@@ -467,8 +464,8 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             payload: The event payload
-        """
 
+        """
         if not self.RECORD_TOPIC:
             return
 
@@ -491,7 +488,6 @@ class BaseRecord(BaseModel):
         override: bool = False,
     ):
         """Print a message with increased visibility (for testing)."""
-
         if override or (
             cls.LOG_STATE_FLAG and settings and settings.get(cls.LOG_STATE_FLAG)
         ):
@@ -504,13 +500,11 @@ class BaseRecord(BaseModel):
     @classmethod
     def strip_tag_prefix(cls, tags: dict):
         """Strip tilde from unencrypted tag names."""
-
         return {(k[1:] if "~" in k else k): v for (k, v) in tags.items()} if tags else {}
 
     @classmethod
     def prefix_tag_filter(cls, tag_filter: dict):
         """Prefix unencrypted tags used in the tag filter."""
-
         ret = None
         if tag_filter:
             tag_map = cls.get_tag_map()
@@ -526,7 +520,6 @@ class BaseRecord(BaseModel):
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
-
         if type(other) is type(self):
             return self.value == other.value and self.tags == other.tags
         return False
@@ -538,8 +531,8 @@ class BaseRecord(BaseModel):
         Args:
             prefix: Common prefix to look for
             walk_mro: Walk MRO to find attributes inherited from superclasses
-        """
 
+        """
         bases = cls.__mro__ if walk_mro else [cls]
         return [
             vars(base)[name]
@@ -561,13 +554,11 @@ class BaseExchangeRecord(BaseRecord):
         **kwargs,
     ):
         """Initialize a new BaseExchangeRecord."""
-
         super().__init__(id, state, **kwargs)
         self.trace = trace
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
-
         if type(other) is type(self):
             return (
                 self.value == other.value

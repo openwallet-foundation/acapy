@@ -34,6 +34,7 @@ class V20CredManager:
 
         Args:
             profile: The profile instance for this credential manager
+
         """
         self._profile = profile
 
@@ -111,7 +112,6 @@ class V20CredManager:
             Resulting credential exchange record including credential proposal
 
         """
-
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V20CredExRecord(
@@ -222,7 +222,6 @@ class V20CredManager:
                 supported formats.
 
         """
-
         cred_proposal_message = (
             counter_proposal if counter_proposal else cred_ex_record.cred_proposal
         )
@@ -287,7 +286,6 @@ class V20CredManager:
             The credential exchange record, updated
 
         """
-
         # Get credential exchange record (holder sent proposal first)
         # or create it (issuer sent offer first)
         try:
@@ -500,7 +498,6 @@ class V20CredManager:
             Tuple: (Updated credential exchange record, credential issue message)
 
         """
-
         if cred_ex_record.state != V20CredExRecord.STATE_REQUEST_RECEIVED:
             raise V20CredManagerError(
                 f"Credential exchange {cred_ex_record.cred_ex_id} "
@@ -733,7 +730,6 @@ class V20CredManager:
 
     async def delete_cred_ex_record(self, cred_ex_id: str) -> None:
         """Delete credential exchange record and associated detail records."""
-
         async with self._profile.session() as session:
             for fmt in V20CredFormat.Format:  # details first: do not strand any orphans
                 for record in await fmt.detail.query_by_cred_ex_id(

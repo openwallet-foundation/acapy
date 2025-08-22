@@ -35,6 +35,7 @@ class Keylist(AgentMessage):
             keys: Found keys by requested query
             pagination: Pagination rules
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
         self.keys = list(keys) if keys else []

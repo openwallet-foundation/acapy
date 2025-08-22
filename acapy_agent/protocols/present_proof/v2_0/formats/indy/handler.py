@@ -77,14 +77,12 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-
         return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
 
     def get_format_data(
         self, message_type: str, data: dict
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
-
         return (
             V20PresFormat(
                 attach_id=IndyPresExchangeHandler.format.api,
@@ -109,7 +107,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-
         indy_proof_request = pres_ex_record.pres_proposal.attachment(
             IndyPresExchangeHandler.format
         )
@@ -131,7 +128,6 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-
         requested_credentials = {}
         if not request_data:
             try:

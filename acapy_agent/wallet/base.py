@@ -55,6 +55,7 @@ class BaseWallet(ABC):
         Raises:
             WalletDuplicateError: If the resulting verkey already exists in the wallet
             WalletError: If there is another backend error
+
         """
 
     @abstractmethod
@@ -173,6 +174,7 @@ class BaseWallet(ABC):
 
         Returns:
             The stored `DIDInfo`
+
         """
 
     async def create_public_did(

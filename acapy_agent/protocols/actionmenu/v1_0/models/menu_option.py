@@ -33,6 +33,7 @@ class MenuOption(BaseModel):
             description: Additional descriptive text for the menu option
             disabled: If the option should be shown as disabled
             form: A form to display when the option is selected
+
         """
         self.name = name
         self.title = title

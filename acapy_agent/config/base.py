@@ -38,6 +38,7 @@ class BaseSettings(Mapping[str, Any]):
         Args:
             var_names: A list of variable name alternatives
             default: The default value to return if none are defined
+
         """
         value = self.get_value(*var_names, default)
         if value is not None:
@@ -51,6 +52,7 @@ class BaseSettings(Mapping[str, Any]):
         Args:
             var_names: A list of variable name alternatives
             default: The default value to return if none are defined
+
         """
         value = self.get_value(*var_names, default)
         if value is not None:
@@ -64,6 +66,7 @@ class BaseSettings(Mapping[str, Any]):
         Args:
             var_names: A list of variable name alternatives
             default: The default value to return if none are defined
+
         """
         value = self.get_value(*var_names, default=default)
         if value is not None:

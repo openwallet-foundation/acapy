@@ -60,6 +60,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         Args:
             did: The DID to look up on the ledger or in the cache
+
         """
 
     @abstractmethod
@@ -71,6 +72,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         Args:
             did: The DID to look up on the ledger or in the cache
             endpoint_type: The type of the endpoint (default 'endpoint')
+
         """
 
     @abstractmethod
@@ -79,6 +81,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         Args:
             did: The DID to look up on the ledger or in the cache
+
         """
 
     async def _construct_attr_json(
@@ -95,8 +98,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             endpoint: The endpoint address
             endpoint_type: The type of the endpoint
             routing_keys: List of routing_keys if mediator is present
-        """
 
+        """
         if not routing_keys:
             routing_keys = []
 
@@ -131,6 +134,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             write_ledger: Flag to write the endpoint to the ledger
             endorser_did: Optional DID of the endorser
             routing_keys: List of routing_keys if mediator is present
+
         """
 
     @abstractmethod
@@ -152,6 +156,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             role: For permissioned ledgers, what role should the new DID have.
             write_ledger: Flag to write the nym to the ledger
             endorser_did: Optional DID of the endorser
+
         """
 
     @abstractmethod
@@ -160,6 +165,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         Args:
             did: DID to register on the ledger.
+
         """
 
     @abstractmethod
@@ -172,6 +178,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         Args:
             next_seed: seed for incoming ed25519 keypair (default random)
+
         """
 
     @abstractmethod
@@ -288,7 +295,6 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             endorser_did: Optional DID of the endorser
 
         """
-
         public_info = await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError("Cannot publish schema without a public DID")
@@ -799,6 +805,7 @@ class Role(Enum):
         Args:
             token: token identifying role to indy-sdk:
                 "STEWARD", "TRUSTEE", "ENDORSER", "" or None
+
         """
         if token is None:
             return Role.USER
@@ -818,10 +825,8 @@ class Role(Enum):
 
         Recall that None signifies USER and "" signifies a role undergoing reset.
         """
-
         return str(self.value[0]) if isinstance(self.value[0], int) else self.value[0]
 
     def token(self) -> str:
         """Return token identifying role to indy-sdk."""
-
         return self.value[0] if self in (Role.USER, Role.ROLE_REMOVE) else self.name

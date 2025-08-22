@@ -55,7 +55,6 @@ class DIDRotateRequestJSONSchema(OpenAPISchema):
 @tenant_authentication
 async def rotate(request: web.BaseRequest):
     """Request to rotate a DID."""
-
     LOGGER.debug("DID Rotate Rotate request >>>")
 
     context: AdminRequestContext = request["context"]
@@ -97,7 +96,6 @@ async def rotate(request: web.BaseRequest):
 @tenant_authentication
 async def hangup(request: web.BaseRequest):
     """Hangup a DID rotation."""
-
     LOGGER.debug("DID Rotate Hangup request >>>")
 
     context: AdminRequestContext = request["context"]
@@ -120,14 +118,12 @@ async def hangup(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes([web.post("/did-rotate/{conn_id}/rotate", rotate)])
     app.add_routes([web.post("/did-rotate/{conn_id}/hangup", hangup)])
 
 
 def post_process_routes(app: web.Application):
     """Amend Swagger API."""
-
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(

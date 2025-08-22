@@ -48,6 +48,7 @@ class ProblemReport(AgentMessage):
             tracking_uri: URI for tracking the problem
             escalation_uri: URI for escalating the problem
             kwargs: Additional keyword arguments for message
+
         """
         super().__init__(**kwargs)
         self.description = description if description else None

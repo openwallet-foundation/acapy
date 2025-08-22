@@ -39,7 +39,6 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the multiple Indy ledger manager instance."""
-
         backend_name = self.root_profile.BACKEND_NAME
         if backend_name in ("askar", "askar-anoncreds"):
             manager_type = "single-wallet-askar"

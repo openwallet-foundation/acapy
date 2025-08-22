@@ -30,6 +30,7 @@ class Forward(AgentMessage):
             to (str): Recipient DID
             msg (str): Message content
             kwargs: Additional keyword arguments
+
         """
         super().__init__(**kwargs)
         self.to = to

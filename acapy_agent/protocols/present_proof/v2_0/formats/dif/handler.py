@@ -89,7 +89,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         self, message_type: str, data: dict
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
-
         return (
             V20PresFormat(
                 attach_id=DIFPresFormatHandler.format.api,

@@ -32,8 +32,8 @@ def resource(ref: str, delimiter: Optional[str] = None) -> str:
         ref: reference
         delimiter: delimiter character
             (default None maps to '#', or ';' introduces identifiers)
-    """
 
+    """
     return ref.split(delimiter if delimiter else "#")[0]
 
 
@@ -47,7 +47,6 @@ def canon_did(uri: str) -> str:
         ValueError: for invalid input.
 
     """
-
     if ok_did(uri):
         return uri
 
@@ -69,8 +68,8 @@ def canon_ref(did: str, ref: str, delimiter: Optional[str] = None):
             location in the DID doc
         delimiter: delimiter character marking fragment (default '#') or
             introducing identifier (';') against DID resource
-    """
 
+    """
     if not ok_did(did):
         raise ValueError("Bad DID {} cannot act as DID document identifier".format(did))
 
@@ -103,7 +102,6 @@ def ok_did(token: str) -> bool:
     Returns: whether input token looks like a valid schema identifier
 
     """
-
     try:
         return len(b58decode(token)) == 16 if token else False
     except ValueError:

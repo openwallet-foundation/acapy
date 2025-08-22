@@ -288,6 +288,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
         Args:
             val: ServiceDecorator or dict to set as the service
+
         """
         if val is None:
             self._decorators.pop("service", None)
@@ -310,6 +311,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
         Args:
             val: ThreadDecorator or dict to set as the thread
+
         """
         if val is None:
             self._decorators.pop("thread", None)
@@ -328,6 +330,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
         Args:
             msg: The received message containing optional thread information
+
         """
         if msg:
             thread = msg._thread
@@ -341,6 +344,7 @@ class AgentMessage(BaseModel, BaseMessage):
         Args:
             thid: The thread identifier
             pthid: The parent thread identifier
+
         """
         if thid or pthid:
             self._thread = ThreadDecorator(thid=thid, pthid=pthid)
@@ -363,6 +367,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
         Args:
             val: TraceDecorator or dict to set as the trace
+
         """
         if val is None:
             self._decorators.pop("trace", None)
@@ -374,6 +379,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
         Args:
             msg: The received message containing optional trace information
+
         """
         if msg and msg._trace:
             # ignore if not a valid type
@@ -386,6 +392,7 @@ class AgentMessage(BaseModel, BaseMessage):
         Args:
             context: context object
             trace: string containing trace json structure
+
         """
         if trace:
             self.add_trace_decorator(
@@ -401,6 +408,7 @@ class AgentMessage(BaseModel, BaseMessage):
         Args:
             target: The trace target
             full_thread: Full thread flag
+
         """
         if self._trace:
             # don't replace if there is already a trace decorator
@@ -415,6 +423,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
         Args:
             val: The trace target
+
         """
         if not self._trace:
             self.add_trace_decorator(target=TRACE_MESSAGE_TARGET, full_thread=True)

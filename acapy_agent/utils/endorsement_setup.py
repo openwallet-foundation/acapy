@@ -22,7 +22,6 @@ class EndorsementSetupError(Exception):
 
 async def attempt_auto_author_with_endorser_setup(profile: Profile):
     """Automatically setup the author's endorser connection if possible."""
-
     if not is_author_role(profile):
         return
 

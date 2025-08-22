@@ -16,13 +16,16 @@ from anoncreds import (
     W3cPresentation,
     create_link_secret,
 )
+
+# ideally both AskarError and DBStoreError should inherit from a shared base class,
+# so the business layer doesn't need to care about the storage choice.
 from aries_askar import AskarError, AskarErrorCode
+from ..database_manager.dbstore import DBStoreError, DBStoreErrorCode
 from marshmallow import INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnonCredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..storage.vc_holder.base import VCHolder
@@ -78,23 +81,39 @@ class AnonCredsHolder:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
+        # Check if profile is AskarAnonCredsProfile or KanonAnonCredsProfile
+        # by checking the backend attribute
+        if not isinstance(self._profile, Profile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        
+        # Check if it's a supported anoncreds profile type
+        if hasattr(self._profile, 'backend'):
+            backend = (
+                self._profile.backend.lower()
+                if isinstance(self._profile.backend, str)
+                else ''
+            )
+            if 'anoncreds' not in backend and 'kanon' not in backend:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        else:
+            # For AskarAnonCredsProfile, check the class name
+            class_name = self._profile.__class__.__name__
+            if 'AnonCreds' not in class_name and 'Kanon' not in class_name:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
 
     async def get_master_secret(self) -> str:
         """Get or create the default master secret."""
-
         while True:
             async with self.profile.session() as session:
                 try:
                     record = await session.handle.fetch(
                         CATEGORY_MASTER_SECRET, AnonCredsHolder.MASTER_SECRET_ID
                     )
-                except AskarError as err:
+                except (AskarError, DBStoreError) as err:
                     raise AnonCredsHolderError("Error fetching master secret") from err
                 if record:
                     try:
@@ -117,8 +136,11 @@ class AnonCredsHolder:
                             AnonCredsHolder.MASTER_SECRET_ID,
                             secret,
                         )
-                    except AskarError as err:
-                        if err.code != AskarErrorCode.DUPLICATE:
+                    except (AskarError, DBStoreError) as err:
+                        if err.code not in (
+                            AskarErrorCode.DUPLICATE,
+                            DBStoreErrorCode.DUPLICATE,
+                        ):
                             raise AnonCredsHolderError(
                                 "Error saving master secret"
                             ) from err
@@ -271,7 +293,7 @@ class AnonCredsHolder:
                         value_json=mime_types,
                     )
                 await txn.commit()
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsHolderError("Error storing credential") from err
 
         return credential_id
@@ -381,7 +403,6 @@ class AnonCredsHolder:
             wql: wql query dict
 
         """
-
         result = []
 
         try:
@@ -395,7 +416,7 @@ class AnonCredsHolder:
             async for row in rows:
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsHolderError("Error retrieving credentials") from err
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error loading stored credential") from err
@@ -495,7 +516,7 @@ class AnonCredsHolder:
         try:
             async with self.profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsHolderError("Error retrieving credential") from err
 
         if not cred:
@@ -526,6 +547,7 @@ class AnonCredsHolder:
 
         Returns:
             bool: True if the credential is revoked, False otherwise.
+
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id
@@ -556,7 +578,7 @@ class AnonCredsHolder:
                 await session.handle.remove(
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsHolderError(
                 "Error deleting credential", error_code=err.code
             ) from err  # noqa: E501
@@ -580,7 +602,7 @@ class AnonCredsHolder:
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                     credential_id,
                 )
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsHolderError("Error retrieving credential mime types") from err
         values = mime_types_record and mime_types_record.value_json
         if values:
@@ -604,7 +626,6 @@ class AnonCredsHolder:
             rev_states: AnonCreds format revocation states JSON
 
         """
-
         creds: Dict[str, Credential] = {}
 
         def get_rev_state(cred_id: str, detail: dict):
@@ -750,7 +771,6 @@ class AnonCredsHolder:
             the revocation state
 
         """
-
         try:
             rev_state = await asyncio.get_event_loop().run_in_executor(
                 None,

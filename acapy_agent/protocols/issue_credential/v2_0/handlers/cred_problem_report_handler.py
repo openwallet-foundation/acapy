@@ -17,6 +17,7 @@ class CredProblemReportHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug(
             "Issue-credential v2.0 problem report handler called with context %s",

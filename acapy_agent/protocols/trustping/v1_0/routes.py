@@ -76,13 +76,11 @@ async def connections_send_ping(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes([web.post("/connections/{conn_id}/send-ping", connections_send_ping)])
 
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

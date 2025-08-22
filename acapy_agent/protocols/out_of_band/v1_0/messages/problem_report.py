@@ -65,7 +65,6 @@ class OOBProblemReportSchema(ProblemReportSchema):
     @pre_dump
     def check_thread_deco(self, obj, **kwargs):
         """Thread decorator, and its thid and pthid, are mandatory."""
-
         if not obj._decorators.to_dict().get("~thread", {}).keys() >= {"thid", "pthid"}:
             raise ValidationError("Missing required field(s) in thread decorator")
 
@@ -74,7 +73,6 @@ class OOBProblemReportSchema(ProblemReportSchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields."""
-
         if not data.get("description", {}).get("code", ""):
             raise ValidationError("Value for description.code must be present")
         elif data.get("description", {}).get("code", "") not in [

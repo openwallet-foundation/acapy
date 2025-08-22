@@ -14,8 +14,8 @@ class InvitationHandler(BaseHandler):
         Args:
             context: Request context
             responder: Responder callback
-        """
 
+        """
         self._logger.debug("InvitationHandler called with context %s", context)
         assert isinstance(context.message, InvitationMessage)
 

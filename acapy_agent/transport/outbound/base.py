@@ -111,6 +111,7 @@ class BaseOutboundTransport(ABC):
             outbound_message: the outbound message to handle
             endpoint: URI endpoint for delivery
             metadata: Additional metadata associated with the payload
+
         """
 
 

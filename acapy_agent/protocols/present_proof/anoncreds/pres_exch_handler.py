@@ -64,7 +64,6 @@ class AnonCredsPresExchHandler:
           "referent-1": {"cred_id": "1", "non_revoked": {"from": ..., "to": ...}}
         }
         """
-
         requested_referents = {}
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})
@@ -234,7 +233,6 @@ class AnonCredsPresExchHandler:
         requested_credentials: Optional[dict] = None,
     ) -> dict:
         """Return AnonCreds proof request as dict."""
-
         # If not anoncreds capable, try to use indy handler. This should be removed when
         # indy filter is completely retired
         if not isinstance(self._profile, AskarAnonCredsProfile):

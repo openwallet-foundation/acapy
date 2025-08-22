@@ -50,7 +50,6 @@ def _canonize_document(doc: dict, document_loader: DocumentLoader | None = None)
 
 def _created_at() -> str:
     """Creation Timestamp."""
-
     stamp = datetime.datetime.now(datetime.timezone.utc)
     return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -59,7 +58,6 @@ def create_verify_data(
     data: dict, signature_options: dict, document_loader: DocumentLoader | None = None
 ) -> tuple[dict, str]:
     """Encapsulate process of constructing string used during sign and verify."""
-
     signature_options["type"] = signature_options.get("type", "Ed25519Signature2018")
     type_ = signature_options.get("type")
     if type_ != "Ed25519Signature2018":

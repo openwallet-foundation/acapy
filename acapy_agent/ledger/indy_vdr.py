@@ -321,9 +321,7 @@ class IndyVdrLedger(BaseLedger):
             taa_accept: whether to apply TAA acceptance to the (signed, write) request
             sign_did: override the signing DID
             write_ledger: whether to write the request to the ledger
-
         """
-
         if not self.pool_handle:
             raise ClosedPoolError(
                 f"Cannot sign and submit request to closed pool '{self.pool_name}'"
@@ -342,7 +340,9 @@ class IndyVdrLedger(BaseLedger):
 
         if sign:
             if not sign_did:
-                raise BadLedgerRequestError("Cannot sign request without a public DID")
+                raise BadLedgerRequestError(
+                    "Cannot sign request without a public DID"
+                )
 
             if taa_accept or taa_accept is None:
                 acceptance = await self.get_latest_txn_author_acceptance()
@@ -357,7 +357,9 @@ class IndyVdrLedger(BaseLedger):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 request.set_signature(
-                    await wallet.sign_message(request.signature_input, sign_did.verkey)
+                    await wallet.sign_message(
+                        request.signature_input, sign_did.verkey
+                    )
                 )
                 del wallet
 
@@ -1007,23 +1009,26 @@ class IndyVdrLedger(BaseLedger):
         """Look up the latest TAA acceptance."""
         cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.profile.name
         acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
-        if not acceptance:
-            tag_filter = {"pool_name": self.pool_name}
-            async with self.profile.session() as session:
-                storage = session.inject(BaseStorage)
-                cache = self.profile.inject_or(BaseCache)
-                found = await storage.find_all_records(
-                    TAA_ACCEPTED_RECORD_TYPE, tag_filter
-                )
-            if found:
-                records = [json.loads(record.value) for record in found]
-                records.sort(key=lambda v: v["time"], reverse=True)
-                acceptance = records[0]
-            else:
-                acceptance = {}
-            if cache:
-                await cache.set(cache_key, acceptance, self.pool.cache_duration)
-        return acceptance
+        try:
+            if not acceptance:
+                tag_filter = {"pool_name": self.pool_name}
+                async with self.profile.session() as session:
+                    storage = session.inject(BaseStorage)
+                    cache = self.profile.inject_or(BaseCache)
+                    found = await storage.find_all_records(
+                        TAA_ACCEPTED_RECORD_TYPE, tag_filter
+                    )
+                if found:
+                    records = [json.loads(record.value) for record in found]
+                    records.sort(key=lambda v: v["time"], reverse=True)
+                    acceptance = records[0]
+                else:
+                    acceptance = {}
+                if cache:
+                    await cache.set(cache_key, acceptance, self.pool.cache_duration)
+            return acceptance
+        except Exception as e:
+            raise LedgerError(f"Failed to get TAA acceptance: {str(e)}") from e
 
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
         """Get revocation registry definition by ID."""
@@ -1161,7 +1166,10 @@ class IndyVdrLedger(BaseLedger):
                 "No issuer DID found for revocation registry definition"
             )
 
-        if self.profile.context.settings.get("wallet.type") == "askar-anoncreds":
+        if self.profile.context.settings.get("wallet.type") in (
+            "askar-anoncreds",
+            "kanon-anoncreds",
+        ):
             from acapy_agent.anoncreds.default.legacy_indy.registry import (
                 LegacyIndyRegistry,
             )
@@ -1240,7 +1248,10 @@ class IndyVdrLedger(BaseLedger):
                 "No issuer DID found for revocation registry entry"
             )
 
-        if self.profile.context.settings.get("wallet.type") == "askar-anoncreds":
+        if self.profile.context.settings.get("wallet.type") in (
+            "askar-anoncreds",
+            "kanon-anoncreds",
+        ):
             from acapy_agent.anoncreds.default.legacy_indy.registry import (
                 LegacyIndyRegistry,
             )

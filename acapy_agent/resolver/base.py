@@ -55,6 +55,7 @@ class ResolutionResult:
         Args:
             did_document: DID Document resolved
             metadata: Resolving details
+
         """
         self.did_document = did_document
         self.metadata = metadata
@@ -77,6 +78,7 @@ class BaseDIDResolver(ABC):
 
         Args:
             type_ (Type): Type of resolver, native or non-native
+
         """
         self.type = type_ or ResolverType.NON_NATIVE
 

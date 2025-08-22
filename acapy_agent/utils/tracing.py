@@ -88,7 +88,6 @@ def tracing_enabled(context, message) -> bool:
 
 def decode_inbound_message(message):
     """Return bundled message if appropriate."""
-
     if message and isinstance(message, OutboundMessage):
         if message.payload and isinstance(message.payload, AgentMessage):
             return message.payload
@@ -144,7 +143,6 @@ def trace_event(
             True.
 
     """
-
     ret = time.perf_counter()
 
     if force_trace or tracing_enabled(context, message):

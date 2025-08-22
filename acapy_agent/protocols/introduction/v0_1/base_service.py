@@ -45,6 +45,7 @@ class BaseIntroductionService(ABC):
             outbound_handler: The outbound handler coroutine for sending a message
             session: Profile session to use for connection, introduction records
             message: The message to use when requesting the invitation
+
         """
 
     @abstractmethod
@@ -62,4 +63,5 @@ class BaseIntroductionService(ABC):
             invitation: The received Invitation message
             session: Profile session to use for introduction records
             outbound_handler: The outbound handler coroutine for sending a message
+
         """

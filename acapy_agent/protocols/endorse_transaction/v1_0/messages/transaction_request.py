@@ -44,6 +44,7 @@ class TransactionRequest(AgentMessage):
             messages_attach: The attached message describing the actual transaction
             endorser_write_txn: Request Endorser to write the ledger transaction
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
         self.transaction_id = transaction_id

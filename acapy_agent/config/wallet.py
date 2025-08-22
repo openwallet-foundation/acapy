@@ -19,29 +19,42 @@ from .injection_context import InjectionContext
 LOGGER = logging.getLogger(__name__)
 
 CFG_MAP = {
-    "key",
-    "key_derivation_method",
-    "rekey",
-    "name",
-    "storage_config",
-    "storage_creds",
-    "storage_type",
-    "test",
+    "wallet": [
+        "key",
+        "key_derivation_method",
+        "rekey",
+        "name",
+        "storage_config",
+        "storage_creds",
+        "storage_type",
+        "test",
+    ],
+    "dbstore": [
+        "key",
+        "storage_type",
+        "rekey",
+        "storage_config",
+        "storage_creds",
+        "schema_config",
+    ],
 }
 
 
 def _create_config_with_settings(settings) -> dict:
     profile_config = {}
 
-    for k in CFG_MAP:
-        pk = f"wallet.{k}"
-        if pk in settings:
-            profile_config[k] = settings[pk]
+    for key in CFG_MAP["wallet"]:
+        settings_key = f"wallet.{key}"
+        if settings_key in settings:
+            profile_config[key] = settings[settings_key]
 
-    # may be set by `aca-py provision --recreate`
+    for key in CFG_MAP["dbstore"]:
+        settings_key = f"dbstore.{key}"
+        if settings_key in settings:
+            profile_config[f"dbstore_{key}"] = settings[settings_key]
+
     if settings.get("wallet.recreate"):
         profile_config["auto_recreate"] = True
-
     return profile_config
 
 
@@ -84,6 +97,7 @@ async def _replace_public_did_if_seed_mismatch(
 
     Returns:
         DIDInfo: Either the original DID info or a new one if replaced
+
     """
     if not wallet_seed:
         return public_did_info
@@ -156,7 +170,6 @@ async def wallet_config(
     context: InjectionContext, provision: bool = False
 ) -> Tuple[Profile, DIDInfo]:
     """Initialize the root profile."""
-
     profile_manager = context.inject(ProfileManager)
 
     settings = context.settings

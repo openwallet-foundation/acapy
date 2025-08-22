@@ -33,7 +33,6 @@ class WebDIDResolver(BaseDIDResolver):
         according to
         https://w3c-ccg.github.io/did-method-web/#read-resolve
         """
-
         as_did = DID(did)
         method_specific_id = as_did.method_specific_id
         if ":" in method_specific_id:
@@ -55,7 +54,6 @@ class WebDIDResolver(BaseDIDResolver):
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve did:web DIDs."""
-
         url = self.__transform_to_url(did)
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:

@@ -29,7 +29,6 @@ class RevocRecoveryException(Exception):
 
 async def fetch_txns(genesis_txns, registry_id):
     """Fetch tails file and revocation registry information."""
-
     try:
         vdr_module = importlib.import_module("indy_vdr")
         credx_module = importlib.import_module("indy_credx")
@@ -86,7 +85,6 @@ async def generate_ledger_rrrecovery_txn(
     genesis_txns, registry_id, set_revoked, cred_def, rev_reg_def_private
 ):
     """Generate a new ledger accum entry, based on wallet vs ledger revocation state."""
-
     new_delta = None
 
     ledger_data = await fetch_txns(genesis_txns, registry_id)

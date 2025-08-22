@@ -97,6 +97,7 @@ def did_is_self_certified(did: str, verkey: str) -> bool:
     Args:
         did: DID string
         verkey: VERKEY string
+
     """
     ABBREVIATED_VERKEY_REGEX = "^~[1-9A-HJ-NP-Za-km-z]{21,22}$"
     if re.search(ABBREVIATED_VERKEY_REGEX, verkey):
