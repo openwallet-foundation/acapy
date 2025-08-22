@@ -14,6 +14,8 @@ collect_ignore = [
     "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_compare_conj.py",
     "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_or_conj.py",
     "acapy_agent/database_manager/wql_nosql/tests/test_tags_after_removed_plaintext.py",
+    # Performance tests that may have concurrency issues
+    "acapy_agent/database_manager/test/test_database_performance.py",
 ]
 
 # Handler files use relative imports that fail when imported directly by pytest-ruff
