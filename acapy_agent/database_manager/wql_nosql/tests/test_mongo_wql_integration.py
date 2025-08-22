@@ -1,6 +1,13 @@
 import unittest
 import logging
-from pymongo import MongoClient
+import pytest
+
+try:
+    from pymongo import MongoClient
+    PYMONGO_AVAILABLE = True
+except ImportError:
+    PYMONGO_AVAILABLE = False
+
 from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName, query_to_tagquery
 from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
 from acapy_agent.database_manager.wql_nosql.query import query_from_str
@@ -10,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.skipif(not PYMONGO_AVAILABLE, reason="pymongo is not installed")
 class TestMongoTagEncoder(unittest.TestCase):
     def setUp(self):
         """Set up MongoDB connection and ensure collection is clean."""

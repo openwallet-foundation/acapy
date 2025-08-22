@@ -469,3 +469,31 @@ class SqliteSession(AbstractDatabaseSession):
                 LOGGER.debug("[close_session] Completed")
             except Exception:
                 pass
+
+    def translate_error(self, error: Exception) -> DBStoreError:
+        """Translate database-specific errors to DBStoreError."""
+        if hasattr(self.database, 'backend') and self.database.backend:
+            return self.database.backend.translate_error(error)
+        
+        LOGGER.debug("Translating error: %s, type=%s", str(error), type(error))
+        
+        if isinstance(error, DatabaseError):
+            return DBStoreError(
+                code=DBStoreErrorCode.UNEXPECTED, 
+                message=f"Database error: {str(error)}"
+            )
+        elif "UNIQUE constraint failed" in str(error):
+            return DBStoreError(
+                code=DBStoreErrorCode.DUPLICATE, 
+                message=f"Duplicate entry: {str(error)}"
+            )
+        elif "database is locked" in str(error):
+            return DBStoreError(
+                code=DBStoreErrorCode.UNEXPECTED,
+                message=f"Database is locked: {str(error)}"
+            )
+        else:
+            return DBStoreError(
+                code=DBStoreErrorCode.UNEXPECTED,
+                message=f"Unexpected error: {str(error)}"
+            )
