@@ -17,7 +17,6 @@ from .revocation import (
 from .setup import DefaultRevocationSetup
 
 __all__ = [
-    "AnonCredsRevocationModuleResponseSchema",
     "AnonCredsRevocationRegistryFullError",
     "CATEGORY_REV_LIST",
     "CATEGORY_REV_REG_DEF",

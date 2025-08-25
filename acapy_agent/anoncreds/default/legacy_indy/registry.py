@@ -81,7 +81,7 @@ from ...revocation import (
     CATEGORY_REV_REG_DEF,
     CATEGORY_REV_REG_DEF_PRIVATE,
 )
-from ...revocation.recover import generate_ledger_rrrecovery_txn
+from .recover import generate_ledger_rrrecovery_txn
 
 LOGGER = logging.getLogger(__name__)
 
