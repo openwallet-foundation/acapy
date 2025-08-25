@@ -2,22 +2,24 @@
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Optional, Text, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Text, Tuple, Type
 
-from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
-from ..anoncreds.revocation import AnonCredsRevocation
-from ..core.error import BaseError
-from ..core.profile import Profile
-from ..protocols.issue_credential.v1_0.models.credential_exchange import (
+from ...core.error import BaseError
+from ...core.profile import Profile
+from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
-from ..protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
+from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
-from ..revocation.util import notify_pending_cleared_event
-from ..storage.error import StorageNotFoundError
-from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from ...revocation.util import notify_pending_cleared_event
+from ...storage.error import StorageNotFoundError
+from ..models.issuer_cred_rev_record import IssuerCredRevRecord
+from .revocation import AnonCredsRevocation
+
+if TYPE_CHECKING:
+    from ..default.legacy_indy.registry import LegacyIndyRegistry
 
 
 class RevocationManagerError(BaseError):

@@ -29,7 +29,6 @@ from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecord,
 )
-from .....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....models.credential_definition import (
@@ -38,6 +37,7 @@ from ....models.credential_definition import (
     CredDefValue,
     CredDefValuePrimary,
 )
+from ....models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....models.revocation import (
     RevList,
     RevListResult,

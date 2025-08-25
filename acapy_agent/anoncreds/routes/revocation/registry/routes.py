@@ -1,7 +1,8 @@
-"""Revocation registry admin routes."""
+"""AnonCreds revocation registry routes."""
 
 import json
 import logging
+from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -12,62 +13,132 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields, validate, validates_schema
-from marshmallow.exceptions import ValidationError
 from uuid_utils import uuid4
 
-from ..admin.decorators.auth import tenant_authentication
-from ..admin.request_context import AdminRequestContext
-from ..anoncreds.base import (
-    AnonCredsObjectNotFound,
-    AnonCredsRegistrationError,
-    AnonCredsResolutionError,
-)
-from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
-from ..anoncreds.issuer import AnonCredsIssuerError
-from ..anoncreds.models.revocation import RevRegDefState
-from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
-from ..anoncreds.routes import (
-    AnonCredsRevocationModuleResponseSchema,
-    AnonCredsRevRegIdMatchInfoSchema,
-    create_transaction_for_endorser_description,
-    endorser_connection_id_description,
-)
-from ..askar.profile_anon import AskarAnonCredsProfile
-from ..indy.issuer import IndyIssuerError
-from ..indy.models.revocation import IndyRevRegDef
-from ..ledger.base import BaseLedger
-from ..ledger.error import LedgerError
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import (
+from .....admin.decorators.auth import tenant_authentication
+from .....admin.request_context import AdminRequestContext
+from .....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
+from .....anoncreds.issuer import AnonCredsIssuerError
+from .....anoncreds.models.revocation import RevRegDefState
+from .....anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
+from .....anoncreds.routes.revocation import AnonCredsRevocationModuleResponseSchema
+from .....askar.profile_anon import AskarAnonCredsProfile
+from .....indy.issuer import IndyIssuerError
+from .....indy.models.revocation import IndyRevRegDef
+from .....ledger.base import BaseLedger
+from .....ledger.error import LedgerError
+from .....ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
+from .....messaging.models.openapi import OpenAPISchema
+from .....messaging.valid import (
     ANONCREDS_CRED_DEF_ID_EXAMPLE,
     ANONCREDS_CRED_DEF_ID_VALIDATE,
     ANONCREDS_CRED_REV_ID_EXAMPLE,
     ANONCREDS_CRED_REV_ID_VALIDATE,
+    ANONCREDS_DID_EXAMPLE,
     ANONCREDS_REV_REG_ID_EXAMPLE,
     ANONCREDS_REV_REG_ID_VALIDATE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
     WHOLE_NUM_EXAMPLE,
     WHOLE_NUM_VALIDATE,
     UUIDFour,
 )
-from ..revocation.error import RevocationError
-from ..revocation.models.issuer_rev_reg_record import (
+from .....revocation.error import RevocationError, RevocationNotSupportedError
+from .....revocation.models.issuer_rev_reg_record import (
     IssuerRevRegRecord,
     IssuerRevRegRecordSchema,
 )
-from ..storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
-from ..utils.profiles import is_not_anoncreds_profile_raise_web_exception
-from .manager import RevocationManager, RevocationManagerError
-from .models.issuer_cred_rev_record import (
+from .....storage.error import StorageError
+from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
+from ....base import AnonCredsObjectNotFound, AnonCredsResolutionError
+from ....issuer import AnonCredsIssuer
+from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
     IssuerCredRevRecordSchemaAnonCreds,
 )
+from ....models.revocation import RevRegDefResultSchema
+from ....revocation.manager import RevocationManager, RevocationManagerError
+from ....util import handle_value_error
+from ...common import (
+    create_transaction_for_endorser_description,
+    endorser_connection_id_description,
+)
+from .. import REVOCATION_TAG_TITLE
 
 LOGGER = logging.getLogger(__name__)
 
-TAG_TITLE = "AnonCreds - Revocation"
+
+class AnonCredsRevRegIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking rev reg id."""
+
+    rev_reg_id = fields.Str(
+        required=True,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation Registry identifier",
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
+        },
+    )
+
+
+class InnerRevRegDefSchema(OpenAPISchema):
+    """Request schema for revocation registry creation request."""
+
+    issuer_id = fields.Str(
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": ANONCREDS_DID_EXAMPLE,
+        },
+        data_key="issuerId",
+        required=True,
+    )
+    cred_def_id = fields.Str(
+        metadata={
+            "description": "Credential definition identifier",
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
+        },
+        data_key="credDefId",
+        required=True,
+    )
+    tag = fields.Str(
+        metadata={"description": "tag for revocation registry", "example": "default"},
+        required=True,
+    )
+    max_cred_num = fields.Int(
+        metadata={
+            "description": "Maximum number of credential revocations per registry",
+            "example": 777,
+        },
+        data_key="maxCredNum",
+        required=True,
+    )
+
+
+class RevRegDefOptionsSchema(OpenAPISchema):
+    """Parameters and validators for rev reg def options."""
+
+    endorser_connection_id = fields.Str(
+        metadata={
+            "description": endorser_connection_id_description,
+            "example": UUIDFour.EXAMPLE,
+        },
+        required=False,
+    )
+    create_transaction_for_endorser = fields.Bool(
+        metadata={
+            "description": create_transaction_for_endorser_description,
+            "example": False,
+        },
+        required=False,
+    )
+
+
+class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
+    """Wrapper for revocation registry creation request."""
+
+    revocation_registry_definition = fields.Nested(InnerRevRegDefSchema())
+    options = fields.Nested(RevRegDefOptionsSchema())
 
 
 class RevRegResultSchemaAnonCreds(OpenAPISchema):
@@ -91,6 +162,8 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
             (rev_reg_id and cred_rev_id and not cred_ex_id)
             or (cred_ex_id and not rev_reg_id and not cred_rev_id)
         ):
+            from marshmallow.exceptions import ValidationError
+
             raise ValidationError(
                 "Request must have either rev_reg_id and cred_rev_id or cred_ex_id"
             )
@@ -132,6 +205,8 @@ class RevRegId(OpenAPISchema):
         cred_def_id = data.get("cred_def_id")
 
         if not (rev_reg_id or cred_def_id):
+            from marshmallow.exceptions import ValidationError
+
             raise ValidationError("Request must have either rev_reg_id or cred_def_id")
 
     rev_reg_id = fields.Str(
@@ -380,8 +455,12 @@ class RevokeRequestSchemaAnonCreds(CredRevRecordQueryStringSchema):
         notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
+            from marshmallow.exceptions import ValidationError
+
             raise ValidationError("Request must specify connection_id if notify is true")
         if notify and not notify_version:
+            from marshmallow.exceptions import ValidationError
+
             raise ValidationError("Request must specify notify_version if notify is true")
 
     publish = fields.Boolean(
@@ -436,101 +515,90 @@ class RevokeRequestSchemaAnonCreds(CredRevRecordQueryStringSchema):
 
 
 @docs(
-    tags=[TAG_TITLE],
-    summary="Revoke an issued credential",
+    tags=[REVOCATION_TAG_TITLE],
+    summary="Create and publish a registration revocation on the connected datastore",
 )
-@request_schema(RevokeRequestSchemaAnonCreds())
-@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
+@request_schema(RevRegCreateRequestSchemaAnonCreds())
+@response_schema(RevRegDefResultSchema(), 200, description="")
 @tenant_authentication
-async def revoke(request: web.BaseRequest):
-    """Request handler for storing a credential revocation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential revocation details.
-
-    """
+async def rev_reg_def_post(request: web.BaseRequest):
+    """Request handler for creating revocation registry definition."""
     context: AdminRequestContext = request["context"]
     profile = context.profile
 
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     body = await request.json()
-    cred_ex_id = body.get("cred_ex_id")
-    body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
-    notify = body.get("notify")
-    connection_id = body.get("connection_id")
-    body["notify_version"] = body.get("notify_version", "v1_0")
-    notify_version = body["notify_version"]
+    revocation_registry_definition = body.get("revocation_registry_definition")
+    options = body.get("options", {})
 
-    if notify and not connection_id:
-        raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
-    if notify and not notify_version:
+    if revocation_registry_definition is None:
         raise web.HTTPBadRequest(
-            reason="Request must specify notify_version if notify is true"
+            reason="revocation_registry_definition object is required"
         )
 
-    rev_manager = RevocationManager(profile)
-    try:
-        if cred_ex_id:
-            # rev_reg_id and cred_rev_id should not be present so we can
-            # safely splat the body
-            await rev_manager.revoke_credential_by_cred_ex_id(**body)
-        else:
-            # no cred_ex_id so we can safely splat the body
-            await rev_manager.revoke_credential(**body)
-        return web.json_response({})
-    except (
-        RevocationManagerError,
-        AnonCredsRevocationError,
-        StorageError,
-        AnonCredsIssuerError,
-        AnonCredsRegistrationError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    issuer_id = revocation_registry_definition.get("issuerId")
+    cred_def_id = revocation_registry_definition.get("credDefId")
+    max_cred_num = revocation_registry_definition.get("maxCredNum")
+    tag = revocation_registry_definition.get("tag")
 
-
-@docs(tags=[TAG_TITLE], summary="Publish pending revocations to ledger")
-@request_schema(PublishRevocationsSchemaAnonCreds())
-@response_schema(PublishRevocationsResultSchemaAnonCreds(), 200, description="")
-@tenant_authentication
-async def publish_revocations(request: web.BaseRequest):
-    """Request handler for publishing pending revocations to the ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Credential revocation ids published as revoked by revocation registry id.
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    body = await request.json()
-    options = body.get("options", {})
-    rrid2crid = body.get("rrid2crid")
-
-    rev_manager = RevocationManager(profile)
+    issuer = AnonCredsIssuer(profile)
+    revocation = AnonCredsRevocation(profile)
+    # check we published this cred def
+    found = await issuer.match_created_credential_definitions(cred_def_id)
+    if not found:
+        raise web.HTTPNotFound(
+            reason=f"Not issuer of credential definition id {cred_def_id}"
+        )
 
     try:
-        rev_reg_resp = await rev_manager.publish_pending_revocations(rrid2crid, options)
-        return web.json_response({"rrid2crid": rev_reg_resp})
-    except (
-        RevocationError,
-        StorageError,
-        AnonCredsIssuerError,
-        AnonCredsRevocationError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+        result = await shield(
+            revocation.create_and_register_revocation_registry_definition(
+                issuer_id,
+                cred_def_id,
+                registry_type="CL_ACCUM",
+                max_cred_num=max_cred_num,
+                tag=tag,
+                options=options,
+            )
+        )
+        return web.json_response(result.serialize())
+    except (RevocationNotSupportedError, AnonCredsRevocationError) as e:
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
+    summary="Update the active registry",
+)
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
+@tenant_authentication
+async def set_active_registry(request: web.BaseRequest):
+    """Request handler to set the active registry.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_not_anoncreds_profile_raise_web_exception(profile)
+
+    rev_reg_id = request.match_info["rev_reg_id"]
+    try:
+        revocation = AnonCredsRevocation(profile)
+        await revocation.set_active_registry(rev_reg_id)
+        return web.json_response({})
+    except ValueError as e:
+        handle_value_error(e)
+    except AnonCredsRevocationError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+
+
+@docs(
+    tags=[REVOCATION_TAG_TITLE],
     summary="Search for matching revocation registries that current agent created",
 )
 @querystring_schema(RevRegsCreatedQueryStringSchema())
@@ -567,7 +635,7 @@ async def get_rev_regs(request: web.BaseRequest):
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Get revocation registry by revocation registry id",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -580,7 +648,7 @@ async def get_rev_reg(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The revocation registry
+        The revocation registry identifier
 
     """
     context: AdminRequestContext = request["context"]
@@ -642,7 +710,7 @@ async def _get_issuer_rev_reg_record(
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Get current active revocation registry by credential definition id",
 )
 @match_info_schema(RevocationCredDefIdMatchInfoSchema())
@@ -674,7 +742,7 @@ async def get_active_rev_reg(request: web.BaseRequest):
     return web.json_response({"result": rev_reg.serialize()})
 
 
-@docs(tags=[TAG_TITLE], summary="Rotate revocation registry")
+@docs(tags=[REVOCATION_TAG_TITLE], summary="Rotate revocation registry")
 @match_info_schema(RevocationCredDefIdMatchInfoSchema())
 @response_schema(RevRegsCreatedSchemaAnonCreds(), 200, description="")
 @tenant_authentication
@@ -705,7 +773,7 @@ async def rotate_rev_reg(request: web.BaseRequest):
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Get number of credentials issued against revocation registry",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -746,7 +814,7 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Get details of credentials issued against revocation registry",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -788,7 +856,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Get details of revoked credentials from ledger",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -833,7 +901,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 
 
 @docs(
-    tags=[TAG_TITLE],
+    tags=[REVOCATION_TAG_TITLE],
     summary="Fix revocation state in wallet and return number of updated entries",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -932,103 +1000,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     )
 
 
-@docs(
-    tags=[TAG_TITLE],
-    summary="Get credential revocation status",
-)
-@querystring_schema(CredRevRecordQueryStringSchema())
-@response_schema(CredRevRecordResultSchemaAnonCreds(), 200, description="")
-@tenant_authentication
-async def get_cred_rev_record(request: web.BaseRequest):
-    """Request handler to get credential revocation record.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The issuer credential revocation record
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    rev_reg_id = request.query.get("rev_reg_id")
-    cred_rev_id = request.query.get("cred_rev_id")  # numeric string
-    cred_ex_id = request.query.get("cred_ex_id")
-
-    try:
-        async with profile.session() as session:
-            if rev_reg_id and cred_rev_id:
-                recs = await IssuerCredRevRecord.retrieve_by_ids(
-                    session, rev_reg_id, cred_rev_id
-                )
-                if len(recs) == 1:
-                    rec = recs[0]
-                elif len(recs) > 1:
-                    raise StorageDuplicateError(
-                        f"Multiple records found for rev_reg_id: {rev_reg_id} "
-                        f"and cred_rev_id: {cred_rev_id}"
-                    )
-                else:
-                    raise StorageNotFoundError(
-                        f"No record found for rev_reg_id: {rev_reg_id} "
-                        f"and cred_rev_id: {cred_rev_id}"
-                    )
-            else:
-                rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
-                    session, cred_ex_id
-                )
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-
-    return web.json_response({"result": rec.serialize()})
-
-
-@docs(
-    tags=[TAG_TITLE],
-    summary="Download tails file",
-    produces=["application/octet-stream"],
-)
-@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(AnonCredsRevocationModuleResponseSchema, description="tails file")
-@tenant_authentication
-async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
-    """Request handler to download tails file for revocation registry.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The tails file in FileResponse
-
-    """
-    #
-    # there is no equivalent of this in anoncreds.
-    # do we need it there or is this only for transitions.
-    #
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    rev_reg_id = request.match_info["rev_reg_id"]
-    try:
-        revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.get_created_revocation_registry_definition(
-            rev_reg_id
-        )
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
-    except AnonCredsIssuerError as e:
-        raise web.HTTPInternalServerError(reason=str(e)) from e
-
-    tails_local_path = rev_reg_def.value.tails_location
-    return web.FileResponse(path=tails_local_path, status=200)
-
-
-@docs(tags=[TAG_TITLE], summary="Set revocation registry state manually")
+@docs(tags=[REVOCATION_TAG_TITLE], summary="Set revocation registry state manually")
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchemaAnonCreds(), 200, description="")
@@ -1064,23 +1036,13 @@ async def set_rev_reg_state(request: web.BaseRequest):
     return web.json_response({"result": rev_reg.serialize()})
 
 
-class TailsDeleteResponseSchema(OpenAPISchema):
-    """Return schema for tails deletion."""
-
-    message = fields.Str()
-
-
-async def register(app: web.Application):
+async def register(app: web.Application) -> None:
     """Register routes."""
+
     app.add_routes(
         [
-            web.post("/anoncreds/revocation/revoke", revoke),
-            web.post("/anoncreds/revocation/publish-revocations", publish_revocations),
-            web.get(
-                "/anoncreds/revocation/credential-record",
-                get_cred_rev_record,
-                allow_head=False,
-            ),
+            web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
+            web.put("/anoncreds/registry/{rev_reg_id}/active", set_active_registry),
             web.get(
                 "/anoncreds/revocation/registries",
                 get_rev_regs,
@@ -1115,11 +1077,6 @@ async def register(app: web.Application):
                 get_rev_reg_indy_recs,
                 allow_head=False,
             ),
-            web.get(
-                "/anoncreds/revocation/registry/{rev_reg_id}/tails-file",
-                get_tails_file,
-                allow_head=False,
-            ),
             web.patch(
                 "/anoncreds/revocation/registry/{rev_reg_id}/set-state",
                 set_rev_reg_state,
@@ -1132,7 +1089,7 @@ async def register(app: web.Application):
     )
 
 
-def post_process_routes(app: web.Application):
+def post_process_routes(app: web.Application) -> None:
     """Amend swagger API."""
 
     # Add top-level tags description
@@ -1140,24 +1097,11 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": TAG_TITLE,
-            "description": "Revocation registry management",
+            "name": REVOCATION_TAG_TITLE,
+            "description": "AnonCreds revocation registry management",
             "externalDocs": {
                 "description": "Overview",
-                "url": (
-                    "https://github.com/hyperledger/indy-hipe/tree/"
-                    "master/text/0011-cred-revocation"
-                ),
+                "url": "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation",
             },
         }
     )
-
-    # aio_http-apispec polite API only works on schema for JSON objects, not files yet
-    methods = app._state["swagger_dict"]["paths"].get(
-        "/revocation/registry/{rev_reg_id}/tails-file"
-    )
-    if methods:
-        methods["get"]["responses"]["200"]["schema"] = {
-            "type": "string",
-            "format": "binary",
-        }

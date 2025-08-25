@@ -391,3 +391,11 @@ MOCK_CRED = {
     "rev_reg": MOCK_REV_REG_DEF,
     "witness": "977...590",
 }
+
+
+class MockRevocationRegistryDefinition:
+    def __init__(self, rev_reg_id):
+        self.revRegId = rev_reg_id
+
+    def serialize(self):
+        return {"revocation_registry_definition_id": self.revRegId}

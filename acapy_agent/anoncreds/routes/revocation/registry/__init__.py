@@ -1,0 +1,1 @@
+"""AnonCreds revocation registry routes."""
