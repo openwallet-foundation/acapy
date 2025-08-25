@@ -13,6 +13,7 @@ from aiohttp import web
 from aiohttp_apispec import setup_aiohttp_apispec, validation_middleware
 from uuid_utils import uuid4
 
+from ..anoncreds.revocation_recovery_middleware import revocation_recovery_middleware
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
@@ -380,6 +381,9 @@ class AdminServer(BaseAdminServer):
 
         # Upgrade middleware needs the context setup
         middlewares.append(upgrade_middleware)
+
+        # Revocation registry event recovery middleware
+        middlewares.append(revocation_recovery_middleware)
 
         # Register validation_middleware last avoiding unauthorized validations
         middlewares.append(validation_middleware)
