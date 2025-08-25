@@ -1,8 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 
 from ....utils.testing import create_test_profile
-from ....revocation_anoncreds.models import issuer_cred_rev_record as test_module
-from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ...models import issuer_cred_rev_record as test_module
+from ...models.issuer_cred_rev_record import IssuerCredRevRecord
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:1234:default"

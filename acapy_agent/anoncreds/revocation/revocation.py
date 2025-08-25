@@ -25,21 +25,21 @@ from aries_askar.error import AskarError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
-from ..core.error import BaseError
-from ..core.event_bus import Event, EventBus
-from ..core.profile import Profile, ProfileSession
-from ..tails.anoncreds_tails_server import AnonCredsTailsServer
-from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .events import RevListFinishedEvent, RevRegDefFinishedEvent
-from .issuer import (
+from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
+from ...core.error import BaseError
+from ...core.event_bus import Event, EventBus
+from ...core.profile import Profile, ProfileSession
+from ...tails.anoncreds_tails_server import AnonCredsTailsServer
+from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
+from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
+from ..issuer import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
     STATE_FINISHED,
     AnonCredsIssuer,
 )
-from .models.credential_definition import CredDef
-from .models.revocation import (
+from ..models.credential_definition import CredDef
+from ..models.revocation import (
     RevList,
     RevListResult,
     RevListState,
@@ -47,8 +47,8 @@ from .models.revocation import (
     RevRegDefResult,
     RevRegDefState,
 )
-from .registry import AnonCredsRegistry
-from .util import indy_client_dir
+from ..registry import AnonCredsRegistry
+from ..util import indy_client_dir
 
 LOGGER = logging.getLogger(__name__)
 

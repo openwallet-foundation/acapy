@@ -14,7 +14,7 @@ from marshmallow import RAISE
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import AnonCredsIssuer
 from ......anoncreds.registry import AnonCredsRegistry
-from ......anoncreds.revocation import AnonCredsRevocation
+from ......anoncreds.revocation.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
@@ -27,7 +27,7 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ......anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
 from ......vc.vc_ld import VerifiableCredential
 from ......wallet.base import BaseWallet
