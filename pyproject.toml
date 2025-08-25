@@ -50,7 +50,7 @@ uuid_utils = ">=0.10,<0.12"
 # did libraries
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-did-webvh = ">=1.0.0rc0"
+did-webvh = ">=1.0.0"
 
 # Verifiable Credentials
 anoncreds = "~0.2.0"
