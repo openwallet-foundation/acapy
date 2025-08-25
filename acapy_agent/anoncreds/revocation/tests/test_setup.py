@@ -2,16 +2,16 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from ...tests import mock
-from ...utils.testing import create_test_profile
-from .. import revocation_setup as test_module
-from ..events import (
+from ....tests import mock
+from ....utils.testing import create_test_profile
+from ...revocation import setup as test_module
+from ...events import (
     CredDefFinishedEvent,
     CredDefFinishedPayload,
     RevRegDefFinishedEvent,
     RevRegDefFinishedPayload,
 )
-from ..models.revocation import RevRegDef, RevRegDefValue
+from ...models.revocation import RevRegDef, RevRegDefValue
 from ..revocation import AnonCredsRevocation
 
 

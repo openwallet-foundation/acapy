@@ -16,9 +16,9 @@ from anoncreds import (
 from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
 
-from ...anoncreds.issuer import AnonCredsIssuer
-from ...anoncreds.models.credential_definition import CredDef
-from ...anoncreds.models.revocation import (
+from ....anoncreds.issuer import AnonCredsIssuer
+from ....anoncreds.models.credential_definition import CredDef
+from ....anoncreds.models.revocation import (
     RevList,
     RevListResult,
     RevListState,
@@ -27,16 +27,16 @@ from ...anoncreds.models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
-from ...anoncreds.registry import AnonCredsRegistry
-from ...anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
-from ...anoncreds.tests.test_issuer import MockCredDefEntry
-from ...askar.profile_anon import AskarAnonCredsProfileSession
-from ...core.event_bus import Event, EventBus, MockEventBus
-from ...tails.anoncreds_tails_server import AnonCredsTailsServer
-from ...tests import mock
-from ...utils.testing import create_test_profile
-from .. import revocation as test_module
+from ....anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
+from ....anoncreds.registry import AnonCredsRegistry
+from ....anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
+from ....anoncreds.tests.test_issuer import MockCredDefEntry
+from ....askar.profile_anon import AskarAnonCredsProfileSession
+from ....core.event_bus import Event, EventBus, MockEventBus
+from ....tails.anoncreds_tails_server import AnonCredsTailsServer
+from ....tests import mock
+from ....utils.testing import create_test_profile
+from ... import revocation as test_module
 
 rev_reg_def = RevRegDef(
     tag="tag",
