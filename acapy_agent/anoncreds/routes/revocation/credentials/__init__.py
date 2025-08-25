@@ -1,0 +1,1 @@
+"""AnonCreds credential revocation routes."""
