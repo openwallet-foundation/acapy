@@ -198,7 +198,12 @@ class KanonStorage(BaseStorage):
         LOGGER.debug(
             "find_paginated_records: type=%s, tags=%s, limit=%s, "
             "offset=%s, order=%s, desc=%s",
-            type_filter, tag_query, limit, offset, order_by, descending
+            type_filter,
+            tag_query,
+            limit,
+            offset,
+            order_by,
+            descending,
         )
         results = []
         scan = self._session.store.scan(
@@ -234,7 +239,12 @@ class KanonStorage(BaseStorage):
         LOGGER.debug(
             "find_paginated_records_keyset: type=%s, tags=%s, last_id=%s, "
             "limit=%s, order=%s, desc=%s",
-            type_filter, tag_query, last_id, limit, order_by, descending
+            type_filter,
+            tag_query,
+            last_id,
+            limit,
+            order_by,
+            descending,
         )
         results = []
         scan = self._session.store.scan_keyset(
@@ -331,7 +341,7 @@ class KanonStorage(BaseStorage):
 
 class KanonStorageSearch(BaseStorageSearch):
     """Kanon storage search interface."""
-    
+
     def __init__(self, profile: Profile):
         """Initialize KanonStorageSearch with a profile."""
         self._profile = profile
@@ -351,7 +361,7 @@ class KanonStorageSearch(BaseStorageSearch):
 
 class KanonStorageSearchSession(BaseStorageSearchSession):
     """Kanon storage search session."""
-    
+
     def __init__(
         self,
         profile,

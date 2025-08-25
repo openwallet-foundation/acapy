@@ -1375,8 +1375,9 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 (px_rec_out, pres_msg) = await self.manager.create_pres(
                     px_rec_in, request_data
                 )
-            assert "AnonCreds interface requires AskarAnonCreds or KanonAnonCreds profile" in str(
-                context.exception
+            assert (
+                "AnonCreds interface requires AskarAnonCreds or KanonAnonCreds profile"
+                in str(context.exception)
             )
 
     async def test_receive_pres(self):

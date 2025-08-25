@@ -111,10 +111,12 @@ async def run_tests(store: PostgresDatabase, conn_str: str):
             entries = await session.fetch_all(category="connection")
             print(
                 "Connections before tests: "
-                f"{[
-                    f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}'
-                    for entry in entries
-                ]}"
+                f"{
+                    [
+                        f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}'
+                        for entry in entries
+                    ]
+                }"
             )
 
         # Step 3: Test scan with WQL equality query
@@ -341,7 +343,9 @@ async def main():
     store = None
     try:
         # Step 1: Provision the database
-        conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb?sslmode=prefer")
+        conn_str = os.environ.get(
+            "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb?sslmode=prefer"
+        )
         print("\n### Setting Up the Database ###")
         print(f"Provisioning database at {conn_str} with normalized schema...")
         backend = PostgresqlBackend()

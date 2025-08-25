@@ -403,6 +403,7 @@ class KanonStoreConfig:
 
 class KanonOpenStore:
     """Kanon open store."""
+
     def __init__(
         self, config: KanonStoreConfig, created, db_store: DBStore, askar_store: Store
     ):

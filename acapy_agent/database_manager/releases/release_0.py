@@ -1,8 +1,10 @@
 """Module docstring."""
 
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
-    generic_handler import (
-    GenericHandler as SqliteGenericHandler,
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
+    generic_handler,
+)
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers import (
+    generic_handler as postgres_generic_handler,
 )
 # from ..category_registry import create_postgresql_handler, SchemaContext
 
@@ -19,10 +21,6 @@ from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
 #     }
 # }
 
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
-generic_handler import (
-    GenericHandler as PostgresqlGenericHandler,
-)
 from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
     SchemaContext,
 )
@@ -30,10 +28,10 @@ from acapy_agent.database_manager.databases.postgresql_normalized.schema_context
 RELEASE = {
     "default": {
         "handlers": {
-            "sqlite": lambda: SqliteGenericHandler(
+            "sqlite": lambda: generic_handler.GenericHandler(
                 category="default", tags_table_name="items_tags"
             ),
-            "postgresql": lambda: PostgresqlGenericHandler(
+            "postgresql": lambda: postgres_generic_handler.GenericHandler(
                 category="default",
                 tags_table_name="items_tags",
                 schema_context=SchemaContext(),

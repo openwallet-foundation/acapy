@@ -6,7 +6,11 @@ import unittest
 import psycopg
 import logging
 import pytest
-from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName, query_to_tagquery
+from acapy_agent.database_manager.wql_normalized.tags import (
+    TagQuery,
+    TagName,
+    query_to_tagquery,
+)
 from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
 from acapy_agent.database_manager.wql_normalized.query import query_from_str
 
@@ -38,16 +42,19 @@ class TestPostgresTagEncoderNonNormalizedB(unittest.TestCase):
         self.enc_value = lambda x: x  # No transformation for tag values
 
         # Get PostgreSQL connection from environment variable or use default
-        postgres_url = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb2")
+        postgres_url = os.environ.get(
+            "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb2"
+        )
         # Parse the URL to extract connection parameters
         import urllib.parse
+
         parsed = urllib.parse.urlparse(postgres_url)
 
         try:
             self.conn = psycopg.connect(
                 host=parsed.hostname or "localhost",
                 port=parsed.port or 5432,
-                dbname=parsed.path.lstrip('/') if parsed.path else "mydb2",
+                dbname=parsed.path.lstrip("/") if parsed.path else "mydb2",
                 user=parsed.username or "myuser",
                 password=parsed.password or "mypass",
             )

@@ -142,7 +142,7 @@ class TestDBStoreGeneric:
             tag_filter=tag_filter,
             limit=10,
             offset=0,
-            profile="test_profile"
+            profile="test_profile",
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 3, "Expected 3 active people"
@@ -153,7 +153,7 @@ class TestDBStoreGeneric:
             tag_filter=tag_filter,
             limit=1,
             offset=1,
-            profile="test_profile"
+            profile="test_profile",
         )
         paginated_entries = [entry async for entry in scan_paginated]
         assert len(paginated_entries) == 1, "Expected 1 entry with pagination"
@@ -175,21 +175,21 @@ class TestDBStoreGeneric:
     @pytest.mark.asyncio
     async def test_complex_filter(self, populated_store):
         """Test scanning with a complex tag filter."""
-        complex_tag_filter = json.dumps({
-            "$or": [
-                {
-                    "$and": [
-                        {"attr::person.gender": {"$like": "F"}},
-                        {"attr::person.status": "active"}
-                    ]
-                },
-                {"$not": {"attr::person.status": "active"}}
-            ]
-        })
+        complex_tag_filter = json.dumps(
+            {
+                "$or": [
+                    {
+                        "$and": [
+                            {"attr::person.gender": {"$like": "F"}},
+                            {"attr::person.status": "active"},
+                        ]
+                    },
+                    {"$not": {"attr::person.status": "active"}},
+                ]
+            }
+        )
         scan = populated_store.scan(
-            category="people",
-            tag_filter=complex_tag_filter,
-            profile="test_profile"
+            category="people", tag_filter=complex_tag_filter, profile="test_profile"
         )
         entries = [entry async for entry in scan]
         # Expected: 2 active females + 1 inactive male = 3 total

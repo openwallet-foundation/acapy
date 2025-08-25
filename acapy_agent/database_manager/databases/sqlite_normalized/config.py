@@ -13,6 +13,7 @@ import sqlite3
 try:
     # Use sqlcipher3 if available (same as connection_pool.py)
     import sqlcipher3
+
     sqlite3 = sqlcipher3
 except ImportError:
     pass
@@ -22,6 +23,7 @@ LOGGER = logging.getLogger(__name__)
 
 class SqliteConfig:
     """Configuration for SQLite database connections."""
+
     def __init__(
         self,
         uri: str = "sqlite://:memory:",
@@ -131,9 +133,7 @@ class SqliteConfig:
                     "Loading schema release: %s (type: sqlite)", effective_release_number
                 )
 
-                handlers, schemas, _ = get_release(
-                    effective_release_number, "sqlite"
-                )
+                handlers, schemas, _ = get_release(effective_release_number, "sqlite")
                 # LOGGER.debug(
                 #     "Schemas loaded for release=%s: %s",
                 #     effective_release_number,
@@ -184,8 +184,11 @@ class SqliteConfig:
                             "Executing SQL [%d] for category '%s': %s",
                             idx + 1,
                             category,
-                            (sql_stripped[:100] + "..." 
-                             if len(sql_stripped) > 100 else sql_stripped),
+                            (
+                                sql_stripped[:100] + "..."
+                                if len(sql_stripped) > 100
+                                else sql_stripped
+                            ),
                         )
                         try:
                             cursor.execute(sql_stripped)
@@ -206,8 +209,8 @@ class SqliteConfig:
                             raise DatabaseError(
                                 code=DatabaseErrorCode.PROVISION_ERROR,
                                 message=(
-                            f"Failed to apply schema for category '{category}'"
-                        ),
+                                    f"Failed to apply schema for category '{category}'"
+                                ),
                                 actual_error=str(e),
                             )
 
@@ -266,7 +269,7 @@ class SqliteConfig:
         self, conn, current_release: str, target_release: str, db_type: str = "sqlite"
     ):
         """Apply migrations from current_release to target_release.
-        
+
         Args:
             conn: Database connection
             current_release: Current schema release
@@ -286,19 +289,14 @@ class SqliteConfig:
             else -1
         )
         target_index = (
-            RELEASE_ORDER.index(target_release) 
-            if target_release in RELEASE_ORDER else -1
+            RELEASE_ORDER.index(target_release) if target_release in RELEASE_ORDER else -1
         )
 
-        if (
-            current_index == -1 or target_index == -1 or 
-            target_index <= current_index
-        ):
+        if current_index == -1 or target_index == -1 or target_index <= current_index:
             raise DatabaseError(
                 code=DatabaseErrorCode.UNSUPPORTED_VERSION,
                 message=(
-                    f"Invalid migration path from {current_release} to "
-                    f"{target_release}"
+                    f"Invalid migration path from {current_release} to {target_release}"
                 ),
             )
 
@@ -319,8 +317,7 @@ class SqliteConfig:
                     )
                 migrate_func(conn)
                 LOGGER.info(
-                    f"Applied {db_type} migration from {from_release} to "
-                    f"{to_release}"
+                    f"Applied {db_type} migration from {from_release} to {to_release}"
                 )
             except ImportError:
                 LOGGER.warning(
@@ -335,8 +332,7 @@ class SqliteConfig:
                 raise DatabaseError(
                     code=DatabaseErrorCode.PROVISION_ERROR,
                     message=(
-                        f"{db_type} migration failed from {from_release} to "
-                        f"{to_release}"
+                        f"{db_type} migration failed from {from_release} to {to_release}"
                     ),
                     actual_error=str(e),
                 )
@@ -348,12 +344,12 @@ class SqliteConfig:
         target_schema_release_number: Optional[str] = None,
     ) -> Tuple[ConnectionPool, str, str, str]:
         """Open database connection and validate configuration.
-        
+
         Args:
             profile: Profile name to use
             schema_migration: Whether to perform schema migration
             target_schema_release_number: Target schema release number
-            
+
         Returns:
             Tuple of (connection pool, profile name, db path, release number)
         """
@@ -441,7 +437,7 @@ class SqliteConfig:
             if self.schema_config == "generic" and db_current_release != "release_0":
                 LOGGER.error(
                     "Invalid configuration: schema_config='generic' but "
-                "schema_release_number='%s'",
+                    "schema_release_number='%s'",
                     db_current_release,
                 )
                 raise DatabaseError(
@@ -460,7 +456,7 @@ class SqliteConfig:
             ):
                 LOGGER.error(
                     "Schema release number mismatch: database has '%s', but "
-                "target is '%s'",
+                    "target is '%s'",
                     db_current_release,
                     target_schema_release_number,
                 )
@@ -487,7 +483,7 @@ class SqliteConfig:
 
     def remove(self) -> bool:
         """Remove the database file.
-        
+
         Returns:
             True if successful or in-memory database
         """

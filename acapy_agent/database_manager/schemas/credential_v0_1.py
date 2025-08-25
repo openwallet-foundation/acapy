@@ -50,11 +50,11 @@ SCHEMAS = {
             REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_credential_record_item_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_credential_record_item_id_v0_1 "
         "ON credential_record_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_credential_record_item_name_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_credential_record_item_name_v0_1 "
         "ON credential_record_v0_1 (name);",
-        "CREATE NONCLUSTERED INDEX idx_credential_record_value_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_credential_record_value_v0_1 "
         "ON credential_record_v0_1 (value);",
     ],
 }
@@ -73,11 +73,11 @@ DROP_SCHEMAS = {
         "DROP TABLE IF EXISTS credential_record_v0_1 CASCADE;",
     ],
     "mssql": [
-        "DROP INDEX IF EXISTS idx_credential_record_value_v0_1 " 
+        "DROP INDEX IF EXISTS idx_credential_record_value_v0_1 "
         "ON credential_record_v0_1;",
-        "DROP INDEX IF EXISTS idx_credential_record_item_name_v0_1 " 
+        "DROP INDEX IF EXISTS idx_credential_record_item_name_v0_1 "
         "ON credential_record_v0_1;",
-        "DROP INDEX IF EXISTS idx_credential_record_item_id_v0_1 " 
+        "DROP INDEX IF EXISTS idx_credential_record_item_id_v0_1 "
         "ON credential_record_v0_1;",
         "DROP TABLE IF EXISTS credential_record_v0_1;",
     ],

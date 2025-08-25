@@ -14,11 +14,7 @@ import logging
 
 from .error import DBStoreError, DBStoreErrorCode
 from .db_types import Entry, EntryList
-from .interfaces import (
-    AbstractDatabaseStore,
-    AbstractDatabaseSession,
-    DatabaseBackend
-)
+from .interfaces import AbstractDatabaseStore, AbstractDatabaseSession, DatabaseBackend
 
 # Logging setup
 LOGGER = logging.getLogger(__name__)
@@ -38,15 +34,7 @@ class Scan(AsyncIterator):
     """Async iterator for database scanning."""
 
     def __init__(
-        self,
-        store,
-        profile,
-        category,
-        tag_filter,
-        offset,
-        limit,
-        order_by,
-        descending
+        self, store, profile, category, tag_filter, offset, limit, order_by, descending
     ):
         """Initialize DBStoreScan with scan parameters."""
         self._store = store
@@ -228,15 +216,11 @@ class DBStore:
     """Database store class."""
 
     def __init__(
-        self,
-        db: AbstractDatabaseStore,
-        uri: str,
-        release_number: str = "release_0"
+        self, db: AbstractDatabaseStore, uri: str, release_number: str = "release_0"
     ):
         """Initialize DBStore."""
         LOGGER.debug(
-            f"Store initialized with db={db}, uri={uri}, "
-            f"release_number={release_number}"
+            f"Store initialized with db={db}, uri={uri}, release_number={release_number}"
         )
         self._db = db
         self._uri = uri
@@ -392,10 +376,7 @@ class DBStore:
 
     @classmethod
     async def remove(
-        cls,
-        uri: str,
-        release_number: str = "release_0",
-        config: Optional[dict] = None
+        cls, uri: str, release_number: str = "release_0", config: Optional[dict] = None
     ) -> bool:
         """Remove the database store."""
         LOGGER.debug(
@@ -465,9 +446,7 @@ class DBStore:
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
         """Perform the action."""
-        LOGGER.debug(
-            f"rekey called with key_method={key_method}, pass_key={pass_key}"
-        )
+        LOGGER.debug(f"rekey called with key_method={key_method}, pass_key={pass_key}")
         try:
             await self._db.rekey(key_method, pass_key)
         except Exception as e:
@@ -545,16 +524,12 @@ class DBStore:
         """Enter async context manager."""
         LOGGER.debug("__aenter__ called")
         if not self._opener:
-            self._opener = DBOpenSession(
-                self._db, None, False, self._release_number
-            )
+            self._opener = DBOpenSession(self._db, None, False, self._release_number)
         return await self._opener.__aenter__()
 
     async def __aexit__(self, exc_type, exc, tb):
         """Exit async context manager."""
-        LOGGER.debug(
-            f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}"
-        )
+        LOGGER.debug(f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}")
         opener = self._opener
         self._opener = None
         return await opener.__aexit__(exc_type, exc, tb)
@@ -569,9 +544,7 @@ class DBStoreSession:
 
     def __init__(self, db_session: AbstractDatabaseSession, is_txn: bool):
         """Initialize DBStoreSession."""
-        LOGGER.debug(
-            f"Session initialized with db_session={db_session}, is_txn={is_txn}"
-        )
+        LOGGER.debug(f"Session initialized with db_session={db_session}, is_txn={is_txn}")
         self._db_session = db_session
         self._is_txn = is_txn
 
@@ -587,9 +560,7 @@ class DBStoreSession:
 
     async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
         """Perform the action."""
-        LOGGER.debug(
-            f"count called with category={category}, tag_filter={tag_filter}"
-        )
+        LOGGER.debug(f"count called with category={category}, tag_filter={tag_filter}")
         try:
             return await self._db_session.count(category, tag_filter)
         except Exception as e:
@@ -601,8 +572,7 @@ class DBStoreSession:
     ) -> Optional[Entry]:
         """Perform the action."""
         LOGGER.debug(
-            f"fetch called with category={category}, name={name}, "
-            f"for_update={for_update}"
+            f"fetch called with category={category}, name={name}, for_update={for_update}"
         )
         try:
             return await self._db_session.fetch(
@@ -692,13 +662,10 @@ class DBStoreSession:
             LOGGER.error("remove error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def remove_all(
-        self, category: str, tag_filter: Union[str, dict] = None
-    ) -> int:
+    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
         """Perform the action."""
         LOGGER.debug(
-            f"remove_all called with category={category}, "
-            f"tag_filter={tag_filter}"
+            f"remove_all called with category={category}, tag_filter={tag_filter}"
         )
         try:
             return await self._db_session.remove_all(category, tag_filter)
@@ -710,9 +677,7 @@ class DBStoreSession:
         """Perform the action."""
         LOGGER.debug("commit called")
         if not self._is_txn:
-            raise DBStoreError(
-                DBStoreErrorCode.WRAPPER, "Session is not a transaction"
-            )
+            raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session is not a transaction")
         try:
             await self._db_session.commit()
         except Exception as e:
@@ -723,9 +688,7 @@ class DBStoreSession:
         """Perform the action."""
         LOGGER.debug("rollback called")
         if not self._is_txn:
-            raise DBStoreError(
-                DBStoreErrorCode.WRAPPER, "Session is not a transaction"
-            )
+            raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session is not a transaction")
         try:
             await self._db_session.rollback()
         except Exception as e:
@@ -799,9 +762,7 @@ class DBOpenSession:
 
     async def __aexit__(self, exc_type, exc, tb):
         """Magic method description."""
-        LOGGER.debug(
-            f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}"
-        )
+        LOGGER.debug(f"__aexit__ called with exc_type={exc_type}, exc={exc}, tb={tb}")
         session = self._session
         self._session = None
         if self._is_txn and exc_type is None:

@@ -7,6 +7,7 @@ import json
 
 class KeyAlg(Enum):
     """Enumeration of supported key algorithms."""
+
     A128GCM = "a128gcm"
     A256GCM = "a256gcm"
     A128CBC_HS256 = "a128cbchs256"
@@ -34,6 +35,7 @@ class KeyAlg(Enum):
 
 class SeedMethod(Enum):
     """Enumeration of supported seed methods."""
+
     BlsKeyGen = "bls_keygen"
 
     @classmethod
@@ -47,6 +49,7 @@ class SeedMethod(Enum):
 
 class EntryOperation(Enum):
     """Enumeration of database entry operations."""
+
     INSERT = 0
     REPLACE = 1
     REMOVE = 2

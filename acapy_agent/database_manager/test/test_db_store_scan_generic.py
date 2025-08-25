@@ -37,14 +37,16 @@ async def populated_store(test_db_path):
             connection_id = f"conn_{i:03d}"
             name = f"cred_{i:03d}"
             expiry_ms = 3600000 if i % 10 != 9 else -1000  # 5 expired records
-            value = json.dumps({
-                "status": status,
-                "connection_id": connection_id,
-                "credential_id": f"cred_id_{i:03d}",
-                "schema_id": "schema:1.0",
-                "issuer_did": "did:example:issuer",
-                "issued_at": "2025-06-23T12:00:00Z",
-            })
+            value = json.dumps(
+                {
+                    "status": status,
+                    "connection_id": connection_id,
+                    "credential_id": f"cred_id_{i:03d}",
+                    "schema_id": "schema:1.0",
+                    "issuer_did": "did:example:issuer",
+                    "issued_at": "2025-06-23T12:00:00Z",
+                }
+            )
             tags = {
                 "status": status,
                 "connection_id": connection_id,
@@ -68,10 +70,7 @@ class TestDBStoreScanGeneric:
     @pytest.mark.asyncio
     async def test_scan_basic(self, populated_store):
         """Test basic scanning of credential_record entries without filters."""
-        scan = populated_store.scan(
-            category="credential_record",
-            profile="test_profile"
-        )
+        scan = populated_store.scan(category="credential_record", profile="test_profile")
         entries = [entry async for entry in scan]
         # 50 total records - 5 expired = 45 non-expired records
         assert len(entries) == 45, f"Expected 45 non-expired records, got {len(entries)}"
@@ -81,9 +80,7 @@ class TestDBStoreScanGeneric:
         """Test scanning with a simple tag filter (status=active)."""
         tag_filter = json.dumps({"status": "active"})
         scan = populated_store.scan(
-            category="credential_record",
-            tag_filter=tag_filter,
-            profile="test_profile"
+            category="credential_record", tag_filter=tag_filter, profile="test_profile"
         )
         entries = [entry async for entry in scan]
         # 17 active records total, 2 expired (indices 9, 39) = 15 non-expired active
@@ -102,20 +99,14 @@ class TestDBStoreScanGeneric:
         """Test scanning with limit and offset for pagination."""
         # First page
         scan1 = populated_store.scan(
-            category="credential_record",
-            profile="test_profile",
-            limit=10,
-            offset=0
+            category="credential_record", profile="test_profile", limit=10, offset=0
         )
         entries1 = [entry async for entry in scan1]
         assert len(entries1) == 10, "Expected 10 entries in first page"
 
         # Second page
         scan2 = populated_store.scan(
-            category="credential_record",
-            profile="test_profile",
-            limit=10,
-            offset=10
+            category="credential_record", profile="test_profile", limit=10, offset=10
         )
         entries2 = [entry async for entry in scan2]
         assert len(entries2) == 10, "Expected 10 entries in second page"
@@ -130,10 +121,7 @@ class TestDBStoreScanGeneric:
         """Test basic keyset pagination."""
         # Get the first entry to establish starting point
         async with populated_store.session() as session:
-            all_entries = await session.fetch_all(
-                category="credential_record",
-                limit=1
-            )
+            all_entries = await session.fetch_all(category="credential_record", limit=1)
             assert len(all_entries) == 1, "Expected 1 entry"
 
             # Calculate first_id based on total count
@@ -145,7 +133,7 @@ class TestDBStoreScanGeneric:
             category="credential_record",
             last_id=first_id,
             limit=10,
-            profile="test_profile"
+            profile="test_profile",
         )
         entries = [entry async for entry in scan]
 
@@ -168,15 +156,12 @@ class TestDBStoreScanGeneric:
         # Get starting point for active records
         async with populated_store.session() as session:
             active_entries = await session.fetch_all(
-                category="credential_record",
-                tag_filter=tag_filter,
-                limit=1
+                category="credential_record", tag_filter=tag_filter, limit=1
             )
             assert len(active_entries) == 1, "Expected 1 active entry"
 
             active_count = await session.count(
-                category="credential_record",
-                tag_filter=tag_filter
+                category="credential_record", tag_filter=tag_filter
             )
             first_id = active_count - len(active_entries) + 1  # Should be 15
 
@@ -186,14 +171,12 @@ class TestDBStoreScanGeneric:
             tag_filter=tag_filter,
             last_id=first_id,
             limit=5,
-            profile="test_profile"
+            profile="test_profile",
         )
         entries = [entry async for entry in scan]
 
         # Should get up to 5 active records after the starting ID
-        assert len(entries) <= 5, (
-            f"Expected up to 5 records, got {len(entries)}"
-        )
+        assert len(entries) <= 5, f"Expected up to 5 records, got {len(entries)}"
 
         for entry in entries:
             value = json.loads(entry.value)
@@ -205,15 +188,13 @@ class TestDBStoreScanGeneric:
     async def test_scan_keyset_ordering(self, populated_store):
         """Test that scan_keyset returns entries in correct order."""
         scan = populated_store.scan_keyset(
-            category="credential_record",
-            limit=20,
-            profile="test_profile"
+            category="credential_record", limit=20, profile="test_profile"
         )
         entries = [entry async for entry in scan]
 
         # Verify entries are ordered by credential_id
         for i in range(1, len(entries)):
-            prev_cred_id = json.loads(entries[i-1].value)["credential_id"]
+            prev_cred_id = json.loads(entries[i - 1].value)["credential_id"]
             curr_cred_id = json.loads(entries[i].value)["credential_id"]
             assert curr_cred_id > prev_cred_id, (
                 f"Entries not in order: {prev_cred_id} should come before {curr_cred_id}"
@@ -223,22 +204,19 @@ class TestDBStoreScanGeneric:
     async def test_scan_complex_filter(self, populated_store):
         """Test scanning with complex WQL filter."""
         # Complex filter: (active OR pending) AND connection_id starts with conn_0
-        complex_filter = json.dumps({
-            "$and": [
-                {
-                    "$or": [
-                        {"status": "active"},
-                        {"status": "pending"}
-                    ]
-                },
-                {"connection_id": {"$like": "conn_0%"}}
-            ]
-        })
+        complex_filter = json.dumps(
+            {
+                "$and": [
+                    {"$or": [{"status": "active"}, {"status": "pending"}]},
+                    {"connection_id": {"$like": "conn_0%"}},
+                ]
+            }
+        )
 
         scan = populated_store.scan(
             category="credential_record",
             tag_filter=complex_filter,
-            profile="test_profile"
+            profile="test_profile",
         )
         entries = [entry async for entry in scan]
 
@@ -255,8 +233,7 @@ class TestDBStoreScanGeneric:
     async def test_scan_empty_category(self, populated_store):
         """Test scanning an empty category returns no results."""
         scan = populated_store.scan(
-            category="non_existent_category",
-            profile="test_profile"
+            category="non_existent_category", profile="test_profile"
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 0, "Expected no entries for non-existent category"
@@ -272,10 +249,7 @@ class TestDBStoreScanGeneric:
         assert count == 45, f"Expected 45 non-expired records, got {count}"
 
         # Verify scan also excludes expired records
-        scan = populated_store.scan(
-            category="credential_record",
-            profile="test_profile"
-        )
+        scan = populated_store.scan(category="credential_record", profile="test_profile")
         entries = [entry async for entry in scan]
         assert len(entries) == 45, f"Expected 45 entries from scan, got {len(entries)}"
 

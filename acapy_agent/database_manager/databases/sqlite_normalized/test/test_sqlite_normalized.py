@@ -107,10 +107,12 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
         async with store.session() as session:
             entries = await session.fetch_all(category="connection")
             print(
-                f"Connections before tests: {[
-                    f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}' 
-                    for entry in entries
-                ]}"
+                f"Connections before tests: {
+                    [
+                        f'{entry.name}: {entry.tags}, value={json.loads(entry.value)}'
+                        for entry in entries
+                    ]
+                }"
             )
 
         # Step 3: Test scan in database with offset and limit
@@ -527,9 +529,7 @@ async def main():
                 pool, profile_name, path, effective_release_number
             )
             profile_name = await non_enc_store.get_profile_name()
-            print(
-                f"Non-encrypted database ready! Profile name: {profile_name}"
-            )
+            print(f"Non-encrypted database ready! Profile name: {profile_name}")
         except Exception as e:
             print(f"Oops! Failed to set up the non-encrypted database: {e}")
             exit(1)

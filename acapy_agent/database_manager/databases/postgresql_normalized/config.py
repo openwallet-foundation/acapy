@@ -19,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 class PostgresConfig:
     """Configuration for PostgreSQL database connections."""
+
     def __init__(
         self,
         uri: str,
@@ -95,7 +96,9 @@ class PostgresConfig:
     ):
         LOGGER.debug(
             "Applying migrations from release %s to %s for %s",
-            current_release, target_release, db_type
+            current_release,
+            target_release,
+            db_type,
         )
         if current_release == target_release:
             return
@@ -113,8 +116,7 @@ class PostgresConfig:
             raise DatabaseError(
                 code=DatabaseErrorCode.UNSUPPORTED_VERSION,
                 message=(
-                    f"Invalid migration path from {current_release} to "
-                    f"{target_release}"
+                    f"Invalid migration path from {current_release} to {target_release}"
                 ),
             )
 
@@ -150,8 +152,7 @@ class PostgresConfig:
                 raise DatabaseError(
                     code=DatabaseErrorCode.PROVISION_ERROR,
                     message=(
-                        f"{db_type} migration failed from {from_release} to "
-                        f"{to_release}"
+                        f"{db_type} migration failed from {from_release} to {to_release}"
                     ),
                     actual_error=str(e),
                 )
@@ -725,16 +726,16 @@ class PostgresConfig:
                 # Core table creation
                 await cursor.execute(f"""
                     CREATE TABLE IF NOT EXISTS {
-                        self.schema_context.qualify_table("config")
-                    } (
+                    self.schema_context.qualify_table("config")
+                } (
                         name TEXT PRIMARY KEY,
                         value TEXT
                     )
                 """)
                 await cursor.execute(f"""
                     CREATE TABLE IF NOT EXISTS {
-                        self.schema_context.qualify_table("profiles")
-                    } (
+                    self.schema_context.qualify_table("profiles")
+                } (
                         id SERIAL PRIMARY KEY,
                         name TEXT UNIQUE,
                         reference TEXT,
@@ -743,8 +744,8 @@ class PostgresConfig:
                 """)
                 await cursor.execute(f"""
                     CREATE TABLE IF NOT EXISTS {
-                        self.schema_context.qualify_table("items")
-                    } (
+                    self.schema_context.qualify_table("items")
+                } (
                         id SERIAL PRIMARY KEY,
                         profile_id INTEGER,
                         kind INTEGER,
@@ -754,21 +755,21 @@ class PostgresConfig:
                         expiry TIMESTAMP,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (profile_id) REFERENCES {
-                            self.schema_context.qualify_table("profiles")
-                        } (id) ON DELETE CASCADE ON UPDATE CASCADE
+                    self.schema_context.qualify_table("profiles")
+                } (id) ON DELETE CASCADE ON UPDATE CASCADE
                     )
                 """)
                 await cursor.execute(f"""
                     CREATE TABLE IF NOT EXISTS {
-                        self.schema_context.qualify_table("items_tags")
-                    } (
+                    self.schema_context.qualify_table("items_tags")
+                } (
                         id SERIAL PRIMARY KEY,
                         item_id INTEGER,
                         name TEXT,
                         value TEXT,
                         FOREIGN KEY (item_id) REFERENCES {
-                            self.schema_context.qualify_table("items")
-                        } (id) ON DELETE CASCADE ON UPDATE CASCADE
+                    self.schema_context.qualify_table("items")
+                } (id) ON DELETE CASCADE ON UPDATE CASCADE
                     )
                 """)
 

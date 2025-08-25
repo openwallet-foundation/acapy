@@ -340,9 +340,7 @@ class IndyVdrLedger(BaseLedger):
 
         if sign:
             if not sign_did:
-                raise BadLedgerRequestError(
-                    "Cannot sign request without a public DID"
-                )
+                raise BadLedgerRequestError("Cannot sign request without a public DID")
 
             if taa_accept or taa_accept is None:
                 acceptance = await self.get_latest_txn_author_acceptance()
@@ -357,9 +355,7 @@ class IndyVdrLedger(BaseLedger):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 request.set_signature(
-                    await wallet.sign_message(
-                        request.signature_input, sign_did.verkey
-                    )
+                    await wallet.sign_message(request.signature_input, sign_did.verkey)
                 )
                 del wallet
 

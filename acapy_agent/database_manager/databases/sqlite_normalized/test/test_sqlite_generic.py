@@ -3,7 +3,6 @@
 # poetry run python \
 # acapy_agent/database_manager/databases/sqlite_normalized/test/test_sqlite_generic.py
 
-
 import asyncio
 import os
 import json
@@ -36,9 +35,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(
-                        f"{entry.name}: {entry.tags}, value={value}"
-                    )
+                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -265,9 +262,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(
-                        f"{entry.name}: {entry.tags}, value={value}"
-                    )
+                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -290,9 +285,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(
-                        f"{entry.name}: {entry.tags}, value={value}"
-                    )
+                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -311,9 +304,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(
-                        f"{entry.name}: {entry.tags}, value={value}"
-                    )
+                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -330,9 +321,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             for entry in entries:
                 try:
                     value = json.loads(entry.value)
-                    parsed_entries.append(
-                        f"{entry.name}: {entry.tags}, value={value}"
-                    )
+                    parsed_entries.append(f"{entry.name}: {entry.tags}, value={value}")
                 except json.JSONDecodeError:
                     print(f"Failed to parse JSON for {entry.name}: {entry.value}")
                     raise
@@ -396,7 +385,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             except json.JSONDecodeError:
                 print(
                     f"Failed to parse JSON for {scanned_entries[0].name}: "
-                f"{scanned_entries[0].value}"
+                    f"{scanned_entries[0].value}"
                 )
                 raise
 

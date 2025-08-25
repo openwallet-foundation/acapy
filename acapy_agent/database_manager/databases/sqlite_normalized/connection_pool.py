@@ -20,6 +20,7 @@ LOGGER = logging.getLogger(__name__)
 
 class ConnectionPool:
     """Connection pool manager for SQLite databases."""
+
     def __init__(
         self,
         db_path: str,
@@ -63,7 +64,8 @@ class ConnectionPool:
     def _keep_alive(self):
         # Allow configuring keep-alive interval for tests
         import os
-        keep_alive_interval = int(os.environ.get('SQLITE_KEEPALIVE_INTERVAL', '10'))
+
+        keep_alive_interval = int(os.environ.get("SQLITE_KEEPALIVE_INTERVAL", "10"))
         while self._keep_alive_running.is_set():
             # Check every second but only do work at intervals
             for _ in range(keep_alive_interval):
@@ -300,8 +302,9 @@ class ConnectionPool:
     def close(self):
         """Close the connection pool."""
         import os
+
         # Allow configuring close timeout for tests (default 15s for production)
-        close_timeout = float(os.environ.get('SQLITE_CLOSE_TIMEOUT', '15.0'))
+        close_timeout = float(os.environ.get("SQLITE_CLOSE_TIMEOUT", "15.0"))
         with self.lock:
             self._keep_alive_running.clear()
             self.keep_alive_thread.join(timeout=close_timeout)

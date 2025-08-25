@@ -23,7 +23,9 @@ LOGGER = logging.getLogger(__name__)
 async def main():
     """Run test main function."""
     # Define configuration using PostgresConfig
-    conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb?sslmode=prefer")
+    conn_str = os.environ.get(
+        "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/mydb?sslmode=prefer"
+    )
     _ = PostgresConfig(  # Config validation test
         uri=conn_str,
         min_size=4,

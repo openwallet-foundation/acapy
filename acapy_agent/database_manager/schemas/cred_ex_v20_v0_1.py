@@ -36,7 +36,7 @@ SCHEMAS = {
         """,
         "CREATE INDEX IF NOT EXISTS idx_cred_ex_item_id_v0_1 "
         "ON cred_ex_v20_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_cred_ex_thread_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_cred_ex_thread_id_v0_1 "
         "ON cred_ex_v20_v0_1 (thread_id);",
         """
         CREATE TABLE IF NOT EXISTS cred_ex_v20_attributes_v0_1 (
@@ -48,7 +48,7 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_attributes_attr_name_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_attributes_attr_name_v0_1 "
         "ON cred_ex_v20_attributes_v0_1 (attr_name);",
         """
         CREATE TABLE IF NOT EXISTS cred_ex_v20_formats_v0_1 (
@@ -60,7 +60,7 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_formats_format_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_formats_format_id_v0_1 "
         "ON cred_ex_v20_formats_v0_1 (format_id);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_cred_ex_v20_timestamp_v0_1
@@ -106,7 +106,7 @@ SCHEMAS = {
         """,
         "CREATE INDEX IF NOT EXISTS idx_cred_ex_item_id_v0_1 "
         "ON cred_ex_v20_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_cred_ex_thread_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_cred_ex_thread_id_v0_1 "
         "ON cred_ex_v20_v0_1 (thread_id);",
         """
         CREATE TABLE IF NOT EXISTS cred_ex_v20_attributes_v0_1 (
@@ -118,7 +118,7 @@ SCHEMAS = {
                 REFERENCES cred_ex_v20_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_attributes_attr_name_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_attributes_attr_name_v0_1 "
         "ON cred_ex_v20_attributes_v0_1 (attr_name);",
         """
         CREATE TABLE IF NOT EXISTS cred_ex_v20_formats_v0_1 (
@@ -130,7 +130,7 @@ SCHEMAS = {
                 REFERENCES cred_ex_v20_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_formats_format_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_cred_ex_v20_formats_format_id_v0_1 "
         "ON cred_ex_v20_formats_v0_1 (format_id);",
         """
         CREATE OR REPLACE FUNCTION update_cred_ex_v20_timestamp_v0_1()
@@ -181,9 +181,9 @@ SCHEMAS = {
             CONSTRAINT cred_ex_v20_v0_1_unique_thread_id UNIQUE (thread_id)
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_cred_ex_item_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_cred_ex_item_id_v0_1 "
         "ON cred_ex_v20_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_cred_ex_thread_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_cred_ex_thread_id_v0_1 "
         "ON cred_ex_v20_v0_1 (thread_id);",
         """
         CREATE TABLE cred_ex_v20_attributes_v0_1 (
@@ -195,7 +195,7 @@ SCHEMAS = {
                 REFERENCES cred_ex_v20_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_cred_ex_v20_attributes_attr_name_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_cred_ex_v20_attributes_attr_name_v0_1 "
         "ON cred_ex_v20_attributes_v0_1 (attr_name);",
         """
         CREATE TABLE cred_ex_v20_formats_v0_1 (
@@ -207,7 +207,7 @@ SCHEMAS = {
                 REFERENCES cred_ex_v20_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_cred_ex_v20_formats_format_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_cred_ex_v20_formats_format_id_v0_1 "
         "ON cred_ex_v20_formats_v0_1 (format_id);",
         """
         CREATE TRIGGER trg_update_cred_ex_v20_timestamp_v0_1
@@ -250,10 +250,10 @@ DROP_SCHEMAS = {
     ],
     "mssql": [
         "DROP TRIGGER IF EXISTS trg_update_cred_ex_v20_timestamp_v0_1;",
-        "DROP INDEX IF EXISTS idx_cred_ex_v20_formats_format_id_v0_1 " 
+        "DROP INDEX IF EXISTS idx_cred_ex_v20_formats_format_id_v0_1 "
         "ON cred_ex_v20_formats_v0_1;",
         "DROP TABLE IF EXISTS cred_ex_v20_formats_v0_1;",
-        "DROP INDEX IF EXISTS idx_cred_ex_v20_attributes_attr_name_v0_1 " 
+        "DROP INDEX IF EXISTS idx_cred_ex_v20_attributes_attr_name_v0_1 "
         "ON cred_ex_v20_attributes_v0_1;",
         "DROP TABLE IF EXISTS cred_ex_v20_attributes_v0_1;",
         "DROP INDEX IF EXISTS idx_cred_ex_thread_id_v0_1 ON cred_ex_v20_v0_1;",

@@ -22,7 +22,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         self, category: str, columns: List[str], table_name: Optional[str] = None
     ):
         """Initialize the ConnectionMetadataCustomHandler.
-        
+
         Args:
             category: Category name
             columns: List of column names
@@ -37,7 +37,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
 
     def _extract_metadata(self, json_data: dict) -> str:
         """Extract key-value pairs from JSON data and serialize as JSON string.
-        
+
         Extract key-value pairs from JSON data and serialize them as a JSON string
         for the metadata field.
 
@@ -72,7 +72,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         expiry_ms: int,
     ) -> None:
         """Insert a connection metadata record.
-        
+
         Args:
             cursor: Database cursor
             profile_id: Profile identifier
@@ -207,7 +207,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         expiry_ms: int,
     ) -> None:
         """Replace a connection metadata record.
-        
+
         Args:
             cursor: Database cursor
             profile_id: Profile identifier

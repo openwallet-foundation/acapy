@@ -639,7 +639,7 @@ async def finish_upgrade(profile: Profile):
         # This should only happen for subwallets
         except StorageNotFoundError:
             # Check if this is a Kanon-based profile to determine storage type
-            if hasattr(profile, 'backend') and 'kanon' in profile.backend.lower():
+            if hasattr(profile, "backend") and "kanon" in profile.backend.lower():
                 await storage.add_record(
                     StorageRecord(
                         RECORD_TYPE_ACAPY_STORAGE_TYPE,

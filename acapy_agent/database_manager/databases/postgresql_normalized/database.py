@@ -26,6 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 class PostgresDatabase(AbstractDatabaseStore):
     """PostgreSQL database implementation for normalized storage."""
+
     def __init__(
         self,
         pool: AsyncConnectionPool,
@@ -382,11 +383,11 @@ class PostgresDatabase(AbstractDatabaseStore):
                         async with conn.cursor() as cursor:
                             await cursor.execute(
                                 (
-                                "SELECT pg_terminate_backend(pg_stat_activity.pid) "
-                                "FROM pg_stat_activity "
-                                "WHERE pg_stat_activity.datname = %s "
-                                "AND pid <> pg_backend_pid()"
-                            ),
+                                    "SELECT pg_terminate_backend(pg_stat_activity.pid) "
+                                    "FROM pg_stat_activity "
+                                    "WHERE pg_stat_activity.datname = %s "
+                                    "AND pid <> pg_backend_pid()"
+                                ),
                                 (target_db,),
                             )
                             await cursor.execute(f"DROP DATABASE IF EXISTS {target_db}")

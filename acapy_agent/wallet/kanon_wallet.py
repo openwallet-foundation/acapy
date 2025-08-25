@@ -714,11 +714,11 @@ class KanonWallet(BaseWallet):
                     raise WalletError("Cannot rotate DID key: no next key established")
                 LOGGER.debug("Applying next_verkey: %s", next_verkey)
                 del metadata["next_verkey"]
-                
+
                 # Preserve the method and key_type from the stored DID entry
                 method_name = entry_val.get("method")
                 key_type_name = entry_val.get("verkey_type", "ed25519")
-                
+
                 entry_val["verkey"] = next_verkey
                 item.tags["verkey"] = next_verkey
                 await session.replace(
@@ -728,14 +728,14 @@ class KanonWallet(BaseWallet):
             except DBStoreError as err:
                 LOGGER.error("DBStoreError in rotate_did_keypair_apply: %s", err)
                 raise WalletError("Error updating DID metadata") from err
-        
+
         # Convert method and key_type strings to their respective objects
         did_methods: DIDMethods = self._session.inject(DIDMethods)
         key_types: KeyTypes = self._session.inject(KeyTypes)
-        
+
         method = did_methods.from_method(method_name) if method_name else SOV
         key_type = key_types.from_key_type(key_type_name) or ED25519
-        
+
         result = DIDInfo(
             did=did,
             verkey=next_verkey,

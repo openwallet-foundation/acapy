@@ -116,9 +116,7 @@ class NormalizedHandler(BaseHandler):
                 json_data = json.loads(value)
                 LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
             except json.JSONDecodeError as e:
-                LOGGER.error(
-                    f"[insert] Invalid JSON value: {str(e)}, raw value: {value}"
-                )
+                LOGGER.error(f"[insert] Invalid JSON value: {str(e)}, raw value: {value}")
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
                     message=f"Invalid JSON value: {str(e)}",

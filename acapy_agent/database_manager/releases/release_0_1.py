@@ -1,44 +1,22 @@
 """Module docstring."""
 
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
-    normalized_handler import (
-    NormalizedHandler as SqliteNormalizedHandler,
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
+    normalized_handler as sn_handler,
+    generic_handler as sg_handler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
-generic_handler import (
-    GenericHandler as SqliteGenericHandler,
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom import (
+    cred_ex_v20_custom_handler as scred_handler,
+    pres_ex_v20_custom_handler as spres_handler,
+    connection_metadata_custom_handler as sconn_handler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
-custom.cred_ex_v20_custom_handler import (
-    CredExV20CustomHandler as SqliteCredExV20CustomHandler,
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers import (
+    normalized_handler as pn_handler,
+    generic_handler as pg_handler,
 )
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
-custom.pres_ex_v20_custom_handler import (
-    PresExV20CustomHandler as SqlitePresExV20CustomHandler,
-)
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.\
-custom.connection_metadata_custom_handler import (
-    ConnectionMetadataCustomHandler as SqliteConnectionMetadataCustomHandler,
-)
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
-normalized_handler import (
-    NormalizedHandler as PostgresqlNormalizedHandler,
-)
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
-generic_handler import (
-    GenericHandler as PostgresqlGenericHandler,
-)
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
-custom.cred_ex_v20_custom_handler import (
-    CredExV20CustomHandler as PostgresqlCredExV20CustomHandler,
-)
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
-custom.pres_ex_v20_custom_handler import (
-    PresExV20CustomHandler as PostgresqlPresExV20CustomHandler,
-)
-from acapy_agent.database_manager.databases.postgresql_normalized.handlers.\
-custom.connection_metadata_custom_handler import (
-    ConnectionMetadataCustomHandler as PostgresqlConnectionMetadataCustomHandler,
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom import (
+    cred_ex_v20_custom_handler as pcred_handler,
+    pres_ex_v20_custom_handler as ppres_handler,
+    connection_metadata_custom_handler as pconn_handler,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
     SchemaContext,
@@ -49,12 +27,12 @@ RELEASE = {
     "connection": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "connection",
                 table_name="connection_v0_1",
                 columns=load_schema("connection", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "connection",
                 table_name="connection_v0_1",
                 columns=load_schema("connection", "0_1")["columns"],
@@ -67,12 +45,12 @@ RELEASE = {
     "oob_record": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "oob_record",
                 table_name="oob_record_v0_1",
                 columns=load_schema("oob_record", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "oob_record",
                 table_name="oob_record_v0_1",
                 columns=load_schema("oob_record", "0_1")["columns"],
@@ -85,12 +63,12 @@ RELEASE = {
     "transaction": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "transaction",
                 table_name="transaction_record_v0_1",
                 columns=load_schema("transaction", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "transaction",
                 table_name="transaction_record_v0_1",
                 columns=load_schema("transaction", "0_1")["columns"],
@@ -103,12 +81,12 @@ RELEASE = {
     "schema_sent": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "schema_sent",
                 table_name="schema_sent_v0_1",
                 columns=load_schema("schema_sent", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "schema_sent",
                 table_name="schema_sent_v0_1",
                 columns=load_schema("schema_sent", "0_1")["columns"],
@@ -121,10 +99,10 @@ RELEASE = {
     "did": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "did", table_name="did_v0_1", columns=load_schema("did", "0_1")["columns"]
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "did",
                 table_name="did_v0_1",
                 columns=load_schema("did", "0_1")["columns"],
@@ -137,12 +115,12 @@ RELEASE = {
     "cred_def_sent": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "cred_def_sent",
                 table_name="cred_def_sent_v0_1",
                 columns=load_schema("cred_def_sent", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "cred_def_sent",
                 table_name="cred_def_sent_v0_1",
                 columns=load_schema("cred_def_sent", "0_1")["columns"],
@@ -155,12 +133,12 @@ RELEASE = {
     "credential_def": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "credential_def",
                 table_name="credential_def_v0_1",
                 columns=load_schema("credential_def", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "credential_def",
                 table_name="credential_def_v0_1",
                 columns=load_schema("credential_def", "0_1")["columns"],
@@ -173,12 +151,12 @@ RELEASE = {
     "schema": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "schema",
                 table_name="schema_v0_1",
                 columns=load_schema("schema", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "schema",
                 table_name="schema_v0_1",
                 columns=load_schema("schema", "0_1")["columns"],
@@ -191,12 +169,12 @@ RELEASE = {
     "revocation_reg_def": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "revocation_reg_def",
                 table_name="revocation_reg_def_v0_1",
                 columns=load_schema("revocation_reg_def", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "revocation_reg_def",
                 table_name="revocation_reg_def_v0_1",
                 columns=load_schema("revocation_reg_def", "0_1")["columns"],
@@ -209,12 +187,12 @@ RELEASE = {
     "cred_ex_v20": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteCredExV20CustomHandler(
+            "sqlite": scred_handler.CredExV20CustomHandler(
                 "cred_ex_v20",
                 table_name="cred_ex_v20_v0_1",
                 columns=load_schema("cred_ex_v20", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlCredExV20CustomHandler(
+            "postgresql": pcred_handler.CredExV20CustomHandler(
                 "cred_ex_v20",
                 table_name="cred_ex_v20_v0_1",
                 columns=load_schema("cred_ex_v20", "0_1")["columns"],
@@ -227,12 +205,12 @@ RELEASE = {
     "connection_invitation": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "connection_invitation",
                 table_name="connection_invitation_v0_1",
                 columns=load_schema("connection_invitation", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "connection_invitation",
                 table_name="connection_invitation_v0_1",
                 columns=load_schema("connection_invitation", "0_1")["columns"],
@@ -245,12 +223,12 @@ RELEASE = {
     "connection_metadata": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteConnectionMetadataCustomHandler(
+            "sqlite": sconn_handler.ConnectionMetadataCustomHandler(
                 "connection_metadata",
                 table_name="connection_metadata_v0_1",
                 columns=load_schema("connection_metadata", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlConnectionMetadataCustomHandler(
+            "postgresql": pconn_handler.ConnectionMetadataCustomHandler(
                 "connection_metadata",
                 table_name="connection_metadata_v0_1",
                 columns=load_schema("connection_metadata", "0_1")["columns"],
@@ -263,12 +241,12 @@ RELEASE = {
     "revocation_list": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "revocation_list",
                 table_name="revocation_list_v0_1",
                 columns=load_schema("revocation_list", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "revocation_list",
                 table_name="revocation_list_v0_1",
                 columns=load_schema("revocation_list", "0_1")["columns"],
@@ -281,12 +259,12 @@ RELEASE = {
     "connection_request": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "connection_request",
                 table_name="connection_request_v0_1",
                 columns=load_schema("connection_request", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "connection_request",
                 table_name="connection_request_v0_1",
                 columns=load_schema("connection_request", "0_1")["columns"],
@@ -299,12 +277,12 @@ RELEASE = {
     "issuer_cred_rev": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "issuer_cred_rev",
                 table_name="issuer_cred_rev_v0_1",
                 columns=load_schema("issuer_cred_rev", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "issuer_cred_rev",
                 table_name="issuer_cred_rev_v0_1",
                 columns=load_schema("issuer_cred_rev", "0_1")["columns"],
@@ -317,12 +295,12 @@ RELEASE = {
     "pres_ex_v20": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqlitePresExV20CustomHandler(
+            "sqlite": spres_handler.PresExV20CustomHandler(
                 "pres_ex_v20",
                 table_name="pres_ex_v20_v0_1",
                 columns=load_schema("pres_ex_v20", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlPresExV20CustomHandler(
+            "postgresql": ppres_handler.PresExV20CustomHandler(
                 "pres_ex_v20",
                 table_name="pres_ex_v20_v0_1",
                 columns=load_schema("pres_ex_v20", "0_1")["columns"],
@@ -335,12 +313,12 @@ RELEASE = {
     "anoncreds_cred_ex_v20": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "anoncreds_cred_ex_v20",
                 table_name="anoncreds_cred_ex_v20_v0_1",
                 columns=load_schema("anoncreds_cred_ex_v20", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "anoncreds_cred_ex_v20",
                 table_name="anoncreds_cred_ex_v20_v0_1",
                 columns=load_schema("anoncreds_cred_ex_v20", "0_1")["columns"],
@@ -353,12 +331,12 @@ RELEASE = {
     "did_key": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "did_key",
                 table_name="did_key_v0_1",
                 columns=load_schema("did_key", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "did_key",
                 table_name="did_key_v0_1",
                 columns=load_schema("did_key", "0_1")["columns"],
@@ -371,12 +349,12 @@ RELEASE = {
     "did_doc": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteNormalizedHandler(
+            "sqlite": sn_handler.NormalizedHandler(
                 "did_doc",
                 table_name="did_doc_v0_1",
                 columns=load_schema("did_doc", "0_1")["columns"],
             ),
-            "postgresql": PostgresqlNormalizedHandler(
+            "postgresql": pn_handler.NormalizedHandler(
                 "did_doc",
                 table_name="did_doc_v0_1",
                 columns=load_schema("did_doc", "0_1")["columns"],
@@ -389,10 +367,10 @@ RELEASE = {
     "credential": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteGenericHandler(
+            "sqlite": sg_handler.GenericHandler(
                 "credential", tags_table_name="credential_record_v0_1"
             ),
-            "postgresql": PostgresqlGenericHandler(
+            "postgresql": pg_handler.GenericHandler(
                 "credential",
                 tags_table_name="credential_record_v0_1",
                 schema_context=SchemaContext(),
@@ -404,8 +382,8 @@ RELEASE = {
     "default": {
         "version": "0_1",
         "handlers": {
-            "sqlite": SqliteGenericHandler("default", tags_table_name="items_tags"),
-            "postgresql": PostgresqlGenericHandler(
+            "sqlite": sg_handler.GenericHandler("default", tags_table_name="items_tags"),
+            "postgresql": pg_handler.GenericHandler(
                 "default", tags_table_name="items_tags", schema_context=SchemaContext()
             ),
         },

@@ -374,6 +374,6 @@ COLUMNS = ["key", "connection_id", "metadata"]
 # sample:category = "connection_metadata"
 # tags: {'key', 'connection_id'}
 # json: {
-#   "transaction_their_job": "TRANSACTION_ENDORSER", 
+#   "transaction_their_job": "TRANSACTION_ENDORSER",
 #   "transaction_my_job": "TRANSACTION_AUTHOR"
 # }

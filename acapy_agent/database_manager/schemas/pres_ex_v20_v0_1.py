@@ -29,9 +29,9 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_pres_ex_item_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_pres_ex_item_id_v0_1 "
         "ON pres_ex_v20_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_pres_ex_thread_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_pres_ex_thread_id_v0_1 "
         "ON pres_ex_v20_v0_1 (thread_id);",
         """
         CREATE TABLE IF NOT EXISTS pres_ex_v20_revealed_attr_groups_v0_1 (
@@ -87,9 +87,9 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_pres_ex_item_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_pres_ex_item_id_v0_1 "
         "ON pres_ex_v20_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_pres_ex_thread_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_pres_ex_thread_id_v0_1 "
         "ON pres_ex_v20_v0_1 (thread_id);",
         """
         CREATE TABLE IF NOT EXISTS pres_ex_v20_revealed_attr_groups_v0_1 (
@@ -159,9 +159,9 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_pres_ex_item_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_pres_ex_item_id_v0_1 "
         "ON pres_ex_v20_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_pres_ex_thread_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_pres_ex_thread_id_v0_1 "
         "ON pres_ex_v20_v0_1 (thread_id);",
         """
         CREATE TABLE pres_ex_v20_revealed_attr_groups_v0_1 (
@@ -174,7 +174,7 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_pres_ex_v20_revealed_attr_groups_attr_name_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_pres_ex_v20_revealed_attr_groups_attr_name_v0_1 "
         "ON pres_ex_v20_revealed_attr_groups_v0_1 (attr_name);",
         """
         CREATE TRIGGER trg_insert_pres_ex_v20_revealed_attr_groups_v0_1
@@ -222,7 +222,7 @@ DROP_SCHEMAS = {
     ],
     "mssql": [
         "DROP TRIGGER IF EXISTS trg_insert_pres_ex_v20_revealed_attr_groups_v0_1;",
-        "DROP INDEX IF EXISTS idx_pres_ex_v20_revealed_attr_groups_attr_name_v0_1 " 
+        "DROP INDEX IF EXISTS idx_pres_ex_v20_revealed_attr_groups_attr_name_v0_1 "
         "ON pres_ex_v20_revealed_attr_groups_v0_1;",
         "DROP TABLE IF EXISTS pres_ex_v20_revealed_attr_groups_v0_1;",
         "DROP INDEX IF EXISTS idx_pres_ex_thread_id_v0_1 ON pres_ex_v20_v0_1;",

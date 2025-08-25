@@ -9,9 +9,9 @@ LOGGER = logging.getLogger(__name__)
 
 class SqliteTagEncoder(TagQueryEncoder):
     """Encoder for generating SQLite-compatible SQL queries from TagQuery objects.
-    
+
     Uses '?' placeholders for parameters.
-    Supports both normalized and non-normalized modes with a configurable tags 
+    Supports both normalized and non-normalized modes with a configurable tags
     table for non-normalized mode.
     """
 
@@ -24,9 +24,9 @@ class SqliteTagEncoder(TagQueryEncoder):
         tags_table: str = "items_tags",
     ):
         """Initialize the encoder with functions to encode tag names and values.
-        
+
         Also accepts a mode flag, an optional table alias and tags table name.
-        
+
         Args:
             enc_name (callable): Function to encode tag names (str -> str).
             enc_value (callable): Function to encode tag values (str -> str).
@@ -167,7 +167,7 @@ class SqliteTagEncoder(TagQueryEncoder):
             self.arguments.append(enc_name)
             self.arguments.extend(enc_values)
             value_placeholders = ", ".join(["?" for _ in enc_values])
-            in_op = 'NOT IN' if negate else 'IN'
+            in_op = "NOT IN" if negate else "IN"
             sql_clause = (
                 f"i.id IN (SELECT item_id FROM {self.tags_table} "
                 f"WHERE name = ? AND value {in_op} ({value_placeholders}))"

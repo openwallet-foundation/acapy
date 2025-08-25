@@ -20,7 +20,9 @@ logging.basicConfig(
 
 
 # Define the PostgreSQL connection string
-conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_generic")
+conn_str = os.environ.get(
+    "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_generic"
+)
 profile_name = "test_generic"
 config = {
     "min_connections": 4,

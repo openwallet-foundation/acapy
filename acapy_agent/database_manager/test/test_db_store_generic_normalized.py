@@ -38,6 +38,7 @@ async def test_db_path():
     yield str(db_path)
     # Cleanup
     import shutil
+
     try:
         shutil.rmtree(tmpdir, ignore_errors=True)
     except Exception:
@@ -69,6 +70,7 @@ async def non_encrypted_store():
     # Note: shared in-memory databases would require file:memdb1?mode=memory&cache=shared
     # but that requires additional SQLite configuration, so using temp file for now
     import tempfile
+
     tmpdir = tempfile.mkdtemp()
     db_path = Path(tmpdir) / "test_no_enc.db"
     uri = f"sqlite://{db_path}"
@@ -84,6 +86,7 @@ async def non_encrypted_store():
     await store.close()
     # Cleanup
     import shutil
+
     try:
         shutil.rmtree(tmpdir, ignore_errors=True)
     except Exception:
@@ -200,7 +203,7 @@ class TestDBStoreGenericNormalized:
             tag_filter=tag_filter,
             limit=10,
             offset=0,
-            profile="test_profile"
+            profile="test_profile",
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 3, "Expected 3 active people"
@@ -211,7 +214,7 @@ class TestDBStoreGenericNormalized:
             tag_filter=tag_filter,
             limit=1,
             offset=1,
-            profile="test_profile"
+            profile="test_profile",
         )
         paginated_entries = [entry async for entry in scan_paginated]
         assert len(paginated_entries) == 1, "Expected 1 entry with pagination"
@@ -233,21 +236,21 @@ class TestDBStoreGenericNormalized:
     @pytest.mark.asyncio
     async def test_complex_filter(self, populated_store):
         """Test complex WQL queries on normalized database."""
-        complex_tag_filter = json.dumps({
-            "$or": [
-                {
-                    "$and": [
-                        {"attr::person.gender": {"$like": "F"}},
-                        {"attr::person.status": "active"}
-                    ]
-                },
-                {"$not": {"attr::person.status": "active"}}
-            ]
-        })
+        complex_tag_filter = json.dumps(
+            {
+                "$or": [
+                    {
+                        "$and": [
+                            {"attr::person.gender": {"$like": "F"}},
+                            {"attr::person.status": "active"},
+                        ]
+                    },
+                    {"$not": {"attr::person.status": "active"}},
+                ]
+            }
+        )
         scan = populated_store.scan(
-            category="people",
-            tag_filter=complex_tag_filter,
-            profile="test_profile"
+            category="people", tag_filter=complex_tag_filter, profile="test_profile"
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 3, "Expected 3 entries with complex filter"
@@ -294,7 +297,8 @@ class TestDBStoreGenericNormalized:
         async with populated_store.session() as session:
             all_entries = await session.fetch_all(category="connection")
             active_entries = [
-                entry for entry in all_entries
+                entry
+                for entry in all_entries
                 if json.loads(entry.value).get("state") == "active"
             ]
             assert len(active_entries) == 2, "Expected 2 active connections"
@@ -305,7 +309,8 @@ class TestDBStoreGenericNormalized:
         async with populated_store.session() as session:
             all_entries = await session.fetch_all(category="connection")
             active_count = sum(
-                1 for entry in all_entries
+                1
+                for entry in all_entries
                 if json.loads(entry.value).get("state") == "active"
             )
             assert active_count == 2, "Expected 2 active connections"
@@ -320,12 +325,12 @@ class TestDBStoreGenericNormalized:
                 category="connection",
                 name="conn_1",
                 value=json.dumps(updated_json),
-                tags={}
+                tags={},
             )
             updated_entry = await session.fetch(category="connection", name="conn_1")
-            assert (
-                json.loads(updated_entry.value)["state"] == "completed"
-            ), "State not updated"
+            assert json.loads(updated_entry.value)["state"] == "completed", (
+                "State not updated"
+            )
 
     @pytest.mark.asyncio
     async def test_remove_connections(self, populated_store):
@@ -341,7 +346,8 @@ class TestDBStoreGenericNormalized:
         async with populated_store.session() as session:
             all_entries = await session.fetch_all(category="connection")
             entries_with_inbound = [
-                entry for entry in all_entries
+                entry
+                for entry in all_entries
                 if "inbound_connection_id" in json.loads(entry.value)
             ]
             assert len(entries_with_inbound) == 3, (
@@ -465,9 +471,7 @@ class TestDBStoreGenericNormalized:
         # Test scanning
         tag_filter = json.dumps({"attr::person.status": "active"})
         scan = non_encrypted_store.scan(
-            category="people",
-            tag_filter=tag_filter,
-            profile="test_profile_no_enc"
+            category="people", tag_filter=tag_filter, profile="test_profile_no_enc"
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 1, "Expected 1 active person in non-encrypted db"

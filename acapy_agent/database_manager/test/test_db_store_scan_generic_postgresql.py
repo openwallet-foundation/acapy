@@ -3,7 +3,6 @@
 # poetry run python \
 # acapy_agent/database_manager/test/test_db_store_scan_generic_postgresql.py
 
-
 import asyncio
 import json
 import logging
@@ -24,8 +23,8 @@ logging.basicConfig(
 
 # Define the PostgreSQL connection string
 conn_str = os.environ.get(
-    "POSTGRES_URL", 
-    "postgresql://myuser:mypass@localhost:5432/test_scan_normalize?sslmode=prefer"
+    "POSTGRES_URL",
+    "postgresql://myuser:mypass@localhost:5432/test_scan_normalize?sslmode=prefer",
 )
 profile_name = "test_profile"
 config = {

@@ -1,7 +1,6 @@
 """Test PostgreSQL database store with normalized schema."""
 # Run: poetry run python <path>/test_db_store_postgresql_normalized.py
 
-
 import asyncio
 import json
 import logging
@@ -20,7 +19,9 @@ logging.basicConfig(
 )
 
 # Define the PostgreSQL connection string
-conn_str = os.environ.get("POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_normalize")
+conn_str = os.environ.get(
+    "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_normalize"
+)
 profile_name = "test_normalize"
 config = {
     "min_connections": 4,

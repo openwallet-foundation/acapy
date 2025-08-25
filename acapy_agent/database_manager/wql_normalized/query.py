@@ -541,9 +541,7 @@ def parse_single_operator(op_name: str, key: str, value: JSONValue) -> Query:
             raise ValueError("$like must be used with string")
         return LikeQuery(key, value)
     elif op_name == "$in":
-        if not isinstance(value, list) or not all(
-            isinstance(v, str) for v in value
-        ):
+        if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
             raise ValueError("$in must be used with array of strings")
         return InQuery(key, value)
     else:
@@ -556,9 +554,7 @@ def parse_operator(key: str, value: JSONValue) -> Optional[Query]:
         if not isinstance(value, list):
             raise ValueError("$and must be an array")
         subqueries = [
-            parse_query(sub_dict)
-            for sub_dict in value
-            if isinstance(sub_dict, dict)
+            parse_query(sub_dict) for sub_dict in value if isinstance(sub_dict, dict)
         ]
         if not subqueries:
             return None
@@ -567,9 +563,7 @@ def parse_operator(key: str, value: JSONValue) -> Optional[Query]:
         if not isinstance(value, list):
             raise ValueError("$or must be an array")
         subqueries = [
-            parse_query(sub_dict)
-            for sub_dict in value
-            if isinstance(sub_dict, dict)
+            parse_query(sub_dict) for sub_dict in value if isinstance(sub_dict, dict)
         ]
         if not subqueries:
             return None

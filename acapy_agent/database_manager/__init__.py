@@ -4,6 +4,7 @@
 # This ensures backends are available in all processes including test workers
 try:
     from .databases.backends.backend_registration import register_backends
+
     register_backends()
 except ImportError:
     # Backend registration is optional - some deployments may not need all backends

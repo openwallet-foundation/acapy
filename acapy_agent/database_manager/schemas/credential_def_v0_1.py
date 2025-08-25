@@ -28,9 +28,9 @@ SCHEMAS = {
         """,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_item_id_v0_1 "
         "ON credential_def_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_credential_def_schema_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_credential_def_schema_id_v0_1 "
         "ON credential_def_v0_1 (schema_id);",
-        "CREATE INDEX IF NOT EXISTS idx_credential_def_issuer_did_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_credential_def_issuer_did_v0_1 "
         "ON credential_def_v0_1 (issuer_id);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_credential_def_timestamp_v0_1
@@ -68,9 +68,9 @@ SCHEMAS = {
         """,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_item_id_v0_1 "
         "ON credential_def_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_credential_def_schema_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_credential_def_schema_id_v0_1 "
         "ON credential_def_v0_1 (schema_id);",
-        "CREATE INDEX IF NOT EXISTS idx_credential_def_issuer_did_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_credential_def_issuer_did_v0_1 "
         "ON credential_def_v0_1 (issuer_id);",
         """
         CREATE OR REPLACE FUNCTION update_credential_def_timestamp_v0_1()
@@ -113,11 +113,11 @@ SCHEMAS = {
             CONSTRAINT credential_def_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_credential_def_item_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_credential_def_item_id_v0_1 "
         "ON credential_def_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_credential_def_schema_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_credential_def_schema_id_v0_1 "
         "ON credential_def_v0_1 (schema_id);",
-        "CREATE NONCLUSTERED INDEX idx_credential_def_issuer_did_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_credential_def_issuer_did_v0_1 "
         "ON credential_def_v0_1 (issuer_id);",
         """
         CREATE TRIGGER trg_update_credential_def_timestamp_v0_1

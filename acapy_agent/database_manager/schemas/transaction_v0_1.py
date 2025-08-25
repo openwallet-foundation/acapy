@@ -408,14 +408,11 @@ DROP_SCHEMAS = {
         "DROP TABLE IF EXISTS transaction_formats_v0_1;",
         "DROP INDEX IF EXISTS idx_transaction_created_at_v0_1 "
         "ON transaction_record_v0_1;",
-        "DROP INDEX IF EXISTS idx_transaction_state_v0_1 "
-        "ON transaction_record_v0_1;",
-        "DROP INDEX IF EXISTS idx_transaction_thread_id_v0_1 "
-        "ON transaction_record_v0_1;",
+        "DROP INDEX IF EXISTS idx_transaction_state_v0_1 ON transaction_record_v0_1;",
+        "DROP INDEX IF EXISTS idx_transaction_thread_id_v0_1 ON transaction_record_v0_1;",
         "DROP INDEX IF EXISTS idx_transaction_connection_id_v0_1 "
         "ON transaction_record_v0_1;",
-        "DROP INDEX IF EXISTS idx_transaction_item_name_v0_1 "
-        "ON transaction_record_v0_1;",
+        "DROP INDEX IF EXISTS idx_transaction_item_name_v0_1 ON transaction_record_v0_1;",
         "DROP INDEX IF EXISTS idx_transaction_item_id_v0_1 "
         "ON transaction_record_v0_1;"
         "DROP TABLE IF EXISTS transaction_record_v0_1;",

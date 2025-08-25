@@ -28,10 +28,10 @@ def is_valid_json(value: str) -> bool:
 
 def serialize_json_with_bool_strings(data: Any) -> str:
     """Serialize data to JSON, converting booleans to strings and replacing '~' with '_'.
-    
+
     Args:
         data: Data to serialize.
-        
+
     Returns:
         JSON string representation.
     """
@@ -41,8 +41,7 @@ def serialize_json_with_bool_strings(data: Any) -> str:
             return str(obj).lower()
         elif isinstance(obj, dict):
             return {
-                k.replace("~", "_"): convert_bools_and_keys(v)
-                for k, v in obj.items()
+                k.replace("~", "_"): convert_bools_and_keys(v) for k, v in obj.items()
             }
         elif isinstance(obj, list):
             return [convert_bools_and_keys(item) for item in obj]
@@ -786,8 +785,7 @@ class NormalizedHandler(BaseHandler):
                 f"DELETE FROM {self.table} WHERE item_id = %s", (item_id,)
             )
             await cursor.execute(
-                f"DELETE FROM {self.schema_context.qualify_table('items')} "
-                f"WHERE id = %s",
+                f"DELETE FROM {self.schema_context.qualify_table('items')} WHERE id = %s",
                 (item_id,),
             )
             LOGGER.debug("[%s] Removed record with item_id=%s", operation_name, item_id)

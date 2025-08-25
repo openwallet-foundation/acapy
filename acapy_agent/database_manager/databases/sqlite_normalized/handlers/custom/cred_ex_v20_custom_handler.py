@@ -28,7 +28,7 @@ class CredExV20CustomHandler(NormalizedHandler):
         db_type: str = "sqlite",
     ):
         """Initialize the CredExV20CustomHandler.
-        
+
         Args:
             category: Category name
             columns: List of column names
@@ -65,10 +65,10 @@ class CredExV20CustomHandler(NormalizedHandler):
 
     def _extract_cred_def_id(self, json_data: dict) -> str:
         """Extract credential definition ID from JSON data.
-        
+
         Args:
             json_data: Dictionary containing credential data
-            
+
         Returns:
             Credential definition ID if found, None otherwise
         """
@@ -243,7 +243,7 @@ class CredExV20CustomHandler(NormalizedHandler):
         expiry_ms: int,
     ) -> None:
         """Insert a new credential exchange record.
-        
+
         Args:
             cursor: Database cursor
             profile_id: Profile identifier
@@ -447,7 +447,7 @@ class CredExV20CustomHandler(NormalizedHandler):
         expiry_ms: int,
     ) -> None:
         """Replace an existing credential exchange record.
-        
+
         Args:
             cursor: Database cursor
             profile_id: Profile identifier

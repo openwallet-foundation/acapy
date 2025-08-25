@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__name__ + ".DBStore")
 
 class PostgresSession(AbstractDatabaseSession):
     """PostgreSQL database session implementation."""
+
     def __init__(
         self,
         database: PostgresDatabase,

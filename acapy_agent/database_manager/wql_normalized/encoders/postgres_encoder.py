@@ -9,6 +9,7 @@ LOGGER = logging.getLogger(__name__)
 
 class PostgresTagEncoder(TagQueryEncoder):
     """PostgreSQL tag query encoder."""
+
     """Encoder for generating PostgreSQL-compatible SQL queries from TagQuery objects.
 
     Uses '%s' placeholders for parameters, compatible with psycopg 3.2.9.
@@ -25,7 +26,7 @@ class PostgresTagEncoder(TagQueryEncoder):
         tags_table: str = "items_tags",
     ):
         """Initialize the encoder with functions to encode tag names and values.
-        
+
         A mode flag, an optional table alias, and an optional tags table name for
         non-normalized mode.
 
@@ -69,7 +70,7 @@ class PostgresTagEncoder(TagQueryEncoder):
             top_level (bool): Whether this is a top-level query.
 
         Returns:
-            Tuple[str, List[str]] | str: SQL clause and list of parameters 
+            Tuple[str, List[str]] | str: SQL clause and list of parameters
                 for top-level queries,
                                         or SQL clause string for subqueries.
 
@@ -146,7 +147,7 @@ class PostgresTagEncoder(TagQueryEncoder):
         """Encode a comparison operation clause for PostgreSQL.
 
         In normalized mode, generates direct column comparisons (e.g., "t.column = %s").
-        In non-normalized mode, generates subqueries using the configured tags 
+        In non-normalized mode, generates subqueries using the configured tags
         table (e.g., "i.id IN (SELECT item_id FROM tags_table ...)").
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
@@ -180,7 +181,7 @@ class PostgresTagEncoder(TagQueryEncoder):
 
     def encode_in_clause(self, enc_name: str, enc_values: List[str], negate: bool) -> str:
         """Encode an 'IN' clause for multiple values in PostgreSQL.
-        
+
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
 
@@ -207,7 +208,7 @@ class PostgresTagEncoder(TagQueryEncoder):
 
     def encode_exist_clause(self, enc_name: str, negate: bool) -> str:
         """Encode an 'EXISTS' clause for tag or column existence in PostgreSQL.
-        
+
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
 

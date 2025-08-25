@@ -416,7 +416,7 @@ COLUMNS = ["state", "issuerId", "cred_def_id", "revoc_def_type", "value", "activ
 
 # sample
 # Sample revocation registry definition:
-# revocation_reg_def, 
+# revocation_reg_def,
 # name=BacujJ3zNmAR9afs9hPryb:4:BacujJ3zNmAR9afs9hPryb:3:CL:2842508:cd0.29:CL_ACCUM:1,
 # value={
 #   "issuerId": "BacujJ3zNmAR9afs9hPryb",

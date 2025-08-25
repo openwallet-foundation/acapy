@@ -455,8 +455,7 @@ DROP_SCHEMAS = {
         "ON revocation_list_v0_1;",
         "DROP INDEX IF EXISTS idx_revocation_list_rev_reg_def_id_v0_1 "
         "ON revocation_list_v0_1;",
-        "DROP INDEX IF EXISTS idx_revocation_list_item_id_v0_1 "
-        "ON revocation_list_v0_1;",
+        "DROP INDEX IF EXISTS idx_revocation_list_item_id_v0_1 ON revocation_list_v0_1;",
         "DROP TABLE IF EXISTS revocation_list_v0_1;",
     ],
 }

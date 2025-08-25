@@ -3,7 +3,6 @@
 # poetry run python \
 # acapy_agent/database_manager/test/test_db_store_scan_normalized_postgresql.py
 
-
 import asyncio
 import json
 import logging
@@ -26,7 +25,8 @@ logging.basicConfig(
 
 # Define the PostgreSQL connection string
 conn_str = os.environ.get(
-    "POSTGRES_URL", "postgres://myuser:mypass@localhost:5432/test_scan_normalize?sslmode=prefer"
+    "POSTGRES_URL",
+    "postgres://myuser:mypass@localhost:5432/test_scan_normalize?sslmode=prefer",
 )
 profile_name = "test_profile"
 config = {
@@ -99,9 +99,7 @@ async def setup_data(store: DBStore, num_records: int = 50):
                 f"[setup_data] Attempting to insert record {name} "
                 f"with expiry_ms={expiry_ms}"
             )
-            print(
-                f"Attempting to insert record {name} with expiry_ms={expiry_ms}"
-            )
+            print(f"Attempting to insert record {name} with expiry_ms={expiry_ms}")
             try:
                 await session.insert(
                     category="pres_ex_v20",

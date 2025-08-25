@@ -88,7 +88,9 @@ class GenericHandler(BaseHandler):
                 )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=f"Duplicate entry for category '{category}' and name '{name}'"
+                    message=(
+                        f"Duplicate entry for category '{category}' and name '{name}'"
+                    ),
                 )
             item_id = cursor.lastrowid
             LOGGER.debug("[%s] Inserted item with item_id=%d", operation_name, item_id)
@@ -456,8 +458,7 @@ class GenericHandler(BaseHandler):
         """Count entries matching criteria in the database."""
         operation_name = "count"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
-            "tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -494,8 +495,7 @@ class GenericHandler(BaseHandler):
         """Remove a single entry from the database."""
         operation_name = "remove"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, name=%s, "
-            "tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, name=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,
@@ -532,8 +532,7 @@ class GenericHandler(BaseHandler):
         """Remove all entries matching criteria from the database."""
         operation_name = "remove_all"
         LOGGER.debug(
-            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
-            "tags_table=%s",
+            "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, tags_table=%s",
             operation_name,
             profile_id,
             category,

@@ -25,10 +25,10 @@ LOGGER = logging.getLogger(__name__)
 
 def enc_name(name: str) -> str:
     """Encode name for database storage.
-    
+
     Args:
         name: Name to encode
-        
+
     Returns:
         Encoded name
     """
@@ -37,10 +37,10 @@ def enc_name(name: str) -> str:
 
 def enc_value(value: str) -> str:
     """Encode value for database storage.
-    
+
     Args:
         value: Value to encode
-        
+
     Returns:
         Encoded value
     """
@@ -49,6 +49,7 @@ def enc_value(value: str) -> str:
 
 class SqliteDatabase(AbstractDatabaseStore):
     """SQLite database implementation for normalized storage."""
+
     def __init__(
         self,
         pool: ConnectionPool,
@@ -131,10 +132,10 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     async def create_profile(self, name: str = None) -> str:
         """Create a new profile in the database.
-        
+
         Args:
             name: Profile name to create
-            
+
         Returns:
             str: The created profile name
         """
@@ -175,7 +176,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     async def get_profile_name(self) -> str:
         """Get the default profile name.
-        
+
         Returns:
             str: Default profile name
         """
@@ -183,13 +184,14 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     async def remove_profile(self, name: str) -> bool:
         """Remove a profile from the database.
-        
+
         Args:
             name: Profile name to remove
-            
+
         Returns:
             bool: True if removed successfully
         """
+
         def _remove():
             with self.lock:
                 conn = self.pool.get_connection()
@@ -216,11 +218,12 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
         """Rekey the database with new encryption.
-        
+
         Args:
             key_method: Key method to use
             pass_key: Password key for encryption
         """
+
         def _rekey():
             with self.lock:
                 conn = self.pool.get_connection()
@@ -262,7 +265,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         descending: bool = False,
     ) -> Generator[Entry, None, None]:
         """Scan entries in the database with filtering and pagination.
-        
+
         Args:
             profile: Profile name to scan
             category: Category to scan
@@ -271,7 +274,7 @@ class SqliteDatabase(AbstractDatabaseStore):
             limit: Limit for pagination
             order_by: Column to order by
             descending: Whether to sort descending
-            
+
         Yields:
             Entry: Database entries matching criteria
         """
@@ -321,7 +324,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         descending: bool = False,
     ) -> Generator[Entry, None, None]:
         """Scan entries using keyset pagination.
-        
+
         Args:
             profile: Profile name to scan
             category: Category to scan
@@ -330,7 +333,7 @@ class SqliteDatabase(AbstractDatabaseStore):
             limit: Limit for pagination
             order_by: Column to order by
             descending: Whether to sort descending
-            
+
         Yields:
             Entry: Database entries
         """
@@ -371,10 +374,10 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     def session(self, profile: str = None):
         """Create a context manager for database session.
-        
+
         Args:
             profile: Profile name to use
-            
+
         Returns:
             SqliteSession: Database session context manager
         """
@@ -404,10 +407,10 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     def transaction(self, profile: str = None):
         """Create a transaction context manager.
-        
+
         Args:
             profile: Profile name to use
-            
+
         Returns:
             SqliteSession: Database transaction context manager
         """
@@ -437,7 +440,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     def close(self, remove: bool = False):
         """Close the database and optionally remove the file.
-        
+
         Args:
             remove: Whether to remove the database file
         """

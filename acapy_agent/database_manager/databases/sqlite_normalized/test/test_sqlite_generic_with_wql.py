@@ -199,7 +199,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             print(f"Found {len(entries)} active females")
             assert len(entries) == (2 if is_encrypted else 0), (
                 f"Expected {2 if is_encrypted else 0} active females "
-            f"(Alice, Charlie if encrypted; none if non-encrypted)"
+                f"(Alice, Charlie if encrypted; none if non-encrypted)"
             )
             for entry in entries:
                 try:
@@ -241,10 +241,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             try:
                 value = json.loads(updated_entry.value)
-                name = 'Alice' if is_encrypted else 'David'
-                print(
-                    f"Updated {name}: {updated_entry.name}, value={value}"
-                )
+                name = "Alice" if is_encrypted else "David"
+                print(f"Updated {name}: {updated_entry.name}, value={value}")
             except json.JSONDecodeError:
                 print(
                     f"Failed to parse JSON for {updated_entry.name}: "
@@ -280,10 +278,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             try:
                 value = json.loads(new_entry.value)
-                name = 'David' if is_encrypted else 'Grace'
-                print(
-                    f"Inserted {name}: {new_entry.name}, value={value}"
-                )
+                name = "David" if is_encrypted else "Grace"
+                print(f"Inserted {name}: {new_entry.name}, value={value}")
             except json.JSONDecodeError:
                 print(f"Failed to parse JSON for {new_entry.name}: {new_entry.value}")
                 raise
@@ -309,10 +305,8 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
             try:
                 value = json.loads(updated_entry.value)
-                name = 'David' if is_encrypted else 'Grace'
-                print(
-                    f"Updated {name}: {updated_entry.name}, value={value}"
-                )
+                name = "David" if is_encrypted else "Grace"
+                print(f"Updated {name}: {updated_entry.name}, value={value}")
             except json.JSONDecodeError:
                 print(
                     f"Failed to parse JSON for {updated_entry.name}: "
@@ -444,8 +438,7 @@ async def main():
         # Step 1: Provision the database with an encryption key
         print("\n### Setting Up the Database ###")
         print(
-            "Provisioning the database at", db_path, 
-            "with encryption key 'strong_key'..."
+            "Provisioning the database at", db_path, "with encryption key 'strong_key'..."
         )
         config = SqliteConfig(
             uri=f"sqlite://{db_path}",
@@ -655,9 +648,7 @@ async def main():
                 pool, profile_name, path, effective_release_number
             )
             profile_name = await non_enc_store.get_profile_name()
-            print(
-                f"Non-encrypted database ready! Profile name: {profile_name}"
-            )
+            print(f"Non-encrypted database ready! Profile name: {profile_name}")
         except Exception as e:
             print(f"Oops! Failed to set up the non-encrypted database: {e}")
             exit(1)

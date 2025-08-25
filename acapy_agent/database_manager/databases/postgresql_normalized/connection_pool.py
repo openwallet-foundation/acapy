@@ -9,6 +9,7 @@ LOGGER = logging.getLogger(__name__)
 
 class PostgresConnectionPool:
     """Connection pool manager for PostgreSQL databases."""
+
     def __init__(
         self,
         conn_str: str,

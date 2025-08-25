@@ -28,7 +28,7 @@ class CredExV20CustomHandler(NormalizedHandler):
         schema_context: Optional[SchemaContext] = None,
     ):
         """Initialize the CredExV20CustomHandler.
-        
+
         Args:
             category: The category of credentials to handle
             columns: List of columns for the credential exchange table
@@ -238,7 +238,7 @@ class CredExV20CustomHandler(NormalizedHandler):
         expiry_ms: int,
     ) -> None:
         """Insert a credential exchange record with custom data extraction.
-        
+
         Args:
             cursor: Database cursor for executing queries
             profile_id: Profile ID for the credential exchange

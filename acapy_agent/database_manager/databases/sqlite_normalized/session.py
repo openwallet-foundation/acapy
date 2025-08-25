@@ -287,9 +287,7 @@ class SqliteSession(AbstractDatabaseSession):
                     raise
                 except Exception as e:
                     LOGGER.error(
-                        "Failed to fetch all items in category '%s': %s",
-                        category,
-                        str(e)
+                        "Failed to fetch all items in category '%s': %s", category, str(e)
                     )
                     raise DatabaseError(
                         code=DatabaseErrorCode.QUERY_ERROR,
@@ -384,9 +382,7 @@ class SqliteSession(AbstractDatabaseSession):
 
         await asyncio.to_thread(_remove)
 
-    async def remove_all(
-        self, category: str, tag_filter: Union[str, dict] = None
-    ) -> int:
+    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
         """Remove all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
@@ -472,28 +468,26 @@ class SqliteSession(AbstractDatabaseSession):
 
     def translate_error(self, error: Exception) -> DBStoreError:
         """Translate database-specific errors to DBStoreError."""
-        if hasattr(self.database, 'backend') and self.database.backend:
+        if hasattr(self.database, "backend") and self.database.backend:
             return self.database.backend.translate_error(error)
-        
+
         LOGGER.debug("Translating error: %s, type=%s", str(error), type(error))
-        
+
         if isinstance(error, DatabaseError):
             return DBStoreError(
-                code=DBStoreErrorCode.UNEXPECTED, 
-                message=f"Database error: {str(error)}"
+                code=DBStoreErrorCode.UNEXPECTED, message=f"Database error: {str(error)}"
             )
         elif "UNIQUE constraint failed" in str(error):
             return DBStoreError(
-                code=DBStoreErrorCode.DUPLICATE, 
-                message=f"Duplicate entry: {str(error)}"
+                code=DBStoreErrorCode.DUPLICATE, message=f"Duplicate entry: {str(error)}"
             )
         elif "database is locked" in str(error):
             return DBStoreError(
                 code=DBStoreErrorCode.UNEXPECTED,
-                message=f"Database is locked: {str(error)}"
+                message=f"Database is locked: {str(error)}",
             )
         else:
             return DBStoreError(
                 code=DBStoreErrorCode.UNEXPECTED,
-                message=f"Unexpected error: {str(error)}"
+                message=f"Unexpected error: {str(error)}",
             )

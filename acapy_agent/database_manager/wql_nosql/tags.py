@@ -42,6 +42,7 @@ class TagName:
 
 class CompareOp(Enum):
     """Class description."""
+
     Eq = "="
     Neq = "!="
     Gt = ">"
@@ -70,6 +71,7 @@ class CompareOp(Enum):
 
 class ConjunctionOp(Enum):
     """Class description."""
+
     And = " AND "
     Or = " OR "
 
@@ -87,6 +89,7 @@ class ConjunctionOp(Enum):
 
 class TagQuery:
     """Class description."""
+
     def __init__(
         self,
         variant: str,
@@ -219,6 +222,7 @@ class TagQuery:
 
 class TagQueryEncoder(ABC):
     """Class description."""
+
     @abstractmethod
     def encode_name(self, name: TagName) -> bytes:
         """Perform the action."""
@@ -317,7 +321,7 @@ class TagQueryEncoder(ABC):
 
 def query_to_tagquery(q):
     """Convert a Query object from query.py to a TagQuery object from tags.py.
-    
+
     Strips '~' from keys as it is no longer used to determine tag type.
     NOTE: this is for backward compatibility as the caller will continue to
     provide the ~ character for plaintext.

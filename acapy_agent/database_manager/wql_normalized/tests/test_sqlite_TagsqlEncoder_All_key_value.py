@@ -3,7 +3,11 @@
 import unittest
 import sqlite3
 import logging
-from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName, query_to_tagquery
+from acapy_agent.database_manager.wql_normalized.tags import (
+    TagQuery,
+    TagName,
+    query_to_tagquery,
+)
 from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
 from acapy_agent.database_manager.wql_normalized.query import query_from_str
 

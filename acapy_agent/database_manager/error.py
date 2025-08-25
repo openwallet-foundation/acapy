@@ -5,6 +5,7 @@ from enum import IntEnum
 
 class DBStoreErrorCode(IntEnum):
     """Error codes for database store operations."""
+
     SUCCESS = 0
     BACKEND = 1
     BUSY = 2

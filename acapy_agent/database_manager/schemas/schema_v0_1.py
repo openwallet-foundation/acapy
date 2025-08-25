@@ -22,12 +22,12 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 " +
-        "ON schema_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 " +
-        "ON schema_v0_1 (issuer_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 " +
-        "ON schema_v0_1 (name, version);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 "
+        + "ON schema_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 "
+        + "ON schema_v0_1 (issuer_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 "
+        + "ON schema_v0_1 (name, version);",
         "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 ON schema_v0_1 (state);",
         """
         CREATE TABLE IF NOT EXISTS schema_attributes_v0_1 (
@@ -38,8 +38,8 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 " +
-        "ON schema_attributes_v0_1 (attr_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 "
+        + "ON schema_attributes_v0_1 (attr_name);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_insert_schema_attributes_v0_1
         AFTER INSERT ON schema_v0_1
@@ -94,12 +94,12 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 " +
-        "ON schema_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 " +
-        "ON schema_v0_1 (issuer_id);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 " +
-        "ON schema_v0_1 (name, version);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 "
+        + "ON schema_v0_1 (item_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 "
+        + "ON schema_v0_1 (issuer_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 "
+        + "ON schema_v0_1 (name, version);",
         "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 ON schema_v0_1 (state);",
         """
         CREATE TABLE IF NOT EXISTS schema_attributes_v0_1 (
@@ -110,8 +110,8 @@ SCHEMAS = {
                 REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 " +
-        "ON schema_attributes_v0_1 (attr_name);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 "
+        + "ON schema_attributes_v0_1 (attr_name);",
         """
         CREATE OR REPLACE FUNCTION insert_schema_attributes_v0_1()
         RETURNS TRIGGER AS $$
@@ -191,8 +191,8 @@ SCHEMAS = {
         "CREATE NONCLUSTERED INDEX idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
         "CREATE NONCLUSTERED INDEX idx_schema_schema_id_v0_1 ON schema_v0_1 (item_name);",
         "CREATE NONCLUSTERED INDEX idx_schema_issuer_id_v0_1 ON schema_v0_1 (issuer_id);",
-        "CREATE NONCLUSTERED INDEX idx_schema_name_version_v0_1 " +
-        "ON schema_v0_1 (name, version);",
+        "CREATE NONCLUSTERED INDEX idx_schema_name_version_v0_1 "
+        + "ON schema_v0_1 (name, version);",
         "CREATE NONCLUSTERED INDEX idx_schema_state_v0_1 ON schema_v0_1 (state);",
         """
         CREATE TABLE schema_attributes_v0_1 (
@@ -203,8 +203,8 @@ SCHEMAS = {
                 REFERENCES schema_v0_1(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_schema_attributes_attr_name_v0_1 " +
-        "ON schema_attributes_v0_1 (attr_name);",
+        "CREATE NONCLUSTERED INDEX idx_schema_attributes_attr_name_v0_1 "
+        + "ON schema_attributes_v0_1 (attr_name);",
         """
         CREATE TRIGGER trg_insert_schema_attributes_v0_1
         ON schema_v0_1
@@ -293,8 +293,8 @@ DROP_SCHEMAS = {
         "DROP TRIGGER IF EXISTS trg_update_schema_timestamp_v0_1;",
         "DROP TRIGGER IF EXISTS trg_update_schema_attributes_v0_1;",
         "DROP TRIGGER IF EXISTS trg_insert_schema_attributes_v0_1;",
-        "DROP INDEX IF EXISTS idx_schema_attributes_attr_name_v0_1 " +
-        "ON schema_attributes_v0_1;",
+        "DROP INDEX IF EXISTS idx_schema_attributes_attr_name_v0_1 "
+        + "ON schema_attributes_v0_1;",
         "DROP TABLE IF EXISTS schema_attributes_v0_1;",
         "DROP INDEX IF EXISTS idx_schema_state_v0_1 ON schema_v0_1;",
         "DROP INDEX IF EXISTS idx_schema_name_version_v0_1 ON schema_v0_1;",
@@ -309,8 +309,8 @@ COLUMNS = ["version", "name", "attrNames", "issuer_id", "state"]
 
 
 # category=schema, name=BacujJ3zNmAR9afs9hPryb:2:person-demo-schema:0.029,
-# value={"issuerId": "BacujJ3zNmAR9afs9hPryb", 
-#        "attrNames": ["person.name.family", "person.name.given", "person.birthDate"], 
+# value={"issuerId": "BacujJ3zNmAR9afs9hPryb",
+#        "attrNames": ["person.name.family", "person.name.given", "person.birthDate"],
 #        "name": "person-demo-schema", "version": "0.029"},
-#  tags={'name': 'person-demo-schema', 'version': '0.029', 
+#  tags={'name': 'person-demo-schema', 'version': '0.029',
 #        'issuer_id': 'BacujJ3zNmAR9afs9hPryb', 'state': 'finished'}

@@ -13,6 +13,7 @@ def register_backends():
     # Register SQLite backend
     try:
         from ...databases.sqlite_normalized.backend import SqliteBackend
+
         sqlite_backend = SqliteBackend()
         register_backend("sqlite", sqlite_backend)
         LOGGER.debug("Registered backend: sqlite")
@@ -22,6 +23,7 @@ def register_backends():
     # Register PostgreSQL backend (both postgres and postgresql prefixes)
     try:
         from ...databases.postgresql_normalized.backend import PostgresqlBackend
+
         postgresql_backend = PostgresqlBackend()
         register_backend("postgres", postgresql_backend)
         register_backend("postgresql", postgresql_backend)

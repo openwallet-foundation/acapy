@@ -56,22 +56,24 @@ async def populated_store(test_db_path):
             thread_id = f"thread_{i:03d}"
             name = f"pres_ex_{i:03d}"
             expiry_ms = 3600000 if i % 10 != 9 else -1000  # 5 expired records
-            value = json.dumps({
-                "state": state,
-                "connection_id": connection_id,
-                "thread_id": thread_id,
-                "pres_request": PRES_REQUEST_JSON,
-                "pres": PRES_JSON,
-                "initiator": "self",
-                "role": "prover",
-                "verified": "true" if i % 2 == 0 else "false",
-                "verified_msgs": None,
-                "auto_present": "true",
-                "auto_verify": "false",
-                "auto_remove": "false",
-                "error_msg": None,
-                "trace": "false",
-            })
+            value = json.dumps(
+                {
+                    "state": state,
+                    "connection_id": connection_id,
+                    "thread_id": thread_id,
+                    "pres_request": PRES_REQUEST_JSON,
+                    "pres": PRES_JSON,
+                    "initiator": "self",
+                    "role": "prover",
+                    "verified": "true" if i % 2 == 0 else "false",
+                    "verified_msgs": None,
+                    "auto_present": "true",
+                    "auto_verify": "false",
+                    "auto_remove": "false",
+                    "error_msg": None,
+                    "trace": "false",
+                }
+            )
             tags = {
                 "state": state,
                 "connection_id": connection_id,
@@ -114,13 +116,15 @@ async def store_with_profiles(test_db_path):
         await session.insert(
             category="pres_ex_v20",
             name="pres_ex_other",
-            value=json.dumps({
-                "state": "active",
-                "connection_id": "conn_other",
-                "thread_id": "thread_other",
-                "pres_request": PRES_REQUEST_JSON,
-                "pres": PRES_JSON,
-            }),
+            value=json.dumps(
+                {
+                    "state": "active",
+                    "connection_id": "conn_other",
+                    "thread_id": "thread_other",
+                    "pres_request": PRES_REQUEST_JSON,
+                    "pres": PRES_JSON,
+                }
+            ),
             tags={"state": "active", "connection_id": "conn_other"},
         )
 
@@ -134,10 +138,7 @@ class TestDBStoreScanNormalized:
     @pytest.mark.asyncio
     async def test_scan_basic(self, populated_store):
         """Test basic scanning of pres_ex_v20 records without filters."""
-        scan = populated_store.scan(
-            category="pres_ex_v20",
-            profile="test_profile"
-        )
+        scan = populated_store.scan(category="pres_ex_v20", profile="test_profile")
         entries = [entry async for entry in scan]
         # 50 total records - 5 expired = 45 non-expired records
         assert len(entries) == 45, f"Expected 45 non-expired records, got {len(entries)}"
@@ -147,9 +148,7 @@ class TestDBStoreScanNormalized:
         """Test scanning with a simple tag filter (state=active)."""
         tag_filter = json.dumps({"state": "active"})
         scan = populated_store.scan(
-            category="pres_ex_v20",
-            tag_filter=tag_filter,
-            profile="test_profile"
+            category="pres_ex_v20", tag_filter=tag_filter, profile="test_profile"
         )
         entries = [entry async for entry in scan]
         # 17 active records total, 2 expired (indices 9, 39) = 15 non-expired active
@@ -166,16 +165,16 @@ class TestDBStoreScanNormalized:
     @pytest.mark.asyncio
     async def test_scan_with_complex_filter(self, populated_store):
         """Test scanning with a complex WQL tag filter."""
-        complex_tag_filter = json.dumps({
-            "$or": [
-                {"state": "active"},
-                {"$and": [{"state": "pending"}, {"verified": "true"}]},
-            ]
-        })
+        complex_tag_filter = json.dumps(
+            {
+                "$or": [
+                    {"state": "active"},
+                    {"$and": [{"state": "pending"}, {"verified": "true"}]},
+                ]
+            }
+        )
         scan = populated_store.scan(
-            category="pres_ex_v20",
-            tag_filter=complex_tag_filter,
-            profile="test_profile"
+            category="pres_ex_v20", tag_filter=complex_tag_filter, profile="test_profile"
         )
         entries = [entry async for entry in scan]
         # 15 active + 8 pending & verified = 23 total
@@ -227,16 +226,16 @@ class TestDBStoreScanNormalized:
         entries = [entry async for entry in scan]
         assert len(entries) == 45, "Expected 45 non-expired records"
         thread_ids = [json.loads(entry.value)["thread_id"] for entry in entries]
-        assert (
-            thread_ids == sorted(thread_ids)
-        ), "Entries not sorted by thread_id ascending"
+        assert thread_ids == sorted(thread_ids), (
+            "Entries not sorted by thread_id ascending"
+        )
 
         # Sort by state descending
         scan = populated_store.scan(
             category="pres_ex_v20",
             profile="test_profile",
             order_by="state",
-            descending=True
+            descending=True,
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 45, "Expected 45 non-expired records"
@@ -250,9 +249,7 @@ class TestDBStoreScanNormalized:
         """Test scanning with an invalid order_by column."""
         with pytest.raises(Exception) as exc_info:
             scan = populated_store.scan(
-                category="pres_ex_v20",
-                profile="test_profile",
-                order_by="invalid_column"
+                category="pres_ex_v20", profile="test_profile", order_by="invalid_column"
             )
             # Consume the scan to trigger the error
             _ = [entry async for entry in scan]
@@ -271,17 +268,14 @@ class TestDBStoreScanNormalized:
             first_id = count - len(entries) + 1
 
         scan = populated_store.scan_keyset(
-            category="pres_ex_v20",
-            last_id=first_id,
-            limit=10,
-            profile="test_profile"
+            category="pres_ex_v20", last_id=first_id, limit=10, profile="test_profile"
         )
         entries = [entry async for entry in scan]
         assert len(entries) <= 10, f"Expected up to 10 records, got {len(entries)}"
 
         # Verify ordering
         for i in range(1, len(entries)):
-            prev_thread_id = json.loads(entries[i-1].value)["thread_id"]
+            prev_thread_id = json.loads(entries[i - 1].value)["thread_id"]
             curr_thread_id = json.loads(entries[i].value)["thread_id"]
             assert curr_thread_id > prev_thread_id, "Entries not in order"
 
@@ -293,9 +287,7 @@ class TestDBStoreScanNormalized:
         # Get starting point for pending records
         async with populated_store.session() as session:
             pending_entries = await session.fetch_all(
-                category="pres_ex_v20",
-                tag_filter=tag_filter,
-                limit=1
+                category="pres_ex_v20", tag_filter=tag_filter, limit=1
             )
             assert len(pending_entries) == 1, "Expected 1 pending entry"
             count = await session.count(category="pres_ex_v20")
@@ -378,10 +370,7 @@ class TestDBStoreScanNormalized:
     @pytest.mark.asyncio
     async def test_scan_expired_records(self, populated_store):
         """Test scanning excludes expired records."""
-        scan = populated_store.scan(
-            category="pres_ex_v20",
-            profile="test_profile"
-        )
+        scan = populated_store.scan(category="pres_ex_v20", profile="test_profile")
         entries = [entry async for entry in scan]
         # Should have 45 non-expired records (50 total - 5 expired)
         assert len(entries) == 45, f"Expected 45 non-expired records, got {len(entries)}"
@@ -397,18 +386,12 @@ class TestDBStoreScanNormalized:
     async def test_scan_profile_isolation(self, store_with_profiles):
         """Test scanning with different profiles shows isolation."""
         # Scan default profile - should be empty
-        scan = store_with_profiles.scan(
-            category="pres_ex_v20",
-            profile="test_profile"
-        )
+        scan = store_with_profiles.scan(category="pres_ex_v20", profile="test_profile")
         entries = [entry async for entry in scan]
         assert len(entries) == 0, "Expected 0 records in test_profile"
 
         # Scan other profile - should have 1 record
-        scan = store_with_profiles.scan(
-            category="pres_ex_v20",
-            profile="other_profile"
-        )
+        scan = store_with_profiles.scan(category="pres_ex_v20", profile="other_profile")
         entries = [entry async for entry in scan]
         assert len(entries) == 1, "Expected 1 record in other_profile"
         assert entries[0].name == "pres_ex_other", (
@@ -419,8 +402,7 @@ class TestDBStoreScanNormalized:
     async def test_scan_empty_category(self, populated_store):
         """Test scanning an empty category returns no results."""
         scan = populated_store.scan(
-            category="non_existent_category",
-            profile="test_profile"
+            category="non_existent_category", profile="test_profile"
         )
         entries = [entry async for entry in scan]
         assert len(entries) == 0, "Expected no entries for non-existent category"
@@ -429,12 +411,10 @@ class TestDBStoreScanNormalized:
     async def test_scan_keyset_fetch_all(self, populated_store):
         """Test scan_keyset's fetch_all method."""
         scan = populated_store.scan_keyset(
-            category="pres_ex_v20",
-            limit=10,
-            profile="test_profile"
+            category="pres_ex_v20", limit=10, profile="test_profile"
         )
         entries = await scan.fetch_all()
         assert len(entries) == 10, f"Expected 10 entries, got {len(entries)}"
-        assert all(hasattr(entry, 'name') for entry in entries), (
+        assert all(hasattr(entry, "name") for entry in entries), (
             "All entries should have name attribute"
         )

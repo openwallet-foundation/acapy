@@ -9,7 +9,7 @@ from ....wql_normalized.tags import TagQuery
 
 class BaseHandler(ABC):
     """Abstract base class for handlers managing CRUD operations.
-    
+
     Handles CRUD and query operations for a specific category.
     """
 

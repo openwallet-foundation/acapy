@@ -23,7 +23,7 @@ class PresExV20CustomHandler(NormalizedHandler):
         self, category: str, columns: List[str], table_name: Optional[str] = None
     ):
         """Initialize the PresExV20CustomHandler.
-        
+
         Args:
             category: Category name
             columns: List of column names
@@ -37,7 +37,7 @@ class PresExV20CustomHandler(NormalizedHandler):
 
     def _extract_revealed_attrs(self, json_data: dict) -> str:
         """Extract revealed attribute groups from presentations~attach base64 data.
-        
+
         Extract revealed attribute groups from the presentations~attach base64 data
         in pres and return as JSON string.
 

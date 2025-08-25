@@ -2,7 +2,6 @@
 # poetry run python \
 # acapy_agent/database_manager/test/test_db_store_postgresql_normalized_provision.py
 
-
 import asyncio
 import json
 import logging

@@ -171,8 +171,7 @@ DROP_SCHEMAS = {
         "DROP TRIGGER IF EXISTS trg_update_issuer_cred_rev_timestamp_v0_1;",
         "DROP INDEX IF EXISTS idx_issuer_cred_rev_rev_reg_cred_rev_v0_1 "
         "ON issuer_cred_rev_v0_1;",
-        "DROP INDEX IF EXISTS idx_issuer_cred_rev_state_v0_1 "
-        "ON issuer_cred_rev_v0_1;",
+        "DROP INDEX IF EXISTS idx_issuer_cred_rev_state_v0_1 ON issuer_cred_rev_v0_1;",
         "DROP INDEX IF EXISTS idx_issuer_cred_rev_cred_def_id_v0_1 "
         "ON issuer_cred_rev_v0_1;",
         "DROP INDEX IF EXISTS idx_issuer_cred_rev_rev_reg_id_v0_1 "

@@ -27,17 +27,17 @@ SCHEMAS = {
             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 "
         "ON oob_record_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 "
         "ON oob_record_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 "
         "ON oob_record_v0_1 (invi_msg_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 "
         "ON oob_record_v0_1 (connection_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 "
         "ON oob_record_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 "
         "ON oob_record_v0_1 (created_at);",
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_oob_record_timestamp_v0_1
@@ -75,17 +75,17 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 "
         "ON oob_record_v0_1 (item_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 "
         "ON oob_record_v0_1 (item_name);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 "
         "ON oob_record_v0_1 (invi_msg_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 "
         "ON oob_record_v0_1 (connection_id);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 "
         "ON oob_record_v0_1 (state);",
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 " 
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 "
         "ON oob_record_v0_1 (created_at);",
         """
         CREATE OR REPLACE FUNCTION update_oob_record_timestamp_v0_1()
@@ -134,16 +134,16 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 "
         "ON oob_record_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 "
         "ON oob_record_v0_1 (item_name);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_invi_msg_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_oob_record_invi_msg_id_v0_1 "
         "ON oob_record_v0_1 (invi_msg_id);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_connection_id_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_oob_record_connection_id_v0_1 "
         "ON oob_record_v0_1 (connection_id);",
         "CREATE NONCLUSTERED INDEX idx_oob_record_state_v0_1 ON oob_record_v0_1 (state);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_created_at_v0_1 " 
+        "CREATE NONCLUSTERED INDEX idx_oob_record_created_at_v0_1 "
         "ON oob_record_v0_1 (created_at);",
         """
         CREATE TRIGGER trg_update_oob_record_timestamp_v0_1

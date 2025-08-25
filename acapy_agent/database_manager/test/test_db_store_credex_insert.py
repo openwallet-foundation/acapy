@@ -68,10 +68,13 @@ class TestCredExV20Insert:
         conn, cursor = temp_db
 
         # Insert an item first
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO items (id, profile_id, kind, category, name, value, expiry)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (1, 1, 1, "cred_ex_v20", "test_cred_001", "{}", None))
+        """,
+            (1, 1, 1, "cred_ex_v20", "test_cred_001", "{}", None),
+        )
 
         # Create test data
         cred_ex_data = {
@@ -88,22 +91,26 @@ class TestCredExV20Insert:
         # For this test, we're directly testing the SQL insertion
 
         # Insert cred_ex_v20 record
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO cred_ex_v20_v0_1 (
                 item_id, item_name, connection_id, cred_def_id,
                 thread_id, parent_thread_id, initiator, role, state
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            1, "test_cred_001",
-            cred_ex_data["connection_id"],
-            cred_ex_data["cred_def_id"],
-            cred_ex_data["thread_id"],
-            None,  # parent_thread_id
-            cred_ex_data["initiator"],
-            cred_ex_data["role"],
-            cred_ex_data["state"]
-        ))
+        """,
+            (
+                1,
+                "test_cred_001",
+                cred_ex_data["connection_id"],
+                cred_ex_data["cred_def_id"],
+                cred_ex_data["thread_id"],
+                None,  # parent_thread_id
+                cred_ex_data["initiator"],
+                cred_ex_data["role"],
+                cred_ex_data["state"],
+            ),
+        )
 
         conn.commit()
 
@@ -121,31 +128,43 @@ class TestCredExV20Insert:
         conn, cursor = temp_db
 
         # Insert first item
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO items (id, profile_id, kind, category, name, value, expiry)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (1, 1, 1, "cred_ex_v20", "test_cred_001", "{}", None))
+        """,
+            (1, 1, 1, "cred_ex_v20", "test_cred_001", "{}", None),
+        )
 
         # Insert first cred_ex_v20 record
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO cred_ex_v20_v0_1 (
                 item_id, item_name, connection_id, thread_id, state
             )
             VALUES (?, ?, ?, ?, ?)
-        """, (1, "test_cred_001", "conn_001", "thread_001", "offer-sent"))
+        """,
+            (1, "test_cred_001", "conn_001", "thread_001", "offer-sent"),
+        )
 
         conn.commit()
 
         # Try to insert second item with same thread_id (should fail)
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO items (id, profile_id, kind, category, name, value, expiry)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (2, 1, 1, "cred_ex_v20", "test_cred_002", "{}", None))
+        """,
+            (2, 1, 1, "cred_ex_v20", "test_cred_002", "{}", None),
+        )
 
         with pytest.raises(sqlite3.IntegrityError):
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO cred_ex_v20_v0_1 (
                     item_id, item_name, connection_id, thread_id, state
                 )
                 VALUES (?, ?, ?, ?, ?)
-            """, (2, "test_cred_002", "conn_002", "thread_001", "offer-sent"))
+            """,
+                (2, "test_cred_002", "conn_002", "thread_001", "offer-sent"),
+            )

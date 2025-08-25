@@ -1,5 +1,6 @@
 """Module docstring."""
 
+
 def migrate_sqlite(conn):
     """Migrate SQLite database from release 1.0 to 1.1."""
     cursor = conn.cursor()

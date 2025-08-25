@@ -15,6 +15,7 @@ LOGGER = logging.getLogger(__name__)
 
 class SqliteBackend(DatabaseBackend):
     """SQLite backend implementation for database manager."""
+
     def provision(
         self,
         uri: str,
@@ -27,7 +28,7 @@ class SqliteBackend(DatabaseBackend):
         config: Optional[dict] = None,
     ):
         """Provision a new SQLite database instance.
-        
+
         Uses specified release number and schema config.
         """
         LOGGER.debug(
