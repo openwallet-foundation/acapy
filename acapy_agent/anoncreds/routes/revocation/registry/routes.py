@@ -215,7 +215,7 @@ async def _get_issuer_rev_reg_record(
             rev_reg_id
         )
         if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
         # looking good, so grab some other data
         state = await revocation.get_created_revocation_registry_definition_state(
             rev_reg_id
@@ -371,7 +371,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
             rev_reg_id
         )
         if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
@@ -468,7 +468,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             rev_reg_id
         )
         if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
@@ -556,7 +556,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
         revocation = AnonCredsRevocation(profile)
         rev_reg_def = await revocation.set_rev_reg_state(rev_reg_id, state)
         if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
 
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e

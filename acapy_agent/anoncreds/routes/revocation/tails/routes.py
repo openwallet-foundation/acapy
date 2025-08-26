@@ -72,7 +72,7 @@ async def upload_tails_file(request: web.BaseRequest):
             rev_reg_id
         )
         if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
 
         await revocation.upload_tails_file(rev_reg_def)
         return web.json_response({})

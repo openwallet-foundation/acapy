@@ -18,7 +18,7 @@ async def get_revocation_registry_definition_or_404(
         request: The aiohttp request object
 
     Returns:
-        Tuple of (revocation, rev_reg_id) after validation
+        Tuple of (AnonCredsRevocation instance, rev_reg_id) after validation
 
     Raises:
         web.HTTPNotFound: If the revocation registry definition is not found
@@ -36,7 +36,7 @@ async def get_revocation_registry_definition_or_404(
             rev_reg_id
         )
         if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
