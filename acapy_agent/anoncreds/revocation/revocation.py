@@ -81,7 +81,7 @@ class RevokeResult(NamedTuple):
 class AnonCredsRevocation:
     """Revocation registry operations manager."""
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Profile) -> None:
         """Initialize an AnonCredsRevocation instance.
 
         Args:
@@ -111,7 +111,7 @@ class AnonCredsRevocation:
         registered_id: str,
         *,
         state: Optional[str] = None,
-    ):
+    ) -> Entry:
         entry = await txn.handle.fetch(
             category,
             job_id,
@@ -647,7 +647,9 @@ class AnonCredsRevocation:
                         tails_file.write(buf)
                         file_hasher.update(buf)
                 except RequestException as rx:
-                    raise AnonCredsRevocationError(f"Error retrieving tails file: {rx}")
+                    raise AnonCredsRevocationError(
+                        f"Error retrieving tails file: {rx}"
+                    ) from rx
 
         download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
         if download_tails_hash != rev_reg_def.value.tails_hash:
@@ -665,7 +667,7 @@ class AnonCredsRevocation:
     def _check_url(self, url: str) -> None:
         parsed = urlparse(url)
         if not (parsed.scheme and parsed.netloc and parsed.path):
-            raise AnonCredsRevocationError("URI {} is not a valid URL".format(url))
+            raise AnonCredsRevocationError(f"URI {url} is not a valid URL")
 
     def generate_public_tails_uri(self, rev_reg_def: RevRegDef) -> str:
         """Construct tails uri from rev_reg_def."""
@@ -940,11 +942,11 @@ class AnonCredsRevocation:
             # Extraneous attribute names are ignored.
             try:
                 credential_value = credential_values[attribute]
-            except KeyError:
+            except KeyError as err:
                 raise AnonCredsRevocationError(
                     "Provided credential values are missing a value "
                     f"for the schema attribute '{attribute}'"
-                )
+                ) from err
 
             raw_values[attribute] = str(credential_value)
         return raw_values
@@ -977,7 +979,9 @@ class AnonCredsRevocation:
 
         """
 
-        def _handle_missing_entries(rev_list: Entry, rev_reg_def: Entry, rev_key: Entry):
+        def _handle_missing_entries(
+            rev_list: Entry, rev_reg_def: Entry, rev_key: Entry
+        ) -> None:
             if not rev_list:
                 raise AnonCredsRevocationError("Revocation registry list not found")
             if not rev_reg_def:
@@ -987,7 +991,7 @@ class AnonCredsRevocation:
                     "Revocation registry definition private data not found"
                 )
 
-        def _has_required_id_and_tails_path():
+        def _has_required_id_and_tails_path() -> bool:
             return rev_reg_def_id and tails_file_path
 
         revoc = None
@@ -1534,12 +1538,14 @@ class AnonCredsRevocation:
             tags=tags,
         )
 
-    async def set_tails_file_public_uri(self, rev_reg_id: str, tails_public_uri: str):
+    async def set_tails_file_public_uri(
+        self, rev_reg_id: str, tails_public_uri: str
+    ) -> None:
         """Update Revocation Registry tails file public uri."""
         # TODO: Implement or remove
         pass
 
-    async def set_rev_reg_state(self, rev_reg_id: str, state: str):
+    async def set_rev_reg_state(self, rev_reg_id: str, state: str) -> None:
         """Update Revocation Registry state."""
         # TODO: Implement or remove
         pass

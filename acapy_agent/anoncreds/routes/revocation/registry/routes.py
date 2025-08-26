@@ -12,7 +12,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema
+from marshmallow import ValidationError, fields, validate, validates_schema
 from uuid_utils import uuid4
 
 from .....admin.decorators.auth import tenant_authentication
@@ -151,7 +151,7 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential revocation record request."""
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
 
         rev_reg_id = data.get("rev_reg_id")
@@ -162,8 +162,6 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
             (rev_reg_id and cred_rev_id and not cred_ex_id)
             or (cred_ex_id and not rev_reg_id and not cred_rev_id)
         ):
-            from marshmallow.exceptions import ValidationError
-
             raise ValidationError(
                 "Request must have either rev_reg_id and cred_rev_id or cred_ex_id"
             )
@@ -446,7 +444,7 @@ class RevokeRequestSchemaAnonCreds(CredRevRecordQueryStringSchema):
     """Parameters and validators for revocation request."""
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate fields - connection_id and thread_id must be present if notify."""
         super().validate_fields(data, **kwargs)
 
@@ -455,12 +453,8 @@ class RevokeRequestSchemaAnonCreds(CredRevRecordQueryStringSchema):
         notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
-            from marshmallow.exceptions import ValidationError
-
             raise ValidationError("Request must specify connection_id if notify is true")
         if notify and not notify_version:
-            from marshmallow.exceptions import ValidationError
-
             raise ValidationError("Request must specify notify_version if notify is true")
 
     publish = fields.Boolean(
@@ -663,7 +657,7 @@ async def get_rev_reg(request: web.BaseRequest):
 
 
 async def _get_issuer_rev_reg_record(
-    profile: AskarAnonCredsProfile, rev_reg_id
+    profile: AskarAnonCredsProfile, rev_reg_id: str | None
 ) -> IssuerRevRegRecord:
     # fetch rev reg def from anoncreds
     try:
@@ -987,9 +981,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         IndyIssuerError,
         LedgerError,
     ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     except Exception as err:
-        raise web.HTTPBadRequest(reason=str(err))
+        raise web.HTTPBadRequest(reason=str(err)) from err
 
     return web.json_response(
         {

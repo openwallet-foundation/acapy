@@ -17,16 +17,16 @@ from .revocation import (
 from .setup import DefaultRevocationSetup
 
 __all__ = [
-    "AnonCredsRevocationRegistryFullError",
     "CATEGORY_REV_LIST",
     "CATEGORY_REV_REG_DEF",
     "CATEGORY_REV_REG_DEF_PRIVATE",
-    "RevocationManager",
-    "RevocationManagerError",
-    "RevocRecoveryException",
-    "fetch_txns",
-    "generate_ledger_rrrecovery_txn",
     "AnonCredsRevocation",
     "AnonCredsRevocationError",
+    "AnonCredsRevocationRegistryFullError",
     "DefaultRevocationSetup",
+    "RevocRecoveryException",
+    "RevocationManager",
+    "RevocationManagerError",
+    "fetch_txns",
+    "generate_ledger_rrrecovery_txn",
 ]

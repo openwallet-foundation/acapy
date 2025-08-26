@@ -29,7 +29,7 @@ class RevocationManagerError(BaseError):
 class RevocationManager:
     """Class for managing revocation operations."""
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Profile) -> None:
         """Initialize a RevocationManager.
 
         Args:
@@ -48,7 +48,7 @@ class RevocationManager:
         connection_id: Optional[str] = None,
         comment: Optional[str] = None,
         options: Optional[dict] = None,
-    ):
+    ) -> None:
         """Revoke a credential by its credential exchange identifier at issue.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
@@ -113,7 +113,7 @@ class RevocationManager:
         connection_id: Optional[str] = None,
         comment: Optional[str] = None,
         options: Optional[dict] = None,
-    ):
+    ) -> None:
         """Revoke a credential.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.

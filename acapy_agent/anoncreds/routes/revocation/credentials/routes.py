@@ -159,7 +159,7 @@ class RevokeRequestSchemaAnonCreds(CredRevRecordQueryStringSchema):
     """Parameters and validators for revocation request."""
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate fields - connection_id and thread_id must be present if notify."""
         super().validate_fields(data, **kwargs)
 
@@ -399,7 +399,7 @@ async def register(app: web.Application) -> None:
     )
 
 
-def post_process_routes(app: web.Application):
+def post_process_routes(app: web.Application) -> None:
     """Amend swagger API."""
 
     # Add top-level tags description

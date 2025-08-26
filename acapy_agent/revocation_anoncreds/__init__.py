@@ -6,11 +6,11 @@ Please update your imports to use the new location: acapy_agent.anoncreds.revoca
 
 import warnings
 
-from ..anoncreds.revocation.manager import RevocationManager, RevocationManagerError
 from ..anoncreds.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
     IssuerCredRevRecordSchemaAnonCreds,
 )
+from ..anoncreds.revocation.manager import RevocationManager, RevocationManagerError
 from ..anoncreds.revocation.recover import (
     RevocRecoveryException,
     fetch_txns,
@@ -31,14 +31,14 @@ warnings.warn(
     stacklevel=2,
 )
 __all__ = [
-    "RevocationManager",
-    "RevocationManagerError",
-    "IssuerCredRevRecord",
-    "IssuerCredRevRecordSchemaAnonCreds",
-    "RevocRecoveryException",
-    "fetch_txns",
-    "generate_ledger_rrrecovery_txn",
     "AnonCredsRevocation",
     "AnonCredsRevocationError",
     "DefaultRevocationSetup",
+    "IssuerCredRevRecord",
+    "IssuerCredRevRecordSchemaAnonCreds",
+    "RevocRecoveryException",
+    "RevocationManager",
+    "RevocationManagerError",
+    "fetch_txns",
+    "generate_ledger_rrrecovery_txn",
 ]
