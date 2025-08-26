@@ -11,7 +11,7 @@ from ...events import (
     RevRegDefFinishedPayload,
 )
 from ...models.revocation import RevRegDef, RevRegDefValue
-from ...revocation import setup as test_module
+from .. import revocation_setup as test_module
 from ..revocation import AnonCredsRevocation
 
 

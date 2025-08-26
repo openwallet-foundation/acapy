@@ -6,7 +6,7 @@ from ...admin.request_context import AdminRequestContext
 from ...core.event_bus import MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile
-from ..revocation.setup import DefaultRevocationSetup
+from ..revocation.revocation_setup import DefaultRevocationSetup
 from ..routes import post_process_routes, register
 from ..routes.schemas.routes import register_events
 

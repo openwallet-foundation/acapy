@@ -20,7 +20,7 @@ from ..anoncreds.revocation.revocation import (
     AnonCredsRevocation,
     AnonCredsRevocationError,
 )
-from ..anoncreds.revocation.setup import DefaultRevocationSetup
+from ..anoncreds.revocation.revocation_setup import DefaultRevocationSetup
 
 # Issue deprecation warning
 warnings.warn(

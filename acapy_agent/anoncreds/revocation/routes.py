@@ -1,4 +1,4 @@
-"""Shim for acapy_agent.anoncreds.revocation.setup to register events on the event bus.
+"""Shim to register events from acapy_agent.anoncreds.revocation.revocation_setup.
 
 DefaultContextBuilder.load_plugins() specifies this package as an AnonCreds plugin,
 allowing for this file to be picked up in PluginRegistry.register_protocol_events().
@@ -7,7 +7,7 @@ revocation-registry management.
 """
 
 from ...core.event_bus import EventBus
-from .setup import DefaultRevocationSetup
+from .revocation_setup import DefaultRevocationSetup
 
 
 def register_events(event_bus: EventBus) -> None:

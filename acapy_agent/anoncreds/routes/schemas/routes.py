@@ -24,7 +24,7 @@ from ...models.schema import (
     SchemaResultSchema,
 )
 from ...registry import AnonCredsRegistry
-from ...revocation.setup import DefaultRevocationSetup
+from ...revocation.revocation_setup import DefaultRevocationSetup
 from ...util import handle_value_error
 from ..common.utils import get_request_body_with_profile_check
 from .models import (

@@ -14,7 +14,7 @@ from .revocation import (
     AnonCredsRevocationError,
     AnonCredsRevocationRegistryFullError,
 )
-from .setup import DefaultRevocationSetup
+from .revocation_setup import DefaultRevocationSetup
 
 __all__ = [
     "CATEGORY_REV_LIST",
