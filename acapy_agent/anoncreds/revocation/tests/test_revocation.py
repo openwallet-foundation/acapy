@@ -348,9 +348,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(RevRegDef, "from_json", return_value="rev-reg-def")
     @mock.patch.object(test_module.AnonCredsRevocation, "notify")
-    async def test_finish_revocation_registry_definition(
-        self, mock_notify, mock_from_json, mock_handle
-    ):
+    async def test_finish_revocation_registry_definition(self, _, __, mock_handle):
         mock_handle.fetch = mock.CoroutineMock(return_value=MockEntry())
         mock_handle.insert = mock.CoroutineMock(return_value=None)
         mock_handle.remove = mock.CoroutineMock(return_value=None)
@@ -778,7 +776,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             def __init__(self, status=http.HTTPStatus.OK):
                 self.status_code = status
 
-            def iter_content(self, chunk_size: int = 1):
+            def iter_content(self, _: int = 1):
                 yield b"tails-hash"
 
         mock_get.side_effect = [
@@ -1455,7 +1453,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     @mock.patch("acapy_agent.anoncreds.revocation.isinstance")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
-    async def test_clear_pending_revocations(self, mock_handle, mock_is_instance):
+    async def test_clear_pending_revocations(self, mock_handle, _):
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
                 None,

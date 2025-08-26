@@ -56,7 +56,6 @@ LOGGER = logging.getLogger(__name__)
 CATEGORY_REV_LIST = "revocation_list"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
-CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
 STATE_REVOCATION_POSTED = "posted"
 STATE_REVOCATION_PENDING = "pending"
 REV_REG_DEF_STATE_ACTIVE = "active"
