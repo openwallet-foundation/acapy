@@ -81,9 +81,9 @@ class IssuerCredRevRecord(BaseRecord):
             state: a state value by which to filter
         """
         tag_filter = {
-            **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},
-            **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
-            **{"state": state for _ in [""] if state},
+            **({"cred_def_id": cred_def_id} if cred_def_id else {}),
+            **({"rev_reg_id": rev_reg_id} if rev_reg_id else {}),
+            **({"state": state} if state else {}),
         }
 
         return await cls.query(session, tag_filter)
