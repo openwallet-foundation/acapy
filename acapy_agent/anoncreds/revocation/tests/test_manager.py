@@ -20,6 +20,8 @@ SCHEMA_TXN = 12
 SCHEMA_ID = f"{TEST_DID}:2:{SCHEMA_NAME}:1.0"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag1"
+CRED_REV_ID = "1"
+CRED_EX_ID = "dummy-cxid"
 TAILS_DIR = "/tmp/indy/revocation/tails_files"
 TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
 TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
@@ -32,8 +34,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
 
     @pytest.mark.skip(reason="AnonCreds-break")
     async def test_revoke_credential_publish(self):
-        CRED_EX_ID = "dummy-cxid"
-        CRED_REV_ID = "1"
         mock_issuer_rev_reg_record = mock.MagicMock(
             revoc_reg_id=REV_REG_ID,
             tails_local_path=TAILS_LOCAL,
@@ -95,8 +95,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         )
 
     async def test_revoke_cred_by_cxid_not_found(self):
-        CRED_EX_ID = "dummy-cxid"
-
         with mock.patch.object(
             test_module.IssuerCredRevRecord,
             "retrieve_by_cred_ex_id",
@@ -112,7 +110,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
 
     @pytest.mark.skip(reason="AnonCreds-break")
     async def test_revoke_credential_no_rev_reg_rec(self):
-        CRED_REV_ID = "1"
         V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
             credential_definition_id=CRED_DEF_ID,
@@ -134,7 +131,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
 
     @pytest.mark.skip(reason="AnonCreds-break")
     async def test_revoke_credential_pend(self):
-        CRED_REV_ID = "1"
         mock_issuer_rev_reg_record = mock.MagicMock(mark_pending=mock.AsyncMock())
         issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
         self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
@@ -438,8 +434,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 assert ret_ex.thread_id == str(1000 + index)
 
     async def test_set_revoked_state_v1(self):
-        CRED_REV_ID = "1"
-
         async with self.profile.session() as session:
             exchange_record = V10CredentialExchange(
                 connection_id="mark-revoked-cid",
@@ -478,8 +472,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             assert check_crev_record.state == IssuerCredRevRecord.STATE_REVOKED
 
     async def test_set_revoked_state_v2(self):
-        CRED_REV_ID = "1"
-
         async with self.profile.session() as session:
             exchange_record = V20CredExRecord(
                 connection_id="mark-revoked-cid",

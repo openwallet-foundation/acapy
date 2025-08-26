@@ -3,10 +3,9 @@
 import logging
 from abc import ABC, abstractmethod
 
-from acapy_agent.protocols.endorse_transaction.v1_0.util import is_author_role
-
 from ...core.event_bus import EventBus
 from ...core.profile import Profile
+from ...protocols.endorse_transaction.v1_0.util import is_author_role
 from ...revocation.util import notify_revocation_published_event
 from ..events import (
     CRED_DEF_FINISHED_PATTERN,

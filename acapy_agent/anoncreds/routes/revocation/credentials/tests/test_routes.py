@@ -50,7 +50,7 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
         ):
             req.validate_fields(
                 {
-                    "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",
+                    "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",  # noqa: E501
                     "cred_rev_id": "1",
                 }
             )
@@ -60,7 +60,7 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(Exception):  # ValidationError
                 req.validate_fields(
                     {
-                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"
+                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"  # noqa: E501
                     }
                 )
             with self.assertRaises(Exception):  # ValidationError
@@ -68,7 +68,7 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(Exception):  # ValidationError
                 req.validate_fields(
                     {
-                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",
+                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",  # noqa: E501
                         "cred_ex_id": "12345678-1234-5678-9abc-def012345678",
                     }
                 )
@@ -82,7 +82,7 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(Exception):  # ValidationError
                 req.validate_fields(
                     {
-                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",
+                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",  # noqa: E501
                         "cred_rev_id": "1",
                         "cred_ex_id": "12345678-1234-5678-9abc-def012345678",
                     }
@@ -180,12 +180,9 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
                 await test_module.publish_revocations(self.request)
 
     async def test_get_cred_rev_record(self):
-        REV_REG_ID = "test_rev_reg_id"
-        CRED_REV_ID = "1"
-
         self.request.query = {
-            "rev_reg_id": REV_REG_ID,
-            "cred_rev_id": CRED_REV_ID,
+            "rev_reg_id": "test_rev_reg_id",
+            "cred_rev_id": "1",
         }
 
         with (
@@ -205,9 +202,7 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_get_cred_rev_record_by_cred_ex_id(self):
-        CRED_EX_ID = "12345678-1234-5678-9abc-def012345678"
-
-        self.request.query = {"cred_ex_id": CRED_EX_ID}
+        self.request.query = {"cred_ex_id": "12345678-1234-5678-9abc-def012345678"}
 
         with (
             mock.patch.object(
@@ -226,12 +221,9 @@ class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_get_cred_rev_record_not_found(self):
-        REV_REG_ID = "test_rev_reg_id"
-        CRED_REV_ID = "1"
-
         self.request.query = {
-            "rev_reg_id": REV_REG_ID,
-            "cred_rev_id": CRED_REV_ID,
+            "rev_reg_id": "test_rev_reg_id",
+            "cred_rev_id": "1",
         }
 
         with mock.patch.object(

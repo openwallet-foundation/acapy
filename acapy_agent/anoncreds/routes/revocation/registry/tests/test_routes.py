@@ -5,15 +5,14 @@ import pytest
 from aiohttp import web
 from aiohttp.web import HTTPNotFound
 
-from acapy_agent.anoncreds.models.revocation import RevRegDef, RevRegDefValue
-from acapy_agent.anoncreds.tests.mock_objects import MockRevocationRegistryDefinition
-
 from ......admin.request_context import AdminRequestContext
 from ......anoncreds.issuer import AnonCredsIssuer
 from ......anoncreds.revocation import AnonCredsRevocation
 from ......tests import mock
 from ......utils.testing import create_test_profile
 from .....models.issuer_cred_rev_record import IssuerCredRevRecord
+from .....models.revocation import RevRegDef, RevRegDefValue
+from .....tests.mock_objects import MockRevocationRegistryDefinition
 from .. import routes as test_module
 from ..routes import (
     get_rev_reg_issued,
@@ -48,6 +47,10 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
         )
 
         self.test_did = "sample-did"
+
+        self.rev_reg_id = (
+            f"{self.test_did}:4:{self.test_did}:3:CL:1234:default:CL_ACCUM:default"
+        )
 
     @mock.patch.object(
         AnonCredsIssuer,
@@ -134,9 +137,9 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             await rev_reg_def_post(self.request)
 
     async def test_rev_regs_created(self):
-        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        cred_def_id = f"{self.test_did}:3:CL:1234:default"
         self.request.query = {
-            "cred_def_id": CRED_DEF_ID,
+            "cred_def_id": cred_def_id,
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
         }
 
@@ -213,11 +216,8 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_get_rev_reg(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        RECORD_ID = "4ba81d6e-f341-4e37-83d4-6b1d3e25a7bd"
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        record_id = "4ba81d6e-f341-4e37-83d4-6b1d3e25a7bd"
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with (
             mock.patch.object(
@@ -228,7 +228,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                 test_module.web, "json_response", mock.Mock()
             ) as mock_json_response,
         ):
-            mock_uuid.return_value = RECORD_ID
+            mock_uuid.return_value = record_id
             mock_anon_creds_revoc.return_value = mock.MagicMock(
                 get_created_revocation_registry_definition=mock.AsyncMock(
                     return_value=RevRegDef(
@@ -261,16 +261,16 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                         "pending_pub": [],
                         "revoc_reg_def": {
                             "ver": "1.0",
-                            "id": REV_REG_ID,
+                            "id": self.rev_reg_id,
                             "revocDefType": "CL_ACCUM",
                             "tag": "tag",
                             "credDefId": "cred_def_id",
                         },
                         "max_cred_num": 100,
-                        "record_id": RECORD_ID,
+                        "record_id": record_id,
                         "tag": "tag",
                         "revoc_def_type": "CL_ACCUM",
-                        "revoc_reg_id": REV_REG_ID,
+                        "revoc_reg_id": self.rev_reg_id,
                         "cred_def_id": "cred_def_id",
                     }
                 }
@@ -278,10 +278,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_get_rev_reg_not_found(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with (
             mock.patch.object(
@@ -302,8 +299,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             mock_json_response.assert_not_called()
 
     async def test_get_rev_reg_issued(self):
-        REV_REG_ID = "test_rev_reg_id"
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with (
             mock.patch.object(
@@ -328,10 +324,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_get_rev_reg_issued_x(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with mock.patch.object(
             test_module.AnonCredsRevocation,
@@ -344,8 +337,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                 await test_module.get_rev_reg_issued(self.request)
 
     async def test_get_rev_reg_issued_count(self):
-        REV_REG_ID = "test_rev_reg_id"
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with (
             mock.patch.object(
@@ -368,11 +360,8 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_set_rev_reg_state(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        RECORD_ID = "4ba81d6e-f341-4e37-83d4-6b1d3e25a7bd"
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        record_id = "4ba81d6e-f341-4e37-83d4-6b1d3e25a7bd"
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         self.request.query = {
             "state": test_module.RevRegDefState.STATE_FINISHED,
@@ -387,7 +376,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                 test_module.web, "json_response", mock.Mock()
             ) as mock_json_response,
         ):
-            mock_uuid.return_value = RECORD_ID
+            mock_uuid.return_value = record_id
             mock_anon_creds_revoc.return_value = mock.MagicMock(
                 set_rev_reg_state=mock.AsyncMock(return_value={}),
                 get_created_revocation_registry_definition=mock.AsyncMock(
@@ -421,16 +410,16 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                         "pending_pub": [],
                         "revoc_reg_def": {
                             "ver": "1.0",
-                            "id": REV_REG_ID,
+                            "id": self.rev_reg_id,
                             "revocDefType": "CL_ACCUM",
                             "tag": "tag",
                             "credDefId": "cred_def_id",
                         },
                         "max_cred_num": 100,
-                        "record_id": RECORD_ID,
+                        "record_id": record_id,
                         "tag": "tag",
                         "revoc_def_type": "CL_ACCUM",
-                        "revoc_reg_id": REV_REG_ID,
+                        "revoc_reg_id": self.rev_reg_id,
                         "cred_def_id": "cred_def_id",
                     }
                 }
@@ -438,10 +427,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
             assert result is mock_json_response.return_value
 
     async def test_set_rev_reg_state_not_found(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         self.request.query = {
             "state": test_module.RevRegDefState.STATE_FINISHED,

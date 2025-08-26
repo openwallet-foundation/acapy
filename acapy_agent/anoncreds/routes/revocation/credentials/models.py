@@ -26,7 +26,7 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential revocation record request."""
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
 
         rev_reg_id = data.get("rev_reg_id")

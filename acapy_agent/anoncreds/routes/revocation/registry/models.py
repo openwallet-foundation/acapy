@@ -158,15 +158,13 @@ class RevRegId(OpenAPISchema):
     """Parameters and validators for delete tails file request."""
 
     @validates_schema
-    def validate_fields(self, data, **kwargs):
+    def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields - must have either rr-id or cr-id."""
 
         rev_reg_id = data.get("rev_reg_id")
         cred_def_id = data.get("cred_def_id")
 
         if not (rev_reg_id or cred_def_id):
-            from marshmallow.exceptions import ValidationError
-
             raise ValidationError("Request must have either rev_reg_id or cred_def_id")
 
     rev_reg_id = fields.Str(

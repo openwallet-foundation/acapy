@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Text, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Tuple, Type
 
 from ...core.error import BaseError
 from ...core.profile import Profile
@@ -223,9 +223,9 @@ class RevocationManager:
 
     async def publish_pending_revocations(
         self,
-        rrid2crid: Optional[Mapping[Text, Sequence[Text]]] = None,
+        rrid2crid: Optional[Mapping[str, Sequence[str]]] = None,
         options: Optional[dict] = None,
-    ) -> Mapping[Text, Sequence[Text]]:
+    ) -> Mapping[str, Sequence[str]]:
         """Publish pending revocations to the ledger.
 
         Args:
@@ -273,8 +273,8 @@ class RevocationManager:
         return published_crids
 
     async def clear_pending_revocations(
-        self, purge: Mapping[Text, Sequence[Text]] = None
-    ) -> Mapping[Text, Sequence[Text]]:
+        self, purge: Mapping[str, Sequence[str]] = None
+    ) -> Mapping[str, Sequence[str]]:
         """Clear pending revocation publications.
 
         Args:

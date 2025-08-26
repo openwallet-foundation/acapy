@@ -1,15 +1,15 @@
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
+from aiohttp import web
 from aiohttp.web import HTTPForbidden, HTTPNotFound
-
-from acapy_agent.anoncreds.revocation.revocation import AnonCredsRevocation
-from acapy_agent.anoncreds.tests.mock_objects import MockRevocationRegistryDefinition
 
 from ......admin.request_context import AdminRequestContext
 from ......anoncreds.models.revocation import RevRegDef, RevRegDefValue
 from ......tests import mock
 from ......utils.testing import create_test_profile
+from .....revocation.revocation import AnonCredsRevocation
+from .....tests.mock_objects import MockRevocationRegistryDefinition
 from ..routes import get_tails_file, upload_tails_file
 
 
@@ -37,14 +37,12 @@ class TestAnonCredsTailsRoutes(IsolatedAsyncioTestCase):
         )
 
         self.test_did = "sample-did"
+        self.rev_reg_id = (
+            f"{self.test_did}:4:{self.test_did}:3:CL:1234:default:CL_ACCUM:default"
+        )
 
     async def test_get_tails_file(self):
-        from ..routes import AnonCredsRevocation, web
-
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with (
             mock.patch.object(
@@ -72,12 +70,7 @@ class TestAnonCredsTailsRoutes(IsolatedAsyncioTestCase):
             assert result is mock_file_response.return_value
 
     async def test_get_tails_file_not_found(self):
-        from ..routes import AnonCredsRevocation, web
-
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         with (
             mock.patch.object(

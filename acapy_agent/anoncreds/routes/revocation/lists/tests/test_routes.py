@@ -4,12 +4,11 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 from aiohttp import web
 
-from acapy_agent.anoncreds.tests.mock_objects import MockRevocationRegistryDefinition
-
 from ......admin.request_context import AdminRequestContext
 from ......anoncreds.revocation import AnonCredsRevocation
 from ......tests import mock
 from ......utils.testing import create_test_profile
+from .....tests.mock_objects import MockRevocationRegistryDefinition
 from ..routes import rev_list_post
 
 
