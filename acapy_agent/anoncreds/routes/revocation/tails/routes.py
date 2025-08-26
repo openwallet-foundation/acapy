@@ -10,6 +10,7 @@ from .....anoncreds.routes.revocation import AnonCredsRevocationModuleResponseSc
 from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ....revocation.revocation import AnonCredsRevocation
 from ....util import handle_value_error
+from ...common.utils import get_revocation_registry_definition_or_404
 from .. import REVOCATION_TAG_TITLE
 from .models import AnonCredsRevRegIdMatchInfoSchema
 
@@ -36,21 +37,10 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     # there is no equivalent of this in anoncreds.
     # do we need it there or is this only for transitions.
     #
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
+    revocation, rev_reg_id = await get_revocation_registry_definition_or_404(request)
 
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    rev_reg_id = request.match_info["rev_reg_id"]
-    try:
-        revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.get_created_revocation_registry_definition(
-            rev_reg_id
-        )
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
-    except AnonCredsIssuerError as e:
-        raise web.HTTPInternalServerError(reason=str(e)) from e
+    # Get the rev_reg_def again since we need it for the tails_location
+    rev_reg_def = await revocation.get_created_revocation_registry_definition(rev_reg_id)
 
     tails_local_path = rev_reg_def.value.tails_location
     return web.FileResponse(path=tails_local_path, status=200)

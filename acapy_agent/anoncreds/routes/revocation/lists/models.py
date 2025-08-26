@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from .....messaging.models.openapi import OpenAPISchema
 from .....messaging.valid import ANONCREDS_REV_REG_ID_EXAMPLE
-from ...common import EndorserOptionsSchema
+from ...common.schemas import EndorserOptionsSchema
 
 
 class RevListOptionsSchema(EndorserOptionsSchema):

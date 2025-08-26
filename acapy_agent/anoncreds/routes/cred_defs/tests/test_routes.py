@@ -8,6 +8,7 @@ from .....admin.request_context import AdminRequestContext
 from .....anoncreds.issuer import AnonCredsIssuer
 from .....tests import mock
 from .....utils.testing import create_test_profile
+from ...common.testing import BaseAnonCredsRouteTestCase, create_mock_request
 from ..routes import cred_def_get, cred_def_post, cred_defs_get
 
 
@@ -20,27 +21,9 @@ class MockCredentialDefinition:
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsCredDefRoutes(IsolatedAsyncioTestCase):
+class TestAnonCredsCredDefRoutes(BaseAnonCredsRouteTestCase, IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.session_inject = {}
-        self.profile = await create_test_profile(
-            settings={
-                "wallet.type": "askar-anoncreds",
-                "admin.admin_api_key": "secret-key",
-            },
-        )
-        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
+        await super().asyncSetUp()
 
     @mock.patch.object(
         AnonCredsIssuer,
@@ -114,24 +97,15 @@ class TestAnonCredsCredDefRoutes(IsolatedAsyncioTestCase):
         assert mock_get_cred_defs.call_count == 2
 
     async def test_cred_def_endpoints_wrong_profile_403(self):
-        self.profile = await create_test_profile(
+        # Create a profile with wrong type to test the 403 error
+        wrong_profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
         )
-        self.context = AdminRequestContext.test_context({}, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
+        wrong_context = AdminRequestContext.test_context({}, wrong_profile)
+        wrong_request = create_mock_request(wrong_context)
 
         # POST cred def
-        self.request.json = mock.CoroutineMock(
+        wrong_request.json = mock.CoroutineMock(
             return_value={
                 "credential_definition": {
                     "issuerId": "issuerId",
@@ -145,13 +119,13 @@ class TestAnonCredsCredDefRoutes(IsolatedAsyncioTestCase):
             }
         )
         with self.assertRaises(web.HTTPForbidden):
-            await cred_def_post(self.request)
+            await cred_def_post(wrong_request)
 
         # GET cred def
-        self.request.match_info = {"cred_def_id": "cred_def_id"}
+        wrong_request.match_info = {"cred_def_id": "cred_def_id"}
         with self.assertRaises(web.HTTPForbidden):
-            await cred_def_get(self.request)
+            await cred_def_get(wrong_request)
 
         # GET cred defs
         with self.assertRaises(web.HTTPForbidden):
-            await cred_defs_get(self.request)
+            await cred_defs_get(wrong_request)

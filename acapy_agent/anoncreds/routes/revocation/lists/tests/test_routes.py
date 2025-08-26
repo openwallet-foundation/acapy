@@ -9,31 +9,16 @@ from ......anoncreds.revocation import AnonCredsRevocation
 from ......tests import mock
 from ......utils.testing import create_test_profile
 from .....tests.mock_objects import MockRevocationRegistryDefinition
+from ....common.testing import BaseAnonCredsRouteTestCase, create_mock_request
 from ..routes import rev_list_post
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsRevocationListRoutes(IsolatedAsyncioTestCase):
+class TestAnonCredsRevocationListRoutes(
+    BaseAnonCredsRouteTestCase, IsolatedAsyncioTestCase
+):
     async def asyncSetUp(self) -> None:
-        self.session_inject = {}
-        self.profile = await create_test_profile(
-            settings={
-                "wallet.type": "askar-anoncreds",
-                "admin.admin_api_key": "secret-key",
-            },
-        )
-        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
+        await super().asyncSetUp()
 
     @mock.patch.object(
         AnonCredsRevocation,
@@ -49,24 +34,15 @@ class TestAnonCredsRevocationListRoutes(IsolatedAsyncioTestCase):
         assert mock_create.call_count == 1
 
     async def test_rev_list_wrong_profile_403(self):
-        self.profile = await create_test_profile(
+        # Create a profile with wrong type to test the 403 error
+        wrong_profile = await create_test_profile(
             settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
         )
-        self.context = AdminRequestContext.test_context({}, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
-
-        self.request.json = mock.CoroutineMock(
+        wrong_context = AdminRequestContext.test_context({}, wrong_profile)
+        wrong_request = create_mock_request(wrong_context)
+        wrong_request.json = mock.CoroutineMock(
             return_value={"revRegDefId": "rev_reg_def_id", "options": {}}
         )
+
         with self.assertRaises(web.HTTPForbidden):
-            await rev_list_post(self.request)
+            await rev_list_post(wrong_request)

@@ -5,8 +5,6 @@ from marshmallow.exceptions import ValidationError
 
 from .....messaging.models.openapi import OpenAPISchema
 from .....messaging.valid import (
-    ANONCREDS_CRED_REV_ID_EXAMPLE,
-    ANONCREDS_CRED_REV_ID_VALIDATE,
     ANONCREDS_REV_REG_ID_EXAMPLE,
     ANONCREDS_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
@@ -15,52 +13,17 @@ from .....messaging.valid import (
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchemaAnonCreds,
 )
-from ...common import EndorserOptionsSchema
+from ...common.schemas import (
+    CredRevRecordQueryStringMixin,
+    EndorserOptionsSchema,
+    RevocationIdsDictMixin,
+)
 
 
-class CredRevRecordQueryStringSchema(OpenAPISchema):
+class CredRevRecordQueryStringSchema(CredRevRecordQueryStringMixin):
     """Parameters and validators for credential revocation record request."""
 
-    @validates_schema
-    def validate_fields(self, data: dict, **kwargs) -> None:
-        """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
-
-        rev_reg_id = data.get("rev_reg_id")
-        cred_rev_id = data.get("cred_rev_id")
-        cred_ex_id = data.get("cred_ex_id")
-
-        if not (
-            (rev_reg_id and cred_rev_id and not cred_ex_id)
-            or (cred_ex_id and not rev_reg_id and not cred_rev_id)
-        ):
-            raise ValidationError(
-                "Request must have either rev_reg_id and cred_rev_id or cred_ex_id"
-            )
-
-    rev_reg_id = fields.Str(
-        required=False,
-        validate=ANONCREDS_REV_REG_ID_VALIDATE,
-        metadata={
-            "description": "Revocation registry identifier",
-            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
-        },
-    )
-    cred_rev_id = fields.Str(
-        required=False,
-        validate=ANONCREDS_CRED_REV_ID_VALIDATE,
-        metadata={
-            "description": "Credential revocation identifier",
-            "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
-        },
-    )
-    cred_ex_id = fields.Str(
-        required=False,
-        validate=UUID4_VALIDATE,
-        metadata={
-            "description": "Credential exchange identifier",
-            "example": UUID4_EXAMPLE,
-        },
-    )
+    pass
 
 
 class CredRevRecordResultSchemaAnonCreds(OpenAPISchema):
@@ -75,43 +38,16 @@ class PublishRevocationsOptions(EndorserOptionsSchema):
     pass
 
 
-class PublishRevocationsSchemaAnonCreds(OpenAPISchema):
+class PublishRevocationsSchemaAnonCreds(RevocationIdsDictMixin):
     """Request and result schema for revocation publication API call."""
 
-    rrid2crid = fields.Dict(
-        required=False,
-        keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
-        values=fields.List(
-            fields.Str(
-                validate=ANONCREDS_CRED_REV_ID_VALIDATE,
-                metadata={
-                    "description": "Credential revocation identifier",
-                    "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
-                },
-            )
-        ),
-        metadata={"description": "Credential revocation ids by revocation registry id"},
-    )
     options = fields.Nested(PublishRevocationsOptions())
 
 
-class PublishRevocationsResultSchemaAnonCreds(OpenAPISchema):
+class PublishRevocationsResultSchemaAnonCreds(RevocationIdsDictMixin):
     """Result schema for credential definition send request."""
 
-    rrid2crid = fields.Dict(
-        required=False,
-        keys=fields.Str(metadata={"example": ANONCREDS_REV_REG_ID_EXAMPLE}),
-        values=fields.List(
-            fields.Str(
-                validate=ANONCREDS_CRED_REV_ID_VALIDATE,
-                metadata={
-                    "description": "Credential revocation identifier",
-                    "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
-                },
-            )
-        ),
-        metadata={"description": "Credential revocation ids by revocation registry id"},
-    )
+    pass
 
 
 class RevokeRequestSchemaAnonCreds(CredRevRecordQueryStringSchema):

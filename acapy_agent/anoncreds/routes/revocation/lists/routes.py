@@ -7,12 +7,11 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
 from .....admin.decorators.auth import tenant_authentication
-from .....admin.request_context import AdminRequestContext
 from .....storage.error import StorageNotFoundError
-from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ....models.revocation import RevListResultSchema
 from ....revocation.revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ....util import handle_value_error
+from ...common.utils import get_request_body_with_profile_check
 from .. import REVOCATION_TAG_TITLE
 from .models import RevListCreateRequestSchema
 
@@ -28,14 +27,9 @@ LOGGER = logging.getLogger(__name__)
 @tenant_authentication
 async def rev_list_post(request: web.BaseRequest):
     """Request handler for creating registering a revocation list."""
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
+    _, profile, body, options = await get_request_body_with_profile_check(request)
 
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    body = await request.json()
     rev_reg_def_id = body.get("rev_reg_def_id")
-    options = body.get("options", {})
 
     try:
         revocation = AnonCredsRevocation(profile)

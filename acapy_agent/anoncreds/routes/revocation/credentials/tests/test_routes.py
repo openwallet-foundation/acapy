@@ -9,6 +9,7 @@ from ......storage.error import StorageNotFoundError
 from ......tests import mock
 from ......utils.testing import create_test_profile
 from .....models.issuer_cred_rev_record import IssuerCredRevRecord
+from ....common.testing import BaseAnonCredsRouteTestCaseWithOutbound
 from .. import routes as test_module
 from ..routes import (
     CredRevRecordQueryStringSchema,
@@ -19,29 +20,11 @@ from ..routes import (
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsCredentialRevocationRoutes(IsolatedAsyncioTestCase):
+class TestAnonCredsCredentialRevocationRoutes(
+    BaseAnonCredsRouteTestCaseWithOutbound, IsolatedAsyncioTestCase
+):
     async def asyncSetUp(self):
-        self.session_inject = {}
-        self.profile = await create_test_profile(
-            settings={
-                "admin.admin_api_key": "secret-key",
-                "wallet.type": "askar-anoncreds",
-            },
-        )
-        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
-        self.request_dict = {
-            "context": self.context,
-            "outbound_message_router": mock.CoroutineMock(),
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            headers={"x-api-key": "secret-key"},
-        )
-
-        self.test_did = "sample-did"
+        await super().asyncSetUp()
 
     async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (

@@ -8,7 +8,7 @@ from ....messaging.valid import (
     ANONCREDS_DID_EXAMPLE,
     ANONCREDS_SCHEMA_ID_EXAMPLE,
 )
-from ..common import EndorserOptionsSchema, SchemaQueryFieldsMixin
+from ..common.schemas import EndorserOptionsSchema, SchemaQueryFieldsMixin
 
 
 class CredIdMatchInfo(OpenAPISchema):

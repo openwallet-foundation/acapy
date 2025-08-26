@@ -8,7 +8,7 @@ from ....messaging.valid import (
     ANONCREDS_SCHEMA_ID_EXAMPLE,
 )
 from ...models.schema import AnonCredsSchemaSchema
-from ..common import EndorserOptionsSchema, SchemaQueryFieldsMixin
+from ..common.schemas import EndorserOptionsSchema, SchemaQueryFieldsMixin
 
 
 class SchemaIdMatchInfo(OpenAPISchema):

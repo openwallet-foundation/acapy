@@ -13,6 +13,7 @@ from ......utils.testing import create_test_profile
 from .....models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....models.revocation import RevRegDef, RevRegDefState, RevRegDefValue
 from .....tests.mock_objects import MockRevocationRegistryDefinition
+from ....common.testing import BaseAnonCredsRouteTestCase
 from .. import routes as test_module
 from ..routes import (
     get_rev_reg_issued,
@@ -24,29 +25,11 @@ from ..routes import (
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
+class TestAnonCredsRevocationRegistryRoutes(
+    BaseAnonCredsRouteTestCase, IsolatedAsyncioTestCase
+):
     async def asyncSetUp(self) -> None:
-        self.session_inject = {}
-        self.profile = await create_test_profile(
-            settings={
-                "wallet.type": "askar-anoncreds",
-                "admin.admin_api_key": "secret-key",
-            },
-        )
-        self.context = AdminRequestContext.test_context(self.session_inject, self.profile)
-        self.request_dict = {
-            "context": self.context,
-        }
-        self.request = mock.MagicMock(
-            app={},
-            match_info={},
-            query={},
-            __getitem__=lambda _, k: self.request_dict[k],
-            context=self.context,
-            headers={"x-api-key": "secret-key"},
-        )
-
-        self.test_did = "sample-did"
+        await super().asyncSetUp()
 
         self.rev_reg_id = (
             f"{self.test_did}:4:{self.test_did}:3:CL:1234:default:CL_ACCUM:default"

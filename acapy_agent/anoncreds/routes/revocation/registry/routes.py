@@ -40,6 +40,10 @@ from ....models.issuer_cred_rev_record import (
 from ....models.revocation import RevRegDefResultSchema
 from ....revocation.manager import RevocationManager, RevocationManagerError
 from ....util import handle_value_error
+from ...common.utils import (
+    get_request_body_with_profile_check,
+    get_revocation_registry_definition_or_404,
+)
 from .. import REVOCATION_TAG_TITLE
 from .models import (
     AnonCredsRevRegIdMatchInfoSchema,
@@ -68,14 +72,8 @@ LOGGER = logging.getLogger(__name__)
 @tenant_authentication
 async def rev_reg_def_post(request: web.BaseRequest):
     """Request handler for creating revocation registry definition."""
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    body = await request.json()
+    _, profile, body, options = await get_request_body_with_profile_check(request)
     revocation_registry_definition = body.get("revocation_registry_definition")
-    options = body.get("options", {})
 
     if revocation_registry_definition is None:
         raise web.HTTPBadRequest(
@@ -334,23 +332,9 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
         Number of credentials issued against revocation registry
 
     """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
+    _, rev_reg_id = await get_revocation_registry_definition_or_404(request)
 
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    rev_reg_id = request.match_info["rev_reg_id"]
-    try:
-        revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.get_created_revocation_registry_definition(
-            rev_reg_id
-        )
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
-    except AnonCredsIssuerError as e:
-        raise web.HTTPInternalServerError(reason=str(e)) from e
-
-    async with profile.session() as session:
+    async with request["context"].profile.session() as session:
         count = len(
             await IssuerCredRevRecord.query_by_ids(session, rev_reg_id=rev_reg_id)
         )

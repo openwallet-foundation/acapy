@@ -26,6 +26,7 @@ from ...models.schema import (
 )
 from ...registry import AnonCredsRegistry
 from ...util import handle_value_error
+from ..common.utils import get_request_body_with_profile_check
 from .models import (
     GetSchemasResponseSchema,
     SchemaIdMatchInfo,
@@ -79,13 +80,7 @@ async def schemas_post(request: web.BaseRequest):
             schema_metadata : This fields contains metadata about the schema.
 
     """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    body = await request.json()
-    options = body.get("options", {})
+    _, profile, body, options = await get_request_body_with_profile_check(request)
     schema_data = body.get("schema")
 
     if schema_data is None:

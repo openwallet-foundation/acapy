@@ -23,6 +23,7 @@ from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
 from ....revocation.manager import RevocationManager, RevocationManagerError
+from ...common.utils import get_request_body_with_profile_check
 from .. import REVOCATION_TAG_TITLE
 from .models import (
     CredRevRecordQueryStringSchema,
@@ -52,12 +53,7 @@ async def revoke(request: web.BaseRequest):
         The credential revocation details.
 
     """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    body = await request.json()
+    context, profile, body, _ = await get_request_body_with_profile_check(request)
     cred_ex_id = body.get("cred_ex_id")
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
     notify = body.get("notify")
@@ -106,13 +102,7 @@ async def publish_revocations(request: web.BaseRequest):
         Credential revocation ids published as revoked by revocation registry id.
 
     """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    body = await request.json()
-    options = body.get("options", {})
+    _, profile, body, options = await get_request_body_with_profile_check(request)
     rrid2crid = body.get("rrid2crid")
 
     rev_manager = RevocationManager(profile)
