@@ -5,7 +5,8 @@ from ...storage.record import StorageRecord
 
 @pytest.fixture
 def record_factory():
-    def _test_record(tags={}):
+    def _test_record(tags=None):
+        tags = tags or {}
         return StorageRecord(type="TYPE", value="TEST", tags=tags)
 
     yield _test_record
