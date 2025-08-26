@@ -154,6 +154,7 @@ nav:
 - Contributing:
     - How to Contribute: CONTRIBUTING.md
     - Maintainers: MAINTAINERS.md
+    - Governance: GOVERNANCE.md
     - Code of Conduct: CODE_OF_CONDUCT.md
     - Security Vulnerability Reporting: SECURITY.md
     - Publishing an ACA-Py Release: PUBLISHING.md

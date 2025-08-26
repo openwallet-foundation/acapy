@@ -11,6 +11,7 @@ if [[ "$1" == "clean" ]]; then
         docs/CODE_OF_CONDUCT.md \
         docs/CONTRIBUTING.md \
         docs/MAINTAINERS.md \
+        docs/GOVERNANCE.md \
         docs/PUBLISHING.md \
         docs/LTS-Strategy.md \
         docs/aca-py_architecture.png \
