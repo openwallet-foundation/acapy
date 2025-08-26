@@ -811,7 +811,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                     type="CL_ACCUM",
                 )
             )
-            assert mock_remove.call_count == 1
+        assert mock_remove.call_count == 1
 
         # http request fails
         with self.assertRaises(test_module.AnonCredsRevocationError):
