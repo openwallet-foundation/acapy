@@ -528,19 +528,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#132rc0" class="md-nav__link">
+  <a href="#132" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.2rc0
+      1.3.2
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.2rc0">
+    <nav class="md-nav" aria-label="1.3.2">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#august-12-2025" class="md-nav__link">
+  <a href="#august-26-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      August 12, 2025
+      August 26, 2025
     </span>
   </a>
   
@@ -3180,6 +3180,28 @@
   
   
     <li class="md-nav__item">
+      <a href="../GOVERNANCE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Governance
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
@@ -3317,19 +3339,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#132rc0" class="md-nav__link">
+  <a href="#132" class="md-nav__link">
     <span class="md-ellipsis">
-      1.3.2rc0
+      1.3.2
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.3.2rc0">
+    <nav class="md-nav" aria-label="1.3.2">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#august-12-2025" class="md-nav__link">
+  <a href="#august-26-2025" class="md-nav__link">
     <span class="md-ellipsis">
-      August 12, 2025
+      August 26, 2025
     </span>
   </a>
   
@@ -4233,40 +4255,53 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="132rc0">1.3.2rc0<a class="headerlink" href="#132rc0" title="Permanent link">&para;</a></h2>
-<h3 id="august-12-2025">August 12, 2025<a class="headerlink" href="#august-12-2025" title="Permanent link">&para;</a></h3>
+<h2 id="132">1.3.2<a class="headerlink" href="#132" title="Permanent link">&para;</a></h2>
+<h3 id="august-26-2025">August 26, 2025<a class="headerlink" href="#august-26-2025" title="Permanent link">&para;</a></h3>
 <p>ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the <a href="">Categorized List of Changes</a> below for more details about the changes in this release.</p>
+<p>The release includes a fix for a change (<a href="https://github.com/openwallet-foundation/acapy/pull/3081">#3081</a> added in <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.0.0">Release 1.0.0</a>) that introduced a PII leakage possibility. See the <a href="#132-breaking-changes">1.3.2 Breaking Changes</a> section below for details.</p>
 <h3 id="132-deprecation-notices">1.3.2 Deprecation Notices<a class="headerlink" href="#132-deprecation-notices" title="Permanent link">&para;</a></h3>
 <p>In an upcoming ACA-Py release, we will be dropping from the core ACA-Py repository the <a href="https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/">AIP 1.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/">RFC 0037 Present Proof v1.0</a> DIDComm protocols. Each of the protocols will be moved to the <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> repo. All ACA-Py implementers that use those protocols <strong>SHOULD</strong> update as soon as possible to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/">AIP 2.0</a> versions of those protocols (<a href="https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/">RFC 0453 Issue Credential v2.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/">RFC 0454 Present Proof v2.0</a>, respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins.</p>
 <h3 id="132-breaking-changes">1.3.2 Breaking Changes<a class="headerlink" href="#132-breaking-changes" title="Permanent link">&para;</a></h3>
-<p>There are no breaking changes in this release.</p>
+<p>Release 1.3.2 includes a privacy-related change that also introduces a breaking change for some deployments -- including those using <a href="https://github.com/openwallet-foundation/acapy-vc-authn-oidc">acapy-vc-authn-oidc</a>.</p>
+<ul>
+<li><strong>Removal of <code>by_format</code> from webhook payloads</strong> (<a href="https://github.com/openwallet-foundation/acapy/pull/3837">#3837</a>)<br />
+  In a recent update, ACA-Py webhook events for credential and presentation v2.0 exchanges included a <code>by_format</code> field by default, instead of only when used with the <code>ACAPY_DEBUG_WEBHOOKS</code> configuration parameter. <code>by_format</code> contains sensitive protocol payload data and, in some cases, could result in <strong>personally identifiable information (PII) being logged</strong>. This behavior has been reverted. </li>
+</ul>
+<p><strong>Impact when upgrading:</strong><br />
+    - If your deployment relies on the <code>by_format</code> field in webhook events you need to ensure the startup parameter <code>ACAPY_DEBUG_WEBHOOKS</code> is activated.
+    - Most applications that simply respond to the state of v2.0 credential exchanges (e.g., <code>credential_issued</code>, <code>presentation_verified</code>) are not affected.<br />
+    - Applications that parsed or logged the <code>by_format</code> contents must ensure the <code>ACAPY_DEBUG_WEBHOOKS</code> configuration is set, or better, update their logic to not require that information.</p>
+<p>Because this change addresses a <strong>privacy issue</strong> (PII leakage), it is being included in the 1.3.x patch series rather than requiring a minor release increment.</p>
 <h3 id="132-categorized-list-of-pull-requests">1.3.2 Categorized List of Pull Requests<a class="headerlink" href="#132-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Bug Fixes and Behavior Changes</strong><ul>
-<li>fix: update tails server upload methods to return public file URIs <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3852" title="GitHub Issue: squidfunk/mkdocs-material #3852">#3852</a> TheTechmage</li>
-<li>Only strip did:sov dids to unqualified did in oob receive invitation requests (holder) <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3846" title="GitHub Issue: squidfunk/mkdocs-material #3846">#3846</a> jamshale</li>
-<li>Remove by_format from standard webhook payloads <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3837" title="GitHub Issue: squidfunk/mkdocs-material #3837">#3837</a> jamshale</li>
-<li>Fixed debug port setting <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3828" title="GitHub Issue: squidfunk/mkdocs-material #3828">#3828</a> Gavinok</li>
-<li>Fix: Some asyncio task management and modernization <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3818" title="GitHub Issue: squidfunk/mkdocs-material #3818">#3818</a> jamshale</li>
+<li>fix: update tails server upload methods to return public file URIs <a href="https://github.com/openwallet-foundation/acapy/pull/3852">#3852</a> <a href="https://github.com/TheTechmage">TheTechmage</a></li>
+<li>Only strip did:sov dids to unqualified did in oob receive invitation requests (holder) <a href="https://github.com/openwallet-foundation/acapy/pull/3846">#3846</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Remove by_format from standard webhook payloads <a href="https://github.com/openwallet-foundation/acapy/pull/3837">#3837</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Fixed debug port setting <a href="https://github.com/openwallet-foundation/acapy/pull/3828">#3828</a> <a href="https://github.com/Gavinok">Gavinok</a></li>
+<li>Fix: Some asyncio task management and modernization <a href="https://github.com/openwallet-foundation/acapy/pull/3818">#3818</a> <a href="https://github.com/jamshale">jamshale</a></li>
 </ul>
 </li>
 <li><strong>Operational and Dependency Updates</strong><ul>
-<li><img alt="➖" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2796.svg" title=":heavy_minus_sign:" /> Remove unused dependency: ecdsa <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3847" title="GitHub Issue: squidfunk/mkdocs-material #3847">#3847</a> ff137</li>
-<li>Add retries when opening the askar store / Refactor store.py <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3811" title="GitHub Issue: squidfunk/mkdocs-material #3811">#3811</a> jamshale</li>
-<li>Upgrade pytest-asyncio to major version 1.0.0 <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3810" title="GitHub Issue: squidfunk/mkdocs-material #3810">#3810</a> jamshale</li>
+<li>Update did-webvh package version <a href="https://github.com/openwallet-foundation/acapy/pull/3860">#3860</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li><img alt="♻" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/267b.svg" title=":recycle:" /> Sync ruff version <a href="https://github.com/openwallet-foundation/acapy/pull/3859">#3859</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="➖" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2796.svg" title=":heavy_minus_sign:" /> Remove unused dependency: ecdsa <a href="https://github.com/openwallet-foundation/acapy/pull/3847">#3847</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>Add retries when opening the askar store / Refactor store.py <a href="https://github.com/openwallet-foundation/acapy/pull/3811">#3811</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Upgrade pytest-asyncio to major version 1.0.0 <a href="https://github.com/openwallet-foundation/acapy/pull/3810">#3810</a> <a href="https://github.com/jamshale">jamshale</a></li>
 </ul>
 </li>
 <li><strong>Documentation and README Updates</strong><ul>
-<li>Add DeepWiki AI Docs Badge and revise the README intro <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3853" title="GitHub Issue: squidfunk/mkdocs-material #3853">#3853</a> swcurran</li>
-<li>Update README with latest on LTS Release Status <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3833" title="GitHub Issue: squidfunk/mkdocs-material #3833">#3833</a> swcurran</li>
-<li>Update scenarios to openwallet acapy-minimal-example repo <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3851" title="GitHub Issue: squidfunk/mkdocs-material #3851">#3851</a> jamshale</li>
+<li>Add DeepWiki AI Docs Badge and revise the README intro <a href="https://github.com/openwallet-foundation/acapy/pull/3853">#3853</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Update README with latest on LTS Release Status <a href="https://github.com/openwallet-foundation/acapy/pull/3833">#3833</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Update scenarios to openwallet acapy-minimal-example repo <a href="https://github.com/openwallet-foundation/acapy/pull/3851">#3851</a> <a href="https://github.com/jamshale">jamshale</a></li>
 </ul>
 </li>
 <li><strong>Dependabot PRs</strong><ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-07-02..2025-08-12+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-07-02..2025-08-26+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 <li><strong>Release management pull requests</strong>:<ul>
+<li>1.3.2 <a href="https://github.com/openwallet-foundation/acapy/pull/3863">#3863</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.3.2rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3858">#3858</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
