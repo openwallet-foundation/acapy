@@ -254,7 +254,7 @@ class AnonCredsRevocation:
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
-                "Error saving new revocation registry"
+                "Error storing revocation registry definition"
             ) from err
 
     async def finish_revocation_registry_definition(
@@ -493,7 +493,7 @@ class AnonCredsRevocation:
 
         except AskarError as err:
             raise AnonCredsRevocationError(
-                "Error saving new revocation registry"
+                "Error storing revocation registry list"
             ) from err
 
     async def finish_revocation_list(
@@ -585,7 +585,7 @@ class AnonCredsRevocation:
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
-                "Error saving new revocation registry"
+                "Error saving updated revocation list"
             ) from err
 
         return result
