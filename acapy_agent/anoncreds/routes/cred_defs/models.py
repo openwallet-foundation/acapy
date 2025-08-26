@@ -8,10 +8,7 @@ from ....messaging.valid import (
     ANONCREDS_DID_EXAMPLE,
     ANONCREDS_SCHEMA_ID_EXAMPLE,
 )
-from ..common import (
-    create_transaction_for_endorser_description,
-    endorser_connection_id_description,
-)
+from ..common import EndorserOptionsSchema, SchemaQueryFieldsMixin
 
 
 class CredIdMatchInfo(OpenAPISchema):
@@ -54,23 +51,9 @@ class InnerCredDefSchema(OpenAPISchema):
     )
 
 
-class CredDefPostOptionsSchema(OpenAPISchema):
+class CredDefPostOptionsSchema(EndorserOptionsSchema):
     """Parameters and validators for credential definition options."""
 
-    endorser_connection_id = fields.Str(
-        metadata={
-            "description": endorser_connection_id_description,
-            "example": "UUIDFour.EXAMPLE",
-        },
-        required=False,
-    )
-    create_transaction_for_endorser = fields.Bool(
-        metadata={
-            "description": create_transaction_for_endorser_description,
-            "example": False,
-        },
-        required=False,
-    )
     support_revocation = fields.Bool(
         metadata={
             "description": "Support credential revocation",
@@ -93,7 +76,7 @@ class CredDefPostRequestSchema(OpenAPISchema):
     options = fields.Nested(CredDefPostOptionsSchema())
 
 
-class CredDefsQueryStringSchema(OpenAPISchema):
+class CredDefsQueryStringSchema(SchemaQueryFieldsMixin):
     """Parameters and validators for credential definition list query."""
 
     issuer_id = fields.Str(
@@ -106,18 +89,6 @@ class CredDefsQueryStringSchema(OpenAPISchema):
         metadata={
             "description": "Schema identifier",
             "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
-        }
-    )
-    schema_name = fields.Str(
-        metadata={
-            "description": "Schema name",
-            "example": "example-schema",
-        }
-    )
-    schema_version = fields.Str(
-        metadata={
-            "description": "Schema version",
-            "example": "1.0",
         }
     )
 

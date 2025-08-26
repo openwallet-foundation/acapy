@@ -11,15 +11,11 @@ from .....messaging.valid import (
     ANONCREDS_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUIDFour,
 )
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchemaAnonCreds,
 )
-from ...common import (
-    create_transaction_for_endorser_description,
-    endorser_connection_id_description,
-)
+from ...common import EndorserOptionsSchema
 
 
 class CredRevRecordQueryStringSchema(OpenAPISchema):
@@ -73,24 +69,10 @@ class CredRevRecordResultSchemaAnonCreds(OpenAPISchema):
     result = fields.Nested(IssuerCredRevRecordSchemaAnonCreds())
 
 
-class PublishRevocationsOptions(OpenAPISchema):
+class PublishRevocationsOptions(EndorserOptionsSchema):
     """Options for publishing revocations to ledger."""
 
-    endorser_connection_id = fields.Str(
-        metadata={
-            "description": endorser_connection_id_description,
-            "required": False,
-            "example": UUIDFour.EXAMPLE,
-        }
-    )
-
-    create_transaction_for_endorser = fields.Bool(
-        metadata={
-            "description": create_transaction_for_endorser_description,
-            "required": False,
-            "example": False,
-        }
-    )
+    pass
 
 
 class PublishRevocationsSchemaAnonCreds(OpenAPISchema):

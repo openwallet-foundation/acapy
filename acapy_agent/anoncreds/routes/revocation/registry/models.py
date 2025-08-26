@@ -17,7 +17,6 @@ from .....messaging.valid import (
     UUID4_VALIDATE,
     WHOLE_NUM_EXAMPLE,
     WHOLE_NUM_VALIDATE,
-    UUIDFour,
 )
 from .....revocation.models.issuer_rev_reg_record import (
     IssuerRevRegRecordSchema,
@@ -25,10 +24,7 @@ from .....revocation.models.issuer_rev_reg_record import (
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchemaAnonCreds,
 )
-from ...common import (
-    create_transaction_for_endorser_description,
-    endorser_connection_id_description,
-)
+from ...common import EndorserOptionsSchema
 
 
 class AnonCredsRevRegIdMatchInfoSchema(OpenAPISchema):
@@ -77,23 +73,10 @@ class InnerRevRegDefSchema(OpenAPISchema):
     )
 
 
-class RevRegDefOptionsSchema(OpenAPISchema):
+class RevRegDefOptionsSchema(EndorserOptionsSchema):
     """Parameters and validators for rev reg def options."""
 
-    endorser_connection_id = fields.Str(
-        metadata={
-            "description": endorser_connection_id_description,
-            "example": UUIDFour.EXAMPLE,
-        },
-        required=False,
-    )
-    create_transaction_for_endorser = fields.Bool(
-        metadata={
-            "description": create_transaction_for_endorser_description,
-            "example": False,
-        },
-        required=False,
-    )
+    pass
 
 
 class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
@@ -341,24 +324,10 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-class PublishRevocationsOptions(OpenAPISchema):
+class PublishRevocationsOptions(EndorserOptionsSchema):
     """Options for publishing revocations to ledger."""
 
-    endorser_connection_id = fields.Str(
-        metadata={
-            "description": endorser_connection_id_description,
-            "required": False,
-            "example": UUIDFour.EXAMPLE,
-        }
-    )
-
-    create_transaction_for_endorser = fields.Bool(
-        metadata={
-            "description": create_transaction_for_endorser_description,
-            "required": False,
-            "example": False,
-        }
-    )
+    pass
 
 
 class PublishRevocationsSchemaAnonCreds(OpenAPISchema):

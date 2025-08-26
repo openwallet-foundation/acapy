@@ -11,7 +11,7 @@ from ......anoncreds.revocation import AnonCredsRevocation
 from ......tests import mock
 from ......utils.testing import create_test_profile
 from .....models.issuer_cred_rev_record import IssuerCredRevRecord
-from .....models.revocation import RevRegDef, RevRegDefValue
+from .....models.revocation import RevRegDef, RevRegDefState, RevRegDefValue
 from .....tests.mock_objects import MockRevocationRegistryDefinition
 from .. import routes as test_module
 from ..routes import (
@@ -245,7 +245,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                     )
                 ),
                 get_created_revocation_registry_definition_state=mock.AsyncMock(
-                    return_value=test_module.RevRegDefState.STATE_FINISHED
+                    return_value=RevRegDefState.STATE_FINISHED
                 ),
                 get_pending_revocations=mock.AsyncMock(return_value=[]),
             )
@@ -256,7 +256,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                     "result": {
                         "tails_local_path": "tails_location",
                         "tails_hash": "tails_hash",
-                        "state": test_module.RevRegDefState.STATE_FINISHED,
+                        "state": RevRegDefState.STATE_FINISHED,
                         "issuer_did": "issuer_id",
                         "pending_pub": [],
                         "revoc_reg_def": {
@@ -364,7 +364,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         self.request.query = {
-            "state": test_module.RevRegDefState.STATE_FINISHED,
+            "state": RevRegDefState.STATE_FINISHED,
         }
 
         with (
@@ -394,7 +394,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                     )
                 ),
                 get_created_revocation_registry_definition_state=mock.AsyncMock(
-                    return_value=test_module.RevRegDefState.STATE_FINISHED
+                    return_value=RevRegDefState.STATE_FINISHED
                 ),
                 get_pending_revocations=mock.AsyncMock(return_value=[]),
             )
@@ -405,7 +405,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
                     "result": {
                         "tails_local_path": "tails_location",
                         "tails_hash": "tails_hash",
-                        "state": test_module.RevRegDefState.STATE_FINISHED,
+                        "state": RevRegDefState.STATE_FINISHED,
                         "issuer_did": "issuer_id",
                         "pending_pub": [],
                         "revoc_reg_def": {
@@ -430,7 +430,7 @@ class TestAnonCredsRevocationRegistryRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"rev_reg_id": self.rev_reg_id}
 
         self.request.query = {
-            "state": test_module.RevRegDefState.STATE_FINISHED,
+            "state": RevRegDefState.STATE_FINISHED,
         }
 
         with (
