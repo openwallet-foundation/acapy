@@ -8,18 +8,11 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.revocation.setup import DefaultRevocationSetup
 from ....core.event_bus import EventBus
-from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import (
-    ANONCREDS_DID_EXAMPLE,
-    ANONCREDS_SCHEMA_ID_EXAMPLE,
-    UUIDFour,
-)
 from ....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ...base import (
     AnonCredsObjectNotFound,
@@ -28,93 +21,20 @@ from ...base import (
 )
 from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...models.schema import (
-    AnonCredsSchemaSchema,
     GetSchemaResultSchema,
     SchemaResultSchema,
 )
 from ...registry import AnonCredsRegistry
 from ...util import handle_value_error
-from ..common import (
-    create_transaction_for_endorser_description,
-    endorser_connection_id_description,
+from .models import (
+    GetSchemasResponseSchema,
+    SchemaIdMatchInfo,
+    SchemaPostRequestSchema,
+    SchemasQueryStringSchema,
 )
 
 SCHEMAS_TAG_TITLE = "AnonCreds - Schemas"
 SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
-
-
-class SchemaIdMatchInfo(OpenAPISchema):
-    """Path parameters and validators for request taking schema id."""
-
-    schema_id = fields.Str(
-        metadata={
-            "description": "Schema identifier",
-            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
-        }
-    )
-
-
-class SchemaPostOptionSchema(OpenAPISchema):
-    """Parameters and validators for schema options."""
-
-    endorser_connection_id = fields.Str(
-        metadata={
-            "description": endorser_connection_id_description,
-            "example": UUIDFour.EXAMPLE,
-        },
-        required=False,
-    )
-
-    create_transaction_for_endorser = fields.Bool(
-        metadata={
-            "description": create_transaction_for_endorser_description,
-            "example": False,
-        },
-        required=False,
-    )
-
-
-class SchemasQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for query string in schemas list query."""
-
-    schema_name = fields.Str(
-        metadata={
-            "description": "Schema name",
-            "example": "example-schema",
-        }
-    )
-    schema_version = fields.Str(
-        metadata={
-            "description": "Schema version",
-            "example": "1.0",
-        }
-    )
-    schema_issuer_id = fields.Str(
-        metadata={
-            "description": "Schema issuer identifier",
-            "example": ANONCREDS_DID_EXAMPLE,
-        }
-    )
-
-
-class GetSchemasResponseSchema(OpenAPISchema):
-    """Parameters and validators for schema list all response."""
-
-    schema_ids = fields.List(
-        fields.Str(
-            metadata={
-                "description": "Schema identifiers",
-                "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
-            }
-        )
-    )
-
-
-class SchemaPostRequestSchema(OpenAPISchema):
-    """Parameters and validators for query string in create schema."""
-
-    schema = fields.Nested(AnonCredsSchemaSchema())
-    options = fields.Nested(SchemaPostOptionSchema())
 
 
 @docs(
