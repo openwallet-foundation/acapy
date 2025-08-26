@@ -776,7 +776,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             def __init__(self, status=http.HTTPStatus.OK):
                 self.status_code = status
 
-            def iter_content(self, _: int = 1):
+            def iter_content(self, chunk_size: int = 1):
                 yield b"tails-hash"
 
         mock_get.side_effect = [
