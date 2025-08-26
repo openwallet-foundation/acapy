@@ -5,9 +5,9 @@ import pytest
 from aiohttp import web
 
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.issuer import AnonCredsIssuer
 from .....tests import mock
 from .....utils.testing import create_test_profile
+from ....issuer import AnonCredsIssuer
 from ...common.testing import BaseAnonCredsRouteTestCase, create_mock_request
 from ..routes import cred_def_get, cred_def_post, cred_defs_get
 

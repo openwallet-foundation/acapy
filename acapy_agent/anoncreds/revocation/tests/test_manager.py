@@ -3,7 +3,6 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from ....anoncreds.issuer import AnonCredsIssuer
 from ....protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
@@ -11,6 +10,7 @@ from ....protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExR
 from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....tests import mock
 from ....utils.testing import create_test_profile
+from ...issuer import AnonCredsIssuer
 from .. import manager as test_module
 from ..manager import RevocationManager, RevocationManagerError
 

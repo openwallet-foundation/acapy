@@ -16,10 +16,6 @@ from uuid_utils import uuid4
 
 from .....admin.decorators.auth import tenant_authentication
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
-from .....anoncreds.issuer import AnonCredsIssuerError
-from .....anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
-from .....anoncreds.routes.revocation import AnonCredsRevocationModuleResponseSchema
 from .....askar.profile_anon import AskarAnonCredsProfile
 from .....indy.issuer import IndyIssuerError
 from .....indy.models.revocation import IndyRevRegDef
@@ -33,12 +29,15 @@ from .....revocation.models.issuer_rev_reg_record import (
 from .....storage.error import StorageError
 from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ....base import AnonCredsObjectNotFound, AnonCredsResolutionError
-from ....issuer import AnonCredsIssuer
+from ....default.legacy_indy.registry import LegacyIndyRegistry
+from ....issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
 from ....models.revocation import RevRegDefResultSchema
+from ....revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ....revocation.manager import RevocationManager, RevocationManagerError
+from ....routes.revocation import AnonCredsRevocationModuleResponseSchema
 from ....util import handle_value_error
 from ...common.utils import (
     get_request_body_with_profile_check,

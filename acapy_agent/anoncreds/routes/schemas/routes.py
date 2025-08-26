@@ -11,7 +11,6 @@ from aiohttp_apispec import (
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.revocation.setup import DefaultRevocationSetup
 from ....core.event_bus import EventBus
 from ....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ...base import (
@@ -25,6 +24,7 @@ from ...models.schema import (
     SchemaResultSchema,
 )
 from ...registry import AnonCredsRegistry
+from ...revocation.setup import DefaultRevocationSetup
 from ...util import handle_value_error
 from ..common.utils import get_request_body_with_profile_check
 from .models import (

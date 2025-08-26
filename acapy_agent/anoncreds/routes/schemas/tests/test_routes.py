@@ -5,11 +5,11 @@ import pytest
 from aiohttp import web
 
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.base import AnonCredsObjectNotFound
-from .....anoncreds.issuer import AnonCredsIssuer
-from .....anoncreds.models.schema import AnonCredsSchema, SchemaResult, SchemaState
 from .....tests import mock
 from .....utils.testing import create_test_profile
+from ....base import AnonCredsObjectNotFound
+from ....issuer import AnonCredsIssuer
+from ....models.schema import AnonCredsSchema, SchemaResult, SchemaState
 from ...common.testing import BaseAnonCredsRouteTestCase, create_mock_request
 from ..routes import schema_get, schemas_get, schemas_post
 

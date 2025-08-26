@@ -6,12 +6,12 @@ from aiohttp import web
 from aiohttp.web import HTTPNotFound
 
 from ......admin.request_context import AdminRequestContext
-from ......anoncreds.issuer import AnonCredsIssuer
-from ......anoncreds.revocation import AnonCredsRevocation
 from ......tests import mock
 from ......utils.testing import create_test_profile
+from .....issuer import AnonCredsIssuer
 from .....models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....models.revocation import RevRegDef, RevRegDefState, RevRegDefValue
+from .....revocation import AnonCredsRevocation
 from .....tests.mock_objects import MockRevocationRegistryDefinition
 from ....common.testing import BaseAnonCredsRouteTestCase
 from .. import routes as test_module

@@ -5,9 +5,9 @@ from aiohttp import web
 from aiohttp.web import HTTPForbidden, HTTPNotFound
 
 from ......admin.request_context import AdminRequestContext
-from ......anoncreds.models.revocation import RevRegDef, RevRegDefValue
 from ......tests import mock
 from ......utils.testing import create_test_profile
+from .....models.revocation import RevRegDef, RevRegDefValue
 from .....revocation.revocation import AnonCredsRevocation
 from .....tests.mock_objects import MockRevocationRegistryDefinition
 from ....common.testing import BaseAnonCredsRouteTestCaseWithOutbound

@@ -12,17 +12,17 @@ from aiohttp_apispec import (
 
 from .....admin.decorators.auth import tenant_authentication
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.base import AnonCredsRegistrationError
-from .....anoncreds.issuer import AnonCredsIssuerError
-from .....anoncreds.revocation import AnonCredsRevocationError
-from .....anoncreds.routes.revocation import AnonCredsRevocationModuleResponseSchema
 from .....revocation.error import RevocationError
 from .....storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
 from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
+from ....base import AnonCredsRegistrationError
+from ....issuer import AnonCredsIssuerError
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
+from ....revocation import AnonCredsRevocationError
 from ....revocation.manager import RevocationManager, RevocationManagerError
+from ....routes.revocation import AnonCredsRevocationModuleResponseSchema
 from ...common.utils import get_request_body_with_profile_check
 from .. import REVOCATION_TAG_TITLE
 from .models import (

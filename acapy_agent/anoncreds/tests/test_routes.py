@@ -3,10 +3,10 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.revocation.setup import DefaultRevocationSetup
 from ...core.event_bus import MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile
+from ..revocation.setup import DefaultRevocationSetup
 from ..routes import post_process_routes, register
 from ..routes.schemas.routes import register_events
 

@@ -3,10 +3,10 @@
 from aiohttp import web
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.issuer import AnonCredsIssuerError
-from ....anoncreds.revocation import AnonCredsRevocation
 from ....core.profile import Profile
 from ....utils.profiles import is_not_anoncreds_profile_raise_web_exception
+from ...issuer import AnonCredsIssuerError
+from ...revocation import AnonCredsRevocation
 
 
 async def get_revocation_registry_definition_or_404(

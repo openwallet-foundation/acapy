@@ -2,7 +2,6 @@
 
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from .....anoncreds.models.revocation import RevRegDefState
 from .....messaging.models.openapi import OpenAPISchema
 from .....messaging.valid import (
     ANONCREDS_CRED_DEF_ID_EXAMPLE,
@@ -22,6 +21,7 @@ from .....revocation.models.issuer_rev_reg_record import (
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchemaAnonCreds,
 )
+from ....models.revocation import RevRegDefState
 from ...common.schemas import (
     CredRevRecordQueryStringMixin,
     EndorserOptionsSchema,

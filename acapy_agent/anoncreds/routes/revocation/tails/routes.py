@@ -5,10 +5,10 @@ from aiohttp_apispec import docs, match_info_schema, response_schema
 
 from .....admin.decorators.auth import tenant_authentication
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.issuer import AnonCredsIssuerError
-from .....anoncreds.routes.revocation import AnonCredsRevocationModuleResponseSchema
 from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
+from ....issuer import AnonCredsIssuerError
 from ....revocation.revocation import AnonCredsRevocation
+from ....routes.revocation import AnonCredsRevocationModuleResponseSchema
 from ....util import handle_value_error
 from ...common.utils import get_revocation_registry_definition_or_404
 from .. import REVOCATION_TAG_TITLE
