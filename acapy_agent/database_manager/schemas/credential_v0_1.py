@@ -2,6 +2,10 @@
 
 CATEGORY = "credential"
 
+IDX_CRED_ON_ITEM_ID = "ON credential_record_v0_1 (item_id);"
+IDX_CRED_ON_NAME = "ON credential_record_v0_1 (name);"
+IDX_CRED_ON_VALUE = "ON credential_record_v0_1 (value);"
+
 SCHEMAS = {
     "sqlite": [
         """
@@ -15,11 +19,11 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_credential_record_item_id_v0_1 "
-        "ON credential_record_v0_1 (item_id);",
+        + IDX_CRED_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_credential_record_item_name_v0_1 "
-        "ON credential_record_v0_1 (name);",
+        + IDX_CRED_ON_NAME,
         "CREATE INDEX IF NOT EXISTS idx_credential_record_value_v0_1 "
-        "ON credential_record_v0_1 (value);",
+        + IDX_CRED_ON_VALUE,
     ],
     "postgresql": [
         """
@@ -33,11 +37,11 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_credential_record_item_id_v0_1 "
-        "ON credential_record_v0_1 (item_id);",
+        + IDX_CRED_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_credential_record_item_name_v0_1 "
-        "ON credential_record_v0_1 (name);",
+        + IDX_CRED_ON_NAME,
         "CREATE INDEX IF NOT EXISTS idx_credential_record_value_v0_1 "
-        "ON credential_record_v0_1 (value);",
+        + IDX_CRED_ON_VALUE,
     ],
     "mssql": [
         """
@@ -51,11 +55,11 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_credential_record_item_id_v0_1 "
-        "ON credential_record_v0_1 (item_id);",
+        + IDX_CRED_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_credential_record_item_name_v0_1 "
-        "ON credential_record_v0_1 (name);",
+        + IDX_CRED_ON_NAME,
         "CREATE NONCLUSTERED INDEX idx_credential_record_value_v0_1 "
-        "ON credential_record_v0_1 (value);",
+        + IDX_CRED_ON_VALUE,
     ],
 }
 

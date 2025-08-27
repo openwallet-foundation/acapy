@@ -4,7 +4,7 @@ import threading
 import logging
 import asyncio
 import time
-from typing import Optional, Union, AsyncGenerator, TYPE_CHECKING
+from typing import Optional, AsyncGenerator, TYPE_CHECKING
 import urllib.parse
 
 from psycopg_pool import AsyncConnectionPool
@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from .backend import PostgresqlBackend
 
 LOGGER = logging.getLogger(__name__)
+
+
+ERR_NO_DB_IN_CONN_STR = "No database name specified in connection string"
 
 
 class PostgresDatabase(AbstractDatabaseStore):
@@ -65,6 +68,7 @@ class PostgresDatabase(AbstractDatabaseStore):
             schema_context or SchemaContext()
         )  # Default to SchemaContext
         self.backend = backend
+        self._monitoring_task: Optional[asyncio.Task] = None
 
     async def initialize(self):
         """Initialize the database connection."""
@@ -87,11 +91,15 @@ class PostgresDatabase(AbstractDatabaseStore):
 
     async def start_monitoring(self):
         """Start monitoring active sessions."""
-        asyncio.create_task(self._monitor_active_sessions())
+        if self._monitoring_task is None or self._monitoring_task.done():
+            self._monitoring_task = asyncio.create_task(self._monitor_active_sessions())
 
     async def _monitor_active_sessions(self):
         while True:
-            await asyncio.sleep(5)
+            try:
+                await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                raise
             with self.lock:
                 if self.active_sessions:
                     current_time = time.time()
@@ -102,6 +110,8 @@ class PostgresDatabase(AbstractDatabaseStore):
                         if age_seconds > 5:
                             try:
                                 await session.close()
+                            except asyncio.CancelledError:
+                                raise
                             except Exception:
                                 pass
 
@@ -215,7 +225,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         self,
         profile: Optional[str],
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         offset: int = None,
         limit: int = None,
         order_by: Optional[str] = None,
@@ -262,7 +272,7 @@ class PostgresDatabase(AbstractDatabaseStore):
         self,
         profile: Optional[str],
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         last_id: Optional[int] = None,
         limit: int = None,
         order_by: Optional[str] = None,
@@ -360,11 +370,20 @@ class PostgresDatabase(AbstractDatabaseStore):
     async def close(self, remove: bool = False):
         """Close the database connection."""
         try:
+            # Cancel background monitoring task if running
+            if self._monitoring_task and not self._monitoring_task.done():
+                self._monitoring_task.cancel()
+                try:
+                    await self._monitoring_task
+                except asyncio.CancelledError:
+                    pass  # Expected when cancelling task
+                finally:
+                    self._monitoring_task = None
             if remove:
                 parsed = urllib.parse.urlparse(self.conn_str)
                 target_db = parsed.path.lstrip("/")
                 if not target_db:
-                    raise ValueError("No database name specified in connection string")
+                    raise ValueError(ERR_NO_DB_IN_CONN_STR)
                 default_conn_str = self.conn_str.replace(f"/{target_db}", "/postgres")
                 pool = PostgresConnectionPool(
                     conn_str=default_conn_str,
@@ -403,6 +422,8 @@ class PostgresDatabase(AbstractDatabaseStore):
                 finally:
                     await pool.close()
             await self.pool.close()
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("Failed to close database: %s", str(e))
             raise DatabaseError(

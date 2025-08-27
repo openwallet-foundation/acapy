@@ -16,7 +16,7 @@ class SchemaContext:
         )
 
     def _validate_schema_name(self, schema_name: str) -> str:
-        if not re.match(r"^[a-zA-Z0-9_]+$", schema_name):
+        if not re.match(r"^\w+$", schema_name, re.ASCII):
             raise ValueError(
                 f"Invalid schema name '{schema_name}': must contain only "
                 f"alphanumeric characters and underscores"

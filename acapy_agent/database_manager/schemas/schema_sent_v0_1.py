@@ -2,6 +2,9 @@
 
 CATEGORY = "schema_sent"
 
+IDX_ON_ITEM_ID = "ON schema_sent_v0_1 (item_id);"
+IDX_ON_SCHEMA_ID = "ON schema_sent_v0_1 (schema_id);"
+
 SCHEMAS = {
     "sqlite": [
         """
@@ -19,10 +22,9 @@ SCHEMAS = {
             UNIQUE(item_id)
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 "
-        + "ON schema_sent_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 " + IDX_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 "
-        + "ON schema_sent_v0_1 (schema_id);",
+        + IDX_ON_SCHEMA_ID,
     ],
     "postgresql": [
         """
@@ -40,10 +42,9 @@ SCHEMAS = {
             CONSTRAINT schema_sent_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 "
-        + "ON schema_sent_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 " + IDX_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 "
-        + "ON schema_sent_v0_1 (schema_id);",
+        + IDX_ON_SCHEMA_ID,
     ],
     "mssql": [
         """
@@ -61,10 +62,9 @@ SCHEMAS = {
             CONSTRAINT schema_sent_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_schema_sent_item_id_v0_1 "
-        + "ON schema_sent_v0_1 (item_id);",
+        "CREATE NONCLUSTERED INDEX idx_schema_sent_item_id_v0_1 " + IDX_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_schema_sent_schema_id_v0_1 "
-        + "ON schema_sent_v0_1 (schema_id);",
+        + IDX_ON_SCHEMA_ID,
     ],
 }
 

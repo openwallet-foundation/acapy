@@ -1,7 +1,7 @@
 """Module docstring."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Union, List, Tuple, Any, Generator
+from typing import Optional, Sequence, List, Tuple, Any, Generator
 import sqlite3
 from ....db_types import Entry  # Assuming Entry is defined in a types module
 from ....wql_normalized.tags import (
@@ -23,7 +23,7 @@ class BaseHandler(ABC):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -37,7 +37,7 @@ class BaseHandler(ABC):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -51,7 +51,7 @@ class BaseHandler(ABC):
         profile_id: int,
         category: str,
         name: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         for_update: bool,
     ) -> Optional[Entry]:
         """Fetch a single entry by its name."""
@@ -63,7 +63,7 @@ class BaseHandler(ABC):
         cursor: sqlite3.Cursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         limit: int,
         for_update: bool,
     ) -> Sequence[Entry]:
@@ -76,7 +76,7 @@ class BaseHandler(ABC):
         cursor: sqlite3.Cursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Count the number of entries matching the specified criteria."""
         pass
@@ -94,7 +94,7 @@ class BaseHandler(ABC):
         cursor: sqlite3.Cursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Remove all entries matching the specified criteria."""
         pass

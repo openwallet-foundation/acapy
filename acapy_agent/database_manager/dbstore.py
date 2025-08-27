@@ -5,7 +5,7 @@ import asyncio
 import inspect
 import importlib
 import threading
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import AsyncIterator
 # anext is a builtin in Python 3.10+
@@ -22,6 +22,7 @@ LOGGER = logging.getLogger(__name__)
 # Registry for backends with thread safety
 _backend_registry = {}
 _registry_lock = threading.Lock()
+_BACKEND_REGISTRATION_IMPORT = ".databases.backends.backend_registration"
 
 
 def register_backend(db_type: str, backend: DatabaseBackend):
@@ -118,8 +119,8 @@ class ScanKeyset(AsyncIterator):
         self,
         store: "DBStore",
         profile: Optional[str],
-        category: Union[str, bytes],
-        tag_filter: Union[str, dict] = None,
+        category: str | bytes,
+        tag_filter: str | dict = None,
         last_id: Optional[int] = None,
         limit: int = None,
         order_by: Optional[str] = None,
@@ -225,10 +226,10 @@ class DBStore:
         self._db = db
         self._uri = uri
         self._release_number = release_number
-        self._opener: DBOpenSession = None
+        self._opener: Optional[DBOpenSession] = None
 
     @classmethod
-    def generate_raw_key(cls, seed: Union[str, bytes] = None) -> str:
+    def generate_raw_key(cls, seed: str | bytes | None = None) -> str:
         """Perform the action."""
         LOGGER.debug(f"generate_raw_key called with seed={seed}")
         from . import bindings
@@ -275,7 +276,7 @@ class DBStore:
         with _registry_lock:
             if not _backend_registry:  # Register backends if not already done
                 backend_registration = importlib.import_module(
-                    ".databases.backends.backend_registration", package=__package__
+                    _BACKEND_REGISTRATION_IMPORT, package=__package__
                 )
                 backend_registration.register_backends()
         db_type = uri.split(":")[0]
@@ -308,6 +309,8 @@ class DBStore:
                     schema_config,
                     config=config,
                 )
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("provision error: %s", str(e))
             raise backend.translate_error(e)
@@ -338,7 +341,7 @@ class DBStore:
         with _registry_lock:
             if not _backend_registry:  # Register backends if not already done
                 backend_registration = importlib.import_module(
-                    ".databases.backends.backend_registration", package=__package__
+                    _BACKEND_REGISTRATION_IMPORT, package=__package__
                 )
                 backend_registration.register_backends()
         db_type = uri.split(":")[0]
@@ -369,6 +372,8 @@ class DBStore:
                     target_schema_release_number,
                     config=config,
                 )
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("open error: %s", str(e))
             raise backend.translate_error(e)
@@ -387,7 +392,7 @@ class DBStore:
         with _registry_lock:
             if not _backend_registry:  # Register backends if not already done
                 backend_registration = importlib.import_module(
-                    ".databases.backends.backend_registration", package=__package__
+                    _BACKEND_REGISTRATION_IMPORT, package=__package__
                 )
                 backend_registration.register_backends()
         db_type = uri.split(":")[0]
@@ -401,6 +406,8 @@ class DBStore:
                 return await backend.remove(uri, config=config)
             else:
                 return await asyncio.to_thread(backend.remove, uri, config=config)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("remove error: %s", str(e))
             raise backend.translate_error(e)
@@ -413,6 +420,8 @@ class DBStore:
                 await self._db.initialize()
             else:
                 await asyncio.to_thread(self._db.initialize)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("initialize error: %s", str(e))
             raise self._db.translate_error(e)
@@ -422,6 +431,8 @@ class DBStore:
         LOGGER.debug(f"create_profile called with name={name}")
         try:
             return await self._db.create_profile(name)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("create_profile error: %s", str(e))
             raise self._db.translate_error(e)
@@ -431,6 +442,8 @@ class DBStore:
         LOGGER.debug("get_profile_name called")
         try:
             return await self._db.get_profile_name()
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("get_profile_name error: %s", str(e))
             raise self._db.translate_error(e)
@@ -440,6 +453,8 @@ class DBStore:
         LOGGER.debug(f"remove_profile called with name={name}")
         try:
             return await self._db.remove_profile(name)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("remove_profile error: %s", str(e))
             raise self._db.translate_error(e)
@@ -449,6 +464,8 @@ class DBStore:
         LOGGER.debug(f"rekey called with key_method={key_method}, pass_key={pass_key}")
         try:
             await self._db.rekey(key_method, pass_key)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("rekey error: %s", str(e))
             raise self._db.translate_error(e)
@@ -456,7 +473,7 @@ class DBStore:
     def scan(
         self,
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         offset: int = None,
         limit: int = None,
         profile: str = None,
@@ -477,7 +494,7 @@ class DBStore:
     def scan_keyset(
         self,
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         last_id: Optional[int] = None,
         limit: int = None,
         profile: str = None,
@@ -516,6 +533,8 @@ class DBStore:
                     await asyncio.to_thread(self._db.close, remove=remove)
                 self._db = None
             LOGGER.debug("close completed")
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("close failed: %s", str(e))
             raise DBStoreError(DBStoreErrorCode.UNEXPECTED, str(e)) from e
@@ -558,11 +577,13 @@ class DBStoreSession:
         """Perform the action."""
         return id(self)
 
-    async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def count(self, category: str, tag_filter: str | dict = None) -> int:
         """Perform the action."""
         LOGGER.debug(f"count called with category={category}, tag_filter={tag_filter}")
         try:
             return await self._db_session.count(category, tag_filter)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("count error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -578,6 +599,8 @@ class DBStoreSession:
             return await self._db_session.fetch(
                 category, name, tag_filter=None, for_update=for_update
             )
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("fetch error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -585,7 +608,7 @@ class DBStoreSession:
     async def fetch_all(
         self,
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         limit: int = None,
         for_update: bool = False,
         order_by: Optional[str] = None,
@@ -603,6 +626,8 @@ class DBStoreSession:
                 category, tag_filter, limit, for_update, order_by, descending
             )
             return EntryList(entries)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("fetch_all error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -611,7 +636,7 @@ class DBStoreSession:
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
         value_json=None,
@@ -626,6 +651,8 @@ class DBStoreSession:
             if value is None and value_json is not None:
                 value = json.dumps(value_json)
             await self._db_session.insert(category, name, value, tags, expiry_ms)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("insert error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -634,7 +661,7 @@ class DBStoreSession:
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
         value_json=None,
@@ -649,6 +676,8 @@ class DBStoreSession:
             if value is None and value_json is not None:
                 value = json.dumps(value_json)
             await self._db_session.replace(category, name, value, tags, expiry_ms)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("replace error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -658,17 +687,21 @@ class DBStoreSession:
         LOGGER.debug(f"remove called with category={category}, name={name}")
         try:
             await self._db_session.remove(category, name)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("remove error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def remove_all(self, category: str, tag_filter: str | dict = None) -> int:
         """Perform the action."""
         LOGGER.debug(
             f"remove_all called with category={category}, tag_filter={tag_filter}"
         )
         try:
             return await self._db_session.remove_all(category, tag_filter)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("remove_all error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -680,6 +713,8 @@ class DBStoreSession:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session is not a transaction")
         try:
             await self._db_session.commit()
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("commit error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -691,6 +726,8 @@ class DBStoreSession:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session is not a transaction")
         try:
             await self._db_session.rollback()
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("rollback error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -700,6 +737,8 @@ class DBStoreSession:
         LOGGER.debug("close called")
         try:
             await self._db_session.close()
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             LOGGER.error("close error: %s", str(e))
             raise self._db_session.translate_error(e)
@@ -728,7 +767,7 @@ class DBOpenSession:
         self._profile = profile
         self._is_txn = is_txn
         self._release_number = release_number
-        self._session: DBStoreSession = None
+        self._session: Optional[DBStoreSession] = None
 
     @property
     def is_transaction(self) -> bool:

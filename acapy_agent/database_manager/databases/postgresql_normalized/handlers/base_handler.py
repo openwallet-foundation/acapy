@@ -1,7 +1,7 @@
 """Module docstring."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Union, List, Tuple, Any, AsyncGenerator
+from typing import Optional, Sequence, List, Tuple, Any, AsyncGenerator
 from psycopg import AsyncCursor
 from ....db_types import Entry
 from ....wql_normalized.tags import TagQuery
@@ -24,7 +24,7 @@ class BaseHandler(ABC):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -38,7 +38,7 @@ class BaseHandler(ABC):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -52,7 +52,7 @@ class BaseHandler(ABC):
         profile_id: int,
         category: str,
         name: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         for_update: bool,
     ) -> Optional[Entry]:
         """Fetch a single entry by its name."""
@@ -64,7 +64,7 @@ class BaseHandler(ABC):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         limit: int,
         for_update: bool,
         order_by: Optional[str] = None,
@@ -79,7 +79,7 @@ class BaseHandler(ABC):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Count the number of entries matching the specified criteria."""
         pass
@@ -97,7 +97,7 @@ class BaseHandler(ABC):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Remove all entries matching the specified criteria."""
         pass

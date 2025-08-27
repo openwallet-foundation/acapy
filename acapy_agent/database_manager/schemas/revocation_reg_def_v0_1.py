@@ -377,8 +377,8 @@ DROP_SCHEMAS = {
         "DROP TRIGGER IF EXISTS trg_update_revocation_reg_def_values_v0_1 "
         "ON revocation_reg_def_v0_1;",
         "DROP FUNCTION IF EXISTS update_revocation_reg_def_values_v0_1 CASCADE;",
-        "DROP TRIGGER IF EXISTS trg_insert_revocation_reg_def_values_v0_1 "
-        "ON revocation_reg_def_v0_1;"
+        "DROP TRIGGER IF EXISTS trg_insert_revocation_reg_def_values_v0_1 ON "
+        "revocation_reg_def_v0_1;",
         "DROP FUNCTION IF EXISTS insert_revocation_reg_def_values_v0_1 CASCADE;",
         "DROP INDEX IF EXISTS idx_revocation_reg_def_values_rev_reg_def_id_v0_1;",
         "DROP TABLE IF EXISTS revocation_reg_def_values_v0_1 CASCADE;",

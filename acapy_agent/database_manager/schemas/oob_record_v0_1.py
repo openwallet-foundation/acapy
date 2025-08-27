@@ -2,6 +2,13 @@
 
 CATEGORY = "oob_record"
 
+IDX_OOB_ON_ITEM_ID = "ON oob_record_v0_1 (item_id);"
+IDX_OOB_ON_ITEM_NAME = "ON oob_record_v0_1 (item_name);"
+IDX_OOB_ON_INVI_MSG_ID = "ON oob_record_v0_1 (invi_msg_id);"
+IDX_OOB_ON_CONNECTION_ID = "ON oob_record_v0_1 (connection_id);"
+IDX_OOB_ON_STATE = "ON oob_record_v0_1 (state);"
+IDX_OOB_ON_CREATED_AT = "ON oob_record_v0_1 (created_at);"
+
 SCHEMAS = {
     "sqlite": [
         """
@@ -28,17 +35,17 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 "
-        "ON oob_record_v0_1 (item_id);",
+        + IDX_OOB_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 "
-        "ON oob_record_v0_1 (item_name);",
+        + IDX_OOB_ON_ITEM_NAME,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 "
-        "ON oob_record_v0_1 (invi_msg_id);",
+        + IDX_OOB_ON_INVI_MSG_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 "
-        "ON oob_record_v0_1 (connection_id);",
+        + IDX_OOB_ON_CONNECTION_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 "
-        "ON oob_record_v0_1 (state);",
+        + IDX_OOB_ON_STATE,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 "
-        "ON oob_record_v0_1 (created_at);",
+        + IDX_OOB_ON_CREATED_AT,
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_oob_record_timestamp_v0_1
         AFTER UPDATE ON oob_record_v0_1
@@ -76,17 +83,17 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 "
-        "ON oob_record_v0_1 (item_id);",
+        + IDX_OOB_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 "
-        "ON oob_record_v0_1 (item_name);",
+        + IDX_OOB_ON_ITEM_NAME,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 "
-        "ON oob_record_v0_1 (invi_msg_id);",
+        + IDX_OOB_ON_INVI_MSG_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 "
-        "ON oob_record_v0_1 (connection_id);",
+        + IDX_OOB_ON_CONNECTION_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 "
-        "ON oob_record_v0_1 (state);",
+        + IDX_OOB_ON_STATE,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 "
-        "ON oob_record_v0_1 (created_at);",
+        + IDX_OOB_ON_CREATED_AT,
         """
         CREATE OR REPLACE FUNCTION update_oob_record_timestamp_v0_1()
         RETURNS TRIGGER AS $$
@@ -135,16 +142,17 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 "
-        "ON oob_record_v0_1 (item_id);",
+        + IDX_OOB_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 "
-        "ON oob_record_v0_1 (item_name);",
+        + IDX_OOB_ON_ITEM_NAME,
         "CREATE NONCLUSTERED INDEX idx_oob_record_invi_msg_id_v0_1 "
-        "ON oob_record_v0_1 (invi_msg_id);",
+        + IDX_OOB_ON_INVI_MSG_ID,
         "CREATE NONCLUSTERED INDEX idx_oob_record_connection_id_v0_1 "
-        "ON oob_record_v0_1 (connection_id);",
-        "CREATE NONCLUSTERED INDEX idx_oob_record_state_v0_1 ON oob_record_v0_1 (state);",
+        + IDX_OOB_ON_CONNECTION_ID,
+        "CREATE NONCLUSTERED INDEX idx_oob_record_state_v0_1 "
+        + IDX_OOB_ON_STATE,
         "CREATE NONCLUSTERED INDEX idx_oob_record_created_at_v0_1 "
-        "ON oob_record_v0_1 (created_at);",
+        + IDX_OOB_ON_CREATED_AT,
         """
         CREATE TRIGGER trg_update_oob_record_timestamp_v0_1
         ON oob_record_v0_1

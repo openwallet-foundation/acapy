@@ -386,8 +386,8 @@ DROP_SCHEMAS = {
         "DROP TRIGGER IF EXISTS trg_update_transaction_formats_v0_1 "
         "ON transaction_record_v0_1;",
         "DROP FUNCTION IF EXISTS update_transaction_formats_v0_1 CASCADE;",
-        "DROP TRIGGER IF EXISTS trg_insert_transaction_formats_v0_1 "
-        "ON transaction_record_v0_1;"
+        "DROP TRIGGER IF EXISTS trg_insert_transaction_formats_v0_1 ON "
+        "transaction_record_v0_1;",
         "DROP FUNCTION IF EXISTS insert_transaction_formats_v0_1 CASCADE;",
         "DROP INDEX IF EXISTS idx_transaction_formats_attach_id_v0_1;",
         "DROP TABLE IF EXISTS transaction_formats_v0_1 CASCADE;",

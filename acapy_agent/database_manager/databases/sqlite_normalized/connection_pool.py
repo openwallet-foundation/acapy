@@ -17,6 +17,7 @@ from ..errors import DatabaseError, DatabaseErrorCode
 
 LOGGER = logging.getLogger(__name__)
 
+PRAGMA_CIPHER_COMPAT = "PRAGMA cipher_compatibility = 4"
 
 class ConnectionPool:
     """Connection pool manager for SQLite databases."""
@@ -67,88 +68,106 @@ class ConnectionPool:
 
         keep_alive_interval = int(os.environ.get("SQLITE_KEEPALIVE_INTERVAL", "10"))
         while self._keep_alive_running.is_set():
-            # Check every second but only do work at intervals
+            # Sleep in 1-second increments to be responsive to shutdown
             for _ in range(keep_alive_interval):
                 if not self._keep_alive_running.is_set():
                     return
                 time.sleep(1)
             with self.lock:
+                self._perform_checkpoint()
+                # Validate existing connections and recreate broken ones
                 temp_conns = []
-                checkpoint_conn = None
-                try:
-                    checkpoint_conn = (
-                        sqlite3.connect(self.db_path, check_same_thread=False)
-                        if not self.encryption_key
-                        else sqlcipher.connect(self.db_path, check_same_thread=False)
-                    )
-                    if self.encryption_key:
-                        checkpoint_conn.execute(f"PRAGMA key = '{self.encryption_key}'")
-                        # Skip migration for checkpoint connection - not needed
-                        checkpoint_conn.execute("PRAGMA cipher_compatibility = 4")
-                    cursor = checkpoint_conn.cursor()
-                    cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-                except Exception as e:
-                    # Only log at debug level for in-memory databases (common in tests)
-                    if ":memory:" in self.db_path:
-                        LOGGER.debug(
-                            "Keep-alive WAL checkpoint failed (in-memory db): %s", str(e)
-                        )
-                    else:
-                        LOGGER.error("Keep-alive WAL checkpoint failed: %s", str(e))
-                finally:
-                    if checkpoint_conn:
-                        checkpoint_conn.close()
                 initial_size = self.pool.qsize()
                 while not self.pool.empty():
                     try:
                         conn = self.pool.get_nowait()
-                        _ = self.connection_ids.get(id(conn), -1)  # Track for debugging
-                        try:
-                            cursor = conn.cursor()
-                            cursor.execute("SELECT 1")
-                            cursor.execute("BEGIN")
-                            cursor.execute("ROLLBACK")
-                            temp_conns.append(conn)
-                        except Exception:
-                            try:
-                                conn.close()
-                                del self.connection_ids[id(conn)]
-                            except Exception:
-                                pass
-                            try:
-                                new_conn = self._create_connection()
-                                temp_conns.append(new_conn)
-                            except Exception as e:
-                                LOGGER.error(
-                                    "Failed to recreate connection in keep-alive: %s",
-                                    str(e),
-                                )
                     except queue.Empty:
                         break
+                    _ = self.connection_ids.get(id(conn), -1)
+                    if self._is_connection_healthy(conn):
+                        temp_conns.append(conn)
+                    else:
+                        self._safe_close_and_forget(conn)
+                        try:
+                            temp_conns.append(self._recreate_connection())
+                        except Exception as e:
+                            LOGGER.error(
+                                "Failed to recreate connection in keep-alive: %s", str(e)
+                            )
                 if len(temp_conns) < initial_size:
                     LOGGER.warning(
                         "Lost %d connections during keep-alive",
                         initial_size - len(temp_conns),
                     )
                 while (
-                    len(temp_conns) < self.pool_size and self._keep_alive_running.is_set()
+                    len(temp_conns) < self.pool_size
+                    and self._keep_alive_running.is_set()
                 ):
                     try:
-                        new_conn = self._create_connection()
-                        temp_conns.append(new_conn)
+                        temp_conns.append(self._recreate_connection())
                     except Exception as e:
                         LOGGER.error(
                             "Failed to restore connection in keep-alive: %s", str(e)
                         )
+                        break
                 for conn in temp_conns:
                     try:
                         self.pool.put_nowait(conn)
                     except queue.Full:
-                        try:
-                            conn.close()
-                            del self.connection_ids[id(conn)]
-                        except Exception:
-                            pass
+                        self._safe_close_and_forget(conn)
+
+    def _perform_checkpoint(self):
+        """Run a WAL checkpoint to keep file sizes bounded."""
+        checkpoint_conn = None
+        try:
+            checkpoint_conn = (
+                sqlite3.connect(self.db_path, check_same_thread=False)
+                if not self.encryption_key
+                else sqlcipher.connect(self.db_path, check_same_thread=False)
+            )
+            if self.encryption_key:
+                checkpoint_conn.execute(f"PRAGMA key = '{self.encryption_key}'")
+                # Skip migration for checkpoint connection - not needed
+                checkpoint_conn.execute(PRAGMA_CIPHER_COMPAT)
+            cursor = checkpoint_conn.cursor()
+            cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except Exception as e:
+            if ":memory:" in self.db_path:
+                LOGGER.debug(
+                    "Keep-alive WAL checkpoint failed (in-memory db): %s", str(e)
+                )
+            else:
+                LOGGER.error("Keep-alive WAL checkpoint failed: %s", str(e))
+        finally:
+            if checkpoint_conn:
+                try:
+                    checkpoint_conn.close()
+                except Exception:
+                    pass
+
+    def _is_connection_healthy(self, conn) -> bool:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.execute("BEGIN")
+            cursor.execute("ROLLBACK")
+            return True
+        except Exception:
+            return False
+
+    def _recreate_connection(self):
+        new_conn = self._create_connection()
+        return new_conn
+
+    def _safe_close_and_forget(self, conn):
+        try:
+            conn.close()
+        except Exception:
+            pass
+        try:
+            del self.connection_ids[id(conn)]
+        except Exception:
+            pass
 
     def _create_connection(self):
         try:
@@ -163,7 +182,7 @@ class ConnectionPool:
                 try:
                     conn.execute(f"PRAGMA key = '{self.encryption_key}'")
                     # Set compatibility first
-                    conn.execute("PRAGMA cipher_compatibility = 4")
+                    conn.execute(PRAGMA_CIPHER_COMPAT)
                     # Try to set WAL mode first (must be done before any transactions)
                     conn.execute("PRAGMA journal_mode = WAL")
                     conn.execute("PRAGMA foreign_keys = ON;")
@@ -208,40 +227,16 @@ class ConnectionPool:
                 while time.time() - start_time < timeout:
                     try:
                         conn = self.pool.get(block=False)
-                        _ = self.connection_ids.get(id(conn), -1)  # Track for debugging
-                        try:
-                            cursor = conn.cursor()
-                            cursor.execute("SELECT 1")
-                            # LOGGER.debug(
-                            #     "Connection ID=%d retrieved from pool. "
-                            #     "Pool size: %d/%d",
-                            #     conn_id, self.pool.qsize(), self.pool_size
-                            # )
+                        _ = self.connection_ids.get(id(conn), -1)
+                        if self._is_connection_healthy(conn):
                             return conn
-                        except sqlite3.OperationalError:
-                            try:
-                                conn.close()
-                                del self.connection_ids[id(conn)]
-                            except Exception:
-                                pass
-                            try:
-                                new_conn = self._create_connection()
-                                self.pool.put(new_conn)
-                            except Exception as e:
-                                LOGGER.error("Failed to recreate connection: %s", str(e))
-                            continue
-                        except Exception:
-                            try:
-                                conn.close()
-                                del self.connection_ids[id(conn)]
-                            except Exception:
-                                pass
-                            try:
-                                new_conn = self._create_connection()
-                                self.pool.put(new_conn)
-                            except Exception as e:
-                                LOGGER.error("Failed to recreate connection: %s", str(e))
-                            continue
+                        # unhealthy: close and replace
+                        self._safe_close_and_forget(conn)
+                        try:
+                            self.pool.put(self._recreate_connection())
+                        except Exception as e:
+                            LOGGER.error("Failed to recreate connection: %s", str(e))
+                        continue
                     except queue.Empty:
                         time.sleep(0.1)
                 LOGGER.error("Connection pool exhausted after %d seconds", timeout)
@@ -261,9 +256,11 @@ class ConnectionPool:
         """Return a connection to the pool."""
         with self.lock:
             try:
-                cursor = conn.cursor()
-                cursor.execute("SELECT 1")
-                self.pool.put(conn)
+                if self._is_connection_healthy(conn):
+                    self.pool.put(conn)
+                else:
+                    self._safe_close_and_forget(conn)
+                    self.pool.put(self._recreate_connection())
                 LOGGER.debug(
                     "Connection ID=%d returned to pool. Pool size: %d/%d",
                     self.connection_ids.get(id(conn), -1),
@@ -271,13 +268,9 @@ class ConnectionPool:
                     self.pool_size,
                 )
             except Exception:
+                self._safe_close_and_forget(conn)
                 try:
-                    conn.close()
-                    del self.connection_ids[id(conn)]
-                except Exception:
-                    pass
-                try:
-                    new_conn = self._create_connection()
+                    new_conn = self._recreate_connection()
                     self.pool.put(new_conn)
                 except Exception as e:
                     LOGGER.error("Failed to recreate connection for pool: %s", str(e))
@@ -318,7 +311,7 @@ class ConnectionPool:
                 if self.encryption_key:
                     checkpoint_conn.execute(f"PRAGMA key = '{self.encryption_key}'")
                     # Skip migration for checkpoint connection - not needed
-                    checkpoint_conn.execute("PRAGMA cipher_compatibility = 4")
+                    checkpoint_conn.execute(PRAGMA_CIPHER_COMPAT)
                     checkpoint_conn.execute("PRAGMA cipher_memory_security = OFF")
                 cursor = checkpoint_conn.cursor()
                 cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")

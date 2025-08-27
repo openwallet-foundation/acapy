@@ -5,7 +5,7 @@ import logging
 import asyncio
 import time
 import sqlite3
-from typing import Optional, Generator, Union
+from typing import Optional, Generator
 
 try:
     # Try new sqlcipher3 first (SQLite 3.46+)
@@ -67,6 +67,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         self.active_sessions = []
         self.session_creation_times = {}
         self.max_sessions = int(pool.pool_size * 0.75)  # need load test
+        self._monitoring_task: Optional[asyncio.Task] = None
 
         try:
             self.default_profile_id = self._get_profile_id(default_profile)
@@ -86,7 +87,8 @@ class SqliteDatabase(AbstractDatabaseStore):
 
     async def start_monitoring(self):
         """Start monitoring active database sessions."""
-        asyncio.create_task(self._monitor_active_sessions())
+        if self._monitoring_task is None or self._monitoring_task.done():
+            self._monitoring_task = asyncio.create_task(self._monitor_active_sessions())
 
     async def _monitor_active_sessions(self):
         while True:
@@ -258,7 +260,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         self,
         profile: Optional[str],
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         offset: int = None,
         limit: int = None,
         order_by: Optional[str] = None,
@@ -317,7 +319,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         self,
         profile: Optional[str],
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         last_id: Optional[int] = None,
         limit: int = None,
         order_by: Optional[str] = None,
@@ -372,11 +374,12 @@ class SqliteDatabase(AbstractDatabaseStore):
             finally:
                 self.pool.return_connection(conn)
 
-    def session(self, profile: str = None):
+    def session(self, profile: str = None, release_number: str = "release_1"):
         """Create a context manager for database session.
 
         Args:
             profile: Profile name to use
+            release_number: Release number for schema versioning
 
         Returns:
             SqliteSession: Database session context manager
@@ -405,11 +408,12 @@ class SqliteDatabase(AbstractDatabaseStore):
         )
         return sess
 
-    def transaction(self, profile: str = None):
+    def transaction(self, profile: str = None, release_number: str = "release_1"):
         """Create a transaction context manager.
 
         Args:
             profile: Profile name to use
+            release_number: Release number for schema versioning
 
         Returns:
             SqliteSession: Database transaction context manager
@@ -445,6 +449,15 @@ class SqliteDatabase(AbstractDatabaseStore):
             remove: Whether to remove the database file
         """
         try:
+            # Cancel background monitoring task if running
+            if self._monitoring_task and not self._monitoring_task.done():
+                self._monitoring_task.cancel()
+                try:
+                    asyncio.get_event_loop().run_until_complete(self._monitoring_task)
+                except Exception:
+                    pass
+                finally:
+                    self._monitoring_task = None
             if self.pool:
                 checkpoint_conn = None
                 try:

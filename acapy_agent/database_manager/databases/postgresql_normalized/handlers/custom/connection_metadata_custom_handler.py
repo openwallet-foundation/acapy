@@ -46,6 +46,26 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             LOGGER.error(f"Error extracting metadata: {str(e)}")
             return None
 
+    def _compute_expiry(self, expiry_ms: Optional[int]) -> Optional[datetime]:
+        return (
+            datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+            if expiry_ms
+            else None
+        )
+
+    def _parse_value(self, value: str | bytes) -> dict:
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        if value and isinstance(value, str) and is_valid_json(value):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError as e:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid JSON value: {str(e)}",
+                )
+        return {}
+
     async def insert(
         self,
         cursor: AsyncCursor,
@@ -54,7 +74,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         name: str,
         value: Union[str, bytes],
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Insert a new connection metadata entry."""
         LOGGER.debug(
@@ -62,23 +82,11 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             f"value={value}, tags={tags}"
         )
 
-        expiry = None
-        if expiry_ms:
-            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+        expiry = self._compute_expiry(expiry_ms)
 
-        if isinstance(value, bytes):
-            value = value.decode("utf-8")
-        json_data = {}
-        if value and isinstance(value, str) and is_valid_json(value):
-            try:
-                json_data = json.loads(value)
-                LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
-            except json.JSONDecodeError as e:
-                LOGGER.error(f"[insert] Invalid JSON value: {str(e)}, raw value: {value}")
-                raise DatabaseError(
-                    code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid JSON value: {str(e)}",
-                )
+        json_data = self._parse_value(value)
+        if json_data:
+            LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
 
         LOGGER.debug(
             f"[insert] Inserting into items table with profile_id={profile_id}, "
@@ -186,7 +194,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         name: str,
         value: Union[str, bytes],
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Replace an existing connection metadata entry."""
         LOGGER.debug(
@@ -194,9 +202,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             f"value={value}, tags={tags}"
         )
 
-        expiry = None
-        if expiry_ms:
-            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+        expiry = self._compute_expiry(expiry_ms)
 
         await cursor.execute(
             f"""
@@ -227,18 +233,9 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             (value, expiry, item_id),
         )
 
-        if isinstance(value, bytes):
-            value = value.decode("utf-8")
-        json_data = {}
-        if value and isinstance(value, str) and is_valid_json(value):
-            try:
-                json_data = json.loads(value)
-                LOGGER.debug(f"[replace] Parsed json_data: {json_data}")
-            except json.JSONDecodeError as e:
-                raise DatabaseError(
-                    code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid JSON value: {str(e)}",
-                )
+        json_data = self._parse_value(value)
+        if json_data:
+            LOGGER.debug(f"[replace] Parsed json_data: {json_data}")
 
         LOGGER.debug(
             f"[replace] Deleting existing entry from {self.table} for item_id={item_id}"

@@ -1,7 +1,7 @@
 """Database types and data structures for database manager."""
 
 from enum import Enum
-from typing import Optional, Union, Sequence
+from typing import Optional, Sequence
 import json
 
 
@@ -60,7 +60,7 @@ class Entry:
 
     _KEYS = ("name", "category", "value", "tags")
 
-    def __init__(self, category: str, name: str, value: Union[str, bytes], tags: dict):
+    def __init__(self, category: str, name: str, value: str | bytes, tags: dict):
         """Initialize Entry."""
         self._category = category
         self._name = name

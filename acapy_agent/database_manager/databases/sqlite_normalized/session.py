@@ -2,7 +2,7 @@
 
 import threading
 import asyncio
-from typing import Optional, Union, Sequence
+from typing import Optional, Sequence
 
 from ...dbstore import AbstractDatabaseSession, Entry
 from ...error import DBStoreError, DBStoreErrorCode
@@ -125,28 +125,41 @@ class SqliteSession(AbstractDatabaseSession):
 
     async def __aexit__(self, exc_type, exc, tb):
         """Exit async context manager."""
+        cancelled_during_exit = False
         if self.conn:
-            try:
-                if self.is_txn:
-                    if exc_type is None:
-                        await asyncio.to_thread(self.conn.commit)
-                    else:
-                        await asyncio.to_thread(self.conn.rollback)
-            except asyncio.exceptions.CancelledError:
-                await asyncio.to_thread(self.conn.rollback)
-            except Exception:
-                pass
-            finally:
-                try:
-                    await asyncio.to_thread(self.pool.return_connection, self.conn)
-                    self.conn = None
-                    if self in self.database.active_sessions:
-                        self.database.active_sessions.remove(self)
-                    LOGGER.debug("[close_session] Completed")
-                except Exception:
-                    pass
+            cancelled_during_exit = await self._handle_transaction_completion(exc_type)
+            await self._cleanup_sqlite_session()
+        if cancelled_during_exit:
+            raise asyncio.CancelledError
 
-    async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def _handle_transaction_completion(self, exc_type) -> bool:
+        """Handle transaction completion and return if cancelled."""
+        cancelled_during_exit = False
+        try:
+            if self.is_txn:
+                if exc_type is None:
+                    await asyncio.to_thread(self.conn.commit)
+                else:
+                    await asyncio.to_thread(self.conn.rollback)
+        except asyncio.exceptions.CancelledError:
+            await asyncio.to_thread(self.conn.rollback)
+            cancelled_during_exit = True
+        except Exception:
+            pass
+        return cancelled_during_exit
+
+    async def _cleanup_sqlite_session(self):
+        """Clean up SQLite session resources."""
+        try:
+            await asyncio.to_thread(self.pool.return_connection, self.conn)
+            self.conn = None
+            if self in self.database.active_sessions:
+                self.database.active_sessions.remove(self)
+            LOGGER.debug("[close_session] Completed")
+        except Exception:
+            pass
+
+    async def count(self, category: str, tag_filter: str | dict = None) -> int:
         """Count entries in a category."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
 
@@ -175,7 +188,7 @@ class SqliteSession(AbstractDatabaseSession):
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
     ):
@@ -225,7 +238,7 @@ class SqliteSession(AbstractDatabaseSession):
         self,
         category: str,
         name: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         for_update: bool = False,
     ) -> Optional[Entry]:
         """Fetch a single entry."""
@@ -259,7 +272,7 @@ class SqliteSession(AbstractDatabaseSession):
     async def fetch_all(
         self,
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         limit: int = None,
         for_update: bool = False,
         order_by: Optional[str] = None,
@@ -301,7 +314,7 @@ class SqliteSession(AbstractDatabaseSession):
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
     ):
@@ -382,7 +395,7 @@ class SqliteSession(AbstractDatabaseSession):
 
         await asyncio.to_thread(_remove)
 
-    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def remove_all(self, category: str, tag_filter: str | dict = None) -> int:
         """Remove all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])

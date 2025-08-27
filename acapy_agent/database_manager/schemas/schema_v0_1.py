@@ -2,6 +2,12 @@
 
 CATEGORY = "schema"
 
+IDX_SCHEMA_ON_ITEM_ID = "ON schema_v0_1 (item_id);"
+IDX_SCHEMA_ON_ITEM_NAME = "ON schema_v0_1 (item_name);"
+IDX_SCHEMA_ON_ISSUER_ID = "ON schema_v0_1 (issuer_id);"
+IDX_SCHEMA_ON_NAME_VERSION = "ON schema_v0_1 (name, version);"
+IDX_SCHEMA_ON_STATE = "ON schema_v0_1 (state);"
+IDX_SCHEMA_ATTR_ON_ATTR_NAME = "ON schema_attributes_v0_1 (attr_name);"
 SCHEMAS = {
     "sqlite": [
         """
@@ -21,14 +27,14 @@ SCHEMAS = {
             CONSTRAINT schema_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 " + IDX_SCHEMA_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 "
-        + "ON schema_v0_1 (item_name);",
+        + IDX_SCHEMA_ON_ITEM_NAME,
         "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 "
-        + "ON schema_v0_1 (issuer_id);",
+        + IDX_SCHEMA_ON_ISSUER_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 "
-        + "ON schema_v0_1 (name, version);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 ON schema_v0_1 (state);",
+        + IDX_SCHEMA_ON_NAME_VERSION,
+        "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 " + IDX_SCHEMA_ON_STATE,
         """
         CREATE TABLE IF NOT EXISTS schema_attributes_v0_1 (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +45,7 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 "
-        + "ON schema_attributes_v0_1 (attr_name);",
+        + IDX_SCHEMA_ATTR_ON_ATTR_NAME,
         """
         CREATE TRIGGER IF NOT EXISTS trg_insert_schema_attributes_v0_1
         AFTER INSERT ON schema_v0_1
@@ -93,14 +99,14 @@ SCHEMAS = {
             CONSTRAINT schema_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
+        "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 " + IDX_SCHEMA_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 "
-        + "ON schema_v0_1 (item_name);",
+        + IDX_SCHEMA_ON_ITEM_NAME,
         "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 "
-        + "ON schema_v0_1 (issuer_id);",
+        + IDX_SCHEMA_ON_ISSUER_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 "
-        + "ON schema_v0_1 (name, version);",
-        "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 ON schema_v0_1 (state);",
+        + IDX_SCHEMA_ON_NAME_VERSION,
+        "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 " + IDX_SCHEMA_ON_STATE,
         """
         CREATE TABLE IF NOT EXISTS schema_attributes_v0_1 (
             id SERIAL PRIMARY KEY,
@@ -111,7 +117,7 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_attributes_attr_name_v0_1 "
-        + "ON schema_attributes_v0_1 (attr_name);",
+        + IDX_SCHEMA_ATTR_ON_ATTR_NAME,
         """
         CREATE OR REPLACE FUNCTION insert_schema_attributes_v0_1()
         RETURNS TRIGGER AS $$
@@ -188,12 +194,12 @@ SCHEMAS = {
             CONSTRAINT schema_v0_1_unique_item_id UNIQUE (item_id)
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_schema_item_id_v0_1 ON schema_v0_1 (item_id);",
-        "CREATE NONCLUSTERED INDEX idx_schema_schema_id_v0_1 ON schema_v0_1 (item_name);",
-        "CREATE NONCLUSTERED INDEX idx_schema_issuer_id_v0_1 ON schema_v0_1 (issuer_id);",
+        "CREATE NONCLUSTERED INDEX idx_schema_item_id_v0_1 " + IDX_SCHEMA_ON_ITEM_ID,
+        "CREATE NONCLUSTERED INDEX idx_schema_schema_id_v0_1 " + IDX_SCHEMA_ON_ITEM_NAME,
+        "CREATE NONCLUSTERED INDEX idx_schema_issuer_id_v0_1 " + IDX_SCHEMA_ON_ISSUER_ID,
         "CREATE NONCLUSTERED INDEX idx_schema_name_version_v0_1 "
-        + "ON schema_v0_1 (name, version);",
-        "CREATE NONCLUSTERED INDEX idx_schema_state_v0_1 ON schema_v0_1 (state);",
+        + IDX_SCHEMA_ON_NAME_VERSION,
+        "CREATE NONCLUSTERED INDEX idx_schema_state_v0_1 " + IDX_SCHEMA_ON_STATE,
         """
         CREATE TABLE schema_attributes_v0_1 (
             id INT IDENTITY(1,1) PRIMARY KEY,
@@ -204,7 +210,7 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_schema_attributes_attr_name_v0_1 "
-        + "ON schema_attributes_v0_1 (attr_name);",
+        + IDX_SCHEMA_ATTR_ON_ATTR_NAME,
         """
         CREATE TRIGGER trg_insert_schema_attributes_v0_1
         ON schema_v0_1

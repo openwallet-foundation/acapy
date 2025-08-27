@@ -7,7 +7,7 @@ from ..normalized_handler import (
 )
 from ....errors import DatabaseError, DatabaseErrorCode
 from psycopg import AsyncCursor
-from typing import Union, List, Optional
+from typing import List, Optional
 import json
 import base64
 import logging
@@ -88,15 +88,67 @@ class PresExV20CustomHandler(NormalizedHandler):
             LOGGER.error(f"Error extracting revealed attributes: {str(e)}")
             return json.dumps([])
 
+    def _compute_expiry(self, expiry_ms: Optional[int]) -> Optional[datetime]:
+        return (
+            datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+            if expiry_ms
+            else None
+        )
+
+    def _parse_value(self, value: str | bytes) -> dict:
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        if value and isinstance(value, str) and is_valid_json(value):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError as e:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid JSON value: {str(e)}",
+                )
+        return {}
+
+    def _normalize_value(self, col: str, val):
+        if col == "pres_request":
+            # Force serialize pres_request consistently
+            if isinstance(val, str) and is_valid_json(val):
+                try:
+                    val = json.loads(val)
+                except json.JSONDecodeError as e:
+                    raise DatabaseError(
+                        code=DatabaseErrorCode.QUERY_ERROR,
+                        message=f"Failed to re-serialize pres_request: {str(e)}",
+                    )
+        if isinstance(val, (dict, list)):
+            return serialize_json_with_bool_strings(val)
+        if val is True:
+            return "true"
+        if val is False:
+            return "false"
+        return val
+
+    def _assemble_data(
+        self, columns: List[str], json_data: dict, tags: dict, name: str, item_id: int
+    ) -> dict:
+        data = {"item_id": item_id, "item_name": name}
+        for col in columns:
+            if col in json_data:
+                data[col] = self._normalize_value(col, json_data[col])
+            elif col in tags:
+                data[col] = self._normalize_value(col, tags[col])
+            else:
+                data[col] = None
+        return data
+
     async def insert(
         self,
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Insert a new presentation exchange entry."""
         LOGGER.debug(
@@ -104,23 +156,11 @@ class PresExV20CustomHandler(NormalizedHandler):
             f"value={value}, tags={tags}"
         )
 
-        expiry = None
-        if expiry_ms:
-            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+        expiry = self._compute_expiry(expiry_ms)
 
-        if isinstance(value, bytes):
-            value = value.decode("utf-8")
-        json_data = {}
-        if value and isinstance(value, str) and is_valid_json(value):
-            try:
-                json_data = json.loads(value)
-                LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
-            except json.JSONDecodeError as e:
-                LOGGER.error(f"[insert] Invalid JSON value: {str(e)}, raw value: {value}")
-                raise DatabaseError(
-                    code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid JSON value: {str(e)}",
-                )
+        json_data = self._parse_value(value)
+        if json_data:
+            LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
 
         json_data["revealed_attr_groups"] = self._extract_revealed_attrs(json_data)
         LOGGER.debug(
@@ -152,90 +192,7 @@ class PresExV20CustomHandler(NormalizedHandler):
         item_id = row[0]
         LOGGER.debug(f"[insert] Inserted into items table, item_id={item_id}")
 
-        data = {"item_id": item_id, "item_name": name}
-        LOGGER.debug(f"[insert] Processing columns: {self.columns}")
-        for col in self.columns:
-            if col in json_data:
-                val = json_data[col]
-                LOGGER.debug(
-                    f"[insert] Column {col} found in json_data with value {val} "
-                    f"(type: {type(val)})"
-                )
-                if col == "pres_request":
-                    if isinstance(val, str) and is_valid_json(val):
-                        try:
-                            val = json.loads(val)
-                            val = serialize_json_with_bool_strings(val)
-                            LOGGER.debug(
-                                f"[insert] Force serialized {col} to JSON: {val}"
-                            )
-                        except json.JSONDecodeError as e:
-                            LOGGER.error(
-                                f"[insert] Failed to re-serialize pres_request: "
-                                f"{str(e)}, raw value: {val}"
-                            )
-                            raise DatabaseError(
-                                code=DatabaseErrorCode.QUERY_ERROR,
-                                message=(
-                                    f"Failed to re-serialize pres_request: {str(e)}"
-                                ),
-                            )
-                    elif isinstance(val, dict):
-                        try:
-                            val = serialize_json_with_bool_strings(val)
-                            LOGGER.debug(f"[insert] Serialized {col} to JSON: {val}")
-                        except DatabaseError as e:
-                            LOGGER.error(
-                                f"[insert] Serialization failed for column {col}: "
-                                f"{str(e)}"
-                            )
-                            raise
-                elif isinstance(val, (dict, list)):
-                    try:
-                        val = serialize_json_with_bool_strings(val)
-                        LOGGER.debug(f"[insert] Serialized {col} to JSON: {val}")
-                    except DatabaseError as e:
-                        LOGGER.error(
-                            f"[insert] Serialization failed for column {col}: {str(e)}"
-                        )
-                        raise
-                elif val is True:
-                    val = "true"
-                elif val is False:
-                    val = "false"
-                elif val is None:
-                    val = None
-                data[col] = val
-                LOGGER.debug(f"[insert] Added column {col} from json_data: {val}")
-            elif col in tags:
-                val = tags[col]
-                LOGGER.debug(
-                    f"[insert] Column {col} found in tags with value {val} "
-                    f"(type: {type(val)})"
-                )
-                if isinstance(val, (dict, list)):
-                    try:
-                        val = serialize_json_with_bool_strings(val)
-                        LOGGER.debug(f"[insert] Serialized {col} to JSON: {val}")
-                    except DatabaseError as e:
-                        LOGGER.error(
-                            f"[insert] Serialization failed for column {col}: {str(e)}"
-                        )
-                        raise
-                elif val is True:
-                    val = "true"
-                elif val is False:
-                    val = "false"
-                elif val is None:
-                    val = None
-                data[col] = val
-                LOGGER.debug(f"[insert] Added column {col} from tags: {val}")
-            else:
-                LOGGER.debug(
-                    f"[insert] Column {col} not found in json_data or tags, "
-                    f"setting to NULL"
-                )
-                data[col] = None
+        data = self._assemble_data(self.columns, json_data, tags, name, item_id)
 
         LOGGER.debug(f"[insert] Final data for normalized table: {data}")
 
@@ -260,9 +217,9 @@ class PresExV20CustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Replace an existing presentation exchange entry."""
         LOGGER.debug(
@@ -270,9 +227,7 @@ class PresExV20CustomHandler(NormalizedHandler):
             f"value={value}, tags={tags}"
         )
 
-        expiry = None
-        if expiry_ms:
-            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+        expiry = self._compute_expiry(expiry_ms)
 
         await cursor.execute(
             f"""
@@ -303,18 +258,9 @@ class PresExV20CustomHandler(NormalizedHandler):
             (value, expiry, item_id),
         )
 
-        if isinstance(value, bytes):
-            value = value.decode("utf-8")
-        json_data = {}
-        if value and isinstance(value, str) and is_valid_json(value):
-            try:
-                json_data = json.loads(value)
-                LOGGER.debug(f"[replace] Parsed json_data: {json_data}")
-            except json.JSONDecodeError as e:
-                raise DatabaseError(
-                    code=DatabaseErrorCode.QUERY_ERROR,
-                    message=f"Invalid JSON value: {str(e)}",
-                )
+        json_data = self._parse_value(value)
+        if json_data:
+            LOGGER.debug(f"[replace] Parsed json_data: {json_data}")
 
         json_data["revealed_attr_groups"] = self._extract_revealed_attrs(json_data)
         LOGGER.debug(
@@ -327,91 +273,7 @@ class PresExV20CustomHandler(NormalizedHandler):
         )
         await cursor.execute(f"DELETE FROM {self.table} WHERE item_id = %s", (item_id,))
 
-        data = {"item_id": item_id, "item_name": name}
-        LOGGER.debug(f"[replace] Processing columns: {self.columns}")
-        for col in self.columns:
-            if col in json_data:
-                val = json_data[col]
-                LOGGER.debug(
-                    f"[replace] Column {col} found in json_data with value {val} "
-                    f"(type: {type(val)})"
-                )
-                if col == "pres_request":
-                    if isinstance(val, str) and is_valid_json(val):
-                        try:
-                            val = json.loads(val)
-                            val = serialize_json_with_bool_strings(val)
-                            LOGGER.debug(
-                                f"[replace] Force serialized {col} to JSON: {val}"
-                            )
-                        except json.JSONDecodeError as e:
-                            LOGGER.error(
-                                f"[replace] Failed to re-serialize pres_request: "
-                                f"{str(e)}, "
-                                f"raw value: {val}"
-                            )
-                            raise DatabaseError(
-                                code=DatabaseErrorCode.QUERY_ERROR,
-                                message=(
-                                    f"Failed to re-serialize pres_request: {str(e)}"
-                                ),
-                            )
-                    elif isinstance(val, dict):
-                        try:
-                            val = serialize_json_with_bool_strings(val)
-                            LOGGER.debug(f"[replace] Serialized {col} to JSON: {val}")
-                        except DatabaseError as e:
-                            LOGGER.error(
-                                f"[replace] Serialization failed for column {col}: "
-                                f"{str(e)}"
-                            )
-                            raise
-                elif isinstance(val, (dict, list)):
-                    try:
-                        val = serialize_json_with_bool_strings(val)
-                        LOGGER.debug(f"[replace] Serialized {col} to JSON: {val}")
-                    except DatabaseError as e:
-                        LOGGER.error(
-                            f"[replace] Serialization failed for column {col}: {str(e)}"
-                        )
-                        raise
-                elif val is True:
-                    val = "true"
-                elif val is False:
-                    val = "false"
-                elif val is None:
-                    val = None
-                data[col] = val
-                LOGGER.debug(f"[replace] Added column {col} from json_data: {val}")
-            elif col in tags:
-                val = tags[col]
-                LOGGER.debug(
-                    f"[replace] Column {col} found in tags with value {val} "
-                    f"(type: {type(val)})"
-                )
-                if isinstance(val, (dict, list)):
-                    try:
-                        val = serialize_json_with_bool_strings(val)
-                        LOGGER.debug(f"[replace] Serialized {col} to JSON: {val}")
-                    except DatabaseError as e:
-                        LOGGER.error(
-                            f"[replace] Serialization failed for column {col}: {str(e)}"
-                        )
-                        raise
-                elif val is True:
-                    val = "true"
-                elif val is False:
-                    val = "false"
-                elif val is None:
-                    val = None
-                data[col] = val
-                LOGGER.debug(f"[replace] Added column {col} from tags: {val}")
-            else:
-                LOGGER.debug(
-                    f"[replace] Column {col} not found in json_data or tags, "
-                    f"setting to NULL"
-                )
-                data[col] = None
+        data = self._assemble_data(self.columns, json_data, tags, name, item_id)
 
         columns = list(data.keys())
         placeholders = ", ".join(["%s" for _ in columns])

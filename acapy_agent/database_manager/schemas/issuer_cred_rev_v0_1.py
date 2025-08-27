@@ -2,6 +2,15 @@
 
 CATEGORY = "issuer_cred_rev"
 
+IDX_ISSUER_CRED_REV_ON_ITEM_ID = "ON issuer_cred_rev_v0_1 (item_id);"
+IDX_ISSUER_CRED_REV_ON_CRED_EX_ID = "ON issuer_cred_rev_v0_1 (cred_ex_id);"
+IDX_ISSUER_CRED_REV_ON_REV_REG_ID = "ON issuer_cred_rev_v0_1 (rev_reg_id);"
+IDX_ISSUER_CRED_REV_ON_CRED_DEF_ID = "ON issuer_cred_rev_v0_1 (cred_def_id);"
+IDX_ISSUER_CRED_REV_ON_STATE = "ON issuer_cred_rev_v0_1 (state);"
+IDX_ISSUER_CRED_REV_ON_REV_REG_CRED_REV = (
+    "ON issuer_cred_rev_v0_1 (rev_reg_id, cred_rev_id);"
+)
+
 SCHEMAS = {
     "sqlite": [
         """
@@ -24,17 +33,17 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_item_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (item_id);",
+        + IDX_ISSUER_CRED_REV_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_cred_ex_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (cred_ex_id);",
+        + IDX_ISSUER_CRED_REV_ON_CRED_EX_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_rev_reg_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (rev_reg_id);",
+        + IDX_ISSUER_CRED_REV_ON_REV_REG_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_cred_def_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (cred_def_id);",
+        + IDX_ISSUER_CRED_REV_ON_CRED_DEF_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_state_v0_1 "
-        "ON issuer_cred_rev_v0_1 (state);",
+        + IDX_ISSUER_CRED_REV_ON_STATE,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_rev_reg_cred_rev_v0_1 "
-        "ON issuer_cred_rev_v0_1 (rev_reg_id, cred_rev_id);",
+        + IDX_ISSUER_CRED_REV_ON_REV_REG_CRED_REV,
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_issuer_cred_rev_timestamp_v0_1
         AFTER UPDATE ON issuer_cred_rev_v0_1
@@ -67,17 +76,17 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_item_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (item_id);",
+        + IDX_ISSUER_CRED_REV_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_cred_ex_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (cred_ex_id);",
+        + IDX_ISSUER_CRED_REV_ON_CRED_EX_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_rev_reg_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (rev_reg_id);",
+        + IDX_ISSUER_CRED_REV_ON_REV_REG_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_cred_def_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (cred_def_id);",
+        + IDX_ISSUER_CRED_REV_ON_CRED_DEF_ID,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_state_v0_1 "
-        "ON issuer_cred_rev_v0_1 (state);",
+        + IDX_ISSUER_CRED_REV_ON_STATE,
         "CREATE INDEX IF NOT EXISTS idx_issuer_cred_rev_rev_reg_cred_rev_v0_1 "
-        "ON issuer_cred_rev_v0_1 (rev_reg_id, cred_rev_id);",
+        + IDX_ISSUER_CRED_REV_ON_REV_REG_CRED_REV,
         """
         CREATE OR REPLACE FUNCTION update_issuer_cred_rev_timestamp_v0_1()
         RETURNS TRIGGER AS $$
@@ -117,17 +126,17 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_issuer_cred_rev_item_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (item_id);",
+        + IDX_ISSUER_CRED_REV_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_issuer_cred_rev_cred_ex_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (cred_ex_id);",
+        + IDX_ISSUER_CRED_REV_ON_CRED_EX_ID,
         "CREATE NONCLUSTERED INDEX idx_issuer_cred_rev_rev_reg_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (rev_reg_id);",
+        + IDX_ISSUER_CRED_REV_ON_REV_REG_ID,
         "CREATE NONCLUSTERED INDEX idx_issuer_cred_rev_cred_def_id_v0_1 "
-        "ON issuer_cred_rev_v0_1 (cred_def_id);",
+        + IDX_ISSUER_CRED_REV_ON_CRED_DEF_ID,
         "CREATE NONCLUSTERED INDEX idx_issuer_cred_rev_state_v0_1 "
-        "ON issuer_cred_rev_v0_1 (state);",
+        + IDX_ISSUER_CRED_REV_ON_STATE,
         "CREATE NONCLUSTERED INDEX idx_issuer_cred_rev_rev_reg_cred_rev_v0_1 "
-        "ON issuer_cred_rev_v0_1 (rev_reg_id, cred_rev_id);"
+        + IDX_ISSUER_CRED_REV_ON_REV_REG_CRED_REV,
         """
         CREATE TRIGGER trg_update_issuer_cred_rev_timestamp_v0_1
         ON issuer_cred_rev_v0_1
@@ -179,7 +188,7 @@ DROP_SCHEMAS = {
         "DROP INDEX IF EXISTS idx_issuer_cred_rev_cred_ex_id_v0_1 "
         "ON issuer_cred_rev_v0_1;",
         "DROP INDEX IF EXISTS idx_issuer_cred_rev_item_id_v0_1 "
-        "ON issuer_cred_rev_v0_1;"
+        "ON issuer_cred_rev_v0_1;",
         "DROP TABLE IF EXISTS issuer_cred_rev_v0_1;",
     ],
 }

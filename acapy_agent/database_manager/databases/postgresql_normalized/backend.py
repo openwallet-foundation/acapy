@@ -13,14 +13,67 @@ from psycopg import errors as psycopg_errors
 LOGGER = logging.getLogger(__name__)
 
 
+# Maps for compact error translation to reduce branching complexity
+DB_ERROR_MAP = {
+    DatabaseErrorCode.DATABASE_NOT_FOUND: (
+        DBStoreErrorCode.NOT_FOUND,
+        "Database Not Found",
+    ),
+    DatabaseErrorCode.PROFILE_NOT_FOUND: (
+        DBStoreErrorCode.NOT_FOUND,
+        "Database profile not found",
+    ),
+    DatabaseErrorCode.UNSUPPORTED_VERSION: (
+        DBStoreErrorCode.UNSUPPORTED,
+        "Unsupported release number in config table",
+    ),
+    DatabaseErrorCode.DEFAULT_PROFILE_NOT_FOUND: (
+        DBStoreErrorCode.NOT_FOUND,
+        "Database default profile not found",
+    ),
+    DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED: (
+        DBStoreErrorCode.UNEXPECTED,
+        "Connection pool exhausted",
+    ),
+    DatabaseErrorCode.PROFILE_ALREADY_EXISTS: (
+        DBStoreErrorCode.DUPLICATE,
+        "Profile already exists",
+    ),
+    DatabaseErrorCode.RECORD_NOT_FOUND: (
+        DBStoreErrorCode.NOT_FOUND,
+        "Record not found",
+    ),
+    DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR: (
+        DBStoreErrorCode.DUPLICATE,
+        "Duplicate Item Entry Error",
+    ),
+    DatabaseErrorCode.DATABASE_NOT_ENCRYPTED: (
+        DBStoreErrorCode.UNEXPECTED,
+        "Cannot rekey an unencrypted database",
+    ),
+    DatabaseErrorCode.CONNECTION_ERROR: (
+        DBStoreErrorCode.UNEXPECTED,
+        "Connection error",
+    ),
+    DatabaseErrorCode.QUERY_ERROR: (
+        DBStoreErrorCode.UNEXPECTED,
+        "Query error",
+    ),
+    DatabaseErrorCode.PROVISION_ERROR: (
+        DBStoreErrorCode.UNEXPECTED,
+        "Provision error",
+    ),
+}
+
+
 class PostgresqlBackend:
     """PostgreSQL backend implementation for database manager."""
 
     async def provision(
         self,
         uri: str,
-        key_method: Optional[str],
-        pass_key: Optional[str],
+        _key_method: Optional[str],
+        _pass_key: Optional[str],
         profile: Optional[str],
         recreate: bool,
         release_number: str,
@@ -95,8 +148,8 @@ class PostgresqlBackend:
     async def open(
         self,
         uri: str,
-        key_method: Optional[str],
-        pass_key: Optional[str],
+        _key_method: Optional[str],
+        _pass_key: Optional[str],
         profile: Optional[str],
         schema_migration: Optional[bool] = None,
         target_schema_release_number: Optional[str] = None,
@@ -198,61 +251,9 @@ class PostgresqlBackend:
         """Translate database errors to DBStoreError."""
         LOGGER.debug("Translating error: %s, type=%s", str(error), type(error))
         if isinstance(error, DatabaseError):
-            if error.code == DatabaseErrorCode.DATABASE_NOT_FOUND:
-                return DBStoreError(
-                    code=DBStoreErrorCode.NOT_FOUND, message="Database Not Found"
-                )
-            if error.code == DatabaseErrorCode.PROFILE_NOT_FOUND:
-                return DBStoreError(
-                    code=DBStoreErrorCode.NOT_FOUND, message="Database profile not found"
-                )
-            if error.code == DatabaseErrorCode.UNSUPPORTED_VERSION:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNSUPPORTED,
-                    message="Unsupported release number in config table",
-                )
-            if error.code == DatabaseErrorCode.DEFAULT_PROFILE_NOT_FOUND:
-                return DBStoreError(
-                    code=DBStoreErrorCode.NOT_FOUND,
-                    message="Database default profile not found",
-                )
-            if error.code == DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNEXPECTED, message="Connection pool exhausted"
-                )
-            if error.code == DatabaseErrorCode.PROFILE_ALREADY_EXISTS:
-                return DBStoreError(
-                    code=DBStoreErrorCode.DUPLICATE, message="Profile already exists"
-                )
-            if error.code == DatabaseErrorCode.RECORD_NOT_FOUND:
-                return DBStoreError(
-                    code=DBStoreErrorCode.NOT_FOUND, message="Record not found"
-                )
-            if error.code == DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR:
-                return DBStoreError(
-                    code=DBStoreErrorCode.DUPLICATE, message="Duplicate Item Entry Error"
-                )
-            if error.code == DatabaseErrorCode.DATABASE_NOT_ENCRYPTED:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNEXPECTED,
-                    message="Cannot rekey an unencrypted database",
-                )
-            if error.code == DatabaseErrorCode.CONNECTION_ERROR:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNEXPECTED, message="Connection error"
-                )
-            if error.code == DatabaseErrorCode.QUERY_ERROR:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNEXPECTED, message="Query error"
-                )
-            if error.code == DatabaseErrorCode.PROVISION_ERROR:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNEXPECTED, message="Provision error"
-                )
-            if error.code == DatabaseErrorCode.UNSUPPORTED_OPERATION:
-                return DBStoreError(
-                    code=DBStoreErrorCode.UNEXPECTED, message="Unsupported operation"
-                )
+            mapped = DB_ERROR_MAP.get(error.code)
+            if mapped:
+                return DBStoreError(code=mapped[0], message=mapped[1])
         elif isinstance(error, psycopg_errors.UniqueViolation):
             return DBStoreError(
                 code=DBStoreErrorCode.DUPLICATE, message=f"Duplicate entry: {str(error)}"

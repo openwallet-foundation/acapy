@@ -7,7 +7,7 @@ from ..normalized_handler import (
 )
 from ....errors import DatabaseError, DatabaseErrorCode
 import sqlite3
-from typing import Union, List, Optional
+from typing import List, Optional
 import json
 import base64
 import logging
@@ -238,9 +238,9 @@ class CredExV20CustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes, dict],
+        value: str | bytes | dict,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Insert a new credential exchange record.
 
@@ -442,9 +442,9 @@ class CredExV20CustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes, dict],
+        value: str | bytes | dict,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Replace an existing credential exchange record.
 

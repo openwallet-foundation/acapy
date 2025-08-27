@@ -2,7 +2,7 @@
 
 import threading
 import asyncio
-from typing import Optional, Union, Sequence
+from typing import Optional, Sequence
 import binascii
 
 from psycopg import pq, errors as psycopg_errors
@@ -38,7 +38,7 @@ class PostgresSession(AbstractDatabaseSession):
         self.schema_context = database.schema_context
 
     def _process_value(
-        self, value: Union[str, bytes], operation: str, name: str, category: str
+        self, value: str | bytes, operation: str, name: str, category: str
     ) -> str:
         """Process items.value for insert/replace (encode) or fetch/fetch_all (decode)."""
         if operation in ("insert", "replace"):
@@ -160,83 +160,117 @@ class PostgresSession(AbstractDatabaseSession):
         max_retries = 5
         for attempt in range(max_retries):
             try:
-                self.conn = await self.pool.getconn(timeout=60.0)
-                try:
-                    async with self.conn.cursor() as cursor:
-                        await cursor.execute("SELECT 1")
-                except Exception as e:
-                    await self.conn.rollback()
-                    await self.pool.putconn(self.conn)
-                    self.conn = None
-                    LOGGER.error("Invalid connection retrieved: %s", str(e))
-                    raise DatabaseError(
-                        code=DatabaseErrorCode.CONNECTION_ERROR,
-                        message="Invalid connection retrieved from pool",
-                        actual_error=str(e),
-                    )
-                if self.profile_id is None:
-                    self.profile_id = await self._get_profile_id(self.profile)
-                if self.is_txn:
-                    await self.conn.execute("BEGIN")
-                LOGGER.debug(
-                    "[enter_session] Starting for profile=%s, is_txn=%s, "
-                    "release_number=%s",
-                    self.profile,
-                    self.is_txn,
-                    self.release_number,
-                )
+                await self._acquire_and_validate_connection()
+                await self._setup_session()
+                self._log_session_start()
                 return self
             except asyncio.CancelledError:
-                if self.conn:
-                    await self.conn.rollback()
-                    await self.pool.putconn(self.conn)
-                    self.conn = None
+                await self._cleanup_connection()
                 raise
             except Exception as e:
-                if self.conn:
-                    await self.conn.rollback()
-                    await self.pool.putconn(self.conn)
-                    self.conn = None
+                await self._cleanup_connection()
                 if attempt < max_retries - 1:
                     await asyncio.sleep(1)
                     continue
-                LOGGER.error(
-                    "Failed to enter session after %d retries: %s", max_retries, str(e)
-                )
-                raise DatabaseError(
-                    code=DatabaseErrorCode.CONNECTION_ERROR,
-                    message="Failed to enter session",
-                    actual_error=str(e),
-                )
+                self._handle_session_failure(max_retries, e)
+
+    async def _acquire_and_validate_connection(self):
+        """Acquire and validate database connection."""
+        self.conn = await self.pool.getconn()
+        try:
+            async with self.conn.cursor() as cursor:
+                await cursor.execute("SELECT 1")
+        except Exception as e:
+            await self._cleanup_connection()
+            LOGGER.error("Invalid connection retrieved: %s", str(e))
+            raise DatabaseError(
+                code=DatabaseErrorCode.CONNECTION_ERROR,
+                message="Invalid connection retrieved from pool",
+                actual_error=str(e),
+            )
+
+    async def _setup_session(self):
+        """Setup session with profile and transaction state."""
+        if self.profile_id is None:
+            self.profile_id = await self._get_profile_id(self.profile)
+        if self.is_txn:
+            await self.conn.execute("BEGIN")
+
+    def _log_session_start(self):
+        """Log session start information."""
+        LOGGER.debug(
+            "[enter_session] Starting for profile=%s, is_txn=%s, release_number=%s",
+            self.profile, self.is_txn, self.release_number
+        )
+
+    async def _cleanup_connection(self):
+        """Clean up database connection."""
+        if self.conn:
+            await self.conn.rollback()
+            await self.pool.putconn(self.conn)
+            self.conn = None
+
+    def _handle_session_failure(self, max_retries: int, error: Exception):
+        """Handle session setup failure after retries."""
+        LOGGER.error(
+            "Failed to enter session after %d retries: %s", max_retries, str(error)
+        )
+        raise DatabaseError(
+            code=DatabaseErrorCode.CONNECTION_ERROR,
+            message="Failed to enter session",
+            actual_error=str(error),
+        )
 
     async def __aexit__(self, exc_type, exc, tb):
         """Exit async context manager."""
+        cancelled_during_exit = False
         if self.conn:
-            try:
-                if self.is_txn:
-                    if exc_type is None:
-                        await self.conn.commit()
-                    else:
-                        await self.conn.rollback()
-                else:
-                    if self.conn.pgconn.transaction_status != pq.TransactionStatus.IDLE:
-                        await self.conn.commit()
-            except asyncio.CancelledError:
-                await self.conn.rollback()
-            except Exception:
-                await self.conn.rollback()
-            finally:
-                try:
-                    await self.conn.rollback()
-                    await self.pool.putconn(self.conn)
-                    self.conn = None
-                    if self in self.database.active_sessions:
-                        self.database.active_sessions.remove(self)
-                    LOGGER.debug("[close_session] Completed")
-                except Exception:
-                    pass
+            cancelled_during_exit = await self._handle_transaction_completion(exc_type)
+            await self._cleanup_session()
+        
+        if cancelled_during_exit:
+            raise asyncio.CancelledError
 
-    async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def _handle_transaction_completion(self, exc_type) -> bool:
+        """Handle transaction commit/rollback and return if cancelled."""
+        cancelled_during_exit = False
+        try:
+            if self.is_txn:
+                await self._handle_transaction_mode(exc_type)
+            else:
+                await self._handle_non_transaction_mode()
+        except asyncio.CancelledError:
+            await self.conn.rollback()
+            cancelled_during_exit = True
+        except Exception:
+            await self.conn.rollback()
+        return cancelled_during_exit
+
+    async def _handle_transaction_mode(self, exc_type):
+        """Handle transaction completion in transaction mode."""
+        if exc_type is None:
+            await self.conn.commit()
+        else:
+            await self.conn.rollback()
+
+    async def _handle_non_transaction_mode(self):
+        """Handle transaction completion in non-transaction mode."""
+        if self.conn.pgconn.transaction_status != pq.TransactionStatus.IDLE:
+            await self.conn.commit()
+
+    async def _cleanup_session(self):
+        """Clean up session resources."""
+        try:
+            await self.conn.rollback()
+            await self.pool.putconn(self.conn)
+            self.conn = None
+            if self in self.database.active_sessions:
+                self.database.active_sessions.remove(self)
+            LOGGER.debug("[close_session] Completed")
+        except Exception:
+            pass
+
+    async def count(self, category: str, tag_filter: str | dict = None) -> int:
         """Count entries in a category."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])
@@ -269,7 +303,7 @@ class PostgresSession(AbstractDatabaseSession):
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
     ):
@@ -310,7 +344,7 @@ class PostgresSession(AbstractDatabaseSession):
         self,
         category: str,
         name: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         for_update: bool = False,
     ) -> Optional[Entry]:
         """Fetch a single entry."""
@@ -356,7 +390,7 @@ class PostgresSession(AbstractDatabaseSession):
     async def fetch_all(
         self,
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         limit: int = None,
         for_update: bool = False,
         order_by: Optional[str] = None,
@@ -414,7 +448,7 @@ class PostgresSession(AbstractDatabaseSession):
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
     ):
@@ -482,7 +516,7 @@ class PostgresSession(AbstractDatabaseSession):
                     actual_error=str(e),
                 )
 
-    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def remove_all(self, category: str, tag_filter: str | dict = None) -> int:
         """Remove all entries matching criteria."""
         handlers, _, _ = get_release(self.release_number, "postgresql")
         handler = handlers.get(category, handlers["default"])

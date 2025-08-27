@@ -2,6 +2,7 @@
 
 import logging
 from psycopg_pool import AsyncConnectionPool
+import asyncio
 from ..errors import DatabaseError, DatabaseErrorCode
 
 LOGGER = logging.getLogger(__name__)
@@ -53,10 +54,11 @@ class PostgresConnectionPool:
                 actual_error=str(e),
             )
 
-    async def getconn(self, timeout: float = 60.0):
+    async def getconn(self):
         """Get a connection from the pool."""
         try:
-            conn = await self.pool.getconn(timeout=timeout)
+            async with asyncio.timeout(60.0):
+                conn = await self.pool.getconn()
             # Rollback any existing transaction to ensure clean state
             await conn.rollback()
             # Ensure client encoding is set to UTF-8
@@ -71,74 +73,22 @@ class PostgresConnectionPool:
                 self.max_size,
             )
             return conn
+        except asyncio.TimeoutError as e:
+            LOGGER.error("Failed to retrieve connection from pool: %s", str(e))
+            raise DatabaseError(
+                code=DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED,
+                message="Connection pool exhausted after 60.0 seconds",
+                actual_error=str(e),
+            )
         except Exception as e:
             LOGGER.error("Failed to retrieve connection from pool: %s", str(e))
             raise DatabaseError(
                 code=DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED,
-                message=f"Connection pool exhausted after {timeout} seconds",
+                message="Connection pool exhausted",
                 actual_error=str(e),
             )
 
-    # async def getconn(self, timeout: float = 60.0):
-    #     LOGGER.debug(
-    #         "Attempting to retrieve connection from pool with timeout=%s", timeout
-    #     )
-    #     try:
-    #         conn = await self.pool.getconn(timeout=timeout)
-    #         # Check and reset transaction status
-    #         LOGGER.debug(
-    #             "Checking transaction status for connection ID=%d, initial status=%s",
-    #             id(conn), conn.pgconn.transaction_status
-    #         )
-    #         if conn.pgconn.transaction_status != pq.TransactionStatus.IDLE:
-    #             LOGGER.debug(
-    #                 "Connection in non-IDLE status: %s, attempting rollback",
-    #                 conn.pgconn.transaction_status
-    #             )
-    #             try:
-    #                 await conn.rollback()
-    #                 LOGGER.debug("Rollback completed, new transaction status=%s",
-    #                             conn.pgconn.transaction_status)
-    #             except Exception as e:
-    #                 LOGGER.error("Failed to rollback connection: %s", str(e))
-    #                 await self.pool.putconn(conn)
-    #                 raise DatabaseError(
-    #                     code=DatabaseErrorCode.CONNECTION_ERROR,
-    #                     message="Failed to reset connection transaction state",
-    #                     actual_error=str(e)
-    #                 )
-    #         if conn.pgconn.transaction_status != pq.TransactionStatus.IDLE:
-    #             LOGGER.error("Connection still in non-IDLE state after rollback: %s",
-    #                         conn.pgconn.transaction_status)
-    #             await self.pool.putconn(conn)
-    #             raise DatabaseError(
-    #                 code=DatabaseErrorCode.CONNECTION_ERROR,
-    #                 message=(
-    #                     f"Connection in invalid transaction state: "
-    #                     f"{conn.pgconn.transaction_status}"
-    #                 )
-    #             )
-    #         # Ensure client encoding is set to UTF-8
-    #         LOGGER.debug(
-    #             "Setting client_encoding to UTF8 for connection ID=%d", id(conn)
-    #         )
-    #         await conn.execute("SET client_encoding = 'UTF8'")
-    #         conn_id = self.connection_count
-    #         self.connection_ids[id(conn)] = conn_id
-    #         self.connection_count += 1
-    #         LOGGER.debug("Connection ID=%d retrieved from pool. Pool size: %d/%d",
-    #                     conn_id,
-    #                     self.pool.get_stats().get("pool_available", 0),
-    #                     self.max_size
-    #         )
-    #         return conn
-    #     except Exception as e:
-    #         LOGGER.error("Failed to retrieve connection from pool: %s", str(e))
-    #         raise DatabaseError(
-    #             code=DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED,
-    #             message=f"Connection pool exhausted after {timeout} seconds",
-    #             actual_error=str(e)
-    #         )
+    
 
     async def putconn(self, conn):
         """Return a connection to the pool."""

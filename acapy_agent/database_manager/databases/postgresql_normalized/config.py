@@ -17,6 +17,13 @@ from psycopg.sql import SQL, Identifier
 LOGGER = logging.getLogger(__name__)
 
 
+# Common SQL and error message constants
+SQL_SELECT_DB_EXISTS = "SELECT 1 FROM pg_database WHERE datname = %s"
+SQL_DROP_TABLE_IF_EXISTS = "DROP TABLE IF EXISTS"
+SQL_DROP_TABLE = "DROP TABLE"
+ERR_NO_DB_IN_CONN_STR = "No database name specified in connection string"
+
+
 class PostgresConfig:
     """Configuration for PostgreSQL database connections."""
 
@@ -90,6 +97,120 @@ class PostgresConfig:
             LOGGER.debug(f"Replaced database {db_name} with postgres: {new_conn_str}")
             return new_conn_str
         return parsed._replace(path="/postgres").geturl()
+
+    # Helpers to reduce complexity in DROP statement handling
+    def _is_valid_drop_sql(self, sql: str) -> bool:
+        up = sql.upper().lstrip()
+        return (
+            up.startswith(SQL_DROP_TABLE)
+            or up.startswith("DROP INDEX")
+            or up.startswith("DROP TRIGGER")
+            or up.startswith("DROP FUNCTION")
+        )
+
+    def _qualify_drop_sql(self, sql: str) -> str:
+        up = sql.upper()
+        if up.startswith(SQL_DROP_TABLE):
+            table_name = (
+                sql.split(f"{SQL_DROP_TABLE_IF_EXISTS} ")[-1].split()[0].strip()
+            )
+            return sql.replace(
+                f"{SQL_DROP_TABLE_IF_EXISTS} {table_name}",
+                (
+                    f"{SQL_DROP_TABLE_IF_EXISTS} "
+                    f"{self.schema_context.qualify_table(table_name)}"
+                ),
+            )
+        if up.startswith("DROP INDEX"):
+            index_name = sql.split("DROP INDEX IF EXISTS ")[-1].split()[0].strip()
+            return sql.replace(
+                f"DROP INDEX IF EXISTS {index_name}",
+                (
+                    f"DROP INDEX IF EXISTS "
+                    f"{self.schema_context.qualify_table(index_name)}"
+                ),
+            )
+        if up.startswith("DROP TRIGGER"):
+            return sql.replace(" ON ", f" ON {self.schema_context}.")
+        if up.startswith("DROP FUNCTION"):
+            function_name = (
+                sql.split("IF EXISTS")[-1].split("CASCADE")[0].strip()
+            )
+            return sql.replace(
+                f"IF EXISTS {function_name}",
+                f"IF EXISTS {self.schema_context}.{function_name}",
+            )
+        return sql
+
+    def _is_redundant_drop(self, modified_sql: str, dropped_tables: set) -> bool:
+        if SQL_DROP_TABLE not in modified_sql.upper():
+            return False
+        try:
+            table_name = modified_sql.split(SQL_DROP_TABLE_IF_EXISTS)[-1].split()[0]
+            table_name = table_name.strip(";").split(".")[-1]
+        except Exception:
+            for table in dropped_tables:
+                if table in modified_sql:
+                    return True
+            return False
+        return table_name in dropped_tables
+
+    async def _read_config_values_from_conn(
+        self,
+        conn,
+        schema_name: str,
+        fallback_release_number: str,
+    ) -> Tuple[str, str, str, Optional[str]]:
+        """Read schema config, release number/type, and default profile.
+
+        Returns (schema_config, schema_release_number, schema_release_type,
+        default_profile).
+        Uses provided fallback_release_number when the value is not found.
+        """
+        async with conn.cursor() as cursor:
+            await cursor.execute(f"SET search_path TO {schema_name}, public")
+
+            await cursor.execute(
+                f"SELECT value FROM "
+                f"{self.schema_context.qualify_table('config')} "
+                f"WHERE name = 'schema_config'"
+            )
+            schema_config_row = await cursor.fetchone()
+            schema_config = (
+                schema_config_row[0] if schema_config_row else self.schema_config
+            )
+
+            await cursor.execute(
+                f"SELECT value FROM "
+                f"{self.schema_context.qualify_table('config')} "
+                f"WHERE name = 'schema_release_number'"
+            )
+            schema_release_number_row = await cursor.fetchone()
+            schema_release_number = (
+                schema_release_number_row[0]
+                if schema_release_number_row
+                else fallback_release_number
+            )
+
+            await cursor.execute(
+                f"SELECT value FROM "
+                f"{self.schema_context.qualify_table('config')} "
+                f"WHERE name = 'schema_release_type'"
+            )
+            schema_release_type_row = await cursor.fetchone()
+            schema_release_type = (
+                schema_release_type_row[0] if schema_release_type_row else "postgresql"
+            )
+
+            await cursor.execute(
+                f"SELECT value FROM "
+                f"{self.schema_context.qualify_table('config')} "
+                f"WHERE name = 'default_profile'"
+            )
+            default_profile_row = await cursor.fetchone()
+            default_profile = default_profile_row and default_profile_row[0]
+
+        return schema_config, schema_release_number, schema_release_type, default_profile
 
     async def _apply_migrations(
         self, conn, current_release: str, target_release: str, db_type: str = "postgresql"
@@ -188,7 +309,7 @@ class PostgresConfig:
                             self.schema_context.qualify_table(table),
                         )
                         await cursor.execute(
-                            f"DROP TABLE IF EXISTS "
+                            f"{SQL_DROP_TABLE_IF_EXISTS} "
                             f"{self.schema_context.qualify_table(table)} CASCADE"
                         )
                         LOGGER.debug(
@@ -228,58 +349,18 @@ class PostgresConfig:
                                 drop_statements,
                             )
                             for sql in drop_statements:
-                                if not (
-                                    sql.upper().startswith("DROP TABLE")
-                                    or sql.upper().startswith("DROP INDEX")
-                                    or sql.upper().startswith("DROP TRIGGER")
-                                    or sql.upper().startswith("DROP FUNCTION")
-                                ):
+                                if not self._is_valid_drop_sql(sql):
                                     LOGGER.debug(
                                         "Skipping non-drop statement for category %s: %s",
                                         category,
                                         sql,
                                     )
                                     continue
-                                modified_sql = sql
-                                if sql.upper().startswith("DROP TABLE"):
-                                    table_name = (
-                                        sql.split("DROP TABLE IF EXISTS ")[-1]
-                                        .split()[0]
-                                        .strip()
-                                    )
-                                    modified_sql = sql.replace(
-                                        f"DROP TABLE IF EXISTS {table_name}",
-                                        f"DROP TABLE IF EXISTS "
-                                        f"{self.schema_context.qualify_table(table_name)}",
-                                    )
-                                elif sql.upper().startswith("DROP INDEX"):
-                                    index_name = (
-                                        sql.split("DROP INDEX IF EXISTS ")[-1]
-                                        .split()[0]
-                                        .strip()
-                                    )
-                                    modified_sql = sql.replace(
-                                        f"DROP INDEX IF EXISTS {index_name}",
-                                        f"DROP INDEX IF EXISTS "
-                                        f"{self.schema_context.qualify_table(index_name)}",
-                                    )
-                                elif sql.upper().startswith("DROP TRIGGER"):
-                                    modified_sql = sql.replace(
-                                        " ON ", f" ON {self.schema_context}."
-                                    )
-                                elif sql.upper().startswith("DROP FUNCTION"):
-                                    function_name = (
-                                        sql.split("IF EXISTS")[-1]
-                                        .split("CASCADE")[0]
-                                        .strip()
-                                    )
-                                    modified_sql = sql.replace(
-                                        f"IF EXISTS {function_name}",
-                                        f"IF EXISTS {self.schema_context}."
-                                        f"{function_name}",
-                                    )
-                                if "DROP TABLE" in modified_sql.upper() and any(
-                                    table in modified_sql for table in dropped_tables
+
+                                modified_sql = self._qualify_drop_sql(sql)
+
+                                if self._is_redundant_drop(
+                                    modified_sql, dropped_tables
                                 ):
                                     LOGGER.debug(
                                         "Skipping redundant drop statement for "
@@ -301,9 +382,9 @@ class PostgresConfig:
                                         category,
                                         modified_sql,
                                     )
-                                    if "DROP TABLE" in modified_sql.upper():
+                                    if SQL_DROP_TABLE in modified_sql.upper():
                                         table_name = (
-                                            modified_sql.split("DROP TABLE IF EXISTS")[-1]
+                                            modified_sql.split(SQL_DROP_TABLE_IF_EXISTS)[-1]
                                             .split()[0]
                                             .strip(";")
                                             .split(".")[-1]
@@ -319,9 +400,8 @@ class PostgresConfig:
                                     raise DatabaseError(
                                         code=DatabaseErrorCode.QUERY_ERROR,
                                         message=(
-                                            f"Failed to execute drop statement for "
-                                            f"category "
-                                            f"{category}: {modified_sql}"
+                                            "Failed to execute drop statement for "
+                                            f"category {category}: {modified_sql}"
                                         ),
                                         actual_error=str(e),
                                     )
@@ -405,14 +485,12 @@ class PostgresConfig:
                     )
 
                 await cursor.execute(f"SET search_path TO {schema_name}, public")
-                await cursor.execute(
-                    "SELECT 1 FROM pg_database WHERE datname = %s", (target_db,)
-                )
+                await cursor.execute(SQL_SELECT_DB_EXISTS, (target_db,))
                 db_exists = await cursor.fetchone()
 
                 if db_exists and not recreate:
-                    # Database exists and recreate=False: check schema_release_number
-                    # and skip table creation
+                    # Database exists and recreate=False: check config and
+                    # skip table creation
                     target_pool = PostgresConnectionPool(
                         conn_str=self.conn_str,
                         min_size=1,
@@ -431,63 +509,27 @@ class PostgresConfig:
                         ):
                             await target_conn.rollback()
                         await target_conn.set_autocommit(True)
-                        async with target_conn.cursor() as cursor:
-                            await cursor.execute(
-                                f"SET search_path TO {schema_name}, public"
-                            )
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'schema_config'"
-                            )
-                            schema_config_row = await cursor.fetchone()
-                            schema_config = (
-                                schema_config_row[0]
-                                if schema_config_row
-                                else self.schema_config
-                            )
 
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'schema_release_number'"
-                            )
-                            schema_release_number_row = await cursor.fetchone()
-                            schema_release_number = (
-                                schema_release_number_row[0]
-                                if schema_release_number_row
-                                else release_number
-                            )
+                        (
+                            schema_config,
+                            schema_release_number,
+                            schema_release_type,
+                            default_profile_db,
+                        ) = await self._read_config_values_from_conn(
+                            target_conn, schema_name, release_number
+                        )
 
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'schema_release_type'"
-                            )
-                            schema_release_type_row = await cursor.fetchone()
-                            schema_release_type = (
-                                schema_release_type_row[0]
-                                if schema_release_type_row
-                                else "postgresql"
-                            )
+                        if default_profile_db:
+                            profile_name = profile or default_profile_db
+                            if profile_name != default_profile_db:
+                                raise DatabaseError(
+                                    code=DatabaseErrorCode.PROFILE_NOT_FOUND,
+                                    message=(
+                                        f"Profile '{profile_name}' does not match "
+                                        f"default profile '{default_profile_db}'"
+                                    ),
+                                )
 
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'default_profile'"
-                            )
-                            default_profile_row = await cursor.fetchone()
-                            if default_profile_row:
-                                default_profile = default_profile_row[0]
-                                profile_name = profile or default_profile
-                                if profile_name != default_profile:
-                                    raise DatabaseError(
-                                        code=DatabaseErrorCode.PROFILE_NOT_FOUND,
-                                        message=(
-                                            f"Profile '{profile_name}' does not match "
-                                            f"default profile '{default_profile}'"
-                                        ),
-                                    )
                         # Since recreate=False and database exists, skip table creation
                         skip_create_tables = True
                     except Exception as e:
@@ -532,63 +574,24 @@ class PostgresConfig:
                         ):
                             await target_conn.rollback()
                         await target_conn.set_autocommit(True)
-                        async with target_conn.cursor() as cursor:
-                            await cursor.execute(
-                                f"SET search_path TO {schema_name}, public"
-                            )
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'schema_config'"
-                            )
-                            schema_config_row = await cursor.fetchone()
-                            schema_config = (
-                                schema_config_row[0]
-                                if schema_config_row
-                                else self.schema_config
-                            )
-
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'schema_release_number'"
-                            )
-                            schema_release_number_row = await cursor.fetchone()
-                            schema_release_number = (
-                                schema_release_number_row[0]
-                                if schema_release_number_row
-                                else release_number
-                            )
-
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'schema_release_type'"
-                            )
-                            schema_release_type_row = await cursor.fetchone()
-                            schema_release_type = (
-                                schema_release_type_row[0]
-                                if schema_release_type_row
-                                else "postgresql"
-                            )
-
-                            await cursor.execute(
-                                f"SELECT value FROM "
-                                f"{self.schema_context.qualify_table('config')} "
-                                f"WHERE name = 'default_profile'"
-                            )
-                            default_profile_row = await cursor.fetchone()
-                            if default_profile_row:
-                                default_profile = default_profile_row[0]
-                                profile_name = profile or default_profile
-                                if profile_name != default_profile:
-                                    raise DatabaseError(
-                                        code=DatabaseErrorCode.PROFILE_NOT_FOUND,
-                                        message=(
-                                            f"Profile '{profile_name}' does not match "
-                                            f"default profile '{default_profile}'"
-                                        ),
-                                    )
+                        (
+                            schema_config,
+                            schema_release_number,
+                            schema_release_type,
+                            default_profile_db,
+                        ) = await self._read_config_values_from_conn(
+                            target_conn, schema_name, release_number
+                        )
+                        if default_profile_db:
+                            profile_name = profile or default_profile_db
+                            if profile_name != default_profile_db:
+                                raise DatabaseError(
+                                    code=DatabaseErrorCode.PROFILE_NOT_FOUND,
+                                    message=(
+                                        f"Profile '{profile_name}' does not match "
+                                        f"default profile '{default_profile_db}'"
+                                    ),
+                                )
                     except Exception as e:
                         error_message = str(e).lower()
                         if (
@@ -636,9 +639,7 @@ class PostgresConfig:
                     max_retries = 5
                     retry_delay = 0.5
                     for attempt in range(max_retries):
-                        await cursor.execute(
-                            "SELECT 1 FROM pg_database WHERE datname = %s", (target_db,)
-                        )
+                        await cursor.execute(SQL_SELECT_DB_EXISTS, (target_db,))
                         verify_db_exists = await cursor.fetchone()
                         if verify_db_exists:
                             break
@@ -714,259 +715,11 @@ class PostgresConfig:
         conn = await pool.getconn()
         try:
             async with conn.cursor() as cursor:
-                await cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {self.schema_context}")
-                await cursor.execute(
-                    f"GRANT ALL ON SCHEMA {self.schema_context} TO {self.schema_context}"
-                )
-                LOGGER.debug(
-                    "Created and granted permissions on schema %s", self.schema_context
-                )
-                await cursor.execute(f"SET search_path TO {self.schema_context}, public")
-
-                # Core table creation
-                await cursor.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {
-                    self.schema_context.qualify_table("config")
-                } (
-                        name TEXT PRIMARY KEY,
-                        value TEXT
-                    )
-                """)
-                await cursor.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {
-                    self.schema_context.qualify_table("profiles")
-                } (
-                        id SERIAL PRIMARY KEY,
-                        name TEXT UNIQUE,
-                        reference TEXT,
-                        profile_key TEXT
-                    )
-                """)
-                await cursor.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {
-                    self.schema_context.qualify_table("items")
-                } (
-                        id SERIAL PRIMARY KEY,
-                        profile_id INTEGER,
-                        kind INTEGER,
-                        category TEXT,
-                        name TEXT,
-                        value TEXT,
-                        expiry TIMESTAMP,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (profile_id) REFERENCES {
-                    self.schema_context.qualify_table("profiles")
-                } (id) ON DELETE CASCADE ON UPDATE CASCADE
-                    )
-                """)
-                await cursor.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {
-                    self.schema_context.qualify_table("items_tags")
-                } (
-                        id SERIAL PRIMARY KEY,
-                        item_id INTEGER,
-                        name TEXT,
-                        value TEXT,
-                        FOREIGN KEY (item_id) REFERENCES {
-                    self.schema_context.qualify_table("items")
-                } (id) ON DELETE CASCADE ON UPDATE CASCADE
-                    )
-                """)
-
-                LOGGER.debug(
-                    "_create_tables called with effective_release_number=%s",
-                    effective_release_number,
-                )
-
-                # Schema creation for non-release_0
-                if effective_release_number != "release_0":
-                    handlers, schemas, _ = get_release(
-                        effective_release_number, "postgresql"
-                    )
-                    # LOGGER.debug("Schemas loaded for release=%s: %s",
-                    #              effective_release_number, schemas)
-                    for category, schema in schemas.items():
-                        LOGGER.debug(
-                            "Processing category=%s with schema=%s", category, schema
-                        )
-                        if schema is None:
-                            LOGGER.warning(
-                                "Skipping category %s: schema is None", category
-                            )
-                            continue
-                        if not isinstance(schema, dict):
-                            LOGGER.error(
-                                "Invalid schema type for category %s: expected dict, "
-                                "got %s",
-                                category,
-                                type(schema),
-                            )
-                            continue
-                        if "postgresql" not in schema:
-                            LOGGER.warning(
-                                "Skipping category %s: no postgresql schema found in %s",
-                                category,
-                                schema,
-                            )
-                            continue
-                        LOGGER.debug(
-                            "Applying PostgreSQL schema for category %s: %s",
-                            category,
-                            schema["postgresql"],
-                        )
-                        for sql in schema["postgresql"]:
-                            modified_sql = sql
-                            if sql.upper().startswith("CREATE TABLE"):
-                                table_name = (
-                                    sql.split("CREATE TABLE IF NOT EXISTS ")[-1]
-                                    .split("(")[0]
-                                    .strip()
-                                )
-                                modified_sql = sql.replace(
-                                    f"CREATE TABLE IF NOT EXISTS {table_name}",
-                                    f"CREATE TABLE IF NOT EXISTS "
-                                    f"{self.schema_context.qualify_table(table_name)}",
-                                )
-                                if "REFERENCES " in modified_sql:
-                                    modified_sql = modified_sql.replace(
-                                        "REFERENCES items(",
-                                        f"REFERENCES "
-                                        f"{self.schema_context.qualify_table('items')}(",
-                                    )
-                                    modified_sql = modified_sql.replace(
-                                        "REFERENCES profiles(",
-                                        f"REFERENCES "
-                                        f"{self.schema_context.qualify_table('profiles')}(",
-                                    )
-                            elif sql.upper().startswith("CREATE INDEX"):
-                                parts = sql.split(" ON ")
-                                if len(parts) > 1:
-                                    table_name = parts[1].split("(")[0].strip()
-                                    modified_sql = (
-                                        parts[0]
-                                        + " ON "
-                                        + (
-                                            f"{self.schema_context.qualify_table(table_name)}"
-                                            " ("
-                                        )
-                                        + "(".join(parts[1].split("(")[1:])
-                                    )
-                            elif sql.upper().startswith("CREATE TRIGGER"):
-                                modified_sql = sql.replace(
-                                    " ON ", f" ON {self.schema_context}."
-                                )
-                            elif sql.upper().startswith("CREATE FUNCTION"):
-                                function_name = (
-                                    sql.split("CREATE OR REPLACE FUNCTION ")[-1]
-                                    .split("(")[0]
-                                    .strip()
-                                )
-                                modified_sql = sql.replace(
-                                    f"CREATE OR REPLACE FUNCTION {function_name}",
-                                    (
-                                        f"CREATE OR REPLACE FUNCTION "
-                                        f"{self.schema_context}.{function_name}"
-                                    ),
-                                )
-                            try:
-                                # LOGGER.debug(
-                                #     "Executing create statement for category %s: %s",
-                                #     category, modified_sql
-                                # )
-                                LOGGER.debug(
-                                    "Executing create statement for category %s", category
-                                )
-
-                                await cursor.execute(modified_sql)
-                                # LOGGER.debug(
-                                #     "Successfully executed create statement for "
-                                #     "category %s: %s",
-                                #     category, modified_sql
-                                # )
-                                # LOGGER.debug(
-                                #     "Successfully executed create statement for "
-                                #     "category %s",
-                                #     category
-                                # )
-                            except Exception as e:
-                                LOGGER.error(
-                                    "Failed to execute SQL for category %s: %s, SQL: %s",
-                                    category,
-                                    str(e),
-                                    modified_sql,
-                                )
-                                raise DatabaseError(
-                                    code=DatabaseErrorCode.PROVISION_ERROR,
-                                    message=(
-                                        f"Failed to apply schema for category {category}"
-                                    ),
-                                    actual_error=str(e),
-                                )
-                # Additional indexes and config insertions
-                await cursor.execute(
-                    f"CREATE UNIQUE INDEX IF NOT EXISTS ix_items_profile_category_name "
-                    f"ON {self.schema_context.qualify_table('items')} "
-                    f"(profile_id, category, name)"
-                )
-                await cursor.execute(
-                    f"CREATE INDEX IF NOT EXISTS ix_items_tags_item_id "
-                    f"ON {self.schema_context.qualify_table('items_tags')} (item_id)"
-                )
-                await cursor.execute(
-                    f"CREATE INDEX IF NOT EXISTS ix_items_expiry "
-                    f"ON {self.schema_context.qualify_table('items')} (expiry)"
-                )
-                await cursor.execute(
-                    f"CREATE INDEX IF NOT EXISTS ix_items_tags_thread_id "
-                    f"ON {self.schema_context.qualify_table('items_tags')} "
-                    f"(name, value) WHERE name = 'thread_id'"
-                )
-                await cursor.execute(
-                    (
-                        f"INSERT INTO {self.schema_context.qualify_table('config')} "
-                        f"(name, value) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING"
-                    ),
-                    ("default_profile", default_profile),
-                )
-                await cursor.execute(
-                    (
-                        f"INSERT INTO {self.schema_context.qualify_table('config')} "
-                        f"(name, value) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING"
-                    ),
-                    ("key", None),
-                )
-                await cursor.execute(
-                    (
-                        f"INSERT INTO {self.schema_context.qualify_table('config')} "
-                        f"(name, value) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING"
-                    ),
-                    ("schema_release_number", effective_release_number),
-                )
-                await cursor.execute(
-                    (
-                        f"INSERT INTO {self.schema_context.qualify_table('config')} "
-                        f"(name, value) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING"
-                    ),
-                    ("schema_release_type", "postgresql"),
-                )
-                await cursor.execute(
-                    (
-                        f"INSERT INTO {self.schema_context.qualify_table('config')} "
-                        f"(name, value) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING"
-                    ),
-                    ("schema_config", self.schema_config),
-                )
-                await cursor.execute(
-                    (
-                        f"INSERT INTO {self.schema_context.qualify_table('profiles')} "
-                        f"(name, profile_key) VALUES (%s, NULL) "
-                        f"ON CONFLICT (name) DO NOTHING"
-                    ),
-                    (default_profile,),
-                )
-                await cursor.execute(
-                    f"CREATE UNIQUE INDEX IF NOT EXISTS ix_profile_name "
-                    f"ON {self.schema_context.qualify_table('profiles')} (name)"
+                await self._setup_schema(cursor)
+                await self._create_core_tables(cursor)
+                await self._apply_release_schemas(cursor, effective_release_number)
+                await self._insert_configuration_data(
+                    cursor, default_profile, effective_release_number
                 )
                 await conn.commit()
         except Exception as e:
@@ -979,6 +732,235 @@ class PostgresConfig:
             )
         finally:
             await pool.putconn(conn)
+
+    async def _setup_schema(self, cursor) -> None:
+        """Set up the database schema and permissions."""
+        await cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {self.schema_context}")
+        await cursor.execute(
+            f"GRANT ALL ON SCHEMA {self.schema_context} TO {self.schema_context}"
+        )
+        LOGGER.debug(
+            "Created and granted permissions on schema %s", self.schema_context
+        )
+        await cursor.execute(f"SET search_path TO {self.schema_context}, public")
+
+    async def _create_core_tables(self, cursor) -> None:
+        """Create the core database tables."""
+        await cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {
+            self.schema_context.qualify_table("config")
+        } (
+                name TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+        await cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {
+            self.schema_context.qualify_table("profiles")
+        } (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE,
+                reference TEXT,
+                profile_key TEXT
+            )
+        """)
+        await cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {
+            self.schema_context.qualify_table("items")
+        } (
+                id SERIAL PRIMARY KEY,
+                profile_id INTEGER,
+                kind INTEGER,
+                category TEXT,
+                name TEXT,
+                value TEXT,
+                expiry TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (profile_id) REFERENCES {
+            self.schema_context.qualify_table("profiles")
+        } (id) ON DELETE CASCADE ON UPDATE CASCADE
+            )
+        """)
+        await cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {
+            self.schema_context.qualify_table("items_tags")
+        } (
+                id SERIAL PRIMARY KEY,
+                item_id INTEGER,
+                name TEXT,
+                value TEXT,
+                FOREIGN KEY (item_id) REFERENCES {
+            self.schema_context.qualify_table("items")
+        } (id) ON DELETE CASCADE ON UPDATE CASCADE
+            )
+        """)
+
+    async def _apply_release_schemas(self, cursor, effective_release_number: str) -> None:
+        """Apply schemas for the specified release number."""
+        LOGGER.debug(
+            "_create_tables called with effective_release_number=%s",
+            effective_release_number,
+        )
+
+        if effective_release_number == "release_0":
+            return
+
+        _, schemas, _ = get_release(effective_release_number, "postgresql")
+        for category, schema in schemas.items():
+            await self._process_category_schema(cursor, category, schema)
+
+    async def _process_category_schema(self, cursor, category: str, schema) -> None:
+        """Process and apply schema for a specific category."""
+        LOGGER.debug("Processing category=%s with schema=%s", category, schema)
+        
+        if schema is None:
+            LOGGER.warning("Skipping category %s: schema is None", category)
+            return
+            
+        if not isinstance(schema, dict):
+            LOGGER.error(
+                "Invalid schema type for category %s: expected dict, got %s",
+                category, type(schema),
+            )
+            return
+            
+        if "postgresql" not in schema:
+            LOGGER.warning(
+                "Skipping category %s: no postgresql schema found in %s",
+                category, schema,
+            )
+            return
+
+        LOGGER.debug(
+            "Applying PostgreSQL schema for category %s: %s",
+            category, schema["postgresql"],
+        )
+        
+        for sql in schema["postgresql"]:
+            await self._execute_schema_sql(cursor, category, sql)
+
+    async def _execute_schema_sql(self, cursor, category: str, sql: str) -> None:
+        """Execute a single schema SQL statement."""
+        modified_sql = self._qualify_create_statement(sql)
+        try:
+            LOGGER.debug("Executing create statement for category %s", category)
+            await cursor.execute(modified_sql)
+        except Exception as e:
+            LOGGER.error(
+                "Failed to execute SQL for category %s: %s, SQL: %s",
+                category, str(e), modified_sql,
+            )
+            raise DatabaseError(
+                code=DatabaseErrorCode.PROVISION_ERROR,
+                message=f"Failed to apply schema for category {category}",
+                actual_error=str(e),
+            )
+
+    async def _insert_configuration_data(
+        self, cursor, default_profile: str, effective_release_number: str
+    ) -> None:
+        """Insert configuration data and create indexes."""
+        await self._ensure_core_indexes(cursor)
+        
+        config_data = [
+            ("default_profile", default_profile),
+            ("key", None),
+            ("schema_release_number", effective_release_number),
+            ("schema_release_type", "postgresql"),
+            ("schema_config", self.schema_config),
+        ]
+        
+        for name, value in config_data:
+            await cursor.execute(
+                (
+                    f"INSERT INTO {self.schema_context.qualify_table('config')} "
+                    f"(name, value) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING"
+                ),
+                (name, value),
+            )
+        
+        await cursor.execute(
+            (
+                f"INSERT INTO {self.schema_context.qualify_table('profiles')} "
+                f"(name, profile_key) VALUES (%s, NULL) "
+                f"ON CONFLICT (name) DO NOTHING"
+            ),
+            (default_profile,),
+        )
+        await cursor.execute(
+            f"CREATE UNIQUE INDEX IF NOT EXISTS ix_profile_name "
+            f"ON {self.schema_context.qualify_table('profiles')} (name)"
+        )
+
+    def _qualify_create_statement(self, sql: str) -> str:
+        """Qualify CREATE statements (TABLE/INDEX/TRIGGER/FUNCTION) with schema."""
+        up = sql.upper()
+        if up.startswith("CREATE TABLE"):
+            table_name = (
+                sql.split("CREATE TABLE IF NOT EXISTS ")[-1].split("(")[0].strip()
+            )
+            modified = sql.replace(
+                f"CREATE TABLE IF NOT EXISTS {table_name}",
+                (
+                    f"CREATE TABLE IF NOT EXISTS "
+                    f"{self.schema_context.qualify_table(table_name)}"
+                ),
+            )
+            if "REFERENCES " in modified:
+                modified = modified.replace(
+                    "REFERENCES items(",
+                    f"REFERENCES {self.schema_context.qualify_table('items')}(",
+                )
+                modified = modified.replace(
+                    "REFERENCES profiles(",
+                    f"REFERENCES {self.schema_context.qualify_table('profiles')}(",
+                )
+            return modified
+        if up.startswith("CREATE INDEX"):
+            parts = sql.split(" ON ")
+            if len(parts) > 1:
+                table_name = parts[1].split("(")[0].strip()
+                return (
+                    parts[0]
+                    + " ON "
+                    + f"{self.schema_context.qualify_table(table_name)} ("
+                    + "(".join(parts[1].split("(")[1:])
+                )
+            return sql
+        if up.startswith("CREATE TRIGGER"):
+            return sql.replace(" ON ", f" ON {self.schema_context}.")
+        if up.startswith("CREATE FUNCTION"):
+            function_name = (
+                sql.split("CREATE OR REPLACE FUNCTION ")[-1]
+                .split("(")[0]
+                .strip()
+            )
+            return sql.replace(
+                f"CREATE OR REPLACE FUNCTION {function_name}",
+                f"CREATE OR REPLACE FUNCTION {self.schema_context}.{function_name}",
+            )
+        return sql
+
+    async def _ensure_core_indexes(self, cursor):
+        """Create core indexes required for performance and integrity."""
+        await cursor.execute(
+            f"CREATE UNIQUE INDEX IF NOT EXISTS ix_items_profile_category_name "
+            f"ON {self.schema_context.qualify_table('items')} "
+            f"(profile_id, category, name)"
+        )
+        await cursor.execute(
+            f"CREATE INDEX IF NOT EXISTS ix_items_tags_item_id "
+            f"ON {self.schema_context.qualify_table('items_tags')} (item_id)"
+        )
+        await cursor.execute(
+            f"CREATE INDEX IF NOT EXISTS ix_items_expiry "
+            f"ON {self.schema_context.qualify_table('items')} (expiry)"
+        )
+        await cursor.execute(
+            f"CREATE INDEX IF NOT EXISTS ix_items_tags_thread_id "
+            f"ON {self.schema_context.qualify_table('items_tags')} "
+            f"(name, value) WHERE name = 'thread_id'"
+        )
 
     async def provision(
         self,
@@ -997,7 +979,7 @@ class PostgresConfig:
         parsed = urllib.parse.urlparse(self.conn_str)
         target_db = parsed.path.lstrip("/")
         if not target_db:
-            raise ValueError("No database name specified in connection string")
+            raise ValueError(ERR_NO_DB_IN_CONN_STR)
 
         if not release_number:
             LOGGER.error("No release number provided for provisioning")
@@ -1069,8 +1051,8 @@ class PostgresConfig:
             parsed.query,
         )
         if not target_db:
-            LOGGER.error("No database name specified in connection string")
-            raise ValueError("No database name specified in connection string")
+            LOGGER.error(ERR_NO_DB_IN_CONN_STR)
+            raise ValueError(ERR_NO_DB_IN_CONN_STR)
 
         query_params = urllib.parse.parse_qs(parsed.query)
         valid_params = {
@@ -1159,13 +1141,11 @@ class PostgresConfig:
                 LOGGER.debug(
                     (
                         "Executing query to check database existence: "
-                        "SELECT 1 FROM pg_database WHERE datname = %s"
+                        f"{SQL_SELECT_DB_EXISTS}"
                     ),
                     target_db,
                 )
-                await cursor.execute(
-                    "SELECT 1 FROM pg_database WHERE datname = %s", (target_db,)
-                )
+                await cursor.execute(SQL_SELECT_DB_EXISTS, (target_db,))
                 db_exists = await cursor.fetchone()
                 LOGGER.debug("Database existence query result: db_exists=%s", db_exists)
                 if not db_exists:
@@ -1374,7 +1354,7 @@ class PostgresConfig:
         parsed = urllib.parse.urlparse(self.conn_str)
         target_db = parsed.path.lstrip("/")
         if not target_db:
-            return True
+            return False
         default_conn_str = self._get_default_conn_str(target_db)
         pool = PostgresConnectionPool(
             conn_str=default_conn_str,

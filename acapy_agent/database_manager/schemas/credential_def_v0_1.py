@@ -2,6 +2,10 @@
 
 CATEGORY = "credential_def"
 
+IDX_CRED_DEF_ON_ITEM_ID = "ON credential_def_v0_1 (item_id);"
+IDX_CRED_DEF_ON_SCHEMA_ID = "ON credential_def_v0_1 (schema_id);"
+IDX_CRED_DEF_ON_ISSUER_ID = "ON credential_def_v0_1 (issuer_id);"
+
 SCHEMAS = {
     "sqlite": [
         """
@@ -27,11 +31,11 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_item_id_v0_1 "
-        "ON credential_def_v0_1 (item_id);",
+        + IDX_CRED_DEF_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_schema_id_v0_1 "
-        "ON credential_def_v0_1 (schema_id);",
+        + IDX_CRED_DEF_ON_SCHEMA_ID,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_issuer_did_v0_1 "
-        "ON credential_def_v0_1 (issuer_id);",
+        + IDX_CRED_DEF_ON_ISSUER_ID,
         """
         CREATE TRIGGER IF NOT EXISTS trg_update_credential_def_timestamp_v0_1
         AFTER UPDATE ON credential_def_v0_1
@@ -67,11 +71,11 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_item_id_v0_1 "
-        "ON credential_def_v0_1 (item_id);",
+        + IDX_CRED_DEF_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_schema_id_v0_1 "
-        "ON credential_def_v0_1 (schema_id);",
+        + IDX_CRED_DEF_ON_SCHEMA_ID,
         "CREATE INDEX IF NOT EXISTS idx_credential_def_issuer_did_v0_1 "
-        "ON credential_def_v0_1 (issuer_id);",
+        + IDX_CRED_DEF_ON_ISSUER_ID,
         """
         CREATE OR REPLACE FUNCTION update_credential_def_timestamp_v0_1()
         RETURNS TRIGGER AS $$
@@ -114,11 +118,11 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_credential_def_item_id_v0_1 "
-        "ON credential_def_v0_1 (item_id);",
+        + IDX_CRED_DEF_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_credential_def_schema_id_v0_1 "
-        "ON credential_def_v0_1 (schema_id);",
+        + IDX_CRED_DEF_ON_SCHEMA_ID,
         "CREATE NONCLUSTERED INDEX idx_credential_def_issuer_did_v0_1 "
-        "ON credential_def_v0_1 (issuer_id);",
+        + IDX_CRED_DEF_ON_ISSUER_ID,
         """
         CREATE TRIGGER trg_update_credential_def_timestamp_v0_1
         ON credential_def_v0_1

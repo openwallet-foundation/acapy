@@ -16,11 +16,21 @@ from ..schema_context import SchemaContext
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)  # Enable debug logging for troubleshooting
 
+LOG_FAILED = "[%s] Failed: %s"
+LOG_RAW_VALUE = "[%s] Raw value type: %s, value: %r"
+LOG_DECODED_VALUE = "[%s] Decoded value from bytes: %s"
+LOG_VALUE_NONE = "[%s] value is None for item_id=%d"
+LOG_PARSED_TAG_FILTER = "[%s] Parsed tag_filter JSON: %s"
+LOG_GEN_SQL_PARAMS = "[%s] Generated SQL clause: %s, params: %s"
+LOG_EXEC_SQL_PARAMS = "[%s] Executing query: %s with params: %s"
+SQL_SET_UTF8 = "SET client_encoding = 'UTF8'"
+
 
 class GenericHandler(BaseHandler):
     """Handler for generic categories using items and a configurable tags table."""
 
     ALLOWED_ORDER_BY_COLUMNS = {"id", "name", "value"}
+    EXPIRY_CLAUSE = "(i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)"
 
     def __init__(
         self,
@@ -50,13 +60,27 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
+    async def _ensure_utf8(self, cursor: AsyncCursor) -> None:
+        await cursor.execute(SQL_SET_UTF8)
+
+    def _validate_order_by(self, order_by: Optional[str]) -> None:
+        if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
+            LOGGER.error("[order_by] Invalid column: %s", order_by)
+            raise DatabaseError(
+                code=DatabaseErrorCode.QUERY_ERROR,
+                message=(
+                    f"Invalid order_by column: {order_by}. Allowed columns: "
+                    f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                ),
+            )
+
     async def insert(
         self,
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -82,15 +106,13 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Calculated expiry: %s", operation_name, expiry)
 
         # Convert bytes to string if necessary, as items.value is TEXT
-        LOGGER.debug(
-            "[%s] Input value type: %s, value: %r", operation_name, type(value), value
-        )
+        LOGGER.debug(LOG_RAW_VALUE, operation_name, type(value), value)
         if isinstance(value, bytes):
             value = value.decode("utf-8")
-            LOGGER.debug("[%s] Decoded input value from bytes: %s", operation_name, value)
+            LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             await cursor.execute(
                 f"""
                 INSERT INTO {self.schema_context.qualify_table("items")}
@@ -142,7 +164,7 @@ class GenericHandler(BaseHandler):
                     item_id,
                 )
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -182,15 +204,13 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Calculated expiry: %s", operation_name, expiry)
 
         # Convert bytes to string if necessary, as items.value is TEXT
-        LOGGER.debug(
-            "[%s] Input value type: %s, value: %r", operation_name, type(value), value
-        )
+        LOGGER.debug(LOG_RAW_VALUE, operation_name, type(value), value)
         if isinstance(value, bytes):
             value = value.decode("utf-8")
-            LOGGER.debug("[%s] Decoded input value from bytes: %s", operation_name, value)
+            LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             await cursor.execute(
                 f"""
                 SELECT id FROM {self.schema_context.qualify_table("items")}
@@ -261,7 +281,7 @@ class GenericHandler(BaseHandler):
                     ),
                 )
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -274,7 +294,7 @@ class GenericHandler(BaseHandler):
         profile_id: int,
         category: str,
         name: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         for_update: bool,
     ) -> Optional[Entry]:
         """Fetch a single item from the database."""
@@ -294,7 +314,7 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(SQL_SET_UTF8)
             params = [profile_id, category, name]
             query = f"""
                 SELECT id, value FROM {self.schema_context.qualify_table("items")}
@@ -343,17 +363,12 @@ class GenericHandler(BaseHandler):
                 )
                 if isinstance(tag_filter, str):
                     tag_filter = json.loads(tag_filter)
-                    LOGGER.debug(
-                        "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
-                    )
+                    LOGGER.debug(LOG_PARSED_TAG_FILTER, operation_name, tag_filter)
                 wql_query = query_from_json(tag_filter)
                 tag_query = query_to_tagquery(wql_query)
                 sql_clause, clause_params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause for tag_query: %s, params: %s",
-                    operation_name,
-                    sql_clause,
-                    clause_params,
+                    LOG_GEN_SQL_PARAMS, operation_name, sql_clause, clause_params
                 )
 
                 query = f"""
@@ -413,7 +428,7 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Returning entry: %s", operation_name, entry)
             return entry
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -425,7 +440,7 @@ class GenericHandler(BaseHandler):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         limit: int,
         for_update: bool,
         order_by: Optional[str] = None,
@@ -450,33 +465,20 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
-            if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
-                LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
-                raise DatabaseError(
-                    code=DatabaseErrorCode.QUERY_ERROR,
-                    message=(
-                        f"Invalid order_by column: {order_by}. Allowed columns: "
-                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
-                    ),
-                )
+            await self._ensure_utf8(cursor)
+            self._validate_order_by(order_by)
 
             sql_clause = "TRUE"
             params = [profile_id, category]
             if tag_filter:
                 if isinstance(tag_filter, str):
                     tag_filter = json.loads(tag_filter)
-                    LOGGER.debug(
-                        "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
-                    )
+                    LOGGER.debug(LOG_PARSED_TAG_FILTER, operation_name, tag_filter)
                 wql_query = query_from_json(tag_filter)
                 tag_query = query_to_tagquery(wql_query)
                 sql_clause, clause_params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
-                    operation_name,
-                    sql_clause,
-                    clause_params,
+                    LOG_GEN_SQL_PARAMS, operation_name, sql_clause, clause_params
                 )
                 params.extend(clause_params)
 
@@ -486,7 +488,7 @@ class GenericHandler(BaseHandler):
                 SELECT i.id, i.category, i.name, i.value
                 FROM {self.schema_context.qualify_table("items")} i
                 WHERE i.profile_id = %s AND i.category = %s
-                AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                AND {self.EXPIRY_CLAUSE}
                 AND {sql_clause}
                 ORDER BY i.{order_column} {order_direction}
             """
@@ -511,7 +513,7 @@ class GenericHandler(BaseHandler):
                 item_id, category, name, value, tag_name, tag_value = row
                 # Explicitly decode value if it is bytes
                 LOGGER.debug(
-                    "[%s] Raw value type: %s, value: %r",
+                    LOG_RAW_VALUE,
                     operation_name,
                     type(value),
                     value,
@@ -519,11 +521,11 @@ class GenericHandler(BaseHandler):
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
                     LOGGER.debug(
-                        "[%s] Decoded value from bytes: %s", operation_name, value
+                        LOG_DECODED_VALUE, operation_name, value
                     )
                 elif value is None:
                     LOGGER.warning(
-                        "[%s] value is None for item_id=%d", operation_name, item_id
+                        LOG_VALUE_NONE, operation_name, item_id
                     )
                     value = ""
                 if item_id != current_item_id:
@@ -540,7 +542,7 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Fetched %d entries", operation_name, len(entries))
             return entries
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -552,7 +554,7 @@ class GenericHandler(BaseHandler):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Count items matching the given criteria."""
         operation_name = "count"
@@ -566,7 +568,7 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(SQL_SET_UTF8)
             sql_clause = "TRUE"
             params = [profile_id, category]
             if tag_filter:
@@ -588,7 +590,7 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Counted %d entries", operation_name, count)
             return count
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -610,7 +612,7 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(SQL_SET_UTF8)
             await cursor.execute(
                 f"""
                 DELETE FROM {self.schema_context.qualify_table("items")}
@@ -626,7 +628,7 @@ class GenericHandler(BaseHandler):
                     ),
                 )
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -652,7 +654,7 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(SQL_SET_UTF8)
             sql_clause = "TRUE"
             params = [profile_id, category]
             if tag_filter:
@@ -676,7 +678,7 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Removed %d entries", operation_name, rowcount)
             return rowcount
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -713,22 +715,15 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
-            if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
-                raise DatabaseError(
-                    code=DatabaseErrorCode.QUERY_ERROR,
-                    message=(
-                        f"Invalid order_by column: {order_by}. Allowed columns: "
-                        f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
-                    ),
-                )
+            await self._ensure_utf8(cursor)
+            self._validate_order_by(order_by)
 
             sql_clause = "TRUE"
             params = [profile_id, category]
             if tag_query:
                 sql_clause, clause_params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GEN_SQL_PARAMS,
                     operation_name,
                     sql_clause,
                     clause_params,
@@ -741,7 +736,7 @@ class GenericHandler(BaseHandler):
                 SELECT i.id, i.category, i.name, i.value
                 FROM {self.schema_context.qualify_table("items")} i
                 WHERE i.profile_id = %s AND i.category = %s
-                AND (i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)
+                AND {self.EXPIRY_CLAUSE}
                 AND {sql_clause}
             """
             subquery_params = params
@@ -758,12 +753,7 @@ class GenericHandler(BaseHandler):
                 LEFT JOIN {self.tags_table} t ON sub.id = t.item_id
                 ORDER BY sub.{order_column} {order_direction}
             """
-            LOGGER.debug(
-                "[%s] Executing query: %s with params: %s",
-                operation_name,
-                query,
-                subquery_params,
-            )
+            LOGGER.debug(LOG_EXEC_SQL_PARAMS, operation_name, query, subquery_params)
             await cursor.execute(query, subquery_params)
             current_item_id = None
             current_entry = None
@@ -771,7 +761,7 @@ class GenericHandler(BaseHandler):
                 item_id, category, name, value, tag_name, tag_value = row
                 # Explicitly decode value if it is bytes
                 LOGGER.debug(
-                    "[%s] Raw value type: %s, value: %r",
+                    LOG_RAW_VALUE,
                     operation_name,
                     type(value),
                     value,
@@ -779,11 +769,11 @@ class GenericHandler(BaseHandler):
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
                     LOGGER.debug(
-                        "[%s] Decoded value from bytes: %s", operation_name, value
+                        LOG_DECODED_VALUE, operation_name, value
                     )
                 elif value is None:
                     LOGGER.warning(
-                        "[%s] value is None for item_id=%d", operation_name, item_id
+                        LOG_VALUE_NONE, operation_name, item_id
                     )
                     value = ""
                 if item_id != current_item_id:
@@ -798,7 +788,7 @@ class GenericHandler(BaseHandler):
             if current_entry:
                 yield current_entry
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -835,7 +825,7 @@ class GenericHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await cursor.execute(SQL_SET_UTF8)
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
@@ -850,7 +840,7 @@ class GenericHandler(BaseHandler):
             if tag_query:
                 sql_clause, clause_params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GEN_SQL_PARAMS,
                     operation_name,
                     sql_clause,
                     clause_params,
@@ -892,7 +882,7 @@ class GenericHandler(BaseHandler):
                 item_id, category, name, value, tag_name, tag_value = row
                 # Explicitly decode value if it is bytes
                 LOGGER.debug(
-                    "[%s] Raw value type: %s, value: %r",
+                    LOG_RAW_VALUE,
                     operation_name,
                     type(value),
                     value,
@@ -900,7 +890,7 @@ class GenericHandler(BaseHandler):
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
                     LOGGER.debug(
-                        "[%s] Decoded value from bytes: %s", operation_name, value
+                        LOG_DECODED_VALUE, operation_name, value
                     )
                 if item_id != current_item_id:
                     if current_entry:
@@ -914,7 +904,7 @@ class GenericHandler(BaseHandler):
             if current_entry:
                 yield current_entry
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -941,5 +931,5 @@ class GenericHandler(BaseHandler):
             )
             return sql_clause, arguments
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             raise

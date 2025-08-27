@@ -7,7 +7,7 @@ from ..normalized_handler import (
 )
 from ....errors import DatabaseError, DatabaseErrorCode
 from psycopg import AsyncCursor
-from typing import Union, List, Optional
+from typing import List, Optional
 import json
 import base64
 import logging
@@ -99,6 +99,111 @@ class CredExV20CustomHandler(NormalizedHandler):
         except Exception as e:
             LOGGER.error(f"Error extracting cred_def_id: {str(e)}")
             return None
+
+    def _compute_expiry(self, expiry_ms: Optional[int]) -> Optional[datetime]:
+        return (
+            datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+            if expiry_ms
+            else None
+        )
+
+    def _parse_value(
+        self, value: str | bytes | dict
+    ) -> tuple[dict, str | None]:
+        json_data: dict = {}
+        if isinstance(value, dict):
+            json_data = value
+            return json_data, json.dumps(json_data)
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        if value and isinstance(value, str) and is_valid_json(value):
+            try:
+                json_data = json.loads(value)
+                return json_data, value
+            except json.JSONDecodeError as e:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid JSON value: {str(e)}",
+                )
+        return json_data, value  # non-JSON strings or None
+
+    async def _get_item_id(
+        self, cursor: AsyncCursor, profile_id: int, category: str, name: str
+    ) -> Optional[int]:
+        await cursor.execute(
+            f"""
+                SELECT id FROM {self.schema_context.qualify_table("items")}
+                WHERE profile_id = %s AND category = %s AND name = %s
+            """,
+            (profile_id, category, name),
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else None
+
+    def _normalize_value(self, val):
+        if isinstance(val, (dict, list)):
+            return serialize_json_with_bool_strings(val)
+        if val is True:
+            return "true"
+        if val is False:
+            return "false"
+        return val
+
+    def _assemble_data(
+        self,
+        columns: List[str],
+        json_data: dict,
+        tags: dict,
+        name: str,
+        item_id: int,
+        cred_def_id: Optional[str],
+    ) -> dict:
+        data = {"item_id": item_id, "item_name": name}
+        for col in columns:
+            if col == "cred_def_id" and cred_def_id:
+                data[col] = cred_def_id
+                continue
+            if col in json_data:
+                data[col] = self._normalize_value(json_data[col])
+                continue
+            if col in tags:
+                data[col] = self._normalize_value(tags[col])
+                continue
+            data[col] = None
+        return data
+
+    async def _ensure_no_duplicate_thread(
+        self,
+        cursor: AsyncCursor,
+        table: str,
+        thread_id: Optional[str],
+        *,
+        item_id: Optional[int] = None,
+    ) -> None:
+        if not thread_id:
+            return
+        if item_id is None:
+            # Strict check for insert path
+            await cursor.execute(
+                f"SELECT id FROM {table} WHERE thread_id = %s",
+                (thread_id,),
+            )
+            dups = await cursor.fetchall()
+            if dups:
+                raise DatabaseError(
+                    code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
+                    message=f"Duplicate thread_id {thread_id} found",
+                )
+        else:
+            # Cleanup for replace path (allow same item, remove others)
+            await cursor.execute(
+                f"SELECT id FROM {table} WHERE thread_id = %s AND item_id != %s",
+                (thread_id, item_id),
+            )
+            dups = await cursor.fetchall()
+            for dup_id_row in dups or []:
+                dup_id = dup_id_row[0]
+                await cursor.execute(f"DELETE FROM {table} WHERE id = %s", (dup_id,))
 
     async def _extract_attributes_and_formats(
         self, json_data: dict, cred_ex_id: int, cursor: AsyncCursor
@@ -233,9 +338,9 @@ class CredExV20CustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes, dict],
+        value: str | bytes | dict,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Insert a credential exchange record with custom data extraction.
 
@@ -255,65 +360,17 @@ class CredExV20CustomHandler(NormalizedHandler):
             )
         )
 
-        expiry = None
-        if expiry_ms:
-            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+        expiry = self._compute_expiry(expiry_ms)
 
         try:
-            if isinstance(value, bytes):
-                value = value.decode("utf-8")
-            json_data = {}
-            if isinstance(value, dict):
-                json_data = value
-                value_to_store = json.dumps(json_data)
-                LOGGER.debug(f"[insert] Value is already a dict: {json_data}")
-            elif value and isinstance(value, str) and is_valid_json(value):
-                try:
-                    json_data = json.loads(value)
-                    value_to_store = value
-                    LOGGER.debug(f"[insert] Parsed json_data: {json_data}")
-                except json.JSONDecodeError as e:
-                    LOGGER.error(
-                        f"[insert] Invalid JSON value: {str(e)}, raw value: {value}"
-                    )
-                    raise DatabaseError(
-                        code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Invalid JSON value: {str(e)}",
-                    )
-            else:
-                value_to_store = value
+            json_data, value_to_store = self._parse_value(value)
 
-            await cursor.execute(
-                f"""
-                SELECT id FROM {self.schema_context.qualify_table("items")}
-                WHERE profile_id = %s AND category = %s AND name = %s
-            """,
-                (profile_id, category, name),
-            )
-            existing_item = await cursor.fetchone()
-            if existing_item:
-                item_id = existing_item[0]
+            existing_id = await self._get_item_id(cursor, profile_id, category, name)
+            if existing_id:
                 LOGGER.debug(
-                    f"[insert] Found existing item_id={item_id} for "
+                    f"[insert] Found existing item_id={existing_id} for "
                     f"category={category}, name={name}"
                 )
-                await cursor.execute(
-                    f"SELECT id, thread_id FROM {self.table} WHERE item_id = %s",
-                    (item_id,),
-                )
-                existing_cred = await cursor.fetchone()
-                if existing_cred:
-                    LOGGER.error(
-                        f"[insert] Duplicate cred_ex_v20 record for item_id={item_id}, "
-                        f"thread_id={existing_cred[1]}"
-                    )
-                    raise DatabaseError(
-                        code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                        message=(
-                            f"Duplicate cred_ex_v20 record for item_id={item_id}, "
-                            f"existing thread_id={existing_cred[1]}"
-                        ),
-                    )
                 raise DatabaseError(
                     code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
                     message=(
@@ -321,23 +378,9 @@ class CredExV20CustomHandler(NormalizedHandler):
                     ),
                 )
 
-            if tags.get("thread_id"):
-                await cursor.execute(
-                    f"SELECT id, item_id FROM {self.table} WHERE thread_id = %s",
-                    (tags.get("thread_id"),),
-                )
-                duplicates = await cursor.fetchall()
-                if duplicates:
-                    LOGGER.error(
-                        (
-                            f"[insert] Duplicate thread_id found in {self.table}: "
-                            f"{duplicates}"
-                        )
-                    )
-                    raise DatabaseError(
-                        code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                        message=f"Duplicate thread_id {tags.get('thread_id')} found",
-                    )
+            await self._ensure_no_duplicate_thread(
+                cursor, self.table, tags.get("thread_id")
+            )
 
             await cursor.execute(
                 f"""
@@ -352,46 +395,9 @@ class CredExV20CustomHandler(NormalizedHandler):
             LOGGER.debug(f"[insert] Inserted into items table, item_id={item_id}")
 
             cred_def_id = self._extract_cred_def_id(json_data)
-            data = {"item_id": item_id, "item_name": name}
-            for col in self.columns:
-                if col == "cred_def_id" and cred_def_id:
-                    data[col] = cred_def_id
-                    LOGGER.debug(
-                        (
-                            f"[insert] Added column {col} from custom extraction: "
-                            f"{cred_def_id}"
-                        )
-                    )
-                elif col in json_data:
-                    val = json_data[col]
-                    if isinstance(val, (dict, list)):
-                        val = serialize_json_with_bool_strings(val)
-                    elif val is True:
-                        val = "true"
-                    elif val is False:
-                        val = "false"
-                    elif val is None:
-                        val = None
-                    data[col] = val
-                    LOGGER.debug(f"[insert] Added column {col} from json_data: {val}")
-                elif col in tags:
-                    val = tags[col]
-                    if isinstance(val, (dict, list)):
-                        val = serialize_json_with_bool_strings(val)
-                    elif val is True:
-                        val = "true"
-                    elif val is False:
-                        val = "false"
-                    elif val is None:
-                        val = None
-                    data[col] = val
-                    LOGGER.debug(f"[insert] Added column {col} from tags: {val}")
-                else:
-                    data[col] = None
-                    LOGGER.debug(
-                        f"[insert] Column {col} not found in json_data or tags, "
-                        f"setting to NULL"
-                    )
+            data = self._assemble_data(
+                self.columns, json_data, tags, name, item_id, cred_def_id
+            )
 
             columns = list(data.keys())
             placeholders = ", ".join(["%s" for _ in columns])
@@ -424,9 +430,9 @@ class CredExV20CustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes, dict],
+        value: str | bytes | dict,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Replace an existing credential exchange record."""
         LOGGER.debug(
@@ -434,80 +440,24 @@ class CredExV20CustomHandler(NormalizedHandler):
             f"thread_id={tags.get('thread_id')}"
         )
 
-        expiry = None
-        if expiry_ms:
-            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+        expiry = self._compute_expiry(expiry_ms)
 
         try:
-            await cursor.execute(
-                f"""
-                SELECT id FROM {self.schema_context.qualify_table("items")}
-                WHERE profile_id = %s AND category = %s AND name = %s
-            """,
-                (profile_id, category, name),
-            )
-            row = await cursor.fetchone()
-            if not row:
+            item_id = await self._get_item_id(cursor, profile_id, category, name)
+            if not item_id:
                 raise DatabaseError(
                     code=DatabaseErrorCode.RECORD_NOT_FOUND,
                     message=(
                         f"Record not found for category '{category}' and name '{name}'"
                     ),
                 )
-            item_id = row[0]
             LOGGER.debug(f"[replace] Found item_id={item_id} for replacement")
 
-            if tags.get("thread_id"):
-                await cursor.execute(
-                    f"SELECT id, item_id FROM {self.table} "
-                    f"WHERE thread_id = %s AND item_id != %s",
-                    (tags.get("thread_id"), item_id),
-                )
-                duplicates = await cursor.fetchall()
-                if duplicates:
-                    LOGGER.warning(
-                        f"[replace] Duplicate thread_id found in {self.table}: "
-                        f"{duplicates}"
-                    )
-                    for dup_id, dup_item_id in duplicates:
-                        await cursor.execute(
-                            f"DELETE FROM {self.table} WHERE id = %s", (dup_id,)
-                        )
-                        LOGGER.debug(
-                            (
-                                f"[replace] Deleted duplicate record id={dup_id}, "
-                                f"thread_id={tags.get('thread_id')}"
-                            )
-                        )
+            await self._ensure_no_duplicate_thread(
+                cursor, self.table, tags.get("thread_id"), item_id=item_id
+            )
 
-            json_data = {}
-            if isinstance(value, dict):
-                json_data = value
-                value_to_store = json.dumps(json_data)
-                LOGGER.debug(f"[replace] Value is already a dict: {json_data}")
-            elif isinstance(value, bytes):
-                value = value.decode("utf-8")
-                value_to_store = value
-                if value and is_valid_json(value):
-                    try:
-                        json_data = json.loads(value)
-                        LOGGER.debug(f"[replace] Parsed json_data: {json_data}")
-                    except json.JSONDecodeError as e:
-                        raise DatabaseError(
-                            code=DatabaseErrorCode.QUERY_ERROR,
-                            message=f"Invalid JSON value: {str(e)}",
-                        )
-            else:
-                value_to_store = value
-                if value and is_valid_json(value):
-                    try:
-                        json_data = json.loads(value)
-                        LOGGER.debug(f"[replace] Parsed json_data: {json_data}")
-                    except json.JSONDecodeError as e:
-                        raise DatabaseError(
-                            code=DatabaseErrorCode.QUERY_ERROR,
-                            message=f"Invalid JSON value: {str(e)}",
-                        )
+            json_data, value_to_store = self._parse_value(value)
 
             if "cred_issue" in json_data and json_data["cred_issue"]:
                 cred_issue = json_data["cred_issue"]
@@ -549,48 +499,9 @@ class CredExV20CustomHandler(NormalizedHandler):
                 f"DELETE FROM {self.table} WHERE item_id = %s", (item_id,)
             )
             cred_def_id = self._extract_cred_def_id(json_data)
-            data = {"item_id": item_id, "item_name": name}
-            for col in self.columns:
-                if col == "cred_def_id" and cred_def_id:
-                    data[col] = cred_def_id
-                    LOGGER.debug(
-                        (
-                            f"[replace] Added column {col} from custom extraction: "
-                            f"{cred_def_id}"
-                        )
-                    )
-                elif col in json_data:
-                    val = json_data[col]
-                    if isinstance(val, (dict, list)):
-                        val = serialize_json_with_bool_strings(val)
-                    elif val is True:
-                        val = "true"
-                    elif val is False:
-                        val = "false"
-                    elif val is None:
-                        val = None
-                    data[col] = val
-                    LOGGER.debug(f"[replace] Added column {col} from json_data: {val}")
-                elif col in tags:
-                    val = tags[col]
-                    if isinstance(val, (dict, list)):
-                        val = serialize_json_with_bool_strings(val)
-                    elif val is True:
-                        val = "true"
-                    elif val is False:
-                        val = "false"
-                    elif val is None:
-                        val = None
-                    data[col] = val
-                    LOGGER.debug(f"[replace] Added column {col} from tags: {val}")
-                else:
-                    data[col] = None
-                    LOGGER.debug(
-                        (
-                            f"[replace] Column {col} not found in json_data or tags, "
-                            "setting to NULL"
-                        )
-                    )
+            data = self._assemble_data(
+                self.columns, json_data, tags, name, item_id, cred_def_id
+            )
 
             columns = list(data.keys())
             placeholders = ", ".join(["%s" for _ in columns])

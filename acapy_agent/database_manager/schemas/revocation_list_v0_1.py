@@ -200,8 +200,8 @@ SCHEMAS = {
         CREATE OR REPLACE FUNCTION update_revocation_list_fields_v0_1()
         RETURNS TRIGGER AS $$
         BEGIN
-            IF NEW.rev_list IS NOT NULL AND NEW.rev_list::jsonb IS NOT NULL "
-            "AND NEW.rev_list != OLD.rev_list THEN
+            IF NEW.rev_list IS NOT NULL AND NEW.rev_list::jsonb IS NOT NULL 
+               AND NEW.rev_list != OLD.rev_list THEN
                 NEW.rev_reg_def_id = jsonb_extract_path_text(
                     NEW.rev_list::jsonb, 'revRegDefId');
                 NEW.issuer_id = jsonb_extract_path_text(NEW.rev_list::jsonb, 'issuerId');
@@ -225,8 +225,8 @@ SCHEMAS = {
         CREATE OR REPLACE FUNCTION update_revocation_list_revocations_v0_1()
         RETURNS TRIGGER AS $$
         BEGIN
-            IF NEW.revocationList IS NOT NULL AND NEW.revocationList::jsonb IS NOT NULL "
-            "AND NEW.revocationList != OLD.revocationList THEN
+            IF NEW.revocationList IS NOT NULL AND NEW.revocationList::jsonb IS NOT NULL 
+               AND NEW.revocationList != OLD.revocationList THEN
                 DELETE FROM revocation_list_revocations_v0_1 
                 WHERE revocation_list_id = OLD.id;
                 INSERT INTO revocation_list_revocations_v0_1
@@ -380,8 +380,9 @@ SCHEMAS = {
             WHERE i.revocationList IS NOT NULL
               AND ISJSON(i.revocationList) = 1
               AND j.value = 1
-              AND i.revocationList != "
-              "(SELECT d.revocationList FROM deleted d WHERE d.id = i.id);
+              AND i.revocationList != (
+                SELECT d.revocationList FROM deleted d WHERE d.id = i.id
+              );
         END;
         """,
         """

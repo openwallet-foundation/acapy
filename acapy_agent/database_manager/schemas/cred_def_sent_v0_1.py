@@ -2,6 +2,9 @@
 
 CATEGORY = "cred_def_sent"
 
+IDX_CRED_DEF_SENT_ON_ITEM_ID = "ON cred_def_sent_v0_1 (item_id);"
+IDX_CRED_DEF_SENT_ON_SCHEMA_ID = "ON cred_def_sent_v0_1 (schema_id);"
+
 SCHEMAS = {
     "sqlite": [
         """
@@ -23,9 +26,9 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_cred_def_sent_item_id_v0_1 "
-        "ON cred_def_sent_v0_1 (item_id);",
+        + IDX_CRED_DEF_SENT_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_cred_def_sent_schema_id_v0_1 "
-        "ON cred_def_sent_v0_1 (schema_id);",
+        + IDX_CRED_DEF_SENT_ON_SCHEMA_ID,
     ],
     "postgresql": [
         """
@@ -47,9 +50,9 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_cred_def_sent_item_id_v0_1 "
-        "ON cred_def_sent_v0_1 (item_id);",
+        + IDX_CRED_DEF_SENT_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_cred_def_sent_schema_id_v0_1 "
-        "ON cred_def_sent_v0_1 (schema_id);",
+        + IDX_CRED_DEF_SENT_ON_SCHEMA_ID,
     ],
     "mssql": [
         """
@@ -71,9 +74,9 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_cred_def_sent_item_id_v0_1 "
-        "ON cred_def_sent_v0_1 (item_id);",
+        + IDX_CRED_DEF_SENT_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_cred_def_sent_schema_id_v0_1 "
-        "ON cred_def_sent_v0_1 (schema_id);",
+        + IDX_CRED_DEF_SENT_ON_SCHEMA_ID,
     ],
 }
 

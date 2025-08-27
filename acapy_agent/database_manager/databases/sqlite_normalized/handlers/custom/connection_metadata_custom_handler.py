@@ -7,7 +7,7 @@ from ..normalized_handler import (
 )
 from ....errors import DatabaseError, DatabaseErrorCode
 import sqlite3
-from typing import Union, List, Optional
+from typing import List, Optional
 import json
 import logging
 from datetime import datetime, timedelta, timezone
@@ -67,9 +67,9 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Insert a connection metadata record.
 
@@ -202,9 +202,9 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
-        expiry_ms: int,
+        expiry_ms: Optional[int] = None,
     ) -> None:
         """Replace a connection metadata record.
 

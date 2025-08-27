@@ -7,7 +7,7 @@ from ....wql_normalized.query import query_from_json
 from ....wql_normalized.encoders import encoder_factory
 from ...errors import DatabaseError, DatabaseErrorCode
 import sqlite3
-from typing import Optional, Sequence, Union, List, Tuple, Any, Generator
+from typing import Optional, Sequence, List, Tuple, Any, Generator
 import json
 from datetime import datetime, timedelta, timezone
 import logging
@@ -92,7 +92,7 @@ class NormalizedHandler(BaseHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -253,7 +253,7 @@ class NormalizedHandler(BaseHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: int,
     ) -> None:
@@ -428,7 +428,7 @@ class NormalizedHandler(BaseHandler):
         profile_id: int,
         category: str,
         name: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         for_update: bool,
     ) -> Optional[Entry]:
         """Fetch a single entry by its name."""
@@ -490,7 +490,7 @@ class NormalizedHandler(BaseHandler):
         cursor: sqlite3.Cursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         limit: int,
         for_update: bool,
         order_by: Optional[str] = None,
@@ -582,7 +582,7 @@ class NormalizedHandler(BaseHandler):
         cursor: sqlite3.Cursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Count the number of entries matching the specified criteria."""
         sql_clause = "1=1"
@@ -650,7 +650,7 @@ class NormalizedHandler(BaseHandler):
         cursor: sqlite3.Cursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Remove all entries matching the specified criteria."""
         LOGGER.debug(

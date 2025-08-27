@@ -1,7 +1,7 @@
 """Module docstring."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Union, Generator
+from typing import Optional, Sequence, Generator
 
 from .db_types import Entry
 
@@ -94,7 +94,7 @@ class AbstractDatabaseStore(ABC):
         self,
         profile: Optional[str],
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         offset: int = None,
         limit: int = None,
     ) -> Generator[Entry, None, None]:
@@ -145,7 +145,7 @@ class AbstractDatabaseSession(ABC):
     """Abstract base class for database session implementations."""
 
     @abstractmethod
-    async def count(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def count(self, category: str, tag_filter: str | dict = None) -> int:
         """Count entries."""
         pass
 
@@ -160,7 +160,7 @@ class AbstractDatabaseSession(ABC):
     async def fetch_all(
         self,
         category: str,
-        tag_filter: Union[str, dict] = None,
+        tag_filter: str | dict = None,
         limit: int = None,
         for_update: bool = False,
     ) -> Sequence[Entry]:
@@ -172,7 +172,7 @@ class AbstractDatabaseSession(ABC):
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
         value_json=None,
@@ -185,7 +185,7 @@ class AbstractDatabaseSession(ABC):
         self,
         category: str,
         name: str,
-        value: Union[str, bytes] = None,
+        value: str | bytes = None,
         tags: dict = None,
         expiry_ms: int = None,
         value_json=None,
@@ -199,7 +199,7 @@ class AbstractDatabaseSession(ABC):
         pass
 
     @abstractmethod
-    async def remove_all(self, category: str, tag_filter: Union[str, dict] = None) -> int:
+    async def remove_all(self, category: str, tag_filter: str | dict = None) -> int:
         """Remove all matching entries."""
         pass
 

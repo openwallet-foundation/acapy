@@ -16,6 +16,17 @@ from ..schema_context import SchemaContext
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)  # Enable debug logging for troubleshooting
 
+LOG_FAILED = "[%s] Failed: %s"
+LOG_DECODED_VALUE = "[%s] Decoded value from bytes: %s"
+LOG_VALUE_NONE_ID = "[%s] value is None for item_id=%s"
+LOG_EXEC_SQL_PARAMS = "[%s] Executing SQL: %s | Params: %s"
+LOG_EXEC_SQL_SINGLE_PARAM = "[%s] Executing SQL: %s | Params: (%s,)"
+LOG_PARSED_TAG_FILTER = "[%s] Parsed tag_filter JSON: %s"
+LOG_GENERATED_SQL_CLAUSE = "[%s] Generated SQL clause: %s, params: %s"
+LOG_GENERATED_SQL_CLAUSE_ARGS = "[%s] Generated SQL clause: %s, arguments: %s"
+LOG_INVALID_ORDER_BY = "[%s] Invalid order_by column: %s"
+LOG_FETCHED_ROW = "[%s] Fetched row: %s"
+SQL_SET_UTF8 = "SET client_encoding = 'UTF8'"
 
 def is_valid_json(value: str) -> bool:
     """Check if a string is valid JSON."""
@@ -103,13 +114,29 @@ class NormalizedHandler(BaseHandler):
             self.schema_context,
         )
 
+        self.EXPIRY_CLAUSE = "(i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)"
+
+    async def _ensure_utf8(self, cursor: AsyncCursor) -> None:
+        await cursor.execute(SQL_SET_UTF8)
+
+    def _validate_order_by(self, order_by: Optional[str]) -> None:
+        if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
+            LOGGER.error("[order_by] Invalid column: %s", order_by)
+            raise DatabaseError(
+                code=DatabaseErrorCode.QUERY_ERROR,
+                message=(
+                    LOG_INVALID_ORDER_BY % ("insert", order_by) + f". Allowed columns: "
+                    f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
+                ),
+            )
+
     async def insert(
         self,
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: Optional[int] = None,
     ) -> None:
@@ -128,137 +155,182 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
-            expiry = None
-            if expiry_ms is not None:
-                expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
-                LOGGER.debug("[%s] Computed expiry: %s", operation_name, expiry)
-
-            if isinstance(value, bytes):
-                value = value.decode("utf-8")
-                LOGGER.debug(
-                    "[%s] Decoded input value from bytes: %s", operation_name, value
-                )
-
-            json_data = {}
-            if value and isinstance(value, str) and is_valid_json(value):
-                try:
-                    json_data = json.loads(value)
-                    LOGGER.debug("[%s] Parsed json_data: %s", operation_name, json_data)
-                except json.JSONDecodeError as e:
-                    LOGGER.error(
-                        "[%s] Invalid JSON value: %s, raw value: %s",
-                        operation_name,
-                        str(e),
-                        value,
-                    )
-                    raise DatabaseError(
-                        code=DatabaseErrorCode.QUERY_ERROR,
-                        message=f"Invalid JSON value: {str(e)}",
-                    )
-
-            LOGGER.debug(
-                "[%s] Inserting into items table with profile_id=%s, category=%s, "
-                "name=%s, value=%s, expiry=%s",
-                operation_name,
-                profile_id,
-                category,
-                name,
-                value,
-                expiry,
+            await self._ensure_utf8(cursor)
+            
+            # Process and validate input data
+            expiry, processed_value, json_data = await self._process_insert_data(
+                operation_name, value, expiry_ms
             )
-            await cursor.execute(
-                f"""
-                INSERT INTO {self.schema_context.qualify_table("items")} (
-                    profile_id, kind, category, name, value, expiry
-                )
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (profile_id, category, name) DO NOTHING
-                RETURNING id
-            """,
-                (profile_id, 0, category, name, value, expiry),
+            
+            # Insert into items table and get item_id
+            item_id = await self._insert_item(
+                cursor, operation_name, profile_id, category, name, processed_value, expiry
             )
-            row = await cursor.fetchone()
-            if not row:
-                LOGGER.error(
-                    "[%s] Duplicate entry for category=%s, name=%s",
-                    operation_name,
-                    category,
-                    name,
-                )
-                raise DatabaseError(
-                    code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                    message=(
-                        f"Duplicate entry for category '{category}' and name '{name}'"
-                    ),
-                )
-            item_id = row[0]
-            LOGGER.debug(
-                "[%s] Inserted into items table, item_id=%s", operation_name, item_id
+            
+            # Process columns and insert into normalized table
+            await self._insert_normalized_data(
+                cursor, operation_name, item_id, name, json_data, tags
             )
-
-            data = {"item_id": item_id, "item_name": name}
-            LOGGER.debug("[%s] Processing columns: %s", operation_name, self.columns)
-            for col in self.columns:
-                val = json_data.get(col, tags.get(col))
-                if val is None:
-                    LOGGER.debug(
-                        "[%s] Column %s not found in json_data or tags, setting to NULL",
-                        operation_name,
-                        col,
-                    )
-                elif isinstance(val, (dict, list)):
-                    try:
-                        val = serialize_json_with_bool_strings(val)
-                        LOGGER.debug(
-                            "[%s] Serialized %s to JSON: %s", operation_name, col, val
-                        )
-                    except DatabaseError as e:
-                        LOGGER.error(
-                            "[%s] Serialization failed for column %s: %s",
-                            operation_name,
-                            col,
-                            str(e),
-                        )
-                        raise
-                elif val is True:
-                    val = "true"
-                elif val is False:
-                    val = "false"
-                data[col] = val
-                LOGGER.debug(
-                    "[%s] Added column %s: %s (type: %s)",
-                    operation_name,
-                    col,
-                    val,
-                    type(val),
-                )
-
-            columns = list(data.keys())
-            placeholders = ", ".join(["%s" for _ in columns])
-            sql = (
-                f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders})"
-            )
-            LOGGER.debug(
-                "[%s] Executing SQL: %s with values: %s",
-                operation_name,
-                sql,
-                list(data.values()),
-            )
-            await cursor.execute(sql, list(data.values()))
-            LOGGER.debug(
-                "[%s] Successfully inserted into %s for item_id=%s",
-                operation_name,
-                self.table,
-                item_id,
-            )
+            
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
             if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
                 await cursor.connection.commit()
+
+    async def _process_insert_data(
+        self, operation_name: str, value: str | bytes, expiry_ms: Optional[int]
+    ) -> tuple:
+        """Process and validate insert data."""
+        # Handle expiry
+        expiry = None
+        if expiry_ms is not None:
+            expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
+            LOGGER.debug("[%s] Computed expiry: %s", operation_name, expiry)
+
+        # Handle bytes value
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+            LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
+
+        # Parse JSON data
+        json_data = {}
+        if value and isinstance(value, str) and is_valid_json(value):
+            try:
+                json_data = json.loads(value)
+                LOGGER.debug("[%s] Parsed json_data: %s", operation_name, json_data)
+            except json.JSONDecodeError as e:
+                LOGGER.error(
+                    "[%s] Invalid JSON value: %s, raw value: %s",
+                    operation_name,
+                    str(e),
+                    value,
+                )
+                raise DatabaseError(
+                    code=DatabaseErrorCode.QUERY_ERROR,
+                    message=f"Invalid JSON value: {str(e)}",
+                )
+        
+        return expiry, value, json_data
+
+    async def _insert_item(
+        self, cursor, operation_name: str, profile_id: int, 
+        category: str, name: str, value: str, expiry
+    ) -> int:
+        """Insert into items table and return item_id."""
+        LOGGER.debug(
+            "[%s] Inserting into items table with profile_id=%s, category=%s, "
+            "name=%s, value=%s, expiry=%s",
+            operation_name,
+            profile_id,
+            category,
+            name,
+            value,
+            expiry,
+        )
+        await cursor.execute(
+            f"""
+            INSERT INTO {self.schema_context.qualify_table("items")} (
+                profile_id, kind, category, name, value, expiry
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (profile_id, category, name) DO NOTHING
+            RETURNING id
+        """,
+            (profile_id, 0, category, name, value, expiry),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            LOGGER.error(
+                "[%s] Duplicate entry for category=%s, name=%s",
+                operation_name,
+                category,
+                name,
+            )
+            raise DatabaseError(
+                code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
+                message=(
+                    f"Duplicate entry for category '{category}' and name '{name}'"
+                ),
+            )
+        item_id = row[0]
+        LOGGER.debug(
+            "[%s] Inserted into items table, item_id=%s", operation_name, item_id
+        )
+        return item_id
+
+    async def _insert_normalized_data(
+        self, cursor, operation_name: str, item_id: int, name: str, 
+        json_data: dict, tags: dict
+    ) -> None:
+        """Process columns and insert into normalized table."""
+        data = {"item_id": item_id, "item_name": name}
+        LOGGER.debug("[%s] Processing columns: %s", operation_name, self.columns)
+        
+        for col in self.columns:
+            val = self._process_column_value(operation_name, col, json_data, tags)
+            data[col] = val
+
+        columns = list(data.keys())
+        placeholders = ", ".join(["%s" for _ in columns])
+        sql = (
+            f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders})"
+        )
+        LOGGER.debug(
+            LOG_EXEC_SQL_PARAMS,
+            operation_name,
+            sql,
+            list(data.values()),
+        )
+        await cursor.execute(sql, list(data.values()))
+        LOGGER.debug(
+            "[%s] Successfully inserted into %s for item_id=%s",
+            operation_name,
+            self.table,
+            item_id,
+        )
+
+    def _process_column_value(
+        self, operation_name: str, col: str, json_data: dict, tags: dict
+    ):
+        """Process individual column value."""
+        val = json_data.get(col, tags.get(col))
+        if val is None:
+            LOGGER.debug(
+                "[%s] Column %s not found in json_data or tags, setting to NULL",
+                operation_name,
+                col,
+            )
+            return val
+        elif isinstance(val, (dict, list)):
+            try:
+                val = serialize_json_with_bool_strings(val)
+                LOGGER.debug(
+                    "[%s] Serialized %s to JSON: %s", operation_name, col, val
+                )
+            except DatabaseError as e:
+                LOGGER.error(
+                    "[%s] Serialization failed for column %s: %s",
+                    operation_name,
+                    col,
+                    str(e),
+                )
+                raise
+        elif val is True:
+            val = "true"
+        elif val is False:
+            val = "false"
+        
+        LOGGER.debug(
+            "[%s] Added column %s: %s (type: %s)",
+            operation_name,
+            col,
+            val,
+            type(val),
+        )
+        return val
 
     async def replace(
         self,
@@ -286,7 +358,7 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             expiry = None
             if expiry_ms is not None:
                 expiry = datetime.now(timezone.utc) + timedelta(milliseconds=expiry_ms)
@@ -294,9 +366,7 @@ class NormalizedHandler(BaseHandler):
 
             if isinstance(value, bytes):
                 value = value.decode("utf-8")
-                LOGGER.debug(
-                    "[%s] Decoded input value from bytes: %s", operation_name, value
-                )
+                LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
 
             await cursor.execute(
                 f"""
@@ -399,7 +469,7 @@ class NormalizedHandler(BaseHandler):
                 f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders})"
             )
             LOGGER.debug(
-                "[%s] Executing SQL: %s with values: %s",
+                LOG_EXEC_SQL_PARAMS,
                 operation_name,
                 sql,
                 list(data.values()),
@@ -412,7 +482,7 @@ class NormalizedHandler(BaseHandler):
                 item_id,
             )
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -425,7 +495,7 @@ class NormalizedHandler(BaseHandler):
         profile_id: int,
         category: str,
         name: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         for_update: bool,
     ) -> Optional[Entry]:
         """Fetch a single entry."""
@@ -443,7 +513,7 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             base_query = f"""
                 SELECT id, value FROM {self.schema_context.qualify_table("items")}
                 WHERE profile_id = %s AND category = %s AND name = %s
@@ -453,27 +523,23 @@ class NormalizedHandler(BaseHandler):
                 base_query += " FOR UPDATE"
             base_params = (profile_id, category, name)
             LOGGER.debug(
-                "[%s] Executing SQL: %s | Params: %s",
+                LOG_EXEC_SQL_PARAMS,
                 operation_name,
                 base_query.strip(),
                 base_params,
             )
             await cursor.execute(base_query, base_params)
             row = await cursor.fetchone()
-            LOGGER.debug("[%s] Fetched row from items: %s", operation_name, row)
+            LOGGER.debug(LOG_FETCHED_ROW, operation_name, row)
 
             if not row:
                 return None
             item_id, item_value = row
             if isinstance(item_value, bytes):
                 item_value = item_value.decode("utf-8")
-                LOGGER.debug(
-                    "[%s] Decoded item_value from bytes: %s", operation_name, item_value
-                )
+                LOGGER.debug(LOG_DECODED_VALUE, operation_name, item_value)
             elif item_value is None:
-                LOGGER.warning(
-                    "[%s] item_value is None for item_id=%s", operation_name, item_id
-                )
+                LOGGER.warning(LOG_VALUE_NONE_ID, operation_name, item_id)
                 item_value = ""
 
             if tag_filter:
@@ -481,7 +547,7 @@ class NormalizedHandler(BaseHandler):
                     try:
                         tag_filter = json.loads(tag_filter)
                         LOGGER.debug(
-                            "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
+                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
                         )
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
@@ -496,7 +562,7 @@ class NormalizedHandler(BaseHandler):
                 )
                 full_params = [item_id] + params
                 LOGGER.debug(
-                    "[%s] Executing SQL: %s | Params: %s",
+                    LOG_EXEC_SQL_PARAMS,
                     operation_name,
                     query,
                     full_params,
@@ -505,7 +571,7 @@ class NormalizedHandler(BaseHandler):
             else:
                 query = f"SELECT * FROM {self.table} WHERE item_id = %s"
                 LOGGER.debug(
-                    "[%s] Executing SQL: %s | Params: (%s,)",
+                    LOG_EXEC_SQL_SINGLE_PARAM,
                     operation_name,
                     query,
                     item_id,
@@ -514,7 +580,7 @@ class NormalizedHandler(BaseHandler):
 
             row = await cursor.fetchone()
             LOGGER.debug(
-                "[%s] Fetched row from table %s: %s", operation_name, self.table, row
+                LOG_FETCHED_ROW + " from table %s", operation_name, row, self.table
             )
             if not row:
                 return None
@@ -536,7 +602,7 @@ class NormalizedHandler(BaseHandler):
             )
             return Entry(category=category, name=name, value=item_value, tags=tags)
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -548,7 +614,7 @@ class NormalizedHandler(BaseHandler):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
         limit: int,
         for_update: bool,
         order_by: Optional[str] = None,
@@ -571,13 +637,13 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
-                LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
+                LOGGER.error(LOG_INVALID_ORDER_BY, operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
                     message=(
-                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        LOG_INVALID_ORDER_BY % ("scan", order_by) + f". Allowed columns: "
                         f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
                     ),
                 )
@@ -589,7 +655,7 @@ class NormalizedHandler(BaseHandler):
                     try:
                         tag_filter = json.loads(tag_filter)
                         LOGGER.debug(
-                            "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
+                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
                         )
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
@@ -600,7 +666,7 @@ class NormalizedHandler(BaseHandler):
                 tag_query = query_to_tagquery(wql_query)
                 sql_clause, params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GENERATED_SQL_CLAUSE,
                     operation_name,
                     sql_clause,
                     params,
@@ -625,7 +691,7 @@ class NormalizedHandler(BaseHandler):
                 full_params.append(limit)
 
             LOGGER.debug(
-                "[%s] Executing SQL: %s | Params: %s",
+                LOG_EXEC_SQL_PARAMS,
                 operation_name,
                 query.strip(),
                 full_params,
@@ -635,18 +701,18 @@ class NormalizedHandler(BaseHandler):
             entries = []
 
             async for row in cursor:
-                LOGGER.debug("[%s] Fetched row: %s", operation_name, row)
+                LOGGER.debug(LOG_FETCHED_ROW, operation_name, row)
                 row_dict = dict(zip(columns, row))
                 name = row_dict["i_name"]
                 value = row_dict["i_value"]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
                     LOGGER.debug(
-                        "[%s] Decoded value from bytes: %s", operation_name, value
+                        LOG_DECODED_VALUE, operation_name, value
                     )
                 elif value is None:
                     LOGGER.warning(
-                        "[%s] value is None for item_id=%s",
+                        LOG_VALUE_NONE_ID,
                         operation_name,
                         row_dict["i_id"],
                     )
@@ -664,7 +730,7 @@ class NormalizedHandler(BaseHandler):
             LOGGER.debug("[%s] Total entries fetched: %s", operation_name, len(entries))
             return entries
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -676,7 +742,7 @@ class NormalizedHandler(BaseHandler):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Count entries matching criteria."""
         operation_name = "count"
@@ -690,7 +756,7 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             sql_clause = "TRUE"
             params = []
             if tag_filter:
@@ -698,7 +764,7 @@ class NormalizedHandler(BaseHandler):
                     try:
                         tag_filter = json.loads(tag_filter)
                         LOGGER.debug(
-                            "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
+                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
                         )
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
@@ -709,7 +775,7 @@ class NormalizedHandler(BaseHandler):
                 tag_query = query_to_tagquery(wql_query)
                 sql_clause, params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GENERATED_SQL_CLAUSE,
                     operation_name,
                     sql_clause,
                     params,
@@ -724,7 +790,7 @@ class NormalizedHandler(BaseHandler):
                 AND {sql_clause}
             """
             LOGGER.debug(
-                "[%s] Executing SQL: %s | Params: %s",
+                LOG_EXEC_SQL_PARAMS,
                 operation_name,
                 query.strip(),
                 [profile_id, category] + params,
@@ -734,7 +800,7 @@ class NormalizedHandler(BaseHandler):
             LOGGER.debug("[%s] Counted %s entries", operation_name, count)
             return count
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -756,7 +822,7 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             await cursor.execute(
                 f"""
                 SELECT id FROM {self.schema_context.qualify_table("items")}
@@ -790,7 +856,7 @@ class NormalizedHandler(BaseHandler):
             )
             LOGGER.debug("[%s] Removed record with item_id=%s", operation_name, item_id)
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -816,7 +882,7 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             sql_clause = "TRUE"
             params = []
             if tag_filter:
@@ -824,7 +890,7 @@ class NormalizedHandler(BaseHandler):
                     try:
                         tag_filter = json.loads(tag_filter)
                         LOGGER.debug(
-                            "[%s] Parsed tag_filter JSON: %s", operation_name, tag_filter
+                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
                         )
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
@@ -835,7 +901,7 @@ class NormalizedHandler(BaseHandler):
                 tag_query = query_to_tagquery(wql_query)
                 sql_clause, params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GENERATED_SQL_CLAUSE,
                     operation_name,
                     sql_clause,
                     params,
@@ -852,7 +918,7 @@ class NormalizedHandler(BaseHandler):
                 )
             """
             LOGGER.debug(
-                "[%s] Executing SQL: %s | Params: %s",
+                LOG_EXEC_SQL_PARAMS,
                 operation_name,
                 query.strip(),
                 [profile_id, category] + params,
@@ -862,7 +928,7 @@ class NormalizedHandler(BaseHandler):
             LOGGER.debug("[%s] Removed %s entries", operation_name, rowcount)
             return rowcount
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -897,13 +963,13 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
-                LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
+                LOGGER.error(LOG_INVALID_ORDER_BY, operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
                     message=(
-                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        LOG_INVALID_ORDER_BY % ("scan", order_by) + f". Allowed columns: "
                         f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
                     ),
                 )
@@ -913,7 +979,7 @@ class NormalizedHandler(BaseHandler):
             if tag_query:
                 sql_clause, params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GENERATED_SQL_CLAUSE,
                     operation_name,
                     sql_clause,
                     params,
@@ -963,18 +1029,18 @@ class NormalizedHandler(BaseHandler):
 
             columns = [desc[0] for desc in cursor.description]
             async for row in cursor:
-                LOGGER.debug("[%s] Fetched row: %s", operation_name, row)
+                LOGGER.debug(LOG_FETCHED_ROW, operation_name, row)
                 row_dict = dict(zip(columns, row))
                 name = row_dict["i_name"]
                 value = row_dict["i_value"]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
                     LOGGER.debug(
-                        "[%s] Decoded value from bytes: %s", operation_name, value
+                        LOG_DECODED_VALUE, operation_name, value
                     )
                 elif value is None:
                     LOGGER.warning(
-                        "[%s] value is None for item_id=%s",
+                        LOG_VALUE_NONE_ID,
                         operation_name,
                         row_dict["i_id"],
                     )
@@ -987,7 +1053,7 @@ class NormalizedHandler(BaseHandler):
                 tags = deserialize_tags(tags)
                 yield Entry(category=category, name=name, value=value, tags=tags)
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -1022,13 +1088,13 @@ class NormalizedHandler(BaseHandler):
         )
 
         try:
-            await cursor.execute("SET client_encoding = 'UTF8'")
+            await self._ensure_utf8(cursor)
             if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
-                LOGGER.error("[%s] Invalid order_by column: %s", operation_name, order_by)
+                LOGGER.error(LOG_INVALID_ORDER_BY, operation_name, order_by)
                 raise DatabaseError(
                     code=DatabaseErrorCode.QUERY_ERROR,
                     message=(
-                        f"Invalid order_by column: {order_by}. Allowed columns: "
+                        LOG_INVALID_ORDER_BY % ("scan", order_by) + f". Allowed columns: "
                         f"{', '.join(self.ALLOWED_ORDER_BY_COLUMNS)}"
                     ),
                 )
@@ -1038,7 +1104,7 @@ class NormalizedHandler(BaseHandler):
             if tag_query:
                 sql_clause, params = self.get_sql_clause(tag_query)
                 LOGGER.debug(
-                    "[%s] Generated SQL clause: %s, params: %s",
+                    LOG_GENERATED_SQL_CLAUSE,
                     operation_name,
                     sql_clause,
                     params,
@@ -1080,18 +1146,18 @@ class NormalizedHandler(BaseHandler):
 
             columns = [desc[0] for desc in cursor.description]
             async for row in cursor:
-                LOGGER.debug("[%s] Fetched row: %s", operation_name, row)
+                LOGGER.debug(LOG_FETCHED_ROW, operation_name, row)
                 row_dict = dict(zip(columns, row))
                 name = row_dict["i_name"]
                 value = row_dict["i_value"]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
                     LOGGER.debug(
-                        "[%s] Decoded value from bytes: %s", operation_name, value
+                        LOG_DECODED_VALUE, operation_name, value
                     )
                 elif value is None:
                     LOGGER.warning(
-                        "[%s] value is None for item_id=%s",
+                        LOG_VALUE_NONE_ID,
                         operation_name,
                         row_dict["i_id"],
                     )
@@ -1104,7 +1170,7 @@ class NormalizedHandler(BaseHandler):
                 tags = deserialize_tags(tags)
                 yield Entry(category=category, name=name, value=value, tags=tags)
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
             raise
         finally:
@@ -1124,14 +1190,14 @@ class NormalizedHandler(BaseHandler):
         try:
             sql_clause, arguments = self.encoder.encode_query(tag_query)
             LOGGER.debug(
-                "[%s] Generated SQL clause: %s, arguments: %s",
+                LOG_GENERATED_SQL_CLAUSE_ARGS,
                 operation_name,
                 sql_clause,
                 arguments,
             )
             return sql_clause, arguments
         except Exception as e:
-            LOGGER.error("[%s] Failed: %s", operation_name, str(e))
+            LOGGER.error(LOG_FAILED, operation_name, str(e))
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
                 message=f"Failed to generate SQL clause: {str(e)}",
