@@ -30,6 +30,24 @@ LOGGER = logging.getLogger(__name__)
 CATEGORY_CREDENTIAL = "credential"
 CATEGORY_LINK_SECRET = "master_secret"
 
+ERR_FETCH_LINK_SECRET = "Error fetching link secret"
+ERR_LOAD_LINK_SECRET = "Error loading link secret"
+ERR_CREATE_LINK_SECRET = "Error creating link secret"
+ERR_SAVE_LINK_SECRET = "Error saving link secret"
+ERR_CREATE_CRED_REQ = "Error creating credential request"
+ERR_PROCESS_RECEIVED_CRED = "Error processing received credential"
+ERR_PARSING_SCHEMA_ID = "Error parsing credential schema ID: {}"
+ERR_PARSING_CRED_DEF_ID = "Error parsing credential definition ID: {}"
+ERR_STORING_CREDENTIAL = "Error storing credential"
+ERR_RETRIEVING_CREDENTIALS = "Error retrieving credentials"
+ERR_LOADING_STORED_CREDENTIAL = "Error loading stored credential"
+ERR_UNKNOWN_PRESENTATION_REQ_REF = "Unknown presentation request referent: {}"
+ERR_RETRIEVING_CREDENTIAL = "Error retrieving credential"
+ERR_LOADING_REQUESTED_CREDENTIAL = "Error loading requested credential"
+ERR_RETRIEVING_CRED_MIME_TYPES = "Error retrieving credential mime types"
+ERR_CREATE_PRESENTATION = "Error creating presentation"
+ERR_CREATE_REV_STATE = "Error creating revocation state"
+
 
 def _make_cred_info(cred_id, cred: Credential):
     cred_info = cred.to_dict()  # not secure!
@@ -73,65 +91,90 @@ class IndyCredxHolder(IndyHolder):
 
         while True:
             async with self._profile.session() as session:
-                try:
-                    record = await session.handle.fetch(
-                        CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
-                    )
-                except (DBStoreError, AskarError) as err:
-                    LOGGER.error("Error fetching link secret: %s", err)
-                    raise IndyHolderError("Error fetching link secret") from err
-
+                record = await self._fetch_link_secret_record(session)
+                
                 if record:
-                    try:
-                        LOGGER.debug("Loading LinkSecret")
-                        secret = LinkSecret.load(record.raw_value)
-                        LOGGER.debug("Loaded existing link secret.")
-                    except CredxError as err:
-                        LOGGER.info(
-                            "Attempt fallback method after error loading link secret: %s",
-                            err,
-                        )
-                        try:
-                            ms_string = record.value.decode("ascii")
-                            link_secret_dict = {"value": {"ms": ms_string}}
-                            secret = LinkSecret.load(link_secret_dict)
-                            LOGGER.debug("Loaded LinkSecret from AnonCreds secret.")
-                        except CredxError as decode_err:
-                            LOGGER.error("Error loading link secret: %s", decode_err)
-                            raise IndyHolderError("Error loading link secret") from err
+                    secret = self._load_existing_link_secret(record)
                     break
                 else:
-                    try:
-                        secret = LinkSecret.create()
-                        LOGGER.debug("Created new link secret.")
-                    except CredxError as err:
-                        LOGGER.error("Error creating link secret: %s", err)
-                        raise IndyHolderError("Error creating link secret") from err
-
-                    try:
-                        await session.handle.insert(
-                            CATEGORY_LINK_SECRET,
-                            IndyCredxHolder.LINK_SECRET_ID,
-                            secret.to_json_buffer(),
-                        )
-                        LOGGER.debug("Saved new link secret.")
-                    except (DBStoreError, AskarError) as err:
-                        is_duplicate = (
-                            isinstance(err, DBStoreError)
-                            and err.code == DBStoreErrorCode.DUPLICATE
-                        ) or (
-                            isinstance(err, AskarError)
-                            and err.code == AskarErrorCode.DUPLICATE
-                        )
-
-                        if not is_duplicate:
-                            LOGGER.error("Error saving link secret: %s", err)
-                            raise IndyHolderError("Error saving link secret") from err
-                        # else: lost race to create record, retry
-                    else:
+                    secret = await self._create_and_save_link_secret(session)
+                    if secret:  # Successfully created and saved
                         break
+                    # else: retry due to duplicate error
+        
         LOGGER.debug("Returning link secret.")
         return secret
+
+    async def _fetch_link_secret_record(self, session):
+        """Fetch link secret record from storage."""
+        try:
+            return await session.handle.fetch(
+                CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
+            )
+        except (DBStoreError, AskarError) as err:
+            LOGGER.error("%s: %s", ERR_FETCH_LINK_SECRET, err)
+            raise IndyHolderError(ERR_FETCH_LINK_SECRET) from err
+
+    def _load_existing_link_secret(self, record) -> LinkSecret:
+        """Load existing link secret from record."""
+        try:
+            LOGGER.debug("Loading LinkSecret")
+            secret = LinkSecret.load(record.raw_value)
+            LOGGER.debug("Loaded existing link secret.")
+            return secret
+        except CredxError as err:
+            LOGGER.info(
+                "Attempt fallback method after error loading link secret: %s", err
+            )
+            return self._load_link_secret_fallback(record, err)
+
+    def _load_link_secret_fallback(self, record, original_err) -> LinkSecret:
+        """Attempt fallback method to load link secret."""
+        try:
+            ms_string = record.value.decode("ascii")
+            link_secret_dict = {"value": {"ms": ms_string}}
+            secret = LinkSecret.load(link_secret_dict)
+            LOGGER.debug("Loaded LinkSecret from AnonCreds secret.")
+            return secret
+        except CredxError as decode_err:
+            LOGGER.error("%s: %s", ERR_LOAD_LINK_SECRET, decode_err)
+            raise IndyHolderError(ERR_LOAD_LINK_SECRET) from original_err
+
+    async def _create_and_save_link_secret(self, session) -> LinkSecret:
+        """Create and save a new link secret."""
+        secret = self._create_new_link_secret()
+        
+        try:
+            await session.handle.insert(
+                CATEGORY_LINK_SECRET,
+                IndyCredxHolder.LINK_SECRET_ID,
+                secret.to_json_buffer(),
+            )
+            LOGGER.debug("Saved new link secret.")
+            return secret
+        except (DBStoreError, AskarError) as err:
+            if self._is_duplicate_error(err):
+                return None  # Retry needed
+            LOGGER.error("%s: %s", ERR_SAVE_LINK_SECRET, err)
+            raise IndyHolderError(ERR_SAVE_LINK_SECRET) from err
+
+    def _create_new_link_secret(self) -> LinkSecret:
+        """Create a new link secret."""
+        try:
+            secret = LinkSecret.create()
+            LOGGER.debug("Created new link secret.")
+            return secret
+        except CredxError as err:
+            LOGGER.error("%s: %s", ERR_CREATE_LINK_SECRET, err)
+            raise IndyHolderError(ERR_CREATE_LINK_SECRET) from err
+
+    def _is_duplicate_error(self, err) -> bool:
+        """Check if error is a duplicate record error."""
+        return (
+            isinstance(err, DBStoreError) and err.code == DBStoreErrorCode.DUPLICATE
+        ) or (
+            isinstance(err, AskarError) and err.code == AskarErrorCode.DUPLICATE
+        )
 
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: dict, holder_did: str
@@ -162,7 +205,7 @@ class IndyCredxHolder(IndyHolder):
                 credential_offer,
             )
         except CredxError as err:
-            raise IndyHolderError("Error creating credential request") from err
+            raise IndyHolderError(ERR_CREATE_CRED_REQ) from err
         cred_req_json, cred_req_metadata_json = (
             cred_req.to_json(),
             cred_req_metadata.to_json(),
@@ -214,17 +257,17 @@ class IndyCredxHolder(IndyHolder):
                 rev_reg_def,
             )
         except CredxError as err:
-            raise IndyHolderError("Error processing received credential") from err
+            raise IndyHolderError(ERR_PROCESS_RECEIVED_CRED) from err
 
         schema_id = cred_recvd.schema_id
         schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
         if not schema_id_parts:
-            raise IndyHolderError(f"Error parsing credential schema ID: {schema_id}")
+            raise IndyHolderError(ERR_PARSING_SCHEMA_ID.format(schema_id))
         cred_def_id = cred_recvd.cred_def_id
         cdef_id_parts = re.match(r"^(\w+):3:CL:([^:]+):([^:]+)$", cred_def_id)
         if not cdef_id_parts:
             raise IndyHolderError(
-                f"Error parsing credential definition ID: {cred_def_id}"
+                ERR_PARSING_CRED_DEF_ID.format(cred_def_id)
             )
 
         credential_id = credential_id or str(uuid4())
@@ -264,7 +307,7 @@ class IndyCredxHolder(IndyHolder):
                     )
                 await txn.commit()
         except (DBStoreError, AskarError) as err:
-            raise IndyHolderError("Error storing credential") from err
+            raise IndyHolderError(ERR_STORING_CREDENTIAL) from err
 
         return credential_id
 
@@ -291,9 +334,9 @@ class IndyCredxHolder(IndyHolder):
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
         except (DBStoreError, AskarError) as err:
-            raise IndyHolderError("Error retrieving credentials") from err
+            raise IndyHolderError(ERR_RETRIEVING_CREDENTIALS) from err
         except CredxError as err:
-            raise IndyHolderError("Error loading stored credential") from err
+            raise IndyHolderError(ERR_LOADING_STORED_CREDENTIAL) from err
 
         return result
 
@@ -317,63 +360,111 @@ class IndyCredxHolder(IndyHolder):
 
         """
         extra_query = extra_query or {}
+        referents = self._get_effective_referents(presentation_request, referents)
+        
+        creds = {}
+        for reft in referents:
+            await self._process_referent(
+                presentation_request, reft, creds, extra_query, offset, limit
+            )
+        
+        self._finalize_credential_referents(creds)
+        return list(creds.values())
+
+    def _get_effective_referents(
+        self, presentation_request: dict, referents: Sequence[str]
+    ) -> Sequence[str]:
+        """Get effective referents for the presentation request."""
         if not referents:
-            referents = (
+            return (
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
+        return referents
 
-        creds = {}
+    async def _process_referent(
+        self, 
+        presentation_request: dict, 
+        reft: str, 
+        creds: dict, 
+        extra_query: dict, 
+        offset: int, 
+        limit: int
+    ):
+        """Process a single referent to find matching credentials."""
+        names, restr = self._extract_referent_info(presentation_request, reft)
+        tag_filter = self._build_tag_filter(names, restr, extra_query)
+        
+        rows = self._profile.store.scan(
+            category=CATEGORY_CREDENTIAL,
+            tag_filter=tag_filter,
+            offset=offset,
+            limit=limit,
+            profile=self._profile.settings.get("wallet.askar_profile"),
+        )
+        
+        async for row in rows:
+            self._add_credential_to_results(row, reft, creds, presentation_request)
 
-        for reft in referents:
-            names = set()
-            if reft in presentation_request["requested_attributes"]:
-                attr = presentation_request["requested_attributes"][reft]
-                if "name" in attr:
-                    names.add(_normalize_attr_name(attr["name"]))
-                elif "names" in attr:
-                    names.update(_normalize_attr_name(name) for name in attr["names"])
-                # for name in names:
-                #     tag_filter[f"attr::{_normalize_attr_name(name)}::marker"] = "1"
-                restr = attr.get("restrictions")
-            elif reft in presentation_request["requested_predicates"]:
-                pred = presentation_request["requested_predicates"][reft]
-                if "name" in pred:
-                    names.add(_normalize_attr_name(pred["name"]))
-                # tag_filter[f"attr::{_normalize_attr_name(name)}::marker"] = "1"
-                restr = pred.get("restrictions")
-            else:
-                raise IndyHolderError(f"Unknown presentation request referent: {reft}")
+    def _extract_referent_info(
+        self, presentation_request: dict, reft: str
+    ) -> tuple[set, dict]:
+        """Extract names and restrictions from a referent."""
+        names = set()
+        
+        if reft in presentation_request["requested_attributes"]:
+            attr = presentation_request["requested_attributes"][reft]
+            names = self._extract_attribute_names(attr)
+            restr = attr.get("restrictions")
+        elif reft in presentation_request["requested_predicates"]:
+            pred = presentation_request["requested_predicates"][reft]
+            if "name" in pred:
+                names.add(_normalize_attr_name(pred["name"]))
+            restr = pred.get("restrictions")
+        else:
+            raise IndyHolderError(ERR_UNKNOWN_PRESENTATION_REQ_REF.format(reft))
+            
+        return names, restr
 
-            tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
-            if restr:
-                # FIXME check if restr is a list or dict? validate WQL format
-                tag_filter = {"$and": [tag_filter] + restr}
-            if extra_query:
-                tag_filter = {"$and": [tag_filter, extra_query]}
+    def _extract_attribute_names(self, attr: dict) -> set:
+        """Extract attribute names from attribute specification."""
+        names = set()
+        if "name" in attr:
+            names.add(_normalize_attr_name(attr["name"]))
+        elif "names" in attr:
+            names.update(_normalize_attr_name(name) for name in attr["names"])
+        return names
 
-            rows = self._profile.store.scan(
-                category=CATEGORY_CREDENTIAL,
-                tag_filter=tag_filter,
-                offset=offset,
-                limit=limit,
-                profile=self._profile.settings.get("wallet.askar_profile"),
-            )
-            async for row in rows:
-                if row.name in creds:
-                    creds[row.name]["presentation_referents"].add(reft)
-                else:
-                    cred_info = _make_cred_info(row.name, Credential.load(row.raw_value))
-                    creds[row.name] = {
-                        "cred_info": cred_info,
-                        "interval": presentation_request.get("non_revoked"),
-                        "presentation_referents": {reft},
-                    }
+    def _build_tag_filter(self, names: set, restr: dict, extra_query: dict) -> dict:
+        """Build tag filter for credential search."""
+        tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
+        
+        filters_to_combine = [tag_filter]
+        if restr:
+            filters_to_combine.extend(restr if isinstance(restr, list) else [restr])
+        if extra_query:
+            filters_to_combine.append(extra_query)
+            
+        return {"$and": filters_to_combine} if len(filters_to_combine) > 1 else tag_filter
 
+    def _add_credential_to_results(
+        self, row, reft: str, creds: dict, presentation_request: dict
+    ):
+        """Add credential to results or update existing entry."""
+        if row.name in creds:
+            creds[row.name]["presentation_referents"].add(reft)
+        else:
+            cred_info = _make_cred_info(row.name, Credential.load(row.raw_value))
+            creds[row.name] = {
+                "cred_info": cred_info,
+                "interval": presentation_request.get("non_revoked"),
+                "presentation_referents": {reft},
+            }
+
+    def _finalize_credential_referents(self, creds: dict):
+        """Convert presentation referents sets to lists."""
         for cred in creds.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
-
-        return list(creds.values())
 
     async def get_credential(self, credential_id: str) -> str:
         """Get a credential stored in the wallet.
@@ -391,7 +482,7 @@ class IndyCredxHolder(IndyHolder):
             async with self._profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
         except (DBStoreError, AskarError) as err:
-            raise IndyHolderError("Error retrieving credential") from err
+            raise IndyHolderError(ERR_RETRIEVING_CREDENTIAL) from err
 
         if not cred:
             raise WalletNotFoundError(
@@ -401,7 +492,7 @@ class IndyCredxHolder(IndyHolder):
         try:
             return Credential.load(cred.raw_value)
         except CredxError as err:
-            raise IndyHolderError("Error loading requested credential") from err
+            raise IndyHolderError(ERR_LOADING_REQUESTED_CREDENTIAL) from err
 
     async def credential_revoked(
         self,
@@ -480,7 +571,7 @@ class IndyCredxHolder(IndyHolder):
                     credential_id,
                 )
         except (DBStoreError, AskarError) as err:
-            raise IndyHolderError("Error retrieving credential mime types") from err
+            raise IndyHolderError(ERR_RETRIEVING_CRED_MIME_TYPES) from err
         values = mime_types_record and mime_types_record.value_json
         if values:
             return values.get(attr) if attr else values
@@ -504,35 +595,31 @@ class IndyCredxHolder(IndyHolder):
 
         """
         creds: Dict[str, Credential] = {}
-
-        def get_rev_state(cred_id: str, detail: dict):
-            cred = creds[cred_id]
-            rev_reg_id = cred.rev_reg_id
-            timestamp = detail.get("timestamp") if rev_reg_id else None
-            rev_state = None
-            if timestamp:
-                if not rev_states or rev_reg_id not in rev_states:
-                    raise IndyHolderError(
-                        f"No revocation states provided for credential '{cred_id}' "
-                        f"with rev_reg_id '{rev_reg_id}'"
-                    )
-                rev_state = rev_states[rev_reg_id].get(timestamp)
-                if not rev_state:
-                    raise IndyHolderError(
-                        f"No revocation states provided for credential '{cred_id}' "
-                        f"with rev_reg_id '{rev_reg_id}' at timestamp {timestamp}"
-                    )
-            return timestamp, rev_state
-
-        self_attest = requested_credentials.get("self_attested_attributes") or {}
         present_creds = PresentCredentials()
+        
+        await self._process_requested_attributes(
+            requested_credentials, creds, present_creds, rev_states
+        )
+        await self._process_requested_predicates(
+            requested_credentials, creds, present_creds, rev_states
+        )
+        
+        return await self._create_final_presentation(
+            presentation_request, requested_credentials, present_creds,
+            schemas, credential_definitions
+        )
+
+    async def _process_requested_attributes(
+        self, requested_credentials: dict, creds: dict, present_creds, rev_states: dict
+    ):
+        """Process requested attributes for presentation."""
         req_attrs = requested_credentials.get("requested_attributes") or {}
         for reft, detail in req_attrs.items():
             cred_id = detail["cred_id"]
             if cred_id not in creds:
-                # NOTE: could be optimized if multiple creds are requested
                 creds[cred_id] = await self._get_credential(cred_id)
-            timestamp, rev_state = get_rev_state(cred_id, detail)
+            
+            timestamp, rev_state = self._get_rev_state(cred_id, detail, creds, rev_states)
             present_creds.add_attributes(
                 creds[cred_id],
                 reft,
@@ -540,13 +627,18 @@ class IndyCredxHolder(IndyHolder):
                 timestamp=timestamp,
                 rev_state=rev_state,
             )
+
+    async def _process_requested_predicates(
+        self, requested_credentials: dict, creds: dict, present_creds, rev_states: dict
+    ):
+        """Process requested predicates for presentation."""
         req_preds = requested_credentials.get("requested_predicates") or {}
         for reft, detail in req_preds.items():
             cred_id = detail["cred_id"]
             if cred_id not in creds:
-                # NOTE: could be optimized if multiple creds are requested
                 creds[cred_id] = await self._get_credential(cred_id)
-            timestamp, rev_state = get_rev_state(cred_id, detail)
+                
+            timestamp, rev_state = self._get_rev_state(cred_id, detail, creds, rev_states)
             present_creds.add_predicates(
                 creds[cred_id],
                 reft,
@@ -554,6 +646,41 @@ class IndyCredxHolder(IndyHolder):
                 rev_state=rev_state,
             )
 
+    def _get_rev_state(
+        self, cred_id: str, detail: dict, creds: dict, rev_states: dict
+    ) -> tuple:
+        """Get revocation state for a credential."""
+        cred = creds[cred_id]
+        rev_reg_id = cred.rev_reg_id
+        timestamp = detail.get("timestamp") if rev_reg_id else None
+        rev_state = None
+        
+        if timestamp:
+            self._validate_rev_states(rev_states, rev_reg_id, cred_id)
+            rev_state = rev_states[rev_reg_id].get(timestamp)
+            if not rev_state:
+                raise IndyHolderError(
+                    f"No revocation states provided for credential '{cred_id}' "
+                    f"with rev_reg_id '{rev_reg_id}' at timestamp {timestamp}"
+                )
+        
+        return timestamp, rev_state
+
+    def _validate_rev_states(self, rev_states: dict, rev_reg_id: str, cred_id: str):
+        """Validate that revocation states are available."""
+        if not rev_states or rev_reg_id not in rev_states:
+            raise IndyHolderError(
+                f"No revocation states provided for credential '{cred_id}' "
+                f"with rev_reg_id '{rev_reg_id}'"
+            )
+
+    async def _create_final_presentation(
+        self, presentation_request: dict, requested_credentials: dict, 
+        present_creds, schemas: dict, credential_definitions: dict
+    ) -> str:
+        """Create the final presentation."""
+        self_attest = requested_credentials.get("self_attested_attributes") or {}
+        
         try:
             secret = await self.get_link_secret()
             presentation = await asyncio.get_event_loop().run_in_executor(
@@ -567,7 +694,7 @@ class IndyCredxHolder(IndyHolder):
                 credential_definitions.values(),
             )
         except CredxError as err:
-            raise IndyHolderError("Error creating presentation") from err
+            raise IndyHolderError(ERR_CREATE_PRESENTATION) from err
 
         return presentation.to_json()
 
@@ -610,5 +737,5 @@ class IndyCredxHolder(IndyHolder):
                 tails_file_path,
             )
         except CredxError as err:
-            raise IndyHolderError("Error creating revocation state") from err
+            raise IndyHolderError(ERR_CREATE_REV_STATE) from err
         return rev_state.to_json()

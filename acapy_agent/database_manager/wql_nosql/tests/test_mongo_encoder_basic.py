@@ -62,10 +62,10 @@ class TestMongoTagEncoder(unittest.TestCase):
     # Existing test methods
     def test_comparison_conjunction(self):
         """Test encoding a conjunction of comparison operations."""
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
         mongo_query = self.encoder.encode_query(query)
@@ -91,16 +91,16 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_deeply_nested_not(self):
         """Test encoding a deeply nested NOT query."""
-        query = TagQuery.Not(
-            TagQuery.And(
+        query = TagQuery.not_(
+            TagQuery.and_(
                 [
-                    TagQuery.Or(
+                    TagQuery.or_(
                         [
-                            TagQuery.Eq(TagName("category"), "electronics"),
-                            TagQuery.Eq(TagName("sale"), "yes"),
+                            TagQuery.eq(TagName("category"), "electronics"),
+                            TagQuery.eq(TagName("sale"), "yes"),
                         ]
                     ),
-                    TagQuery.Not(TagQuery.Eq(TagName("stock"), "out")),
+                    TagQuery.not_(TagQuery.eq(TagName("stock"), "out")),
                 ]
             )
         )
@@ -133,19 +133,19 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_negate_conj(self):
         """Test encoding a negated conjunction query."""
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Eq(TagName("status"), "in_stock"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.eq(TagName("status"), "in_stock"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Not(TagQuery.Eq(TagName("status"), "sold_out")),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.not_(TagQuery.eq(TagName("status"), "sold_out")),
             ]
         )
-        query = TagQuery.Not(TagQuery.Or([condition_1, condition_2]))
+        query = TagQuery.not_(TagQuery.or_([condition_1, condition_2]))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {
             "$and": [
@@ -177,10 +177,10 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_in_and_exist_conjunction(self):
         """Test encoding an In and Exist conjunction."""
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.In(TagName("color"), ["red", "blue"]),
-                TagQuery.Exist([TagName("size")]),
+                TagQuery.in_(TagName("color"), ["red", "blue"]),
+                TagQuery.exist([TagName("size")]),
             ]
         )
         mongo_query = self.encoder.encode_query(query)
@@ -207,19 +207,19 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_or_conjunction(self):
         """Test encoding an OR conjunction query."""
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("tag_a"), "value_a"),
-                TagQuery.Eq(TagName("tag_b"), "value_b"),
+                TagQuery.eq(TagName("tag_a"), "value_a"),
+                TagQuery.eq(TagName("tag_b"), "value_b"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("tag_a"), "value_a"),
-                TagQuery.Not(TagQuery.Eq(TagName("tag_b"), "value_c")),
+                TagQuery.eq(TagName("tag_a"), "value_a"),
+                TagQuery.not_(TagQuery.eq(TagName("tag_b"), "value_c")),
             ]
         )
-        query = TagQuery.Or([condition_1, condition_2])
+        query = TagQuery.or_([condition_1, condition_2])
         mongo_query = self.encoder.encode_query(query)
         expected_query = {
             "$or": [
@@ -245,7 +245,7 @@ class TestMongoTagEncoder(unittest.TestCase):
     # New test methods for individual operators
     def test_eq_positive(self):
         """Test encoding a positive equality query."""
-        query = TagQuery.Eq(TagName("field"), "value")
+        query = TagQuery.eq(TagName("field"), "value")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": "value"}
         self.assertEqual(mongo_query, expected_query, "Positive equality query mismatch")
@@ -264,14 +264,14 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_eq_negated(self):
         """Test encoding a negated equality query."""
-        query = TagQuery.Not(TagQuery.Eq(TagName("field"), "value"))
+        query = TagQuery.not_(TagQuery.eq(TagName("field"), "value"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$ne": "value"}}
         self.assertEqual(mongo_query, expected_query, "Negated equality query mismatch")
 
     def test_neq_positive(self):
         """Test encoding a positive inequality query."""
-        query = TagQuery.Neq(TagName("field"), "value")
+        query = TagQuery.neq(TagName("field"), "value")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$ne": "value"}}
         self.assertEqual(
@@ -280,14 +280,14 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_neq_negated(self):
         """Test encoding a negated inequality query."""
-        query = TagQuery.Not(TagQuery.Neq(TagName("field"), "value"))
+        query = TagQuery.not_(TagQuery.neq(TagName("field"), "value"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": "value"}
         self.assertEqual(mongo_query, expected_query, "Negated inequality query mismatch")
 
     def test_gt_positive(self):
         """Test encoding a positive greater-than query."""
-        query = TagQuery.Gt(TagName("field"), "10")
+        query = TagQuery.gt(TagName("field"), "10")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$gt": "10"}}
         self.assertEqual(
@@ -296,7 +296,7 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_gt_negated(self):
         """Test encoding a negated greater-than query."""
-        query = TagQuery.Not(TagQuery.Gt(TagName("field"), "10"))
+        query = TagQuery.not_(TagQuery.gt(TagName("field"), "10"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$not": {"$gt": "10"}}}
         self.assertEqual(
@@ -305,7 +305,7 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_gte_positive(self):
         """Test encoding a positive greater-than-or-equal query."""
-        query = TagQuery.Gte(TagName("field"), "10")
+        query = TagQuery.gte(TagName("field"), "10")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$gte": "10"}}
         self.assertEqual(
@@ -314,7 +314,7 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_gte_negated(self):
         """Test encoding a negated greater-than-or-equal query."""
-        query = TagQuery.Not(TagQuery.Gte(TagName("field"), "10"))
+        query = TagQuery.not_(TagQuery.gte(TagName("field"), "10"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$not": {"$gte": "10"}}}
         self.assertEqual(
@@ -323,21 +323,21 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_lt_positive(self):
         """Test encoding a positive less-than query."""
-        query = TagQuery.Lt(TagName("field"), "10")
+        query = TagQuery.lt(TagName("field"), "10")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$lt": "10"}}
         self.assertEqual(mongo_query, expected_query, "Positive less-than query mismatch")
 
     def test_lt_negated(self):
         """Test encoding a negated less-than query."""
-        query = TagQuery.Not(TagQuery.Lt(TagName("field"), "10"))
+        query = TagQuery.not_(TagQuery.lt(TagName("field"), "10"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$not": {"$lt": "10"}}}
         self.assertEqual(mongo_query, expected_query, "Negated less-than query mismatch")
 
     def test_lte_positive(self):
         """Test encoding a positive less-than-or-equal query."""
-        query = TagQuery.Lte(TagName("field"), "10")
+        query = TagQuery.lte(TagName("field"), "10")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$lte": "10"}}
         self.assertEqual(
@@ -346,7 +346,7 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_lte_negated(self):
         """Test encoding a negated less-than-or-equal query."""
-        query = TagQuery.Not(TagQuery.Lte(TagName("field"), "10"))
+        query = TagQuery.not_(TagQuery.lte(TagName("field"), "10"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$not": {"$lte": "10"}}}
         self.assertEqual(
@@ -355,42 +355,42 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_like_positive(self):
         """Test encoding a positive LIKE query."""
-        query = TagQuery.Like(TagName("field"), "pattern")
+        query = TagQuery.like(TagName("field"), "pattern")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$regex": "pattern"}}
         self.assertEqual(mongo_query, expected_query, "Positive LIKE query mismatch")
 
     def test_like_negated(self):
         """Test encoding a negated LIKE query."""
-        query = TagQuery.Not(TagQuery.Like(TagName("field"), "pattern"))
+        query = TagQuery.not_(TagQuery.like(TagName("field"), "pattern"))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$not": {"$regex": "pattern"}}}
         self.assertEqual(mongo_query, expected_query, "Negated LIKE query mismatch")
 
     def test_in_positive(self):
         """Test encoding a positive IN query."""
-        query = TagQuery.In(TagName("field"), ["a", "b"])
+        query = TagQuery.in_(TagName("field"), ["a", "b"])
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$in": ["a", "b"]}}
         self.assertEqual(mongo_query, expected_query, "Positive IN query mismatch")
 
     def test_in_negated(self):
         """Test encoding a negated IN query."""
-        query = TagQuery.Not(TagQuery.In(TagName("field"), ["a", "b"]))
+        query = TagQuery.not_(TagQuery.in_(TagName("field"), ["a", "b"]))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$nin": ["a", "b"]}}
         self.assertEqual(mongo_query, expected_query, "Negated IN query mismatch")
 
     def test_exist_positive(self):
         """Test encoding a positive EXIST query."""
-        query = TagQuery.Exist([TagName("field")])
+        query = TagQuery.exist([TagName("field")])
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$exists": True}}
         self.assertEqual(mongo_query, expected_query, "Positive EXIST query mismatch")
 
     def test_exist_negated(self):
         """Test encoding a negated EXIST query."""
-        query = TagQuery.Not(TagQuery.Exist([TagName("field")]))
+        query = TagQuery.not_(TagQuery.exist([TagName("field")]))
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$exists": False}}
         self.assertEqual(mongo_query, expected_query, "Negated EXIST query mismatch")
@@ -398,8 +398,8 @@ class TestMongoTagEncoder(unittest.TestCase):
     # New test methods for conjunctions
     def test_and_multiple(self):
         """Test encoding an AND query with multiple subqueries."""
-        query = TagQuery.And(
-            [TagQuery.Eq(TagName("f1"), "v1"), TagQuery.Gt(TagName("f2"), "10")]
+        query = TagQuery.and_(
+            [TagQuery.eq(TagName("f1"), "v1"), TagQuery.gt(TagName("f2"), "10")]
         )
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"$and": [{"f1": "v1"}, {"f2": {"$gt": "10"}}]}
@@ -407,8 +407,8 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_or_multiple(self):
         """Test encoding an OR query with multiple subqueries."""
-        query = TagQuery.Or(
-            [TagQuery.Eq(TagName("f1"), "v1"), TagQuery.Gt(TagName("f2"), "10")]
+        query = TagQuery.or_(
+            [TagQuery.eq(TagName("f1"), "v1"), TagQuery.gt(TagName("f2"), "10")]
         )
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"$or": [{"f1": "v1"}, {"f2": {"$gt": "10"}}]}
@@ -416,11 +416,11 @@ class TestMongoTagEncoder(unittest.TestCase):
 
     def test_nested_and_or(self):
         """Test encoding a nested AND/OR query."""
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("f1"), "v1"),
-                TagQuery.Or(
-                    [TagQuery.Gt(TagName("f2"), "10"), TagQuery.Lt(TagName("f3"), "5")]
+                TagQuery.eq(TagName("f1"), "v1"),
+                TagQuery.or_(
+                    [TagQuery.gt(TagName("f2"), "10"), TagQuery.lt(TagName("f3"), "5")]
                 ),
             ]
         )
@@ -433,11 +433,11 @@ class TestMongoTagEncoder(unittest.TestCase):
     # New test methods for complex queries
     def test_mixed_operators(self):
         """Test encoding a query with mixed operators."""
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("f1"), "v1"),
-                TagQuery.Not(TagQuery.In(TagName("f2"), ["a", "b"])),
-                TagQuery.Like(TagName("f3"), "pat"),
+                TagQuery.eq(TagName("f1"), "v1"),
+                TagQuery.not_(TagQuery.in_(TagName("f2"), ["a", "b"])),
+                TagQuery.like(TagName("f3"), "pat"),
             ]
         )
         mongo_query = self.encoder.encode_query(query)
@@ -453,28 +453,28 @@ class TestMongoTagEncoder(unittest.TestCase):
     # New test methods for edge cases
     def test_empty_query(self):
         """Test encoding an empty query."""
-        query = TagQuery.And([])
+        query = TagQuery.and_([])
         mongo_query = self.encoder.encode_query(query)
         expected_query = {}
         self.assertEqual(mongo_query, expected_query, "Empty query mismatch")
 
     def test_empty_in_list(self):
         """Test encoding an IN query with an empty list."""
-        query = TagQuery.In(TagName("field"), [])
+        query = TagQuery.in_(TagName("field"), [])
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"field": {"$in": []}}
         self.assertEqual(mongo_query, expected_query, "Empty IN list query mismatch")
 
     def test_multiple_exists(self):
         """Test encoding an EXIST query with multiple fields."""
-        query = TagQuery.Exist([TagName("f1"), TagName("f2")])
+        query = TagQuery.exist([TagName("f1"), TagName("f2")])
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"$and": [{"f1": {"$exists": True}}, {"f2": {"$exists": True}}]}
         self.assertEqual(mongo_query, expected_query, "Multiple EXISTS query mismatch")
 
     def test_special_characters(self):
         """Test encoding a query with special characters in names and values."""
-        query = TagQuery.Eq(TagName("f.1"), "val$ue")
+        query = TagQuery.eq(TagName("f.1"), "val$ue")
         mongo_query = self.encoder.encode_query(query)
         expected_query = {"f.1": "val$ue"}
         self.assertEqual(mongo_query, expected_query, "Special characters query mismatch")

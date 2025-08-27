@@ -130,7 +130,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         )
 
     def test_like_positive(self):
-        query = TagQuery.Like(TagName("field"), "%pat%")
+        query = TagQuery.like(TagName("field"), "%pat%")
         wql = query.to_wql_str()
         print(f"Test: Positive LIKE query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -161,7 +161,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 4], "Positive LIKE")
 
     def test_like_negated(self):
-        query = TagQuery.Not(TagQuery.Like(TagName("field"), "%pat%"))
+        query = TagQuery.not_(TagQuery.like(TagName("field"), "%pat%"))
         wql = query.to_wql_str()
         print(f"Test: Negated LIKE query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -192,7 +192,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3], "Negated LIKE")
 
     def test_in_positive(self):
-        query = TagQuery.In(TagName("field"), ["a", "b"])
+        query = TagQuery.in_(TagName("field"), ["a", "b"])
         wql = query.to_wql_str()
         print(f"Test: Positive IN query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -219,7 +219,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 4], "Positive IN")
 
     def test_in_negated(self):
-        query = TagQuery.Not(TagQuery.In(TagName("field"), ["a", "b"]))
+        query = TagQuery.not_(TagQuery.in_(TagName("field"), ["a", "b"]))
         wql = query.to_wql_str()
         print(f"Test: Negated IN query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -246,7 +246,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3, 4], "Negated IN")
 
     def test_exist_positive(self):
-        query = TagQuery.Exist([TagName("field")])
+        query = TagQuery.exist([TagName("field")])
         wql = query.to_wql_str()
         print(f"Test: Positive EXIST query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -276,7 +276,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 3], "Positive EXIST")
 
     def test_exist_negated(self):
-        query = TagQuery.Not(TagQuery.Exist([TagName("field")]))
+        query = TagQuery.not_(TagQuery.exist([TagName("field")]))
         wql = query.to_wql_str()
         print(f"Test: Negated EXIST query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -306,8 +306,8 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2], "Negated EXIST")
 
     def test_and_multiple(self):
-        query = TagQuery.And(
-            [TagQuery.Eq(TagName("f1"), "v1"), TagQuery.Gt(TagName("f2"), "10")]
+        query = TagQuery.and_(
+            [TagQuery.eq(TagName("f1"), "v1"), TagQuery.gt(TagName("f2"), "10")]
         )
         wql = query.to_wql_str()
         print(f"Test: AND query with multiple subqueries\nWQL: {wql}")
@@ -339,8 +339,8 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 4], "AND multiple")
 
     def test_or_multiple(self):
-        query = TagQuery.Or(
-            [TagQuery.Eq(TagName("f1"), "v1"), TagQuery.Gt(TagName("f2"), "10")]
+        query = TagQuery.or_(
+            [TagQuery.eq(TagName("f1"), "v1"), TagQuery.gt(TagName("f2"), "10")]
         )
         wql = query.to_wql_str()
         print(f"Test: OR query with multiple subqueries\nWQL: {wql}")
@@ -372,11 +372,11 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 3], "OR multiple")
 
     def test_nested_and_or(self):
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("f1"), "v1"),
-                TagQuery.Or(
-                    [TagQuery.Gt(TagName("f2"), "10"), TagQuery.Lt(TagName("f3"), "5")]
+                TagQuery.eq(TagName("f1"), "v1"),
+                TagQuery.or_(
+                    [TagQuery.gt(TagName("f2"), "10"), TagQuery.lt(TagName("f3"), "5")]
                 ),
             ]
         )
@@ -415,10 +415,10 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2], "Nested AND/OR")
 
     def test_comparison_conjunction(self):
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
         wql = query.to_wql_str()
@@ -460,16 +460,16 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 4], "Comparison conjunction")
 
     def test_deeply_nested_not(self):
-        query = TagQuery.Not(
-            TagQuery.And(
+        query = TagQuery.not_(
+            TagQuery.and_(
                 [
-                    TagQuery.Or(
+                    TagQuery.or_(
                         [
-                            TagQuery.Eq(TagName("category"), "electronics"),
-                            TagQuery.Eq(TagName("sale"), "yes"),
+                            TagQuery.eq(TagName("category"), "electronics"),
+                            TagQuery.eq(TagName("sale"), "yes"),
                         ]
                     ),
-                    TagQuery.Not(TagQuery.Eq(TagName("stock"), "out")),
+                    TagQuery.not_(TagQuery.eq(TagName("stock"), "out")),
                 ]
             )
         )
@@ -510,19 +510,19 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2], "Deeply nested NOT")
 
     def test_and_or_not_complex_case(self):
-        query = TagQuery.Not(
-            TagQuery.And(
+        query = TagQuery.not_(
+            TagQuery.and_(
                 [
-                    TagQuery.Eq(TagName("username"), "alice"),
-                    TagQuery.Or(
+                    TagQuery.eq(TagName("username"), "alice"),
+                    TagQuery.or_(
                         [
-                            TagQuery.Gt(TagName("age"), "30"),
-                            TagQuery.Not(TagQuery.Lte(TagName("height"), "180")),
-                            TagQuery.And(
+                            TagQuery.gt(TagName("age"), "30"),
+                            TagQuery.not_(TagQuery.lte(TagName("height"), "180")),
+                            TagQuery.and_(
                                 [
-                                    TagQuery.Lt(TagName("score"), "100"),
-                                    TagQuery.Not(
-                                        TagQuery.Gte(
+                                    TagQuery.lt(TagName("score"), "100"),
+                                    TagQuery.not_(
+                                        TagQuery.gte(
                                             TagName("timestamp"), "2021-01-01T00:00:00"
                                         )
                                     ),
@@ -530,11 +530,11 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
                             ),
                         ]
                     ),
-                    TagQuery.Not(TagQuery.Like(TagName("secret_code"), "abc123")),
-                    TagQuery.And(
+                    TagQuery.not_(TagQuery.like(TagName("secret_code"), "abc123")),
+                    TagQuery.and_(
                         [
-                            TagQuery.Eq(TagName("occupation"), "developer"),
-                            TagQuery.Not(TagQuery.Neq(TagName("status"), "active")),
+                            TagQuery.eq(TagName("occupation"), "developer"),
+                            TagQuery.not_(TagQuery.neq(TagName("status"), "active")),
                         ]
                     ),
                 ]
@@ -725,7 +725,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         )
 
     def test_empty_query(self):
-        query = TagQuery.And([])
+        query = TagQuery.and_([])
         wql = query.to_wql_str()
         print(f"Test: Empty query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -750,7 +750,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2], "Empty query")
 
     def test_multiple_exists(self):
-        query = TagQuery.Exist([TagName("f1"), TagName("f2")])
+        query = TagQuery.exist([TagName("f1"), TagName("f2")])
         wql = query.to_wql_str()
         print(f"Test: Multiple EXISTS query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -781,7 +781,7 @@ class TestPostgresTagEncoderNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1], "Multiple EXISTS")
 
     def test_special_characters(self):
-        query = TagQuery.Eq(TagName("f1"), "val$ue")
+        query = TagQuery.eq(TagName("f1"), "val$ue")
         wql = query.to_wql_str()
         print(f"Test: Special characters query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)

@@ -92,10 +92,10 @@ class TestPostgresTagEncoder(unittest.TestCase):
 
     def test_comparison_conjunction(self):
         """Test encoding a conjunction of comparison operations into a PostgreSQL statement."""
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
 

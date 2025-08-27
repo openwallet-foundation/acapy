@@ -3,7 +3,7 @@
 import unittest
 import random
 import string
-from .query import (
+from ..query import (
     AndQuery,
     OrQuery,
     NotQuery,

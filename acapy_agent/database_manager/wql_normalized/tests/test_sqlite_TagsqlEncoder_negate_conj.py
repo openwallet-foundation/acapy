@@ -35,19 +35,19 @@ class TestTagSqlEncoder(unittest.TestCase):
 
     def test_negate_conj(self):
         """Test encoding a negated conjunction TagQuery into an SQL statement."""
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Eq(TagName("status"), "in_stock"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.eq(TagName("status"), "in_stock"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Not(TagQuery.Eq(TagName("status"), "sold_out")),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.not_(TagQuery.eq(TagName("status"), "sold_out")),
             ]
         )
-        query = TagQuery.Not(TagQuery.Or([condition_1, condition_2]))
+        query = TagQuery.not_(TagQuery.or_([condition_1, condition_2]))
 
         encoder = encoder_factory.get_encoder("sqlite", self.enc_name, self.enc_value)
 

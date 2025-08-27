@@ -2,7 +2,7 @@
 
 import json
 from enum import Enum
-from typing import List, Union, Optional, Tuple
+from typing import List, Optional, Tuple
 from abc import ABC, abstractmethod
 from .query import (
     AndQuery,
@@ -93,7 +93,7 @@ class TagQuery:
     def __init__(
         self,
         variant: str,
-        data: Union["TagQuery", List["TagQuery"], TagName, str, List[str]],
+        data: "TagQuery" | List["TagQuery"] | TagName | str | List[str],
     ):
         """Initialize TagQuery."""
         self.variant = variant
@@ -111,109 +111,152 @@ class TagQuery:
         return f"TagQuery(variant='{self.variant}', data={data_str})"
 
     @staticmethod
-    def Eq(name: TagName, value: str):
+    def eq(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Eq", (name, value))
-
+    
     @staticmethod
-    def Neq(name: TagName, value: str):
+    def neq(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Neq", (name, value))
-
+    
     @staticmethod
-    def Gt(name: TagName, value: str):
+    def gt(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Gt", (name, value))
-
+    
     @staticmethod
-    def Gte(name: TagName, value: str):
+    def gte(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Gte", (name, value))
-
+    
     @staticmethod
-    def Lt(name: TagName, value: str):
+    def lt(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Lt", (name, value))
-
+    
     @staticmethod
-    def Lte(name: TagName, value: str):
+    def lte(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Lte", (name, value))
-
+    
     @staticmethod
-    def Like(name: TagName, value: str):
+    def like(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Like", (name, value))
-
+    
     @staticmethod
-    def In(name: TagName, values: List[str]):
+    def in_(name: TagName, values: List[str]):
         """Perform the action."""
         return TagQuery("In", (name, values))
-
+    
     @staticmethod
-    def Exist(names: List[TagName]):
+    def exist(names: List[TagName]):
         """Perform the action."""
         return TagQuery("Exist", names)
-
+    
     @staticmethod
-    def And(subqueries: List["TagQuery"]):
+    def and_(subqueries: List["TagQuery"]):
         """Perform the action."""
         return TagQuery("And", subqueries)
-
+    
     @staticmethod
-    def Or(subqueries: List["TagQuery"]):
+    def or_(subqueries: List["TagQuery"]):
         """Perform the action."""
         return TagQuery("Or", subqueries)
+    
 
     @staticmethod
-    def Not(subquery: "TagQuery"):
+    def not_(subquery: "TagQuery"):
         """Perform the action."""
         return TagQuery("Not", subquery)
 
     def to_wql_dict(self):
         """Convert the TagQuery to a WQL-compatible dictionary."""
-        if self.variant == "Eq":
-            name, value = self.data
-            return {name.to_string(): value}
-        elif self.variant == "Neq":
-            name, value = self.data
-            return {name.to_string(): {"$neq": value}}
-        elif self.variant == "Gt":
-            name, value = self.data
-            return {name.to_string(): {"$gt": value}}
-        elif self.variant == "Gte":
-            name, value = self.data
-            return {name.to_string(): {"$gte": value}}
-        elif self.variant == "Lt":
-            name, value = self.data
-            return {name.to_string(): {"$lt": value}}
-        elif self.variant == "Lte":
-            name, value = self.data
-            return {name.to_string(): {"$lte": value}}
-        elif self.variant == "Like":
-            name, value = self.data
-            return {name.to_string(): {"$like": value}}
-        elif self.variant == "In":
-            name, values = self.data
-            return {name.to_string(): {"$in": values}}
-        elif self.variant == "Exist":
-            names = self.data
-            return {"$exist": [name.to_string() for name in names]}
-        elif self.variant == "And":
-            subqueries = self.data
-            if not subqueries:
-                return {}
-            return {"$and": [sq.to_wql_dict() for sq in subqueries]}
-        elif self.variant == "Or":
-            subqueries = self.data
-            if not subqueries:
-                return {}
-            return {"$or": [sq.to_wql_dict() for sq in subqueries]}
-        elif self.variant == "Not":
-            subquery = self.data
-            return {"$not": subquery.to_wql_dict()}
+        variant_handlers = {
+            "Eq": self._handle_eq_variant,
+            "Neq": self._handle_neq_variant,
+            "Gt": self._handle_gt_variant,
+            "Gte": self._handle_gte_variant,
+            "Lt": self._handle_lt_variant,
+            "Lte": self._handle_lte_variant,
+            "Like": self._handle_like_variant,
+            "In": self._handle_in_variant,
+            "Exist": self._handle_exist_variant,
+            "And": self._handle_and_variant,
+            "Or": self._handle_or_variant,
+            "Not": self._handle_not_variant,
+        }
+        
+        handler = variant_handlers.get(self.variant)
+        if handler:
+            return handler()
         else:
             raise ValueError(f"Unknown query variant: {self.variant}")
+
+    def _handle_eq_variant(self):
+        """Handle Eq variant."""
+        name, value = self.data
+        return {name.to_string(): value}
+
+    def _handle_neq_variant(self):
+        """Handle Neq variant."""
+        name, value = self.data
+        return {name.to_string(): {"$neq": value}}
+
+    def _handle_gt_variant(self):
+        """Handle Gt variant."""
+        name, value = self.data
+        return {name.to_string(): {"$gt": value}}
+
+    def _handle_gte_variant(self):
+        """Handle Gte variant."""
+        name, value = self.data
+        return {name.to_string(): {"$gte": value}}
+
+    def _handle_lt_variant(self):
+        """Handle Lt variant."""
+        name, value = self.data
+        return {name.to_string(): {"$lt": value}}
+
+    def _handle_lte_variant(self):
+        """Handle Lte variant."""
+        name, value = self.data
+        return {name.to_string(): {"$lte": value}}
+
+    def _handle_like_variant(self):
+        """Handle Like variant."""
+        name, value = self.data
+        return {name.to_string(): {"$like": value}}
+
+    def _handle_in_variant(self):
+        """Handle In variant."""
+        name, values = self.data
+        return {name.to_string(): {"$in": values}}
+
+    def _handle_exist_variant(self):
+        """Handle Exist variant."""
+        names = self.data
+        return {"$exist": [name.to_string() for name in names]}
+
+    def _handle_and_variant(self):
+        """Handle And variant."""
+        subqueries = self.data
+        if not subqueries:
+            return {}
+        return {"$and": [sq.to_wql_dict() for sq in subqueries]}
+
+    def _handle_or_variant(self):
+        """Handle Or variant."""
+        subqueries = self.data
+        if not subqueries:
+            return {}
+        return {"$or": [sq.to_wql_dict() for sq in subqueries]}
+
+    def _handle_not_variant(self):
+        """Handle Not variant."""
+        subquery = self.data
+        return {"$not": subquery.to_wql_dict()}
 
     def to_wql_str(self):
         """Convert the TagQuery to a WQL JSON string."""
@@ -284,31 +327,31 @@ class TagQueryEncoder(ABC):
     """Class description."""
 
     @abstractmethod
-    def encode_name(self, name: TagName) -> bytes:
+    def encode_name(self, name: TagName) -> str:
         """Perform the action."""
         pass
 
     @abstractmethod
-    def encode_value(self, value: str) -> bytes:
+    def encode_value(self, value: str) -> str:
         """Perform the action."""
         pass
 
     @abstractmethod
     def encode_op_clause(
-        self, op: CompareOp, enc_name: bytes, enc_value: bytes, negate: bool
+        self, op: CompareOp, enc_name: str, enc_value: str, negate: bool
     ) -> str:
         """Perform the action."""
         pass
 
     @abstractmethod
     def encode_in_clause(
-        self, enc_name: bytes, enc_values: List[bytes], negate: bool
+        self, enc_name: str, enc_values: List[str], negate: bool
     ) -> str:
         """Perform the action."""
         pass
 
     @abstractmethod
-    def encode_exist_clause(self, enc_name: bytes, negate: bool) -> str:
+    def encode_exist_clause(self, enc_name: str, negate: bool) -> str:
         """Perform the action."""
         pass
 
@@ -387,47 +430,47 @@ def query_to_tagquery(q):
     provide the ~ character for plaintext.
     """
     if isinstance(q, AndQuery):
-        return TagQuery.And([query_to_tagquery(sq) for sq in q.subqueries])
+        return TagQuery.and_([query_to_tagquery(sq) for sq in q.subqueries])
     elif isinstance(q, OrQuery):
-        return TagQuery.Or([query_to_tagquery(sq) for sq in q.subqueries])
+        return TagQuery.or_([query_to_tagquery(sq) for sq in q.subqueries])
     elif isinstance(q, NotQuery):
-        return TagQuery.Not(query_to_tagquery(q.subquery))
+        return TagQuery.not_(query_to_tagquery(q.subquery))
     elif isinstance(q, EqQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Eq(tag_name, q.value)
+        return TagQuery.eq(tag_name, q.value)
     elif isinstance(q, NeqQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Neq(tag_name, q.value)
+        return TagQuery.neq(tag_name, q.value)
     elif isinstance(q, GtQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Gt(tag_name, q.value)
+        return TagQuery.gt(tag_name, q.value)
     elif isinstance(q, GteQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Gte(tag_name, q.value)
+        return TagQuery.gte(tag_name, q.value)
     elif isinstance(q, LtQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Lt(tag_name, q.value)
+        return TagQuery.lt(tag_name, q.value)
     elif isinstance(q, LteQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Lte(tag_name, q.value)
+        return TagQuery.lte(tag_name, q.value)
     elif isinstance(q, LikeQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.Like(tag_name, q.value)
+        return TagQuery.like(tag_name, q.value)
     elif isinstance(q, InQuery):
         key = q.key.lstrip("~")  # Ignore and remove '~' character from the key
         tag_name = TagName(key)
-        return TagQuery.In(tag_name, q.values)
+        return TagQuery.in_(tag_name, q.values)
     elif isinstance(q, ExistQuery):
         tag_names = [
             TagName(k.lstrip("~")) for k in q.keys
         ]  # Ignore and remove '~' from each key
-        return TagQuery.Exist(tag_names)
+        return TagQuery.exist(tag_names)
     else:
         raise ValueError(f"Unknown query type: {type(q)}")

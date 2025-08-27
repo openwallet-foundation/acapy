@@ -70,10 +70,8 @@ class PostgresTagEncoder(TagQueryEncoder):
             top_level (bool): Whether this is a top-level query.
 
         Returns:
-            Tuple[str, List[str]] | str: SQL clause and list of parameters
-                for top-level queries,
-                                        or SQL clause string for subqueries.
-
+            Tuple[str, List[str]] | str: SQL clause and list of parameters for
+                top-level queries, or SQL clause string for subqueries.
         """
 
         if top_level:
@@ -81,65 +79,69 @@ class PostgresTagEncoder(TagQueryEncoder):
 
         try:
             if query.variant == "Not":
-                if query.data.variant == "Exist":
-                    sql_clause = self.encode_exist(query.data.data, True)
-                elif query.data.variant == "In":
-                    sql_clause = self.encode_in(*query.data.data, True)
-                elif not self.normalized and query.data.variant in [
-                    "Eq",
-                    "Neq",
-                    "Gt",
-                    "Gte",
-                    "Lt",
-                    "Lte",
-                    "Like",
-                ]:
-                    sql_clause = self.encode_op(
-                        getattr(CompareOp, query.data.variant), *query.data.data, True
-                    )
-                else:
-                    subquery = self.encode_query(query.data, False, top_level=False)
-                    sql_clause = (
-                        f"NOT ({subquery})"
-                        if query.data.variant not in ["And", "Or"]
-                        else f"NOT {subquery}"
-                    )
-                if top_level:
-                    return sql_clause, self.arguments
-                return sql_clause
-
-            if query.variant == "Eq":
-                sql_clause = self.encode_op(CompareOp.Eq, *query.data, negate)
-            elif query.variant == "Neq":
-                sql_clause = self.encode_op(CompareOp.Neq, *query.data, negate)
-            elif query.variant == "Gt":
-                sql_clause = self.encode_op(CompareOp.Gt, *query.data, negate)
-            elif query.variant == "Gte":
-                sql_clause = self.encode_op(CompareOp.Gte, *query.data, negate)
-            elif query.variant == "Lt":
-                sql_clause = self.encode_op(CompareOp.Lt, *query.data, negate)
-            elif query.variant == "Lte":
-                sql_clause = self.encode_op(CompareOp.Lte, *query.data, negate)
-            elif query.variant == "Like":
-                sql_clause = self.encode_op(CompareOp.Like, *query.data, negate)
-            elif query.variant == "In":
-                sql_clause = self.encode_in(*query.data, negate)
-            elif query.variant == "Exist":
-                sql_clause = self.encode_exist(query.data, negate)
-            elif query.variant in ["And", "Or"]:
-                op = ConjunctionOp.And if query.variant == "And" else ConjunctionOp.Or
-                sql_clause = self.encode_conj(op, query.data, negate)
+                sql_clause = self._encode_not(query, top_level)
             else:
-                LOGGER.error(
-                    "[%s] Unknown query variant: %s", "encode_operation", query.variant
-                )
-                raise ValueError(f"Unknown query variant: {query.variant}")
+                compare_map = {
+                    "Eq": CompareOp.Eq,
+                    "Neq": CompareOp.Neq,
+                    "Gt": CompareOp.Gt,
+                    "Gte": CompareOp.Gte,
+                    "Lt": CompareOp.Lt,
+                    "Lte": CompareOp.Lte,
+                    "Like": CompareOp.Like,
+                }
+                if query.variant in compare_map:
+                    sql_clause = self.encode_op(
+                        compare_map[query.variant], *query.data, negate
+                    )
+                elif query.variant == "In":
+                    sql_clause = self.encode_in(*query.data, negate)
+                elif query.variant == "Exist":
+                    sql_clause = self.encode_exist(query.data, negate)
+                elif query.variant in ["And", "Or"]:
+                    op = (
+                        ConjunctionOp.And
+                        if query.variant == "And"
+                        else ConjunctionOp.Or
+                    )
+                    sql_clause = self.encode_conj(op, query.data, negate)
+                else:
+                    LOGGER.error(
+                        "[%s] Unknown query variant: %s",
+                        "encode_operation",
+                        query.variant,
+                    )
+                    raise ValueError(f"Unknown query variant: {query.variant}")
+
             if top_level:
                 return sql_clause, self.arguments
             return sql_clause
         except Exception as e:
             LOGGER.error("[%s] Failed: %s", "encode_operation", str(e))
             raise
+
+    def _encode_not(self, query: TagQuery, top_level: bool) -> str:
+        """Encode a NOT expression with special-cases for certain variants."""
+        inner = query.data
+        if inner.variant == "Exist":
+            sql_clause = self.encode_exist(inner.data, True)
+        elif inner.variant == "In":
+            sql_clause = self.encode_in(*inner.data, True)
+        elif (
+            not self.normalized
+            and inner.variant
+            in ["Eq", "Neq", "Gt", "Gte", "Lt", "Lte", "Like"]
+        ):
+            sql_clause = self.encode_op(
+                getattr(CompareOp, inner.variant), *inner.data, True
+            )
+        else:
+            subquery = self.encode_query(inner, False, top_level=False)
+            if inner.variant not in ["And", "Or"]:
+                sql_clause = f"NOT ({subquery})"
+            else:
+                sql_clause = f"NOT {subquery}"
+        return sql_clause
 
     def encode_op_clause(
         self, op: CompareOp, enc_name: str, enc_value: str, negate: bool

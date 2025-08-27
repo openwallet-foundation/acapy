@@ -11,16 +11,16 @@ from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
 class TestMongoTagEncoder(unittest.TestCase):
     def test_deeply_nested_not(self):
         # Define the query: NOT ((category = "electronics" OR sale = "yes") AND NOT (stock = "out"))
-        query = TagQuery.Not(
-            TagQuery.And(
+        query = TagQuery.not_(
+            TagQuery.and_(
                 [
-                    TagQuery.Or(
+                    TagQuery.or_(
                         [
-                            TagQuery.Eq(TagName("category"), "electronics"),
-                            TagQuery.Eq(TagName("sale"), "yes"),
+                            TagQuery.eq(TagName("category"), "electronics"),
+                            TagQuery.eq(TagName("sale"), "yes"),
                         ]
                     ),
-                    TagQuery.Not(TagQuery.Eq(TagName("stock"), "out")),
+                    TagQuery.not_(TagQuery.eq(TagName("stock"), "out")),
                 ]
             )
         )

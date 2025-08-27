@@ -102,7 +102,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
 
     # Individual Operator Tests
     def test_eq_positive(self):
-        query = TagQuery.Eq(TagName("field"), "value")
+        query = TagQuery.eq(TagName("field"), "value")
         wql = query.to_wql_str()
         print(f"Test: Positive equality query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -138,7 +138,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 3], "Positive equality")
 
     def test_eq_negated(self):
-        query = TagQuery.Not(TagQuery.Eq(TagName("field"), "value"))
+        query = TagQuery.not_(TagQuery.eq(TagName("field"), "value"))
         wql = query.to_wql_str()
         print(f"Test: Negated equality query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -174,7 +174,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2], "Negated equality")
 
     def test_neq_positive(self):
-        query = TagQuery.Neq(TagName("field"), "value")
+        query = TagQuery.neq(TagName("field"), "value")
         wql = query.to_wql_str()
         print(f"Test: Positive inequality query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -210,7 +210,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2, 3], "Positive inequality")
 
     def test_neq_negated(self):
-        query = TagQuery.Not(TagQuery.Neq(TagName("field"), "value"))
+        query = TagQuery.not_(TagQuery.neq(TagName("field"), "value"))
         wql = query.to_wql_str()
         print(f"Test: Negated inequality query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -246,7 +246,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 3], "Negated inequality")
 
     def test_gt_positive(self):
-        query = TagQuery.Gt(TagName("price"), "100")
+        query = TagQuery.gt(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive greater-than query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -292,7 +292,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3, 4], "Positive greater-than")
 
     def test_gt_negated(self):
-        query = TagQuery.Not(TagQuery.Gt(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.gt(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated greater-than query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -336,7 +336,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2], "Negated greater-than")
 
     def test_gte_positive(self):
-        query = TagQuery.Gte(TagName("price"), "100")
+        query = TagQuery.gte(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive greater-than-or-equal query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -386,7 +386,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         )
 
     def test_gte_negated(self):
-        query = TagQuery.Not(TagQuery.Gte(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.gte(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated greater-than-or-equal query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -434,7 +434,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1], "Negated greater-than-or-equal")
 
     def test_lt_positive(self):
-        query = TagQuery.Lt(TagName("price"), "100")
+        query = TagQuery.lt(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive less-than query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -478,7 +478,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1], "Positive less-than")
 
     def test_lt_negated(self):
-        query = TagQuery.Not(TagQuery.Lt(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.lt(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated less-than query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -522,7 +522,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2, 3, 4], "Negated less-than")
 
     def test_lte_positive(self):
-        query = TagQuery.Lte(TagName("price"), "100")
+        query = TagQuery.lte(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive less-than-or-equal query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -572,7 +572,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         )
 
     def test_lte_negated(self):
-        query = TagQuery.Not(TagQuery.Lte(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.lte(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated less-than-or-equal query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -620,7 +620,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3, 4], "Negated less-than-or-equal")
 
     def test_like_positive(self):
-        query = TagQuery.Like(TagName("field"), "%pat%")
+        query = TagQuery.like(TagName("field"), "%pat%")
         wql = query.to_wql_str()
         print(f"Test: Positive LIKE query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -664,7 +664,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 4], "Positive LIKE")
 
     def test_like_negated(self):
-        query = TagQuery.Not(TagQuery.Like(TagName("field"), "%pat%"))
+        query = TagQuery.not_(TagQuery.like(TagName("field"), "%pat%"))
         wql = query.to_wql_str()
         print(f"Test: Negated LIKE query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -708,7 +708,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3], "Negated LIKE")
 
     def test_in_positive(self):
-        query = TagQuery.In(TagName("field"), ["a", "b"])
+        query = TagQuery.in_(TagName("field"), ["a", "b"])
         wql = query.to_wql_str()
         print(f"Test: Positive IN query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -747,7 +747,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 4], "Positive IN")
 
     def test_in_negated(self):
-        query = TagQuery.Not(TagQuery.In(TagName("field"), ["a", "b"]))
+        query = TagQuery.not_(TagQuery.in_(TagName("field"), ["a", "b"]))
         wql = query.to_wql_str()
         print(f"Test: Negated IN query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -784,7 +784,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3, 4], "Negated IN")
 
     def test_exist_positive(self):
-        query = TagQuery.Exist([TagName("field")])
+        query = TagQuery.exist([TagName("field")])
         wql = query.to_wql_str()
         print(f"Test: Positive EXIST query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -817,7 +817,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 3], "Positive EXIST")
 
     def test_exist_negated(self):
-        query = TagQuery.Not(TagQuery.Exist([TagName("field")]))
+        query = TagQuery.not_(TagQuery.exist([TagName("field")]))
         wql = query.to_wql_str()
         print(f"Test: Negated EXIST query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -850,8 +850,8 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2], "Negated EXIST")
 
     def test_and_multiple(self):
-        query = TagQuery.And(
-            [TagQuery.Eq(TagName("f1"), "v1"), TagQuery.Gt(TagName("f2"), "10")]
+        query = TagQuery.and_(
+            [TagQuery.eq(TagName("f1"), "v1"), TagQuery.gt(TagName("f2"), "10")]
         )
         wql = query.to_wql_str()
         print(f"Test: AND query with multiple subqueries\nWQL: {wql}")
@@ -902,8 +902,8 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 4], "AND multiple")
 
     def test_or_multiple(self):
-        query = TagQuery.Or(
-            [TagQuery.Eq(TagName("f1"), "v1"), TagQuery.Gt(TagName("f2"), "10")]
+        query = TagQuery.or_(
+            [TagQuery.eq(TagName("f1"), "v1"), TagQuery.gt(TagName("f2"), "10")]
         )
         wql = query.to_wql_str()
         print(f"Test: OR query with multiple subqueries\nWQL: {wql}")
@@ -950,11 +950,11 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 3], "OR multiple")
 
     def test_nested_and_or(self):
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("f1"), "v1"),
-                TagQuery.Or(
-                    [TagQuery.Gt(TagName("f2"), "10"), TagQuery.Lt(TagName("f3"), "5")]
+                TagQuery.eq(TagName("f1"), "v1"),
+                TagQuery.or_(
+                    [TagQuery.gt(TagName("f2"), "10"), TagQuery.lt(TagName("f3"), "5")]
                 ),
             ]
         )
@@ -1007,10 +1007,10 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2], "Nested AND/OR")
 
     def test_comparison_conjunction(self):
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
         wql = query.to_wql_str()
@@ -1062,16 +1062,16 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 4], "Comparison conjunction")
 
     def test_deeply_nested_not(self):
-        query = TagQuery.Not(
-            TagQuery.And(
+        query = TagQuery.not_(
+            TagQuery.and_(
                 [
-                    TagQuery.Or(
+                    TagQuery.or_(
                         [
-                            TagQuery.Eq(TagName("category"), "electronics"),
-                            TagQuery.Eq(TagName("sale"), "yes"),
+                            TagQuery.eq(TagName("category"), "electronics"),
+                            TagQuery.eq(TagName("sale"), "yes"),
                         ]
                     ),
-                    TagQuery.Not(TagQuery.Eq(TagName("stock"), "out")),
+                    TagQuery.not_(TagQuery.eq(TagName("stock"), "out")),
                 ]
             )
         )
@@ -1119,19 +1119,19 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2], "Deeply nested NOT")
 
     def test_and_or_not_complex_case(self):
-        query = TagQuery.Not(
-            TagQuery.And(
+        query = TagQuery.not_(
+            TagQuery.and_(
                 [
-                    TagQuery.Eq(TagName("username"), "alice"),
-                    TagQuery.Or(
+                    TagQuery.eq(TagName("username"), "alice"),
+                    TagQuery.or_(
                         [
-                            TagQuery.Gt(TagName("age"), "30"),
-                            TagQuery.Not(TagQuery.Lte(TagName("height"), "180")),
-                            TagQuery.And(
+                            TagQuery.gt(TagName("age"), "30"),
+                            TagQuery.not_(TagQuery.lte(TagName("height"), "180")),
+                            TagQuery.and_(
                                 [
-                                    TagQuery.Lt(TagName("score"), "100"),
-                                    TagQuery.Not(
-                                        TagQuery.Gte(
+                                    TagQuery.lt(TagName("score"), "100"),
+                                    TagQuery.not_(
+                                        TagQuery.gte(
                                             TagName("timestamp"), "2021-01-01T00:00:00"
                                         )
                                     ),
@@ -1139,11 +1139,11 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
                             ),
                         ]
                     ),
-                    TagQuery.Not(TagQuery.Like(TagName("secret_code"), "abc123")),
-                    TagQuery.And(
+                    TagQuery.not_(TagQuery.like(TagName("secret_code"), "abc123")),
+                    TagQuery.and_(
                         [
-                            TagQuery.Eq(TagName("occupation"), "developer"),
-                            TagQuery.Not(TagQuery.Neq(TagName("status"), "active")),
+                            TagQuery.eq(TagName("occupation"), "developer"),
+                            TagQuery.not_(TagQuery.neq(TagName("status"), "active")),
                         ]
                     ),
                 ]
@@ -1313,7 +1313,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         )
 
     def test_empty_query(self):
-        query = TagQuery.And([])
+        query = TagQuery.and_([])
         wql = query.to_wql_str()
         print(f"Test: Empty query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -1346,7 +1346,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2], "Empty query")
 
     def test_empty_in_list(self):
-        query = TagQuery.In(TagName("field"), [])
+        query = TagQuery.in_(TagName("field"), [])
         wql = query.to_wql_str()
         print(f"Test: Empty IN list query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -1381,7 +1381,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [], "Empty IN list")
 
     def test_multiple_exists(self):
-        query = TagQuery.Exist([TagName("f1"), TagName("f2")])
+        query = TagQuery.exist([TagName("f1"), TagName("f2")])
         wql = query.to_wql_str()
         print(f"Test: Multiple EXISTS query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -1417,7 +1417,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1], "Multiple EXISTS")
 
     def test_special_characters(self):
-        query = TagQuery.Eq(TagName("f1"), "val$ue")
+        query = TagQuery.eq(TagName("f1"), "val$ue")
         wql = query.to_wql_str()
         print(f"Test: Special characters query\nWQL: {wql}")
         sql_query = self.encoder.encode_query(query)
@@ -1455,13 +1455,13 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
     # def test_deeply_nested_not2(self):
     #     """Test encoding a deeply nested TagQuery with NOT into an SQL statement."""
     #     # Define a deeply nested query with NOT
-    #     query = TagQuery.Not(
-    #         TagQuery.And([
-    #             TagQuery.Or([
-    #                 TagQuery.Eq(TagName("category"), "electronics"),
-    #                 TagQuery.Eq(TagName("sale"), "yes")
+    #     query = TagQuery.not_(
+    #         TagQuery.and_([
+    #             TagQuery.or_([
+    #                 TagQuery.eq(TagName("category"), "electronics"),
+    #                 TagQuery.eq(TagName("sale"), "yes")
     #             ]),
-    #             TagQuery.Not(TagQuery.Eq(TagName("stock"), "out"))
+    #             TagQuery.not_(TagQuery.eq(TagName("stock"), "out"))
     #         ])
     #     )
     #     wql = query.to_wql_str()

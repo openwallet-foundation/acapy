@@ -106,19 +106,19 @@ class TestTags(unittest.TestCase):
 
     def test_simple_and(self):
         """Test encoding a complex TagQuery with AND, OR, and NOT."""
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("enctag"), "encval"),
-                TagQuery.Eq(TagName("plaintag"), "plainval"),
+                TagQuery.eq(TagName("enctag"), "encval"),
+                TagQuery.eq(TagName("plaintag"), "plainval"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("enctag"), "encval"),
-                TagQuery.Not(TagQuery.Eq(TagName("plaintag"), "eggs")),
+                TagQuery.eq(TagName("enctag"), "encval"),
+                TagQuery.not_(TagQuery.eq(TagName("plaintag"), "eggs")),
             ]
         )
-        query = TagQuery.Or([condition_1, condition_2])
+        query = TagQuery.or_([condition_1, condition_2])
         encoder = TestEncoder()
         query_str = encoder.encode_query(query)
         expected = (
@@ -129,19 +129,19 @@ class TestTags(unittest.TestCase):
 
     def test_negate_conj(self):
         """Test encoding a negated conjunction TagQuery."""
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("enctag"), "encval"),
-                TagQuery.Eq(TagName("plaintag"), "plainval"),
+                TagQuery.eq(TagName("enctag"), "encval"),
+                TagQuery.eq(TagName("plaintag"), "plainval"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("enctag"), "encval"),
-                TagQuery.Not(TagQuery.Eq(TagName("plaintag"), "eggs")),
+                TagQuery.eq(TagName("enctag"), "encval"),
+                TagQuery.not_(TagQuery.eq(TagName("plaintag"), "eggs")),
             ]
         )
-        query = TagQuery.Not(TagQuery.Or([condition_1, condition_2]))
+        query = TagQuery.not_(TagQuery.or_([condition_1, condition_2]))
         encoder = TestEncoder()
         query_str = encoder.encode_query(query)
         expected = (

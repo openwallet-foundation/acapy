@@ -107,7 +107,9 @@ class SqliteTagEncoder(TagQueryEncoder):
 
         """
         if not clauses:
+            # For empty OR, return a clause that evaluates to false
             if op == ConjunctionOp.Or:
-                return "0"  # False for empty OR
-            return None  # True for empty AND
+                return "0"
+            # For empty AND, return a clause that evaluates to true
+            return "1"
         return "(" + op.as_sql_str().join(clauses) + ")"

@@ -8,9 +8,9 @@ RUN pip install --no-cache-dir poetry==2.1.1
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    libsqlcipher-dev \
-    gcc \
     g++ \
+    gcc \
+    libsqlcipher-dev \
     libsqlite3-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -62,6 +62,7 @@ RUN useradd -U -ms /bin/bash -u $uid $user
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
+    build-essential \
     ca-certificates \
     curl \
     git \
@@ -69,14 +70,12 @@ RUN apt-get update && \
     libgmp10 \
     libncurses5 \
     libncursesw5 \
-    openssl \
-    sqlite3 \
-    zlib1g \
-    # Support DB Manager
-    build-essential \
-    libsqlcipher-dev \
     libpq-dev \
-    postgresql-client && \
+    libsqlcipher-dev \
+    openssl \
+    postgresql-client \
+    sqlite3 \
+    zlib1g && \
     apt-get autoremove --purge -y && \
     apt-get clean -y && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*

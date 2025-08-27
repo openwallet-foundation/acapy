@@ -28,6 +28,8 @@ from .store_kanon import KanonOpenStore, KanonStoreConfig
 
 LOGGER = logging.getLogger(__name__)
 
+TEST_CATEGORY = "test_category"
+
 
 class KanonAnonCredsProfile(Profile):
     """Kanon AnonCreds profile implementation."""
@@ -303,6 +305,11 @@ class KanonAnonCredsProfileSession(ProfileSession):
         self._check_duration()
 
     def _check_duration(self):
+        """Check transaction duration for monitoring purposes.
+        
+        This method is intentionally empty as duration checking is not
+        implemented in the current kanon profile implementation.
+        """
         pass
 
     def __del__(self):
@@ -330,7 +337,7 @@ class KanonAnonProfileManager(ProfileManager):
         try:
             async with opened.db_store.session() as session:
                 # Lightweight operation to check if DBStore is functional
-                await session.count("test_category")
+                await session.count(TEST_CATEGORY)
         except (DBStoreError, Exception) as e:
             # Close the single store if DBStore fails
             await opened.close()
@@ -340,7 +347,7 @@ class KanonAnonProfileManager(ProfileManager):
         try:
             async with opened.askar_store.session() as session:
                 # Lightweight operation to check if Askar store is functional
-                await session.count("test_category")
+                await session.count(TEST_CATEGORY)
         except (AskarError, Exception) as e:
             # Close the single store if Askar fails
             await opened.close()
@@ -362,7 +369,7 @@ class KanonAnonProfileManager(ProfileManager):
         try:
             async with opened.db_store.session() as session:
                 # Use a lightweight operation, e.g., count items in a dummy category
-                await session.count("test_category")
+                await session.count(TEST_CATEGORY)
         except (DBStoreError, Exception) as e:
             await opened.close()
             raise ProfileError("DBStore is not operational") from e
@@ -371,7 +378,7 @@ class KanonAnonProfileManager(ProfileManager):
         try:
             async with opened.askar_store.session() as session:
                 # Similar lightweight check for Askar
-                await session.count("test_category")
+                await session.count(TEST_CATEGORY)
         except (AskarError, Exception) as e:
             await opened.close()
             raise ProfileError("Askar store is not operational") from e
@@ -379,6 +386,6 @@ class KanonAnonProfileManager(ProfileManager):
         return KanonAnonCredsProfile(opened, context)
 
     @classmethod
-    async def generate_store_key(self, seed: Optional[str] = None) -> str:
+    async def generate_store_key(cls, seed: Optional[str] = None) -> str:
         """Generate a raw store key."""
         return AskarStore.generate_raw_key(validate_seed(seed))

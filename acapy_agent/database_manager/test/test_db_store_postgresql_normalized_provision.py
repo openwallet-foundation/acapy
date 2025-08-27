@@ -409,21 +409,7 @@ async def main():
     """Main test function executing all test scenarios."""
     print("Starting PostgreSQL db_store.py test program...")
     await test_provision()
-    # await test_insert(store)
-    # await test_scan(store)
-    # await test_replace(store)
-    # await test_complex_filter(store)
-    # await test_insert_connections(store)
-    # await test_scan_connections(store)
-    # await test_count_connections(store)
-    # await test_replace_connections(store)
-    # await test_remove_connections(store)
-    # await test_wql_exist_connections(store)
-    # await test_fetch_all(store)
-    # await test_remove_all_people(store)
-    # await test_remove_all_connections(store)
-    # await test_non_encrypted()
-    # await cleanup()
+
     print("All tests passed successfully!")
 
 

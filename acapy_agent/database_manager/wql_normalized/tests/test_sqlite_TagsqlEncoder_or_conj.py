@@ -33,19 +33,19 @@ class TestTagSqlEncoder(unittest.TestCase):
     def test_or_conjunction(self):
         """Test encoding an OR conjunction TagQuery into an SQL statement."""
         # Define the query structure with neutral tag names
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("tag_a"), "value_a"),
-                TagQuery.Eq(TagName("tag_b"), "value_b"),
+                TagQuery.eq(TagName("tag_a"), "value_a"),
+                TagQuery.eq(TagName("tag_b"), "value_b"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("tag_a"), "value_a"),
-                TagQuery.Not(TagQuery.Eq(TagName("tag_b"), "value_c")),
+                TagQuery.eq(TagName("tag_a"), "value_a"),
+                TagQuery.not_(TagQuery.eq(TagName("tag_b"), "value_c")),
             ]
         )
-        query = TagQuery.Or([condition_1, condition_2])
+        query = TagQuery.or_([condition_1, condition_2])
 
         encoder = encoder_factory.get_encoder("sqlite", self.enc_name, self.enc_value)
 

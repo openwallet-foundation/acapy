@@ -423,14 +423,12 @@ async def main():
 
     # Fetch and remove all
     await test_fetch_all(store)
-    # await test_remove_all_people(store)
-    # await test_remove_all_connections(store)
+
 
     # Non-encrypted database tests
     await test_non_encrypted()
 
-    # Cleanup
-    # await cleanup()
+
 
     print("All tests passed successfully!")
 

@@ -27,8 +27,15 @@ CATEGORY_DID = "did"
 CATEGORY_CONFIG = "config"
 RECORD_NAME_PUBLIC_DID = "default_public_did"
 
-# Initialize logger
 LOGGER = logging.getLogger(__name__)
+
+ERR_MSG_NOT_PROVIDED = "Message not provided"
+ERR_VERKEY_NOT_PROVIDED = "Verkey not provided"
+ERR_UNKNOWN_KEY_TYPE = "Unknown key type {}"
+LOG_FETCH_KEY = "Fetching key entry for verkey: %s"
+LOG_FETCH_DID = "Fetching DID entry for: %s"
+LOG_DID_NOT_FOUND = "DID not found: %s"
+LOG_VERIFY_RESULT = "Verification result: %s"
 
 
 class KanonWallet(BaseWallet):
@@ -112,7 +119,7 @@ class KanonWallet(BaseWallet):
         """Assign a KID to a key."""
         LOGGER.debug("Entering assign_kid_to_key with verkey: %s, kid: %s", verkey, kid)
         try:
-            LOGGER.debug("Fetching key entry for verkey: %s", verkey)
+            LOGGER.debug(LOG_FETCH_KEY, verkey)
             key_entry = await self._session.askar_handle.fetch_key(
                 name=verkey, for_update=True
             )
@@ -126,8 +133,8 @@ class KanonWallet(BaseWallet):
             key_types = self.session.inject(KeyTypes)
             key_type = key_types.from_key_type(key.algorithm.value)
             if not key_type:
-                LOGGER.error("Unknown key type: %s", key.algorithm.value)
-                raise WalletError(f"Unknown key type {key.algorithm.value}")
+                LOGGER.error(ERR_UNKNOWN_KEY_TYPE, key.algorithm.value)
+                raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
 
             LOGGER.debug("Updating key with kid: %s", kid)
             await self._session.askar_handle.update_key(name=verkey, tags={"kid": kid})
@@ -162,8 +169,8 @@ class KanonWallet(BaseWallet):
             key_types = self.session.inject(KeyTypes)
             key_type = key_types.from_key_type(key.algorithm.value)
             if not key_type:
-                LOGGER.error("Unknown key type: %s", key.algorithm.value)
-                raise WalletError(f"Unknown key type {key.algorithm.value}")
+                LOGGER.error(ERR_UNKNOWN_KEY_TYPE, key.algorithm.value)
+                raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
         except AskarError as err:
             LOGGER.error("AskarError in get_key_by_kid: %s", err)
             raise WalletError("Error fetching key by kid") from err
@@ -178,7 +185,7 @@ class KanonWallet(BaseWallet):
             LOGGER.error("No verkey provided")
             raise WalletNotFoundError("No key identifier provided")
         try:
-            LOGGER.debug("Fetching key entry for verkey: %s", verkey)
+            LOGGER.debug(LOG_FETCH_KEY, verkey)
             key_entry = await self._session.askar_handle.fetch_key(verkey)
             if not key_entry:
                 LOGGER.error("Key not found for verkey: %s", verkey)
@@ -197,8 +204,8 @@ class KanonWallet(BaseWallet):
             key_types = self.session.inject(KeyTypes)
             key_type = key_types.from_key_type(key.algorithm.value)
             if not key_type:
-                LOGGER.error("Unknown key type: %s", key.algorithm.value)
-                raise WalletError(f"Unknown key type {key.algorithm.value}")
+                LOGGER.error(ERR_UNKNOWN_KEY_TYPE, key.algorithm.value)
+                raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
         except AskarError as err:
             LOGGER.error("AskarError in get_signing_key: %s", err)
             raise WalletError("Error fetching signing key") from err
@@ -218,7 +225,7 @@ class KanonWallet(BaseWallet):
             raise WalletNotFoundError("No key identifier provided")
 
         try:
-            LOGGER.debug("Fetching key entry for verkey: %s", verkey)
+            LOGGER.debug(LOG_FETCH_KEY, verkey)
             key_entry = await self._session.askar_handle.fetch_key(
                 verkey, for_update=True
             )
@@ -284,7 +291,7 @@ class KanonWallet(BaseWallet):
 
         async with self._session.store.session() as session:
             try:
-                LOGGER.debug("Fetching DID entry for: %s", did)
+                LOGGER.debug(LOG_FETCH_DID, did)
                 item = await session.fetch(CATEGORY_DID, did, for_update=True)
                 if item:
                     did_info = item.value_json
@@ -402,13 +409,13 @@ class KanonWallet(BaseWallet):
             raise WalletNotFoundError("No identifier provided")
         async with self._session.store.session() as session:
             try:
-                LOGGER.debug("Fetching DID entry for: %s", did)
+                LOGGER.debug(LOG_FETCH_DID, did)
                 did_entry = await session.fetch(CATEGORY_DID, did)
             except DBStoreError as err:
                 LOGGER.error("DBStoreError in get_local_did: %s", err)
                 raise WalletError("Error when fetching local DID") from err
             if not did_entry:
-                LOGGER.error("DID not found: %s", did)
+                LOGGER.error(LOG_DID_NOT_FOUND, did)
                 raise WalletNotFoundError("Unknown DID: {}".format(did))
             result = self._load_did_entry(did_entry)
             LOGGER.debug("get_local_did completed with result: %s", result)
@@ -451,10 +458,10 @@ class KanonWallet(BaseWallet):
         )
         async with self._session.store.session() as session:
             try:
-                LOGGER.debug("Fetching DID entry for: %s", did)
+                LOGGER.debug(LOG_FETCH_DID, did)
                 item = await session.fetch(CATEGORY_DID, did, for_update=True)
                 if not item:
-                    LOGGER.error("DID not found: %s", did)
+                    LOGGER.error(LOG_DID_NOT_FOUND, did)
                     raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
                 entry_val = item.value_json
                 LOGGER.debug("Current DID value: %s", entry_val)
@@ -675,10 +682,10 @@ class KanonWallet(BaseWallet):
 
         async with self._session.store.session() as session:
             try:
-                LOGGER.debug("Fetching DID entry for: %s", did)
+                LOGGER.debug(LOG_FETCH_DID, did)
                 item = await session.fetch(CATEGORY_DID, did, for_update=True)
                 if not item:
-                    LOGGER.error("DID not found: %s", did)
+                    LOGGER.error(LOG_DID_NOT_FOUND, did)
                     raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
                 entry_val = item.value_json
                 metadata = entry_val.get("metadata", {})
@@ -701,10 +708,10 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("Entering rotate_did_keypair_apply with did: %s", did)
         async with self._session.store.session() as session:
             try:
-                LOGGER.debug("Fetching DID entry for: %s", did)
+                LOGGER.debug(LOG_FETCH_DID, did)
                 item = await session.fetch(CATEGORY_DID, did, for_update=True)
                 if not item:
-                    LOGGER.error("DID not found: %s", did)
+                    LOGGER.error(LOG_DID_NOT_FOUND, did)
                     raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
                 entry_val = item.value_json
                 metadata = entry_val.get("metadata", {})
@@ -752,11 +759,11 @@ class KanonWallet(BaseWallet):
         """Sign message(s) using the private key."""
         LOGGER.debug("Entering sign_message with from_verkey: %s", from_verkey)
         if not message:
-            LOGGER.error("Message not provided")
-            raise WalletError("Message not provided")
+            LOGGER.error(ERR_MSG_NOT_PROVIDED)
+            raise WalletError(ERR_MSG_NOT_PROVIDED)
         if not from_verkey:
-            LOGGER.error("Verkey not provided")
-            raise WalletError("Verkey not provided")
+            LOGGER.error(ERR_VERKEY_NOT_PROVIDED)
+            raise WalletError(ERR_VERKEY_NOT_PROVIDED)
         try:
             LOGGER.debug("Fetching key for verkey: %s", from_verkey)
             keypair = await self._session.askar_handle.fetch_key(from_verkey)
@@ -768,7 +775,7 @@ class KanonWallet(BaseWallet):
                 LOGGER.debug("Signing with BLS12_381_G2")
                 signature = sign_message(
                     message=message,
-                    Panzer=key.get_secret_bytes(),
+                    secret=key.get_secret_bytes(),
                     key_type=BLS12381G2,
                 )
             else:
@@ -795,14 +802,14 @@ class KanonWallet(BaseWallet):
             key_type,
         )
         if not from_verkey:
-            LOGGER.error("Verkey not provided")
-            raise WalletError("Verkey not provided")
+            LOGGER.error(ERR_VERKEY_NOT_PROVIDED)
+            raise WalletError(ERR_VERKEY_NOT_PROVIDED)
         if not signature:
             LOGGER.error("Signature not provided")
             raise WalletError("Signature not provided")
         if not message:
-            LOGGER.error("Message not provided")
-            raise WalletError("Message not provided")
+            LOGGER.error(ERR_MSG_NOT_PROVIDED)
+            raise WalletError(ERR_MSG_NOT_PROVIDED)
 
         verkey = b58_to_bytes(from_verkey)
         LOGGER.debug("Converted verkey to bytes")
@@ -812,7 +819,7 @@ class KanonWallet(BaseWallet):
                 LOGGER.debug("Verifying with ED25519")
                 pk = Key.from_public_bytes(KeyAlg.ED25519, verkey)
                 verified = pk.verify_signature(message, signature)
-                LOGGER.debug("Verification result: %s", verified)
+                LOGGER.debug(LOG_VERIFY_RESULT, verified)
                 return verified
             except AskarError as err:
                 LOGGER.error("AskarError in verify_message: %s", err)
@@ -822,7 +829,7 @@ class KanonWallet(BaseWallet):
                 LOGGER.debug("Verifying with P256")
                 pk = Key.from_public_bytes(KeyAlg.P256, verkey)
                 verified = pk.verify_signature(message, signature)
-                LOGGER.debug("Verification result: %s", verified)
+                LOGGER.debug(LOG_VERIFY_RESULT, verified)
                 return verified
             except AskarError as err:
                 LOGGER.error("AskarError in verify_message: %s", err)
@@ -835,7 +842,7 @@ class KanonWallet(BaseWallet):
             verkey=verkey,
             key_type=key_type,
         )
-        LOGGER.debug("Verification result: %s", verified)
+        LOGGER.debug(LOG_VERIFY_RESULT, verified)
         return verified
 
     async def pack_message(
@@ -848,8 +855,8 @@ class KanonWallet(BaseWallet):
             from_verkey,
         )
         if message is None:
-            LOGGER.error("Message not provided")
-            raise WalletError("Message not provided")
+            LOGGER.error(ERR_MSG_NOT_PROVIDED)
+            raise WalletError(ERR_MSG_NOT_PROVIDED)
         try:
             if from_verkey:
                 LOGGER.debug("Fetching key for from_verkey: %s", from_verkey)

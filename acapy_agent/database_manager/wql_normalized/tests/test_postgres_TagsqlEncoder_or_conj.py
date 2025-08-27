@@ -115,10 +115,10 @@ class TestPostgresTagEncoderOrConj(unittest.TestCase):
 
     def test_or_conjunction_normalized(self):
         """Test encoding an OR conjunction in normalized mode."""
-        query = TagQuery.Or(
+        query = TagQuery.or_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
 
@@ -173,10 +173,10 @@ class TestPostgresTagEncoderOrConj(unittest.TestCase):
 
     def test_or_conjunction_non_normalized(self):
         """Test encoding an OR conjunction in non-normalized mode."""
-        query = TagQuery.Or(
+        query = TagQuery.or_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
 

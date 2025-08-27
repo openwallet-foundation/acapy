@@ -32,10 +32,10 @@ class TestTagSqlEncoderNormalized(unittest.TestCase):
 
     def test_comparison_conjunction_normalized(self):
         """Test encoding a conjunction of comparison operations into an SQL statement for normalized tables."""
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Gt(TagName("price"), "100"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.gt(TagName("price"), "100"),
             ]
         )
 

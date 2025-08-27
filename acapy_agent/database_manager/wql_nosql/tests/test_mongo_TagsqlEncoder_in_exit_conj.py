@@ -15,10 +15,10 @@ class TestMongoTagEncoder(unittest.TestCase):
     def test_in_and_exist_conjunction(self):
         """Test encoding an In and Exist conjunction into MongoDB query."""
         # Define the query: color in ['red', 'blue'] AND size exists
-        query = TagQuery.And(
+        query = TagQuery.and_(
             [
-                TagQuery.In(TagName("color"), ["red", "blue"]),
-                TagQuery.Exist([TagName("size")]),
+                TagQuery.in_(TagName("color"), ["red", "blue"]),
+                TagQuery.exist([TagName("size")]),
             ]
         )
 

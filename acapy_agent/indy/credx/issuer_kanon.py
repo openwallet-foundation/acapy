@@ -43,6 +43,34 @@ CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
 
 
+# Deduplicated error message constants
+ERR_CREATE_SCHEMA = "Error creating schema"
+ERR_STORE_SCHEMA = "Error storing schema"
+ERR_CHECK_CRED_DEF = "Error checking for credential definition"
+ERR_CREATE_CRED_DEF = "Error creating credential definition"
+ERR_STORE_CRED_DEF = "Error storing credential definition"
+ERR_RETRIEVE_CRED_DEF = "Error retrieving credential definition"
+ERR_CRED_DEF_NOT_FOUND_OFFER = "Credential definition not found for credential offer"
+ERR_CREATE_CRED_OFFER = "Error creating credential offer"
+ERR_CRED_DEF_NOT_FOUND_ISSUE = "Credential definition not found for credential issuance"
+ERR_MISSING_SCHEMA_ATTR = (
+    "Provided credential values are missing a value for the schema attribute '{}'"
+)
+ERR_UPDATE_REV_REG_INDEX = "Error updating revocation registry index"
+ERR_LOAD_CRED_DEF = "Error loading credential definition"
+ERR_LOAD_REV_REG_DEF = "Error loading revocation registry definition"
+ERR_LOAD_REV_REG_PRIV = "Error loading revocation registry private key"
+ERR_LOAD_REV_REG = "Error loading revocation registry"
+ERR_UPDATE_REV_REG = "Error updating revocation registry"
+ERR_SAVE_REV_REG = "Error saving revocation registry"
+ERR_CREATE_CREDENTIAL = "Error creating credential"
+ERR_MERGE_DELTAS = "Error merging revocation registry deltas"
+ERR_RETRIEVE_CRED_DEF_FOR_REV = "Error retrieving credential definition"
+ERR_CRED_DEF_NOT_FOUND_REV = "Credential definition not found for revocation registry"
+ERR_CREATE_REV_REG = "Error creating revocation registry"
+ERR_SAVE_NEW_REV_REG = "Error saving new revocation registry"
+
+
 class KanonIndyCredxIssuer(IndyIssuer):
     """Indy-Credx issuer class."""
 
@@ -59,6 +87,90 @@ class KanonIndyCredxIssuer(IndyIssuer):
     def profile(self) -> Profile:
         """Accessor for the profile instance."""
         return self._profile
+
+    # ---------- helpers to reduce cognitive complexity ----------
+
+    def _build_raw_values(self, schema: dict, credential_values: dict) -> dict:
+        """Build raw values from schema attrNames and provided values.
+
+        Raises IndyIssuerError if a schema attribute is missing.
+        """
+        raw_values: dict = {}
+        schema_attributes = schema["attrNames"]
+        for attribute in schema_attributes:
+            try:
+                credential_value = credential_values[attribute]
+            except KeyError:
+                raise IndyIssuerError(
+                    ERR_MISSING_SCHEMA_ATTR.format(attribute)
+                )
+            raw_values[attribute] = str(credential_value)
+        return raw_values
+
+    async def _fetch_revocation_records(self, txn, revoc_reg_id: str):
+        """Fetch revocation records required for updates; validate presence."""
+        rev_reg = await txn.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
+        rev_reg_info = await txn.handle.fetch(
+            CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
+        )
+        rev_reg_def = await txn.handle.fetch(
+            CATEGORY_REV_REG_DEF, revoc_reg_id
+        )
+        rev_key = await txn.handle.fetch(
+            CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
+        )
+        if not rev_reg:
+            raise IndyIssuerError("Revocation registry not found")
+        if not rev_reg_info:
+            raise IndyIssuerError("Revocation registry metadata not found")
+        if not rev_reg_def:
+            raise IndyIssuerError("Revocation registry definition not found")
+        if not rev_key:
+            raise IndyIssuerError(
+                "Revocation registry definition private data not found"
+            )
+        return rev_reg, rev_reg_info, rev_reg_def, rev_key
+
+    def _classify_revocation_ids(
+        self,
+        rev_info: dict,
+        max_cred_num: int,
+        cred_revoc_ids: Sequence[str],
+        revoc_reg_id: str,
+    ) -> tuple[set[int], set[int]]:
+        """Classify credential revocation ids into valid and failed sets."""
+        rev_crids: set[int] = set()
+        failed_crids: set[int] = set()
+        used_ids = set(rev_info.get("used_ids") or [])
+        for rev_id in cred_revoc_ids:
+            rid = int(rev_id)
+            if rid < 1 or rid > max_cred_num:
+                LOGGER.error(
+                    "Skipping requested credential revocation"
+                    "on rev reg id %s, cred rev id=%s not in range",
+                    revoc_reg_id,
+                    rid,
+                )
+                failed_crids.add(rid)
+            elif rid > rev_info["curr_id"]:
+                LOGGER.warning(
+                    "Skipping requested credential revocation"
+                    "on rev reg id %s, cred rev id=%s not yet issued",
+                    revoc_reg_id,
+                    rid,
+                )
+                failed_crids.add(rid)
+            elif rid in used_ids:
+                LOGGER.warning(
+                    "Skipping requested credential revocation"
+                    "on rev reg id %s, cred rev id=%s already revoked",
+                    revoc_reg_id,
+                    rid,
+                )
+                failed_crids.add(rid)
+            else:
+                rev_crids.add(rid)
+        return rev_crids, failed_crids
 
     async def create_schema(
         self,
@@ -91,9 +203,9 @@ class KanonIndyCredxIssuer(IndyIssuer):
             async with self._profile.session() as session:
                 await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
         except CredxError as err:
-            raise IndyIssuerError("Error creating schema") from err
+            raise IndyIssuerError(ERR_CREATE_SCHEMA) from err
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error storing schema") from err
+            raise IndyIssuerError(ERR_STORE_SCHEMA) from err
         return (schema_id, schema_json)
 
     async def credential_definition_in_wallet(
@@ -113,7 +225,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                     )
                 ) is not None
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error checking for credential definition") from err
+            raise IndyIssuerError(ERR_CHECK_CRED_DEF) from err
 
     async def create_and_store_credential_definition(
         self,
@@ -149,18 +261,19 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 key_proof,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: CredentialDefinition.create(
-                    strip_did_prefix(origin_did),
-                    schema,
-                    signature_type or DEFAULT_SIGNATURE_TYPE,
-                    tag or DEFAULT_CRED_DEF_TAG,
-                    support_revocation=support_revocation,
+                lambda origin=origin_did, sch=schema, sig=signature_type,
+                tg=tag, sup=support_revocation: CredentialDefinition.create(
+                    strip_did_prefix(origin),
+                    sch,
+                    sig or DEFAULT_SIGNATURE_TYPE,
+                    tg or DEFAULT_CRED_DEF_TAG,
+                    support_revocation=sup,
                 ),
             )
             cred_def_id = cred_def.id
             cred_def_json = cred_def.to_json()
         except CredxError as err:
-            raise IndyIssuerError("Error creating credential definition") from err
+            raise IndyIssuerError(ERR_CREATE_CRED_DEF) from err
         try:
             async with self._profile.transaction() as txn:
                 await txn.handle.insert(
@@ -180,7 +293,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 )
                 await txn.commit()
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error storing credential definition") from err
+            raise IndyIssuerError(ERR_STORE_CRED_DEF) from err
         return (cred_def_id, cred_def_json)
 
     async def create_credential_offer(self, credential_definition_id: str) -> str:
@@ -202,9 +315,9 @@ class KanonIndyCredxIssuer(IndyIssuer):
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error retrieving credential definition") from err
+            raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def or not key_proof:
-            raise IndyIssuerError("Credential definition not found for credential offer")
+            raise IndyIssuerError(ERR_CRED_DEF_NOT_FOUND_OFFER)
         try:
             # The tag holds the full name of the schema,
             # as opposed to just the sequence number
@@ -217,7 +330,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 key_proof.raw_value,
             )
         except CredxError as err:
-            raise IndyIssuerError("Error creating credential offer") from err
+            raise IndyIssuerError(ERR_CREATE_CRED_OFFER) from err
 
         return credential_offer.to_json()
 
@@ -254,64 +367,33 @@ class KanonIndyCredxIssuer(IndyIssuer):
                     CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                 )
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error retrieving credential definition") from err
+            raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def or not cred_def_private:
             raise IndyIssuerError(
-                "Credential definition not found for credential issuance"
+                ERR_CRED_DEF_NOT_FOUND_ISSUE
             )
 
-        raw_values = {}
-        schema_attributes = schema["attrNames"]
-        for attribute in schema_attributes:
-            # Ensure every attribute present in schema to be set.
-            # Extraneous attribute names are ignored.
-            try:
-                credential_value = credential_values[attribute]
-            except KeyError:
-                raise IndyIssuerError(
-                    "Provided credential values are missing a value "
-                    f"for the schema attribute '{attribute}'"
-                )
-
-            raw_values[attribute] = str(credential_value)
+        raw_values = self._build_raw_values(schema, credential_values)
 
         if revoc_reg_id:
             try:
                 async with self._profile.transaction() as txn:
-                    rev_reg = await txn.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
-                    rev_reg_info = await txn.handle.fetch(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
-                    )
-                    rev_reg_def = await txn.handle.fetch(
-                        CATEGORY_REV_REG_DEF, revoc_reg_id
-                    )
-                    rev_key = await txn.handle.fetch(
-                        CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
-                    )
-                    if not rev_reg:
-                        raise IndyIssuerError("Revocation registry not found")
-                    if not rev_reg_info:
-                        raise IndyIssuerError("Revocation registry metadata not found")
-                    if not rev_reg_def:
-                        raise IndyIssuerError("Revocation registry definition not found")
-                    if not rev_key:
-                        raise IndyIssuerError(
-                            "Revocation registry definition private data not found"
-                        )
-                    # NOTE: we increment the index ahead of time to keep the
-                    # transaction short. The revocation registry itself will NOT
-                    # be updated because we always use ISSUANCE_BY_DEFAULT.
-                    # If something goes wrong later, the index will be skipped.
-                    # FIXME - double check issuance type in case of upgraded wallet?
+                    (
+                        rev_reg,
+                        rev_reg_info,
+                        rev_reg_def_rec,
+                        rev_key,
+                    ) = await self._fetch_revocation_records(txn, revoc_reg_id)
+
                     rev_info = rev_reg_info.value_json
                     rev_reg_index = rev_info["curr_id"] + 1
                     try:
                         rev_reg_def = RevocationRegistryDefinition.load(
-                            rev_reg_def.raw_value
+                            rev_reg_def_rec.raw_value
                         )
                     except CredxError as err:
                         raise IndyIssuerError(
-                            "Error loading revocation registry definition"
+                            ERR_LOAD_REV_REG_DEF
                         ) from err
                     if rev_reg_index > rev_reg_def.max_cred_num:
                         raise IndyIssuerRevocationRegistryFullError(
@@ -319,11 +401,13 @@ class KanonIndyCredxIssuer(IndyIssuer):
                         )
                     rev_info["curr_id"] = rev_reg_index
                     await txn.handle.replace(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
+                        CATEGORY_REV_REG_INFO,
+                        revoc_reg_id,
+                        value_json=rev_info,
                     )
                     await txn.commit()
             except (DBStoreError, AskarError) as err:
-                raise IndyIssuerError("Error updating revocation registry index") from err
+                raise IndyIssuerError(ERR_UPDATE_REV_REG_INDEX) from err
 
             revoc = CredentialRevocationConfig(
                 rev_reg_def,
@@ -359,7 +443,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 revoc,
             )
         except CredxError as err:
-            raise IndyIssuerError("Error creating credential") from err
+            raise IndyIssuerError(ERR_CREATE_CREDENTIAL) from err
 
         return credential.to_json(), credential_revocation_id
 
@@ -387,152 +471,180 @@ class KanonIndyCredxIssuer(IndyIssuer):
         max_attempt = 5
         attempt = 0
 
-        while True:
+        while attempt < max_attempt:
             attempt += 1
-            if attempt >= max_attempt:
-                raise IndyIssuerError("Repeated conflict attempting to update registry")
             try:
-                async with self._profile.session() as session:
-                    cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-                    rev_reg_def = await session.handle.fetch(
-                        CATEGORY_REV_REG_DEF, revoc_reg_id
-                    )
-                    rev_reg_def_private = await session.handle.fetch(
-                        CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
-                    )
-                    rev_reg = await session.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
-                    rev_reg_info = await session.handle.fetch(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id
-                    )
-                if not cred_def:
-                    raise IndyIssuerError("Credential definition not found")
-                if not rev_reg_def:
-                    raise IndyIssuerError("Revocation registry definition not found")
-                if not rev_reg_def_private:
-                    raise IndyIssuerError(
-                        "Revocation registry definition private key not found"
-                    )
-                if not rev_reg:
-                    raise IndyIssuerError("Revocation registry not found")
-                if not rev_reg_info:
-                    raise IndyIssuerError("Revocation registry metadata not found")
-            except (DBStoreError, AskarError) as err:
-                raise IndyIssuerError("Error retrieving revocation registry") from err
-
-            try:
-                cred_def = CredentialDefinition.load(cred_def.raw_value)
-            except CredxError as err:
-                raise IndyIssuerError("Error loading credential definition") from err
-
-            try:
-                rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
-            except CredxError as err:
-                raise IndyIssuerError(
-                    "Error loading revocation registry definition"
-                ) from err
-
-            try:
-                rev_reg_def_private = RevocationRegistryDefinitionPrivate.load(
-                    rev_reg_def_private.raw_value
+                delta, failed_crids = await self._attempt_revocation(
+                    cred_def_id, revoc_reg_id, cred_revoc_ids
                 )
-            except CredxError as err:
-                raise IndyIssuerError(
-                    "Error loading revocation registry private key"
-                ) from err
-
-            try:
-                rev_reg = RevocationRegistry.load(rev_reg.raw_value)
-            except CredxError as err:
-                raise IndyIssuerError("Error loading revocation registry") from err
-
-            rev_crids = set()
-            failed_crids = set()
-            max_cred_num = rev_reg_def.max_cred_num
-            rev_info = rev_reg_info.value_json
-            used_ids = set(rev_info.get("used_ids") or [])
-
-            for rev_id in cred_revoc_ids:
-                rev_id = int(rev_id)
-                if rev_id < 1 or rev_id > max_cred_num:
-                    LOGGER.error(
-                        "Skipping requested credential revocation"
-                        "on rev reg id %s, cred rev id=%s not in range",
-                        revoc_reg_id,
-                        rev_id,
-                    )
-                    failed_crids.add(rev_id)
-                elif rev_id > rev_info["curr_id"]:
-                    LOGGER.warning(
-                        "Skipping requested credential revocation"
-                        "on rev reg id %s, cred rev id=%s not yet issued",
-                        revoc_reg_id,
-                        rev_id,
-                    )
-                    failed_crids.add(rev_id)
-                elif rev_id in used_ids:
-                    LOGGER.warning(
-                        "Skipping requested credential revocation"
-                        "on rev reg id %s, cred rev id=%s already revoked",
-                        revoc_reg_id,
-                        rev_id,
-                    )
-                    failed_crids.add(rev_id)
-                else:
-                    rev_crids.add(rev_id)
-
-            if not rev_crids:
-                break
-
-            try:
-                delta = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: rev_reg.update(
-                        cred_def,
-                        rev_reg_def,
-                        rev_reg_def_private,
-                        issued=None,
-                        revoked=list(rev_crids),  # revoked
-                    ),
-                )
-            except CredxError as err:
-                raise IndyIssuerError("Error updating revocation registry") from err
-
-            try:
-                async with self._profile.transaction() as txn:
-                    rev_reg_upd = await txn.handle.fetch(
-                        CATEGORY_REV_REG, revoc_reg_id, for_update=True
-                    )
-                    rev_info_upd = await txn.handle.fetch(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
-                    )
-                    if not rev_reg_upd or not rev_reg_info:
-                        LOGGER.warning(
-                            "Revocation registry missing, skipping update: {}",
-                            revoc_reg_id,
-                        )
-                        delta = None
-                        break
-                    rev_info_upd = rev_info_upd.value_json
-                    if rev_info_upd != rev_info:
-                        # handle concurrent update to the registry by retrying
-                        continue
-                    await txn.handle.replace(
-                        CATEGORY_REV_REG, revoc_reg_id, rev_reg.to_json_buffer()
-                    )
-                    used_ids.update(rev_crids)
-                    rev_info_upd["used_ids"] = sorted(used_ids)
-                    await txn.handle.replace(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info_upd
-                    )
-                    await txn.commit()
-            except (DBStoreError, AskarError) as err:
-                raise IndyIssuerError("Error saving revocation registry") from err
-            break
+                break  # Success, exit loop
+            except IndyIssuerRetryableError:
+                continue  # Retry on concurrent updates
+            except IndyIssuerError:
+                raise  # Re-raise non-retryable errors
+        else:
+            raise IndyIssuerError("Repeated conflict attempting to update registry")
 
         return (
             delta and delta.to_json(),
             [str(rev_id) for rev_id in sorted(failed_crids)],
         )
+
+    async def _attempt_revocation(
+        self, cred_def_id: str, revoc_reg_id: str, cred_revoc_ids: Sequence[str]
+    ) -> Tuple:
+        """Attempt a single revocation operation."""
+        # Load revocation registry components
+        components = await self._load_revocation_components(cred_def_id, revoc_reg_id)
+        
+        # Classify credential revocation IDs
+        rev_info = components["rev_reg_info"].value_json
+        rev_crids, failed_crids = self._classify_revocation_ids(
+            rev_info, components["rev_reg_def"].max_cred_num, cred_revoc_ids, revoc_reg_id
+        )
+        
+        if not rev_crids:
+            return None, failed_crids
+        
+        # Update revocation registry
+        delta = await self._update_revocation_registry(
+            components, list(rev_crids)
+        )
+        
+        # Save updates to storage
+        await self._save_revocation_updates(
+            revoc_reg_id, components["rev_reg"], rev_info, rev_crids
+        )
+        
+        return delta, failed_crids
+
+    async def _load_revocation_components(
+        self, cred_def_id: str, revoc_reg_id: str
+    ) -> dict:
+        """Load all revocation registry components from storage."""
+        try:
+            async with self._profile.session() as session:
+                components_raw = await self._fetch_raw_components(
+                    session, cred_def_id, revoc_reg_id
+                )
+        except (DBStoreError, AskarError) as err:
+            raise IndyIssuerError("Error retrieving revocation registry") from err
+        
+        return self._parse_revocation_components(components_raw)
+
+    async def _fetch_raw_components(
+        self, session, cred_def_id: str, revoc_reg_id: str
+    ) -> dict:
+        """Fetch raw components from storage."""
+        components = {
+            "cred_def": await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id),
+            "rev_reg_def": await session.handle.fetch(CATEGORY_REV_REG_DEF, revoc_reg_id),
+            "rev_reg_def_private": await session.handle.fetch(
+                CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
+            ),
+            "rev_reg": await session.handle.fetch(CATEGORY_REV_REG, revoc_reg_id),
+            "rev_reg_info": await session.handle.fetch(
+                CATEGORY_REV_REG_INFO, revoc_reg_id
+            ),
+        }
+        
+        self._validate_components_exist(components)
+        return components
+
+    def _validate_components_exist(self, components: dict):
+        """Validate that all required components exist."""
+        error_messages = {
+            "cred_def": "Credential definition not found",
+            "rev_reg_def": "Revocation registry definition not found",
+            "rev_reg_def_private": "Revocation registry definition private key not found",
+            "rev_reg": "Revocation registry not found",
+            "rev_reg_info": "Revocation registry metadata not found",
+        }
+        
+        for key, component in components.items():
+            if not component:
+                raise IndyIssuerError(error_messages[key])
+
+    def _parse_revocation_components(self, components_raw: dict) -> dict:
+        """Parse raw components into proper objects."""
+        try:
+            return {
+                "cred_def": CredentialDefinition.load(
+                    components_raw["cred_def"].raw_value
+                ),
+                "rev_reg_def": RevocationRegistryDefinition.load(
+                    components_raw["rev_reg_def"].raw_value
+                ),
+                "rev_reg_def_private": RevocationRegistryDefinitionPrivate.load(
+                    components_raw["rev_reg_def_private"].raw_value
+                ),
+                "rev_reg": RevocationRegistry.load(components_raw["rev_reg"].raw_value),
+                "rev_reg_info": components_raw["rev_reg_info"],
+            }
+        except CredxError as err:
+            raise IndyIssuerError("Error loading revocation registry components") from err
+
+    async def _update_revocation_registry(self, components: dict, rev_crids: list):
+        """Update the revocation registry with revoked credentials."""
+        try:
+            return await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: components["rev_reg"].update(
+                    components["cred_def"],
+                    components["rev_reg_def"],
+                    components["rev_reg_def_private"],
+                    issued=None,
+                    revoked=rev_crids,
+                ),
+            )
+        except CredxError as err:
+            raise IndyIssuerError(ERR_UPDATE_REV_REG) from err
+
+    async def _save_revocation_updates(
+        self, revoc_reg_id: str, rev_reg, original_rev_info: dict, rev_crids: set
+    ):
+        """Save revocation updates to storage."""
+        try:
+            async with self._profile.transaction() as txn:
+                # Fetch current state for concurrent update detection
+                rev_reg_upd = await txn.handle.fetch(
+                    CATEGORY_REV_REG, revoc_reg_id, for_update=True
+                )
+                rev_info_upd = await txn.handle.fetch(
+                    CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
+                )
+                
+                if not rev_reg_upd or not rev_info_upd:
+                    LOGGER.warning(
+                        "Revocation registry missing, skipping update: %s", revoc_reg_id
+                    )
+                    return
+                
+                current_rev_info = rev_info_upd.value_json
+                if current_rev_info != original_rev_info:
+                    # Concurrent update detected, need to retry
+                    raise IndyIssuerRetryableError("Concurrent update detected")
+                
+                # Update registry and metadata
+                await txn.handle.replace(
+                    CATEGORY_REV_REG, revoc_reg_id, rev_reg.to_json_buffer()
+                )
+                
+                used_ids = set(current_rev_info.get("used_ids") or [])
+                used_ids.update(rev_crids)
+                current_rev_info["used_ids"] = sorted(used_ids)
+                
+                await txn.handle.replace(
+                    CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=current_rev_info
+                )
+                await txn.commit()
+        except (DBStoreError, AskarError) as err:
+            raise IndyIssuerError(ERR_SAVE_REV_REG) from err
+
+
+class IndyIssuerRetryableError(IndyIssuerError):
+    """Error that indicates the operation should be retried."""
+    pass
 
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
@@ -554,7 +666,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 delta.update_with(d2)
                 return delta.to_json()
             except CredxError as err:
-                raise IndyIssuerError("Error merging revocation registry deltas") from err
+                raise IndyIssuerError(ERR_MERGE_DELTAS) from err
 
         return await asyncio.get_event_loop().run_in_executor(
             None, update, fro_delta, to_delta
@@ -588,7 +700,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
             async with self._profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error retrieving credential definition") from err
+            raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def:
             raise IndyIssuerError(
                 "Credential definition not found for revocation registry"
@@ -602,17 +714,19 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 _rev_reg_delta,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: RevocationRegistryDefinition.create(
-                    strip_did_prefix(origin_did),
-                    cred_def.raw_value,
-                    tag,
-                    revoc_def_type,
-                    max_cred_num,
-                    tails_dir_path=tails_base_path,
+                lambda o=origin_did, cd=cred_def.raw_value, tg=tag,
+                rdt=revoc_def_type, mx=max_cred_num, td=tails_base_path:
+                RevocationRegistryDefinition.create(
+                    strip_did_prefix(o),
+                    cd,
+                    tg,
+                    rdt,
+                    mx,
+                    tails_dir_path=td,
                 ),
             )
         except CredxError as err:
-            raise IndyIssuerError("Error creating revocation registry") from err
+            raise IndyIssuerError(ERR_CREATE_REV_REG) from err
 
         rev_reg_def_id = rev_reg_def.id
         rev_reg_def_json = rev_reg_def.to_json()
@@ -636,7 +750,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 )
                 await txn.commit()
         except (DBStoreError, AskarError) as err:
-            raise IndyIssuerError("Error saving new revocation registry") from err
+            raise IndyIssuerError(ERR_SAVE_NEW_REV_REG) from err
 
         return (
             rev_reg_def_id,

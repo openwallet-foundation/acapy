@@ -14,6 +14,8 @@ from .cache import ProfileCache
 
 LOGGER = logging.getLogger(__name__)
 
+WALLET_TYPE_KEY = "wallet.type"
+
 
 class MultitenantManager(BaseMultitenantManager):
     """Class for handling multitenancy."""
@@ -68,7 +70,7 @@ class MultitenantManager(BaseMultitenantManager):
                 "wallet.seed": None,
                 "wallet.rekey": None,
                 "wallet.name": None,
-                "wallet.type": None,
+                WALLET_TYPE_KEY: None,
                 "mediation.open": None,
                 "mediation.invite": None,
                 "mediation.default_id": None,
@@ -89,13 +91,13 @@ class MultitenantManager(BaseMultitenantManager):
             self._profiles.put(wallet_id, profile)
 
         # return anoncreds profile if explicitly set as wallet type
-        if profile.context.settings.get("wallet.type") == "kanon-anoncreds":
+        if profile.context.settings.get(WALLET_TYPE_KEY) == "kanon-anoncreds":
             return KanonAnonCredsProfile(
                 profile.opened,
                 profile.context,
             )
 
-        elif profile.context.settings.get("wallet.type") == "askar-anoncreds":
+        elif profile.context.settings.get(WALLET_TYPE_KEY) == "askar-anoncreds":
             return AskarAnonCredsProfile(
                 profile.opened,
                 profile.context,

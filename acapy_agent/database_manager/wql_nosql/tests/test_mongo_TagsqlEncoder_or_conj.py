@@ -13,19 +13,19 @@ from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
 class TestMongoTagEncoder(unittest.TestCase):
     def test_or_conjunction(self):
         # Define the query: (tag_a = "value_a" AND tag_b = "value_b") OR (tag_a = "value_a" AND tag_b != "value_c")
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("tag_a"), "value_a"),
-                TagQuery.Eq(TagName("tag_b"), "value_b"),
+                TagQuery.eq(TagName("tag_a"), "value_a"),
+                TagQuery.eq(TagName("tag_b"), "value_b"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("tag_a"), "value_a"),
-                TagQuery.Not(TagQuery.Eq(TagName("tag_b"), "value_c")),
+                TagQuery.eq(TagName("tag_a"), "value_a"),
+                TagQuery.not_(TagQuery.eq(TagName("tag_b"), "value_c")),
             ]
         )
-        query = TagQuery.Or([condition_1, condition_2])
+        query = TagQuery.or_([condition_1, condition_2])
 
         # Encoding functions (identity functions)
         def enc_name(x):

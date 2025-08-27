@@ -123,7 +123,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         )
 
     def test_eq_positive(self):
-        query = TagQuery.Eq(TagName("field"), "value")
+        query = TagQuery.eq(TagName("field"), "value")
         wql = query.to_wql_str()
         print(f"Test: Positive equality query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -162,7 +162,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 3], "Positive equality")
 
     def test_eq_negated(self):
-        query = TagQuery.Not(TagQuery.Eq(TagName("field"), "value"))
+        query = TagQuery.not_(TagQuery.eq(TagName("field"), "value"))
         wql = query.to_wql_str()
         print(f"Test: Negated equality query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -201,7 +201,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2], "Negated equality")
 
     def test_neq_positive(self):
-        query = TagQuery.Neq(TagName("field"), "value")
+        query = TagQuery.neq(TagName("field"), "value")
         wql = query.to_wql_str()
         print(f"Test: Positive inequality query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -240,7 +240,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2, 3], "Positive inequality")
 
     def test_neq_negated(self):
-        query = TagQuery.Not(TagQuery.Neq(TagName("field"), "value"))
+        query = TagQuery.not_(TagQuery.neq(TagName("field"), "value"))
         wql = query.to_wql_str()
         print(f"Test: Negated inequality query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -279,7 +279,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 3], "Negated inequality")
 
     def test_gt_positive(self):
-        query = TagQuery.Gt(TagName("price"), "100")
+        query = TagQuery.gt(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive greater-than query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -326,7 +326,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3, 4], "Positive greater-than")
 
     def test_gt_negated(self):
-        query = TagQuery.Not(TagQuery.Gt(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.gt(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated greater-than query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -371,7 +371,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2], "Negated greater-than")
 
     def test_gte_positive(self):
-        query = TagQuery.Gte(TagName("price"), "100")
+        query = TagQuery.gte(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive greater-than-or-equal query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -422,7 +422,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         )
 
     def test_gte_negated(self):
-        query = TagQuery.Not(TagQuery.Gte(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.gte(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated greater-than-or-equal query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -471,7 +471,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1], "Negated greater-than-or-equal")
 
     def test_lt_positive(self):
-        query = TagQuery.Lt(TagName("price"), "100")
+        query = TagQuery.lt(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive less-than query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -516,7 +516,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1], "Positive less-than")
 
     def test_lt_negated(self):
-        query = TagQuery.Not(TagQuery.Lt(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.lt(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated less-than query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -561,7 +561,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [2, 3, 4], "Negated less-than")
 
     def test_lte_positive(self):
-        query = TagQuery.Lte(TagName("price"), "100")
+        query = TagQuery.lte(TagName("price"), "100")
         wql = query.to_wql_str()
         print(f"Test: Positive less-than-or-equal query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -612,7 +612,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         )
 
     def test_lte_negated(self):
-        query = TagQuery.Not(TagQuery.Lte(TagName("price"), "100"))
+        query = TagQuery.not_(TagQuery.lte(TagName("price"), "100"))
         wql = query.to_wql_str()
         print(f"Test: Negated less-than-or-equal query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -661,7 +661,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [3, 4], "Negated less-than-or-equal")
 
     def test_like_positive(self):
-        query = TagQuery.Like(TagName("field"), "%pat%")
+        query = TagQuery.like(TagName("field"), "%pat%")
         wql = query.to_wql_str()
         print(f"Test: Positive LIKE query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)
@@ -706,7 +706,7 @@ class TestPostgresTagEncoderNonNormalizedA(unittest.TestCase):
         self.run_query_and_verify(sql_query, params, [1, 2, 4], "Positive LIKE")
 
     def test_like_negated(self):
-        query = TagQuery.Not(TagQuery.Like(TagName("field"), "%pat%"))
+        query = TagQuery.not_(TagQuery.like(TagName("field"), "%pat%"))
         wql = query.to_wql_str()
         print(f"Test: Negated LIKE query\nWQL: {wql}")
         sql_query, params = self.encoder.encode_query(query)

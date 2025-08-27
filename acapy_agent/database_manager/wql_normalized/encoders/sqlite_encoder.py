@@ -6,6 +6,9 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
+# SQL operation constants
+SQL_NOT_IN = "NOT IN"
+
 
 class SqliteTagEncoder(TagQueryEncoder):
     """Encoder for generating SQLite-compatible SQL queries from TagQuery objects.
@@ -66,56 +69,50 @@ class SqliteTagEncoder(TagQueryEncoder):
 
         try:
             if query.variant == "Not":
-                if query.data.variant == "Exist":
-                    return self.encode_exist(query.data.data, True)
-                elif query.data.variant == "In":
-                    return self.encode_in(*query.data.data, True)
-                elif not self.normalized and query.data.variant in [
-                    "Eq",
-                    "Neq",
-                    "Gt",
-                    "Gte",
-                    "Lt",
-                    "Lte",
-                    "Like",
-                ]:
-                    return self.encode_op(
-                        getattr(CompareOp, query.data.variant), *query.data.data, True
-                    )
-                subquery = self.encode_query(query.data, False, top_level=False)
-                if query.data.variant in ["And", "Or"]:
-                    return f"NOT {subquery}"
-                return f"NOT ({subquery})"
+                return self._encode_not(query)
 
-            if query.variant == "Eq":
-                return self.encode_op(CompareOp.Eq, *query.data, negate)
-            elif query.variant == "Neq":
-                return self.encode_op(CompareOp.Neq, *query.data, negate)
-            elif query.variant == "Gt":
-                return self.encode_op(CompareOp.Gt, *query.data, negate)
-            elif query.variant == "Gte":
-                return self.encode_op(CompareOp.Gte, *query.data, negate)
-            elif query.variant == "Lt":
-                return self.encode_op(CompareOp.Lt, *query.data, negate)
-            elif query.variant == "Lte":
-                return self.encode_op(CompareOp.Lte, *query.data, negate)
-            elif query.variant == "Like":
-                return self.encode_op(CompareOp.Like, *query.data, negate)
-            elif query.variant == "In":
+            compare_map = {
+                "Eq": CompareOp.Eq,
+                "Neq": CompareOp.Neq,
+                "Gt": CompareOp.Gt,
+                "Gte": CompareOp.Gte,
+                "Lt": CompareOp.Lt,
+                "Lte": CompareOp.Lte,
+                "Like": CompareOp.Like,
+            }
+            if query.variant in compare_map:
+                return self.encode_op(compare_map[query.variant], *query.data, negate)
+            if query.variant == "In":
                 return self.encode_in(*query.data, negate)
-            elif query.variant == "Exist":
+            if query.variant == "Exist":
                 return self.encode_exist(query.data, negate)
-            elif query.variant in ["And", "Or"]:
+            if query.variant in ["And", "Or"]:
                 op = ConjunctionOp.And if query.variant == "And" else ConjunctionOp.Or
                 return self.encode_conj(op, query.data, negate)
-            else:
-                LOGGER.error(
-                    "[%s] Unknown query variant: %s", "encode_operation", query.variant
-                )
-                raise ValueError(f"Unknown query variant: {query.variant}")
+            LOGGER.error(
+                "[%s] Unknown query variant: %s", "encode_operation", query.variant
+            )
+            raise ValueError(f"Unknown query variant: {query.variant}")
         except Exception as e:
             LOGGER.error("[%s] Failed: %s", "encode_operation", str(e))
             raise
+
+    def _encode_not(self, query: TagQuery) -> str:
+        """Encode a NOT expression with special-cases for certain variants."""
+        inner = query.data
+        if inner.variant == "Exist":
+            return self.encode_exist(inner.data, True)
+        if inner.variant == "In":
+            return self.encode_in(*inner.data, True)
+        if (
+            not self.normalized
+            and inner.variant in ["Eq", "Neq", "Gt", "Gte", "Lt", "Lte", "Like"]
+        ):
+            return self.encode_op(getattr(CompareOp, inner.variant), *inner.data, True)
+        subquery = self.encode_query(inner, False, top_level=False)
+        if inner.variant in ["And", "Or"]:
+            return f"NOT {subquery}"
+        return f"NOT ({subquery})"
 
     def encode_op_clause(
         self, op: CompareOp, enc_name: str, enc_value: str, negate: bool
@@ -147,7 +144,7 @@ class SqliteTagEncoder(TagQueryEncoder):
         else:
             self.arguments.append(enc_name)
             self.arguments.append(enc_value)
-            subquery_op = "NOT IN" if negate else "IN"
+            subquery_op = SQL_NOT_IN if negate else "IN"
             sql_clause = (
                 f"i.id {subquery_op} (SELECT item_id FROM {self.tags_table} "
                 f"WHERE name = ? AND value {op.as_sql_str()} ?)"
@@ -161,13 +158,13 @@ class SqliteTagEncoder(TagQueryEncoder):
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             placeholders = ", ".join(["?" for _ in enc_values])
             self.arguments.extend(enc_values)
-            sql_clause = f"{column} {'NOT IN' if negate else 'IN'} ({placeholders})"
+            sql_clause = f"{column} {SQL_NOT_IN if negate else 'IN'} ({placeholders})"
             return sql_clause
         else:
             self.arguments.append(enc_name)
             self.arguments.extend(enc_values)
             value_placeholders = ", ".join(["?" for _ in enc_values])
-            in_op = "NOT IN" if negate else "IN"
+            in_op = SQL_NOT_IN if negate else "IN"
             sql_clause = (
                 f"i.id IN (SELECT item_id FROM {self.tags_table} "
                 f"WHERE name = ? AND value {in_op} ({value_placeholders}))"
@@ -186,7 +183,7 @@ class SqliteTagEncoder(TagQueryEncoder):
             return sql_clause
         else:
             self.arguments.append(enc_name)
-            subquery_op = "NOT IN" if negate else "IN"
+            subquery_op = SQL_NOT_IN if negate else "IN"
             sql_clause = (
                 f"i.id {subquery_op} (SELECT item_id FROM {self.tags_table} "
                 f"WHERE name = ?)"

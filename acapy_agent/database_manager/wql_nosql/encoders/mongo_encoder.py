@@ -24,38 +24,39 @@ class MongoTagEncoder(TagQueryEncoder):
     def encode_op_clause(
         self, op: CompareOp, enc_name: str, enc_value: Any, negate: bool
     ) -> Dict:
-        """Encode a comparison operation clause."""
-        if op == CompareOp.Eq:
-            if negate:
-                return {enc_name: {"$ne": enc_value}}
-            else:
-                return {enc_name: enc_value}  # Use shorthand for equality
-        elif op == CompareOp.Neq:
-            if negate:
-                return {enc_name: enc_value}  # Negating "$ne" becomes equality
-            else:
-                return {enc_name: {"$ne": enc_value}}
-        elif op == CompareOp.Like:
-            pattern = enc_value
-            if negate:
-                return {enc_name: {"$not": {"$regex": pattern}}}
-            else:
-                return {enc_name: {"$regex": pattern}}
-        else:
-            # Handle other comparison operations
-            mongo_op = {
-                CompareOp.Gt: "$gt",
-                CompareOp.Gte: "$gte",
-                CompareOp.Lt: "$lt",
-                CompareOp.Lte: "$lte",
-            }.get(op)
-            if mongo_op is None:
-                raise ValueError(f"Unsupported operation: {op}")
-            if negate:
-                # Negate the operation using "$not"
-                return {enc_name: {"$not": {mongo_op: enc_value}}}
-            else:
-                return {enc_name: {mongo_op: enc_value}}
+        """Encode a comparison operation clause with low branching."""
+        # Direct handlers for equality and like
+        def handle_eq(name: str, value: Any, not_: bool) -> Dict:
+            return {name: {"$ne": value}} if not_ else {name: value}
+
+        def handle_neq(name: str, value: Any, not_: bool) -> Dict:
+            return {name: value} if not_ else {name: {"$ne": value}}
+
+        def handle_like(name: str, value: Any, not_: bool) -> Dict:
+            regex_clause = {"$regex": value}
+            return {name: {"$not": regex_clause}} if not_ else {name: regex_clause}
+
+        direct_dispatch = {
+            CompareOp.Eq: handle_eq,
+            CompareOp.Neq: handle_neq,
+            CompareOp.Like: handle_like,
+        }
+
+        if op in direct_dispatch:
+            return direct_dispatch[op](enc_name, enc_value, negate)
+
+        # Range-like ops share the same shape
+        range_op_map = {
+            CompareOp.Gt: "$gt",
+            CompareOp.Gte: "$gte",
+            CompareOp.Lt: "$lt",
+            CompareOp.Lte: "$lte",
+        }
+        mongo_op = range_op_map.get(op)
+        if not mongo_op:
+            raise ValueError(f"Unsupported operation: {op}")
+        clause = {mongo_op: enc_value}
+        return {enc_name: {"$not": clause}} if negate else {enc_name: clause}
 
     def encode_in_clause(
         self, enc_name: str, enc_values: List[Any], negate: bool

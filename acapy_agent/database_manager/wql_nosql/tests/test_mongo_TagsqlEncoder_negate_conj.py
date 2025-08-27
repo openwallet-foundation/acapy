@@ -12,19 +12,19 @@ from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
 class TestMongoTagEncoder(unittest.TestCase):
     def test_negate_conj(self):
         # Define a negated conjunction query: NOT (OR (condition_1, condition_2))
-        condition_1 = TagQuery.And(
+        condition_1 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Eq(TagName("status"), "in_stock"),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.eq(TagName("status"), "in_stock"),
             ]
         )
-        condition_2 = TagQuery.And(
+        condition_2 = TagQuery.and_(
             [
-                TagQuery.Eq(TagName("category"), "electronics"),
-                TagQuery.Not(TagQuery.Eq(TagName("status"), "sold_out")),
+                TagQuery.eq(TagName("category"), "electronics"),
+                TagQuery.not_(TagQuery.eq(TagName("status"), "sold_out")),
             ]
         )
-        query = TagQuery.Not(TagQuery.Or([condition_1, condition_2]))
+        query = TagQuery.not_(TagQuery.or_([condition_1, condition_2]))
 
         def enc_name(x):
             return x  # No transformation for tag names
