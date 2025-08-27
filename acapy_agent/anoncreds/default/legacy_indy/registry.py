@@ -41,7 +41,6 @@ from ....protocols.endorse_transaction.v1_0.manager import (
     TransactionManagerError,
 )
 from ....protocols.endorse_transaction.v1_0.util import is_author_role
-from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....storage.error import StorageError
 from ....utils import sentinel
 from ....wallet.did_info import DIDInfo
@@ -63,6 +62,7 @@ from ...models.credential_definition import (
     CredDefValue,
     GetCredDefResult,
 )
+from ...models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,

@@ -559,7 +559,7 @@ class AnonCredsHolder:
         except AskarError as err:
             raise AnonCredsHolderError(
                 "Error deleting credential", error_code=err.code
-            ) from err  # noqa: E501
+            ) from err
 
     async def get_mime_type(
         self, credential_id: str, attr: Optional[str] = None
