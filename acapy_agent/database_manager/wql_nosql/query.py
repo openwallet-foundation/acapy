@@ -1,10 +1,10 @@
 """Askar WQL (Wallet Query Language) parsing and optimization."""
 
 import json
-from typing import List, Optional, Callable, Union
+from typing import List, Optional, Callable
 
 # JSONValue represents a parsed JSON value, which can be a dict, list, str, or None
-JSONValue = Union[dict, list, str, None]
+JSONValue = dict | list | str | None
 
 
 class Query:
@@ -34,7 +34,7 @@ class Query:
 
     def __eq__(self, other):
         """Check equality with another query."""
-        raise NotImplementedError
+        return NotImplemented
 
 
 class AndQuery(Query):
@@ -395,80 +395,79 @@ class ExistQuery(Query):
 
 def parse_single_operator(op_name: str, key: str, value: JSONValue) -> Query:
     """Parse a single operator from a key-value pair."""
-    if op_name == "$neq":
-        if not isinstance(value, str):
-            raise ValueError("$neq must be used with string")
-        return NeqQuery(key, value)
-    elif op_name == "$gt":
-        if not isinstance(value, str):
-            raise ValueError("$gt must be used with string")
-        return GtQuery(key, value)
-    elif op_name == "$gte":
-        if not isinstance(value, str):
-            raise ValueError("$gte must be used with string")
-        return GteQuery(key, value)
-    elif op_name == "$lt":
-        if not isinstance(value, str):
-            raise ValueError("$lt must be used with string")
-        return LtQuery(key, value)
-    elif op_name == "$lte":
-        if not isinstance(value, str):
-            raise ValueError("$lte must be used with string")
-        return LteQuery(key, value)
-    elif op_name == "$like":
-        if not isinstance(value, str):
-            raise ValueError("$like must be used with string")
-        return LikeQuery(key, value)
-    elif op_name == "$in":
-        if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
-            raise ValueError("$in must be used with array of strings")
-        return InQuery(key, value)
-    else:
-        raise ValueError("Unknown operator")
+
+    def _require_str(val: JSONValue, opname: str) -> str:
+        if not isinstance(val, str):
+            raise ValueError(f"{opname} must be used with string")
+        return val
+
+    def _require_str_list(val: JSONValue, opname: str) -> List[str]:
+        if not (isinstance(val, list) and all(isinstance(v, str) for v in val)):
+            raise ValueError(f"{opname} must be used with array of strings")
+        return val
+
+    str_ops = {
+        "$neq": NeqQuery,
+        "$gt": GtQuery,
+        "$gte": GteQuery,
+        "$lt": LtQuery,
+        "$lte": LteQuery,
+        "$like": LikeQuery,
+    }
+    if op_name in str_ops:
+        return str_ops[op_name](key, _require_str(value, op_name))
+    if op_name == "$in":
+        return InQuery(key, _require_str_list(value, "$in"))
+    raise ValueError("Unknown operator")
 
 
 def parse_operator(key: str, value: JSONValue) -> Optional[Query]:
     """Parse an operator from a key-value pair."""
-    if key == "$and":
-        if not isinstance(value, list):
-            raise ValueError("$and must be an array")
-        subqueries = [
-            parse_query(sub_dict) for sub_dict in value if isinstance(sub_dict, dict)
-        ]
-        if not subqueries:
-            return None
-        return AndQuery(subqueries)
-    elif key == "$or":
-        if not isinstance(value, list):
-            raise ValueError("$or must be an array")
-        subqueries = [
-            parse_query(sub_dict) for sub_dict in value if isinstance(sub_dict, dict)
-        ]
-        if not subqueries:
-            return None
-        return OrQuery(subqueries)
-    elif key == "$not":
-        if not isinstance(value, dict):
+
+    def _parse_array_of_dicts(val: JSONValue, opname: str) -> List[Query]:
+        if not isinstance(val, list):
+            raise ValueError(f"{opname} must be an array")
+        return [parse_query(v) for v in val if isinstance(v, dict)]
+
+    def _parse_and(val: JSONValue) -> Optional[Query]:
+        subs = _parse_array_of_dicts(val, "$and")
+        return AndQuery(subs) if subs else None
+
+    def _parse_or(val: JSONValue) -> Optional[Query]:
+        subs = _parse_array_of_dicts(val, "$or")
+        return OrQuery(subs) if subs else None
+
+    def _parse_not(val: JSONValue) -> Query:
+        if not isinstance(val, dict):
             raise ValueError("$not must be a JSON object")
-        return NotQuery(parse_query(value))
-    elif key == "$exist":
-        if isinstance(value, str):
-            keys = [value]
-        elif isinstance(value, list):
-            keys = [k for k in value if isinstance(k, str)]
+        return NotQuery(parse_query(val))
+
+    def _parse_exist(val: JSONValue) -> Optional[Query]:
+        if isinstance(val, str):
+            keys = [val]
+        elif isinstance(val, list):
+            keys = [k for k in val if isinstance(k, str)]
             if not keys:
                 return None
         else:
             raise ValueError("$exist must be a string or array of strings")
         return ExistQuery(keys)
-    else:
-        if isinstance(value, str):
-            return EqQuery(key, value)
-        elif isinstance(value, dict) and len(value) == 1:
-            op_name, op_value = next(iter(value.items()))
-            return parse_single_operator(op_name, key, op_value)
-        else:
-            raise ValueError("Unsupported value")
+
+    dispatch = {
+        "$and": _parse_and,
+        "$or": _parse_or,
+        "$not": _parse_not,
+        "$exist": _parse_exist,
+    }
+    if key in dispatch:
+        return dispatch[key](value)
+
+    if isinstance(value, str):
+        return EqQuery(key, value)
+    if isinstance(value, dict) and len(value) == 1:
+        op_name, op_value = next(iter(value.items()))
+        return parse_single_operator(op_name, key, op_value)
+    raise ValueError("Unsupported value")
 
 
 def parse_query(query_dict: dict) -> Query:
@@ -486,22 +485,7 @@ def parse_query(query_dict: dict) -> Query:
         return AndQuery(operators)
 
 
-# def query_from_json(json_value: JSONValue) -> Query:
-#     """Parse a JSON value (dict or list) into a Query object."""
-#     if isinstance(json_value, dict):
-#         return parse_query(json_value)
-#     elif isinstance(json_value, list):
-#         sub_queries = []
-#         for item in json_value:
-#             if isinstance(item, dict):
-#                 sub_query_dict = {k: v for k, v in item.items() if v is not None}
-#                 if sub_query_dict:
-#                     sub_queries.append(parse_query(sub_query_dict))
-#         if sub_queries:
-#             return OrQuery(sub_queries)
-#         return AndQuery([])
-#     else:
-#         raise ValueError("Query must be a JSON object or array")
+
 
 
 def query_from_json(json_value: JSONValue) -> Query:

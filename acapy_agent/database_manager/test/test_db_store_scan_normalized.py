@@ -51,11 +51,19 @@ async def populated_store(test_db_path):
     # Insert test presentation exchange records in a single transaction for speed
     async with store.transaction() as session:
         for i in range(50):
-            state = "active" if i % 3 == 0 else "pending" if i % 3 == 1 else "completed"
+            if i % 3 == 0:
+                state = "active"
+            elif i % 3 == 1:
+                state = "pending"
+            else:
+                state = "completed"
             connection_id = f"conn_{i:03d}"
             thread_id = f"thread_{i:03d}"
             name = f"pres_ex_{i:03d}"
-            expiry_ms = 3600000 if i % 10 != 9 else -1000  # 5 expired records
+            if i % 10 != 9:
+                expiry_ms = 3600000
+            else:
+                expiry_ms = -1000  # 5 expired records
             value = json.dumps(
                 {
                     "state": state,
@@ -65,7 +73,7 @@ async def populated_store(test_db_path):
                     "pres": PRES_JSON,
                     "initiator": "self",
                     "role": "prover",
-                    "verified": "true" if i % 2 == 0 else "false",
+                    "verified": ("true" if i % 2 == 0 else "false"),
                     "verified_msgs": None,
                     "auto_present": "true",
                     "auto_verify": "false",
@@ -78,7 +86,7 @@ async def populated_store(test_db_path):
                 "state": state,
                 "connection_id": connection_id,
                 "thread_id": thread_id,
-                "verified": "true" if i % 2 == 0 else "false",
+                "verified": ("true" if i % 2 == 0 else "false"),
                 "initiator": "self",
                 "role": "prover",
                 "verified_msgs": None,

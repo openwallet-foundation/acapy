@@ -111,7 +111,7 @@ class KanonVCHolder(VCHolder):
 
         def _match_any(query: list, k, vals):
             if vals is None:
-                pass
+                return
             elif len(vals) > 1:
                 query.append({"$or": [{k: v for v in vals}]})
             else:

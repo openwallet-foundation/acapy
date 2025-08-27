@@ -46,10 +46,18 @@ async def setup_data(store: DBStore, num_records: int = 50):
     inserted_names = []
     for i in range(num_records):
         async with store.transaction() as session:
-            status = "active" if i % 3 == 0 else "pending" if i % 3 == 1 else "revoked"
+            if i % 3 == 0:
+                status = "active"
+            elif i % 3 == 1:
+                status = "pending"
+            else:
+                status = "revoked"
             connection_id = f"conn_{i:03d}"
             name = f"cred_{i:03d}"
-            expiry_ms = 3600000 if i % 10 != 9 else -1000  # 5 expired records
+            if i % 10 != 9:
+                expiry_ms = 3600000
+            else:
+                expiry_ms = -1000  # 5 expired records
             value = json.dumps(
                 {
                     "status": status,
@@ -218,6 +226,8 @@ async def main():
         pass_key=None,  # postgres module will ignore this
         profile=profile_name,
         recreate=True,
+        release_number="release_0",
+        schema_config="generic",
         config=config,
     )
     print(f"Database provisioned at {conn_str}")

@@ -33,16 +33,24 @@ async def populated_store(test_db_path):
     # Insert test credential records
     for i in range(50):
         async with store.transaction() as session:
-            status = "active" if i % 3 == 0 else "pending" if i % 3 == 1 else "revoked"
+            if i % 3 == 0:
+                status = "active"
+            elif i % 3 == 1:
+                status = "pending"
+            else:
+                status = "revoked"
             connection_id = f"conn_{i:03d}"
             name = f"cred_{i:03d}"
-            expiry_ms = 3600000 if i % 10 != 9 else -1000  # 5 expired records
+            if i % 10 != 9:
+                expiry_ms = 3600000
+            else:
+                expiry_ms = -1000  # 5 expired records
             value = json.dumps(
                 {
                     "status": status,
                     "connection_id": connection_id,
                     "credential_id": f"cred_id_{i:03d}",
-                    "schema_id": "schema:1.0",
+                        "schema_id": "schema:1.0",
                     "issuer_did": "did:example:issuer",
                     "issued_at": "2025-06-23T12:00:00Z",
                 }

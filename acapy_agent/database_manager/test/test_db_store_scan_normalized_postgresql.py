@@ -63,11 +63,19 @@ async def setup_data(store: DBStore, num_records: int = 50):
     inserted_names = []
     for i in range(num_records):
         async with store.transaction() as session:
-            state = "active" if i % 3 == 0 else "pending" if i % 3 == 1 else "completed"
+            if i % 3 == 0:
+                state = "active"
+            elif i % 3 == 1:
+                state = "pending"
+            else:
+                state = "completed"
             connection_id = f"conn_{i:03d}"
             thread_id = f"thread_{i:03d}"
             name = f"pres_ex_{i:03d}"
-            expiry_ms = 3600000 if i % 10 != 9 else -1000
+            if i % 10 != 9:
+                expiry_ms = 3600000
+            else:
+                expiry_ms = -1000
             value = json.dumps(
                 {
                     "state": state,
@@ -77,7 +85,7 @@ async def setup_data(store: DBStore, num_records: int = 50):
                     "pres": PRES_JSON,
                     "initiator": "self",
                     "role": "prover",
-                    "verified": "true" if i % 2 == 0 else "false",
+                    "verified": ("true" if i % 2 == 0 else "false"),
                     "verified_msgs": None,
                     "auto_present": "true",
                     "auto_verify": "false",
@@ -90,7 +98,7 @@ async def setup_data(store: DBStore, num_records: int = 50):
                 "state": state,
                 "connection_id": connection_id,
                 "thread_id": thread_id,
-                "verified": "true" if i % 2 == 0 else "false",
+                "verified": ("true" if i % 2 == 0 else "false"),
                 "initiator": "self",
                 "role": "prover",
                 "verified_msgs": None,
