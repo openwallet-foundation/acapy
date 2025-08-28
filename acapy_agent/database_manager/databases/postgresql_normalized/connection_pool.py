@@ -88,8 +88,6 @@ class PostgresConnectionPool:
                 actual_error=str(e),
             )
 
-    
-
     async def putconn(self, conn):
         """Return a connection to the pool."""
         try:

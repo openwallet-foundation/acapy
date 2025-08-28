@@ -104,10 +104,15 @@ class SqliteTagEncoder(TagQueryEncoder):
             return self.encode_exist(inner.data, True)
         if inner.variant == "In":
             return self.encode_in(*inner.data, True)
-        if (
-            not self.normalized
-            and inner.variant in ["Eq", "Neq", "Gt", "Gte", "Lt", "Lte", "Like"]
-        ):
+        if not self.normalized and inner.variant in [
+            "Eq",
+            "Neq",
+            "Gt",
+            "Gte",
+            "Lt",
+            "Lte",
+            "Like",
+        ]:
             return self.encode_op(getattr(CompareOp, inner.variant), *inner.data, True)
         subquery = self.encode_query(inner, False, top_level=False)
         if inner.variant in ["And", "Or"]:

@@ -69,7 +69,7 @@ class KanonStoreConfig:
         if not config:
             config = {}
         self.store_class = store_class
-        
+
         self._init_basic_config(config)
         self._init_askar_config(config)
         self._init_dbstore_config(config)
@@ -93,7 +93,7 @@ class KanonStoreConfig:
         """Initialize Askar-specific configuration."""
         self.storage_config = config.get("storage_config", None)
         self.storage_creds = config.get("storage_creds", None)
-        
+
         storage_type = config.get("storage_type")
         if not storage_type or storage_type == "default":
             storage_type = "sqlite"
@@ -109,11 +109,11 @@ class KanonStoreConfig:
         LOGGER.debug("dbstore_key: %s", self.dbstore_key)
         self.dbstore_rekey = config.get("dbstore_rekey")
         LOGGER.debug("dbstore_rekey: %s", self.dbstore_rekey)
-        
+
         self._validate_dbstore_storage_config(config)
         self._init_dbstore_schema_config(config)
         self._init_dbstore_storage_type(config)
-        
+
     def _validate_dbstore_storage_config(self, config: dict):
         """Validate DBStore storage configuration."""
         self.dbstore_storage_config = config.get("dbstore_storage_config", None)
@@ -136,7 +136,7 @@ class KanonStoreConfig:
                     ERR_JSON_INVALID.format("dbstore_storage_config", str(e))
                 )
         LOGGER.debug("dbstore_storage_config: %s", self.dbstore_storage_config)
-        
+
         self.dbstore_storage_creds = config.get("dbstore_storage_creds", None)
         LOGGER.debug("dbstore_storage_creds: %s", self.dbstore_storage_creds)
 
@@ -145,7 +145,12 @@ class KanonStoreConfig:
         if "tls" in config_dict and isinstance(config_dict["tls"], dict):
             tls_config = config_dict["tls"]
             valid_sslmodes = [
-                "disable", "allow", "prefer", "require", "verify-ca", "verify-full"
+                "disable",
+                "allow",
+                "prefer",
+                "require",
+                "verify-ca",
+                "verify-full",
             ]
             if "sslmode" in tls_config and tls_config["sslmode"] not in valid_sslmodes:
                 raise ProfileError("Invalid sslmode in tls configuration")
@@ -156,7 +161,7 @@ class KanonStoreConfig:
             "dbstore_schema_config", self.DEFAULT_SCHEMA_CONFIG
         )
         LOGGER.debug("dbstore_schema_config: %s", self.dbstore_schema_config)
-        
+
         self.dbstore_schema_migration = config.get("dbstore_schema_migration", None)
         LOGGER.debug("dbstore_schema_migration: %s", self.dbstore_schema_migration)
 
@@ -173,7 +178,7 @@ class KanonStoreConfig:
             )
         self.dbstore_storage_type = dbstore_storage_type
         LOGGER.debug("dbstore_storage_type: %s", self.dbstore_storage_type)
-        
+
         if self.dbstore_storage_type == "postgres" and self.dbstore_storage_creds:
             try:
                 json.loads(self.dbstore_storage_creds)
@@ -235,13 +240,13 @@ class KanonStoreConfig:
         creds = json.loads(self.dbstore_storage_creds)
         LOGGER.debug("Parsed dbstore_storage_config: %s", config)
         LOGGER.debug("Parsed dbstore_storage_creds: %s", creds)
-        
+
         config_url = self._validate_postgres_dbstore_url(config)
         account, password = self._validate_postgres_dbstore_creds(creds)
-        
+
         db_name = urllib.parse.quote(self.name + "_dbstore")
         uri = base_uri + f"{account}:{password}@{config_url}/{db_name}"
-        
+
         params = self._build_postgres_dbstore_params(config, creds)
         if params:
             uri += "?" + urllib.parse.urlencode(params)
@@ -331,13 +336,13 @@ class KanonStoreConfig:
         self._validate_postgres_askar_config()
         config = json.loads(self.storage_config)
         creds = json.loads(self.storage_creds)
-        
+
         config_url = self._validate_postgres_askar_url(config)
         account, password = self._validate_postgres_askar_creds(creds)
-        
+
         db_name = urllib.parse.quote(self.name)
         uri = base_uri + f"{account}:{password}@{config_url}/{db_name}"
-        
+
         params = self._build_postgres_askar_params(config, creds)
         if params:
             uri += "?" + urllib.parse.urlencode(params)
@@ -376,7 +381,7 @@ class KanonStoreConfig:
             params["max_connections"] = config["max_connections"]
         if "min_idle_count" in config:
             params["min_connections"] = config["min_idle_count"]
-        
+
         admin_fields = ["admin_account", "admin_password"]
         for field in admin_fields:
             if field in creds:
@@ -476,16 +481,16 @@ class KanonStoreConfig:
         """Open or provision both DBStore and Askar Store with separate error handling."""
         db_uri = self.get_dbstore_uri(create=provision, in_memory=in_memory)
         askar_uri = self.get_askar_uri(create=provision, in_memory=in_memory)
-        
+
         config = (
             json.loads(self.dbstore_storage_config) if self.dbstore_storage_config else {}
         )
-        
+
         db_store = await self._open_dbstore_with_error_handling(db_uri, provision, config)
         askar_store = await self._open_askar_with_error_handling(askar_uri, provision)
-        
+
         await self._handle_store_rekeying(db_store, askar_store)
-        
+
         return KanonOpenStore(self, provision, db_store, askar_store)
 
     async def _open_dbstore_with_error_handling(
@@ -501,9 +506,7 @@ class KanonStoreConfig:
                 raise ProfileDuplicateError(f"Duplicate DBStore '{self.name}'")
             raise ProfileError("Error opening DBStore") from err
 
-    async def _open_askar_with_error_handling(
-        self, askar_uri: str, provision: bool
-    ):
+    async def _open_askar_with_error_handling(self, askar_uri: str, provision: bool):
         """Open Askar store with proper error handling and retry logic."""
         try:
             return await self._open_or_provision_askar(askar_uri, provision)
@@ -525,9 +528,7 @@ class KanonStoreConfig:
             await askar_store.rekey(self.rekey_derivation_method, self.rekey)
             return askar_store
         except AskarError as retry_err:
-            raise ProfileError(
-                "Error opening Askar store after retry"
-            ) from retry_err
+            raise ProfileError("Error opening Askar store after retry") from retry_err
 
     async def _handle_store_rekeying(self, db_store, askar_store):
         """Handle rekeying for both stores if required."""

@@ -107,9 +107,7 @@ class GenericHandler(BaseHandler):
             for tag_name, tag_value in tags.items():
                 if isinstance(tag_value, (list, dict)):
                     tag_value = json.dumps(tag_value)
-                    LOGGER.debug(
-                        LOG_SERIALIZED_TAG, operation_name, tag_name, tag_value
-                    )
+                    LOGGER.debug(LOG_SERIALIZED_TAG, operation_name, tag_name, tag_value)
                 cursor.execute(
                     f"""
                     INSERT INTO {self.tags_table} (item_id, name, value)
@@ -325,8 +323,14 @@ class GenericHandler(BaseHandler):
         """Fetch all entries matching criteria from the database."""
         operation_name = "fetch_all"
         self._log_fetch_all_start(
-            operation_name, profile_id, category, tag_filter, 
-            limit, for_update, order_by, descending
+            operation_name,
+            profile_id,
+            category,
+            tag_filter,
+            limit,
+            for_update,
+            order_by,
+            descending,
         )
 
         try:
@@ -335,26 +339,39 @@ class GenericHandler(BaseHandler):
             query = self._build_fetch_query(
                 sql_clause, order_by, descending, limit, params
             )
-            
+
             cursor.execute(query, [profile_id, category] + params)
             LOGGER.debug(LOG_QUERY_OK, operation_name)
-            
+
             return self._process_fetch_results(cursor)
         except Exception as e:
             LOGGER.error(LOG_FAILED, operation_name, str(e))
             raise
 
     def _log_fetch_all_start(
-        self, operation_name: str, profile_id: int, category: str, 
-        tag_filter: str | dict, limit: int, for_update: bool, 
-        order_by: Optional[str], descending: bool
+        self,
+        operation_name: str,
+        profile_id: int,
+        category: str,
+        tag_filter: str | dict,
+        limit: int,
+        for_update: bool,
+        order_by: Optional[str],
+        descending: bool,
     ):
         """Log the start of fetch_all operation."""
         LOGGER.debug(
             "[%s] Starting with profile_id=%d, category=%s, tag_filter=%s, "
             "limit=%s, for_update=%s, order_by=%s, descending=%s, tags_table=%s",
-            operation_name, profile_id, category, tag_filter,
-            limit, for_update, order_by, descending, self.tags_table
+            operation_name,
+            profile_id,
+            category,
+            tag_filter,
+            limit,
+            for_update,
+            order_by,
+            descending,
+            self.tags_table,
         )
 
     def _validate_order_by(self, operation_name: str, order_by: Optional[str]):
@@ -369,17 +386,21 @@ class GenericHandler(BaseHandler):
                 ),
             )
 
-    def _process_tag_filter(self, operation_name: str, tag_filter: str | dict) -> tuple[str, list]:
+    def _process_tag_filter(
+        self, operation_name: str, tag_filter: str | dict
+    ) -> tuple[str, list]:
         """Process tag filter and return SQL clause and parameters."""
         if tag_filter:
             LOGGER.debug(
                 "[%s] Processing tag_filter: %s, type: %s",
-                operation_name, tag_filter, type(tag_filter)
+                operation_name,
+                tag_filter,
+                type(tag_filter),
             )
             if isinstance(tag_filter, str):
                 tag_filter = json.loads(tag_filter)
                 LOGGER.debug(LOG_PARSED_FILTER, operation_name, tag_filter)
-                
+
             wql_query = query_from_json(tag_filter)
             tag_query = query_to_tagquery(wql_query)
             sql_clause, params = self.get_sql_clause(tag_query)
@@ -390,18 +411,23 @@ class GenericHandler(BaseHandler):
             params = []
             LOGGER.debug(
                 "[%s] No tag_filter provided, using default SQL clause: %s",
-                operation_name, sql_clause
+                operation_name,
+                sql_clause,
             )
             return sql_clause, params
 
     def _build_fetch_query(
-        self, sql_clause: str, order_by: Optional[str], 
-        descending: bool, limit: int, params: list
+        self,
+        sql_clause: str,
+        order_by: Optional[str],
+        descending: bool,
+        limit: int,
+        params: list,
     ) -> str:
         """Build the main fetch query."""
         order_column = order_by if order_by else "id"
         order_direction = "DESC" if descending else "ASC"
-        
+
         subquery = f"""
             SELECT i.id, i.category, i.name, i.value
             FROM items i
@@ -410,7 +436,7 @@ class GenericHandler(BaseHandler):
             AND {sql_clause}
             ORDER BY i.{order_column} {order_direction}
         """
-        
+
         if limit is not None:
             subquery += " LIMIT ?"
             params.append(limit)
@@ -427,19 +453,17 @@ class GenericHandler(BaseHandler):
         entries = []
         current_item_id = None
         current_entry = None
-        
+
         for row in cursor:
             item_id, category, name, value, tag_name, tag_value = row
             if item_id != current_item_id:
                 if current_entry:
                     entries.append(current_entry)
                 current_item_id = item_id
-                current_entry = Entry(
-                    category=category, name=name, value=value, tags={}
-                )
+                current_entry = Entry(category=category, name=name, value=value, tags={})
             if tag_name is not None:
                 current_entry.tags[tag_name] = tag_value
-                
+
         if current_entry:
             entries.append(current_entry)
         return entries

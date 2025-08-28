@@ -50,7 +50,7 @@ async def populated_store(test_db_path):
                     "status": status,
                     "connection_id": connection_id,
                     "credential_id": f"cred_id_{i:03d}",
-                        "schema_id": "schema:1.0",
+                    "schema_id": "schema:1.0",
                     "issuer_did": "did:example:issuer",
                     "issued_at": "2025-06-23T12:00:00Z",
                 }

@@ -114,73 +114,61 @@ class TagQuery:
     def eq(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Eq", (name, value))
-    
 
     @staticmethod
     def neq(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Neq", (name, value))
-    
 
     @staticmethod
     def gt(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Gt", (name, value))
-    
 
     @staticmethod
     def gte(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Gte", (name, value))
-    
 
     @staticmethod
     def lt(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Lt", (name, value))
-    
 
     @staticmethod
     def lte(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Lte", (name, value))
-    
 
     @staticmethod
     def like(name: TagName, value: str):
         """Perform the action."""
         return TagQuery("Like", (name, value))
-    
 
     @staticmethod
     def in_(name: TagName, values: List[str]):
         """Perform the action."""
         return TagQuery("In", (name, values))
-    
 
     @staticmethod
     def exist(names: List[TagName]):
         """Perform the action."""
         return TagQuery("Exist", names)
-    
 
     @staticmethod
     def and_(subqueries: List["TagQuery"]):
         """Perform the action."""
         return TagQuery("And", subqueries)
-    
 
     @staticmethod
     def or_(subqueries: List["TagQuery"]):
         """Perform the action."""
         return TagQuery("Or", subqueries)
-    
 
     @staticmethod
     def not_(subquery: "TagQuery"):
         """Perform the action."""
         return TagQuery("Not", subquery)
-    
 
     def to_wql_dict(self):
         """Convert the TagQuery to a WQL-compatible dictionary."""

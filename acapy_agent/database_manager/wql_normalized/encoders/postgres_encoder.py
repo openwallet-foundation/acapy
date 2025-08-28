@@ -99,11 +99,7 @@ class PostgresTagEncoder(TagQueryEncoder):
                 elif query.variant == "Exist":
                     sql_clause = self.encode_exist(query.data, negate)
                 elif query.variant in ["And", "Or"]:
-                    op = (
-                        ConjunctionOp.And
-                        if query.variant == "And"
-                        else ConjunctionOp.Or
-                    )
+                    op = ConjunctionOp.And if query.variant == "And" else ConjunctionOp.Or
                     sql_clause = self.encode_conj(op, query.data, negate)
                 else:
                     LOGGER.error(
@@ -127,11 +123,15 @@ class PostgresTagEncoder(TagQueryEncoder):
             sql_clause = self.encode_exist(inner.data, True)
         elif inner.variant == "In":
             sql_clause = self.encode_in(*inner.data, True)
-        elif (
-            not self.normalized
-            and inner.variant
-            in ["Eq", "Neq", "Gt", "Gte", "Lt", "Lte", "Like"]
-        ):
+        elif not self.normalized and inner.variant in [
+            "Eq",
+            "Neq",
+            "Gt",
+            "Gte",
+            "Lt",
+            "Lte",
+            "Like",
+        ]:
             sql_clause = self.encode_op(
                 getattr(CompareOp, inner.variant), *inner.data, True
             )

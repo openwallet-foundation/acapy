@@ -28,6 +28,7 @@ LOG_INVALID_ORDER_BY = "[%s] Invalid order_by column: %s"
 LOG_FETCHED_ROW = "[%s] Fetched row: %s"
 SQL_SET_UTF8 = "SET client_encoding = 'UTF8'"
 
+
 def is_valid_json(value: str) -> bool:
     """Check if a string is valid JSON."""
     try:
@@ -156,22 +157,28 @@ class NormalizedHandler(BaseHandler):
 
         try:
             await self._ensure_utf8(cursor)
-            
+
             # Process and validate input data
             expiry, processed_value, json_data = await self._process_insert_data(
                 operation_name, value, expiry_ms
             )
-            
+
             # Insert into items table and get item_id
             item_id = await self._insert_item(
-                cursor, operation_name, profile_id, category, name, processed_value, expiry
+                cursor,
+                operation_name,
+                profile_id,
+                category,
+                name,
+                processed_value,
+                expiry,
             )
-            
+
             # Process columns and insert into normalized table
             await self._insert_normalized_data(
                 cursor, operation_name, item_id, name, json_data, tags
             )
-            
+
         except Exception as e:
             LOGGER.error(LOG_FAILED, operation_name, str(e))
             await cursor.connection.rollback()
@@ -212,12 +219,18 @@ class NormalizedHandler(BaseHandler):
                     code=DatabaseErrorCode.QUERY_ERROR,
                     message=f"Invalid JSON value: {str(e)}",
                 )
-        
+
         return expiry, value, json_data
 
     async def _insert_item(
-        self, cursor, operation_name: str, profile_id: int, 
-        category: str, name: str, value: str, expiry
+        self,
+        cursor,
+        operation_name: str,
+        profile_id: int,
+        category: str,
+        name: str,
+        value: str,
+        expiry,
     ) -> int:
         """Insert into items table and return item_id."""
         LOGGER.debug(
@@ -251,9 +264,7 @@ class NormalizedHandler(BaseHandler):
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.DUPLICATE_ITEM_ENTRY_ERROR,
-                message=(
-                    f"Duplicate entry for category '{category}' and name '{name}'"
-                ),
+                message=(f"Duplicate entry for category '{category}' and name '{name}'"),
             )
         item_id = row[0]
         LOGGER.debug(
@@ -262,22 +273,25 @@ class NormalizedHandler(BaseHandler):
         return item_id
 
     async def _insert_normalized_data(
-        self, cursor, operation_name: str, item_id: int, name: str, 
-        json_data: dict, tags: dict
+        self,
+        cursor,
+        operation_name: str,
+        item_id: int,
+        name: str,
+        json_data: dict,
+        tags: dict,
     ) -> None:
         """Process columns and insert into normalized table."""
         data = {"item_id": item_id, "item_name": name}
         LOGGER.debug("[%s] Processing columns: %s", operation_name, self.columns)
-        
+
         for col in self.columns:
             val = self._process_column_value(operation_name, col, json_data, tags)
             data[col] = val
 
         columns = list(data.keys())
         placeholders = ", ".join(["%s" for _ in columns])
-        sql = (
-            f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders})"
-        )
+        sql = f"INSERT INTO {self.table} ({', '.join(columns)}) VALUES ({placeholders})"
         LOGGER.debug(
             LOG_EXEC_SQL_PARAMS,
             operation_name,
@@ -307,9 +321,7 @@ class NormalizedHandler(BaseHandler):
         elif isinstance(val, (dict, list)):
             try:
                 val = serialize_json_with_bool_strings(val)
-                LOGGER.debug(
-                    "[%s] Serialized %s to JSON: %s", operation_name, col, val
-                )
+                LOGGER.debug("[%s] Serialized %s to JSON: %s", operation_name, col, val)
             except DatabaseError as e:
                 LOGGER.error(
                     "[%s] Serialization failed for column %s: %s",
@@ -322,7 +334,7 @@ class NormalizedHandler(BaseHandler):
             val = "true"
         elif val is False:
             val = "false"
-        
+
         LOGGER.debug(
             "[%s] Added column %s: %s (type: %s)",
             operation_name,
@@ -546,9 +558,7 @@ class NormalizedHandler(BaseHandler):
                 if isinstance(tag_filter, str):
                     try:
                         tag_filter = json.loads(tag_filter)
-                        LOGGER.debug(
-                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
-                        )
+                        LOGGER.debug(LOG_PARSED_TAG_FILTER, operation_name, tag_filter)
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
                             code=DatabaseErrorCode.QUERY_ERROR,
@@ -654,9 +664,7 @@ class NormalizedHandler(BaseHandler):
                 if isinstance(tag_filter, str):
                     try:
                         tag_filter = json.loads(tag_filter)
-                        LOGGER.debug(
-                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
-                        )
+                        LOGGER.debug(LOG_PARSED_TAG_FILTER, operation_name, tag_filter)
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
                             code=DatabaseErrorCode.QUERY_ERROR,
@@ -707,9 +715,7 @@ class NormalizedHandler(BaseHandler):
                 value = row_dict["i_value"]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    LOGGER.debug(
-                        LOG_DECODED_VALUE, operation_name, value
-                    )
+                    LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
                 elif value is None:
                     LOGGER.warning(
                         LOG_VALUE_NONE_ID,
@@ -763,9 +769,7 @@ class NormalizedHandler(BaseHandler):
                 if isinstance(tag_filter, str):
                     try:
                         tag_filter = json.loads(tag_filter)
-                        LOGGER.debug(
-                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
-                        )
+                        LOGGER.debug(LOG_PARSED_TAG_FILTER, operation_name, tag_filter)
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
                             code=DatabaseErrorCode.QUERY_ERROR,
@@ -889,9 +893,7 @@ class NormalizedHandler(BaseHandler):
                 if isinstance(tag_filter, str):
                     try:
                         tag_filter = json.loads(tag_filter)
-                        LOGGER.debug(
-                            LOG_PARSED_TAG_FILTER, operation_name, tag_filter
-                        )
+                        LOGGER.debug(LOG_PARSED_TAG_FILTER, operation_name, tag_filter)
                     except json.JSONDecodeError as e:
                         raise DatabaseError(
                             code=DatabaseErrorCode.QUERY_ERROR,
@@ -1035,9 +1037,7 @@ class NormalizedHandler(BaseHandler):
                 value = row_dict["i_value"]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    LOGGER.debug(
-                        LOG_DECODED_VALUE, operation_name, value
-                    )
+                    LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
                 elif value is None:
                     LOGGER.warning(
                         LOG_VALUE_NONE_ID,
@@ -1152,9 +1152,7 @@ class NormalizedHandler(BaseHandler):
                 value = row_dict["i_value"]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    LOGGER.debug(
-                        LOG_DECODED_VALUE, operation_name, value
-                    )
+                    LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
                 elif value is None:
                     LOGGER.warning(
                         LOG_VALUE_NONE_ID,

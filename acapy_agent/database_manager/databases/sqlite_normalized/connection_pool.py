@@ -19,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 PRAGMA_CIPHER_COMPAT = "PRAGMA cipher_compatibility = 4"
 
+
 class ConnectionPool:
     """Connection pool manager for SQLite databases."""
 
@@ -100,8 +101,7 @@ class ConnectionPool:
                         initial_size - len(temp_conns),
                     )
                 while (
-                    len(temp_conns) < self.pool_size
-                    and self._keep_alive_running.is_set()
+                    len(temp_conns) < self.pool_size and self._keep_alive_running.is_set()
                 ):
                     try:
                         temp_conns.append(self._recreate_connection())

@@ -58,8 +58,7 @@ SCHEMAS = {
         + IDX_CRED_ON_ITEM_ID,
         "CREATE NONCLUSTERED INDEX idx_credential_record_item_name_v0_1 "
         + IDX_CRED_ON_NAME,
-        "CREATE NONCLUSTERED INDEX idx_credential_record_value_v0_1 "
-        + IDX_CRED_ON_VALUE,
+        "CREATE NONCLUSTERED INDEX idx_credential_record_value_v0_1 " + IDX_CRED_ON_VALUE,
     ],
 }
 

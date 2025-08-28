@@ -111,9 +111,7 @@ class PostgresConfig:
     def _qualify_drop_sql(self, sql: str) -> str:
         up = sql.upper()
         if up.startswith(SQL_DROP_TABLE):
-            table_name = (
-                sql.split(f"{SQL_DROP_TABLE_IF_EXISTS} ")[-1].split()[0].strip()
-            )
+            table_name = sql.split(f"{SQL_DROP_TABLE_IF_EXISTS} ")[-1].split()[0].strip()
             return sql.replace(
                 f"{SQL_DROP_TABLE_IF_EXISTS} {table_name}",
                 (
@@ -125,17 +123,12 @@ class PostgresConfig:
             index_name = sql.split("DROP INDEX IF EXISTS ")[-1].split()[0].strip()
             return sql.replace(
                 f"DROP INDEX IF EXISTS {index_name}",
-                (
-                    f"DROP INDEX IF EXISTS "
-                    f"{self.schema_context.qualify_table(index_name)}"
-                ),
+                (f"DROP INDEX IF EXISTS {self.schema_context.qualify_table(index_name)}"),
             )
         if up.startswith("DROP TRIGGER"):
             return sql.replace(" ON ", f" ON {self.schema_context}.")
         if up.startswith("DROP FUNCTION"):
-            function_name = (
-                sql.split("IF EXISTS")[-1].split("CASCADE")[0].strip()
-            )
+            function_name = sql.split("IF EXISTS")[-1].split("CASCADE")[0].strip()
             return sql.replace(
                 f"IF EXISTS {function_name}",
                 f"IF EXISTS {self.schema_context}.{function_name}",
@@ -359,9 +352,7 @@ class PostgresConfig:
 
                                 modified_sql = self._qualify_drop_sql(sql)
 
-                                if self._is_redundant_drop(
-                                    modified_sql, dropped_tables
-                                ):
+                                if self._is_redundant_drop(modified_sql, dropped_tables):
                                     LOGGER.debug(
                                         "Skipping redundant drop statement for "
                                         "category %s: %s",
@@ -384,7 +375,9 @@ class PostgresConfig:
                                     )
                                     if SQL_DROP_TABLE in modified_sql.upper():
                                         table_name = (
-                                            modified_sql.split(SQL_DROP_TABLE_IF_EXISTS)[-1]
+                                            modified_sql.split(SQL_DROP_TABLE_IF_EXISTS)[
+                                                -1
+                                            ]
                                             .split()[0]
                                             .strip(";")
                                             .split(".")[-1]
@@ -739,25 +732,19 @@ class PostgresConfig:
         await cursor.execute(
             f"GRANT ALL ON SCHEMA {self.schema_context} TO {self.schema_context}"
         )
-        LOGGER.debug(
-            "Created and granted permissions on schema %s", self.schema_context
-        )
+        LOGGER.debug("Created and granted permissions on schema %s", self.schema_context)
         await cursor.execute(f"SET search_path TO {self.schema_context}, public")
 
     async def _create_core_tables(self, cursor) -> None:
         """Create the core database tables."""
         await cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {
-            self.schema_context.qualify_table("config")
-        } (
+            CREATE TABLE IF NOT EXISTS {self.schema_context.qualify_table("config")} (
                 name TEXT PRIMARY KEY,
                 value TEXT
             )
         """)
         await cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {
-            self.schema_context.qualify_table("profiles")
-        } (
+            CREATE TABLE IF NOT EXISTS {self.schema_context.qualify_table("profiles")} (
                 id SERIAL PRIMARY KEY,
                 name TEXT UNIQUE,
                 reference TEXT,
@@ -765,9 +752,7 @@ class PostgresConfig:
             )
         """)
         await cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {
-            self.schema_context.qualify_table("items")
-        } (
+            CREATE TABLE IF NOT EXISTS {self.schema_context.qualify_table("items")} (
                 id SERIAL PRIMARY KEY,
                 profile_id INTEGER,
                 kind INTEGER,
@@ -782,9 +767,7 @@ class PostgresConfig:
             )
         """)
         await cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {
-            self.schema_context.qualify_table("items_tags")
-        } (
+            CREATE TABLE IF NOT EXISTS {self.schema_context.qualify_table("items_tags")} (
                 id SERIAL PRIMARY KEY,
                 item_id INTEGER,
                 name TEXT,
@@ -812,30 +795,33 @@ class PostgresConfig:
     async def _process_category_schema(self, cursor, category: str, schema) -> None:
         """Process and apply schema for a specific category."""
         LOGGER.debug("Processing category=%s with schema=%s", category, schema)
-        
+
         if schema is None:
             LOGGER.warning("Skipping category %s: schema is None", category)
             return
-            
+
         if not isinstance(schema, dict):
             LOGGER.error(
                 "Invalid schema type for category %s: expected dict, got %s",
-                category, type(schema),
+                category,
+                type(schema),
             )
             return
-            
+
         if "postgresql" not in schema:
             LOGGER.warning(
                 "Skipping category %s: no postgresql schema found in %s",
-                category, schema,
+                category,
+                schema,
             )
             return
 
         LOGGER.debug(
             "Applying PostgreSQL schema for category %s: %s",
-            category, schema["postgresql"],
+            category,
+            schema["postgresql"],
         )
-        
+
         for sql in schema["postgresql"]:
             await self._execute_schema_sql(cursor, category, sql)
 
@@ -848,7 +834,9 @@ class PostgresConfig:
         except Exception as e:
             LOGGER.error(
                 "Failed to execute SQL for category %s: %s, SQL: %s",
-                category, str(e), modified_sql,
+                category,
+                str(e),
+                modified_sql,
             )
             raise DatabaseError(
                 code=DatabaseErrorCode.PROVISION_ERROR,
@@ -861,7 +849,7 @@ class PostgresConfig:
     ) -> None:
         """Insert configuration data and create indexes."""
         await self._ensure_core_indexes(cursor)
-        
+
         config_data = [
             ("default_profile", default_profile),
             ("key", None),
@@ -869,7 +857,7 @@ class PostgresConfig:
             ("schema_release_type", "postgresql"),
             ("schema_config", self.schema_config),
         ]
-        
+
         for name, value in config_data:
             await cursor.execute(
                 (
@@ -878,7 +866,7 @@ class PostgresConfig:
                 ),
                 (name, value),
             )
-        
+
         await cursor.execute(
             (
                 f"INSERT INTO {self.schema_context.qualify_table('profiles')} "
@@ -931,9 +919,7 @@ class PostgresConfig:
             return sql.replace(" ON ", f" ON {self.schema_context}.")
         if up.startswith("CREATE FUNCTION"):
             function_name = (
-                sql.split("CREATE OR REPLACE FUNCTION ")[-1]
-                .split("(")[0]
-                .strip()
+                sql.split("CREATE OR REPLACE FUNCTION ")[-1].split("(")[0].strip()
             )
             return sql.replace(
                 f"CREATE OR REPLACE FUNCTION {function_name}",

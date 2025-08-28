@@ -28,10 +28,8 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 " + IDX_SCHEMA_ON_ITEM_ID,
-        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 "
-        + IDX_SCHEMA_ON_ITEM_NAME,
-        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 "
-        + IDX_SCHEMA_ON_ISSUER_ID,
+        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 " + IDX_SCHEMA_ON_ITEM_NAME,
+        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 " + IDX_SCHEMA_ON_ISSUER_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 "
         + IDX_SCHEMA_ON_NAME_VERSION,
         "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 " + IDX_SCHEMA_ON_STATE,
@@ -100,10 +98,8 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_item_id_v0_1 " + IDX_SCHEMA_ON_ITEM_ID,
-        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 "
-        + IDX_SCHEMA_ON_ITEM_NAME,
-        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 "
-        + IDX_SCHEMA_ON_ISSUER_ID,
+        "CREATE INDEX IF NOT EXISTS idx_schema_schema_id_v0_1 " + IDX_SCHEMA_ON_ITEM_NAME,
+        "CREATE INDEX IF NOT EXISTS idx_schema_issuer_id_v0_1 " + IDX_SCHEMA_ON_ISSUER_ID,
         "CREATE INDEX IF NOT EXISTS idx_schema_name_version_v0_1 "
         + IDX_SCHEMA_ON_NAME_VERSION,
         "CREATE INDEX IF NOT EXISTS idx_schema_state_v0_1 " + IDX_SCHEMA_ON_STATE,

@@ -1,6 +1,5 @@
 """Module docstring."""
 
-
 SQL_UPDATE_DEFAULT = "UPDATE anoncreds_cred_ex_v20_v1 SET new_field = 'default'"
 
 

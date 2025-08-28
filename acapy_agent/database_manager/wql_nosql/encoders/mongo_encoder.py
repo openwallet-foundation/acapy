@@ -25,6 +25,7 @@ class MongoTagEncoder(TagQueryEncoder):
         self, op: CompareOp, enc_name: str, enc_value: Any, negate: bool
     ) -> Dict:
         """Encode a comparison operation clause with low branching."""
+
         # Direct handlers for equality and like
         def handle_eq(name: str, value: Any, not_: bool) -> Dict:
             return {name: {"$ne": value}} if not_ else {name: value}

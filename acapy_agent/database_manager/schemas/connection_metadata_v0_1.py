@@ -370,5 +370,3 @@ DROP_SCHEMAS = {
 }
 
 COLUMNS = ["key", "connection_id", "metadata"]
-
-

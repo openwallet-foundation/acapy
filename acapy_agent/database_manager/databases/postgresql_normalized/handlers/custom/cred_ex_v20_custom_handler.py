@@ -107,9 +107,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             else None
         )
 
-    def _parse_value(
-        self, value: str | bytes | dict
-    ) -> tuple[dict, str | None]:
+    def _parse_value(self, value: str | bytes | dict) -> tuple[dict, str | None]:
         json_data: dict = {}
         if isinstance(value, dict):
             json_data = value

@@ -23,8 +23,7 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 " + IDX_ON_ITEM_ID,
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 "
-        + IDX_ON_SCHEMA_ID,
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 " + IDX_ON_SCHEMA_ID,
     ],
     "postgresql": [
         """
@@ -43,8 +42,7 @@ SCHEMAS = {
         );
         """,
         "CREATE INDEX IF NOT EXISTS idx_schema_sent_item_id_v0_1 " + IDX_ON_ITEM_ID,
-        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 "
-        + IDX_ON_SCHEMA_ID,
+        "CREATE INDEX IF NOT EXISTS idx_schema_sent_schema_id_v0_1 " + IDX_ON_SCHEMA_ID,
     ],
     "mssql": [
         """
@@ -63,8 +61,7 @@ SCHEMAS = {
         );
         """,
         "CREATE NONCLUSTERED INDEX idx_schema_sent_item_id_v0_1 " + IDX_ON_ITEM_ID,
-        "CREATE NONCLUSTERED INDEX idx_schema_sent_schema_id_v0_1 "
-        + IDX_ON_SCHEMA_ID,
+        "CREATE NONCLUSTERED INDEX idx_schema_sent_schema_id_v0_1 " + IDX_ON_SCHEMA_ID,
     ],
 }
 

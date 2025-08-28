@@ -92,7 +92,7 @@ class IndyCredxHolder(IndyHolder):
         while True:
             async with self._profile.session() as session:
                 record = await self._fetch_link_secret_record(session)
-                
+
                 if record:
                     secret = self._load_existing_link_secret(record)
                     break
@@ -101,7 +101,7 @@ class IndyCredxHolder(IndyHolder):
                     if secret:  # Successfully created and saved
                         break
                     # else: retry due to duplicate error
-        
+
         LOGGER.debug("Returning link secret.")
         return secret
 
@@ -143,7 +143,7 @@ class IndyCredxHolder(IndyHolder):
     async def _create_and_save_link_secret(self, session) -> LinkSecret:
         """Create and save a new link secret."""
         secret = self._create_new_link_secret()
-        
+
         try:
             await session.handle.insert(
                 CATEGORY_LINK_SECRET,
@@ -172,9 +172,7 @@ class IndyCredxHolder(IndyHolder):
         """Check if error is a duplicate record error."""
         return (
             isinstance(err, DBStoreError) and err.code == DBStoreErrorCode.DUPLICATE
-        ) or (
-            isinstance(err, AskarError) and err.code == AskarErrorCode.DUPLICATE
-        )
+        ) or (isinstance(err, AskarError) and err.code == AskarErrorCode.DUPLICATE)
 
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: dict, holder_did: str
@@ -266,9 +264,7 @@ class IndyCredxHolder(IndyHolder):
         cred_def_id = cred_recvd.cred_def_id
         cdef_id_parts = re.match(r"^(\w+):3:CL:([^:]+):([^:]+)$", cred_def_id)
         if not cdef_id_parts:
-            raise IndyHolderError(
-                ERR_PARSING_CRED_DEF_ID.format(cred_def_id)
-            )
+            raise IndyHolderError(ERR_PARSING_CRED_DEF_ID.format(cred_def_id))
 
         credential_id = credential_id or str(uuid4())
         tags = {
@@ -361,13 +357,13 @@ class IndyCredxHolder(IndyHolder):
         """
         extra_query = extra_query or {}
         referents = self._get_effective_referents(presentation_request, referents)
-        
+
         creds = {}
         for reft in referents:
             await self._process_referent(
                 presentation_request, reft, creds, extra_query, offset, limit
             )
-        
+
         self._finalize_credential_referents(creds)
         return list(creds.values())
 
@@ -383,18 +379,18 @@ class IndyCredxHolder(IndyHolder):
         return referents
 
     async def _process_referent(
-        self, 
-        presentation_request: dict, 
-        reft: str, 
-        creds: dict, 
-        extra_query: dict, 
-        offset: int, 
-        limit: int
+        self,
+        presentation_request: dict,
+        reft: str,
+        creds: dict,
+        extra_query: dict,
+        offset: int,
+        limit: int,
     ):
         """Process a single referent to find matching credentials."""
         names, restr = self._extract_referent_info(presentation_request, reft)
         tag_filter = self._build_tag_filter(names, restr, extra_query)
-        
+
         rows = self._profile.store.scan(
             category=CATEGORY_CREDENTIAL,
             tag_filter=tag_filter,
@@ -402,7 +398,7 @@ class IndyCredxHolder(IndyHolder):
             limit=limit,
             profile=self._profile.settings.get("wallet.askar_profile"),
         )
-        
+
         async for row in rows:
             self._add_credential_to_results(row, reft, creds, presentation_request)
 
@@ -411,7 +407,7 @@ class IndyCredxHolder(IndyHolder):
     ) -> tuple[set, dict]:
         """Extract names and restrictions from a referent."""
         names = set()
-        
+
         if reft in presentation_request["requested_attributes"]:
             attr = presentation_request["requested_attributes"][reft]
             names = self._extract_attribute_names(attr)
@@ -423,7 +419,7 @@ class IndyCredxHolder(IndyHolder):
             restr = pred.get("restrictions")
         else:
             raise IndyHolderError(ERR_UNKNOWN_PRESENTATION_REQ_REF.format(reft))
-            
+
         return names, restr
 
     def _extract_attribute_names(self, attr: dict) -> set:
@@ -438,13 +434,13 @@ class IndyCredxHolder(IndyHolder):
     def _build_tag_filter(self, names: set, restr: dict, extra_query: dict) -> dict:
         """Build tag filter for credential search."""
         tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
-        
+
         filters_to_combine = [tag_filter]
         if restr:
             filters_to_combine.extend(restr if isinstance(restr, list) else [restr])
         if extra_query:
             filters_to_combine.append(extra_query)
-            
+
         return {"$and": filters_to_combine} if len(filters_to_combine) > 1 else tag_filter
 
     def _add_credential_to_results(
@@ -596,17 +592,20 @@ class IndyCredxHolder(IndyHolder):
         """
         creds: Dict[str, Credential] = {}
         present_creds = PresentCredentials()
-        
+
         await self._process_requested_attributes(
             requested_credentials, creds, present_creds, rev_states
         )
         await self._process_requested_predicates(
             requested_credentials, creds, present_creds, rev_states
         )
-        
+
         return await self._create_final_presentation(
-            presentation_request, requested_credentials, present_creds,
-            schemas, credential_definitions
+            presentation_request,
+            requested_credentials,
+            present_creds,
+            schemas,
+            credential_definitions,
         )
 
     async def _process_requested_attributes(
@@ -618,7 +617,7 @@ class IndyCredxHolder(IndyHolder):
             cred_id = detail["cred_id"]
             if cred_id not in creds:
                 creds[cred_id] = await self._get_credential(cred_id)
-            
+
             timestamp, rev_state = self._get_rev_state(cred_id, detail, creds, rev_states)
             present_creds.add_attributes(
                 creds[cred_id],
@@ -637,7 +636,7 @@ class IndyCredxHolder(IndyHolder):
             cred_id = detail["cred_id"]
             if cred_id not in creds:
                 creds[cred_id] = await self._get_credential(cred_id)
-                
+
             timestamp, rev_state = self._get_rev_state(cred_id, detail, creds, rev_states)
             present_creds.add_predicates(
                 creds[cred_id],
@@ -654,7 +653,7 @@ class IndyCredxHolder(IndyHolder):
         rev_reg_id = cred.rev_reg_id
         timestamp = detail.get("timestamp") if rev_reg_id else None
         rev_state = None
-        
+
         if timestamp:
             self._validate_rev_states(rev_states, rev_reg_id, cred_id)
             rev_state = rev_states[rev_reg_id].get(timestamp)
@@ -663,7 +662,7 @@ class IndyCredxHolder(IndyHolder):
                     f"No revocation states provided for credential '{cred_id}' "
                     f"with rev_reg_id '{rev_reg_id}' at timestamp {timestamp}"
                 )
-        
+
         return timestamp, rev_state
 
     def _validate_rev_states(self, rev_states: dict, rev_reg_id: str, cred_id: str):
@@ -675,12 +674,16 @@ class IndyCredxHolder(IndyHolder):
             )
 
     async def _create_final_presentation(
-        self, presentation_request: dict, requested_credentials: dict, 
-        present_creds, schemas: dict, credential_definitions: dict
+        self,
+        presentation_request: dict,
+        requested_credentials: dict,
+        present_creds,
+        schemas: dict,
+        credential_definitions: dict,
     ) -> str:
         """Create the final presentation."""
         self_attest = requested_credentials.get("self_attested_attributes") or {}
-        
+
         try:
             secret = await self.get_link_secret()
             presentation = await asyncio.get_event_loop().run_in_executor(

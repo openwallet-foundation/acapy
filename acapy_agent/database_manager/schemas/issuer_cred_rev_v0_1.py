@@ -187,8 +187,7 @@ DROP_SCHEMAS = {
         "ON issuer_cred_rev_v0_1;",
         "DROP INDEX IF EXISTS idx_issuer_cred_rev_cred_ex_id_v0_1 "
         "ON issuer_cred_rev_v0_1;",
-        "DROP INDEX IF EXISTS idx_issuer_cred_rev_item_id_v0_1 "
-        "ON issuer_cred_rev_v0_1;",
+        "DROP INDEX IF EXISTS idx_issuer_cred_rev_item_id_v0_1 ON issuer_cred_rev_v0_1;",
         "DROP TABLE IF EXISTS issuer_cred_rev_v0_1;",
     ],
 }

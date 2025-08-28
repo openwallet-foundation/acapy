@@ -101,9 +101,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
             try:
                 credential_value = credential_values[attribute]
             except KeyError:
-                raise IndyIssuerError(
-                    ERR_MISSING_SCHEMA_ATTR.format(attribute)
-                )
+                raise IndyIssuerError(ERR_MISSING_SCHEMA_ATTR.format(attribute))
             raw_values[attribute] = str(credential_value)
         return raw_values
 
@@ -113,12 +111,8 @@ class KanonIndyCredxIssuer(IndyIssuer):
         rev_reg_info = await txn.handle.fetch(
             CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
         )
-        rev_reg_def = await txn.handle.fetch(
-            CATEGORY_REV_REG_DEF, revoc_reg_id
-        )
-        rev_key = await txn.handle.fetch(
-            CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
-        )
+        rev_reg_def = await txn.handle.fetch(CATEGORY_REV_REG_DEF, revoc_reg_id)
+        rev_key = await txn.handle.fetch(CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id)
         if not rev_reg:
             raise IndyIssuerError("Revocation registry not found")
         if not rev_reg_info:
@@ -126,9 +120,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
         if not rev_reg_def:
             raise IndyIssuerError("Revocation registry definition not found")
         if not rev_key:
-            raise IndyIssuerError(
-                "Revocation registry definition private data not found"
-            )
+            raise IndyIssuerError("Revocation registry definition private data not found")
         return rev_reg, rev_reg_info, rev_reg_def, rev_key
 
     def _classify_revocation_ids(
@@ -261,8 +253,11 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 key_proof,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda origin=origin_did, sch=schema, sig=signature_type,
-                tg=tag, sup=support_revocation: CredentialDefinition.create(
+                lambda origin=origin_did,
+                sch=schema,
+                sig=signature_type,
+                tg=tag,
+                sup=support_revocation: CredentialDefinition.create(
                     strip_did_prefix(origin),
                     sch,
                     sig or DEFAULT_SIGNATURE_TYPE,
@@ -369,9 +364,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
         except (DBStoreError, AskarError) as err:
             raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def or not cred_def_private:
-            raise IndyIssuerError(
-                ERR_CRED_DEF_NOT_FOUND_ISSUE
-            )
+            raise IndyIssuerError(ERR_CRED_DEF_NOT_FOUND_ISSUE)
 
         raw_values = self._build_raw_values(schema, credential_values)
 
@@ -392,9 +385,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                             rev_reg_def_rec.raw_value
                         )
                     except CredxError as err:
-                        raise IndyIssuerError(
-                            ERR_LOAD_REV_REG_DEF
-                        ) from err
+                        raise IndyIssuerError(ERR_LOAD_REV_REG_DEF) from err
                     if rev_reg_index > rev_reg_def.max_cred_num:
                         raise IndyIssuerRevocationRegistryFullError(
                             "Revocation registry is full"
@@ -496,26 +487,24 @@ class KanonIndyCredxIssuer(IndyIssuer):
         """Attempt a single revocation operation."""
         # Load revocation registry components
         components = await self._load_revocation_components(cred_def_id, revoc_reg_id)
-        
+
         # Classify credential revocation IDs
         rev_info = components["rev_reg_info"].value_json
         rev_crids, failed_crids = self._classify_revocation_ids(
             rev_info, components["rev_reg_def"].max_cred_num, cred_revoc_ids, revoc_reg_id
         )
-        
+
         if not rev_crids:
             return None, failed_crids
-        
+
         # Update revocation registry
-        delta = await self._update_revocation_registry(
-            components, list(rev_crids)
-        )
-        
+        delta = await self._update_revocation_registry(components, list(rev_crids))
+
         # Save updates to storage
         await self._save_revocation_updates(
             revoc_reg_id, components["rev_reg"], rev_info, rev_crids
         )
-        
+
         return delta, failed_crids
 
     async def _load_revocation_components(
@@ -529,7 +518,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 )
         except (DBStoreError, AskarError) as err:
             raise IndyIssuerError("Error retrieving revocation registry") from err
-        
+
         return self._parse_revocation_components(components_raw)
 
     async def _fetch_raw_components(
@@ -547,7 +536,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 CATEGORY_REV_REG_INFO, revoc_reg_id
             ),
         }
-        
+
         self._validate_components_exist(components)
         return components
 
@@ -560,7 +549,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
             "rev_reg": "Revocation registry not found",
             "rev_reg_info": "Revocation registry metadata not found",
         }
-        
+
         for key, component in components.items():
             if not component:
                 raise IndyIssuerError(error_messages[key])
@@ -613,27 +602,27 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 rev_info_upd = await txn.handle.fetch(
                     CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                 )
-                
+
                 if not rev_reg_upd or not rev_info_upd:
                     LOGGER.warning(
                         "Revocation registry missing, skipping update: %s", revoc_reg_id
                     )
                     return
-                
+
                 current_rev_info = rev_info_upd.value_json
                 if current_rev_info != original_rev_info:
                     # Concurrent update detected, need to retry
                     raise IndyIssuerRetryableError("Concurrent update detected")
-                
+
                 # Update registry and metadata
                 await txn.handle.replace(
                     CATEGORY_REV_REG, revoc_reg_id, rev_reg.to_json_buffer()
                 )
-                
+
                 used_ids = set(current_rev_info.get("used_ids") or [])
                 used_ids.update(rev_crids)
                 current_rev_info["used_ids"] = sorted(used_ids)
-                
+
                 await txn.handle.replace(
                     CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=current_rev_info
                 )
@@ -644,6 +633,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
 
 class IndyIssuerRetryableError(IndyIssuerError):
     """Error that indicates the operation should be retried."""
+
     pass
 
     async def merge_revocation_registry_deltas(
@@ -714,9 +704,12 @@ class IndyIssuerRetryableError(IndyIssuerError):
                 _rev_reg_delta,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda o=origin_did, cd=cred_def.raw_value, tg=tag,
-                rdt=revoc_def_type, mx=max_cred_num, td=tails_base_path:
-                RevocationRegistryDefinition.create(
+                lambda o=origin_did,
+                cd=cred_def.raw_value,
+                tg=tag,
+                rdt=revoc_def_type,
+                mx=max_cred_num,
+                td=tails_base_path: RevocationRegistryDefinition.create(
                     strip_did_prefix(o),
                     cd,
                     tg,

@@ -8,8 +8,6 @@ from acapy_agent.database_manager.databases.postgresql_normalized.handlers impor
 )
 
 
-
-
 from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
     SchemaContext,
 )

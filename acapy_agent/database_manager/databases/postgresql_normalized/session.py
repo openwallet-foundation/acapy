@@ -200,7 +200,9 @@ class PostgresSession(AbstractDatabaseSession):
         """Log session start information."""
         LOGGER.debug(
             "[enter_session] Starting for profile=%s, is_txn=%s, release_number=%s",
-            self.profile, self.is_txn, self.release_number
+            self.profile,
+            self.is_txn,
+            self.release_number,
         )
 
     async def _cleanup_connection(self):
@@ -227,7 +229,7 @@ class PostgresSession(AbstractDatabaseSession):
         if self.conn:
             cancelled_during_exit = await self._handle_transaction_completion(exc_type)
             await self._cleanup_session()
-        
+
         if cancelled_during_exit:
             raise asyncio.CancelledError
 

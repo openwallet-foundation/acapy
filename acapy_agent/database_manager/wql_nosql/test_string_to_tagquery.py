@@ -1,7 +1,5 @@
 """Tests for string to TagQuery conversion."""
 
-
-
 import unittest
 import random
 import string

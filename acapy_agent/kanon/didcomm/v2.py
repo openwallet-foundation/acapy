@@ -252,7 +252,7 @@ async def unpack_message(
     """Decode a message using DIDComm v2 encryption."""
     wrapper = _parse_envelope(enc_message)
     method = _validate_encryption_method(wrapper)
-    
+
     recip_kid, recip_key = await _find_recipient_key(session, wrapper)
     if not recip_key:
         raise DidcommEnvelopeError("No recognized recipient key")
@@ -301,18 +301,18 @@ async def _resolve_sender_key_ecdh_1pu(
     """Resolve sender key for ECDH-1PU method."""
     sender_kid_apu = _extract_sender_kid_from_apu(wrapper)
     sender_kid = wrapper.protected.get("skid") or sender_kid_apu
-    
+
     if sender_kid_apu and sender_kid != sender_kid_apu:
         raise DidcommEnvelopeError("Mismatch between skid and apu")
     if not sender_kid:
         raise DidcommEnvelopeError("Sender key ID not provided")
-    
+
     sender_key_entry = next(
         iter(await session.fetch_all_keys(tag_filter={"kid": sender_kid})), None
     )
     if not sender_key_entry:
         raise DidcommEnvelopeError("Sender public key not found")
-    
+
     return sender_kid, sender_key_entry.key
 
 

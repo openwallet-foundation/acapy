@@ -306,7 +306,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
 
     def _check_duration(self):
         """Check transaction duration for monitoring purposes.
-        
+
         This method is intentionally empty as duration checking is not
         implemented in the current kanon profile implementation.
         """

@@ -485,9 +485,6 @@ def parse_query(query_dict: dict) -> Query:
         return AndQuery(operators)
 
 
-
-
-
 def query_from_json(json_value: JSONValue) -> Query:
     """Parse a JSON value (dict or list) into a Query object."""
     if isinstance(json_value, dict):

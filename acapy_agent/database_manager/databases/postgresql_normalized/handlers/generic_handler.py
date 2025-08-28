@@ -520,13 +520,9 @@ class GenericHandler(BaseHandler):
                 )
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    LOGGER.debug(
-                        LOG_DECODED_VALUE, operation_name, value
-                    )
+                    LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
                 elif value is None:
-                    LOGGER.warning(
-                        LOG_VALUE_NONE, operation_name, item_id
-                    )
+                    LOGGER.warning(LOG_VALUE_NONE, operation_name, item_id)
                     value = ""
                 if item_id != current_item_id:
                     if current_entry:
@@ -768,13 +764,9 @@ class GenericHandler(BaseHandler):
                 )
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    LOGGER.debug(
-                        LOG_DECODED_VALUE, operation_name, value
-                    )
+                    LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
                 elif value is None:
-                    LOGGER.warning(
-                        LOG_VALUE_NONE, operation_name, item_id
-                    )
+                    LOGGER.warning(LOG_VALUE_NONE, operation_name, item_id)
                     value = ""
                 if item_id != current_item_id:
                     if current_entry:
@@ -889,9 +881,7 @@ class GenericHandler(BaseHandler):
                 )
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    LOGGER.debug(
-                        LOG_DECODED_VALUE, operation_name, value
-                    )
+                    LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
                 if item_id != current_item_id:
                     if current_entry:
                         yield current_entry

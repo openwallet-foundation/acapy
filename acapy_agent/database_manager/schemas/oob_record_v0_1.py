@@ -34,16 +34,14 @@ SCHEMAS = {
             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 "
-        + IDX_OOB_ON_ITEM_ID,
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 " + IDX_OOB_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 "
         + IDX_OOB_ON_ITEM_NAME,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 "
         + IDX_OOB_ON_INVI_MSG_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 "
         + IDX_OOB_ON_CONNECTION_ID,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 "
-        + IDX_OOB_ON_STATE,
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 " + IDX_OOB_ON_STATE,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 "
         + IDX_OOB_ON_CREATED_AT,
         """
@@ -82,16 +80,14 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 "
-        + IDX_OOB_ON_ITEM_ID,
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_item_id_v0_1 " + IDX_OOB_ON_ITEM_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_item_name_v0_1 "
         + IDX_OOB_ON_ITEM_NAME,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_invi_msg_id_v0_1 "
         + IDX_OOB_ON_INVI_MSG_ID,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_connection_id_v0_1 "
         + IDX_OOB_ON_CONNECTION_ID,
-        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 "
-        + IDX_OOB_ON_STATE,
+        "CREATE INDEX IF NOT EXISTS idx_oob_record_state_v0_1 " + IDX_OOB_ON_STATE,
         "CREATE INDEX IF NOT EXISTS idx_oob_record_created_at_v0_1 "
         + IDX_OOB_ON_CREATED_AT,
         """
@@ -141,16 +137,13 @@ SCHEMAS = {
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """,
-        "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 "
-        + IDX_OOB_ON_ITEM_ID,
-        "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 "
-        + IDX_OOB_ON_ITEM_NAME,
+        "CREATE NONCLUSTERED INDEX idx_oob_record_item_id_v0_1 " + IDX_OOB_ON_ITEM_ID,
+        "CREATE NONCLUSTERED INDEX idx_oob_record_item_name_v0_1 " + IDX_OOB_ON_ITEM_NAME,
         "CREATE NONCLUSTERED INDEX idx_oob_record_invi_msg_id_v0_1 "
         + IDX_OOB_ON_INVI_MSG_ID,
         "CREATE NONCLUSTERED INDEX idx_oob_record_connection_id_v0_1 "
         + IDX_OOB_ON_CONNECTION_ID,
-        "CREATE NONCLUSTERED INDEX idx_oob_record_state_v0_1 "
-        + IDX_OOB_ON_STATE,
+        "CREATE NONCLUSTERED INDEX idx_oob_record_state_v0_1 " + IDX_OOB_ON_STATE,
         "CREATE NONCLUSTERED INDEX idx_oob_record_created_at_v0_1 "
         + IDX_OOB_ON_CREATED_AT,
         """
