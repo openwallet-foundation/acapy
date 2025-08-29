@@ -394,23 +394,6 @@ class SqliteConfig:
                     message="Release number not found in config table",
                 )
             effective_release_number = db_current_release
-            # if schema_migration and target_schema_release_number:
-            #     self._apply_migrations(
-            #         conn, db_current_release, target_schema_release_number
-            #     )
-            #     cursor.execute(
-            #         "UPDATE config SET value = ? WHERE name = 'schema_release_number'",
-            #         (target_schema_release_number,)
-            #     )
-            #     cursor.execute(
-            #         "UPDATE config SET value = ? WHERE name = 'schema_config'",
-            #         (
-            #             "generic" if target_schema_release_number == "release_0"
-            #             else "normalize"
-            #         )
-            #     )
-            #     conn.commit()
-            #     effective_release_number = target_schema_release_number
 
             cursor.execute("SELECT value FROM config WHERE name = 'default_profile'")
             default_profile_row = cursor.fetchone()
