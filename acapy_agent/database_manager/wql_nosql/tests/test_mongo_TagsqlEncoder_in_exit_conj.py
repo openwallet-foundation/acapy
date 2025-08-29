@@ -1,7 +1,4 @@
-# pytest --maxfail=1 --disable-warnings --no-cov -vv -s
-# acapy_agent/database_manager/wql/tests/test_mongo_TagsqlEncoder_in_exit_conj.py
-
-"""Test cases for MongoTagEncoder with In and Exist conjunctions."""
+# """Test cases for MongoTagEncoder with In and Exist conjunctions."""
 
 import unittest
 import json

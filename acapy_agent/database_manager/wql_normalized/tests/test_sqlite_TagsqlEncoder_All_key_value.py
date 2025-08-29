@@ -1452,53 +1452,7 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         print("\n-- Cleanup\nDELETE FROM items_tags; DELETE FROM items;")
         self.run_query_and_verify(sql_query, params, [1, 3], "Special characters")
 
-    # def test_deeply_nested_not2(self):
-    #     """Test encoding a deeply nested TagQuery with NOT into an SQL statement."""
-    #     # Define a deeply nested query with NOT
-    #     query = TagQuery.not_(
-    #         TagQuery.and_([
-    #             TagQuery.or_([
-    #                 TagQuery.eq(TagName("category"), "electronics"),
-    #                 TagQuery.eq(TagName("sale"), "yes")
-    #             ]),
-    #             TagQuery.not_(TagQuery.eq(TagName("stock"), "out"))
-    #         ])
-    #     )
-    #     wql = query.to_wql_str()
-    #     print(f"Test: Deeply nested NOT query\nWQL: {wql}")
-    #     sql_query = self.encoder.encode_query(query)
-    #     params = self.encoder.arguments
-    #     expected_query = "NOT ( (i.id IN (SELECT item_id FROM items_tags WHERE name = ? AND value = ?) OR i.id IN (SELECT item_id FROM items_tags WHERE name = ? AND value = ?)) AND i.id NOT IN (SELECT item_id FROM items_tags WHERE name = ? AND value = ?))"
-    #     expected_params = ["category", "electronics", "sale", "yes", "stock", "out"]
-    #     self.assertEqual(sql_query, expected_query, "Deeply nested NOT query mismatch")
-    #     self.assertEqual(params, expected_params, "Deeply nested NOT params mismatch")
-    #     self.verify_round_trip(query, sql_query, params)
-    #     self.cursor.executemany("INSERT INTO items (id) VALUES (?)", [(1,), (2,), (3,), (4,)])
-    #     self.cursor.executemany(
-    #         "INSERT INTO items_tags (item_id, name, value) VALUES (?, ?, ?)",
-    #         [
-    #             (1, "category", "electronics"), (1, "stock", "in"),
-    #             (2, "category", "electronics"), (2, "stock", "out"),
-    #             (3, "sale", "yes"), (3, "stock", "in"),
-    #             (4, "sale", "yes")
-    #         ]
-    #     )
-    #     self.conn.commit()
-    #     print("\n### Complete SQL Statements for Testing")
-    #     print("CREATE TABLE items (id INTEGER PRIMARY KEY);")
-    #     print("CREATE TABLE items_tags (item_id INTEGER, name TEXT, value TEXT);")
-    #     print("INSERT INTO items (id) VALUES (1), (2), (3), (4);")
-    #     print("INSERT INTO items_tags (item_id, name, value) VALUES "
-    #         "(1, 'category', 'electronics'), (1, 'stock', 'in'), "
-    #         "(2, 'category', 'electronics'), (2, 'stock', 'out'), "
-    #         "(3, 'sale', 'yes'), (3, 'stock', 'in'), "
-    #         "(4, 'sale', 'yes');")
-    #     select_query = f"SELECT id FROM items i WHERE {sql_query}"
-    #     complete_sql = replace_placeholders(select_query, params)
-    #     print(f"\n-- Complete SELECT statement with values:\n{complete_sql}")
-    #     print("\n-- Expected result: Item 2")
-    #     print("\n-- Cleanup\nDELETE FROM items_tags; DELETE FROM items;")
-    #     self.run_query_and_verify(sql_query, params, [2], "Deeply nested NOT")
+    
 
 
 def main():

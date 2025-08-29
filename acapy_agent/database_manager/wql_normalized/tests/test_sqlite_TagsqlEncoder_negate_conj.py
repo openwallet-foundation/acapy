@@ -51,21 +51,12 @@ class TestTagSqlEncoder(unittest.TestCase):
 
         encoder = encoder_factory.get_encoder("sqlite", self.enc_name, self.enc_value)
 
-        # encoder = TagSqlEncoder(self.enc_name, self.enc_value, 'sqlite')
+        
 
         query_str = encoder.encode_query(query)
         print(f"encoded query_str is :  {query_str}")
 
-        # expected_query = (
-        #     "((i.id NOT IN (SELECT item_id FROM items_tags WHERE name = ? "
-        #     "AND value = ?) "
-        #     "OR i.id NOT IN (SELECT item_id FROM items_tags WHERE name = ? "
-        #     "AND value = ?)) "
-        #     "AND (i.id NOT IN (SELECT item_id FROM items_tags WHERE name = ? "
-        #     "AND value = ?) "
-        #     "OR i.id IN (SELECT item_id FROM items_tags WHERE name = ? "
-        #     "AND value = ?)))"
-        # )
+        
 
         expected_query = (
             "NOT ((i.id IN (SELECT item_id FROM items_tags WHERE name = ? AND value = ?) "

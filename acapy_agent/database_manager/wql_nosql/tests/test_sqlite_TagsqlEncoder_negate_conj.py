@@ -1,7 +1,3 @@
-# pytest --maxfail=1 --disable-warnings --no-cov -vv
-# acapy_agent/database_manager/wql/tests/test_sqlite_TagsqlEncoder_negate_conj.py
-
-
 """Test cases for the TagSqlEncoder class handling negated conjunctions in SQL queries."""
 
 import unittest
@@ -50,8 +46,6 @@ class TestTagSqlEncoder(unittest.TestCase):
         query = TagQuery.not_(TagQuery.or_([condition_1, condition_2]))
 
         encoder = encoder_factory.get_encoder("sqlite", self.enc_name, self.enc_value)
-
-        # encoder = TagSqlEncoder(self.enc_name, self.enc_value, 'sqlite')
 
         query_str = encoder.encode_query(query)
         print(f"encoded query_str is :  {query_str}")
@@ -109,7 +103,6 @@ class TestTagSqlEncoder(unittest.TestCase):
 
         # Add expected result for reference
         print("\n-- Expected result: Items 2,3 and 4")
-        # Comments with insert statements and expected results
 
         # Cleanup: Delete all inserted rows
         print("\n-- Cleanup")

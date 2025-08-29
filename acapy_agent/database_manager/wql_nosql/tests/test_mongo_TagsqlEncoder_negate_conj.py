@@ -1,6 +1,3 @@
-# pytest --maxfail=1 --disable-warnings --no-cov -vv -s
-# acapy_agent/database_manager/wql/tests/test_mongo_TagsqlEncoder_negate_conj.py
-
 """Test cases for the MongoTagEncoder class handling negated conjunctions in MongoDB queries."""
 
 import unittest
@@ -80,7 +77,7 @@ class TestMongoTagEncoder(unittest.TestCase):
         print("       { _id: 2, category: 'electronics', status: 'sold_out' },")
         print("       { _id: 3, category: 'books', status: 'in_stock' },")
         print("       { _id: 4, category: 'clothing' }")
-        print("   ])")
+        print(")]")
         print("   ```")
         print("4. Run the generated query:")
         print("   ```javascript")

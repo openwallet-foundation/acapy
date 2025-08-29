@@ -1164,21 +1164,7 @@ class TestSqliteTagEncoderNormalized(unittest.TestCase):
         print("\n-- Cleanup\nDELETE FROM items;")
         self.run_query_and_verify(sql_query, params, [1, 2], "Empty query")
 
-    # def test_empty_in_list(self):
-    #     query = TagQuery.in_(TagName("field"), [])
-    #     wql = query.to_wql_str()
-    #     print(f"Test: Empty IN list query\nWQL: {wql}")
-    #     with self.assertRaises(ValueError, msg="Empty IN list should raise ValueError"):
-    #         sql_query = self.encoder.encode_query(query)
-    #     # Skip query execution since it should raise an error
-    #     print("\n### Complete SQL Statements for Testing")
-    #     print("CREATE TABLE items (id INTEGER PRIMARY KEY, field TEXT);")
-    #     print("INSERT INTO items (id, field) VALUES "
-    #           "(1, 'value'), "
-    #           "(2, 'other');")
-    #     print("\n-- No SELECT statement executed due to expected ValueError")
-    #     print("\n-- Expected result: ValueError")
-    #     print("\n-- Cleanup\nDELETE FROM items;")
+    
 
     def test_multiple_exists(self):
         query = TagQuery.exist([TagName("f1"), TagName("f2")])

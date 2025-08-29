@@ -1,7 +1,3 @@
-# pytest --maxfail=1 --disable-warnings --no-cov -vv -s
-# acapy_agent/database_manager/wql/tests/test_mongo_TagsqlEncoder_nested_not_conj.py
-
-
 import unittest
 import json
 from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName

@@ -1,7 +1,3 @@
-# pytest --maxfail=1 --disable-warnings --no-cov -vv -s
-# acapy_agent/database_manager/wql/tests/test_mongo_TagsqlEncoder_or_conj.py
-
-
 """Test cases for the MongoTagEncoder class handling OR conjunctions in MongoDB queries."""
 
 import unittest
