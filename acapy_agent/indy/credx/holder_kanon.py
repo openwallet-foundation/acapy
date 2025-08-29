@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import re
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple
 
 from ...core.profile import Profile
 from ...database_manager.dbstore import DBStoreError, DBStoreErrorCode
@@ -282,7 +282,6 @@ class IndyCredxHolder(IndyHolder):
         mime_types = {}
         for k, attr_value in credential_data["values"].items():
             attr_name = _normalize_attr_name(k)
-            # tags[f"attr::{attr_name}::marker"] = "1"
             tags[f"attr::{attr_name}::value"] = attr_value["raw"]
             if credential_attr_mime_types and k in credential_attr_mime_types:
                 mime_types[k] = credential_attr_mime_types[k]
@@ -549,7 +548,7 @@ class IndyCredxHolder(IndyHolder):
 
     async def get_mime_type(
         self, credential_id: str, attr: Optional[str] = None
-    ) -> Union[dict, str]:
+    ) -> dict | str:
         """Get MIME type per attribute (or for all attributes).
 
         Args:

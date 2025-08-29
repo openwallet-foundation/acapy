@@ -7,7 +7,7 @@ from ....wql_normalized.query import query_from_json
 from ....wql_normalized.encoders import encoder_factory
 from ...errors import DatabaseError, DatabaseErrorCode
 from psycopg import AsyncCursor, pq
-from typing import Optional, Sequence, Union, List, Tuple, Any, AsyncGenerator
+from typing import Optional, Sequence, List, Tuple, Any, AsyncGenerator
 import json
 import logging
 from datetime import datetime, timedelta, timezone
@@ -177,7 +177,7 @@ class GenericHandler(BaseHandler):
         profile_id: int,
         category: str,
         name: str,
-        value: Union[str, bytes],
+        value: str | bytes,
         tags: dict,
         expiry_ms: Optional[int] = None,
     ) -> None:
@@ -636,7 +636,7 @@ class GenericHandler(BaseHandler):
         cursor: AsyncCursor,
         profile_id: int,
         category: str,
-        tag_filter: Union[str, dict],
+        tag_filter: str | dict,
     ) -> int:
         """Remove all items matching the given criteria."""
         operation_name = "remove_all"

@@ -634,7 +634,6 @@ class KanonIndyCredxIssuer(IndyIssuer):
 class IndyIssuerRetryableError(IndyIssuerError):
     """Error that indicates the operation should be retried."""
 
-    pass
 
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
