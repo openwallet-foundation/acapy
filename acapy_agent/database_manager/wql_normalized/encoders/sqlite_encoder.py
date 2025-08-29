@@ -1,6 +1,6 @@
 """Module docstring."""
 
-from typing import List
+from typing import List, Tuple, cast
 from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp, TagQuery
 import logging
 
@@ -101,9 +101,11 @@ class SqliteTagEncoder(TagQueryEncoder):
         """Encode a NOT expression with special-cases for certain variants."""
         inner = query.data
         if inner.variant == "Exist":
-            return self.encode_exist(inner.data, True)
+            names = cast(List[TagName], inner.data)
+            return self.encode_exist(names, negate=True)
         if inner.variant == "In":
-            return self.encode_in(*inner.data, True)
+            name, values = cast(Tuple[TagName, List[str]], inner.data)
+            return self.encode_in(name, values, negate=True)
         if not self.normalized and inner.variant in [
             "Eq",
             "Neq",
@@ -113,7 +115,10 @@ class SqliteTagEncoder(TagQueryEncoder):
             "Lte",
             "Like",
         ]:
-            return self.encode_op(getattr(CompareOp, inner.variant), *inner.data, True)
+            name, value = cast(Tuple[TagName, str], inner.data)
+            return self.encode_op(
+                getattr(CompareOp, inner.variant), name, value, negate=True
+            )
         subquery = self.encode_query(inner, False, top_level=False)
         if inner.variant in ["And", "Or"]:
             return f"NOT {subquery}"

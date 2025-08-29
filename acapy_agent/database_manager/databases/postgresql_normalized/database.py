@@ -112,8 +112,13 @@ class PostgresDatabase(AbstractDatabaseStore):
                                 await session.close()
                             except asyncio.CancelledError:
                                 raise
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                LOGGER.warning(
+                                    "[monitor] Failed to close stale session %s: %s",
+                                    id(session),
+                                    str(e),
+                                    exc_info=True,
+                                )
 
     async def _get_profile_id(self, profile_name: str) -> int:
         conn = await self.pool.getconn()

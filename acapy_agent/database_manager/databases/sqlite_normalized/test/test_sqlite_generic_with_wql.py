@@ -100,7 +100,7 @@ async def run_tests(store, db_path, is_encrypted=True):
             )
         )
         print(f"Scanned not male: {len(scanned_entries_not_male)} entries")
-        assert len(scanned_entries_not_male) == (2 if is_encrypted else 2), (
+        assert len(scanned_entries_not_male) == 2, (
             "Expected 2 not male "
             "(Alice, Charlie if encrypted; Eve, Frank if non-encrypted)"
         )
