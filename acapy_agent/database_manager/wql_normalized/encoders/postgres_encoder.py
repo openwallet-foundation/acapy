@@ -1,6 +1,6 @@
 """Module docstring."""
 
-from typing import List, Tuple
+from typing import List, Tuple, cast
 from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp, TagQuery
 import logging
 
@@ -120,9 +120,11 @@ class PostgresTagEncoder(TagQueryEncoder):
         """Encode a NOT expression with special-cases for certain variants."""
         inner = query.data
         if inner.variant == "Exist":
-            sql_clause = self.encode_exist(inner.data, True)
+            names = cast(List[TagName], inner.data)
+            sql_clause = self.encode_exist(names, negate=True)
         elif inner.variant == "In":
-            sql_clause = self.encode_in(*inner.data, True)
+            name, values = cast(Tuple[TagName, List[str]], inner.data)
+            sql_clause = self.encode_in(name, values, negate=True)
         elif not self.normalized and inner.variant in [
             "Eq",
             "Neq",
@@ -132,8 +134,9 @@ class PostgresTagEncoder(TagQueryEncoder):
             "Lte",
             "Like",
         ]:
+            name, value = cast(Tuple[TagName, str], inner.data)
             sql_clause = self.encode_op(
-                getattr(CompareOp, inner.variant), *inner.data, True
+                getattr(CompareOp, inner.variant), name, value, negate=True
             )
         else:
             subquery = self.encode_query(inner, False, top_level=False)
