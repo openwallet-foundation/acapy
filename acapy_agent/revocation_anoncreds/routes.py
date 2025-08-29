@@ -82,7 +82,6 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
-
         rev_reg_id = data.get("rev_reg_id")
         cred_rev_id = data.get("cred_rev_id")
         cred_ex_id = data.get("cred_ex_id")
@@ -127,7 +126,6 @@ class RevRegId(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields - must have either rr-id or cr-id."""
-
         rev_reg_id = data.get("rev_reg_id")
         cred_def_id = data.get("cred_def_id")
 
@@ -1134,7 +1132,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

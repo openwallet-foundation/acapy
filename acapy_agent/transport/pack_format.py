@@ -29,7 +29,6 @@ DIDCOMM_V2_ID = "id"
 
 def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
     """Get the version of the packed message."""
-
     # Raise differnt errors? Not ValueError?
     protected_b64 = json.loads(packed_msg).get("protected")
     if not protected_b64:
@@ -53,7 +52,6 @@ def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
 
 def get_version_for_outbound_msg(outbound_msg: Union[str, bytes]):
     """Get the version of the packed message."""
-
     msg_json = json.loads(outbound_msg)
 
     if DIDCOMM_V2_ID in msg_json:
@@ -89,7 +87,6 @@ class PackWireFormat(BaseWireFormat):
         self, session: ProfileSession, message_body: Union[str, bytes]
     ) -> Tuple[dict, MessageReceipt]:
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
-
         if session.profile.settings.get("experiment.didcomm_v2"):
             try:
                 pack_format = self.get_for_packed_msg(message_body)
@@ -119,7 +116,6 @@ class PackWireFormat(BaseWireFormat):
         sender_key: str,
     ) -> Union[str, bytes]:
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
-
         if session.profile.settings.get("experiment.didcomm_v2"):
             try:
                 pack_format = self.get_for_outbound_msg(message_json)
@@ -149,7 +145,6 @@ class PackWireFormat(BaseWireFormat):
         receipt: MessageReceipt,
     ):
         """Look up the wallet instance and perform the message unpack."""
-
         return await self.v1pack_format.unpack(
             session=session, message_body=message_body, receipt=receipt
         )
@@ -163,7 +158,6 @@ class PackWireFormat(BaseWireFormat):
         sender_key: str,
     ):
         """Look up the wallet instance and perform the message pack."""
-
         return await self.v1pack_format.pack(
             session=session,
             message_json=message_json,
@@ -195,7 +189,6 @@ class V1PackWireFormat(BaseWireFormat):
             WireFormatParseError: If a wallet is required but can't be located
 
         """
-
         receipt = MessageReceipt()
         receipt.in_time = time_now()
         receipt.raw_message = message_body
@@ -291,7 +284,6 @@ class V1PackWireFormat(BaseWireFormat):
             MessageEncodeError: If the message could not be encoded
 
         """
-
         if sender_key and recipient_keys:
             message = await self.pack(
                 session, message_json, recipient_keys, routing_keys, sender_key
@@ -347,7 +339,6 @@ class V1PackWireFormat(BaseWireFormat):
             RecipientKeysError: If the recipient keys could not be extracted
 
         """
-
         try:
             message_dict = json.loads(message_body)
             protected = json.loads(b64_to_str(message_dict["protected"], urlsafe=True))

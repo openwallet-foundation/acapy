@@ -153,6 +153,7 @@ class InboundTransportManager:
             can_respond: Flag indicating that the transport can send responses
             client_info: An optional dict describing the client
             wire_format: Override the wire format for this session
+
         """
         if not wire_format:
             wire_format = self.profile.context.inject(BaseWireFormat)
@@ -227,6 +228,7 @@ class InboundTransportManager:
 
         Args:
             session: The inbound session
+
         """
         if session and session.can_respond and self.undelivered_queue:
             for key in session.reply_verkeys:

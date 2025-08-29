@@ -24,6 +24,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
     References:
         - https://github.com/python/cpython/blob/main/Lib/logging/handlers.py
         - https://github.com/yorks/mpfhandler/blob/master/src/mpfhandler.py
+
     """
 
     def __init__(

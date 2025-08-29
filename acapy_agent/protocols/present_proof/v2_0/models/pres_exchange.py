@@ -162,8 +162,8 @@ class V20PresExRecord(BaseExchangeRecord):
             reason: A reason to add to the log
             log_params: Additional parameters to log
             log_override: Override configured logging regimen, print to stderr instead
-        """
 
+        """
         if self._last_state == state:  # already done
             return
 
@@ -188,8 +188,8 @@ class V20PresExRecord(BaseExchangeRecord):
         Args:
             session: The profile session to use
             payload: The event payload
-        """
 
+        """
         if not self.RECORD_TOPIC:
             return
 

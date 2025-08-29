@@ -68,7 +68,6 @@ async def verify(
             containing all of the errors that occurred during the verification process.
 
     """
-
     result = await ProofSet.verify(
         document=document,
         suites=suites,
@@ -104,7 +103,6 @@ async def derive(
         dict: The document with derived proof(s).
 
     """
-
     result = await ProofSet.derive(
         document=document,
         reveal_document=reveal_document,

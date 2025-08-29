@@ -85,6 +85,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 The attachment data to valide
         Raises:
             Exception: When the data is not valid.
+
         """
         mapping = {
             CRED_20_PROPOSAL: CredDefQueryStringSchema,
@@ -101,7 +102,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordIndy:
         """Retrieve credential exchange detail record by cred_ex_id."""
-
         async with self.profile.session() as session:
             records = await VCDICredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
@@ -135,6 +135,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             message_type (str): Message type for which to return the format identifier
         Returns:
             str: Issue credential attachment format identifier
+
         """
         return ATTACHMENT_FORMAT[message_type][VCDICredFormatHandler.format.api]
 
@@ -151,6 +152,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             data (dict): The data to include in the attach decorator
         Returns:
             CredFormatAttachment: Credential format and attachment data objects
+
         """
         return (
             V20CredFormat(
@@ -162,7 +164,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
-
         async with self.profile.session() as session:
             storage = session.inject(BaseStorage)
             found = await storage.find_all_records(
@@ -197,7 +198,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create vcdi credential offer."""
-
         issuer = AnonCredsIssuer(self.profile)
         # TODO use the ledger registry in the anoncreds module,
         # or move the functionality into the ledger class.

@@ -35,7 +35,6 @@ class PluginRegistry:
 
     def validate_version(self, version_list, module_name):
         """Validate version dict format."""
-
         is_list = isinstance(version_list, list)
 
         # Must be a list

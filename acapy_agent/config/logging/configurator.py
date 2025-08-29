@@ -44,6 +44,7 @@ def load_resource(path: str, encoding: Optional[str] = None):
 
     Returns:
         file-like object: A file-like object representing the resource
+
     """
     components = path.rsplit(":", 1)
     try:
@@ -132,7 +133,6 @@ class LoggingConfigurator:
         :param multitenant: bool: (Default value = False) Optional flag if multitenant is
             enabled
         """
-
         write_to_log_file = log_file is not None or log_file == ""
 
         if multitenant:
@@ -284,6 +284,7 @@ class LoggingConfigurator:
             banner_length: (Default value = 40) Length of the banner
             border_character: (Default value = ":") Character to use in banner
             border
+
         """
         with Banner(border=border_character, length=banner_length) as banner:
             # Title

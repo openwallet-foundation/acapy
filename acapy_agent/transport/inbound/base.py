@@ -36,6 +36,7 @@ class BaseInboundTransport(ABC):
                 serialization. Defaults to None.
             root_profile (Profile, optional): The root profile for the transport.
                 Defaults to None.
+
         """
         self._create_session = create_session
         self._max_message_size = max_message_size
@@ -74,6 +75,7 @@ class BaseInboundTransport(ABC):
             can_respond: Flag indicating that the transport can send responses
             client_info: Request-specific client information
             wire_format: Optionally override the session wire format
+
         """
         return self._create_session(
             accept_undelivered=accept_undelivered,

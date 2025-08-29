@@ -52,12 +52,10 @@ class V20CredAttrSpec(BaseModel):
 
     def b64_decoded_value(self) -> str:
         """Value, base64-decoded if applicable."""
-
         return b64_to_str(self.value) if self.value and self.mime_type else self.value
 
     def __eq__(self, other):
         """Equality comparator."""
-
         if self.name != other.name:
             return False  # distinct attribute names
 
@@ -147,7 +145,6 @@ class V20CredPreview(BaseModel):
             decode: whether first to decode attributes with MIME type
 
         """
-
         return {
             attr.name: (
                 b64_to_str(attr.value) if attr.mime_type and decode else attr.value

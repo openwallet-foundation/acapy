@@ -18,6 +18,7 @@ class BasicMessageHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug("BasicMessageHandler called with context %s", context)
         assert isinstance(context.message, BasicMessage)

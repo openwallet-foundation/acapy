@@ -15,7 +15,6 @@ class PingResponseHandler(BaseHandler):
             responder: Responder used to reply
 
         """
-
         self._logger.debug("PingResponseHandler called with context: %s", context)
         assert isinstance(context.message, PingResponse)
 

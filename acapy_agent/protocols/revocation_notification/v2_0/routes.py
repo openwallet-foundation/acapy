@@ -70,7 +70,6 @@ async def on_revocation_published(profile: Profile, event: Event):
 
 async def on_pending_cleared(profile: Profile, event: Event):
     """Handle pending cleared event."""
-
     # Query by rev reg ID
     async with profile.session() as session:
         notifications = await RevNotificationRecord.query_by_rev_reg_id(

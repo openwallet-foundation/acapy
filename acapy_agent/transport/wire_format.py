@@ -179,6 +179,5 @@ class JsonWireFormat(BaseWireFormat):
             RecipientKeysError: If the recipient keys could not be extracted
 
         """
-
         # JSON message cannot contain recipient keys
         return []

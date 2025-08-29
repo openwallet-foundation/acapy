@@ -189,6 +189,7 @@ class InboundSession:
 
         Args:
             message: The inbound message instance
+
         """
         receipt = message.receipt
         mode = self.reply_mode = (

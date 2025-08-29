@@ -43,6 +43,7 @@ class V20PresProposal(AgentMessage):
             formats: acceptable attachment formats
             proposals_attach: proposal attachments specifying criteria by format
             kwargs: additional key-value arguments
+
         """
         super().__init__(_id, **kwargs)
         self.comment = comment

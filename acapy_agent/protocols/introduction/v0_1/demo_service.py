@@ -35,6 +35,7 @@ class DemoIntroductionService(BaseIntroductionService):
             outbound_handler: The outbound handler coroutine for sending a message
             session: Profile session to use for connection, introduction records
             message: The message to use when requesting the invitation
+
         """
         try:
             init_connection = await ConnRecord.retrieve_by_id(session, init_connection_id)
@@ -94,6 +95,7 @@ class DemoIntroductionService(BaseIntroductionService):
             invitation: The received (Introduction) Invitation message
             session: Profile session to use for introduction records
             outbound_handler: The outbound handler coroutine for sending a message
+
         """
         thread_id = invitation._thread_id
 

@@ -49,7 +49,6 @@ class CMProblemReportSchema(ProblemReportSchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields."""
-
         if not data.get("description", {}).get("code", ""):
             raise ValidationError("Value for description.code must be present")
         elif data.get("description", {}).get("code", "") not in [

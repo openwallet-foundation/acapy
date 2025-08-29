@@ -16,6 +16,7 @@ def datetime_to_str(dt: Union[str, datetime, None]) -> Union[str, None]:
 
     Args:
         dt: May be a string or datetime to allow automatic conversion
+
     """
     if isinstance(dt, datetime):
         dt = dt.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
@@ -116,7 +117,6 @@ def encode(orig: Any) -> str:
         encoded value
 
     """
-
     if isinstance(orig, int) and -I32_BOUND <= orig < I32_BOUND:
         return str(int(orig))  # python bools are ints
 
@@ -151,7 +151,6 @@ def get_proto_default_version(
     versions: List[Dict[str, Any]], major_version: int = 1
 ) -> str:
     """Return default protocol version from version definition list."""
-
     for version in versions:
         if major_version == version["major_version"]:
             default_major_version = version["major_version"]

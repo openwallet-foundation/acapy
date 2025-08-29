@@ -58,8 +58,8 @@ def get_paginated_query_params(request: BaseRequest) -> Tuple[int, int, str, boo
         - offset (int): The offset for pagination, defaulting to 0.
         - order_by (str): The field by which to order results, defaulting to "id".
         - descending (bool): Order results in descending order; defaults to False.
-    """
 
+    """
     limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
     offset = int(request.query.get("offset", 0))
     order_by = request.query.get("order_by", "id")

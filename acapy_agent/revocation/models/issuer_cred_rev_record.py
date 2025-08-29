@@ -84,6 +84,7 @@ class IssuerCredRevRecord(BaseRecord):
             cred_def_id: the cred def id by which to filter
             rev_reg_id: the rev reg id by which to filter
             state: a state value by which to filter
+
         """
         tag_filter = {
             **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},

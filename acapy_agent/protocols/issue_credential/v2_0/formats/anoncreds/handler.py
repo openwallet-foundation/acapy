@@ -81,7 +81,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordAnonCreds:
         """Retrieve credential exchange detail record by cred_ex_id."""
-
         async with self.profile.session() as session:
             records = await AnonCredsCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
@@ -148,7 +147,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
-
         async with self.profile.session() as session:
             storage = session.inject(BaseStorage)
             found = await storage.find_all_records(
@@ -181,7 +179,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create anoncreds credential offer."""
-
         issuer = AnonCredsIssuer(self.profile)
         cache = self.profile.inject_or(BaseCache)
 
@@ -432,7 +429,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store anoncreds credential."""
-
         # For backwards compatibility, remove indy backup when indy format is retired
         from ..indy.handler import IndyCredFormatHandler
 

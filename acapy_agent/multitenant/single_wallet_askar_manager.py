@@ -24,6 +24,7 @@ class SingleWalletAskarMultitenantManager(BaseMultitenantManager):
         Args:
             profile: The base profile for this manager
             multitenant_profile: The multitenant profile for this manager
+
         """
         super().__init__(profile)
         self._multitenant_profile: Optional[AskarProfile] = multitenant_profile

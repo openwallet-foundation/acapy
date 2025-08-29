@@ -65,7 +65,6 @@ class IntEpoch(Range):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(  # use u64 for indy-sdk compatibility
             min=0,
             max=18446744073709551615,
@@ -80,12 +79,10 @@ class WholeNumber(Range):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(min=0, error="Value {input} is not a non-negative integer")
 
     def __call__(self, value):
         """Validate input value."""
-
         if not isinstance(value, int):
             raise ValidationError("Value {input} is not a valid whole number")
         super().__call__(value)
@@ -99,7 +96,6 @@ class NumericStrWhole(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             NumericStrWhole.PATTERN,
             error="Value {input} is not a non-negative numeric string",
@@ -114,7 +110,6 @@ class NumericStrAny(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             NumericStrAny.PATTERN,
             error="Value {input} is not a numeric string",
@@ -128,12 +123,10 @@ class NaturalNumber(Range):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(min=1, error="Value {input} is not a positive integer")
 
     def __call__(self, value):
         """Validate input value."""
-
         if not isinstance(value, int):
             raise ValidationError("Value {input} is not a valid natural number")
         super().__call__(value)
@@ -147,7 +140,6 @@ class NumericStrNatural(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             NumericStrNatural.PATTERN,
             error="Value {input} is not a positive numeric string",
@@ -161,7 +153,6 @@ class IndyRevRegSize(Range):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             min=RevocationRegistry.MIN_SIZE,
             max=RevocationRegistry.MAX_SIZE,
@@ -174,7 +165,6 @@ class IndyRevRegSize(Range):
 
     def __call__(self, value):
         """Validate input value."""
-
         if not isinstance(value, int):
             raise ValidationError(
                 "Value {input} must be an integer between "
@@ -192,7 +182,6 @@ class JWSHeaderKid(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             JWSHeaderKid.PATTERN,
             error="Value {input} is neither in W3C did:key nor DID URL format",
@@ -212,7 +201,6 @@ class NonSDList(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             NonSDList.PATTERN,
             error="Value {input} is not a valid NonSDList",
@@ -229,7 +217,6 @@ class JSONWebToken(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             JSONWebToken.PATTERN,
             error="Value {input} is not a valid JSON Web token",
@@ -251,7 +238,6 @@ class SDJSONWebToken(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             SDJSONWebToken.PATTERN,
             error="Value {input} is not a valid SD-JSON Web token",
@@ -266,7 +252,6 @@ class DIDKey(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
         )
@@ -280,7 +265,6 @@ class DIDKeyOrRef(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDKeyOrRef.PATTERN, error="Value {input} is not a did:key or did:key ref"
         )
@@ -297,7 +281,6 @@ class DIDKeyRef(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDKeyRef.PATTERN, error="Value {input} is not a did:key reference"
         )
@@ -311,7 +294,6 @@ class DIDWeb(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDWeb.PATTERN, error="Value {input} is not in W3C did:web format"
         )
@@ -327,7 +309,6 @@ class DIDWebvh(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDWebvh.PATTERN, error="Value {input} is not in W3C did:webvh format"
         )
@@ -340,7 +321,6 @@ class DIDPosture(OneOf):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             choices=[did_posture.moniker for did_posture in DIDPostureEnum],
             error="Value {input} must be one of {choices}",
@@ -355,7 +335,6 @@ class IndyDID(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndyDID.PATTERN,
             error="Value {input} is not an indy decentralized identifier (DID)",
@@ -374,7 +353,6 @@ class AnonCredsDID(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDValidation.PATTERN,
             error="Value {input} is not an decentralized identifier (DID)",
@@ -399,7 +377,6 @@ class DIDValidation(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             DIDValidation.PATTERN,
             error="Value {input} is not a valid DID",
@@ -415,7 +392,6 @@ class MaybeIndyDID(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             MaybeIndyDID.PATTERN,
             error="Value {input} is not a valid DID",
@@ -430,7 +406,6 @@ class RawPublicEd25519VerificationKey2018(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             RawPublicEd25519VerificationKey2018.PATTERN,
             error="Value {input} is not a raw Ed25519VerificationKey2018 key",
@@ -451,7 +426,6 @@ class RoutingKey(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             RoutingKey.PATTERN,
             error=(
@@ -475,7 +449,6 @@ class IndyCredDefId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndyCredDefId.PATTERN,
             error="Value {input} is not an indy credential definition identifier",
@@ -490,7 +463,6 @@ class AnonCredsCredDefId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             AnonCredsCredDefId.PATTERN,
             error="Value {input} is not an anoncreds credential definition identifier",
@@ -505,7 +477,6 @@ class MajorMinorVersion(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             MajorMinorVersion.PATTERN,
             error="Value {input} is not a valid version major minor version (use only digits and '.')",  # noqa: E501
@@ -520,7 +491,6 @@ class IndySchemaId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndySchemaId.PATTERN,
             error="Value {input} is not an indy schema identifier",
@@ -535,7 +505,6 @@ class AnonCredsSchemaId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             AnonCredsSchemaId.PATTERN,
             error="Value {input} is not an anoncreds schema identifier",
@@ -555,7 +524,6 @@ class IndyRevRegId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndyRevRegId.PATTERN,
             error="Value {input} is not an indy revocation registry identifier",
@@ -570,7 +538,6 @@ class AnonCredsRevRegId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             AnonCredsRevRegId.PATTERN,
             error="Value {input} is not an anoncreds revocation registry identifier",
@@ -585,7 +552,6 @@ class IndyCredRevId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndyCredRevId.PATTERN,
             error="Value {input} is not an indy credential revocation identifier",
@@ -600,7 +566,6 @@ class AnonCredsCredRevId(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             AnonCredsCredRevId.PATTERN,
             error="Value {input} is not an anoncreds credential revocation identifier",
@@ -614,7 +579,6 @@ class Predicate(OneOf):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             choices=["<", "<=", ">=", ">"],
             error="Value {input} must be one of {choices}",
@@ -632,7 +596,6 @@ class ISO8601DateTime(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             ISO8601DateTime.PATTERN,
             error="Value {input} is not a date in valid format",
@@ -650,7 +613,6 @@ class RFC3339DateTime(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             RFC3339DateTime.PATTERN,
             error="Value {input} is not a date in valid format",
@@ -665,7 +627,6 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndyWQL.PATTERN,
             error="Value {input} is not a valid WQL query",
@@ -673,7 +634,6 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
     def __call__(self, value):
         """Validate input value."""
-
         super().__call__(value or "")
         message = f"Value {value} is not a valid WQL query"
 
@@ -693,7 +653,6 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             IndyExtraWQL.PATTERN,
             error="Value {input} is not a valid extra WQL query",
@@ -701,7 +660,6 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
     def __call__(self, value):
         """Validate input value."""
-
         super().__call__(value or "")
         message = f"Value {value} is not a valid extra WQL query"
 
@@ -721,7 +679,6 @@ class Base64(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             Base64.PATTERN,
             error="Value {input} is not a valid base64 encoding",
@@ -736,7 +693,6 @@ class Base64URL(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             Base64URL.PATTERN,
             error="Value {input} is not a valid base64url encoding",
@@ -751,7 +707,6 @@ class Base64URLNoPad(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             Base64URLNoPad.PATTERN,
             error="Value {input} is not a valid unpadded base64url encoding",
@@ -766,7 +721,6 @@ class SHA256Hash(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             SHA256Hash.PATTERN,
             error="Value {input} is not a valid (binhex-encoded) SHA-256 hash",
@@ -781,7 +735,6 @@ class Base58SHA256Hash(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             Base58SHA256Hash.PATTERN,
             error="Value {input} is not a base58 encoding of a SHA-256 hash",
@@ -802,7 +755,6 @@ class UUIDFour(Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             UUIDFour.PATTERN,
             error="Value {input} is not UUID4 (8-4-4-4-12 hex digits with digit#13=4)",
@@ -833,7 +785,6 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             Endpoint.PATTERN,
             error="Value {input} is not a valid endpoint",
@@ -847,7 +798,6 @@ class EndpointType(OneOf):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             choices=[e.w3c for e in EndpointTypeEnum],
             error="Value {input} must be one of {choices}",
@@ -910,7 +860,6 @@ class CredentialContext(Validator):
 
     def __call__(self, value):
         """Validate input value."""
-
         if not isinstance(value, list):
             raise ValidationError("Value must be a non-empty list.")
 

@@ -32,6 +32,7 @@ class TransportDecorator(BaseModel):
             return_route: Set the return routing mode
             return_route_thread: Identify the thread to enable return routing for
             queued_message_count: Indicate the number of queued messages
+
         """
         super().__init__()
         self.return_route = return_route

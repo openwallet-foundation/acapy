@@ -33,6 +33,7 @@ class RoutingManager:
 
         Args:
             profile: The profile instance for this manager
+
         """
         self._profile = profile
         if not profile:

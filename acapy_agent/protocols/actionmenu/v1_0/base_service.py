@@ -40,6 +40,7 @@ class BaseMenuService(ABC):
             profile: The profile
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
+
         """
 
     @abstractmethod
@@ -59,4 +60,5 @@ class BaseMenuService(ABC):
             action_params: A collection of parameters for the action
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
+
         """

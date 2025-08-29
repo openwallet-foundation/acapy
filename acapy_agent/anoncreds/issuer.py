@@ -15,12 +15,15 @@ from anoncreds import (
     Schema,
     W3cCredential,
 )
-from aries_askar import AskarError
 
-from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
+# ideally both AskarError and DBStoreError should inherit from a shared base class,
+# so the business layer doesn't need to care about the storage choice.
+from aries_askar import AskarError
+from ..database_manager.dbstore import DBStoreError
+
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
 from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
@@ -91,10 +94,27 @@ class AnonCredsIssuer:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
+        # Check if profile is AskarAnonCredsProfile or KanonAnonCredsProfile
+        # by checking the backend attribute
+        if not isinstance(self._profile, Profile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+
+        # Check if it's a supported anoncreds profile type
+        if hasattr(self._profile, "backend"):
+            backend = (
+                self._profile.backend.lower()
+                if isinstance(self._profile.backend, str)
+                else ""
+            )
+            if "anoncreds" not in backend and "kanon" not in backend:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        else:
+            # For AskarAnonCredsProfile, check the class name
+            class_name = self._profile.__class__.__name__
+            if "AnonCreds" not in class_name and "Kanon" not in class_name:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
 
@@ -105,7 +125,7 @@ class AnonCredsIssuer:
 
     async def _finish_registration(
         self,
-        txn: AskarAnonCredsProfileSession,
+        txn: ProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -153,7 +173,7 @@ class AnonCredsIssuer:
                         "state": result.schema_state.state,
                     },
                 )
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsIssuerError("Error storing schema") from err
 
     async def create_and_register_schema(
@@ -272,6 +292,7 @@ class AnonCredsIssuer:
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
         try:
             async with self.profile.session() as session:
@@ -280,7 +301,7 @@ class AnonCredsIssuer:
                         CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                     )
                 ) is not None
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsIssuerError(
                 "Error checking for credential definition"
             ) from err
@@ -438,7 +459,8 @@ class AnonCredsIssuer:
                         options=options,
                     )
                 )
-        except AskarError as err:
+
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
     async def finish_cred_def(
@@ -573,7 +595,7 @@ class AnonCredsIssuer:
                 key_proof = await session.handle.fetch(
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
             raise AnonCredsIssuerError(
@@ -614,7 +636,7 @@ class AnonCredsIssuer:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
@@ -671,7 +693,7 @@ class AnonCredsIssuer:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
-        except AskarError as err:
+        except (AskarError, DBStoreError) as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:

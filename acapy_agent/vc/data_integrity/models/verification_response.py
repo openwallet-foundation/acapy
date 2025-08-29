@@ -23,7 +23,6 @@ class ProblemDetails(BaseModel):
         detail: Optional[str] = None,
     ) -> None:
         """Initialize the ProblemDetails instance."""
-
         self.type = type
         self.title = title
         self.detail = detail
@@ -75,7 +74,6 @@ class DataIntegrityVerificationResult(BaseModel):
         problem_details: Optional[List[ProblemDetails]] = None,
     ) -> None:
         """Initialize the DataIntegrityVerificationResult instance."""
-
         self.verified = verified
         self.proof = proof
         self.problem_details = problem_details
@@ -126,7 +124,6 @@ class DataIntegrityVerificationResponse(BaseModel):
         results: Optional[List[DataIntegrityVerificationResult]] = None,
     ) -> None:
         """Initialize the DataIntegrityVerificationResponse instance."""
-
         self.verified = verified
         self.verified_document = verified_document
         self.results = results

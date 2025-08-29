@@ -123,6 +123,7 @@ class RequestContext:
 
         Args:
             msg: This context's new agent message
+
         """
         self._message = msg
 
@@ -142,6 +143,7 @@ class RequestContext:
 
         Args:
             receipt: This context's new message receipt information
+
         """
         self._message_receipt = receipt
 

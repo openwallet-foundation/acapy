@@ -49,7 +49,6 @@ class UniversalResolver(BaseDIDResolver):
 
     async def setup(self, context: InjectionContext):
         """Perform setup, populate supported method list, configuration."""
-
         # configure endpoint
         endpoint = context.settings.get_str("resolver.universal")
         if endpoint == "DEFAULT" or not endpoint:
@@ -84,7 +83,6 @@ class UniversalResolver(BaseDIDResolver):
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve DID through remote universal resolver."""
-
         async with aiohttp.ClientSession(headers=self.__default_headers) as session:
             async with session.get(f"{self._endpoint}/identifiers/{did}") as resp:
                 if resp.status == 200:

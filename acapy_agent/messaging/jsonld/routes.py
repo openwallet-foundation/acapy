@@ -170,7 +170,6 @@ async def verify(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes([web.post("/jsonld/sign", sign), web.post("/jsonld/verify", verify)])
 
 

@@ -191,6 +191,7 @@ class BaseResponder(ABC):
         Args:
             message: The `OutboundMessage` to be sent
             kwargs: Additional keyword arguments
+
         """
 
     @abstractmethod
@@ -200,6 +201,7 @@ class BaseResponder(ABC):
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+
         """
 
 

@@ -29,6 +29,7 @@ class AnonCredsSchema(BaseModel):
             name: Schema name
             version: Schema version
             kwargs: Addiiotnal keyword arguments
+
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -107,6 +108,7 @@ class GetSchemaResult(BaseModel):
             resolution_metadata: Resolution Metdata
             schema_metadata: Schema Metadata
             kwargs: Additional keyword arguments
+
         """
         super().__init__(**kwargs)
         self.schema_value = schema
@@ -223,6 +225,7 @@ class SchemaResult(BaseModel):
             registration_metadata: Registration Metdata
             schema_metadata: Schema Metadata
             kwargs: Additional keyword arguments
+
         """
         super().__init__(**kwargs)
         self.job_id = job_id
