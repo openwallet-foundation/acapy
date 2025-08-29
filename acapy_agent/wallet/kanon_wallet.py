@@ -527,7 +527,7 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("get_public_did completed with result: %s", public_info)
         return public_info
 
-    async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
+    async def set_public_did(self, did: str | DIDInfo) -> DIDInfo:
         """Assign the public DID."""
         LOGGER.debug("Entering set_public_did with did: %s", did)
         async with self._session.store.session() as session:
@@ -579,7 +579,7 @@ class KanonWallet(BaseWallet):
                         value="{}",
                     ),
                     value=json.dumps({"did": info.did}),
-                    tags=None,
+                    tags={},
                     session=session,
                 )
                 LOGGER.debug("Public DID set")
@@ -754,7 +754,7 @@ class KanonWallet(BaseWallet):
         return result
 
     async def sign_message(
-        self, message: Union[List[bytes], bytes], from_verkey: str
+        self, message: List[bytes] | bytes, from_verkey: str
     ) -> bytes:
         """Sign message(s) using the private key."""
         LOGGER.debug("Entering sign_message with from_verkey: %s", from_verkey)
@@ -790,7 +790,7 @@ class KanonWallet(BaseWallet):
 
     async def verify_message(
         self,
-        message: Union[List[bytes], bytes],
+        message: List[bytes] | bytes,
         signature: bytes,
         from_verkey: str,
         key_type: KeyType,
@@ -917,7 +917,7 @@ class KanonWallet(BaseWallet):
         return result
 
 
-def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> Key:
+def _create_keypair(key_type: KeyType, seed: str | bytes | None = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
     LOGGER.debug("Entering _create_keypair with key_type: %s, seed: %s", key_type, seed)
     if key_type == ED25519:
