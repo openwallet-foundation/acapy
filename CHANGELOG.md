@@ -1,10 +1,12 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.2rc0
+## 1.3.2
 
-### August 12, 2025
+### August 26, 2025
 
 ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the [Categorized List of Changes]() below for more details about the changes in this release.
+
+The release includes a fix for a change ([#3081](https://github.com/openwallet-foundation/acapy/pull/3081) added in [Release 1.0.0](https://github.com/openwallet-foundation/acapy/releases/tag/1.0.0)) that introduced a PII leakage possibility. See the [1.3.2 Breaking Changes](#132-breaking-changes) section below for details.
 
 ### 1.3.2 Deprecation Notices
 
@@ -24,27 +26,40 @@ In an upcoming ACA-Py release, we will be dropping from the core ACA-Py reposito
 
 ### 1.3.2 Breaking Changes
 
-There are no breaking changes in this release.
+Release 1.3.2 includes a privacy-related change that also introduces a breaking change for some deployments -- including those using [acapy-vc-authn-oidc](https://github.com/openwallet-foundation/acapy-vc-authn-oidc).
+
+- **Removal of `by_format` from webhook payloads** ([#3837](https://github.com/openwallet-foundation/acapy/pull/3837))  
+  In a recent update, ACA-Py webhook events for credential and presentation v2.0 exchanges included a `by_format` field by default, instead of only when used with the `ACAPY_DEBUG_WEBHOOKS` configuration parameter. `by_format` contains sensitive protocol payload data and, in some cases, could result in **personally identifiable information (PII) being logged**. This behavior has been reverted. 
+
+  **Impact when upgrading:**  
+  - If your deployment relies on the `by_format` field in webhook events you need to ensure the startup parameter `ACAPY_DEBUG_WEBHOOKS` is activated.
+  - Most applications that simply respond to the state of v2.0 credential exchanges (e.g., `credential_issued`, `presentation_verified`) are not affected.  
+  - Applications that parsed or logged the `by_format` contents must ensure the `ACAPY_DEBUG_WEBHOOKS` configuration is set, or better, update their logic to not require that information.
+
+Because this change addresses a **privacy issue** (PII leakage), it is being included in the 1.3.x patch series rather than requiring a minor release increment.
 
 ### 1.3.2 Categorized List of Pull Requests
 
 - **Bug Fixes and Behavior Changes**
-  - fix: update tails server upload methods to return public file URIs #3852 TheTechmage
-  - Only strip did:sov dids to unqualified did in oob receive invitation requests (holder) #3846 jamshale
-  - Remove by_format from standard webhook payloads #3837 jamshale
-  - Fixed debug port setting #3828 Gavinok
-  - Fix: Some asyncio task management and modernization #3818 jamshale
+  - fix: update tails server upload methods to return public file URIs [\#3852](https://github.com/openwallet-foundation/acapy/pull/3852) [TheTechmage](https://github.com/TheTechmage)
+  - Only strip did:sov dids to unqualified did in oob receive invitation requests (holder) [\#3846](https://github.com/openwallet-foundation/acapy/pull/3846) [jamshale](https://github.com/jamshale)
+  - Remove by_format from standard webhook payloads [\#3837](https://github.com/openwallet-foundation/acapy/pull/3837) [jamshale](https://github.com/jamshale)
+  - Fixed debug port setting [\#3828](https://github.com/openwallet-foundation/acapy/pull/3828) [Gavinok](https://github.com/Gavinok)
+  - Fix: Some asyncio task management and modernization [\#3818](https://github.com/openwallet-foundation/acapy/pull/3818) [jamshale](https://github.com/jamshale)
 - **Operational and Dependency Updates**
-  - :heavy_minus_sign: Remove unused dependency: ecdsa #3847 ff137
-  - Add retries when opening the askar store / Refactor store.py #3811 jamshale
-  - Upgrade pytest-asyncio to major version 1.0.0 #3810 jamshale
+  - Update did-webvh package version [\#3860](https://github.com/openwallet-foundation/acapy/pull/3860) [PatStLouis](https://github.com/PatStLouis)
+  - :recycle: Sync ruff version [\#3859](https://github.com/openwallet-foundation/acapy/pull/3859) [ff137](https://github.com/ff137)
+  - :heavy_minus_sign: Remove unused dependency: ecdsa [\#3847](https://github.com/openwallet-foundation/acapy/pull/3847) [ff137](https://github.com/ff137)
+  - Add retries when opening the askar store / Refactor store.py [\#3811](https://github.com/openwallet-foundation/acapy/pull/3811) [jamshale](https://github.com/jamshale)
+  - Upgrade pytest-asyncio to major version 1.0.0 [\#3810](https://github.com/openwallet-foundation/acapy/pull/3810) [jamshale](https://github.com/jamshale)
 - **Documentation and README Updates**
-  - Add DeepWiki AI Docs Badge and revise the README intro #3853 swcurran
-  - Update README with latest on LTS Release Status #3833 swcurran
-  - Update scenarios to openwallet acapy-minimal-example repo #3851 jamshale
+  - Add DeepWiki AI Docs Badge and revise the README intro [\#3853](https://github.com/openwallet-foundation/acapy/pull/3853) [swcurran](https://github.com/swcurran)
+  - Update README with latest on LTS Release Status [\#3833](https://github.com/openwallet-foundation/acapy/pull/3833) [swcurran](https://github.com/swcurran)
+  - Update scenarios to openwallet acapy-minimal-example repo [\#3851](https://github.com/openwallet-foundation/acapy/pull/3851) [jamshale](https://github.com/jamshale)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-07-02..2025-08-12+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-07-02..2025-08-26+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.3.2 [\#3863](https://github.com/openwallet-foundation/acapy/pull/3863) [swcurran](https://github.com/swcurran)
   - 1.3.2rc0 [\#3858](https://github.com/openwallet-foundation/acapy/pull/3858) [swcurran](https://github.com/swcurran)
 
 ## 1.3.1
