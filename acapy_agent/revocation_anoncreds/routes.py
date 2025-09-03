@@ -666,7 +666,7 @@ async def get_active_rev_reg(request: web.BaseRequest):
     cred_def_id = request.match_info["cred_def_id"]
     try:
         revocation = AnonCredsRevocation(profile)
-        active_reg = await revocation.get_or_create_active_registry(cred_def_id)
+        active_reg = await revocation.get_active_registry(cred_def_id)
         rev_reg = await _get_issuer_rev_reg_record(profile, active_reg.rev_reg_def_id)
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
@@ -1053,9 +1053,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     try:
         revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.set_rev_reg_state(rev_reg_id, state)
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
+        await revocation.set_rev_reg_state(rev_reg_id, state)
 
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
