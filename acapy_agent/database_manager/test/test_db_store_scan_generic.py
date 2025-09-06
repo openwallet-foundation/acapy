@@ -5,11 +5,12 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from acapy_agent.database_manager.dbstore import DBStore
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_db_path():
     """Create a temporary database path for testing."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -17,7 +18,7 @@ async def test_db_path():
         yield str(db_path)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def populated_store(test_db_path):
     """Create a database store with test credential records."""
     uri = f"sqlite://{test_db_path}"
