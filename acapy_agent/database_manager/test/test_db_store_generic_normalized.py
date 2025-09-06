@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from acapy_agent.database_manager.dbstore import DBStore
 
@@ -30,7 +31,7 @@ CONNECTION_JSON_3 = {
 }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_db_path():
     """Create a temporary database path for testing."""
     tmpdir = tempfile.mkdtemp()
@@ -45,7 +46,7 @@ async def test_db_path():
         pass  # Ignore cleanup errors
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def encrypted_store(test_db_path):
     """Create an encrypted database store with normalized schema."""
     # Use in-memory database for faster tests when possible
@@ -63,7 +64,7 @@ async def encrypted_store(test_db_path):
     await store.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def non_encrypted_store():
     """Create a non-encrypted database store with normalized schema."""
     # Use in-memory database for much faster tests
@@ -93,7 +94,7 @@ async def non_encrypted_store():
         pass
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def populated_store(encrypted_store):
     """Create a store with test data for people and connections."""
     async with encrypted_store.transaction() as session:
