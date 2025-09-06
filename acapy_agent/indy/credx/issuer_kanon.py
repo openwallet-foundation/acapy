@@ -481,6 +481,9 @@ class KanonIndyCredxIssuer(IndyIssuer):
             [str(rev_id) for rev_id in sorted(failed_crids)],
         )
 
+    # NOTE: We intentionally do not implement abstract methods here.
+    # Tests use a test-only subclass.
+
     async def _attempt_revocation(
         self, cred_def_id: str, revoc_reg_id: str, cred_revoc_ids: Sequence[str]
     ) -> Tuple:
