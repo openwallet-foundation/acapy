@@ -2,6 +2,7 @@ import json
 from unittest import mock
 
 import pytest
+import pytest_asyncio
 from aries_askar import AskarError, Key, KeyAlg, Session
 
 from ....utils.jwe import JweEnvelope, JweRecipient, b64url
@@ -14,7 +15,7 @@ CAROL_KID = "did:example:carol#key-2"
 MESSAGE = b"Expecto patronum"
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def session():
     profile = await create_test_profile()
     async with profile.session() as session:
