@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from acapy_agent.database_manager.dbstore import DBStore
 
@@ -27,7 +28,7 @@ PRES_JSON = {
 }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_db_path():
     """Create a temporary database path for testing."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -35,7 +36,7 @@ async def test_db_path():
         yield str(db_path)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def populated_store(test_db_path):
     """Create a database store with test presentation exchange records."""
     uri = f"sqlite://{test_db_path}"
@@ -103,7 +104,7 @@ async def populated_store(test_db_path):
     await store.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def store_with_profiles(test_db_path):
     """Create a database store with multiple profiles."""
     uri = f"sqlite://{test_db_path}"
