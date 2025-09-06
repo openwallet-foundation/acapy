@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import List, Optional, Sequence, Tuple, Union, cast
+from typing import List, Optional, Sequence, Tuple, cast
 
 from aries_askar import AskarError, AskarErrorCode, Entry, Key, KeyAlg, SeedMethod
 from ..database_manager.dbstore import DBStoreError
@@ -133,7 +133,7 @@ class KanonWallet(BaseWallet):
             key_types = self.session.inject(KeyTypes)
             key_type = key_types.from_key_type(key.algorithm.value)
             if not key_type:
-                LOGGER.error(ERR_UNKNOWN_KEY_TYPE, key.algorithm.value)
+                LOGGER.error(f"{ERR_UNKNOWN_KEY_TYPE}".format(key.algorithm.value))
                 raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
 
             LOGGER.debug("Updating key with kid: %s", kid)
@@ -169,7 +169,7 @@ class KanonWallet(BaseWallet):
             key_types = self.session.inject(KeyTypes)
             key_type = key_types.from_key_type(key.algorithm.value)
             if not key_type:
-                LOGGER.error(ERR_UNKNOWN_KEY_TYPE, key.algorithm.value)
+                LOGGER.error(f"{ERR_UNKNOWN_KEY_TYPE}".format(key.algorithm.value))
                 raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
         except AskarError as err:
             LOGGER.error("AskarError in get_key_by_kid: %s", err)
@@ -204,7 +204,7 @@ class KanonWallet(BaseWallet):
             key_types = self.session.inject(KeyTypes)
             key_type = key_types.from_key_type(key.algorithm.value)
             if not key_type:
-                LOGGER.error(ERR_UNKNOWN_KEY_TYPE, key.algorithm.value)
+                LOGGER.error(f"{ERR_UNKNOWN_KEY_TYPE}".format(key.algorithm.value))
                 raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
         except AskarError as err:
             LOGGER.error("AskarError in get_signing_key: %s", err)
@@ -919,7 +919,7 @@ class KanonWallet(BaseWallet):
 
 def _create_keypair(key_type: KeyType, seed: str | bytes | None = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
-    LOGGER.debug("Entering _create_keypair with key_type: %s, seed: %s", key_type, seed)
+    LOGGER.debug("Entering _create_keypair with key_type: %s", key_type)
     if key_type == ED25519:
         alg = KeyAlg.ED25519
         method = None
@@ -940,11 +940,11 @@ def _create_keypair(key_type: KeyType, seed: str | bytes | None = None) -> Key:
     if seed:
         try:
             if key_type in (ED25519, P256):
-                LOGGER.debug("Using seed as secret key for %s", key_type)
+                LOGGER.debug("Using seed-derived key for %s", key_type)
                 seed = validate_seed(seed)
                 keypair = Key.from_secret_bytes(alg, seed)
             else:
-                LOGGER.debug("Generating keypair from seed")
+                LOGGER.debug("Generating keypair from seed (method applied)")
                 keypair = Key.from_seed(alg, seed, method=method)
             LOGGER.debug("Keypair created from seed")
         except AskarError as err:
