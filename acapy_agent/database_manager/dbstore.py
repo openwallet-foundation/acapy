@@ -231,7 +231,9 @@ class DBStore:
     @classmethod
     def generate_raw_key(cls, seed: str | bytes | None = None) -> str:
         """Perform the action."""
-        LOGGER.debug(f"generate_raw_key called with seed={seed}")
+        LOGGER.debug(
+            "generate_raw_key called (seed_provided=%s)", bool(seed)
+        )
         from . import bindings
 
         return bindings.generate_raw_key(seed)
@@ -267,7 +269,7 @@ class DBStore:
         """Provision a new database store with specified release and schema."""
         LOGGER.debug(
             f"provision called with uri={uri}, key_method={key_method}, "
-            f"pass_key={pass_key}, "
+            "pass_key=***, "
             f"profile={profile}, recreate={recreate}, "
             f"release_number={release_number}, "
             f"schema_config={schema_config}, config={config}"
@@ -331,7 +333,7 @@ class DBStore:
         """Perform the action."""
         LOGGER.debug(
             f"open called with uri={uri}, key_method={key_method}, "
-            f"pass_key={pass_key}, "
+            "pass_key=***, "
             f"profile={profile}, schema_migration={schema_migration}, "
             f"target_schema_release_number={target_schema_release_number}, "
             f"config={config}, "
@@ -461,7 +463,9 @@ class DBStore:
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
         """Perform the action."""
-        LOGGER.debug(f"rekey called with key_method={key_method}, pass_key={pass_key}")
+        LOGGER.debug(
+            f"rekey called with key_method={key_method}, pass_key=***"
+        )
         try:
             await self._db.rekey(key_method, pass_key)
         except asyncio.CancelledError:
