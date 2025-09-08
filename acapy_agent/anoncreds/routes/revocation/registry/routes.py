@@ -517,7 +517,8 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except Exception as err:
-        raise web.HTTPBadRequest(reason=str(err)) from err
+        LOGGER.exception(f"Error updating revocation registry revoked state: {err}")
+        raise web.HTTPInternalServerError(reason=str(err)) from err
 
     return web.json_response(
         {
