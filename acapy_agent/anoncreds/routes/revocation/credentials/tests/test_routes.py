@@ -33,7 +33,10 @@ class TestAnonCredsCredentialRevocationRoutes(
         ):
             req.validate_fields(
                 {
-                    "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",  # noqa: E501
+                    "rev_reg_id": (
+                        "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:"
+                        "DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"
+                    ),
                     "cred_rev_id": "1",
                 }
             )
@@ -43,7 +46,10 @@ class TestAnonCredsCredentialRevocationRoutes(
             with self.assertRaises(Exception):  # ValidationError
                 req.validate_fields(
                     {
-                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"  # noqa: E501
+                        "rev_reg_id": (
+                            "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:"
+                            "DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"
+                        )
                     }
                 )
             with self.assertRaises(Exception):  # ValidationError
@@ -51,7 +57,10 @@ class TestAnonCredsCredentialRevocationRoutes(
             with self.assertRaises(Exception):  # ValidationError
                 req.validate_fields(
                     {
-                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",  # noqa: E501
+                        "rev_reg_id": (
+                            "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:"
+                            "DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"
+                        ),
                         "cred_ex_id": "12345678-1234-5678-9abc-def012345678",
                     }
                 )
@@ -65,7 +74,10 @@ class TestAnonCredsCredentialRevocationRoutes(
             with self.assertRaises(Exception):  # ValidationError
                 req.validate_fields(
                     {
-                        "rev_reg_id": "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default",  # noqa: E501
+                        "rev_reg_id": (
+                            "did:indy:sovrin:staging:DyZewQF7GvBJ7g8Fg4bQJn:4:did:indy:sovrin:staging:"
+                            "DyZewQF7GvBJ7g8Fg4bQJn:3:CL:1234:default:CL_ACCUM:default"
+                        ),
                         "cred_rev_id": "1",
                         "cred_ex_id": "12345678-1234-5678-9abc-def012345678",
                     }
