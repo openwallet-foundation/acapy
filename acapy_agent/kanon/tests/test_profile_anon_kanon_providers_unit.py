@@ -1,4 +1,5 @@
 import types
+import logging
 import pytest
 
 
@@ -33,7 +34,7 @@ async def test_init_ledger_pool_disabled_and_read_only_logs(monkeypatch, caplog)
             "ledger.keepalive": 3,
         }
     )
-    caplog.set_level("WARNING")
+    caplog.set_level(logging.WARNING, logger="acapy_agent.kanon.profile_anon_kanon")
     prof2 = KanonAnonCredsProfile(_Opened(), ctx2)
 
     assert prof2.ledger_pool is not None
