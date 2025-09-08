@@ -82,12 +82,32 @@ async def upload_tails_file(request: web.BaseRequest):
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
 
+@docs(
+    tags=[REVOCATION_TAG_TITLE],
+    summary="Upload local tails file to server",
+    deprecated=True,
+)
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
+@tenant_authentication
+async def upload_tails_file_deprecated(request: web.BaseRequest):
+    """Deprecated alias for upload_tails_file."""
+    return await upload_tails_file(request)
+
+
 async def register(app: web.Application) -> None:
     """Register routes."""
 
     app.add_routes(
         [
-            web.put("/anoncreds/registry/{rev_reg_id}/tails-file", upload_tails_file),
+            web.put(
+                "/anoncreds/registry/{rev_reg_id}/tails-file",
+                upload_tails_file_deprecated,
+            ),
+            web.put(
+                "/anoncreds/revocation/registry/{rev_reg_id}/tails-file",
+                upload_tails_file,
+            ),
             web.get(
                 "/anoncreds/revocation/registry/{rev_reg_id}/tails-file",
                 get_tails_file,
