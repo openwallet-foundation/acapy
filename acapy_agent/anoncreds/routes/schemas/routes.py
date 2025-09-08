@@ -11,7 +11,6 @@ from aiohttp_apispec import (
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
-from ....core.event_bus import EventBus
 from ....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ...base import (
     AnonCredsObjectNotFound,
@@ -24,7 +23,6 @@ from ...models.schema import (
     SchemaResultSchema,
 )
 from ...registry import AnonCredsRegistry
-from ...revocation.revocation_setup import DefaultRevocationSetup
 from ...util import handle_value_error
 from ..common.utils import get_request_body_with_profile_check
 from .models import (
@@ -174,13 +172,6 @@ async def schemas_get(request: web.BaseRequest):
     except ValueError as e:
         handle_value_error(e)
     return web.json_response({"schema_ids": schema_ids})
-
-
-def register_events(event_bus: EventBus) -> None:
-    """Register events."""
-    # TODO Make this pluggable?
-    setup_manager = DefaultRevocationSetup()
-    setup_manager.register_events(event_bus)
 
 
 async def register(app: web.Application) -> None:
