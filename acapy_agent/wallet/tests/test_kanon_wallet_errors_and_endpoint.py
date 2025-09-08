@@ -53,11 +53,19 @@ def wallet_env(monkeypatch):
         def __init__(self):
             self._keys: Dict[str, Dict[str, Any]] = {}
 
-        async def insert_key(self, name: str, key: FakeKey, metadata: Optional[str] = None, tags: Optional[dict] = None):
+        async def insert_key(
+            self,
+            name: str,
+            key: FakeKey,
+            metadata: Optional[str] = None,
+            tags: Optional[dict] = None,
+        ):
             if name in self._keys:
+
                 class _Err(Exception):
                     def __init__(self):
                         self.code = "DUPLICATE"
+
                 raise _Err()
             self._keys[name] = {"key": key, "metadata": metadata, "tags": tags or {}}
 
@@ -65,14 +73,20 @@ def wallet_env(monkeypatch):
             entry = self._keys.get(name)
             if not entry:
                 return None
-            return types.SimpleNamespace(key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]) 
+            return types.SimpleNamespace(
+                key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]
+            )
 
-        async def update_key(self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None):
+        async def update_key(
+            self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None
+        ):
             entry = self._keys.get(name)
             if not entry:
+
                 class _Err(Exception):
                     def __init__(self):
                         self.code = "NOT_FOUND"
+
                 raise _Err()
             if tags is not None:
                 entry["tags"] = tags
@@ -83,7 +97,13 @@ def wallet_env(monkeypatch):
             results = []
             for _, entry in self._keys.items():
                 if all(entry["tags"].get(k) == v for k, v in (tag_filter or {}).items()):
-                    results.append(types.SimpleNamespace(key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]))
+                    results.append(
+                        types.SimpleNamespace(
+                            key=entry["key"],
+                            metadata=entry["metadata"],
+                            tags=entry["tags"],
+                        )
+                    )
                     if len(results) >= limit:
                         break
             return results
@@ -94,6 +114,7 @@ def wallet_env(monkeypatch):
 
         def session(self):
             store = self
+
             class Sess:
                 async def __aenter__(self):
                     return self
@@ -105,9 +126,17 @@ def wallet_env(monkeypatch):
                     row = store._rows.get((cat, name))
                     if not row:
                         return None
-                    return types.SimpleNamespace(category=cat, name=name, value=row.get("value"), value_json=row.get("value_json"), tags=row.get("tags", {}))
+                    return types.SimpleNamespace(
+                        category=cat,
+                        name=name,
+                        value=row.get("value"),
+                        value_json=row.get("value_json"),
+                        tags=row.get("tags", {}),
+                    )
 
-                async def replace(self, cat, name, value=None, tags=None, value_json=None):
+                async def replace(
+                    self, cat, name, value=None, tags=None, value_json=None
+                ):
                     row = store._rows.get((cat, name))
                     if not row:
                         return None
@@ -120,16 +149,31 @@ def wallet_env(monkeypatch):
                         row["tags"] = tags
 
                 async def insert(self, cat, name, value=None, tags=None, value_json=None):
-                    store._rows[(cat, name)] = {"value": value, "value_json": value_json, "tags": tags or {}}
+                    store._rows[(cat, name)] = {
+                        "value": value,
+                        "value_json": value_json,
+                        "tags": tags or {},
+                    }
 
                 async def fetch_all(self, cat, tag_filter=None, **kwargs):
                     res = []
                     for (c, n), row in store._rows.items():
                         if c != cat:
                             continue
-                        if tag_filter and any((row.get("tags", {}).get(k) != v) for k, v in tag_filter.items()):
+                        if tag_filter and any(
+                            (row.get("tags", {}).get(k) != v)
+                            for k, v in tag_filter.items()
+                        ):
                             continue
-                        res.append(types.SimpleNamespace(category=c, name=n, value=row.get("value"), value_json=row.get("value_json"), tags=row.get("tags", {})))
+                        res.append(
+                            types.SimpleNamespace(
+                                category=c,
+                                name=n,
+                                value=row.get("value"),
+                                value_json=row.get("value_json"),
+                                tags=row.get("tags", {}),
+                            )
+                        )
                     return res
 
             return Sess()
@@ -146,31 +190,40 @@ def wallet_env(monkeypatch):
             self.profile = types.SimpleNamespace(name="p")
 
     key_types = module.KeyTypes()
+
     class _DIDMethods:
         def from_method(self, name):
             return module.SOV
+
         def from_did(self, did):
             return types.SimpleNamespace(method_name="sov", supports_rotation=True)
 
     class _FakeDPV:
         def __init__(self, *_):
             pass
+
         def validate_key_type(self, *_):
             return None
+
         def validate_or_derive_did(self, method, key_type, verkey_bytes, did):
             return did or "did:sov:testdid"
 
     monkeypatch.setattr(module, "DIDParametersValidation", _FakeDPV, raising=True)
 
     profile = FakeProfile()
+
     class _Session:
         def __init__(self, profile):
             self.askar_handle = profile.askar_handle
             self.store = profile.store
-            self.context = types.SimpleNamespace(inject=lambda cls: key_types if cls is module.KeyTypes else _DIDMethods())
+            self.context = types.SimpleNamespace(
+                inject=lambda cls: key_types if cls is module.KeyTypes else _DIDMethods()
+            )
             self.profile = profile
+
         def inject(self, cls):
             return key_types if cls is module.KeyTypes else _DIDMethods()
+
     session = _Session(profile)
 
     wallet = module.KanonWallet(session)
@@ -212,7 +265,9 @@ async def test_input_and_lookup_errors(wallet_env):
 async def test_set_did_endpoint_and_ledger_errors(wallet_env):
     module, wallet, profile = wallet_env
 
-    did_info = await wallet.create_local_did(module.SOV, module.ED25519, metadata={"public": True})
+    did_info = await wallet.create_local_did(
+        module.SOV, module.ED25519, metadata={"public": True}
+    )
     await wallet.set_public_did(did_info.did)
 
     with pytest.raises(module.LedgerConfigError):
@@ -221,14 +276,27 @@ async def test_set_did_endpoint_and_ledger_errors(wallet_env):
     class FakeLedger:
         def __init__(self):
             self.read_only = False
+
         async def __aenter__(self):
             return self
+
         async def __aexit__(self, et, ev, tb):
             return False
-        async def update_endpoint_for_did(self, did, endpoint, endpoint_type, write_ledger=True, endorser_did=None, routing_keys=None):
+
+        async def update_endpoint_for_did(
+            self,
+            did,
+            endpoint,
+            endpoint_type,
+            write_ledger=True,
+            endorser_did=None,
+            routing_keys=None,
+        ):
             return {"did": did, "endpoint": endpoint}
 
-    attrib = await wallet.set_did_endpoint(did_info.did, "http://e", ledger=FakeLedger(), write_ledger=False)
+    attrib = await wallet.set_did_endpoint(
+        did_info.did, "http://e", ledger=FakeLedger(), write_ledger=False
+    )
     assert attrib["did"] == did_info.did
 
 
@@ -246,7 +314,14 @@ async def test_assign_kid_and_get_by_kid_success(wallet_env, monkeypatch):
     class BadKeyTypes(module.KeyTypes.__class__):
         def from_key_type(self_inner, *_):
             return None
-    monkeypatch.setattr(wallet.session, "inject", lambda cls: BadKeyTypes if cls is module.KeyTypes else wallet.session.context.inject(cls))
+
+    monkeypatch.setattr(
+        wallet.session,
+        "inject",
+        lambda cls: BadKeyTypes
+        if cls is module.KeyTypes
+        else wallet.session.context.inject(cls),
+    )
     monkeypatch.setattr(module, "ERR_UNKNOWN_KEY_TYPE", "Unknown key type %s")
     with pytest.raises(module.WalletError):
         await wallet.assign_kid_to_key(info.verkey, "kid-bad")
@@ -256,8 +331,9 @@ async def test_assign_kid_and_get_by_kid_success(wallet_env, monkeypatch):
 async def test_get_public_did_populates_and_store_did_paths(wallet_env):
     module, wallet, profile = wallet_env
 
-    
-    did_info = await wallet.create_local_did(module.SOV, module.ED25519, metadata={"public": True})
+    did_info = await wallet.create_local_did(
+        module.SOV, module.ED25519, metadata={"public": True}
+    )
     pub = await wallet.get_public_did()
     assert pub and pub.did == did_info.did
 
@@ -309,9 +385,13 @@ async def test_create_key_askar_error_non_duplicate(wallet_env, monkeypatch):
             self.code = code
 
     monkeypatch.setattr(module, "AskarError", LocalErr)
-    monkeypatch.setattr(module, "AskarErrorCode", types.SimpleNamespace(DUPLICATE="DUP", INPUT="INPUT"))
+    monkeypatch.setattr(
+        module, "AskarErrorCode", types.SimpleNamespace(DUPLICATE="DUP", INPUT="INPUT")
+    )
+
     async def _raise(*a, **kw):
         raise LocalErr("BUSY")
+
     monkeypatch.setattr(profile.askar_handle, "insert_key", _raise)
 
     with pytest.raises(module.WalletError):
@@ -328,32 +408,50 @@ async def test_create_local_did_duplicate_updates_metadata(wallet_env, monkeypat
         await s.insert(
             "did",
             did,
-            value_json={"did": did, "method": "sov", "verkey": verkey, "verkey_type": "ed25519", "metadata": {"a": 1}},
+            value_json={
+                "did": did,
+                "method": "sov",
+                "verkey": verkey,
+                "verkey_type": "ed25519",
+                "metadata": {"a": 1},
+            },
             tags={"method": "sov", "verkey": verkey, "verkey_type": "ed25519"},
         )
 
     class LocalErr(Exception):
         def __init__(self, code):
             self.code = code
+
     monkeypatch.setattr(module, "AskarError", LocalErr)
     monkeypatch.setattr(module, "AskarErrorCode", types.SimpleNamespace(DUPLICATE="DUP"))
+
     async def _dup(*a, **kw):
         raise LocalErr("DUP")
+
     monkeypatch.setattr(profile.askar_handle, "insert_key", _dup)
 
     class _DPV:
         def __init__(self, *_):
             pass
+
         def validate_key_type(self, *_):
             return None
+
         def validate_or_derive_did(self, *_):
             return did
+
     monkeypatch.setattr(module, "DIDParametersValidation", _DPV)
+
     async def _fetch_key(name, *a, **kw):
-        return types.SimpleNamespace(key=types.SimpleNamespace(get_public_bytes=lambda: b"irrelevant", algorithm=types.SimpleNamespace(value="ed25519")))
+        return types.SimpleNamespace(
+            key=types.SimpleNamespace(
+                get_public_bytes=lambda: b"irrelevant",
+                algorithm=types.SimpleNamespace(value="ed25519"),
+            )
+        )
+
     monkeypatch.setattr(profile.askar_handle, "fetch_key", _fetch_key)
 
-    
     monkeypatch.setattr(module, "bytes_to_b58", lambda *_: "samevk")
     updated = await wallet.create_local_did(module.SOV, module.ED25519, metadata={})
     assert updated.did == did
@@ -368,18 +466,27 @@ async def test_get_local_did_db_error_mapping(wallet_env, monkeypatch):
     class BadSess:
         async def __aenter__(self):
             return self
+
         async def __aexit__(self, et, ev, tb):
             return False
+
         async def fetch(self, *a, **kw):
-            from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
+            from acapy_agent.database_manager.dbstore import (
+                DBStoreError,
+                DBStoreErrorCode,
+            )
+
             raise DBStoreError(DBStoreErrorCode.BUSY, "x")
 
     def _session_factory():
         return BadSess()
+
     monkeypatch.setattr(profile.store, "session", _session_factory)
     from acapy_agent.storage import kanon_storage as storage_module
+
     async def _get_record_mock(*a, **kw):
         raise storage_module.StorageNotFoundError("not found")
+
     monkeypatch.setattr(storage_module.KanonStorage, "get_record", _get_record_mock)
     with pytest.raises(module.WalletError):
         await wallet.get_local_did("did:any")
@@ -390,19 +497,28 @@ async def test_set_public_did_metadata_update_db_error(wallet_env, monkeypatch):
     module, wallet, profile = wallet_env
 
     did_info = await wallet.create_local_did(module.SOV, module.ED25519, metadata={})
+
     class BadSess:
         async def __aenter__(self):
             return self
+
         async def __aexit__(self, et, ev, tb):
             return False
+
         async def fetch(self, *a, **kw):
             return None
+
         async def replace(self, *a, **kw):
-            from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
+            from acapy_agent.database_manager.dbstore import (
+                DBStoreError,
+                DBStoreErrorCode,
+            )
+
             raise DBStoreError(DBStoreErrorCode.BUSY, "fail")
 
     async def _get_public():
         return did_info
+
     monkeypatch.setattr(wallet, "get_public_did", _get_public)
     monkeypatch.setattr(profile.store, "session", lambda: BadSess())
     with pytest.raises(module.WalletError):
@@ -427,13 +543,25 @@ async def test_get_local_did_for_verkey_multi_peer4_choice(wallet_env):
         await s.insert(
             "did",
             "did:peer:4longer",
-            value_json={"did": "did:peer:4longer", "method": "sov", "verkey": verkey, "verkey_type": "ed25519", "metadata": {}},
+            value_json={
+                "did": "did:peer:4longer",
+                "method": "sov",
+                "verkey": verkey,
+                "verkey_type": "ed25519",
+                "metadata": {},
+            },
             tags={"method": "sov", "verkey": verkey, "verkey_type": "ed25519"},
         )
         await s.insert(
             "did",
             "did:peer:4x",
-            value_json={"did": "did:peer:4x", "method": "sov", "verkey": verkey, "verkey_type": "ed25519", "metadata": {}},
+            value_json={
+                "did": "did:peer:4x",
+                "method": "sov",
+                "verkey": verkey,
+                "verkey_type": "ed25519",
+                "metadata": {},
+            },
             tags={"method": "sov", "verkey": verkey, "verkey_type": "ed25519"},
         )
     got = await wallet.get_local_did_for_verkey(verkey)
@@ -460,7 +588,9 @@ async def test_get_public_did_reads_existing_record(wallet_env):
 async def test_replace_local_did_metadata_success(wallet_env):
     module, wallet, profile = wallet_env
 
-    did_info = await wallet.create_local_did(module.SOV, module.ED25519, metadata={"a": 1})
+    did_info = await wallet.create_local_did(
+        module.SOV, module.ED25519, metadata={"a": 1}
+    )
     await wallet.replace_local_did_metadata(did_info.did, {"a": 2})
     got = await wallet.get_local_did(did_info.did)
     assert got.metadata == {"a": 2}
@@ -486,8 +616,12 @@ async def test_sign_message_bls_path(wallet_env, monkeypatch):
 async def test_set_public_did_replaces_existing_record(wallet_env):
     module, wallet, profile = wallet_env
 
-    did1 = await wallet.create_local_did(module.SOV, module.ED25519, did="did:sov:one", metadata={})
-    did2 = await wallet.create_local_did(module.SOV, module.ED25519, did="did:sov:two", metadata={})
+    did1 = await wallet.create_local_did(
+        module.SOV, module.ED25519, did="did:sov:one", metadata={}
+    )
+    did2 = await wallet.create_local_did(
+        module.SOV, module.ED25519, did="did:sov:two", metadata={}
+    )
 
     async with profile.store.session() as s:
         await s.insert(
@@ -505,4 +639,3 @@ async def test_set_public_did_replaces_existing_record(wallet_env):
         assert json.loads(cfg.value)["did"] == did2.did
     got2 = await wallet.get_local_did(did2.did)
     assert got2.metadata.get("posted") is True
-

@@ -51,12 +51,8 @@ class TestTagSqlEncoder(unittest.TestCase):
 
         encoder = encoder_factory.get_encoder("sqlite", self.enc_name, self.enc_value)
 
-        
-
         query_str = encoder.encode_query(query)
         print(f"encoded query_str is :  {query_str}")
-
-        
 
         expected_query = (
             "NOT ((i.id IN (SELECT item_id FROM items_tags WHERE name = ? AND value = ?) "

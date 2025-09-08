@@ -753,9 +753,7 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("rotate_did_keypair_apply completed with result: %s", result)
         return result
 
-    async def sign_message(
-        self, message: List[bytes] | bytes, from_verkey: str
-    ) -> bytes:
+    async def sign_message(self, message: List[bytes] | bytes, from_verkey: str) -> bytes:
         """Sign message(s) using the private key."""
         LOGGER.debug("Entering sign_message with from_verkey: %s", from_verkey)
         if not message:

@@ -44,5 +44,3 @@ def test_key_placeholders_and_repr():
     assert k.wrap_key(Key("h2")) == "Encrypted placeholder"
     r = repr(k)
     assert "Key(" in r and "handle=h1" in r
-
-

@@ -8,6 +8,7 @@ from acapy_agent.database_manager.databases.errors import DatabaseError
 class _FakePool:
     def get_connection(self, **kwargs):
         return object()
+
     def return_connection(self, conn):
         pass
 
@@ -21,7 +22,9 @@ class _FakeDb:
 
 @pytest.mark.asyncio
 async def test_translate_error_mapping_and_fallbacks():
-    sess = SqliteSession(_FakeDb(backend=None), profile="p", is_txn=False, release_number="release_0")
+    sess = SqliteSession(
+        _FakeDb(backend=None), profile="p", is_txn=False, release_number="release_0"
+    )
     err = sess.translate_error(DatabaseError(code=None, message="x"))
     assert getattr(err, "code", None) == DBStoreErrorCode.UNEXPECTED
 
@@ -33,5 +36,3 @@ async def test_translate_error_mapping_and_fallbacks():
 
     err = sess.translate_error(Exception("other"))
     assert err.code == DBStoreErrorCode.UNEXPECTED
-
-

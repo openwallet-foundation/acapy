@@ -1164,8 +1164,6 @@ class TestSqliteTagEncoderNormalized(unittest.TestCase):
         print("\n-- Cleanup\nDELETE FROM items;")
         self.run_query_and_verify(sql_query, params, [1, 2], "Empty query")
 
-    
-
     def test_multiple_exists(self):
         query = TagQuery.exist([TagName("f1"), TagName("f2")])
         wql = query.to_wql_str()

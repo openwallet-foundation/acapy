@@ -20,16 +20,20 @@ async def test_sqlite_uris_and_open_remove(monkeypatch, tmp_path):
     class _DB:
         def __init__(self):
             self.closed = False
+
         async def close(self, remove=False):
             self.closed = True
+
     class _KMS:
         def __init__(self):
             self.closed = False
+
         async def close(self, remove=False):
             self.closed = True
 
     async def _db_open(uri, *a, **k):
         return _DB()
+
     async def _kms_open(uri, *a, **k):
         return _KMS()
 
@@ -69,7 +73,9 @@ async def test_postgres_missing_config_errors(monkeypatch):
         KanonStoreConfig(bad_cfg2).get_askar_uri()
 
     bad_tls = {**cfg}
-    bad_tls["dbstore_storage_config"] = json.dumps({"url": "host/db", "tls": {"sslmode": "bad"}})
+    bad_tls["dbstore_storage_config"] = json.dumps(
+        {"url": "host/db", "tls": {"sslmode": "bad"}}
+    )
     with pytest.raises(ProfileError):
         KanonStoreConfig(bad_tls).get_dbstore_uri()
 
@@ -90,6 +96,7 @@ async def test_open_error_translation_and_rekey(monkeypatch):
     class _DB:
         async def rekey(self, *a, **k):
             pass
+
     class _KMS:
         async def rekey(self, *a, **k):
             pass
@@ -109,12 +116,14 @@ async def test_open_error_translation_and_rekey(monkeypatch):
 
     async def _db_open_dup(uri, *a, **k):
         raise DBStoreError(code=DBStoreErrorCode.DUPLICATE, message="dup")
+
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.DBStore.open", _db_open_dup)
     with pytest.raises(ProfileError):
         await cfg.open_store(provision=False, in_memory=True)
 
     async def _db_open_ok(uri, *a, **k):
         return _DB()
+
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.DBStore.open", _db_open_ok)
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.Store.open", _kms_open_fail)
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.Store.open", _kms_open_retry)
@@ -123,10 +132,14 @@ async def test_open_error_translation_and_rekey(monkeypatch):
 
     async def _kms_dup(uri, *a, **k):
         from aries_askar import AskarError
+
         raise AskarError(AskarErrorCode.DUPLICATE, "x")
+
     async def _kms_nf(uri, *a, **k):
         from aries_askar import AskarError
+
         raise AskarError(AskarErrorCode.NOT_FOUND, "x")
+
     cfg2 = KanonStoreConfig({"name": "t2"})
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.DBStore.open", _db_open_ok)
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.Store.open", _kms_dup)
@@ -147,6 +160,7 @@ async def test_remove_store_mappings(monkeypatch):
 
     async def _kms_remove(uri):
         raise AskarError(AskarErrorCode.NOT_FOUND, "x")
+
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.Store.remove", _kms_remove)
     cfg.store_class = "askar"
     with pytest.raises(ProfileNotFoundError):
@@ -154,9 +168,8 @@ async def test_remove_store_mappings(monkeypatch):
 
     async def _db_remove(uri, *a, **k):
         raise DBStoreError(code=DBStoreErrorCode.NOT_FOUND, message="x")
+
     monkeypatch.setattr("acapy_agent.kanon.store_kanon.DBStore.remove", _db_remove)
     cfg.store_class = "dbstore"
     with pytest.raises(ProfileNotFoundError):
         await cfg.remove_store()
-
-

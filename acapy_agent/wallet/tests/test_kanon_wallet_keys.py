@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 import pytest
 
 
-
 @dataclass
 class FakeKeyAlg:
     value: str
@@ -13,6 +12,7 @@ class FakeKeyAlg:
 
 class FakeKey:
     _seq = 0
+
     def __init__(self, algorithm: FakeKeyAlg, public_bytes: bytes, secret_bytes: bytes):
         self.algorithm = algorithm
         self._public = public_bytes
@@ -22,19 +22,27 @@ class FakeKey:
     def generate(alg: Any):
         FakeKey._seq += 1
         pub = f"pub{FakeKey._seq}".encode()
-        return FakeKey(FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), pub, b"sec")
+        return FakeKey(
+            FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), pub, b"sec"
+        )
 
     @staticmethod
     def from_secret_bytes(alg: Any, secret: bytes):
-        return FakeKey(FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), b"pub", secret)
+        return FakeKey(
+            FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), b"pub", secret
+        )
 
     @staticmethod
     def from_seed(alg: Any, seed: Any, method: Any = None):
-        return FakeKey(FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), b"pub", b"sec")
+        return FakeKey(
+            FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), b"pub", b"sec"
+        )
 
     @staticmethod
     def from_public_bytes(alg: Any, public: bytes):
-        return FakeKey(FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), public, b"")
+        return FakeKey(
+            FakeKeyAlg(alg.value if hasattr(alg, "value") else str(alg)), public, b""
+        )
 
     def get_public_bytes(self) -> bytes:
         return self._public
@@ -50,15 +58,25 @@ class FakeAskarHandle:
     def __init__(self):
         self._keys: Dict[str, Dict[str, Any]] = {}
 
-    async def insert_key(self, name: str, key: FakeKey, metadata: Optional[str] = None, tags: Optional[dict] = None):
+    async def insert_key(
+        self,
+        name: str,
+        key: FakeKey,
+        metadata: Optional[str] = None,
+        tags: Optional[dict] = None,
+    ):
         if name in self._keys:
+
             class _Err(Exception):
                 def __init__(self):
                     self.code = "DUPLICATE"
+
             raise _Err()
         self._keys[name] = {"key": key, "metadata": metadata, "tags": tags or {}}
 
-    async def update_key(self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None):
+    async def update_key(
+        self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None
+    ):
         entry = self._keys.get(name)
         if not entry:
             err = types.SimpleNamespace(code="NOT_FOUND")
@@ -72,13 +90,19 @@ class FakeAskarHandle:
         entry = self._keys.get(name)
         if not entry:
             return None
-        return types.SimpleNamespace(key=entry["key"], metadata=entry["metadata"], tags=entry["tags"])
+        return types.SimpleNamespace(
+            key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]
+        )
 
     async def fetch_all_keys(self, tag_filter: dict, limit: int = 2):
         result = []
         for verkey, entry in self._keys.items():
             if all(entry["tags"].get(k) == v for k, v in (tag_filter or {}).items()):
-                result.append(types.SimpleNamespace(key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]))
+                result.append(
+                    types.SimpleNamespace(
+                        key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]
+                    )
+                )
                 if len(result) >= limit:
                     break
         return result
@@ -130,6 +154,7 @@ class FakeSession:
 @pytest.fixture
 def patched_wallet(monkeypatch):
     from acapy_agent.wallet import kanon_wallet as module
+
     class _KeyAlg:
         ED25519 = FakeKeyAlg("ed25519")
         X25519 = FakeKeyAlg("x25519")
@@ -244,10 +269,10 @@ async def test_pack_message_missing_from_key_raises(patched_wallet):
 @pytest.mark.asyncio
 async def test_get_signing_key_unknown_key_type_raises(patched_wallet):
     module, wallet, askar = patched_wallet
+
     class _UnknownAlg:
         value = "unknown"
+
     await askar.insert_key("vkU", FakeKey(FakeKeyAlg("unknown"), b"pubU", b"sec"))
     with pytest.raises(module.WalletError):
         await wallet.get_signing_key("vkU")
-
-

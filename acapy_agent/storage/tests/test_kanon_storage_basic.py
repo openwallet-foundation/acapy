@@ -9,11 +9,18 @@ class FakeDBStoreHandle:
     def __init__(self):
         self._rows: Dict[tuple[str, str], Dict[str, Any]] = {}
 
-    async def insert(self, category: str, name: str, value: str, tags: Optional[dict] = None):
+    async def insert(
+        self, category: str, name: str, value: str, tags: Optional[dict] = None
+    ):
         key = (category, name)
         if key in self._rows:
             raise DBStoreError(DBStoreErrorCode.DUPLICATE, "duplicate")
-        self._rows[key] = {"category": category, "name": name, "value": value, "tags": tags or {}}
+        self._rows[key] = {
+            "category": category,
+            "name": name,
+            "value": value,
+            "tags": tags or {},
+        }
 
     async def fetch(self, category: str, name: str, for_update: bool = False):
         row = self._rows.get((category, name))
@@ -29,7 +36,12 @@ class FakeDBStoreHandle:
     async def replace(self, category: str, name: str, value: str, tags: dict):
         if (category, name) not in self._rows:
             raise DBStoreError(DBStoreErrorCode.NOT_FOUND, "not found")
-        self._rows[(category, name)] = {"category": category, "name": name, "value": value, "tags": tags}
+        self._rows[(category, name)] = {
+            "category": category,
+            "name": name,
+            "value": value,
+            "tags": tags,
+        }
 
     async def remove(self, category: str, name: str):
         if (category, name) not in self._rows:
@@ -49,7 +61,10 @@ class FakeDBStoreHandle:
                     break
             if ok:
                 yield types.SimpleNamespace(
-                    category=row["category"], name=row["name"], value=row["value"], tags=row["tags"]
+                    category=row["category"],
+                    name=row["name"],
+                    value=row["value"],
+                    tags=row["tags"],
                 )
 
     async def remove_all(self, category: str, tag_filter: Optional[dict] = None):
@@ -116,7 +131,6 @@ class FakeProfile:
     def opened(self):
         return types.SimpleNamespace(db_store=self)
 
-    
     def scan(
         self,
         *,
@@ -154,6 +168,7 @@ class FakeProfile:
             sliced = rows[_offset : _offset + _limit]
             for r in sliced:
                 yield r
+
         return _gen()
 
     def scan_keyset(
@@ -176,10 +191,11 @@ class FakeProfile:
                 if cat == category
             ]
             rows.sort(key=lambda r: r.name, reverse=descending)
-            start = (last_id or 0)
+            start = last_id or 0
             end = start + limit
             for r in rows[start:end]:
                 yield r
+
         return _gen()
 
 
@@ -191,7 +207,7 @@ async def test_add_get_update_delete_record_roundtrip():
     profile = FakeProfile()
     storage = KanonStorage(profile)
 
-    record = StorageRecord(type="config", id="pub", value="{\"did\": \"D\"}", tags={"k": "v"})
+    record = StorageRecord(type="config", id="pub", value='{"did": "D"}', tags={"k": "v"})
 
     await storage.add_record(record)
 
@@ -199,10 +215,10 @@ async def test_add_get_update_delete_record_roundtrip():
     assert got.value == record.value
     assert got.tags == {"k": "v"}
 
-    await storage.update_record(record, value="{\"did\": \"D2\"}", tags={"k": "v2"})
+    await storage.update_record(record, value='{"did": "D2"}', tags={"k": "v2"})
 
     got2 = await storage.get_record("config", "pub")
-    assert got2.value == "{\"did\": \"D2\"}"
+    assert got2.value == '{"did": "D2"}'
     assert got2.tags == {"k": "v2"}
 
     # find_record path
@@ -223,7 +239,6 @@ async def test_find_paginated_records_and_keyset():
     profile = FakeProfile()
     storage = KanonStorage(profile)
 
-    
     for i in range(5):
         rec = StorageRecord(
             type="config",
@@ -258,13 +273,19 @@ async def test_find_all_and_delete_all_and_search_session():
     storage = KanonStorage(profile)
 
     for i in range(3):
-        rec = StorageRecord(type="config", id=f"k{i}", value=f"v{i}", tags={"g": "1" if i % 2 == 0 else "2"})
+        rec = StorageRecord(
+            type="config",
+            id=f"k{i}",
+            value=f"v{i}",
+            tags={"g": "1" if i % 2 == 0 else "2"},
+        )
         await storage.add_record(rec)
 
-    allrecs = await storage.find_all_records("config", {"g": "1"}, order_by="name", descending=False)
+    allrecs = await storage.find_all_records(
+        "config", {"g": "1"}, order_by="name", descending=False
+    )
     assert [r.id for r in allrecs] == ["k0", "k2"]
 
-    
     search = KanonStorageSearch(profile)
     sess = search.search_records("config", {"g": "1"}, page_size=1)
     assert not sess.opened
@@ -300,10 +321,14 @@ async def test_storage_error_paths():
         await storage.get_record("t", "missing")
 
     with pytest.raises(StorageNotFoundError):
-        await storage.update_record(StorageRecord(type="t", id="missing", value="v", tags={}), value="v2", tags={})
+        await storage.update_record(
+            StorageRecord(type="t", id="missing", value="v", tags={}), value="v2", tags={}
+        )
 
     with pytest.raises(StorageNotFoundError):
-        await storage.delete_record(StorageRecord(type="t", id="missing", value="v", tags={}))
+        await storage.delete_record(
+            StorageRecord(type="t", id="missing", value="v", tags={})
+        )
 
     with pytest.raises(Exception):
         await storage.find_record("t", {"k": "v"})
@@ -332,13 +357,11 @@ async def test_session_property_and_validations_and_error_mapping(monkeypatch):
     with pytest.raises(StorageError):
         await storage.get_record("type", "")
 
-
     session = profile.session()
     rec = StorageRecord(type="x", id="one", value="v", tags={})
     await storage.add_record(rec, session=session)
     got = await storage.get_record("x", "one", session=session)
     assert got.id == "one"
-
 
     class BadSess(FakeStoreSession):
         async def fetch_all(self, *args, **kwargs):
@@ -356,7 +379,6 @@ async def test_session_property_and_validations_and_error_mapping(monkeypatch):
     monkeypatch.setattr(profile, "session", _bad_session)
     with pytest.raises(StorageError):
         await storage.find_all_records("x", None)
-
 
     class BadDelSess(FakeStoreSession):
         async def remove_all(self, *args, **kwargs):
@@ -387,6 +409,7 @@ async def test_search_session_db_error(monkeypatch):
         async def _gen():
             raise DBStoreError(DBStoreErrorCode.BUSY, "scan error")
             yield
+
         return _gen()
 
     monkeypatch.setattr(profile, "scan", _bad_scan)
@@ -394,4 +417,3 @@ async def test_search_session_db_error(monkeypatch):
     sess = search.search_records("cat", {})
     with pytest.raises(StorageSearchError):
         await sess.__anext__()
-

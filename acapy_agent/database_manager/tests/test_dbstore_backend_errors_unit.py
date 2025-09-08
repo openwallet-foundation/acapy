@@ -8,10 +8,13 @@ from acapy_agent.database_manager.interfaces import DatabaseBackend
 class _FailBackend(DatabaseBackend):
     def provision(self, *args, **kwargs):
         raise RuntimeError("prov fail")
+
     def open(self, *args, **kwargs):
         raise RuntimeError("open fail")
+
     def remove(self, *args, **kwargs):
         raise RuntimeError("remove fail")
+
     def translate_error(self, exception):
         return DBStoreError(code=DBStoreErrorCode.UNEXPECTED, message=str(exception))
 
@@ -33,5 +36,3 @@ async def test_dbstore_provision_open_remove_error_mapping(monkeypatch):
     with pytest.raises(DBStoreError) as e:
         await DBStore.provision(uri="unknown://path")
     assert e.value.code == DBStoreErrorCode.BACKEND
-
-

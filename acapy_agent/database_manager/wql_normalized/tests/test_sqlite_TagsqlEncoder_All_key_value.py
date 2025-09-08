@@ -1452,8 +1452,6 @@ class TestSqliteTagEncoderNonNormalized(unittest.TestCase):
         print("\n-- Cleanup\nDELETE FROM items_tags; DELETE FROM items;")
         self.run_query_and_verify(sql_query, params, [1, 3], "Special characters")
 
-    
-
 
 def main():
     print("Running SqliteTagEncoder non-normalized tests...")

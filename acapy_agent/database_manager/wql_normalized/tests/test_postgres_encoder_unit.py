@@ -32,5 +32,3 @@ def test_encode_in_and_or_mix():
     sql, args = enc.encode_query(q)
     assert sql.startswith("(") and sql.endswith(")")
     assert args == ["did:indy:123", "did:indy:456", "%email%"]
-
-

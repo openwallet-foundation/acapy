@@ -11,6 +11,7 @@ async def test_register_backends_success(monkeypatch):
         calls.append((db_type, type(backend).__name__))
 
     import acapy_agent.database_manager.databases.backends.backend_registration as br
+
     importlib.reload(br)
     monkeypatch.setattr(br, "register_backend", _register_backend)
     br.register_backends()
@@ -25,6 +26,7 @@ async def test_register_backends_success(monkeypatch):
 async def test_register_backends_importerror_paths(monkeypatch):
     import acapy_agent.database_manager.databases.sqlite_normalized.backend as sqlite_backend
     import acapy_agent.database_manager.databases.postgresql_normalized.backend as pg_backend
+
     had_sqlite = hasattr(sqlite_backend, "SqliteBackend")
     had_pg = hasattr(pg_backend, "PostgresqlBackend")
     try:
@@ -39,6 +41,7 @@ async def test_register_backends_importerror_paths(monkeypatch):
             calls.append((db_type, backend))
 
         import acapy_agent.database_manager.databases.backends.backend_registration as br
+
         monkeypatch.setattr(br, "register_backend", _register_backend)
 
         importlib.reload(br)
@@ -47,4 +50,3 @@ async def test_register_backends_importerror_paths(monkeypatch):
     finally:
         importlib.reload(sqlite_backend)
         importlib.reload(pg_backend)
-

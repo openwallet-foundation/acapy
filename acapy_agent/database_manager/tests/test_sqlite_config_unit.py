@@ -28,6 +28,7 @@ async def test_sqlite_config_open_missing_file_raises():
     cfg = SqliteConfig(uri="sqlite:///does/not/exist.db")
     with pytest.raises(DatabaseError) as e:
         cfg.open(profile="p")
-    assert e.value.code in {DatabaseErrorCode.DATABASE_NOT_FOUND, DatabaseErrorCode.QUERY_ERROR}
-
-
+    assert e.value.code in {
+        DatabaseErrorCode.DATABASE_NOT_FOUND,
+        DatabaseErrorCode.QUERY_ERROR,
+    }

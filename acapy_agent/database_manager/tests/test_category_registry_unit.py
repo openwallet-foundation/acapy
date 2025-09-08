@@ -35,5 +35,3 @@ def test_get_release_invalid_release_raises():
 def test_get_release_unsupported_db_type_raises():
     with pytest.raises(ValueError):
         get_release("release_0_1", "no_such_db")
-
-

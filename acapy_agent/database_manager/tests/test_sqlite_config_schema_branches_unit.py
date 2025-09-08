@@ -17,9 +17,9 @@ async def test_sqlite_config_provision_bad_schema_entries(monkeypatch, tmp_path)
                 "cat1": object(),
             },
             {
-                "default": {"sqlite": [""]},  
-                "cat1": None, 
-                "cat2": {"sqlite": ["CREATE TABLE IF NOT EXISTS bad("]},  
+                "default": {"sqlite": [""]},
+                "cat1": None,
+                "cat2": {"sqlite": ["CREATE TABLE IF NOT EXISTS bad("]},
             },
             {},
         )
@@ -28,5 +28,3 @@ async def test_sqlite_config_provision_bad_schema_entries(monkeypatch, tmp_path)
 
     with pytest.raises(Exception):
         cfg.provision(profile="p", recreate=True, release_number="release_0_1")
-
-

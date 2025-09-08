@@ -68,7 +68,9 @@ async def test_sqlite_session_op_error_paths(monkeypatch):
 
     monkeypatch.setattr(cr, "get_release", _fake_get_release)
 
-    sess = SqliteSession(_FakeDb(), profile="p", is_txn=False, release_number="release_0_1")
+    sess = SqliteSession(
+        _FakeDb(), profile="p", is_txn=False, release_number="release_0_1"
+    )
     sess.conn = _FakeConn()
     sess.profile_id = 1
 
@@ -83,17 +85,20 @@ async def test_sqlite_session_op_error_paths(monkeypatch):
     ):
         with pytest.raises(DatabaseError) as e:
             await op()
-        assert e.value.code in {DatabaseErrorCode.QUERY_ERROR, DatabaseErrorCode.PROFILE_NOT_FOUND}
+        assert e.value.code in {
+            DatabaseErrorCode.QUERY_ERROR,
+            DatabaseErrorCode.PROFILE_NOT_FOUND,
+        }
 
 
 @pytest.mark.asyncio
 async def test_sqlite_session_commit_rollback_guards():
-    sess = SqliteSession(_FakeDb(), profile="p", is_txn=False, release_number="release_0_1")
+    sess = SqliteSession(
+        _FakeDb(), profile="p", is_txn=False, release_number="release_0_1"
+    )
     with pytest.raises(DBStoreError) as e:
         await sess.commit()
     assert e.value.code == DBStoreErrorCode.WRAPPER
     with pytest.raises(DBStoreError) as e2:
         await sess.rollback()
     assert e2.value.code == DBStoreErrorCode.WRAPPER
-
-

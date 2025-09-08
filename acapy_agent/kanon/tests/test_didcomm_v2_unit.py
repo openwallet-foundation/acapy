@@ -14,24 +14,31 @@ def patched_v2(monkeypatch):
     class _Key:
         def __init__(self, alg=None):
             self.algorithm = alg
+
         @staticmethod
         def generate(alg, *a, **k):
             return _Key(alg)
+
         @staticmethod
         def from_jwk(jwk):
             return _Key(_KeyAlg.A256KW)
+
         def get_jwk_public(self):
             return "{}"
+
         def aead_encrypt(self, message, aad=None):
             return types.SimpleNamespace(ciphertext=b"ct", nonce=b"n", tag=b"t")
+
         def aead_decrypt(self, *a, **k):
             return b"msg"
 
     class _Wrap:
         def __init__(self, *a, **k):
             pass
+
         def sender_wrap_key(self, wrap_alg, epk, recip_key, cek, cc_tag=None):
             return types.SimpleNamespace(ciphertext=b"ek")
+
         def receiver_unwrap_key(self, *a, **k):
             return _Key(_KeyAlg.XC20P)
 
@@ -49,16 +56,24 @@ def patched_v2(monkeypatch):
             self.iv = b"n"
             self.recipient_key_ids = []
             self.combined_aad = b"aad"
+
         def add_recipient(self, r):
             self._recips.append(r)
+
         def set_protected(self, prot):
             self.protected = prot
+
         def set_payload(self, ciphertext, nonce, tag):
             self.ciphertext, self.iv, self.tag = ciphertext, nonce, tag
+
         def get_recipient(self, kid):
-            return types.SimpleNamespace(encrypted_key=b"ek", header={"enc": "XC20P", "epk": "{}"})
+            return types.SimpleNamespace(
+                encrypted_key=b"ek", header={"enc": "XC20P", "epk": "{}"}
+            )
+
         def to_json(self):
             return "{}"
+
         @staticmethod
         def from_json(enc):
             env = _Jwe()
@@ -78,8 +93,11 @@ def _fake_session_with_kid(module, kid="rk"):
     class _Sess:
         async def fetch_all_keys(self, tag_filter=None):
             if tag_filter and tag_filter.get("kid") == kid:
-                return [types.SimpleNamespace(key=module.Key.generate(module.KeyAlg.A256KW))]
+                return [
+                    types.SimpleNamespace(key=module.Key.generate(module.KeyAlg.A256KW))
+                ]
             return []
+
     return _Sess()
 
 
@@ -93,7 +111,7 @@ def test_ecdh_es_encrypt_and_decrypt_flow(patched_v2):
 @pytest.mark.asyncio
 async def test_unpack_message_es_success(patched_v2):
     m = patched_v2
-    
+
     plaintext, recip_kid, sender_kid = await m.unpack_message(
         _fake_session_with_kid(m), b"{}"
     )
@@ -111,14 +129,14 @@ async def test_unpack_message_no_recipient_key(patched_v2):
 
 def test_validate_method_unsupported(patched_v2, monkeypatch):
     m = patched_v2
+
     class _Jwe(m.JweEnvelope):
         @staticmethod
         def from_json(enc):
             env = m.JweEnvelope()
             env.protected = {"alg": "XYZ"}
             return env
+
     monkeypatch.setattr(m, "JweEnvelope", _Jwe)
     with pytest.raises(m.DidcommEnvelopeError):
         m._validate_encryption_method(m.JweEnvelope.from_json(b"{}"))
-
-

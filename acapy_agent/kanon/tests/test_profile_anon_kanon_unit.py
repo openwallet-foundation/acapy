@@ -6,10 +6,13 @@ class _FakeDBHandle:
         self.is_transaction = is_txn
         self.closed = False
         self.committed = False
+
     async def commit(self):
         self.committed = True
+
     async def close(self):
         self.closed = True
+
     async def count(self, *_a, **_k):
         return 0
 
@@ -19,10 +22,13 @@ class _FakeKMSHandle:
         self.is_transaction = is_txn
         self.closed = False
         self.committed = False
+
     async def commit(self):
         self.committed = True
+
     async def close(self):
         self.closed = True
+
     async def count(self, *_a, **_k):
         return 0
 
@@ -30,14 +36,19 @@ class _FakeKMSHandle:
 class _FakeDBStore:
     def __init__(self):
         self.removed = []
+
     def session(self, *_a, **_k):
         async def _open():
             return _FakeDBHandle(False)
+
         return _open()
+
     def transaction(self, *_a, **_k):
         async def _open():
             return _FakeDBHandle(True)
+
         return _open()
+
     async def remove_profile(self, name):
         self.removed.append(name)
 
@@ -45,14 +56,19 @@ class _FakeDBStore:
 class _FakeAskarStore:
     def __init__(self):
         self.removed = []
+
     def session(self, *_a, **_k):
         async def _open():
             return _FakeKMSHandle(False)
+
         return _open()
+
     def transaction(self, *_a, **_k):
         async def _open():
             return _FakeKMSHandle(True)
+
         return _open()
+
     async def remove_profile(self, name):
         self.removed.append(name)
 
@@ -63,6 +79,7 @@ class _FakeOpened:
         self.askar_store = _FakeAskarStore()
         self.name = name
         self.created = False
+
     async def close(self):
         if hasattr(self.db_store, "close"):
             await self.db_store.close()
@@ -82,8 +99,10 @@ async def test_profile_remove_success_and_error(monkeypatch):
 
     async def fail_db(name):
         raise Exception("dbfail")
+
     async def fail_kms(name):
         raise Exception("kmsfail")
+
     opened.db_store.remove_profile = fail_db
     opened.askar_store.remove_profile = fail_kms
 
@@ -125,11 +144,19 @@ async def test_session_teardown_commit_errors(monkeypatch):
         def transaction(self, *_a, **_k):
             async def _open():
                 h = _FakeDBHandle(True)
-                from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
+                from acapy_agent.database_manager.dbstore import (
+                    DBStoreError,
+                    DBStoreErrorCode,
+                )
+
                 async def bad_commit():
-                    raise DBStoreError(code=DBStoreErrorCode.WRAPPER, message="bad commit")
+                    raise DBStoreError(
+                        code=DBStoreErrorCode.WRAPPER, message="bad commit"
+                    )
+
                 h.commit = bad_commit
                 return h
+
             return _open()
 
     opened = _FakeOpened("p1")
@@ -150,12 +177,15 @@ async def test_profile_close_closes_both(monkeypatch):
         def __init__(self):
             super().__init__()
             self.closed = False
+
         async def close(self, remove=False):
             self.closed = True
+
     class _CKMS(_FakeAskarStore):
         def __init__(self):
             super().__init__()
             self.closed = False
+
         async def close(self, remove=False):
             self.closed = True
 
@@ -166,5 +196,3 @@ async def test_profile_close_closes_both(monkeypatch):
     await prof.close()
     assert opened.db_store.closed is True
     assert opened.askar_store.closed is True
-
-

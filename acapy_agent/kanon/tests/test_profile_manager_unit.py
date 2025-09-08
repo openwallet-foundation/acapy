@@ -4,10 +4,13 @@ import pytest
 class _SessCtx:
     def __init__(self, ok=True):
         self._ok = ok
+
     async def __aenter__(self):
         return self
+
     async def __aexit__(self, exc_type, exc, tb):
         return False
+
     async def count(self, *_a, **_k):
         if not self._ok:
             raise Exception("x")
@@ -19,13 +22,16 @@ class _Opened:
         class _DB:
             def session(self, *a, **k):
                 return _SessCtx(ok_db)
+
         class _KMS:
             def session(self, *a, **k):
                 return _SessCtx(ok_kms)
+
         self.db_store = _DB()
         self.askar_store = _KMS()
         self.name = "p"
         self.created = True
+
     async def close(self):
         pass
 
@@ -38,6 +44,7 @@ async def test_profile_manager_provision_and_open_success(monkeypatch):
     class _KCfg:
         def __init__(self, cfg):
             pass
+
         async def open_store(self, provision=False, in_memory=None):
             return _Opened(True, True)
 
@@ -61,12 +68,14 @@ async def test_profile_manager_db_kms_failures(monkeypatch):
     class _KCfgDBFail:
         def __init__(self, cfg):
             pass
+
         async def open_store(self, provision=False, in_memory=None):
             return _Opened(False, True)
 
     class _KCfgKMSFail:
         def __init__(self, cfg):
             pass
+
         async def open_store(self, provision=False, in_memory=None):
             return _Opened(True, False)
 
@@ -87,12 +96,12 @@ async def test_generate_store_key(monkeypatch):
     from acapy_agent.kanon import profile_anon_kanon as module
 
     monkeypatch.setattr(module, "validate_seed", lambda s: b"seed")
+
     class _Store:
         @staticmethod
         def generate_raw_key(secret):
             return "RAWKEY"
+
     monkeypatch.setattr(module, "AskarStore", _Store)
     out = await module.KanonAnonProfileManager.generate_store_key(seed="x")
     assert out == "RAWKEY"
-
-

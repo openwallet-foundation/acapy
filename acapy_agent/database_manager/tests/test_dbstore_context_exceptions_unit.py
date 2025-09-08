@@ -1,7 +1,10 @@
 import pytest
 
 from acapy_agent.database_manager.dbstore import DBStore
-from acapy_agent.database_manager.interfaces import AbstractDatabaseStore, AbstractDatabaseSession
+from acapy_agent.database_manager.interfaces import (
+    AbstractDatabaseStore,
+    AbstractDatabaseSession,
+)
 from acapy_agent.database_manager.error import DBStoreError, DBStoreErrorCode
 
 
@@ -115,5 +118,3 @@ async def test_dbstore_close_error_mapping():
     with pytest.raises(DBStoreError) as e:
         await store.close()
     assert e.value.code == DBStoreErrorCode.UNEXPECTED
-
-

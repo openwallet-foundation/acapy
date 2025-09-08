@@ -24,8 +24,10 @@ async def test_apply_migrations_success_and_missing(monkeypatch):
     def fake_import(name):
         if "release_0_to_0_1" in name:
             mod = types.SimpleNamespace()
+
             def migrate_sqlite(c):
                 c.execute("-- migrated")
+
             mod.migrate_sqlite = migrate_sqlite
             return mod
         elif "release_0_1_to_0_2" in name:
@@ -49,7 +51,7 @@ async def test_apply_migrations_missing_migrate_func_warns(monkeypatch):
 
     def fake_import(name):
         if "release_0_to_0_1" in name:
-            return types.SimpleNamespace()  
+            return types.SimpleNamespace()
         raise ImportError("no module")
 
     monkeypatch.setattr(
@@ -69,8 +71,10 @@ async def test_apply_migrations_raise_wrapped(monkeypatch):
     def fake_import(name):
         if "release_0_to_0_1" in name:
             mod = types.SimpleNamespace()
+
             def migrate_sqlite(c):
                 raise RuntimeError("boom")
+
             mod.migrate_sqlite = migrate_sqlite
             return mod
         raise AssertionError
@@ -147,5 +151,3 @@ def test_remove_general_exception_wrapped(monkeypatch, tmp_path):
     with pytest.raises(DatabaseError) as exc:
         cfg.remove()
     assert exc.value.code == DatabaseErrorCode.CONNECTION_ERROR
-
-

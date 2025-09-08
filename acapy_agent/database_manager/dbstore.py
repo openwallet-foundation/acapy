@@ -231,9 +231,7 @@ class DBStore:
     @classmethod
     def generate_raw_key(cls, seed: str | bytes | None = None) -> str:
         """Perform the action."""
-        LOGGER.debug(
-            "generate_raw_key called (seed_provided=%s)", bool(seed)
-        )
+        LOGGER.debug("generate_raw_key called (seed_provided=%s)", bool(seed))
         from . import bindings
 
         return bindings.generate_raw_key(seed)
@@ -463,9 +461,7 @@ class DBStore:
 
     async def rekey(self, key_method: str = None, pass_key: str = None):
         """Perform the action."""
-        LOGGER.debug(
-            f"rekey called with key_method={key_method}, pass_key=***"
-        )
+        LOGGER.debug(f"rekey called with key_method={key_method}, pass_key=***")
         try:
             await self._db.rekey(key_method, pass_key)
         except asyncio.CancelledError:

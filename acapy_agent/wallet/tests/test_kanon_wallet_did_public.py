@@ -26,7 +26,7 @@ class FakeKey:
 
     @staticmethod
     def from_secret_bytes(alg: Any, secret: bytes):
-        prefix = (secret[:4] if secret else b"seed")
+        prefix = secret[:4] if secret else b"seed"
         pub = b"pub-" + prefix
         return FakeKey(FakeKeyAlg(getattr(alg, "value", str(alg))), pub, secret)
 
@@ -59,7 +59,14 @@ class FakeDBStoreHandle:
     def __init__(self):
         self._rows: Dict[tuple[str, str], Dict[str, Any]] = {}
 
-    async def insert(self, category: str, name: str, value: Optional[str] = None, tags: Optional[dict] = None, value_json: Optional[dict] = None):
+    async def insert(
+        self,
+        category: str,
+        name: str,
+        value: Optional[str] = None,
+        tags: Optional[dict] = None,
+        value_json: Optional[dict] = None,
+    ):
         key = (category, name)
         if key in self._rows:
             err = types.SimpleNamespace(code="DUPLICATE")
@@ -87,7 +94,14 @@ class FakeDBStoreHandle:
             tags=row["tags"],
         )
 
-    async def replace(self, category: str, name: str, value: Optional[str] = None, tags: Optional[dict] = None, value_json: Optional[dict] = None):
+    async def replace(
+        self,
+        category: str,
+        name: str,
+        value: Optional[str] = None,
+        tags: Optional[dict] = None,
+        value_json: Optional[dict] = None,
+    ):
         key = (category, name)
         row = self._rows.get(key)
         if not row:
@@ -168,6 +182,7 @@ class FakeProfile:
         async def _gen():
             if False:
                 yield None
+
         return _gen()
 
 
@@ -200,13 +215,14 @@ def wallet_with_did_env(monkeypatch):
         P256 = FakeKeyAlg("p256")
         BLS12_381_G2 = FakeKeyAlg("bls12_381_g2")
 
-    
     monkeypatch.setattr(module, "Key", FakeKey, raising=True)
     monkeypatch.setattr(module, "KeyAlg", _KeyAlg, raising=True)
     monkeypatch.setattr(module, "validate_seed", lambda s: b"seedbytes")
     monkeypatch.setattr(module, "pack_message", lambda to, fk, m: b"packed")
+
     async def _unpack(h, em):
         return (b"{ }", "r", "s")
+
     monkeypatch.setattr(module, "unpack_message", _unpack)
 
     class _FakeDPV:
@@ -222,6 +238,7 @@ def wallet_with_did_env(monkeypatch):
     monkeypatch.setattr(module, "DIDParametersValidation", _FakeDPV, raising=True)
 
     key_types = module.KeyTypes()
+
     class _DIDMethods:
         def from_method(self, name):
             return module.SOV
@@ -235,11 +252,19 @@ def wallet_with_did_env(monkeypatch):
         def __init__(self):
             self._keys: Dict[str, Dict[str, Any]] = {}
 
-        async def insert_key(self, name: str, key: FakeKey, metadata: Optional[str] = None, tags: Optional[dict] = None):
+        async def insert_key(
+            self,
+            name: str,
+            key: FakeKey,
+            metadata: Optional[str] = None,
+            tags: Optional[dict] = None,
+        ):
             if name in self._keys:
+
                 class _Err(Exception):
                     def __init__(self):
                         self.code = "DUPLICATE"
+
                 raise _Err()
             self._keys[name] = {"key": key, "metadata": metadata, "tags": tags or {}}
 
@@ -247,14 +272,20 @@ def wallet_with_did_env(monkeypatch):
             entry = self._keys.get(name)
             if not entry:
                 return None
-            return types.SimpleNamespace(key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]) 
+            return types.SimpleNamespace(
+                key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]
+            )
 
-        async def update_key(self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None):
+        async def update_key(
+            self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None
+        ):
             entry = self._keys.get(name)
             if not entry:
+
                 class _Err(Exception):
                     def __init__(self):
                         self.code = "NOT_FOUND"
+
                 raise _Err()
             if tags is not None:
                 entry["tags"] = tags
@@ -265,7 +296,13 @@ def wallet_with_did_env(monkeypatch):
             results = []
             for _, entry in self._keys.items():
                 if all(entry["tags"].get(k) == v for k, v in (tag_filter or {}).items()):
-                    results.append(types.SimpleNamespace(key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]))
+                    results.append(
+                        types.SimpleNamespace(
+                            key=entry["key"],
+                            metadata=entry["metadata"],
+                            tags=entry["tags"],
+                        )
+                    )
                     if len(results) >= limit:
                         break
             return results
@@ -282,7 +319,9 @@ def wallet_with_did_env(monkeypatch):
 async def test_create_local_did_and_get_set_public(wallet_with_did_env):
     module, wallet = wallet_with_did_env
 
-    did_info = await wallet.create_local_did(module.SOV, module.ED25519, metadata={"public": True})
+    did_info = await wallet.create_local_did(
+        module.SOV, module.ED25519, metadata={"public": True}
+    )
     assert did_info.did.startswith("did:sov:")
 
     public = await wallet.get_public_did()
@@ -302,7 +341,9 @@ async def test_sign_verify_and_pack_unpack(wallet_with_did_env):
     sig = await wallet.sign_message(msg, key_info.verkey)
     assert await wallet.verify_message(msg, sig, key_info.verkey, module.ED25519)
 
-    packed = await wallet.pack_message("{}", [key_info.verkey], from_verkey=key_info.verkey)
+    packed = await wallet.pack_message(
+        "{}", [key_info.verkey], from_verkey=key_info.verkey
+    )
     assert packed == b"packed"
 
     unpacked_json, sender, recipient = await wallet.unpack_message(b"xxx")
@@ -312,11 +353,12 @@ async def test_sign_verify_and_pack_unpack(wallet_with_did_env):
 @pytest.mark.asyncio
 async def test_rotate_did_keypair_flow(wallet_with_did_env):
     module, wallet = wallet_with_did_env
-    did_info = await wallet.create_local_did(module.SOV, module.ED25519, metadata={"public": True})
+    did_info = await wallet.create_local_did(
+        module.SOV, module.ED25519, metadata={"public": True}
+    )
     await wallet.set_public_did(did_info.did)
     next_verkey = await wallet.rotate_did_keypair_start(did_info.did, next_seed="seed")
     assert isinstance(next_verkey, str)
     applied = await wallet.rotate_did_keypair_apply(did_info.did)
     assert applied.did == did_info.did
     assert applied.verkey == next_verkey
-
