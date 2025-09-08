@@ -172,7 +172,6 @@ async def get_rev_regs(request: web.BaseRequest):
         )
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
-    # TODO remove state == init
     return web.json_response({"rev_reg_ids": found})
 
 
