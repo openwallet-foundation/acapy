@@ -154,7 +154,7 @@ async def schemas_get(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The credential definition details.
+        The schema identifiers created by the profile.
 
     """
     context: AdminRequestContext = request["context"]
