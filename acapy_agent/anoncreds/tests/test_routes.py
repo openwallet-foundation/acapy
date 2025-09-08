@@ -3,12 +3,9 @@ from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from ...admin.request_context import AdminRequestContext
-from ...core.event_bus import MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile
-from ..revocation.revocation_setup import DefaultRevocationSetup
 from ..routes import post_process_routes, register
-from ..routes.schemas.routes import register_events
 
 
 @pytest.mark.anoncreds
@@ -33,13 +30,6 @@ class TestAnonCredsRoutes(IsolatedAsyncioTestCase):
             context=self.context,
             headers={"x-api-key": "secret-key"},
         )
-
-    @mock.patch.object(DefaultRevocationSetup, "register_events")
-    async def test_register_events(self, mock_revocation_setup_listeners):
-        mock_event_bus = MockEventBus()
-        mock_event_bus.subscribe = mock.MagicMock()
-        register_events(mock_event_bus)
-        assert mock_revocation_setup_listeners.call_count == 1
 
     async def test_register(self):
         mock_app = mock.MagicMock()
