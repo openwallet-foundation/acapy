@@ -102,6 +102,7 @@ class EventBus:
             event (Event): event to emit
 
         """
+        # TODO: This method can now be made synchronous (would be breaking change)
         LOGGER.debug("Notifying subscribers for event: %s", event)
         # Define partial functions for each subscriber that matches the event topic
         partials = [
