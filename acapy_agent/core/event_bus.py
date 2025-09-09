@@ -230,19 +230,18 @@ class EventBus:
         tasks_to_cancel = [
             task for task in self.task_queue.active_tasks if not task.done()
         ]
+        try:
+            # Use TaskQueue's complete() to cancel tasks
+            await self.task_queue.complete(timeout=2.0, cleanup=True)
 
-        # Use TaskQueue's complete() to cancel tasks
-        await self.task_queue.complete(timeout=2.0, cleanup=True)
-
-        # Explicitly wait for the cancelled tasks to actually finish cancelling
-        if tasks_to_cancel:
-            try:
+            # Explicitly wait for the cancelled tasks to actually finish cancelling
+            if tasks_to_cancel:
                 # Wait for all the tasks we just cancelled to actually complete
                 await asyncio.wait(tasks_to_cancel, timeout=2.0)
-            except asyncio.TimeoutError:
-                LOGGER.warning("Some EventBus tasks did not cancel within timeout")
-            except Exception as e:
-                LOGGER.debug("Exception while waiting for task cancellation: %s", e)
+        except asyncio.TimeoutError:
+            LOGGER.warning("Some EventBus tasks did not cancel within timeout")
+        except Exception as e:
+            LOGGER.debug("Exception while waiting for task cancellation: %s", e)
 
         active_after = self.task_queue.current_active
         pending_after = self.task_queue.current_pending
