@@ -114,6 +114,10 @@ class Profile(ABC):
 
     async def close(self):
         """Close the profile instance."""
+        # Shutdown the EventBus to clean up background tasks
+        event_bus = self.inject_or(EventBus)
+        if event_bus:
+            await event_bus.shutdown()
 
     async def remove(self):
         """Remove the profile."""
