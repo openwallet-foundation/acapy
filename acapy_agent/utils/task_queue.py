@@ -438,7 +438,7 @@ class TaskQueue:
         """Wait for all queued tasks to complete with a timeout."""
         return await asyncio.wait_for(self.flush(), timeout)
 
-    async def wait_for_completion(self, timeout: float = 5.0):
+    async def wait_for_completion(self):
         """Wait for all active tasks to complete with timeout.
 
         This is safer than flush() for testing as it doesn't try to
@@ -450,7 +450,7 @@ class TaskQueue:
         try:
             await asyncio.wait_for(
                 asyncio.gather(*self.active_tasks, return_exceptions=True),
-                timeout=timeout,
+                timeout=5.0,
             )
         except asyncio.TimeoutError:
             # Tasks didn't complete in time, but that's okay for testing

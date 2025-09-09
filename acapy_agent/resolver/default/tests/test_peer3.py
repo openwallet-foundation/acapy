@@ -19,7 +19,7 @@ TEST_DP3 = peer2to3(TEST_DP2)
 
 @pytest.fixture
 def event_bus() -> MockEventBus:
-    yield MockEventBus()
+    return MockEventBus()
 
 
 @pytest_asyncio.fixture
