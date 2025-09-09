@@ -69,8 +69,11 @@ class FakeDBStoreHandle:
     ):
         key = (category, name)
         if key in self._rows:
-            err = types.SimpleNamespace(code="DUPLICATE")
-            raise err
+            from acapy_agent.database_manager.dbstore import (
+                DBStoreError,
+                DBStoreErrorCode,
+            )
+            raise DBStoreError(DBStoreErrorCode.DUPLICATE, "dup")
         stored_value = value
         if value_json is not None and stored_value is None:
             stored_value = json.dumps(value_json)
@@ -105,8 +108,11 @@ class FakeDBStoreHandle:
         key = (category, name)
         row = self._rows.get(key)
         if not row:
-            err = types.SimpleNamespace(code="NOT_FOUND")
-            raise err
+            from acapy_agent.database_manager.dbstore import (
+                DBStoreError,
+                DBStoreErrorCode,
+            )
+            raise DBStoreError(DBStoreErrorCode.NOT_FOUND, "nf")
         if value_json is not None:
             row["value_json"] = value_json
             row["value"] = json.dumps(value_json)

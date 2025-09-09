@@ -13,8 +13,11 @@ class _Handle:
         key = (cat, name)
         if key in self.rows:
             # Simulate duplicate
-            err = types.SimpleNamespace(code="DUPLICATE")
-            raise err
+            from acapy_agent.database_manager.dbstore import (
+                DBStoreError,
+                DBStoreErrorCode,
+            )
+            raise DBStoreError(DBStoreErrorCode.DUPLICATE, "dup")
         self.rows[key] = types.SimpleNamespace(
             raw_value=value,
             value_json=value if isinstance(value, dict) else None,

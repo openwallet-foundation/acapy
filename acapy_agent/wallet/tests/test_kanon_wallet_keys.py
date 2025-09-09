@@ -79,8 +79,11 @@ class FakeAskarHandle:
     ):
         entry = self._keys.get(name)
         if not entry:
-            err = types.SimpleNamespace(code="NOT_FOUND")
-            raise err
+            class _Err(Exception):
+                def __init__(self):
+                    self.code = "NOT_FOUND"
+
+            raise _Err()
         if tags is not None:
             entry["tags"] = tags
         if metadata is not None:
