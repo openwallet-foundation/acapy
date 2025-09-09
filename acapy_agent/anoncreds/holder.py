@@ -19,8 +19,7 @@ from anoncreds import (
 
 # ideally both AskarError and DBStoreError should inherit from a shared base class,
 # so the business layer doesn't need to care about the storage choice.
-from aries_askar import AskarError, AskarErrorCode
-from ..database_manager.dbstore import DBStoreError, DBStoreErrorCode
+from ..database_manager.db_errors import DBError, DBCode
 from marshmallow import INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
@@ -113,7 +112,7 @@ class AnonCredsHolder:
                     record = await session.handle.fetch(
                         CATEGORY_MASTER_SECRET, AnonCredsHolder.MASTER_SECRET_ID
                     )
-                except (AskarError, DBStoreError) as err:
+                except DBError as err:
                     raise AnonCredsHolderError("Error fetching master secret") from err
                 if record:
                     try:
@@ -136,11 +135,8 @@ class AnonCredsHolder:
                             AnonCredsHolder.MASTER_SECRET_ID,
                             secret,
                         )
-                    except (AskarError, DBStoreError) as err:
-                        if err.code not in (
-                            AskarErrorCode.DUPLICATE,
-                            DBStoreErrorCode.DUPLICATE,
-                        ):
+                    except DBError as err:
+                        if err.code not in DBCode.DUPLICATE:
                             raise AnonCredsHolderError(
                                 "Error saving master secret"
                             ) from err
@@ -293,7 +289,7 @@ class AnonCredsHolder:
                         value_json=mime_types,
                     )
                 await txn.commit()
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error storing credential") from err
 
         return credential_id
@@ -416,7 +412,7 @@ class AnonCredsHolder:
             async for row in rows:
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credentials") from err
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error loading stored credential") from err
@@ -516,7 +512,7 @@ class AnonCredsHolder:
         try:
             async with self.profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credential") from err
 
         if not cred:
@@ -578,7 +574,7 @@ class AnonCredsHolder:
                 await session.handle.remove(
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsHolderError(
                 "Error deleting credential", error_code=err.code
             ) from err
@@ -602,7 +598,7 @@ class AnonCredsHolder:
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                     credential_id,
                 )
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credential mime types") from err
         values = mime_types_record and mime_types_record.value_json
         if values:

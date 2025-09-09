@@ -14,6 +14,7 @@ from ..database_manager.dbstore import (
     DBStoreErrorCode,
     DBStore,
 )
+from ..database_manager.db_errors import DBError, DBCode
 from ..core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ..utils.env import storage_path
 from ..askar.store import ERR_NO_STORAGE_CONFIG, ERR_NO_STORAGE_CREDS
@@ -457,10 +458,8 @@ class KanonStoreConfig:
                     else {}
                 )
                 await DBStore.remove(self.get_dbstore_uri(), config=config)
-        except (AskarError, DBStoreError) as err:
-            if (isinstance(err, AskarError) and err.code == AskarErrorCode.NOT_FOUND) or (
-                isinstance(err, DBStoreError) and err.code == DBStoreErrorCode.NOT_FOUND
-            ):
+        except DBError as err:
+            if err.code in DBCode.NOT_FOUND:
                 raise ProfileNotFoundError(f"Store '{self.name}' not found")
             raise ProfileError(
                 ERR_REMOVE_STORE.format(self.store_class, str(err))

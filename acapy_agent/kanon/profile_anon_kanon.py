@@ -8,6 +8,7 @@ from weakref import ref
 
 from aries_askar import AskarError, Session, Store as AskarStore
 from ..database_manager.dbstore import DBStoreError, DBStoreSession, DBStore
+from ..database_manager.db_errors import DBError
 
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
@@ -271,7 +272,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
         except asyncio.TimeoutError:
             LOGGER.error("Timeout waiting for store session")
             raise
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             LOGGER.error("Error opening store session: %s", str(err))
             raise ProfileError("Error opening store session") from err
 
@@ -296,7 +297,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
                 # ***CHANGE***: Commit both sessions if transaction
                 await self._dbstore_handle.commit()
                 await self._askar_handle.commit()
-            except (AskarError, DBStoreError) as err:
+            except DBError as err:
                 raise ProfileError("Error committing transaction") from err
         if self._dbstore_handle:
             await self._dbstore_handle.close()

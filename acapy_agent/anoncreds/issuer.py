@@ -20,6 +20,7 @@ from anoncreds import (
 # so the business layer doesn't need to care about the storage choice.
 from aries_askar import AskarError
 from ..database_manager.dbstore import DBStoreError
+from ..database_manager.db_errors import DBError
 
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
@@ -173,7 +174,7 @@ class AnonCredsIssuer:
                         "state": result.schema_state.state,
                     },
                 )
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error storing schema") from err
 
     async def create_and_register_schema(
@@ -301,7 +302,7 @@ class AnonCredsIssuer:
                         CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                     )
                 ) is not None
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsIssuerError(
                 "Error checking for credential definition"
             ) from err
@@ -460,7 +461,7 @@ class AnonCredsIssuer:
                     )
                 )
 
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
     async def finish_cred_def(
@@ -595,7 +596,7 @@ class AnonCredsIssuer:
                 key_proof = await session.handle.fetch(
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
             raise AnonCredsIssuerError(
@@ -636,7 +637,7 @@ class AnonCredsIssuer:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
