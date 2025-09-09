@@ -16,10 +16,10 @@ from ..routes import schema_get, schemas_get, schemas_post
 
 class MockSchema:
     def __init__(self, schema_id):
-        self.schemaId = schema_id
+        self.schema_id = schema_id
 
     def serialize(self):
-        return {"schema_id": self.schemaId}
+        return {"schema_id": self.schema_id}
 
 
 @pytest.mark.anoncreds

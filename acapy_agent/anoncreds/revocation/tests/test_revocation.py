@@ -124,7 +124,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
         self.revocation = test_module.AnonCredsRevocation(self.profile)
 
-    async def test_init(self):
+    def test_init(self):
         assert self.revocation.profile == self.profile
 
     async def test_notify(self):

@@ -26,7 +26,7 @@ class TestAnonCredsCredentialRevocationRoutes(
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
-    async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
+    def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (
             CredRevRecordQueryStringSchema(),
             RevokeRequestSchemaAnonCreds(),

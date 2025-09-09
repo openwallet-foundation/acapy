@@ -8,7 +8,7 @@ import os
 import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Tuple, Union
+from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urlparse
 
 import base58
@@ -622,6 +622,7 @@ class AnonCredsRevocation:
 
     async def retrieve_tails(self, rev_reg_def: RevRegDef) -> str:
         """Retrieve tails file from server."""
+        # TODO: This method is not actually async, and should be
         LOGGER.info(
             "Downloading the tails file with hash: %s",
             rev_reg_def.value.tails_hash,
@@ -958,7 +959,7 @@ class AnonCredsRevocation:
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        credential_type: Union[Credential, W3cCredential],
+        credential_type: Credential | W3cCredential,
         rev_reg_def_id: Optional[str] = None,
         tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
@@ -1115,7 +1116,7 @@ class AnonCredsRevocation:
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        credential_type: Union[Credential, W3cCredential],
+        credential_type: Credential | W3cCredential,
         *,
         retries: int = 5,
     ) -> Tuple[str, str, str]:

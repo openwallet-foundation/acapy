@@ -14,10 +14,10 @@ from ..routes import cred_def_get, cred_def_post, cred_defs_get
 
 class MockCredentialDefinition:
     def __init__(self, cred_def_id):
-        self.credDefId = cred_def_id
+        self.cred_def_id = cred_def_id
 
     def serialize(self):
-        return {"credential_definition_id": self.credDefId}
+        return {"credential_definition_id": self.cred_def_id}
 
 
 @pytest.mark.anoncreds

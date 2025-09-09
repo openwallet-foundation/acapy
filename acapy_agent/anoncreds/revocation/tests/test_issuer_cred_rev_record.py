@@ -13,7 +13,7 @@ class TestIssuerCredRevRecord(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.profile = await create_test_profile()
 
-    async def test_serde(self):
+    def test_serde(self):
         rec = IssuerCredRevRecord(
             record_id=test_module.UUID4_EXAMPLE,
             state=IssuerCredRevRecord.STATE_ISSUED,
