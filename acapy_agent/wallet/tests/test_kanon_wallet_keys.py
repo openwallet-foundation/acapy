@@ -79,6 +79,7 @@ class FakeAskarHandle:
     ):
         entry = self._keys.get(name)
         if not entry:
+
             class _Err(Exception):
                 def __init__(self):
                     self.code = "NOT_FOUND"

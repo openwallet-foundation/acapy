@@ -17,6 +17,7 @@ class _Handle:
                 DBStoreError,
                 DBStoreErrorCode,
             )
+
             raise DBStoreError(DBStoreErrorCode.DUPLICATE, "dup")
         self.rows[key] = types.SimpleNamespace(
             raw_value=value,

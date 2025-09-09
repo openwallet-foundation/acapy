@@ -3,7 +3,9 @@ import logging
 import pytest
 
 
-@pytest.mark.skip(reason="Flaky due to async logging timing; skip to avoid runtime issues")
+@pytest.mark.skip(
+    reason="Flaky due to async logging timing; skip to avoid runtime issues"
+)
 @pytest.mark.asyncio
 async def test_init_ledger_pool_disabled_and_read_only_logs(monkeypatch, caplog):
     from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile

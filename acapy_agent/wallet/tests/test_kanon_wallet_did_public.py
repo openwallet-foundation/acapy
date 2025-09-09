@@ -73,6 +73,7 @@ class FakeDBStoreHandle:
                 DBStoreError,
                 DBStoreErrorCode,
             )
+
             raise DBStoreError(DBStoreErrorCode.DUPLICATE, "dup")
         stored_value = value
         if value_json is not None and stored_value is None:
@@ -112,6 +113,7 @@ class FakeDBStoreHandle:
                 DBStoreError,
                 DBStoreErrorCode,
             )
+
             raise DBStoreError(DBStoreErrorCode.NOT_FOUND, "nf")
         if value_json is not None:
             row["value_json"] = value_json

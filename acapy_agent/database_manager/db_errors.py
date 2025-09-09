@@ -32,5 +32,3 @@ class DBCode:
     NOT_FOUND: FrozenSet[DBCodeUnion] = frozenset(
         {AskarErrorCode.NOT_FOUND, DBStoreErrorCode.NOT_FOUND}
     )
-
-
