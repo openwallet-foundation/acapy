@@ -16,7 +16,7 @@ TEST_SHORT_DP4 = "did:peer:4zQmd8CpeFPci817KDsbSAKWcXAE2mjvCQSasRewvbSF54Bd"
 
 @pytest.fixture
 def event_bus() -> MockEventBus:
-    yield MockEventBus()
+    return MockEventBus()
 
 
 @pytest_asyncio.fixture

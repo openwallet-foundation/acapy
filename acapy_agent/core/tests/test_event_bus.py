@@ -14,18 +14,18 @@ from ..event_bus import Event, EventBus
 
 @pytest.fixture
 def event_bus() -> EventBus:
-    yield EventBus()
+    return EventBus()
 
 
 @pytest.fixture
 def profile() -> MagicMock:
-    yield MagicMock()
+    return MagicMock()
 
 
 @pytest.fixture
 def event() -> Event:
     event = Event(topic="anything", payload="payload")
-    yield event
+    return event
 
 
 class MockProcessor:
@@ -40,7 +40,7 @@ class MockProcessor:
 
 @pytest.fixture
 def processor() -> MockProcessor:
-    yield MockProcessor()
+    return MockProcessor()
 
 
 def test_event(event):
