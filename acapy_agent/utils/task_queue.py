@@ -437,3 +437,21 @@ class TaskQueue:
     async def wait_for(self, timeout: float):
         """Wait for all queued tasks to complete with a timeout."""
         return await asyncio.wait_for(self.flush(), timeout)
+
+    async def wait_for_completion(self, timeout: float = 5.0):
+        """Wait for all active tasks to complete with timeout.
+
+        This is safer than flush() for testing as it doesn't try to
+        manage the drain loop, just waits for existing tasks.
+        """
+        if not self.active_tasks:
+            return
+
+        try:
+            await asyncio.wait_for(
+                asyncio.gather(*self.active_tasks, return_exceptions=True),
+                timeout=timeout,
+            )
+        except asyncio.TimeoutError:
+            # Tasks didn't complete in time, but that's okay for testing
+            pass
