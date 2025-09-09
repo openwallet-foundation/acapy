@@ -312,7 +312,7 @@ async def test_assign_kid_and_get_by_kid_success(wallet_env, monkeypatch):
     assert got.verkey == info.verkey and got.kid == "kid-ok"
 
     class BadKeyTypes(module.KeyTypes.__class__):
-        def from_key_type(self_inner, *_):
+        def from_key_type(self, *_):
             return None
 
     monkeypatch.setattr(
