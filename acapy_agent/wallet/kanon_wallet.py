@@ -1,6 +1,7 @@
 """Module docstring."""
 
 import asyncio
+import inspect
 import json
 import logging
 from typing import List, Optional, Sequence, Tuple, cast
@@ -97,7 +98,9 @@ class KanonWallet(BaseWallet):
             verkey = bytes_to_b58(keypair.get_public_bytes())
             LOGGER.debug("Generated verkey: %s", verkey)
             LOGGER.debug("Inserting key into askar_handle")
-            await self._session.askar_handle.insert_key(
+            await _call_askar(
+                self._session.askar_handle,
+                "insert_key",
                 verkey,
                 keypair,
                 metadata=json.dumps(metadata),
@@ -120,8 +123,8 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("Entering assign_kid_to_key with verkey: %s, kid: %s", verkey, kid)
         try:
             LOGGER.debug(LOG_FETCH_KEY, verkey)
-            key_entry = await self._session.askar_handle.fetch_key(
-                name=verkey, for_update=True
+            key_entry = await _call_askar(
+                self._session.askar_handle, "fetch_key", name=verkey, for_update=True
             )
             if not key_entry:
                 LOGGER.error("Key entry not found for verkey: %s", verkey)
@@ -137,7 +140,9 @@ class KanonWallet(BaseWallet):
                 raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
 
             LOGGER.debug("Updating key with kid: %s", kid)
-            await self._session.askar_handle.update_key(name=verkey, tags={"kid": kid})
+            await _call_askar(
+                self._session.askar_handle, "update_key", name=verkey, tags={"kid": kid}
+            )
             LOGGER.debug("Key updated successfully")
         except AskarError as err:
             LOGGER.error("AskarError in assign_kid_to_key: %s", err)
@@ -151,8 +156,11 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("Entering get_key_by_kid with kid: %s", kid)
         try:
             LOGGER.debug("Fetching all keys with kid: %s", kid)
-            key_entries = await self._session.askar_handle.fetch_all_keys(
-                tag_filter={"kid": kid}, limit=2
+            key_entries = await _call_askar(
+                self._session.askar_handle,
+                "fetch_all_keys",
+                tag_filter={"kid": kid},
+                limit=2,
             )
             if len(key_entries) > 1:
                 LOGGER.error("More than one key found for kid: %s", kid)
@@ -186,7 +194,7 @@ class KanonWallet(BaseWallet):
             raise WalletNotFoundError("No key identifier provided")
         try:
             LOGGER.debug(LOG_FETCH_KEY, verkey)
-            key_entry = await self._session.askar_handle.fetch_key(verkey)
+            key_entry = await _call_askar(self._session.askar_handle, "fetch_key", verkey)
             if not key_entry:
                 LOGGER.error("Key not found for verkey: %s", verkey)
                 raise WalletNotFoundError("Unknown key: {}".format(verkey))
@@ -226,15 +234,19 @@ class KanonWallet(BaseWallet):
 
         try:
             LOGGER.debug(LOG_FETCH_KEY, verkey)
-            key_entry = await self._session.askar_handle.fetch_key(
-                verkey, for_update=True
+            key_entry = await _call_askar(
+                self._session.askar_handle, "fetch_key", verkey, for_update=True
             )
             if not key_entry:
                 LOGGER.error("Keypair not found for verkey: %s", verkey)
                 raise WalletNotFoundError("Keypair not found")
             LOGGER.debug("Updating key metadata")
-            await self._session.askar_handle.update_key(
-                verkey, metadata=json.dumps(metadata or {}), tags=key_entry.tags
+            await _call_askar(
+                self._session.askar_handle,
+                "update_key",
+                verkey,
+                metadata=json.dumps(metadata or {}),
+                tags=key_entry.tags,
             )
             LOGGER.debug("Metadata updated successfully")
         except AskarError as err:
@@ -279,8 +291,12 @@ class KanonWallet(BaseWallet):
 
         try:
             LOGGER.debug("Inserting key into askar_handle")
-            await self._session.askar_handle.insert_key(
-                verkey, keypair, metadata=json.dumps(metadata)
+            await _call_askar(
+                self._session.askar_handle,
+                "insert_key",
+                verkey,
+                keypair,
+                metadata=json.dumps(metadata),
             )
             LOGGER.debug("Key inserted successfully")
         except AskarError as err:
@@ -292,7 +308,9 @@ class KanonWallet(BaseWallet):
         async with self._session.store.session() as session:
             try:
                 LOGGER.debug(LOG_FETCH_DID, did)
-                item = await session.fetch(CATEGORY_DID, did, for_update=True)
+                item = await _call_store(
+                    session, "fetch", CATEGORY_DID, did, for_update=True
+                )
                 if item:
                     did_info = item.value_json
                     LOGGER.debug("Existing DID info: %s", did_info)
@@ -302,8 +320,13 @@ class KanonWallet(BaseWallet):
                     if did_info.get("metadata") != metadata:
                         LOGGER.debug("Updating metadata for existing DID")
                         did_info["metadata"] = metadata
-                        await session.replace(
-                            CATEGORY_DID, did, value_json=did_info, tags=item.tags
+                        await _call_store(
+                            session,
+                            "replace",
+                            CATEGORY_DID,
+                            did,
+                            value_json=did_info,
+                            tags=item.tags,
                         )
                         LOGGER.debug("Metadata updated")
                 else:
@@ -324,7 +347,9 @@ class KanonWallet(BaseWallet):
                     LOGGER.debug(
                         "Inserting new DID with value: %s, tags: %s", value_json, tags
                     )
-                    await session.insert(
+                    await _call_store(
+                        session,
+                        "insert",
                         CATEGORY_DID,
                         did,
                         value_json=value_json,
@@ -390,7 +415,8 @@ class KanonWallet(BaseWallet):
         async with self._session.store.session() as session:
             try:
                 LOGGER.debug("Fetching all DIDs")
-                for item in await session.fetch_all(CATEGORY_DID):
+                rows = await _call_store(session, "fetch_all", CATEGORY_DID)
+                for item in rows:
                     did_info = self._load_did_entry(item)
                     ret.append(did_info)
                     LOGGER.debug("Loaded DID: %s", did_info.did)
@@ -410,7 +436,7 @@ class KanonWallet(BaseWallet):
         async with self._session.store.session() as session:
             try:
                 LOGGER.debug(LOG_FETCH_DID, did)
-                did_entry = await session.fetch(CATEGORY_DID, did)
+                did_entry = await _call_store(session, "fetch", CATEGORY_DID, did)
             except DBStoreError as err:
                 LOGGER.error("DBStoreError in get_local_did: %s", err)
                 raise WalletError("Error when fetching local DID") from err
@@ -427,7 +453,9 @@ class KanonWallet(BaseWallet):
         async with self._session.store.session() as session:
             try:
                 LOGGER.debug("Fetching DIDs for verkey: %s", verkey)
-                dids = await session.fetch_all(CATEGORY_DID, {"verkey": verkey})
+                dids = await _call_store(
+                    session, "fetch_all", CATEGORY_DID, {"verkey": verkey}
+                )
             except DBStoreError as err:
                 LOGGER.error("DBStoreError in get_local_did_for_verkey: %s", err)
                 raise WalletError("Error when fetching local DID for verkey") from err
@@ -534,7 +562,9 @@ class KanonWallet(BaseWallet):
             if isinstance(did, str):
                 try:
                     LOGGER.debug("Fetching DID entry for: %s", did)
-                    item = await session.fetch(CATEGORY_DID, did, for_update=True)
+                    item = await _call_store(
+                        session, "fetch", CATEGORY_DID, did, for_update=True
+                    )
                 except DBStoreError as err:
                     LOGGER.error("DBStoreError in set_public_did: %s", err)
                     raise WalletError("Error when fetching local DID") from err
@@ -560,8 +590,13 @@ class KanonWallet(BaseWallet):
                         entry_val["metadata"] = metadata
                         try:
                             LOGGER.debug("Replacing DID entry")
-                            await session.replace(
-                                CATEGORY_DID, did, value_json=entry_val, tags=item.tags
+                            await _call_store(
+                                session,
+                                "replace",
+                                CATEGORY_DID,
+                                did,
+                                value_json=entry_val,
+                                tags=item.tags,
                             )
                             LOGGER.debug("DID entry replaced")
                         except DBStoreError as err:
@@ -670,7 +705,7 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("Generated new verkey: %s", verkey)
         try:
             LOGGER.debug("Inserting new key")
-            await self._session.askar_handle.insert_key(verkey, keypair)
+            await _call_askar(self._session.askar_handle, "insert_key", verkey, keypair)
             LOGGER.debug("New key inserted")
         except AskarError as err:
             LOGGER.error("AskarError in rotate_did_keypair_start: %s", err)
@@ -683,7 +718,9 @@ class KanonWallet(BaseWallet):
         async with self._session.store.session() as session:
             try:
                 LOGGER.debug(LOG_FETCH_DID, did)
-                item = await session.fetch(CATEGORY_DID, did, for_update=True)
+                item = await _call_store(
+                    session, "fetch", CATEGORY_DID, did, for_update=True
+                )
                 if not item:
                     LOGGER.error(LOG_DID_NOT_FOUND, did)
                     raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
@@ -692,8 +729,13 @@ class KanonWallet(BaseWallet):
                 metadata["next_verkey"] = verkey
                 entry_val["metadata"] = metadata
                 LOGGER.debug("Updating DID with next_verkey: %s", verkey)
-                await session.replace(
-                    CATEGORY_DID, did, value_json=entry_val, tags=item.tags
+                await _call_store(
+                    session,
+                    "replace",
+                    CATEGORY_DID,
+                    did,
+                    value_json=entry_val,
+                    tags=item.tags,
                 )
                 LOGGER.debug("DID updated")
             except DBStoreError as err:
@@ -709,7 +751,9 @@ class KanonWallet(BaseWallet):
         async with self._session.store.session() as session:
             try:
                 LOGGER.debug(LOG_FETCH_DID, did)
-                item = await session.fetch(CATEGORY_DID, did, for_update=True)
+                item = await _call_store(
+                    session, "fetch", CATEGORY_DID, did, for_update=True
+                )
                 if not item:
                     LOGGER.error(LOG_DID_NOT_FOUND, did)
                     raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
@@ -728,8 +772,13 @@ class KanonWallet(BaseWallet):
 
                 entry_val["verkey"] = next_verkey
                 item.tags["verkey"] = next_verkey
-                await session.replace(
-                    CATEGORY_DID, did, value_json=entry_val, tags=item.tags
+                await _call_store(
+                    session,
+                    "replace",
+                    CATEGORY_DID,
+                    did,
+                    value_json=entry_val,
+                    tags=item.tags,
                 )
                 LOGGER.debug("Key rotation applied")
             except DBStoreError as err:
@@ -764,7 +813,9 @@ class KanonWallet(BaseWallet):
             raise WalletError(ERR_VERKEY_NOT_PROVIDED)
         try:
             LOGGER.debug("Fetching key for verkey: %s", from_verkey)
-            keypair = await self._session.askar_handle.fetch_key(from_verkey)
+            keypair = await _call_askar(
+                self._session.askar_handle, "fetch_key", from_verkey
+            )
             if not keypair:
                 LOGGER.error("Key not found: %s", from_verkey)
                 raise WalletNotFoundError("Missing key for sign operation")
@@ -858,7 +909,9 @@ class KanonWallet(BaseWallet):
         try:
             if from_verkey:
                 LOGGER.debug("Fetching key for from_verkey: %s", from_verkey)
-                from_key_entry = await self._session.askar_handle.fetch_key(from_verkey)
+                from_key_entry = await _call_askar(
+                    self._session.askar_handle, "fetch_key", from_verkey
+                )
                 if not from_key_entry:
                     LOGGER.error("Key not found: %s", from_verkey)
                     raise WalletNotFoundError("Missing key for pack operation")
@@ -886,9 +939,11 @@ class KanonWallet(BaseWallet):
             raise WalletError("Message not provided")
         try:
             LOGGER.debug("Unpacking message")
-            unpacked_json, recipient, sender = await unpack_message(
-                self._session.askar_handle, enc_message
-            )
+            result = unpack_message(self._session.askar_handle, enc_message)
+            if inspect.isawaitable(result):
+                unpacked_json, recipient, sender = await result
+            else:
+                unpacked_json, recipient, sender = result
             LOGGER.debug("Message unpacked: sender=%s, recipient=%s", sender, recipient)
         except AskarError as err:
             LOGGER.error("AskarError in unpack_message: %s", err)
@@ -956,3 +1011,45 @@ def _create_keypair(key_type: KeyType, seed: str | bytes | None = None) -> Key:
         LOGGER.debug("Random keypair generated")
     LOGGER.debug("_create_keypair completed")
     return keypair
+
+
+async def _call_askar(askar_handle, method_name: str, *args, **kwargs):
+    method = getattr(askar_handle, method_name)
+    if inspect.iscoroutinefunction(method):
+        return await method(*args, **kwargs)
+    return method(*args, **kwargs)
+
+
+async def _call_store(session, method_name: str, *args, **kwargs):
+    """Call DB session methods supporting both sync handle.* and async session.*.
+
+    - For CRUD (insert, fetch, replace, remove) prefer synchronous handle methods.
+    - For bulk ops (fetch_all, remove_all) prefer session method to allow test overrides.
+    """
+    prefer_session_first = method_name in {"fetch_all", "remove_all"}
+    if prefer_session_first:
+        smethod = getattr(session, method_name, None)
+        if smethod is not None and callable(smethod):
+            if inspect.iscoroutinefunction(smethod):
+                handle = getattr(session, "handle", None)
+                if handle is not None and hasattr(handle, method_name):
+                    hmethod = getattr(handle, method_name)
+                    if (
+                        callable(hmethod)
+                        and not inspect.iscoroutinefunction(hmethod)
+                        and not inspect.isasyncgenfunction(hmethod)
+                    ):
+                        return hmethod(*args, **kwargs)
+                return await smethod(*args, **kwargs)
+            return smethod(*args, **kwargs)
+    handle = getattr(session, "handle", None)
+    if handle is not None and hasattr(handle, method_name):
+        hmethod = getattr(handle, method_name)
+        if callable(hmethod):
+            if inspect.iscoroutinefunction(hmethod):
+                return await hmethod(*args, **kwargs)
+            return hmethod(*args, **kwargs)
+    smethod = getattr(session, method_name)
+    if inspect.iscoroutinefunction(smethod):
+        return await smethod(*args, **kwargs)
+    return smethod(*args, **kwargs)

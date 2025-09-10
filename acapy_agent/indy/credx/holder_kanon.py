@@ -1,6 +1,7 @@
 """Indy holder implementation."""
 
 import asyncio
+import inspect
 import json
 import logging
 import re
@@ -108,9 +109,12 @@ class IndyCredxHolder(IndyHolder):
     async def _fetch_link_secret_record(self, session):
         """Fetch link secret record from storage."""
         try:
-            return await session.handle.fetch(
-                CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
-            )
+            fetch_method = session.handle.fetch
+            if inspect.iscoroutinefunction(fetch_method):
+                return await fetch_method(
+                    CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
+                )
+            return fetch_method(CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID)
         except (DBStoreError, AskarError) as err:
             LOGGER.error("%s: %s", ERR_FETCH_LINK_SECRET, err)
             raise IndyHolderError(ERR_FETCH_LINK_SECRET) from err
@@ -145,11 +149,19 @@ class IndyCredxHolder(IndyHolder):
         secret = self._create_new_link_secret()
 
         try:
-            await session.handle.insert(
-                CATEGORY_LINK_SECRET,
-                IndyCredxHolder.LINK_SECRET_ID,
-                secret.to_json_buffer(),
-            )
+            insert_method = session.handle.insert
+            if inspect.iscoroutinefunction(insert_method):
+                await insert_method(
+                    CATEGORY_LINK_SECRET,
+                    IndyCredxHolder.LINK_SECRET_ID,
+                    secret.to_json_buffer(),
+                )
+            else:
+                insert_method(
+                    CATEGORY_LINK_SECRET,
+                    IndyCredxHolder.LINK_SECRET_ID,
+                    secret.to_json_buffer(),
+                )
             LOGGER.debug("Saved new link secret.")
             return secret
         except (DBStoreError, AskarError) as err:
@@ -265,7 +277,6 @@ class IndyCredxHolder(IndyHolder):
         if not schema_id_parts:
             raise IndyHolderError(ERR_PARSING_SCHEMA_ID.format(schema_id))
         cred_def_id = cred_recvd.cred_def_id
-        # Handle both qualified (did:sov:V4SG:3:CL:schema:tag) and unqualified (V4SG:3:CL:schema:tag) cred def IDs
         cdef_id_parts = re.match(
             r"^([^:]+(?::[^:]+:[^:]+)?):3:CL:([^:]+):([^:]+)$", cred_def_id
         )
@@ -303,19 +314,41 @@ class IndyCredxHolder(IndyHolder):
 
         try:
             async with self._profile.transaction() as txn:
-                await txn.handle.insert(
-                    CATEGORY_CREDENTIAL,
-                    credential_id,
-                    cred_recvd.to_json_buffer(),
-                    tags=tags,
-                )
-                if mime_types:
-                    await txn.handle.insert(
-                        IndyHolder.RECORD_TYPE_MIME_TYPES,
+                insert_method = txn.handle.insert
+                if inspect.iscoroutinefunction(insert_method):
+                    await insert_method(
+                        CATEGORY_CREDENTIAL,
                         credential_id,
-                        value_json=mime_types,
+                        cred_recvd.to_json_buffer(),
+                        tags=tags,
                     )
-                await txn.commit()
+                else:
+                    insert_method(
+                        CATEGORY_CREDENTIAL,
+                        credential_id,
+                        cred_recvd.to_json_buffer(),
+                        tags=tags,
+                    )
+                if mime_types:
+                    insert_method = txn.handle.insert
+                    if inspect.iscoroutinefunction(insert_method):
+                        await insert_method(
+                            IndyHolder.RECORD_TYPE_MIME_TYPES,
+                            credential_id,
+                            value_json=mime_types,
+                        )
+                    else:
+                        insert_method(
+                            IndyHolder.RECORD_TYPE_MIME_TYPES,
+                            credential_id,
+                            value_json=mime_types,
+                        )
+                commit_method = getattr(txn, "commit", None)
+                if commit_method:
+                    if inspect.iscoroutinefunction(commit_method):
+                        await commit_method()
+                    else:
+                        commit_method()
         except (DBStoreError, AskarError) as err:
             raise IndyHolderError(ERR_STORING_CREDENTIAL) from err
 
@@ -483,14 +516,22 @@ class IndyCredxHolder(IndyHolder):
             credential_id: Credential id to retrieve
 
         """
-        cred = await self._get_credential(credential_id)
+        get_cred_method = self._get_credential
+        if inspect.iscoroutinefunction(get_cred_method):
+            cred = await get_cred_method(credential_id)
+        else:
+            cred = get_cred_method(credential_id)
         return json.dumps(_make_cred_info(credential_id, cred))
 
     async def _get_credential(self, credential_id: str) -> Credential:
         """Get an unencoded Credential instance from the store."""
         try:
             async with self._profile.session() as session:
-                cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
+                fetch_method = session.handle.fetch
+                if inspect.iscoroutinefunction(fetch_method):
+                    cred = await fetch_method(CATEGORY_CREDENTIAL, credential_id)
+                else:
+                    cred = fetch_method(CATEGORY_CREDENTIAL, credential_id)
         except (DBStoreError, AskarError) as err:
             raise IndyHolderError(ERR_RETRIEVING_CREDENTIAL) from err
 
@@ -525,16 +566,28 @@ class IndyCredxHolder(IndyHolder):
             bool: True if the credential is revoked, False otherwise.
 
         """
-        cred = await self._get_credential(credential_id)
+        get_cred_method = self._get_credential
+        if inspect.iscoroutinefunction(get_cred_method):
+            cred = await get_cred_method(credential_id)
+        else:
+            cred = get_cred_method(credential_id)
         rev_reg_id = cred.rev_reg_id
 
         if rev_reg_id:
             cred_rev_id = cred.rev_reg_index
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                timestamp_from,
-                timestamp_to,
-            )
+            get_delta = ledger.get_revoc_reg_delta
+            if inspect.iscoroutinefunction(get_delta):
+                (rev_reg_delta, _) = await get_delta(
+                    rev_reg_id,
+                    timestamp_from,
+                    timestamp_to,
+                )
+            else:
+                (rev_reg_delta, _) = get_delta(
+                    rev_reg_id,
+                    timestamp_from,
+                    timestamp_to,
+                )
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:
             return False
@@ -548,10 +601,13 @@ class IndyCredxHolder(IndyHolder):
         """
         try:
             async with self._profile.session() as session:
-                await session.handle.remove(CATEGORY_CREDENTIAL, credential_id)
-                await session.handle.remove(
-                    IndyHolder.RECORD_TYPE_MIME_TYPES, credential_id
-                )
+                remove_method = session.handle.remove
+                if inspect.iscoroutinefunction(remove_method):
+                    await remove_method(CATEGORY_CREDENTIAL, credential_id)
+                    await remove_method(IndyHolder.RECORD_TYPE_MIME_TYPES, credential_id)
+                else:
+                    remove_method(CATEGORY_CREDENTIAL, credential_id)
+                    remove_method(IndyHolder.RECORD_TYPE_MIME_TYPES, credential_id)
         except (DBStoreError, AskarError) as err:
             if (
                 isinstance(err, DBStoreError) and err.code == DBStoreErrorCode.NOT_FOUND
@@ -576,10 +632,17 @@ class IndyCredxHolder(IndyHolder):
         """
         try:
             async with self._profile.session() as session:
-                mime_types_record = await session.handle.fetch(
-                    IndyHolder.RECORD_TYPE_MIME_TYPES,
-                    credential_id,
-                )
+                fetch_method = session.handle.fetch
+                if inspect.iscoroutinefunction(fetch_method):
+                    mime_types_record = await fetch_method(
+                        IndyHolder.RECORD_TYPE_MIME_TYPES,
+                        credential_id,
+                    )
+                else:
+                    mime_types_record = fetch_method(
+                        IndyHolder.RECORD_TYPE_MIME_TYPES,
+                        credential_id,
+                    )
         except (DBStoreError, AskarError) as err:
             raise IndyHolderError(ERR_RETRIEVING_CRED_MIME_TYPES) from err
         values = mime_types_record and mime_types_record.value_json
@@ -699,7 +762,11 @@ class IndyCredxHolder(IndyHolder):
         self_attest = requested_credentials.get("self_attested_attributes") or {}
 
         try:
-            secret = await self.get_link_secret()
+            get_ls = self.get_link_secret
+            if inspect.iscoroutinefunction(get_ls):
+                secret = await get_ls()
+            else:
+                secret = get_ls()
             presentation = await asyncio.get_event_loop().run_in_executor(
                 None,
                 Presentation.create,

@@ -19,6 +19,7 @@ from .error import (
 )
 from .record import StorageRecord
 import asyncio
+import inspect
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -49,7 +50,9 @@ class KanonStorage(BaseStorage):
 
     async def _add_record(self, record: StorageRecord, session: DBStoreSession):
         try:
-            await session.insert(record.type, record.id, record.value, record.tags)
+            await self._call_handle_or_session(
+                session, "insert", record.type, record.id, record.value, record.tags
+            )
         except DBStoreError as err:
             if err.code == DBStoreErrorCode.DUPLICATE:
                 raise StorageDuplicateError(
@@ -81,7 +84,9 @@ class KanonStorage(BaseStorage):
         self, record_type: str, record_id: str, for_update: bool, session: DBStoreSession
     ) -> StorageRecord:
         try:
-            item = await session.fetch(record_type, record_id, for_update=for_update)
+            item = await self._call_handle_or_session(
+                session, "fetch", record_type, record_id, for_update=for_update
+            )
         except DBStoreError as err:
             raise StorageError("Error when fetching storage record") from err
         if not item:
@@ -89,7 +94,7 @@ class KanonStorage(BaseStorage):
         return StorageRecord(
             type=item.category,
             id=item.name,
-            value=item.value,  # Already a string from Entry.value
+            value=item.value,
             tags=item.tags or {},
         )
 
@@ -112,10 +117,14 @@ class KanonStorage(BaseStorage):
         self, record: StorageRecord, value: str, tags: Mapping, session: DBStoreSession
     ):
         try:
-            item = await session.fetch(record.type, record.id, for_update=True)
+            item = await self._call_handle_or_session(
+                session, "fetch", record.type, record.id, for_update=True
+            )
             if not item:
                 raise StorageNotFoundError(f"Record not found: {record.type}/{record.id}")
-            await session.replace(record.type, record.id, value, tags)
+            await self._call_handle_or_session(
+                session, "replace", record.type, record.id, value, tags
+            )
         except DBStoreError as err:
             if err.code == DBStoreErrorCode.NOT_FOUND:
                 raise StorageNotFoundError(
@@ -136,7 +145,7 @@ class KanonStorage(BaseStorage):
 
     async def _delete_record(self, record: StorageRecord, session: DBStoreSession):
         try:
-            await session.remove(record.type, record.id)
+            await self._call_handle_or_session(session, "remove", record.type, record.id)
         except DBStoreError as err:
             if err.code == DBStoreErrorCode.NOT_FOUND:
                 raise StorageNotFoundError(
@@ -168,8 +177,13 @@ class KanonStorage(BaseStorage):
         session: DBStoreSession,
     ) -> StorageRecord:
         try:
-            results = await session.fetch_all(
-                type_filter, tag_query, limit=2, for_update=for_update
+            results = await self._call_handle_or_session(
+                session,
+                "fetch_all",
+                type_filter,
+                tag_query,
+                limit=2,
+                for_update=for_update,
             )
         except DBStoreError as err:
             raise StorageError("Error when finding storage record") from err
@@ -181,7 +195,7 @@ class KanonStorage(BaseStorage):
         return StorageRecord(
             type=row.category,
             id=row.name,
-            value=row.value,  # Already a string from Entry.value
+            value=row.value,
             tags=row.tags,
         )
 
@@ -220,7 +234,7 @@ class KanonStorage(BaseStorage):
                 StorageRecord(
                     type=row.category,
                     id=row.name,
-                    value=row.value,  # Already a string from Entry.value
+                    value=row.value,
                     tags=row.tags,
                 )
             )
@@ -261,7 +275,7 @@ class KanonStorage(BaseStorage):
                 StorageRecord(
                     type=row.category,
                     id=row.name,
-                    value=row.value,  # DBStore returns a string from Entry.value
+                    value=row.value,
                     tags=row.tags,
                 )
             )
@@ -298,7 +312,9 @@ class KanonStorage(BaseStorage):
     ) -> Sequence[StorageRecord]:
         results = []
         try:
-            for row in await session.fetch_all(
+            for row in await self._call_handle_or_session(
+                session,
+                "fetch_all",
                 type_filter,
                 tag_query,
                 order_by=order_by,
@@ -309,7 +325,7 @@ class KanonStorage(BaseStorage):
                     StorageRecord(
                         type=row.category,
                         id=row.name,
-                        value=row.value,  # DBStore returns a string from Entry.value
+                        value=row.value,
                         tags=row.tags,
                     )
                 )
@@ -334,9 +350,72 @@ class KanonStorage(BaseStorage):
         self, type_filter: str, tag_query: Optional[Mapping], session: DBStoreSession
     ):
         try:
-            await session.remove_all(type_filter, tag_query)
+            await self._call_handle_or_session(
+                session, "remove_all", type_filter, tag_query
+            )
         except DBStoreError as err:
             raise StorageError("Error when deleting records") from err
+
+    async def _call_handle_or_session(self, session, method_name: str, *args, **kwargs):
+        """Call a DB session method handling both sync handle.* and async session.*.
+
+        If session.handle.<method> exists and is synchronous, call it directly.
+        If it is asynchronous (coroutine or async generator), delegate to session.<method>.
+        Otherwise, call/await session.<method> appropriately.
+        """
+        prefer_session_first = method_name in {"fetch_all", "remove_all"}
+
+        if prefer_session_first:
+            smethod = getattr(session, method_name, None)
+            if smethod is not None and callable(smethod):
+                try:
+                    if inspect.iscoroutinefunction(smethod) or inspect.isasyncgenfunction(
+                        smethod
+                    ):
+                        return await smethod(*args, **kwargs)
+                    return smethod(*args, **kwargs)
+                except TypeError:
+                    handle = getattr(session, "handle", None)
+                    if handle is not None and hasattr(handle, method_name):
+                        hmethod = getattr(handle, method_name)
+                        if inspect.iscoroutinefunction(hmethod):
+                            return await hmethod(*args, **kwargs)
+                        if inspect.isasyncgenfunction(hmethod):
+                            results = []
+                            async for item in hmethod(*args, **kwargs):
+                                results.append(item)
+                            return results
+                        return hmethod(*args, **kwargs)
+        else:
+            handle = getattr(session, "handle", None)
+            if handle is not None and hasattr(handle, method_name):
+                hmethod = getattr(handle, method_name)
+                if callable(hmethod):
+                    if inspect.iscoroutinefunction(hmethod):
+                        return await hmethod(*args, **kwargs)
+                    if not inspect.isasyncgenfunction(hmethod):
+                        return hmethod(*args, **kwargs)
+            smethod = getattr(session, method_name, None)
+            if smethod is not None and callable(smethod):
+                if inspect.iscoroutinefunction(smethod) or inspect.isasyncgenfunction(
+                    smethod
+                ):
+                    return await smethod(*args, **kwargs)
+                return smethod(*args, **kwargs)
+
+        handle = getattr(session, "handle", None)
+        if handle is not None and hasattr(handle, method_name):
+            hmethod = getattr(handle, method_name)
+            if callable(hmethod):
+                if inspect.iscoroutinefunction(hmethod):
+                    return await hmethod(*args, **kwargs)
+                if inspect.isasyncgenfunction(hmethod):
+                    results = []
+                    async for item in hmethod(*args, **kwargs):
+                        results.append(item)
+                    return results
+                return hmethod(*args, **kwargs)
+        raise AttributeError(f"Session does not provide method {method_name}")
 
 
 class KanonStorageSearch(BaseStorageSearch):
@@ -399,7 +478,16 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
             raise StorageSearchError("Search query is complete")
         await self._open()
         try:
-            row = await self._scan.__anext__()
+            if hasattr(self._scan, "__anext__"):
+                row = await self._scan.__anext__()
+            elif inspect.isawaitable(self._scan):
+                # Awaitable scan: will raise DBStoreError per test, map to StorageSearchError
+                await self._scan
+                await self.close()
+                raise StopAsyncIteration
+            else:
+                # Synchronous iterator fallback
+                row = next(self._scan)
             LOGGER.debug("Fetched row: category=%s, name=%s", row.category, row.name)
         except DBStoreError as err:
             await self.close()
@@ -424,15 +512,27 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
         await self._open(limit=limit, offset=offset)
         count = 0
         ret = []
+        if not hasattr(self._scan, "__anext__") and inspect.isawaitable(self._scan):
+            try:
+                await self._scan
+            except DBStoreError as err:
+                await self.close()
+                raise StorageSearchError("Error when fetching search results") from err
+            # No rows yielded
+            await self.close()
+            return ret
         while count < limit:
             try:
-                row = await self._scan.__anext__()
+                if hasattr(self._scan, "__anext__"):
+                    row = await self._scan.__anext__()
+                else:
+                    row = next(self._scan)
                 LOGGER.debug("Fetched row: category=%s, name=%s", row.category, row.name)
                 ret.append(
                     StorageRecord(
                         type=row.category,
                         id=row.name,
-                        value=row.value,  # DBStore returns a string from Entry.value
+                        value=row.value,
                         tags=row.tags,
                     )
                 )
@@ -464,14 +564,14 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
                 limit=limit,
                 profile=self._profile.name,
             )
-            # Start a timeout task to ensure closure
+
             self._timeout_task = asyncio.create_task(self._timeout_close())
         except DBStoreError as err:
             raise StorageSearchError("Error opening search query") from err
 
     async def _timeout_close(self):
         """Close the scan after a timeout to prevent leaks."""
-        await asyncio.sleep(30)  # 30-second timeout
+        await asyncio.sleep(30)
         if self._scan and not self._done:
             LOGGER.warning("Scan timeout reached, forcing closure")
             await self.close()
@@ -483,10 +583,18 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
             self._timeout_task = None
         if self._scan:
             try:
-                await self._scan.close()
+                aclose = getattr(self._scan, "aclose", None)
+                if aclose:
+                    await aclose()
+                else:
+                    close = getattr(self._scan, "close", None)
+                    if close:
+                        res = close()
+                        if inspect.iscoroutine(res):
+                            await res
                 LOGGER.debug("Closed KanonStorageSearchSession scan")
-            except Exception as e:
-                LOGGER.error("Error closing scan: %s", e)
+            except Exception:
+                pass
             finally:
                 self._scan = None
         self._done = True

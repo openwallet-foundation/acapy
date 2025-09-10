@@ -34,7 +34,7 @@ ALG_MAPPINGS = {
     },
     "bls12381g2": {
         "key_type": BLS12381G2,
-        "multikey_prefix": "zUC7",
+        "multikey_prefix": ("zUC7", "zUC6"),
         "prefix_hex": "eb01",
         "prefix_length": 2,
     },
@@ -61,7 +61,11 @@ def verkey_to_multikey(verkey: str, alg: str):
 def key_type_from_multikey(multikey: str) -> KeyType:
     """Derive key_type class from multikey prefix."""
     for mapping in ALG_MAPPINGS:
-        if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+        prefixes = ALG_MAPPINGS[mapping]["multikey_prefix"]
+        if isinstance(prefixes, (list, tuple)):
+            if any(multikey.startswith(p) for p in prefixes):
+                return ALG_MAPPINGS[mapping]["key_type"]
+        elif multikey.startswith(prefixes):
             return ALG_MAPPINGS[mapping]["key_type"]
 
     raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
@@ -132,7 +136,11 @@ class MultikeyManager:
     def key_type_from_multikey(self, multikey: str) -> KeyType:
         """Derive key_type class from multikey prefix."""
         for mapping in ALG_MAPPINGS:
-            if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+            prefixes = ALG_MAPPINGS[mapping]["multikey_prefix"]
+            if isinstance(prefixes, (list, tuple)):
+                if any(multikey.startswith(p) for p in prefixes):
+                    return ALG_MAPPINGS[mapping]["key_type"]
+            elif multikey.startswith(prefixes):
                 return ALG_MAPPINGS[mapping]["key_type"]
 
         raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
