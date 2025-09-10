@@ -102,13 +102,21 @@ class Key:
         return b"nonce_placeholder"
 
     def aead_encrypt(
-        self, plaintext: bytes = None, *, nonce: bytes | None = None, aad: bytes | None = None
+        self,
+        plaintext: bytes = None,
+        *,
+        nonce: bytes | None = None,
+        aad: bytes | None = None,
     ) -> str:
         """Return a placeholder for encrypted data."""
         return "Encrypted placeholder"
 
     def aead_decrypt(
-        self, ciphertext: bytes = None, *, nonce: bytes | None = None, aad: bytes | None = None
+        self,
+        ciphertext: bytes = None,
+        *,
+        nonce: bytes | None = None,
+        aad: bytes | None = None,
     ) -> bytes:
         """Return placeholder decrypted data."""
         return b"decrypted placeholder"
