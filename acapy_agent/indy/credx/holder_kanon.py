@@ -258,26 +258,41 @@ class IndyCredxHolder(IndyHolder):
             raise IndyHolderError(ERR_PROCESS_RECEIVED_CRED) from err
 
         schema_id = cred_recvd.schema_id
-        schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
+        # Handle both qualified (did:sov:V4SG:2:schema:1.0) and unqualified (V4SG:2:schema:1.0) schema IDs
+        schema_id_parts = re.match(
+            r"^([^:]+(?::[^:]+:[^:]+)?):2:([^:]+):([^:]+)$", schema_id
+        )
         if not schema_id_parts:
             raise IndyHolderError(ERR_PARSING_SCHEMA_ID.format(schema_id))
         cred_def_id = cred_recvd.cred_def_id
-        cdef_id_parts = re.match(r"^(\w+):3:CL:([^:]+):([^:]+)$", cred_def_id)
+        # Handle both qualified (did:sov:V4SG:3:CL:schema:tag) and unqualified (V4SG:3:CL:schema:tag) cred def IDs
+        cdef_id_parts = re.match(
+            r"^([^:]+(?::[^:]+:[^:]+)?):3:CL:([^:]+):([^:]+)$", cred_def_id
+        )
         if not cdef_id_parts:
             raise IndyHolderError(ERR_PARSING_CRED_DEF_ID.format(cred_def_id))
 
         credential_id = credential_id or str(uuid4())
+
+        # Normalize DIDs to unqualified format for consistent storage and querying
+        # This matches the pattern used in BaseConnectionManager.store_did_document()
+        schema_issuer_did = schema_id_parts[1]
+        if schema_issuer_did.startswith("did:sov:"):
+            schema_issuer_did = schema_issuer_did[8:]
+
+        issuer_did = cdef_id_parts[1]
+        if issuer_did.startswith("did:sov:"):
+            issuer_did = issuer_did[8:]
+
         tags = {
             "schema_id": schema_id,
-            "schema_issuer_did": schema_id_parts[1],
+            "schema_issuer_did": schema_issuer_did,
             "schema_name": schema_id_parts[2],
             "schema_version": schema_id_parts[3],
-            "issuer_did": cdef_id_parts[1],
+            "issuer_did": issuer_did,
             "cred_def_id": cred_def_id,
             "rev_reg_id": cred_recvd.rev_reg_id or "None",
         }
-
-        # FIXME - sdk has some special handling for fully qualified DIDs here
 
         mime_types = {}
         for k, attr_value in credential_data["values"].items():
