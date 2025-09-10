@@ -375,8 +375,6 @@ class PostgresDatabase(AbstractDatabaseStore):
                 self._monitoring_task.cancel()
                 try:
                     await self._monitoring_task
-                except asyncio.CancelledError:
-                    pass  # Expected when cancelling task
                 finally:
                     self._monitoring_task = None
             if remove:

@@ -24,6 +24,8 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
+ERR_FETCH_SEARCH_RESULTS = "Error when fetching search results"
+
 
 class KanonStorage(BaseStorage):
     """Kanon Non-Secrets interface."""
@@ -493,7 +495,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
             LOGGER.debug("Fetched row: category=%s, name=%s", row.category, row.name)
         except DBStoreError as err:
             await self.close()
-            raise StorageSearchError("Error when fetching search results") from err
+            raise StorageSearchError(ERR_FETCH_SEARCH_RESULTS) from err
         except StopAsyncIteration:
             await self.close()
             raise
@@ -519,7 +521,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
                 await self._scan
             except DBStoreError as err:
                 await self.close()
-                raise StorageSearchError("Error when fetching search results") from err
+                raise StorageSearchError(ERR_FETCH_SEARCH_RESULTS) from err
             # No rows yielded
             await self.close()
             return ret
@@ -541,7 +543,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
                 count += 1
             except DBStoreError as err:
                 await self.close()
-                raise StorageSearchError("Error when fetching search results") from err
+                raise StorageSearchError(ERR_FETCH_SEARCH_RESULTS) from err
             except StopAsyncIteration:
                 break
         if not ret:

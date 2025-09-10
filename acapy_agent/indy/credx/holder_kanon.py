@@ -230,6 +230,121 @@ class IndyCredxHolder(IndyHolder):
 
         return cred_req_json, cred_req_metadata_json
 
+    def _parse_and_validate_ids(self, cred_recvd) -> tuple[tuple, tuple]:
+        """Parse and validate schema and credential definition IDs.
+
+        Returns:
+            Tuple of (schema_id_parts, cdef_id_parts)
+        """
+        schema_id = cred_recvd.schema_id
+        # Handle both qualified (did:sov:V4SG:2:schema:1.0)
+        # and unqualified (V4SG:2:schema:1.0) schema IDs
+        schema_id_parts = re.match(
+            r"^([^:]+(?::[^:]+:[^:]+)?):2:([^:]+):([^:]+)$", schema_id
+        )
+        if not schema_id_parts:
+            raise IndyHolderError(ERR_PARSING_SCHEMA_ID.format(schema_id))
+
+        cred_def_id = cred_recvd.cred_def_id
+        cdef_id_parts = re.match(
+            r"^([^:]+(?::[^:]+:[^:]+)?):3:CL:([^:]+):([^:]+)$", cred_def_id
+        )
+        if not cdef_id_parts:
+            raise IndyHolderError(ERR_PARSING_CRED_DEF_ID.format(cred_def_id))
+
+        return schema_id_parts, cdef_id_parts
+
+    def _normalize_did(self, did: str) -> str:
+        """Normalize DID to unqualified format for consistent storage."""
+        return did[8:] if did.startswith("did:sov:") else did
+
+    def _build_credential_tags(
+        self,
+        cred_recvd,
+        schema_id_parts: tuple,
+        cdef_id_parts: tuple,
+        credential_data: dict,
+        credential_attr_mime_types: Optional[dict],
+    ) -> tuple[dict, dict]:
+        """Build tags and mime_types for credential storage.
+
+        Returns:
+            Tuple of (tags, mime_types)
+        """
+        schema_issuer_did = self._normalize_did(schema_id_parts[1])
+        issuer_did = self._normalize_did(cdef_id_parts[1])
+
+        tags = {
+            "schema_id": cred_recvd.schema_id,
+            "schema_issuer_did": schema_issuer_did,
+            "schema_name": schema_id_parts[2],
+            "schema_version": schema_id_parts[3],
+            "issuer_did": issuer_did,
+            "cred_def_id": cred_recvd.cred_def_id,
+            "rev_reg_id": cred_recvd.rev_reg_id or "None",
+        }
+
+        mime_types = {}
+        for k, attr_value in credential_data["values"].items():
+            attr_name = _normalize_attr_name(k)
+            tags[f"attr::{attr_name}::value"] = attr_value["raw"]
+            if credential_attr_mime_types and k in credential_attr_mime_types:
+                mime_types[k] = credential_attr_mime_types[k]
+
+        return tags, mime_types
+
+    async def _insert_credential_record(
+        self, txn, credential_id: str, cred_recvd, tags: dict
+    ) -> None:
+        """Insert credential record into storage."""
+        insert_method = txn.handle.insert
+        if inspect.iscoroutinefunction(insert_method):
+            await insert_method(
+                CATEGORY_CREDENTIAL,
+                credential_id,
+                cred_recvd.to_json_buffer(),
+                tags=tags,
+            )
+        else:
+            insert_method(
+                CATEGORY_CREDENTIAL,
+                credential_id,
+                cred_recvd.to_json_buffer(),
+                tags=tags,
+            )
+
+    async def _insert_mime_types_record(
+        self, txn, credential_id: str, mime_types: dict
+    ) -> None:
+        """Insert MIME types record if needed."""
+        if not mime_types:
+            return
+
+        insert_method = txn.handle.insert
+        if inspect.iscoroutinefunction(insert_method):
+            await insert_method(
+                IndyHolder.RECORD_TYPE_MIME_TYPES,
+                credential_id,
+                value_json=mime_types,
+            )
+        else:
+            insert_method(
+                IndyHolder.RECORD_TYPE_MIME_TYPES,
+                credential_id,
+                value_json=mime_types,
+            )
+
+    async def _commit_transaction(self, txn) -> None:
+        """Commit transaction if commit method exists."""
+        commit_method = getattr(txn, "commit", None)
+        if not commit_method:
+            return
+
+        if inspect.iscoroutinefunction(commit_method):
+            await commit_method()
+        else:
+            commit_method()
+
     async def store_credential(
         self,
         credential_definition: dict,
@@ -269,87 +384,23 @@ class IndyCredxHolder(IndyHolder):
         except CredxError as err:
             raise IndyHolderError(ERR_PROCESS_RECEIVED_CRED) from err
 
-        schema_id = cred_recvd.schema_id
-        # Handle both qualified (did:sov:V4SG:2:schema:1.0)
-        # and unqualified (V4SG:2:schema:1.0) schema IDs
-        schema_id_parts = re.match(
-            r"^([^:]+(?::[^:]+:[^:]+)?):2:([^:]+):([^:]+)$", schema_id
-        )
-        if not schema_id_parts:
-            raise IndyHolderError(ERR_PARSING_SCHEMA_ID.format(schema_id))
-        cred_def_id = cred_recvd.cred_def_id
-        cdef_id_parts = re.match(
-            r"^([^:]+(?::[^:]+:[^:]+)?):3:CL:([^:]+):([^:]+)$", cred_def_id
-        )
-        if not cdef_id_parts:
-            raise IndyHolderError(ERR_PARSING_CRED_DEF_ID.format(cred_def_id))
+        schema_id_parts, cdef_id_parts = self._parse_and_validate_ids(cred_recvd)
 
         credential_id = credential_id or str(uuid4())
 
-        # Normalize DIDs to unqualified format for consistent storage and querying
-        # This matches the pattern used in BaseConnectionManager.store_did_document()
-        schema_issuer_did = schema_id_parts[1]
-        if schema_issuer_did.startswith("did:sov:"):
-            schema_issuer_did = schema_issuer_did[8:]
-
-        issuer_did = cdef_id_parts[1]
-        if issuer_did.startswith("did:sov:"):
-            issuer_did = issuer_did[8:]
-
-        tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": schema_issuer_did,
-            "schema_name": schema_id_parts[2],
-            "schema_version": schema_id_parts[3],
-            "issuer_did": issuer_did,
-            "cred_def_id": cred_def_id,
-            "rev_reg_id": cred_recvd.rev_reg_id or "None",
-        }
-
-        mime_types = {}
-        for k, attr_value in credential_data["values"].items():
-            attr_name = _normalize_attr_name(k)
-            tags[f"attr::{attr_name}::value"] = attr_value["raw"]
-            if credential_attr_mime_types and k in credential_attr_mime_types:
-                mime_types[k] = credential_attr_mime_types[k]
+        tags, mime_types = self._build_credential_tags(
+            cred_recvd,
+            schema_id_parts,
+            cdef_id_parts,
+            credential_data,
+            credential_attr_mime_types,
+        )
 
         try:
             async with self._profile.transaction() as txn:
-                insert_method = txn.handle.insert
-                if inspect.iscoroutinefunction(insert_method):
-                    await insert_method(
-                        CATEGORY_CREDENTIAL,
-                        credential_id,
-                        cred_recvd.to_json_buffer(),
-                        tags=tags,
-                    )
-                else:
-                    insert_method(
-                        CATEGORY_CREDENTIAL,
-                        credential_id,
-                        cred_recvd.to_json_buffer(),
-                        tags=tags,
-                    )
-                if mime_types:
-                    insert_method = txn.handle.insert
-                    if inspect.iscoroutinefunction(insert_method):
-                        await insert_method(
-                            IndyHolder.RECORD_TYPE_MIME_TYPES,
-                            credential_id,
-                            value_json=mime_types,
-                        )
-                    else:
-                        insert_method(
-                            IndyHolder.RECORD_TYPE_MIME_TYPES,
-                            credential_id,
-                            value_json=mime_types,
-                        )
-                commit_method = getattr(txn, "commit", None)
-                if commit_method:
-                    if inspect.iscoroutinefunction(commit_method):
-                        await commit_method()
-                    else:
-                        commit_method()
+                await self._insert_credential_record(txn, credential_id, cred_recvd, tags)
+                await self._insert_mime_types_record(txn, credential_id, mime_types)
+                await self._commit_transaction(txn)
         except (DBStoreError, AskarError) as err:
             raise IndyHolderError(ERR_STORING_CREDENTIAL) from err
 

@@ -225,8 +225,6 @@ class CredExV20CustomHandler(NormalizedHandler):
                             f"[extract] Extracted attributes from {field}: {attributes}"
                         )
                         break
-                except json.JSONDecodeError as e:
-                    LOGGER.warning(f"[extract] Invalid {field} JSON: {str(e)}")
                 except Exception as e:
                     LOGGER.warning(
                         f"[extract] Error extracting attributes from {field}: {str(e)}"
@@ -282,10 +280,6 @@ class CredExV20CustomHandler(NormalizedHandler):
                         LOGGER.debug(
                             f"[extract] Extracted formats from {field}: {formats}"
                         )
-                except json.JSONDecodeError as e:
-                    LOGGER.warning(
-                        f"[extract] Invalid {field} JSON for formats: {str(e)}"
-                    )
                 except Exception as e:
                     LOGGER.warning(
                         f"[extract] Error extracting formats from {field}: {str(e)}"
