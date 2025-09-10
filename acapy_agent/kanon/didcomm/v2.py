@@ -2,7 +2,7 @@
 
 import json
 from collections import OrderedDict
-from typing import Mapping, Tuple
+from typing import Mapping, Optional, Tuple
 
 from aries_askar import AskarError, Key, KeyAlg, Session, ecdh
 from marshmallow import ValidationError
@@ -316,7 +316,7 @@ async def _resolve_sender_key_ecdh_1pu(
     return sender_kid, sender_key_entry.key
 
 
-def _extract_sender_kid_from_apu(wrapper: JweEnvelope) -> str:
+def _extract_sender_kid_from_apu(wrapper: JweEnvelope) -> Optional[str]:
     """Extract sender key ID from APU field."""
     apu = wrapper.protected.get("apu")
     if not apu:

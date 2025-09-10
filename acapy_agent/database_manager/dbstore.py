@@ -91,6 +91,7 @@ class Scan(AsyncIterator):
             try:
                 return await anext(self._generator)  # noqa: F821
             except StopAsyncIteration:
+                LOGGER.error("StopAsyncIteration in __anext__")
                 raise
         else:
             # Handle sync generators using the executor
@@ -186,6 +187,7 @@ class ScanKeyset(AsyncIterator):
             try:
                 return await anext(self._generator)  # noqa: F821
             except StopAsyncIteration:
+                LOGGER.error("StopAsyncIteration in __anext__")
                 raise
         else:
             # Handle sync generators using the executor

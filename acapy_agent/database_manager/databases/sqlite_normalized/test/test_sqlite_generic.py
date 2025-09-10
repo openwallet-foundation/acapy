@@ -407,8 +407,6 @@ async def run_tests(store, db_path, is_encrypted=True):
     except Exception as e:
         LOGGER.error(f"Error in run_tests: {str(e)}")
         raise
-    finally:
-        pass
 
 
 async def main():

@@ -60,7 +60,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             LOGGER.error(f"Failed to extract version from table {self.table}: {str(e)}")
             return "1"
 
-    def _extract_cred_def_id(self, json_data: dict) -> str:
+    def _extract_cred_def_id(self, json_data: dict) -> Optional[str]:
         try:
             if "cred_offer" not in json_data or not json_data["cred_offer"]:
                 return None

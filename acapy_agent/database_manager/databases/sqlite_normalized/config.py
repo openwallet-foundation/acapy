@@ -133,12 +133,7 @@ class SqliteConfig:
                     "Loading schema release: %s (type: sqlite)", effective_release_number
                 )
 
-                handlers, schemas, _ = get_release(effective_release_number, "sqlite")
-                # LOGGER.debug(
-                #     "Schemas loaded for release=%s: %s",
-                #     effective_release_number,
-                #     schemas
-                # )
+                _, schemas, _ = get_release(effective_release_number, "sqlite")
 
                 for category, schema in schemas.items():
                     if category == "default":
@@ -340,14 +335,12 @@ class SqliteConfig:
     def open(
         self,
         profile: Optional[str] = None,
-        schema_migration: Optional[bool] = None,
         target_schema_release_number: Optional[str] = None,
     ) -> Tuple[ConnectionPool, str, str, str]:
         """Open database connection and validate configuration.
 
         Args:
             profile: Profile name to use
-            schema_migration: Whether to perform schema migration
             target_schema_release_number: Target schema release number
 
         Returns:

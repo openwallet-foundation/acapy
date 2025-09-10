@@ -83,8 +83,9 @@ async def test_dbstore_provision_open_remove_success(monkeypatch):
     uri = "ok://path"
     store = await DBStore.provision(uri=uri, profile="p", recreate=True)
     assert store.uri == uri
+    release_number = store.release_number
     await store.close()
 
     store2 = await DBStore.open(uri=uri, profile="p")
-    assert store2.release_number == store2.release_number
+    assert store2.release_number == release_number
     assert await DBStore.remove(uri=uri) is True

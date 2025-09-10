@@ -59,7 +59,7 @@ class FakeDBStoreHandle:
     def __init__(self):
         self._rows: Dict[tuple[str, str], Dict[str, Any]] = {}
 
-    async def insert(
+    def insert(
         self,
         category: str,
         name: str,
@@ -86,7 +86,7 @@ class FakeDBStoreHandle:
             "tags": tags or {},
         }
 
-    async def fetch(self, category: str, name: str, for_update: bool = False):
+    def fetch(self, category: str, name: str, for_update: bool = False):
         row = self._rows.get((category, name))
         if not row:
             return None
@@ -98,7 +98,7 @@ class FakeDBStoreHandle:
             tags=row["tags"],
         )
 
-    async def replace(
+    def replace(
         self,
         category: str,
         name: str,
@@ -123,9 +123,9 @@ class FakeDBStoreHandle:
         if tags is not None:
             row["tags"] = tags
 
-    async def fetch_all(self, category: str, tag_filter: Optional[dict] = None, **kwargs):
+    def fetch_all(self, category: str, tag_filter: Optional[dict] = None, **kwargs):
         results = []
-        for (cat, _), row in list(self._rows.items()):
+        for (cat, _), row in self._rows.items():
             if cat != category:
                 continue
             tags = row["tags"] or {}
@@ -188,8 +188,7 @@ class FakeProfile:
 
     def scan(self, *args, **kwargs):
         async def _gen():
-            if False:
-                yield None
+            yield None
 
         return _gen()
 
@@ -228,7 +227,7 @@ def wallet_with_did_env(monkeypatch):
     monkeypatch.setattr(module, "validate_seed", lambda s: b"seedbytes")
     monkeypatch.setattr(module, "pack_message", lambda to, fk, m: b"packed")
 
-    async def _unpack(h, em):
+    def _unpack(h, em):
         return (b"{ }", "r", "s")
 
     monkeypatch.setattr(module, "unpack_message", _unpack)
@@ -260,7 +259,7 @@ def wallet_with_did_env(monkeypatch):
         def __init__(self):
             self._keys: Dict[str, Dict[str, Any]] = {}
 
-        async def insert_key(
+        def insert_key(
             self,
             name: str,
             key: FakeKey,
@@ -276,7 +275,7 @@ def wallet_with_did_env(monkeypatch):
                 raise _Err()
             self._keys[name] = {"key": key, "metadata": metadata, "tags": tags or {}}
 
-        async def fetch_key(self, name: str, for_update: bool = False):
+        def fetch_key(self, name: str, for_update: bool = False):
             entry = self._keys.get(name)
             if not entry:
                 return None
@@ -284,7 +283,7 @@ def wallet_with_did_env(monkeypatch):
                 key=entry["key"], metadata=entry["metadata"], tags=entry["tags"]
             )
 
-        async def update_key(
+        def update_key(
             self, name: str, tags: Optional[dict] = None, metadata: Optional[str] = None
         ):
             entry = self._keys.get(name)
@@ -300,7 +299,7 @@ def wallet_with_did_env(monkeypatch):
             if metadata is not None:
                 entry["metadata"] = metadata
 
-        async def fetch_all_keys(self, tag_filter: dict, limit: int = 2):
+        def fetch_all_keys(self, tag_filter: dict, limit: int = 2):
             results = []
             for _, entry in self._keys.items():
                 if all(entry["tags"].get(k) == v for k, v in (tag_filter or {}).items()):

@@ -9,9 +9,7 @@ class FakeDBStoreHandle:
     def __init__(self):
         self._rows: Dict[tuple[str, str], Dict[str, Any]] = {}
 
-    async def insert(
-        self, category: str, name: str, value: str, tags: Optional[dict] = None
-    ):
+    def insert(self, category: str, name: str, value: str, tags: Optional[dict] = None):
         key = (category, name)
         if key in self._rows:
             raise DBStoreError(DBStoreErrorCode.DUPLICATE, "duplicate")
@@ -22,7 +20,7 @@ class FakeDBStoreHandle:
             "tags": tags or {},
         }
 
-    async def fetch(self, category: str, name: str, for_update: bool = False):
+    def fetch(self, category: str, name: str, for_update: bool = False):
         row = self._rows.get((category, name))
         if not row:
             return None
@@ -33,7 +31,7 @@ class FakeDBStoreHandle:
             tags=row["tags"],
         )
 
-    async def replace(self, category: str, name: str, value: str, tags: dict):
+    def replace(self, category: str, name: str, value: str, tags: dict):
         if (category, name) not in self._rows:
             raise DBStoreError(DBStoreErrorCode.NOT_FOUND, "not found")
         self._rows[(category, name)] = {
@@ -43,14 +41,14 @@ class FakeDBStoreHandle:
             "tags": tags,
         }
 
-    async def remove(self, category: str, name: str):
+    def remove(self, category: str, name: str):
         if (category, name) not in self._rows:
             raise DBStoreError(DBStoreErrorCode.NOT_FOUND, "not found")
         del self._rows[(category, name)]
 
     async def fetch_all(self, category: str, tag_filter: Optional[dict] = None, **kwargs):
         # simple filter implementation
-        for (cat, _), row in list(self._rows.items()):
+        for (cat, _), row in self._rows.items():
             if cat != category:
                 continue
             tags = row["tags"] or {}
@@ -67,9 +65,9 @@ class FakeDBStoreHandle:
                     tags=row["tags"],
                 )
 
-    async def remove_all(self, category: str, tag_filter: Optional[dict] = None):
+    def remove_all(self, category: str, tag_filter: Optional[dict] = None):
         to_delete = []
-        for (cat, name), row in list(self._rows.items()):
+        for (cat, name), row in self._rows.items():
             if cat != category:
                 continue
             tags = row["tags"] or {}
@@ -408,7 +406,6 @@ async def test_search_session_db_error(monkeypatch):
     def _bad_scan(**kwargs):
         async def _gen():
             raise DBStoreError(DBStoreErrorCode.BUSY, "scan error")
-            yield
 
         return _gen()
 

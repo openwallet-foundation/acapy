@@ -88,7 +88,7 @@ class PostgresConfig:
             parsed.username
         )  # starting point here:  Initialize SchemaContext with username from URI
 
-    def _get_default_conn_str(self, target_db: str) -> str:
+    def _get_default_conn_str(self) -> str:
         parsed = urllib.parse.urlparse(self.conn_str)
         db_name = parsed.path.lstrip("/")
         if db_name:
@@ -273,7 +273,6 @@ class PostgresConfig:
 
     async def _drop_tables(
         self,
-        conn,
         target_db: str,
         schema_config: str,
         release_number: str,
@@ -325,9 +324,7 @@ class PostgresConfig:
                         )
 
                 if schema_config != "generic":
-                    handlers, schemas, drop_schemas = get_release(
-                        release_number, schema_release_type
-                    )
+                    _, _, drop_schemas = get_release(release_number, schema_release_type)
                     dropped_tables = set(core_tables)
                     for category in drop_schemas:  # iterate over drop_schemas.keys()
                         LOGGER.debug("Processing drop schemas for category %s", category)
@@ -426,7 +423,7 @@ class PostgresConfig:
             profile,
             release_number,
         )
-        default_conn_str = self._get_default_conn_str(target_db)
+        default_conn_str = self._get_default_conn_str()
         pool_temp = PostgresConnectionPool(
             conn_str=default_conn_str,
             min_size=1,
@@ -608,7 +605,6 @@ class PostgresConfig:
                     await conn.set_autocommit(True)
                     try:
                         await self._drop_tables(
-                            conn,
                             target_db,
                             schema_config,
                             schema_release_number,
@@ -1056,7 +1052,7 @@ class PostgresConfig:
                     "Invalid URI query parameter '%s' in conn_str, will be ignored", param
                 )
 
-        default_conn_str = self._get_default_conn_str(target_db)
+        default_conn_str = self._get_default_conn_str()
         LOGGER.debug("Generated default connection string: %s", default_conn_str)
 
         default_parsed = urllib.parse.urlparse(default_conn_str)
@@ -1341,7 +1337,7 @@ class PostgresConfig:
         target_db = parsed.path.lstrip("/")
         if not target_db:
             return False
-        default_conn_str = self._get_default_conn_str(target_db)
+        default_conn_str = self._get_default_conn_str()
         pool = PostgresConnectionPool(
             conn_str=default_conn_str,
             min_size=self.min_size,

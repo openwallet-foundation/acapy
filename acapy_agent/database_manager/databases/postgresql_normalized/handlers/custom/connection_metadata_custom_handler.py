@@ -33,7 +33,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             f"table={self.table}, columns={columns}, schema_context={schema_context}"
         )
 
-    def _extract_metadata(self, json_data: dict) -> str:
+    def _extract_metadata(self, json_data: dict) -> Optional[str]:
         try:
             if not json_data or not isinstance(json_data, dict):
                 LOGGER.debug("No valid JSON data provided for metadata extraction")

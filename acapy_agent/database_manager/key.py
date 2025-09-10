@@ -81,7 +81,7 @@ class Key:
         """Return placeholder secret bytes since bindings is unavailable."""
         return b"secret_bytes_placeholder"
 
-    def get_jwk_public(self, alg: str | KeyAlg = None) -> str:
+    def get_jwk_public(self) -> str:
         """Return placeholder public JWK since bindings is unavailable."""
         return "jwk_public_placeholder"
 
@@ -89,7 +89,7 @@ class Key:
         """Return placeholder secret JWK since bindings is unavailable."""
         return b"jwk_secret_placeholder"
 
-    def get_jwk_thumbprint(self, alg: str | KeyAlg = None) -> str:
+    def get_jwk_thumbprint(self) -> str:
         """Return placeholder JWK thumbprint since bindings is unavailable."""
         return "jwk_thumbprint_placeholder"
 
@@ -101,20 +101,11 @@ class Key:
         """Return placeholder nonce since bindings is unavailable."""
         return b"nonce_placeholder"
 
-    def aead_encrypt(
-        self, message: str | bytes, *, nonce: bytes = None, aad: bytes = None
-    ) -> str:
+    def aead_encrypt(self) -> str:
         """Return a placeholder for encrypted data."""
         return "Encrypted placeholder"
 
-    def aead_decrypt(
-        self,
-        ciphertext: bytes,
-        *,
-        nonce: bytes,
-        tag: bytes = None,
-        aad: bytes = None,
-    ) -> bytes:
+    def aead_decrypt(self) -> bytes:
         """Return placeholder decrypted data."""
         return b"decrypted placeholder"
 
@@ -130,18 +121,11 @@ class Key:
             "Signature verification is not available without bindings."
         )
 
-    def wrap_key(self, other: "Key", *, nonce: bytes = None) -> str:
+    def wrap_key(self) -> str:
         """Return a placeholder for wrapped key."""
         return "Encrypted placeholder"
 
-    def unwrap_key(
-        self,
-        alg: str | KeyAlg,
-        ciphertext: bytes,
-        *,
-        nonce: bytes = None,
-        tag: bytes = None,
-    ) -> "Key":
+    def unwrap_key(self) -> "Key":
         """Return a placeholder Key instance."""
         return Key("placeholder handle")
 

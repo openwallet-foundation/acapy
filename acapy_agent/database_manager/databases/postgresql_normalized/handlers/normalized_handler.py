@@ -159,7 +159,7 @@ class NormalizedHandler(BaseHandler):
             await self._ensure_utf8(cursor)
 
             # Process and validate input data
-            expiry, processed_value, json_data = await self._process_insert_data(
+            expiry, processed_value, json_data = self._process_insert_data(
                 operation_name, value, expiry_ms
             )
 
@@ -187,7 +187,7 @@ class NormalizedHandler(BaseHandler):
             if cursor.connection.pgconn.transaction_status != pq.TransactionStatus.IDLE:
                 await cursor.connection.commit()
 
-    async def _process_insert_data(
+    def _process_insert_data(
         self, operation_name: str, value: str | bytes, expiry_ms: Optional[int]
     ) -> tuple:
         """Process and validate insert data."""

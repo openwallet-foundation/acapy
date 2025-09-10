@@ -6,10 +6,10 @@ class _Handle:
     def __init__(self):
         self.rows = {}
 
-    async def fetch(self, cat, name, for_update=False):
+    def fetch(self, cat, name, for_update=False):
         return self.rows.get((cat, name))
 
-    async def insert(self, cat, name, value, tags=None):
+    def insert(self, cat, name, value, tags=None):
         key = (cat, name)
         if key in self.rows:
             # Simulate duplicate
@@ -25,10 +25,10 @@ class _Handle:
             tags=tags or {},
         )
 
-    async def remove(self, cat, name):
+    def remove(self, cat, name):
         self.rows.pop((cat, name), None)
 
-    async def replace(self, cat, name, value=None, value_json=None):
+    def replace(self, cat, name, value=None, value_json=None):
         rec = self.rows.get((cat, name))
         if not rec:
             return
@@ -50,7 +50,7 @@ class _Sess:
 
 
 class _Txn(_Sess):
-    async def commit(self):
+    def commit(self):
         return None
 
 
@@ -69,7 +69,7 @@ class _Profile:
 
     def _scan(self, category, tag_filter, offset, limit, profile=None):
         async def _gen():
-            for (cat, name), rec in list(self._handle.rows.items()):
+            for (cat, name), rec in self._handle.rows.items():
                 if cat == category:
                     yield types.SimpleNamespace(name=name, raw_value=rec.raw_value)
 
@@ -317,13 +317,13 @@ async def test_credential_revoked_true_and_false(patched_holder):
             self.rev_reg_id = rr_id
             self.rev_reg_index = idx
 
-    async def _get(cred_id):
+    def _get(cred_id):
         return _C("rr", 3 if cred_id == "c1" else 4)
 
     holder._get_credential = _get
 
     class _Ledger:
-        async def get_revoc_reg_delta(self, rev_reg_id, f, t):
+        def get_revoc_reg_delta(self, rev_reg_id, f, t):
             return ({"value": {"revoked": [3]}}, None)
 
     ledger = _Ledger()
@@ -363,15 +363,11 @@ async def test_create_and_save_link_secret_duplicate_and_error(patched_holder):
     prof = _Profile()
     holder = m.IndyCredxHolder(prof)
 
-    class _SessDup(_Sess):
-        async def __aenter__(self):
-            return self
-
     class _H:
         def __init__(self):
             self.calls = 0
 
-        async def insert(self, *a, **k):
+        def insert(self, *a, **k):
             from acapy_agent.database_manager.dbstore import (
                 DBStoreError,
                 DBStoreErrorCode,
@@ -387,7 +383,7 @@ async def test_create_and_save_link_secret_duplicate_and_error(patched_holder):
     assert out is None
 
     class _HBad:
-        async def insert(self, *a, **k):
+        def insert(self, *a, **k):
             from acapy_agent.database_manager.dbstore import (
                 DBStoreError,
                 DBStoreErrorCode,
@@ -419,8 +415,6 @@ def test_is_duplicate_error_checks(patched_holder):
 @pytest.mark.asyncio
 async def test_delete_credential_not_found_and_error(patched_holder):
     m = patched_holder
-    prof = _Profile()
-    holder = m.IndyCredxHolder(prof)
 
     class _HNotFound(_Handle):
         async def remove(self, cat, name):
@@ -503,7 +497,7 @@ async def test_create_presentation_success_and_error(patched_holder, monkeypatch
     prof = _Profile()
     holder = m.IndyCredxHolder(prof)
 
-    async def _ls():
+    def _ls():
         return "LS"
 
     monkeypatch.setattr(holder, "get_link_secret", _ls)

@@ -1,6 +1,7 @@
 """Http Transport classes and functions."""
 
 import logging
+import traceback
 
 from aiohttp import web
 
@@ -129,8 +130,12 @@ class HttpTransport(BaseInboundTransport):
             except (MessageParseError, WireFormatParseError) as e:
                 raise web.HTTPBadRequest(reason=str(e))
             except Exception as e:
-                # add loogs
-                LOGGER.error("Unexpected error in inbound_message_handler: %s, stack=%s")
+                # add logs
+                LOGGER.error(
+                    "Unexpected error in inbound_message_handler: %s, stack=%s",
+                    str(e),
+                    traceback.format_exc(),
+                )
                 raise web.HTTPInternalServerError(reason=f"Unexpected error: {str(e)}")
 
     async def invite_message_handler(self, request: web.BaseRequest):
