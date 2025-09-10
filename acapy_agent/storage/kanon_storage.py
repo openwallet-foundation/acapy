@@ -360,7 +360,8 @@ class KanonStorage(BaseStorage):
         """Call a DB session method handling both sync handle.* and async session.*.
 
         If session.handle.<method> exists and is synchronous, call it directly.
-        If it is asynchronous (coroutine or async generator), delegate to session.<method>.
+        If it is asynchronous (coroutine or async generator),
+        delegate to session.<method>.
         Otherwise, call/await session.<method> appropriately.
         """
         prefer_session_first = method_name in {"fetch_all", "remove_all"}
@@ -481,7 +482,8 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
             if hasattr(self._scan, "__anext__"):
                 row = await self._scan.__anext__()
             elif inspect.isawaitable(self._scan):
-                # Awaitable scan: will raise DBStoreError per test, map to StorageSearchError
+                # Awaitable scan: will raise DBStoreError per test, map to
+                # StorageSearchError
                 await self._scan
                 await self.close()
                 raise StopAsyncIteration

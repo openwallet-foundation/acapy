@@ -270,7 +270,8 @@ class IndyCredxHolder(IndyHolder):
             raise IndyHolderError(ERR_PROCESS_RECEIVED_CRED) from err
 
         schema_id = cred_recvd.schema_id
-        # Handle both qualified (did:sov:V4SG:2:schema:1.0) and unqualified (V4SG:2:schema:1.0) schema IDs
+        # Handle both qualified (did:sov:V4SG:2:schema:1.0)
+        # and unqualified (V4SG:2:schema:1.0) schema IDs
         schema_id_parts = re.match(
             r"^([^:]+(?::[^:]+:[^:]+)?):2:([^:]+):([^:]+)$", schema_id
         )
