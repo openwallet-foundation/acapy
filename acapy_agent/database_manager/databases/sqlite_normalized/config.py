@@ -335,14 +335,12 @@ class SqliteConfig:
     def open(
         self,
         profile: Optional[str] = None,
-        schema_migration: Optional[bool] = None,
         target_schema_release_number: Optional[str] = None,
     ) -> Tuple[ConnectionPool, str, str, str]:
         """Open database connection and validate configuration.
 
         Args:
             profile: Profile name to use
-            schema_migration: Whether schema migration is requested (ignored for SQLite)
             target_schema_release_number: Target schema release number
 
         Returns:

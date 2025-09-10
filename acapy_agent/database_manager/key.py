@@ -101,15 +101,11 @@ class Key:
         """Return placeholder nonce since bindings is unavailable."""
         return b"nonce_placeholder"
 
-    def aead_encrypt(
-        self, plaintext: bytes, *, nonce: bytes | None = None, aad: bytes | None = None
-    ) -> str:
+    def aead_encrypt(self) -> str:
         """Return a placeholder for encrypted data."""
         return "Encrypted placeholder"
 
-    def aead_decrypt(
-        self, ciphertext: bytes, *, nonce: bytes | None = None, aad: bytes | None = None
-    ) -> bytes:
+    def aead_decrypt(self) -> bytes:
         """Return placeholder decrypted data."""
         return b"decrypted placeholder"
 
@@ -125,7 +121,7 @@ class Key:
             "Signature verification is not available without bindings."
         )
 
-    def wrap_key(self, other_key=None) -> str:
+    def wrap_key(self) -> str:
         """Return a placeholder for wrapped key."""
         return "Encrypted placeholder"
 

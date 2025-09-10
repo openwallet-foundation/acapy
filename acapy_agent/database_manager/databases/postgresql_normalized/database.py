@@ -96,10 +96,7 @@ class PostgresDatabase(AbstractDatabaseStore):
 
     async def _monitor_active_sessions(self):
         while True:
-            try:
-                await asyncio.sleep(5)
-            except asyncio.CancelledError:
-                raise
+            await asyncio.sleep(5)
             with self.lock:
                 if self.active_sessions:
                     current_time = time.time()
@@ -110,8 +107,6 @@ class PostgresDatabase(AbstractDatabaseStore):
                         if age_seconds > 5:
                             try:
                                 await session.close()
-                            except asyncio.CancelledError:
-                                raise
                             except Exception as e:
                                 LOGGER.warning(
                                     "[monitor] Failed to close stale session %s: %s",
@@ -427,8 +422,6 @@ class PostgresDatabase(AbstractDatabaseStore):
                 finally:
                     await pool.close()
             await self.pool.close()
-        except asyncio.CancelledError:
-            raise
         except Exception as e:
             LOGGER.error("Failed to close database: %s", str(e))
             raise DatabaseError(

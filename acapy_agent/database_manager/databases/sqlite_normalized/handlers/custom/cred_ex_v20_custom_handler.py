@@ -63,7 +63,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             LOGGER.error(f"Failed to extract version from table {self.table}: {str(e)}")
             return "1"  # Fallback to default version
 
-    def _extract_cred_def_id(self, json_data: dict) -> str:
+    def _extract_cred_def_id(self, json_data: dict) -> Optional[str]:
         """Extract credential definition ID from JSON data.
 
         Args:

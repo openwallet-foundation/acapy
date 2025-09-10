@@ -79,7 +79,7 @@ class PostgresTagEncoder(TagQueryEncoder):
 
         try:
             if query.variant == "Not":
-                sql_clause = self._encode_not(query, top_level)
+                sql_clause = self._encode_not(query)
             else:
                 compare_map = {
                     "Eq": CompareOp.Eq,
@@ -116,7 +116,7 @@ class PostgresTagEncoder(TagQueryEncoder):
             LOGGER.error("[%s] Failed: %s", "encode_operation", str(e))
             raise
 
-    def _encode_not(self, query: TagQuery, top_level: bool) -> str:
+    def _encode_not(self, query: TagQuery) -> str:
         """Encode a NOT expression with special-cases for certain variants."""
         inner = query.data
         if inner.variant == "Exist":

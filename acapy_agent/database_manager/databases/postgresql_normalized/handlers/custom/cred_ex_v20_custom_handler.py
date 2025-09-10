@@ -6,7 +6,7 @@ from ..normalized_handler import (
     serialize_json_with_bool_strings,
 )
 from ....errors import DatabaseError, DatabaseErrorCode
-from psycopg import AsyncCursor
+from psycopg import AsyncCursor, errors as psycopg_errors
 from typing import List, Optional
 import json
 import base64
@@ -262,7 +262,7 @@ class CredExV20CustomHandler(NormalizedHandler):
                         f"[extract] Inserted attribute: name={attr['name']}, "
                         f"value={attr['value']} for cred_ex_v20_id={cred_ex_id}"
                     )
-        except Exception as e:
+        except psycopg_errors.Error as e:
             LOGGER.error(
                 f"[extract] Database error inserting into {attributes_table}: {str(e)}"
             )
@@ -321,7 +321,7 @@ class CredExV20CustomHandler(NormalizedHandler):
                         f"[extract] Inserted format: attach_id={fmt['attach_id']}, "
                         f"format_type={fmt.get('format')} for cred_ex_v20_id={cred_ex_id}"
                     )
-        except Exception as e:
+        except psycopg_errors.Error as e:
             LOGGER.error(
                 f"[extract] Database error inserting into {formats_table}: {str(e)}"
             )
@@ -412,7 +412,7 @@ class CredExV20CustomHandler(NormalizedHandler):
 
             await self._extract_attributes_and_formats(json_data, cred_ex_id, cursor)
 
-        except Exception as e:
+        except psycopg_errors.Error as e:
             LOGGER.error(
                 f"[insert] Database error during insert for item_id={item_id}, "
                 f"thread_id={tags.get('thread_id')}: {str(e)}"
@@ -518,7 +518,7 @@ class CredExV20CustomHandler(NormalizedHandler):
 
             await self._extract_attributes_and_formats(json_data, cred_ex_id, cursor)
 
-        except Exception as e:
+        except psycopg_errors.Error as e:
             LOGGER.error(
                 (
                     f"[replace] Database error during replace for item_id={item_id}, "

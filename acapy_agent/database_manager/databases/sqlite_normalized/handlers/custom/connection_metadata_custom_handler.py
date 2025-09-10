@@ -35,7 +35,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             f"columns={columns}"
         )
 
-    def _extract_metadata(self, json_data: dict) -> str:
+    def _extract_metadata(self, json_data: dict) -> Optional[str]:
         """Extract key-value pairs from JSON data and serialize as JSON string.
 
         Extract key-value pairs from JSON data and serialize them as a JSON string

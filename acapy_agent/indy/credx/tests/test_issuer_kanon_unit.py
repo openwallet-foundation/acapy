@@ -738,15 +738,6 @@ async def test_save_revocation_updates_success_path(patched_issuer):
             m.CATEGORY_REV_REG_INFO, "rr", {"curr_id": 1, "used_ids": []}
         )
 
-    class _Sess(_Txn):
-        async def fetch(self, cat, name, for_update=False):
-            key = (cat, name)
-            return prof.h.rows.get(key)
-
-    class _P(_Profile):
-        def transaction(self):
-            return _Sess(self.h)
-
     await issuer._save_revocation_updates(
         "rr",
         types.SimpleNamespace(to_json_buffer=lambda: b"{}"),

@@ -471,8 +471,6 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 break  # Success, exit loop
             except IndyIssuerRetryableError:
                 continue  # Retry on concurrent updates
-            except IndyIssuerError:
-                raise  # Re-raise non-retryable errors
         else:
             raise IndyIssuerError("Repeated conflict attempting to update registry")
 
