@@ -58,7 +58,7 @@ class FakeAskarHandle:
     def __init__(self):
         self._keys: Dict[str, Dict[str, Any]] = {}
 
-    def insert_key(
+    async def insert_key(
         self,
         name: str,
         key: FakeKey,
@@ -184,7 +184,7 @@ def patched_wallet(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_create_key_and_get_signing_key_success(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
 
     info = await wallet.create_key(module.ED25519, metadata={"k": 1}, kid="kid-1")
     assert info.verkey  # base58 string from bytes
@@ -212,21 +212,21 @@ async def test_assign_kid_to_key_and_get_by_kid(patched_wallet):
 
 @pytest.mark.asyncio
 async def test_get_signing_key_not_found_raises(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletNotFoundError):
         await wallet.get_signing_key("")
 
 
 @pytest.mark.asyncio
 async def test_create_signing_key_wrapper(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
     info = await wallet.create_signing_key(module.ED25519, metadata={"m": 1})
     assert info.metadata == {"m": 1}
 
 
 @pytest.mark.asyncio
 async def test_get_key_by_kid_not_found_and_duplicate(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletNotFoundError):
         await wallet.get_key_by_kid("nope")
 
@@ -238,14 +238,14 @@ async def test_get_key_by_kid_not_found_and_duplicate(patched_wallet):
 
 @pytest.mark.asyncio
 async def test_replace_signing_key_metadata_requires_verkey(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletNotFoundError):
         await wallet.replace_signing_key_metadata("", {"x": 1})
 
 
 @pytest.mark.asyncio
 async def test_sign_message_and_verify_missing_inputs_and_missing_key(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletError):
         await wallet.sign_message(b"", "vk")
     with pytest.raises(module.WalletError):
@@ -265,7 +265,7 @@ async def test_sign_message_and_verify_missing_inputs_and_missing_key(patched_wa
 
 @pytest.mark.asyncio
 async def test_pack_message_missing_from_key_raises(patched_wallet):
-    module, wallet = patched_wallet
+    module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletNotFoundError):
         await wallet.pack_message("{}", ["vk"], from_verkey="vk")
 

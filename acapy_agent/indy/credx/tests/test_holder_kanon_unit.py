@@ -9,7 +9,7 @@ class _Handle:
     def fetch(self, cat, name, for_update=False):
         return self.rows.get((cat, name))
 
-    def insert(self, cat, name, value, tags=None):
+    async def insert(self, cat, name, value, tags=None):
         key = (cat, name)
         if key in self.rows:
             # Simulate duplicate
@@ -24,6 +24,7 @@ class _Handle:
             value_json=value if isinstance(value, dict) else None,
             tags=tags or {},
         )
+        return None
 
     def remove(self, cat, name):
         self.rows.pop((cat, name), None)
