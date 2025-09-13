@@ -251,7 +251,7 @@ class KanonStoreConfig:
         params = self._build_postgres_dbstore_params(config, creds)
         if params:
             uri += "?" + urllib.parse.urlencode(params)
-        LOGGER.debug("Generated PostgreSQL URI (redacted): %s", uri)
+        LOGGER.debug("Generated PostgreSQL URI (redacted)")
         return uri
 
     def _validate_postgres_dbstore_config(self):
