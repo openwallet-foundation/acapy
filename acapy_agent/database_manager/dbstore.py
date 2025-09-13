@@ -222,9 +222,7 @@ class DBStore:
         self, db: AbstractDatabaseStore, uri: str, release_number: str = "release_0"
     ):
         """Initialize DBStore."""
-        LOGGER.debug(
-            f"Store initialized with db={db}, uri={uri}, release_number={release_number}"
-        )
+        LOGGER.debug("Store initialized (release_number=%s)", release_number)
         self._db = db
         self._uri = uri
         self._release_number = release_number
@@ -268,11 +266,9 @@ class DBStore:
     ) -> "DBStore":
         """Provision a new database store with specified release and schema."""
         LOGGER.debug(
-            f"provision called with uri={uri}, key_method={key_method}, "
-            "pass_key=***, "
-            f"profile={profile}, recreate={recreate}, "
-            f"release_number={release_number}, "
-            f"schema_config={schema_config}, config={config}"
+            "provision called (recreate=%s, release_number=%s)",
+            recreate,
+            release_number,
         )
         # Thread-safe backend registration
         with _registry_lock:
@@ -314,7 +310,7 @@ class DBStore:
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            LOGGER.error("provision error: %s", str(e))
+            LOGGER.error("provision error: %s", type(e).__name__)
             raise backend.translate_error(e)
         return cls(db, uri, release_number)
 
@@ -332,12 +328,9 @@ class DBStore:
     ) -> "DBStore":
         """Perform the action."""
         LOGGER.debug(
-            f"open called with uri={uri}, key_method={key_method}, "
-            "pass_key=***, "
-            f"profile={profile}, schema_migration={schema_migration}, "
-            f"target_schema_release_number={target_schema_release_number}, "
-            f"config={config}, "
-            f"schema_config will be retrieved from database"
+            "open called (schema_migration=%s, target_schema_release_number=%s)",
+            schema_migration,
+            target_schema_release_number,
         )
         # Thread-safe backend registration
         with _registry_lock:
@@ -377,7 +370,7 @@ class DBStore:
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            LOGGER.error("open error: %s", str(e))
+            LOGGER.error("open error: %s", type(e).__name__)
             raise backend.translate_error(e)
         return cls(db, uri, db.release_number)
 
@@ -386,10 +379,7 @@ class DBStore:
         cls, uri: str, release_number: str = "release_0", config: Optional[dict] = None
     ) -> bool:
         """Remove the database store."""
-        LOGGER.debug(
-            f"remove called with uri={uri}, release_number={release_number}, "
-            f"config={config}"
-        )
+        LOGGER.debug("remove called (release_number=%s)", release_number)
         # Thread-safe backend registration
         with _registry_lock:
             if not _backend_registry:  # Register backends if not already done
@@ -411,7 +401,7 @@ class DBStore:
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            LOGGER.error("remove error: %s", str(e))
+            LOGGER.error("remove error: %s", type(e).__name__)
             raise backend.translate_error(e)
 
     async def initialize(self):
@@ -425,7 +415,7 @@ class DBStore:
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            LOGGER.error("initialize error: %s", str(e))
+            LOGGER.error("initialize error: %s", type(e).__name__)
             raise self._db.translate_error(e)
 
     async def create_profile(self, name: str = None) -> str:

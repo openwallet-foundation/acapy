@@ -239,19 +239,19 @@ class KanonStoreConfig:
         self._validate_postgres_dbstore_config()
         config = json.loads(self.dbstore_storage_config)
         creds = json.loads(self.dbstore_storage_creds)
-        LOGGER.debug("Parsed dbstore_storage_config: %s", config)
-        LOGGER.debug("Parsed dbstore_storage_creds: %s", creds)
+        LOGGER.debug("Parsed dbstore_storage_config (keys): %s", list(config.keys()))
+        LOGGER.debug("Parsed dbstore_storage_creds (keys): %s", list(creds.keys()))
 
         config_url = self._validate_postgres_dbstore_url(config)
-        account, password = self._validate_postgres_dbstore_creds(creds)
+        account, _ = self._validate_postgres_dbstore_creds(creds)
 
         db_name = urllib.parse.quote(self.name + "_dbstore")
-        uri = base_uri + f"{account}:{password}@{config_url}/{db_name}"
+        uri = base_uri + f"{account}:***@{config_url}/{db_name}"
 
         params = self._build_postgres_dbstore_params(config, creds)
         if params:
             uri += "?" + urllib.parse.urlencode(params)
-        LOGGER.debug("Generated PostgreSQL URI: %s", uri)
+        LOGGER.debug("Generated PostgreSQL URI (redacted): %s", uri)
         return uri
 
     def _validate_postgres_dbstore_config(self):

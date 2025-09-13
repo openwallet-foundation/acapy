@@ -1146,10 +1146,7 @@ class AnonCredsRevocation:
 
         for attempt in range(max(retries, 1)):
             if attempt > 0:
-                LOGGER.info(
-                    "Waiting 2s before retrying credential issuance for cred def '%s'",
-                    cred_def_id,
-                )
+                LOGGER.info("Waiting 2s before retrying credential issuance")
                 await asyncio.sleep(2)
 
             rev_reg_def_result = None

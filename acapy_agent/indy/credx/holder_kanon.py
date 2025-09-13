@@ -116,7 +116,9 @@ class IndyCredxHolder(IndyHolder):
                 )
             return fetch_method(CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID)
         except (DBStoreError, AskarError) as err:
-            LOGGER.error("%s: %s", ERR_FETCH_LINK_SECRET, err)
+            LOGGER.error(
+                "%s: %s", ERR_FETCH_LINK_SECRET, getattr(err, "code", type(err).__name__)
+            )
             raise IndyHolderError(ERR_FETCH_LINK_SECRET) from err
 
     def _load_existing_link_secret(self, record) -> LinkSecret:
@@ -128,7 +130,8 @@ class IndyCredxHolder(IndyHolder):
             return secret
         except CredxError as err:
             LOGGER.info(
-                "Attempt fallback method after error loading link secret: %s", err
+                "Attempt fallback method after error loading link secret: %s",
+                type(err).__name__,
             )
             return self._load_link_secret_fallback(record, err)
 
@@ -141,7 +144,7 @@ class IndyCredxHolder(IndyHolder):
             LOGGER.debug("Loaded LinkSecret from AnonCreds secret.")
             return secret
         except CredxError as decode_err:
-            LOGGER.error("%s: %s", ERR_LOAD_LINK_SECRET, decode_err)
+            LOGGER.error("%s: %s", ERR_LOAD_LINK_SECRET, type(decode_err).__name__)
             raise IndyHolderError(ERR_LOAD_LINK_SECRET) from original_err
 
     async def _create_and_save_link_secret(self, session) -> LinkSecret:
@@ -177,7 +180,7 @@ class IndyCredxHolder(IndyHolder):
             LOGGER.debug("Created new link secret.")
             return secret
         except CredxError as err:
-            LOGGER.error("%s: %s", ERR_CREATE_LINK_SECRET, err)
+            LOGGER.error("%s: %s", ERR_CREATE_LINK_SECRET, type(err).__name__)
             raise IndyHolderError(ERR_CREATE_LINK_SECRET) from err
 
     def _is_duplicate_error(self, err) -> bool:
