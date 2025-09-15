@@ -127,9 +127,7 @@ class IndyCredxHolder(IndyHolder):
             LOGGER.debug("Loaded existing link secret.")
             return secret
         except CredxError as err:
-            LOGGER.info(
-                "Attempt fallback method after error loading link secret"
-            )
+            LOGGER.info("Attempt fallback method after error loading link secret")
             return self._load_link_secret_fallback(record, err)
 
     def _load_link_secret_fallback(self, record, original_err) -> LinkSecret:
