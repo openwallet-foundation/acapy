@@ -48,7 +48,7 @@ from ..registry import AnonCredsRegistry
 
 
 class MockCredReceived:
-    def __init__(self, bad_schema=False, bad_cred_def=False):
+    def __init__(self):
         self.schema_id = "Sc886XPwD1gDcHwmmLDeR2:2:degree schema:45.101.94"
         self.cred_def_id = "Sc886XPwD1gDcHwmmLDeR2:3:CL:229975:faber.agent.degree_schema"
 

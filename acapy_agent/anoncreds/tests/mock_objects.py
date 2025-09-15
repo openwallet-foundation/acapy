@@ -293,13 +293,6 @@ MOCK_PRES = {
     ],
 }
 
-MOCK_SCHEMA = {
-    "issuerId": "https://example.org/issuers/74acabe2-0edc-415e-ad3d-c259bac04c15",
-    "name": "Example schema",
-    "version": "0.0.1",
-    "attrNames": ["name", "age", "vmax"],
-}
-
 MOCK_CRED_DEF = {
     "issuerId": "did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
     "schemaId": "did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ/anoncreds/v0/SCHEMA/MemberPass/1.0",
@@ -391,3 +384,11 @@ MOCK_CRED = {
     "rev_reg": MOCK_REV_REG_DEF,
     "witness": "977...590",
 }
+
+
+class MockRevocationRegistryDefinition:
+    def __init__(self, rev_reg_id):
+        self.rev_reg_id = rev_reg_id
+
+    def serialize(self):
+        return {"revocation_registry_definition_id": self.rev_reg_id}

@@ -617,7 +617,7 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
     @mock.patch.object(
         test_module.AnonCredsVerifier, "pre_verify", side_effect=ValueError()
     )
-    async def test_verify_presentation_value_error_caught(self, mock_verify):
+    async def test_verify_presentation_value_error_caught(self, _):
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
                 get_credential_definition=mock.CoroutineMock(
