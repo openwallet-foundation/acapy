@@ -1,0 +1,1 @@
+"""AnonCreds schema routes."""

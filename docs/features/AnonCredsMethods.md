@@ -79,7 +79,7 @@ does it automatically -- but your implementation must call the `finish_*` to mak
 the automation. You can see in [Revocation Setup] the automation setup.
 
 [AnonCreds Issuer]: https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/anoncreds/issuer.py#L56
-[Revocation Setup]: https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/anoncreds/revocation_setup.py
+[Revocation Setup]: https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/anoncreds/revocation/setup.py
 
 ## Questions or Comments
 

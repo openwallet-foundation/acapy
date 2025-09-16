@@ -148,7 +148,7 @@ class DefaultContextBuilder(ContextBuilder):
             "acapy_agent.anoncreds",
             "acapy_agent.anoncreds.default.did_web",
             "acapy_agent.anoncreds.default.legacy_indy",
-            "acapy_agent.revocation_anoncreds",
+            "acapy_agent.anoncreds.revocation",
         ]
 
         askar_plugins = [
