@@ -81,7 +81,7 @@ pydevd-pycharm = ">=251.17181.23,<254.0.0"
 # testing
 pytest = "^8.3.4"
 pytest-asyncio = "^1.0.0"
-pytest-cov = "^6.0.0"
+pytest-cov = ">=6,<8"
 pytest-ruff = ">=0.4.1,<0.6.0"
 pytest-xdist = "^3.6.1"
 debugpy = "^1.8.11"
