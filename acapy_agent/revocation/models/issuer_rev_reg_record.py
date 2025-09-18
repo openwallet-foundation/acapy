@@ -14,7 +14,7 @@ from marshmallow import fields, validate
 from uuid_utils import uuid4
 
 from ...core.profile import Profile, ProfileSession
-from ...indy.credx.issuer import (
+from ...indy.constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_REV_REG,
     CATEGORY_REV_REG_DEF_PRIVATE,
