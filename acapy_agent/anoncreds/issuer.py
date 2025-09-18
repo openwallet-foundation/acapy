@@ -468,16 +468,13 @@ class AnonCredsIssuer:
 
                 if support_revocation and wait_for_revocation_setup:
                     await self._wait_for_revocation_setup_completion(
-                        cred_def_id=identifier,
-                        timeout=REVOCATION_REGISTRY_CREATION_TIMEOUT,
+                        cred_def_id=identifier
                     )
 
         except DBError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
-    async def _wait_for_revocation_setup_completion(
-        self, cred_def_id: str, timeout: float = REVOCATION_REGISTRY_CREATION_TIMEOUT
-    ) -> None:
+    async def _wait_for_revocation_setup_completion(self, cred_def_id: str) -> None:
         """Wait for revocation registry setup to complete.
 
         Polls for the creation of revocation registry definitions until we have
@@ -485,7 +482,6 @@ class AnonCredsIssuer:
 
         Args:
             cred_def_id: The credential definition ID
-            timeout: Maximum time to wait in seconds
 
         Raises:
             AnonCredsIssuerError: If timeout occurs before completion
@@ -496,7 +492,7 @@ class AnonCredsIssuer:
 
         expected_count = 2  # Active + Pending registries
         poll_interval = 0.5  # Poll every 500ms
-        max_iterations = int(timeout / poll_interval)
+        max_iterations = int(REVOCATION_REGISTRY_CREATION_TIMEOUT / poll_interval)
         rev_reg_defs = []
 
         for _iteration in range(max_iterations):
@@ -539,9 +535,9 @@ class AnonCredsIssuer:
         raise AnonCredsIssuerError(
             "Timeout waiting for revocation setup completion for credential definition "
             f"{cred_def_id}. Expected {expected_count} revocation registries, but only "
-            f"{current_count} were completed within {timeout} seconds. "
-            "Note: Revocation registry creation may still be in progress in the "
-            "background. You can check status using the revocation registry endpoints."
+            f"{current_count} were finished within {REVOCATION_REGISTRY_CREATION_TIMEOUT}"
+            " seconds. Note: Revocation registry creation may still be in progress in the"
+            " background. You can check status using the revocation registry endpoints."
         )
 
     async def finish_cred_def(
@@ -580,9 +576,7 @@ class AnonCredsIssuer:
         # Wait for revocation setup if configured to do so
         wait_for_revocation_setup = options.get("wait_for_revocation_setup", True)
         if wait_for_revocation_setup and support_revocation:
-            await self._wait_for_revocation_setup_completion(
-                cred_def_id, timeout=REVOCATION_REGISTRY_CREATION_TIMEOUT
-            )
+            await self._wait_for_revocation_setup_completion(cred_def_id)
 
     async def get_created_credential_definitions(
         self,

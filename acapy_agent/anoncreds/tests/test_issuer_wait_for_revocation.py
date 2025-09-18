@@ -294,7 +294,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
                 assert "Timeout waiting for revocation setup completion" in error_message
                 assert "job-id" in error_message
                 assert (
-                    "Expected 2 revocation registries, but only 1 were completed"
+                    "Expected 2 revocation registries, but only 1 were finished"
                     in error_message
                 )
                 assert "still be in progress in the background" in error_message
@@ -376,7 +376,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
                 # Check that it shows partial progress in error message
                 error_message = str(exc_context.exception)
                 assert (
-                    "Expected 2 revocation registries, but only 1 were completed"
+                    "Expected 2 revocation registries, but only 1 were finished"
                     in error_message
                 )
         mock_notify.assert_called_once()
