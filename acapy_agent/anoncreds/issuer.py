@@ -501,7 +501,7 @@ class AnonCredsIssuer:
                 async with self.profile.session() as session:
                     registries = await session.handle.fetch_all(
                         CATEGORY_REV_REG_DEF,
-                        {"cred_def_id": cred_def_id, "state": "active"},
+                        {"cred_def_id": cred_def_id, "active": "true"},
                     )
 
                 current_count = len(registries)

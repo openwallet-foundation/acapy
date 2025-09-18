@@ -195,7 +195,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             ) as mock_session_context:
                 mock_session = mock.MagicMock()
                 mock_session.handle.fetch_all = mock.CoroutineMock(
-                    return_value=[mock.MagicMock(), mock.MagicMock()]  # 2 registries
+                    return_value=[mock.MagicMock()]  # 1 registry
                 )
                 mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
                     return_value=mock_session
@@ -269,7 +269,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             ) as mock_session_context:
                 mock_session = mock.MagicMock()
                 mock_session.handle.fetch_all = mock.CoroutineMock(
-                    return_value=[mock.MagicMock()]  # Only 1 registry, need 2
+                    return_value=[]  # No registries
                 )
                 mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
                     return_value=mock_session
@@ -294,92 +294,12 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
                 assert "Timeout waiting for revocation setup completion" in error_message
                 assert "job-id" in error_message
                 assert (
-                    "Expected 2 revocation registries, but only 1 were finished"
+                    "Expected 1 revocation registries, but none were active"
                     in error_message
                 )
                 assert "still be in progress in the background" in error_message
 
                 mock_notify.assert_called_once()
-
-    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_partial_completion_timeout(
-        self, mock_notify
-    ):
-        """Test timeout with partial completion (1/2 registries)."""
-        schema_result = GetSchemaResult(
-            schema_id="schema-id",
-            schema=AnonCredsSchema(
-                issuer_id="issuer-id",
-                name="schema-name",
-                version="1.0",
-                attr_names=["attr1", "attr2"],
-            ),
-            schema_metadata={},
-            resolution_metadata={},
-        )
-
-        cred_def_result = CredDefResult(
-            job_id="job-id",
-            credential_definition_state=CredDefState(
-                state="finished",
-                credential_definition=CredDef(
-                    issuer_id="issuer-id",
-                    schema_id="schema-id",
-                    tag="tag",
-                    type="CL",
-                    value=CredDefValue(
-                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
-                    ),
-                ),
-                credential_definition_id="cred-def-id",
-            ),
-            credential_definition_metadata={},
-            registration_metadata={},
-        )
-
-        self.profile.transaction = mock.Mock(
-            return_value=mock.MagicMock(
-                insert=mock.CoroutineMock(),
-                commit=mock.CoroutineMock(),
-            )
-        )
-
-        with mock.patch("asyncio.sleep") as mock_sleep:
-            mock_sleep.return_value = None  # Make sleep instant
-
-            # Mock the database query to simulate progression: 0 -> 1 -> still 1 (partial completion)
-            with mock.patch.object(
-                self.issuer.profile, "session"
-            ) as mock_session_context:
-                mock_session = mock.MagicMock()
-                mock_session.handle.fetch_all = mock.CoroutineMock(
-                    side_effect=[[], [mock.MagicMock()]]  # Stays at 1 registry
-                )
-                mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
-                    return_value=mock_session
-                )
-                mock_session_context.return_value.__aexit__ = mock.CoroutineMock(
-                    return_value=None
-                )
-
-                with self.assertRaises(test_module.AnonCredsIssuerError) as exc_context:
-                    await self.issuer.store_credential_definition(
-                        schema_result=schema_result,
-                        cred_def_result=cred_def_result,
-                        cred_def_private=mock.MagicMock(),
-                        key_proof=mock.MagicMock(),
-                        support_revocation=True,
-                        max_cred_num=1000,
-                        options={"wait_for_revocation_setup": True},
-                    )
-
-                # Check that it shows partial progress in error message
-                error_message = str(exc_context.exception)
-                assert (
-                    "Expected 2 revocation registries, but only 1 were finished"
-                    in error_message
-                )
-        mock_notify.assert_called_once()
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     async def test_wait_for_revocation_setup_polling_errors_continue(self, mock_notify):
@@ -515,8 +435,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
                     return_value=[
                         mock.MagicMock(),
                         mock.MagicMock(),
-                        mock.MagicMock(),
-                    ]  # 3 registries > 2
+                    ]  # 2 registries > 1
                 )
                 mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
                     return_value=mock_session
@@ -581,10 +500,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
                     ) as mock_session_context:
                         mock_session = mock.MagicMock()
                         mock_session.handle.fetch_all = mock.CoroutineMock(
-                            return_value=[
-                                mock.MagicMock(),
-                                mock.MagicMock(),
-                            ]  # 2 registries
+                            return_value=[mock.MagicMock()]  # 1 registry
                         )
                         mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
                             return_value=mock_session
