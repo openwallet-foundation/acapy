@@ -50,8 +50,11 @@ async def cred_def_post(request: web.BaseRequest):
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     body = await request.json()
-    options = body.get("options", {})
     cred_def = body.get("credential_definition")
+    options = body.get("options") or {}
+    wait_for_revocation_setup = body.get("wait_for_revocation_setup", True)
+
+    options["wait_for_revocation_setup"] = wait_for_revocation_setup
 
     if cred_def is None:
         raise web.HTTPBadRequest(reason="cred_def object is required")

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 from time import time
 from typing import Optional, Sequence
 
@@ -27,6 +28,7 @@ from .events import CredDefFinishedEvent
 from .models.credential_definition import CredDef, CredDefResult
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
+from .revocation import AnonCredsRevocation
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +45,10 @@ EVENT_PREFIX = "acapy::anoncreds::"
 EVENT_SCHEMA = EVENT_PREFIX + CATEGORY_SCHEMA
 EVENT_CRED_DEF = EVENT_PREFIX + CATEGORY_CRED_DEF
 EVENT_FINISHED_SUFFIX = "::" + STATE_FINISHED
+
+REVOCATION_REGISTRY_CREATION_TIMEOUT = float(
+    os.getenv("REVOCATION_REGISTRY_CREATION_TIMEOUT", "120.0")
+)
 
 
 class AnonCredsIssuerError(BaseError):
@@ -406,6 +412,8 @@ class AnonCredsIssuer:
     ) -> None:
         """Store the cred def and it's components in the wallet."""
         options = options or {}
+        wait_for_revocation_setup = options.get("wait_for_revocation_setup", True)
+
         identifier = (
             cred_def_result.job_id
             or cred_def_result.credential_definition_state.credential_definition_id
@@ -444,6 +452,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, identifier, key_proof.to_json_buffer()
                 )
                 await txn.commit()
+
             if cred_def_result.credential_definition_state.state == STATE_FINISHED:
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
@@ -456,13 +465,97 @@ class AnonCredsIssuer:
                     )
                 )
 
+                if support_revocation and wait_for_revocation_setup:
+                    await self._wait_for_revocation_setup_completion(
+                        cred_def_id=identifier,
+                        timeout=REVOCATION_REGISTRY_CREATION_TIMEOUT,
+                    )
+
         except DBError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
+
+    async def _wait_for_revocation_setup_completion(
+        self, cred_def_id: str, timeout: float = REVOCATION_REGISTRY_CREATION_TIMEOUT
+    ) -> None:
+        """Wait for revocation registry setup to complete.
+
+        Polls for the creation of revocation registry definitions until we have
+        the expected number (2: active + pending) or timeout occurs.
+
+        Args:
+            cred_def_id: The credential definition ID
+            timeout: Maximum time to wait in seconds
+
+        Raises:
+            AnonCredsIssuerError: If timeout occurs before completion
+        """
+        LOGGER.debug(
+            "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
+        )
+
+        revocation = AnonCredsRevocation(self.profile)
+        expected_count = 2  # Active + Pending registries
+        poll_interval = 0.5  # Poll every 500ms
+        max_iterations = int(timeout / poll_interval)
+
+        for _iteration in range(max_iterations):
+            try:
+                # Check for finished revocation registry definitions
+                rev_reg_defs = (
+                    await revocation.get_created_revocation_registry_definitions(
+                        cred_def_id=cred_def_id, state="finished"
+                    )
+                )
+
+                current_count = len(rev_reg_defs)
+                LOGGER.debug(
+                    "Revocation setup progress for %s: %d/%d registries completed",
+                    cred_def_id,
+                    current_count,
+                    expected_count,
+                )
+
+                if current_count >= expected_count:
+                    LOGGER.info(
+                        "Revocation setup completed for cred_def_id: %s "
+                        "(%d registries created)",
+                        cred_def_id,
+                        current_count,
+                    )
+                    return
+
+            except Exception as e:
+                LOGGER.warning(
+                    "Error checking revocation setup progress for %s: %s", cred_def_id, e
+                )
+                # Continue polling despite errors - they might be transient
+
+            await asyncio.sleep(poll_interval)  # Wait before next poll
+
+        # Timeout occurred
+        try:
+            # Final check to get current state for error message
+            rev_reg_defs = await revocation.get_created_revocation_registry_definitions(
+                cred_def_id=cred_def_id, state="finished"
+            )
+            current_count = len(rev_reg_defs)
+        except Exception:
+            current_count = 0
+
+        raise AnonCredsIssuerError(
+            "Timeout waiting for revocation setup completion for credential definition "
+            f"{cred_def_id}. Expected {expected_count} revocation registries, but only "
+            f"{current_count} were completed within {timeout} seconds. "
+            "Note: Revocation registry creation may still be in progress in the "
+            "background. You can check status using the revocation registry endpoints."
+        )
 
     async def finish_cred_def(
         self, job_id: str, cred_def_id: str, options: Optional[dict] = None
     ) -> None:
         """Finish a cred def."""
+        options = options or {}
+
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(
                 txn, CATEGORY_CRED_DEF, job_id, cred_def_id
@@ -489,6 +582,13 @@ class AnonCredsIssuer:
                 options=options,
             )
         )
+
+        # Wait for revocation setup if configured to do so
+        wait_for_revocation_setup = options.get("wait_for_revocation_setup", True)
+        if wait_for_revocation_setup and support_revocation:
+            await self._wait_for_revocation_setup_completion(
+                cred_def_id, timeout=REVOCATION_REGISTRY_CREATION_TIMEOUT
+            )
 
     async def get_created_credential_definitions(
         self,
