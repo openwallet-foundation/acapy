@@ -90,8 +90,8 @@ class EventBus:
     def __init__(self):
         """Initialize Event Bus."""
         self.topic_patterns_to_subscribers: Dict[Pattern, List[Callable]] = {}
+
         # TaskQueue for non-blocking event processing
-        # Use a reasonable max_active to prevent resource exhaustion
         self.task_queue = TaskQueue(max_active=MAX_ACTIVE_EVENT_BUS_TASKS)
 
     async def notify(self, profile: "Profile", event: Event):
@@ -103,6 +103,7 @@ class EventBus:
 
         """
         # TODO: This method can now be made synchronous (would be breaking change)
+
         LOGGER.debug("Notifying subscribers for event: %s", event)
         # Define partial functions for each subscriber that matches the event topic
         partials = [
@@ -121,12 +122,9 @@ class EventBus:
             return
 
         LOGGER.debug("Notifying %d subscribers for %s event", len(partials), event.topic)
-        # Fire and forget: run each processor as a background task
-        # instead of awaiting them sequentially
         for processor in partials:
-            # Spawn as background task with error handling
-            # Use put() to respect TaskQueue limits for resource management
             LOGGER.debug("Putting %s event for processor %s", event.topic, processor)
+            # Run each processor as a background task (fire and forget) with error handler
             self.task_queue.put(
                 processor(),
                 task_complete=self._make_error_handler(processor, event),
