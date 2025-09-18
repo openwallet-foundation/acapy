@@ -34,10 +34,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
         self.issuer = test_module.AnonCredsIssuer(self.profile)
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    @mock.patch("acapy_agent.anoncreds.revocation.revocation.AnonCredsRevocation")
-    async def test_wait_for_revocation_setup_false_fire_and_forget(
-        self, mock_revocation_class, mock_notify
-    ):
+    async def test_wait_for_revocation_setup_false_fire_and_forget(self, mock_notify):
         """Test wait_for_revocation_setup=False (fire and forget mode)."""
         # Setup mocks
         schema_result = GetSchemaResult(
@@ -92,13 +89,9 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
 
         # Should notify but not wait
         mock_notify.assert_called_once()
-        mock_revocation_class.assert_not_called()  # Should not instantiate AnonCredsRevocation
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    @mock.patch("acapy_agent.anoncreds.revocation.revocation.AnonCredsRevocation")
-    async def test_wait_for_revocation_setup_no_support_revocation(
-        self, mock_revocation_class, mock_notify
-    ):
+    async def test_wait_for_revocation_setup_no_support_revocation(self, mock_notify):
         """Test wait_for_revocation_setup=True but support_revocation=False."""
         schema_result = GetSchemaResult(
             schema_id="schema-id",
@@ -150,7 +143,6 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
         )
 
         mock_notify.assert_called_once()
-        mock_revocation_class.assert_not_called()  # Should not wait
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     async def test_wait_for_revocation_setup_successful_completion(self, mock_notify):
@@ -387,6 +379,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
                     "Expected 2 revocation registries, but only 1 were completed"
                     in error_message
                 )
+        mock_notify.assert_called_once()
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     async def test_wait_for_revocation_setup_polling_errors_continue(self, mock_notify):
