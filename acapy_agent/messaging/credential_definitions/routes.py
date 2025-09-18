@@ -95,6 +95,13 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
             "example": "default",
         },
     )
+    wait_for_revocation_setup = fields.Boolean(
+        required=False,
+        load_default=True,
+        metadata={
+            "description": "Wait for revocation registry setup to complete before returning"  # noqa: E501
+        },
+    )
 
 
 class CredentialDefinitionSendResultSchema(OpenAPISchema):
@@ -215,6 +222,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
+    wait_for_revocation_setup = body.get("wait_for_revocation_setup", True)
 
     # Don't allow revocable cred def to be created without tails server base url
     if not profile.settings.get("tails_server_base_url") and support_revocation:
@@ -324,6 +332,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         # Notify event
         meta_data["processing"]["auto_create_rev_reg"] = True
         await notify_cred_def_event(profile, cred_def_id, meta_data)
+
+        if support_revocation and wait_for_revocation_setup:
+            await issuer._wait_for_revocation_setup_completion(cred_def_id)
 
         return web.json_response(
             {
