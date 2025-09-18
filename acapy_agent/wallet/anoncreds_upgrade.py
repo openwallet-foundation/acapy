@@ -15,10 +15,13 @@ from anoncreds import (
 from aries_askar import AskarError
 from indy_credx import LinkSecret
 
-from ..anoncreds.issuer import (
+from ..anoncreds.constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_KEY_PROOF,
     CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
     CATEGORY_SCHEMA,
 )
 from ..anoncreds.models.credential_definition import CredDef, CredDefState
@@ -30,11 +33,6 @@ from ..anoncreds.models.revocation import (
     RevRegDefValue,
 )
 from ..anoncreds.models.schema import SchemaState
-from ..anoncreds.revocation import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
 from ..cache.base import BaseCache
 from ..core.profile import Profile
 from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
