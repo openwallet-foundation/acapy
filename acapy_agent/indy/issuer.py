@@ -201,17 +201,3 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
             Merged delta in JSON format
 
         """
-
-    @abstractmethod
-    async def _wait_for_active_revocation_registry(self, cred_def_id: str) -> None:
-        """Wait for revocation registry setup to complete.
-
-        Polls for the creation of revocation registry definitions until we have
-        the 1 active registry or timeout occurs.
-
-        Args:
-            cred_def_id: The credential definition ID
-
-        Raises:
-            IndyIssuerError: If timeout occurs before completion
-        """
