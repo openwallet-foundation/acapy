@@ -23,6 +23,7 @@ from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.cred_def import CredentialDefinitionSchema
+from ...indy.util import wait_for_active_revocation_registry
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -335,7 +336,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         if support_revocation and wait_for_revocation_setup:
             try:
-                await issuer._wait_for_active_revocation_registry(cred_def_id)
+                await wait_for_active_revocation_registry(profile, cred_def_id)
             except IndyIssuerError as err:
                 raise web.HTTPGatewayTimeout(reason=err.message) from err
 
