@@ -20,6 +20,7 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
+from ...revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ...utils.general import strip_did_prefix
 from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
@@ -647,42 +648,40 @@ class IndyCredxIssuer(IndyIssuer):
             rev_reg_json,
         )
 
-    async def _wait_for_revocation_setup_completion(self, cred_def_id: str) -> None:
+    async def _wait_for_active_revocation_registry(self, cred_def_id: str) -> None:
         """Wait for revocation registry setup to complete.
 
         Polls for the creation of revocation registry definitions until we have
-        the expected number (2: active + pending) or timeout occurs.
+        the 1 active registry or timeout occurs.
 
         Args:
             cred_def_id: The credential definition ID
 
         Raises:
-            AnonCredsIssuerError: If timeout occurs before completion
+            IndyIssuerError: If timeout occurs before completion
         """
         LOGGER.debug(
             "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
         )
 
-        expected_count = 2  # Active + Pending registries
+        expected_count = 1  # Active registry
         poll_interval = 0.5  # Poll every 500ms
         max_iterations = int(REVOCATION_REGISTRY_CREATION_TIMEOUT / poll_interval)
-        rev_reg_defs = []
+        registries = []
 
         for _iteration in range(max_iterations):
             try:
                 # Check for finished revocation registry definitions
                 async with self.profile.session() as session:
-                    rev_reg_defs = await session.handle.fetch_all(
-                        CATEGORY_REV_REG_DEF,
-                        {"cred_def_id": cred_def_id, "state": "finished"},
+                    registries = await IssuerRevRegRecord.query_by_cred_def_id(
+                        session, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
                     )
 
-                current_count = len(rev_reg_defs)
+                current_count = len(registries)
                 LOGGER.debug(
-                    "Revocation setup progress for %s: %d/%d registries completed",
+                    "Revocation setup progress for %s: %d registries active",
                     cred_def_id,
                     current_count,
-                    expected_count,
                 )
 
                 if current_count >= expected_count:
@@ -703,12 +702,12 @@ class IndyCredxIssuer(IndyIssuer):
             await asyncio.sleep(poll_interval)  # Wait before next poll
 
         # Timeout occurred
-        current_count = len(rev_reg_defs)
+        current_count = len(registries)
 
         raise IndyIssuerError(
             "Timeout waiting for revocation setup completion for credential definition "
-            f"{cred_def_id}. Expected {expected_count} revocation registries, but only "
-            f"{current_count} were finished within {REVOCATION_REGISTRY_CREATION_TIMEOUT}"
-            " seconds. Note: Revocation registry creation may still be in progress in the"
-            " background. You can check status using the revocation registry endpoints."
+            f"{cred_def_id}. Expected 1 active revocation registries, but none "
+            f"were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} seconds. "
+            "Note: Revocation registry creation may still be in progress in the "
+            "background. You can check status using the revocation registry endpoints."
         )

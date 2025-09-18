@@ -334,7 +334,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         await notify_cred_def_event(profile, cred_def_id, meta_data)
 
         if support_revocation and wait_for_revocation_setup:
-            await issuer._wait_for_revocation_setup_completion(cred_def_id)
+            try:
+                await issuer._wait_for_active_revocation_registry(cred_def_id)
+            except IndyIssuerError as err:
+                raise web.HTTPGatewayTimeout(reason=err.message) from err
 
         return web.json_response(
             {
