@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import os
-from typing import Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from aries_askar import AskarError
 from indy_credx import (
@@ -20,7 +20,6 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
-from ...revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ...utils.general import strip_did_prefix
 from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
@@ -29,6 +28,10 @@ from ..issuer import (
     IndyIssuerError,
     IndyIssuerRevocationRegistryFullError,
 )
+
+if TYPE_CHECKING:
+    from ...revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
+
 
 LOGGER = logging.getLogger(__name__)
 
