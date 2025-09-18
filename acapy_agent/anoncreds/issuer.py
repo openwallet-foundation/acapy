@@ -23,23 +23,24 @@ from ..core.profile import Profile, ProfileSession
 from ..database_manager.db_errors import DBError
 from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
+from .constants import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_CRED_DEF_KEY_PROOF,
+    CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_SCHEMA,
+    DEFAULT_CRED_DEF_TAG,
+    DEFAULT_MAX_CRED_NUM,
+    DEFAULT_SIGNATURE_TYPE,
+    STATE_FINISHED,
+)
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import CredDefFinishedEvent
 from .models.credential_definition import CredDef, CredDefResult
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
-from .revocation import AnonCredsRevocation
 
 LOGGER = logging.getLogger(__name__)
-
-DEFAULT_CRED_DEF_TAG = "default"
-DEFAULT_SIGNATURE_TYPE = "CL"
-DEFAULT_MAX_CRED_NUM = 1000
-CATEGORY_SCHEMA = "schema"
-CATEGORY_CRED_DEF = "credential_def"
-CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
-CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
-STATE_FINISHED = "finished"
 
 EVENT_PREFIX = "acapy::anoncreds::"
 EVENT_SCHEMA = EVENT_PREFIX + CATEGORY_SCHEMA
@@ -493,19 +494,19 @@ class AnonCredsIssuer:
             "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
         )
 
-        revocation = AnonCredsRevocation(self.profile)
         expected_count = 2  # Active + Pending registries
         poll_interval = 0.5  # Poll every 500ms
         max_iterations = int(timeout / poll_interval)
+        rev_reg_defs = []
 
         for _iteration in range(max_iterations):
             try:
                 # Check for finished revocation registry definitions
-                rev_reg_defs = (
-                    await revocation.get_created_revocation_registry_definitions(
-                        cred_def_id=cred_def_id, state="finished"
+                async with self.profile.session() as session:
+                    rev_reg_defs = await session.handle.fetch_all(
+                        CATEGORY_REV_REG_DEF,
+                        {"cred_def_id": cred_def_id, "state": "finished"},
                     )
-                )
 
                 current_count = len(rev_reg_defs)
                 LOGGER.debug(
@@ -533,14 +534,7 @@ class AnonCredsIssuer:
             await asyncio.sleep(poll_interval)  # Wait before next poll
 
         # Timeout occurred
-        try:
-            # Final check to get current state for error message
-            rev_reg_defs = await revocation.get_created_revocation_registry_definitions(
-                cred_def_id=cred_def_id, state="finished"
-            )
-            current_count = len(rev_reg_defs)
-        except Exception:
-            current_count = 0
+        current_count = len(rev_reg_defs)
 
         raise AnonCredsIssuerError(
             "Timeout waiting for revocation setup completion for credential definition "

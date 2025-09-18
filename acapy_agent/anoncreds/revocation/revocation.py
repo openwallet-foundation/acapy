@@ -32,14 +32,17 @@ from ...core.profile import Profile, ProfileSession
 from ...database_manager.db_errors import DBError
 from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
-from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
-from ..issuer import (
+from ..constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
     STATE_FINISHED,
-    AnonCredsIssuer,
 )
+from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
+from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
+from ..issuer import AnonCredsIssuer
 from ..models.credential_definition import CredDef
 from ..models.revocation import (
     RevList,
@@ -53,13 +56,6 @@ from ..registry import AnonCredsRegistry
 from ..util import indy_client_dir
 
 LOGGER = logging.getLogger(__name__)
-
-CATEGORY_REV_LIST = "revocation_list"
-CATEGORY_REV_REG_DEF = "revocation_reg_def"
-CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
-STATE_REVOCATION_POSTED = "posted"
-STATE_REVOCATION_PENDING = "pending"
-REV_REG_DEF_STATE_ACTIVE = "active"
 
 
 class AnonCredsRevocationError(BaseError):

@@ -53,6 +53,11 @@ from ...base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
+from ...constants import (
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
 from ...models.credential_definition import (
@@ -76,11 +81,6 @@ from ...models.revocation import (
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from ...models.schema_info import AnonCredsSchemaInfo
-from ...revocation import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
 from .recover import generate_ledger_rrrecovery_txn
 
 LOGGER = logging.getLogger(__name__)
