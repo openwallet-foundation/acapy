@@ -76,7 +76,7 @@ class CredDefPostRequestSchema(OpenAPISchema):
     options = fields.Nested(CredDefPostOptionsSchema())
     wait_for_revocation_setup = fields.Boolean(
         required=False,
-        default=True,
+        dump_default=True,
         metadata={
             "description": "Wait for revocation registry setup to complete before returning"  # noqa: E501
         },
