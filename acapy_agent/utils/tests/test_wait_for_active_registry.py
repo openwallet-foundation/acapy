@@ -28,7 +28,7 @@ class TestWaitForActiveRevocationRegistry(IsolatedAsyncioTestCase):
             with mock.patch.object(
                 IssuerRevRegRecord, "query_by_cred_def_id"
             ) as mock_query:
-                mock_query.return_value = [mock_registry]  # 1 active registry
+                mock_query.return_value = [mock_registry, mock_registry]  # 2 active
 
                 # Should complete immediately without timeout
                 await test_module.wait_for_active_revocation_registry(
@@ -55,8 +55,12 @@ class TestWaitForActiveRevocationRegistry(IsolatedAsyncioTestCase):
             with mock.patch.object(
                 IssuerRevRegRecord, "query_by_cred_def_id"
             ) as mock_query:
-                # First 2 calls return empty, 3rd call returns 1 active registry
-                mock_query.side_effect = [[], [], [mock_registry]]
+                # First call return empty, second call returns 1 active registry, 3rd call returns 2 active registries
+                mock_query.side_effect = [
+                    [],
+                    [mock_registry],
+                    [mock_registry, mock_registry],
+                ]
 
                 await test_module.wait_for_active_revocation_registry(
                     self.profile, self.cred_def_id
@@ -78,26 +82,17 @@ class TestWaitForActiveRevocationRegistry(IsolatedAsyncioTestCase):
             ) as mock_query:
                 mock_query.return_value = []  # No active registries
 
-                # Set a very short timeout for testing
-                with mock.patch.object(
-                    test_module, "REVOCATION_REGISTRY_CREATION_TIMEOUT", 1.0
-                ):
-                    with self.assertRaises(TimeoutError) as exc_context:
-                        await test_module.wait_for_active_revocation_registry(
-                            self.profile, self.cred_def_id
-                        )
-
-                    # Check error message content
-                    error_message = str(exc_context.exception)
-                    assert (
-                        "Timeout waiting for revocation setup completion" in error_message
+                with self.assertRaises(TimeoutError) as exc_context:
+                    await test_module.wait_for_active_revocation_registry(
+                        self.profile, self.cred_def_id
                     )
-                    assert self.cred_def_id in error_message
-                    assert "Expected 1 active revocation registries" in error_message
-                    assert "still be in progress in the background" in error_message
 
-                    # Should have polled multiple times (1.0s timeout / 0.5s interval = 2 iterations)
-                    assert mock_query.call_count == 2
+                # Check error message content
+                error_message = str(exc_context.exception)
+                assert "Timeout waiting for revocation setup completion" in error_message
+                assert self.cred_def_id in error_message
+                assert "Expected 2 active revocation registries" in error_message
+                assert "still be in progress in the background" in error_message
 
     async def test_polling_with_transient_errors_then_success(self):
         """Test that polling continues despite transient database errors."""
@@ -114,7 +109,7 @@ class TestWaitForActiveRevocationRegistry(IsolatedAsyncioTestCase):
                 mock_query.side_effect = [
                     Exception("Database connection error"),
                     Exception("Temporary network issue"),
-                    [mock_registry],  # Success on 3rd attempt
+                    [mock_registry, mock_registry],  # Success on 3rd attempt
                 ]
 
                 await test_module.wait_for_active_revocation_registry(
@@ -148,7 +143,7 @@ class TestWaitForActiveRevocationRegistry(IsolatedAsyncioTestCase):
                     self.profile, self.cred_def_id
                 )
 
-                # Should complete immediately since we have >= 1
+                # Should complete immediately since we have >= 2
                 mock_query.assert_called_once()
                 mock_sleep.assert_not_called()
 
