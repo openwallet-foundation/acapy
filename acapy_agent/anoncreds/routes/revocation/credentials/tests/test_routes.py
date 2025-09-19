@@ -1,8 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
 
+from marshmallow import ValidationError
 import pytest
 from aiohttp import web
-from aiohttp.web import HTTPNotFound
+from aiohttp.web import HTTPNotFound, HTTPForbidden
 
 from ......admin.request_context import AdminRequestContext
 from ......storage.error import StorageNotFoundError
@@ -41,9 +42,9 @@ class TestAnonCredsCredentialRevocationRoutes(
                 }
             )
             req.validate_fields({"cred_ex_id": "12345678-1234-5678-9abc-def012345678"})
-            with self.assertRaises(Exception):  # ValidationError
+            with self.assertRaises(ValidationError):
                 req.validate_fields({})
-            with self.assertRaises(Exception):  # ValidationError
+            with self.assertRaises(ValidationError):
                 req.validate_fields(
                     {
                         "rev_reg_id": (
@@ -52,9 +53,9 @@ class TestAnonCredsCredentialRevocationRoutes(
                         )
                     }
                 )
-            with self.assertRaises(Exception):  # ValidationError
+            with self.assertRaises(ValidationError):
                 req.validate_fields({"cred_rev_id": "1"})
-            with self.assertRaises(Exception):  # ValidationError
+            with self.assertRaises(ValidationError):
                 req.validate_fields(
                     {
                         "rev_reg_id": (
@@ -64,14 +65,14 @@ class TestAnonCredsCredentialRevocationRoutes(
                         "cred_ex_id": "12345678-1234-5678-9abc-def012345678",
                     }
                 )
-            with self.assertRaises(Exception):  # ValidationError
+            with self.assertRaises(ValidationError):
                 req.validate_fields(
                     {
                         "cred_rev_id": "1",
                         "cred_ex_id": "12345678-1234-5678-9abc-def012345678",
                     }
                 )
-            with self.assertRaises(Exception):  # ValidationError
+            with self.assertRaises(ValidationError):
                 req.validate_fields(
                     {
                         "rev_reg_id": (
@@ -257,5 +258,5 @@ class TestAnonCredsCredentialRevocationRoutes(
         )
 
         # Test revoke endpoint
-        with self.assertRaises(Exception):  # Should raise HTTPForbidden
+        with self.assertRaises(HTTPForbidden):
             await revoke(self.request)

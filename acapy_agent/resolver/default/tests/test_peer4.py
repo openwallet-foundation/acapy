@@ -3,7 +3,7 @@
 import pytest
 import pytest_asyncio
 
-from ....core.event_bus import EventBus
+from ....core.event_bus import EventBus, MockEventBus
 from ....core.profile import Profile
 from ....utils.testing import create_test_profile
 from .. import peer4 as test_module
@@ -15,12 +15,12 @@ TEST_SHORT_DP4 = "did:peer:4zQmd8CpeFPci817KDsbSAKWcXAE2mjvCQSasRewvbSF54Bd"
 
 
 @pytest.fixture
-def event_bus():
-    yield EventBus()
+def event_bus() -> MockEventBus:
+    return MockEventBus()
 
 
 @pytest_asyncio.fixture
-async def profile(event_bus: EventBus):
+async def profile(event_bus: MockEventBus):
     """Profile fixture."""
     profile = await create_test_profile()
     profile.context.injector.bind_instance(EventBus, event_bus)

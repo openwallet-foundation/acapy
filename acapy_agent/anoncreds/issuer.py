@@ -23,6 +23,16 @@ from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
 from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
+from .constants import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_CRED_DEF_KEY_PROOF,
+    CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_SCHEMA,
+    DEFAULT_CRED_DEF_TAG,
+    DEFAULT_MAX_CRED_NUM,
+    DEFAULT_SIGNATURE_TYPE,
+    STATE_FINISHED,
+)
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .events import CredDefFinishedEvent
 from .models.credential_definition import CredDef, CredDefResult
@@ -30,15 +40,6 @@ from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, Schem
 from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
-
-DEFAULT_CRED_DEF_TAG = "default"
-DEFAULT_SIGNATURE_TYPE = "CL"
-DEFAULT_MAX_CRED_NUM = 1000
-CATEGORY_SCHEMA = "schema"
-CATEGORY_CRED_DEF = "credential_def"
-CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
-CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
-STATE_FINISHED = "finished"
 
 EVENT_PREFIX = "acapy::anoncreds::"
 EVENT_SCHEMA = EVENT_PREFIX + CATEGORY_SCHEMA
@@ -389,6 +390,7 @@ class AnonCredsIssuer:
     ) -> None:
         """Store the cred def and it's components in the wallet."""
         options = options or {}
+
         identifier = (
             cred_def_result.job_id
             or cred_def_result.credential_definition_state.credential_definition_id
@@ -427,6 +429,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, identifier, key_proof.to_json_buffer()
                 )
                 await txn.commit()
+
             if cred_def_result.credential_definition_state.state == STATE_FINISHED:
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
@@ -438,6 +441,7 @@ class AnonCredsIssuer:
                         options=options,
                     )
                 )
+
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
@@ -445,6 +449,8 @@ class AnonCredsIssuer:
         self, job_id: str, cred_def_id: str, options: Optional[dict] = None
     ) -> None:
         """Finish a cred def."""
+        options = options or {}
+
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(
                 txn, CATEGORY_CRED_DEF, job_id, cred_def_id
