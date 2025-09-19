@@ -14,7 +14,7 @@ async def wait_for_active_revocation_registry(profile: Profile, cred_def_id: str
     """Wait for revocation registry setup to complete.
 
     Polls for the creation of revocation registry definitions until we have
-    the 1 active registry or timeout occurs.
+    the 2 active registries or timeout occurs.
 
     Args:
         profile: The profile
@@ -27,7 +27,7 @@ async def wait_for_active_revocation_registry(profile: Profile, cred_def_id: str
         "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
     )
 
-    expected_count = 1  # Active registry
+    expected_count = 2  # Active registry
     poll_interval = 0.5  # Poll every 500ms
     max_iterations = int(REVOCATION_REGISTRY_CREATION_TIMEOUT / poll_interval)
     registries = []
@@ -69,8 +69,8 @@ async def wait_for_active_revocation_registry(profile: Profile, cred_def_id: str
 
     raise TimeoutError(
         "Timeout waiting for revocation setup completion for credential definition "
-        f"{cred_def_id}. Expected 1 active revocation registries, but none "
-        f"were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} seconds. "
-        "Note: Revocation registry creation may still be in progress in the "
+        f"{cred_def_id}. Expected {expected_count} active revocation registries, but "
+        f"{current_count} were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} "
+        "seconds. Note: Revocation registry creation may still be in progress in the "
         "background. You can check status using the revocation registry endpoints."
     )
