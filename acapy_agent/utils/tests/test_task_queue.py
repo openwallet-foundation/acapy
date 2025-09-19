@@ -73,7 +73,9 @@ class TestTaskQueue(IsolatedAsyncioTestCase):
         coro = retval(1, delay=1)
         pend = PendingTask(coro, None)
         assert str(pend).startswith("<PendingTask")
-        task = asyncio.get_event_loop().create_task(coro)
+        # Create a fresh coroutine since the original one was consumed by PendingTask
+        fresh_coro = retval(1, delay=1)
+        task = asyncio.get_event_loop().create_task(fresh_coro)
         assert task_exc_info(task) is None
         pend.task = task
         assert pend.task is task
