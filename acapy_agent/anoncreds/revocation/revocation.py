@@ -1217,7 +1217,14 @@ class AnonCredsRevocation:
 
             rev_reg_def_result = None
             if revocable:
-                rev_reg_def_result = await self.get_or_create_active_registry(cred_def_id)
+                try:
+                    rev_reg_def_result = await self.get_or_create_active_registry(
+                        cred_def_id
+                    )
+                except AnonCredsRevocationError:
+                    # No active registry, try again
+                    continue
+
                 if (
                     rev_reg_def_result.revocation_registry_definition_state.state
                     != STATE_FINISHED
