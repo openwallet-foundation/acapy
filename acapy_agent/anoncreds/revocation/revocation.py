@@ -26,7 +26,7 @@ from anoncreds import (
 # so the business layer doesn't need to care about the storage choice.
 from aries_askar import Entry
 from aries_askar.error import AskarError
-from ..database_manager.dbstore import DBStoreError
+from ...database_manager.dbstore import DBStoreError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
