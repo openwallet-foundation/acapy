@@ -16,9 +16,14 @@ from anoncreds import (
 from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
 
-from ...anoncreds.issuer import AnonCredsIssuer
-from ...anoncreds.models.credential_definition import CredDef
-from ...anoncreds.models.revocation import (
+from ....askar.profile_anon import AskarAnonCredsProfileSession
+from ....core.event_bus import Event, EventBus, MockEventBus
+from ....tails.anoncreds_tails_server import AnonCredsTailsServer
+from ....tests import mock
+from ....utils.testing import create_test_profile
+from ...issuer import AnonCredsIssuer
+from ...models.credential_definition import CredDef
+from ...models.revocation import (
     RevList,
     RevListResult,
     RevListState,
@@ -27,16 +32,11 @@ from ...anoncreds.models.revocation import (
     RevRegDefState,
     RevRegDefValue,
 )
-from ...anoncreds.models.schema import AnonCredsSchema, GetSchemaResult
-from ...anoncreds.registry import AnonCredsRegistry
-from ...anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
-from ...anoncreds.tests.test_issuer import MockCredDefEntry
-from ...askar.profile_anon import AskarAnonCredsProfileSession
-from ...core.event_bus import Event, EventBus, MockEventBus
-from ...tails.anoncreds_tails_server import AnonCredsTailsServer
-from ...tests import mock
-from ...utils.testing import create_test_profile
-from .. import revocation as test_module
+from ...models.schema import AnonCredsSchema, GetSchemaResult
+from ...registry import AnonCredsRegistry
+from ...revocation import revocation as test_module
+from ...tests.mock_objects import MOCK_REV_REG_DEF
+from ...tests.test_issuer import MockCredDefEntry
 
 rev_reg_def = RevRegDef(
     tag="tag",
@@ -88,13 +88,13 @@ class MockRevRegDefEntry:
 
 class MockEntry:
     def __init__(
-        self, name="name", value_json="", raw_value="raw-value", value="value", tags={}
+        self, name="name", value_json="", raw_value="raw-value", value="value", tags=None
     ) -> None:
         self.name = name
         self.value_json = value_json
         self.raw_value = raw_value
         self.value = value
-        self.tags = tags
+        self.tags = tags or {}
 
 
 class MockRevListEntry:
@@ -124,7 +124,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
         self.revocation = test_module.AnonCredsRevocation(self.profile)
 
-    async def test_init(self):
+    def test_init(self):
         assert self.revocation.profile == self.profile
 
     async def test_notify(self):
@@ -348,9 +348,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(RevRegDef, "from_json", return_value="rev-reg-def")
     @mock.patch.object(test_module.AnonCredsRevocation, "notify")
-    async def test_finish_revocation_registry_definition(
-        self, mock_notify, mock_from_json, mock_handle
-    ):
+    async def test_finish_revocation_registry_definition(self, _, __, mock_handle):
         mock_handle.fetch = mock.CoroutineMock(return_value=MockEntry())
         mock_handle.insert = mock.CoroutineMock(return_value=None)
         mock_handle.remove = mock.CoroutineMock(return_value=None)
@@ -811,7 +809,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                     type="CL_ACCUM",
                 )
             )
-            assert mock_remove.call_count == 1
+        assert mock_remove.call_count == 1
 
         # http request fails
         with self.assertRaises(test_module.AnonCredsRevocationError):
@@ -1066,7 +1064,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     @mock.patch.object(
         RevocationRegistryDefinition, "load", return_value=rev_reg_def.value
     )
-    @mock.patch("acapy_agent.anoncreds.revocation.CredentialRevocationConfig")
+    @mock.patch("acapy_agent.anoncreds.revocation.revocation.CredentialRevocationConfig")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=mock.MagicMock())
     async def test_create_credential_private_with_rev_reg_and_tails(
@@ -1455,7 +1453,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     @mock.patch("acapy_agent.anoncreds.revocation.isinstance")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
-    async def test_clear_pending_revocations(self, mock_handle, mock_is_instance):
+    async def test_clear_pending_revocations(self, mock_handle, _):
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
                 None,

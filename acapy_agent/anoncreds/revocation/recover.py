@@ -35,7 +35,7 @@ async def fetch_txns(genesis_txns, registry_id):
         vdr_module = importlib.import_module("indy_vdr")
         credx_module = importlib.import_module("indy_credx")
     except Exception as e:
-        raise RevocRecoveryException(f"Failed to import library {e}")
+        raise RevocRecoveryException(f"Failed to import library {e}") from e
 
     pool = await vdr_module.open_pool(transactions=genesis_txns)
     LOGGER.debug("Connected to pool")
@@ -92,7 +92,7 @@ async def generate_ledger_rrrecovery_txn(
     ledger_data = await fetch_txns(genesis_txns, registry_id)
     if not ledger_data:
         return new_delta
-    defn, registry, delta, prev_revoked, tails_temp = ledger_data
+    defn, registry, _delta, prev_revoked, tails_temp = ledger_data
 
     set_revoked = set(set_revoked)
     mismatch = prev_revoked - set_revoked

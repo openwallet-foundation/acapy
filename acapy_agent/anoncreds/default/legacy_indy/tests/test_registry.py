@@ -29,7 +29,6 @@ from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecord,
 )
-from .....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....models.credential_definition import (
@@ -38,6 +37,7 @@ from ....models.credential_definition import (
     CredDefValue,
     CredDefValuePrimary,
 )
+from ....models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....models.revocation import (
     RevList,
     RevListResult,
@@ -149,6 +149,9 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         assert bool(self.registry.supported_identifiers_regex.match(TEST_INDY_DID))
         assert bool(self.registry.supported_identifiers_regex.match(TEST_INDY_DID_1))
         assert bool(self.registry.supported_identifiers_regex.match(TEST_INDY_SCHEMA_ID))
+        assert bool(
+            self.registry.supported_identifiers_regex.match(TEST_INDY_CRED_DEF_ID)
+        )
         assert bool(
             self.registry.supported_identifiers_regex.match(TEST_INDY_REV_REG_DEF_ID)
         )
@@ -620,7 +623,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         return_value=(TransactionRecord(), "transaction_request"),
     )
     async def test_register_revocation_registry_definition_with_author_role(
-        self, mock_create_request, mock_create_record, mock_endorser_connection
+        self, mock_create_request, mock_create_record, _
     ):
         self.profile.settings.set_value("endorser.author", True)
         mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
@@ -682,7 +685,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         return_value=TransactionRecord(),
     )
     async def test_register_revocation_registry_definition_with_create_transaction_option(
-        self, mock_create_record, mock_endorser_connection
+        self, mock_create_record, _
     ):
         mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
         mock_base_ledger.send_revoc_reg_def = mock.CoroutineMock(
@@ -734,7 +737,7 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         return_value=TransactionRecord(),
     )
     async def test_register_revocation_registry_definition_with_create_transaction_and_auto_request(
-        self, mock_create_record, mock_endorser_connection
+        self, mock_create_record, _
     ):
         mock_base_ledger = mock.MagicMock(BaseLedger, autospec=True)
         mock_base_ledger.send_revoc_reg_def = mock.CoroutineMock(

@@ -3,13 +3,11 @@
 import logging
 from abc import ABC, abstractmethod
 
-from acapy_agent.protocols.endorse_transaction.v1_0.util import is_author_role
-
-from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
-from ..core.event_bus import EventBus
-from ..core.profile import Profile
-from ..revocation.util import notify_revocation_published_event
-from .events import (
+from ...core.event_bus import EventBus
+from ...core.profile import Profile
+from ...protocols.endorse_transaction.v1_0.util import is_author_role
+from ...revocation.util import notify_revocation_published_event
+from ..events import (
     CRED_DEF_FINISHED_PATTERN,
     REV_LIST_FINISHED_PATTERN,
     REV_REG_DEF_FINISHED_PATTERN,
@@ -17,6 +15,7 @@ from .events import (
     RevListFinishedEvent,
     RevRegDefFinishedEvent,
 )
+from .revocation import AnonCredsRevocation, AnonCredsRevocationError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ class AnonCredsRevocationSetupManager(ABC):
     """Base class for automated setup of revocation."""
 
     @abstractmethod
-    def register_events(self, event_bus: EventBus):
+    def register_events(self, event_bus: EventBus) -> None:
         """Event registration."""
 
 
@@ -55,7 +54,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     REGISTRY_TYPE = "CL_ACCUM"
     INITIAL_REGISTRY_COUNT = 2
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Init manager."""
 
     def register_events(self, event_bus: EventBus) -> None:

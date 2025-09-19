@@ -77,11 +77,6 @@ class MockCredDefEntry:
         return json.dumps({"cred_def": "cred_def"})
 
 
-class MockCredDefPrivate:
-    def to_json_buffer(self):
-        return "cred-def-private"
-
-
 class MockKeyProof:
     def to_json_buffer(self):
         return "key-proof"

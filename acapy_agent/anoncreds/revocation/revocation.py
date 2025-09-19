@@ -6,8 +6,9 @@ import http
 import logging
 import os
 import time
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urlparse
 
 import base58
@@ -29,21 +30,21 @@ from ..database_manager.dbstore import DBStoreError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnonCredsProfileSession
-from ..core.error import BaseError
-from ..core.event_bus import Event, EventBus
-from ..core.profile import Profile, ProfileSession
-from ..tails.anoncreds_tails_server import AnonCredsTailsServer
-from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .events import RevListFinishedEvent, RevRegDefFinishedEvent
-from .issuer import (
+from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
+from ...core.error import BaseError
+from ...core.event_bus import Event, EventBus
+from ...core.profile import Profile, ProfileSession
+from ...tails.anoncreds_tails_server import AnonCredsTailsServer
+from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
+from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
+from ..issuer import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
     STATE_FINISHED,
     AnonCredsIssuer,
 )
-from .models.credential_definition import CredDef
-from .models.revocation import (
+from ..models.credential_definition import CredDef
+from ..models.revocation import (
     RevList,
     RevListResult,
     RevListState,
@@ -51,15 +52,14 @@ from .models.revocation import (
     RevRegDefResult,
     RevRegDefState,
 )
-from .registry import AnonCredsRegistry
-from .util import indy_client_dir
+from ..registry import AnonCredsRegistry
+from ..util import indy_client_dir
 
 LOGGER = logging.getLogger(__name__)
 
 CATEGORY_REV_LIST = "revocation_list"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
-CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
 STATE_REVOCATION_POSTED = "posted"
 STATE_REVOCATION_PENDING = "pending"
 REV_REG_DEF_STATE_ACTIVE = "active"
@@ -85,7 +85,7 @@ class RevokeResult(NamedTuple):
 class AnonCredsRevocation:
     """Revocation registry operations manager."""
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Profile) -> None:
         """Initialize an AnonCredsRevocation instance.
 
         Args:
@@ -115,7 +115,7 @@ class AnonCredsRevocation:
         registered_id: str,
         *,
         state: Optional[str] = None,
-    ):
+    ) -> Entry:
         entry = await txn.handle.fetch(
             category,
             job_id,
@@ -257,7 +257,7 @@ class AnonCredsRevocation:
                 )
         except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
-                "Error saving new revocation registry"
+                "Error storing revocation registry definition"
             ) from err
 
     async def finish_revocation_registry_definition(
@@ -495,7 +495,7 @@ class AnonCredsRevocation:
 
         except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
-                "Error saving new revocation registry"
+                "Error storing revocation registry list"
             ) from err
 
     async def finish_revocation_list(
@@ -587,7 +587,7 @@ class AnonCredsRevocation:
                 )
         except (DBStoreError, AskarError) as err:
             raise AnonCredsRevocationError(
-                "Error saving new revocation registry"
+                "Error saving updated revocation list"
             ) from err
 
         return result
@@ -625,6 +625,7 @@ class AnonCredsRevocation:
 
     async def retrieve_tails(self, rev_reg_def: RevRegDef) -> str:
         """Retrieve tails file from server."""
+        # TODO: This method is not actually async, and should be
         LOGGER.info(
             "Downloading the tails file with hash: %s",
             rev_reg_def.value.tails_hash,
@@ -650,7 +651,9 @@ class AnonCredsRevocation:
                         tails_file.write(buf)
                         file_hasher.update(buf)
                 except RequestException as rx:
-                    raise AnonCredsRevocationError(f"Error retrieving tails file: {rx}")
+                    raise AnonCredsRevocationError(
+                        f"Error retrieving tails file: {rx}"
+                    ) from rx
 
         download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
         if download_tails_hash != rev_reg_def.value.tails_hash:
@@ -668,7 +671,7 @@ class AnonCredsRevocation:
     def _check_url(self, url: str) -> None:
         parsed = urlparse(url)
         if not (parsed.scheme and parsed.netloc and parsed.path):
-            raise AnonCredsRevocationError("URI {} is not a valid URL".format(url))
+            raise AnonCredsRevocationError(f"URI {url} is not a valid URL")
 
     def generate_public_tails_uri(self, rev_reg_def: RevRegDef) -> str:
         """Construct tails uri from rev_reg_def."""
@@ -943,11 +946,11 @@ class AnonCredsRevocation:
             # Extraneous attribute names are ignored.
             try:
                 credential_value = credential_values[attribute]
-            except KeyError:
+            except KeyError as err:
                 raise AnonCredsRevocationError(
                     "Provided credential values are missing a value "
                     f"for the schema attribute '{attribute}'"
-                )
+                ) from err
 
             raw_values[attribute] = str(credential_value)
         return raw_values
@@ -959,7 +962,7 @@ class AnonCredsRevocation:
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        credential_type: Union[Credential, W3cCredential],
+        credential_type: Credential | W3cCredential,
         rev_reg_def_id: Optional[str] = None,
         tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
@@ -980,7 +983,9 @@ class AnonCredsRevocation:
 
         """
 
-        def _handle_missing_entries(rev_list: Entry, rev_reg_def: Entry, rev_key: Entry):
+        def _handle_missing_entries(
+            rev_list: Entry, rev_reg_def: Entry, rev_key: Entry
+        ) -> None:
             if not rev_list:
                 raise AnonCredsRevocationError("Revocation registry list not found")
             if not rev_reg_def:
@@ -990,7 +995,7 @@ class AnonCredsRevocation:
                     "Revocation registry definition private data not found"
                 )
 
-        def _has_required_id_and_tails_path():
+        def _has_required_id_and_tails_path() -> bool:
             return rev_reg_def_id and tails_file_path
 
         revoc = None
@@ -1114,7 +1119,7 @@ class AnonCredsRevocation:
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        credential_type: Union[Credential, W3cCredential],
+        credential_type: Credential | W3cCredential,
         *,
         retries: int = 5,
     ) -> Tuple[str, str, str]:
@@ -1505,8 +1510,15 @@ class AnonCredsRevocation:
         crid_mask: Optional[Sequence[int]] = None,
     ) -> None:
         """Clear pending revocations."""
-        if not isinstance(txn, AskarAnonCredsProfileSession):
-            raise ValueError("Askar wallet required")
+        # Accept both Askar and Kanon anoncreds sessions
+        try:
+            from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
+            accepted = isinstance(txn, (AskarAnonCredsProfileSession, KanonAnonCredsProfileSession))
+        except Exception:
+            accepted = isinstance(txn, AskarAnonCredsProfileSession)
+
+        if not accepted:
+            raise ValueError("AnonCreds wallet session required")
 
         entry = await txn.handle.fetch(
             CATEGORY_REV_LIST,
@@ -1534,12 +1546,14 @@ class AnonCredsRevocation:
             tags=tags,
         )
 
-    async def set_tails_file_public_uri(self, rev_reg_id: str, tails_public_uri: str):
+    async def set_tails_file_public_uri(
+        self, rev_reg_id: str, tails_public_uri: str
+    ) -> None:
         """Update Revocation Registry tails file public uri."""
         # TODO: Implement or remove
         pass
 
-    async def set_rev_reg_state(self, rev_reg_id: str, state: str):
+    async def set_rev_reg_state(self, rev_reg_id: str, state: str) -> None:
         """Update Revocation Registry state."""
         # TODO: Implement or remove
         pass

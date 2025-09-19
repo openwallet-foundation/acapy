@@ -448,4 +448,4 @@ class GetCredDefResultSchema(BaseModelSchema):
         CredDefSchema(), metadata={"description": "credential definition"}
     )
     resolution_metadata = fields.Dict()
-    credential_definitions_metadata = fields.Dict()
+    credential_definitions_metadata = fields.Dict()  # TODO: This is unused

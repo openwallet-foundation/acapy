@@ -2,22 +2,24 @@
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Optional, Text, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
-from ..anoncreds.revocation import AnonCredsRevocation
-from ..core.error import BaseError
-from ..core.profile import Profile
-from ..protocols.issue_credential.v1_0.models.credential_exchange import (
+from ...core.error import BaseError
+from ...core.profile import Profile
+from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
-from ..protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
+from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
-from ..revocation.util import notify_pending_cleared_event
-from ..storage.error import StorageNotFoundError
-from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from ...revocation.util import notify_pending_cleared_event
+from ...storage.error import StorageNotFoundError
+from ..models.issuer_cred_rev_record import IssuerCredRevRecord
+from .revocation import AnonCredsRevocation
+
+if TYPE_CHECKING:
+    from ..default.legacy_indy.registry import LegacyIndyRegistry
 
 
 class RevocationManagerError(BaseError):
@@ -27,7 +29,7 @@ class RevocationManagerError(BaseError):
 class RevocationManager:
     """Class for managing revocation operations."""
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Profile) -> None:
         """Initialize a RevocationManager.
 
         Args:
@@ -47,7 +49,7 @@ class RevocationManager:
         connection_id: Optional[str] = None,
         comment: Optional[str] = None,
         options: Optional[dict] = None,
-    ):
+    ) -> None:
         """Revoke a credential by its credential exchange identifier at issue.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
@@ -112,7 +114,7 @@ class RevocationManager:
         connection_id: Optional[str] = None,
         comment: Optional[str] = None,
         options: Optional[dict] = None,
-    ):
+    ) -> None:
         """Revoke a credential.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
@@ -222,9 +224,9 @@ class RevocationManager:
 
     async def publish_pending_revocations(
         self,
-        rrid2crid: Optional[Mapping[Text, Sequence[Text]]] = None,
+        rrid2crid: Optional[Mapping[str, Sequence[str]]] = None,
         options: Optional[dict] = None,
-    ) -> Mapping[Text, Sequence[Text]]:
+    ) -> Mapping[str, Sequence[str]]:
         """Publish pending revocations to the ledger.
 
         Args:
@@ -273,8 +275,8 @@ class RevocationManager:
         return published_crids
 
     async def clear_pending_revocations(
-        self, purge: Mapping[Text, Sequence[Text]] = None
-    ) -> Mapping[Text, Sequence[Text]]:
+        self, purge: Mapping[str, Sequence[str]] = None
+    ) -> Mapping[str, Sequence[str]]:
         """Clear pending revocation publications.
 
         Args:
