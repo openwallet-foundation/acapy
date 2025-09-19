@@ -18,6 +18,7 @@ from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolderError
 from ....anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.revocation.revocation import AnonCredsRevocationError
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
@@ -1540,84 +1541,80 @@ async def credential_exchange_issue(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+    outbound_handler = request["outbound_message_router"]
+
+    body = await request.json()
+    comment = body.get("comment")
+
+    cred_ex_id = request.match_info["cred_ex_id"]
+
+    cred_ex_record = None
+    conn_record = None
     try:
-        r_time = get_timer()
-
-        context: AdminRequestContext = request["context"]
-        profile = context.profile
-        outbound_handler = request["outbound_message_router"]
-
-        body = await request.json()
-        comment = body.get("comment")
-
-        cred_ex_id = request.match_info["cred_ex_id"]
-
-        cred_ex_record = None
-        conn_record = None
-        try:
-            async with profile.session() as session:
-                try:
-                    cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                        session,
-                        cred_ex_id,
-                    )
-                except StorageNotFoundError as err:
-                    raise web.HTTPNotFound(reason=err.roll_up) from err
-
-                conn_record = None
-                if cred_ex_record.connection_id:
-                    conn_record = await ConnRecord.retrieve_by_id(
-                        session, cred_ex_record.connection_id
-                    )
-            if conn_record and not conn_record.is_ready:
-                raise web.HTTPForbidden(
-                    reason=f"Connection {cred_ex_record.connection_id} not ready"
+        async with profile.session() as session:
+            try:
+                cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                    session,
+                    cred_ex_id,
                 )
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
 
-            cred_manager = V20CredManager(profile)
-            (cred_ex_record, cred_issue_message) = await cred_manager.issue_credential(
-                cred_ex_record,
-                comment=comment,
+            conn_record = None
+            if cred_ex_record.connection_id:
+                conn_record = await ConnRecord.retrieve_by_id(
+                    session, cred_ex_record.connection_id
+                )
+        if conn_record and not conn_record.is_ready:
+            raise web.HTTPForbidden(
+                reason=f"Connection {cred_ex_record.connection_id} not ready"
             )
 
-            details = await _get_attached_credentials(profile, cred_ex_record)
-            result = _format_result_with_details(cred_ex_record, details)
-
-        except (
-            BaseModelError,
-            AnonCredsIssuerError,
-            IndyIssuerError,
-            LedgerError,
-            StorageError,
-            V20CredFormatError,
-            V20CredManagerError,
-        ) as err:
-            LOGGER.exception("Error preparing issued credential")
-            if cred_ex_record:
-                async with profile.session() as session:
-                    await cred_ex_record.save_error_state(session, reason=err.roll_up)
-            await report_problem(
-                err,
-                ProblemReportReason.ISSUANCE_ABANDONED.value,
-                web.HTTPBadRequest,
-                cred_ex_record,
-                outbound_handler,
-            )
-
-        await outbound_handler(
-            cred_issue_message, connection_id=cred_ex_record.connection_id
+        cred_manager = V20CredManager(profile)
+        (cred_ex_record, cred_issue_message) = await cred_manager.issue_credential(
+            cred_ex_record,
+            comment=comment,
         )
 
-        trace_event(
-            context.settings,
-            cred_issue_message,
-            outcome="credential_exchange_issue.END",
-            perf_counter=r_time,
+        details = await _get_attached_credentials(profile, cred_ex_record)
+        result = _format_result_with_details(cred_ex_record, details)
+
+    except (
+        BaseModelError,
+        AnonCredsIssuerError,
+        AnonCredsRevocationError,
+        IndyIssuerError,
+        LedgerError,
+        StorageError,
+        V20CredFormatError,
+        V20CredManagerError,
+    ) as err:
+        LOGGER.exception("Error preparing issued credential")
+        if cred_ex_record:
+            async with profile.session() as session:
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        await report_problem(
+            err,
+            ProblemReportReason.ISSUANCE_ABANDONED.value,
+            web.HTTPBadRequest,
+            cred_ex_record,
+            outbound_handler,
         )
 
-        return web.json_response(result)
-    except Exception as err:
-        raise web.HTTPInternalServerError(reason=str(err)) from err
+    await outbound_handler(cred_issue_message, connection_id=cred_ex_record.connection_id)
+
+    trace_event(
+        context.settings,
+        cred_issue_message,
+        outcome="credential_exchange_issue.END",
+        perf_counter=r_time,
+    )
+
+    return web.json_response(result)
 
 
 @docs(
