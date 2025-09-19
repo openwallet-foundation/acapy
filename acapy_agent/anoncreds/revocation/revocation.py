@@ -449,9 +449,9 @@ class AnonCredsRevocation:
 
         raise TimeoutError(
             "Timeout waiting for revocation setup completion for credential definition "
-            f"{cred_def_id}. Expected {expected_count} revocation registries, but none "
-            f"were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} seconds. "
-            "Note: Revocation registry creation may still be in progress in the "
+            f"{cred_def_id}. Expected {expected_count} revocation registries, but "
+            f"{current_count} were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} "
+            "seconds. Note: Revocation registry creation may still be in progress in the "
             "background. You can check status using the revocation registry endpoints."
         )
 
