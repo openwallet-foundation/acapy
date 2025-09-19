@@ -11,7 +11,7 @@ from typing import Optional
 LOGGER = logging.getLogger(__name__)
 
 REVOCATION_REGISTRY_CREATION_TIMEOUT = float(
-    os.getenv("REVOCATION_REGISTRY_CREATION_TIMEOUT", "120.0")
+    os.getenv("REVOCATION_REGISTRY_CREATION_TIMEOUT", "60.0")
 )
 
 
