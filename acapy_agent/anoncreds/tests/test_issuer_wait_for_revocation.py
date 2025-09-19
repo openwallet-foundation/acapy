@@ -1,6 +1,5 @@
-"""Tests for wait_for_revocation_setup functionality in AnonCredsIssuer."""
+"""Tests for credential definition creation with wait_for_revocation_setup options."""
 
-import asyncio
 import json
 from unittest import IsolatedAsyncioTestCase
 
@@ -20,6 +19,7 @@ from ...anoncreds.models.schema import (
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import issuer as test_module
+from ..revocation.revocation_setup import DefaultRevocationSetup
 
 
 @pytest.mark.anoncreds
@@ -34,8 +34,8 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
         self.issuer = test_module.AnonCredsIssuer(self.profile)
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_false_fire_and_forget(self, mock_notify):
-        """Test wait_for_revocation_setup=False (fire and forget mode)."""
+    async def test_store_credential_definition_with_wait_false(self, mock_notify):
+        """Test that store_credential_definition works with wait_for_revocation_setup=False."""
         # Setup mocks
         schema_result = GetSchemaResult(
             schema_id="schema-id",
@@ -76,7 +76,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             )
         )
 
-        # Call with wait_for_revocation_setup=False
+        # Call with wait_for_revocation_setup=False - should work normally
         await self.issuer.store_credential_definition(
             schema_result=schema_result,
             cred_def_result=cred_def_result,
@@ -87,12 +87,16 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             options={"wait_for_revocation_setup": False},
         )
 
-        # Should notify but not wait
+        # Should notify with correct parameters including options
         mock_notify.assert_called_once()
+        call_args = mock_notify.call_args[0][0]  # Get the event passed to notify
+        assert call_args.payload.cred_def_id == "job-id"
+        assert call_args.payload.support_revocation is True
+        assert not call_args.payload.options["wait_for_revocation_setup"]
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_no_support_revocation(self, mock_notify):
-        """Test wait_for_revocation_setup=True but support_revocation=False."""
+    async def test_store_credential_definition_with_wait_true(self, mock_notify):
+        """Test that store_credential_definition works with wait_for_revocation_setup=True."""
         schema_result = GetSchemaResult(
             schema_id="schema-id",
             schema=AnonCredsSchema(
@@ -131,7 +135,67 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             )
         )
 
-        # Call with support_revocation=False (should not wait regardless of wait flag)
+        # Call with wait_for_revocation_setup=True - should still work normally
+        # (waiting is now handled in the event handler, not in store_credential_definition)
+        await self.issuer.store_credential_definition(
+            schema_result=schema_result,
+            cred_def_result=cred_def_result,
+            cred_def_private=mock.MagicMock(),
+            key_proof=mock.MagicMock(),
+            support_revocation=True,
+            max_cred_num=1000,
+            options={"wait_for_revocation_setup": True},
+        )
+
+        # Should notify with correct parameters including options
+        mock_notify.assert_called_once()
+        call_args = mock_notify.call_args[0][0]  # Get the event passed to notify
+        assert call_args.payload.cred_def_id == "job-id"
+        assert call_args.payload.support_revocation is True
+        assert call_args.payload.options["wait_for_revocation_setup"] is True
+
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
+    async def test_store_credential_definition_no_support_revocation(self, mock_notify):
+        """Test that store_credential_definition works with support_revocation=False."""
+        schema_result = GetSchemaResult(
+            schema_id="schema-id",
+            schema=AnonCredsSchema(
+                issuer_id="issuer-id",
+                name="schema-name",
+                version="1.0",
+                attr_names=["attr1", "attr2"],
+            ),
+            schema_metadata={},
+            resolution_metadata={},
+        )
+
+        cred_def_result = CredDefResult(
+            job_id="job-id",
+            credential_definition_state=CredDefState(
+                state="finished",
+                credential_definition=CredDef(
+                    issuer_id="issuer-id",
+                    schema_id="schema-id",
+                    tag="tag",
+                    type="CL",
+                    value=CredDefValue(
+                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
+                    ),
+                ),
+                credential_definition_id="cred-def-id",
+            ),
+            credential_definition_metadata={},
+            registration_metadata={},
+        )
+
+        self.profile.transaction = mock.Mock(
+            return_value=mock.MagicMock(
+                insert=mock.CoroutineMock(),
+                commit=mock.CoroutineMock(),
+            )
+        )
+
+        # Call with support_revocation=False - should work normally
         await self.issuer.store_credential_definition(
             schema_result=schema_result,
             cred_def_result=cred_def_result,
@@ -139,334 +203,20 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             key_proof=mock.MagicMock(),
             support_revocation=False,
             max_cred_num=1000,
-            options={"wait_for_revocation_setup": True},
+            options={
+                "wait_for_revocation_setup": True
+            },  # This shouldn't matter when revocation is disabled
         )
 
+        # Should notify with correct parameters
         mock_notify.assert_called_once()
+        call_args = mock_notify.call_args[0][0]  # Get the event passed to notify
+        assert call_args.payload.cred_def_id == "job-id"
+        assert not call_args.payload.support_revocation
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_successful_completion(self, mock_notify):
-        """Test wait_for_revocation_setup=True with successful completion."""
-        schema_result = GetSchemaResult(
-            schema_id="schema-id",
-            schema=AnonCredsSchema(
-                issuer_id="issuer-id",
-                name="schema-name",
-                version="1.0",
-                attr_names=["attr1", "attr2"],
-            ),
-            schema_metadata={},
-            resolution_metadata={},
-        )
-
-        cred_def_result = CredDefResult(
-            job_id="job-id",
-            credential_definition_state=CredDefState(
-                state="finished",
-                credential_definition=CredDef(
-                    issuer_id="issuer-id",
-                    schema_id="schema-id",
-                    tag="tag",
-                    type="CL",
-                    value=CredDefValue(
-                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
-                    ),
-                ),
-                credential_definition_id="cred-def-id",
-            ),
-            credential_definition_metadata={},
-            registration_metadata={},
-        )
-
-        self.profile.transaction = mock.Mock(
-            return_value=mock.MagicMock(
-                insert=mock.CoroutineMock(),
-                commit=mock.CoroutineMock(),
-            )
-        )
-
-        # Mock revocation service to return 2 finished registries immediately
-        with mock.patch("asyncio.sleep") as mock_sleep:
-            mock_sleep.return_value = None  # Make sleep instant
-
-            # Mock the database query to return finished registries
-            with mock.patch.object(
-                self.issuer.profile, "session"
-            ) as mock_session_context:
-                mock_session = mock.MagicMock()
-                mock_session.handle.fetch_all = mock.CoroutineMock(
-                    return_value=[mock.MagicMock()]  # 1 registry
-                )
-                mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
-                    return_value=mock_session
-                )
-                mock_session_context.return_value.__aexit__ = mock.CoroutineMock(
-                    return_value=None
-                )
-
-                await self.issuer.store_credential_definition(
-                    schema_result=schema_result,
-                    cred_def_result=cred_def_result,
-                    cred_def_private=mock.MagicMock(),
-                    key_proof=mock.MagicMock(),
-                    support_revocation=True,
-                    max_cred_num=1000,
-                    options={"wait_for_revocation_setup": True},
-                )
-
-                mock_notify.assert_called_once()
-                # Should not need to sleep since registries are immediately available
-                mock_sleep.assert_not_called()
-
-    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_timeout(self, mock_notify):
-        """Test wait_for_revocation_setup=True with timeout."""
-        schema_result = GetSchemaResult(
-            schema_id="schema-id",
-            schema=AnonCredsSchema(
-                issuer_id="issuer-id",
-                name="schema-name",
-                version="1.0",
-                attr_names=["attr1", "attr2"],
-            ),
-            schema_metadata={},
-            resolution_metadata={},
-        )
-
-        cred_def_result = CredDefResult(
-            job_id="job-id",
-            credential_definition_state=CredDefState(
-                state="finished",
-                credential_definition=CredDef(
-                    issuer_id="issuer-id",
-                    schema_id="schema-id",
-                    tag="tag",
-                    type="CL",
-                    value=CredDefValue(
-                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
-                    ),
-                ),
-                credential_definition_id="cred-def-id",
-            ),
-            credential_definition_metadata={},
-            registration_metadata={},
-        )
-
-        self.profile.transaction = mock.Mock(
-            return_value=mock.MagicMock(
-                insert=mock.CoroutineMock(),
-                commit=mock.CoroutineMock(),
-            )
-        )
-
-        # Mock revocation service to return only 1 registry (incomplete)
-        with mock.patch("asyncio.sleep") as mock_sleep:
-            mock_sleep.return_value = None  # Make sleep instant
-
-            # Mock the database query to return only 1 registry (incomplete)
-            with mock.patch.object(
-                self.issuer.profile, "session"
-            ) as mock_session_context:
-                mock_session = mock.MagicMock()
-                mock_session.handle.fetch_all = mock.CoroutineMock(
-                    return_value=[]  # No registries
-                )
-                mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
-                    return_value=mock_session
-                )
-                mock_session_context.return_value.__aexit__ = mock.CoroutineMock(
-                    return_value=None
-                )
-
-                with self.assertRaises(test_module.AnonCredsIssuerError) as exc_context:
-                    await self.issuer.store_credential_definition(
-                        schema_result=schema_result,
-                        cred_def_result=cred_def_result,
-                        cred_def_private=mock.MagicMock(),
-                        key_proof=mock.MagicMock(),
-                        support_revocation=True,
-                        max_cred_num=1000,
-                        options={"wait_for_revocation_setup": True},
-                    )
-
-                # Check error message includes helpful information
-                error_message = str(exc_context.exception)
-                assert "Timeout waiting for revocation setup completion" in error_message
-                assert "job-id" in error_message
-                assert (
-                    "Expected 1 revocation registries, but none were active"
-                    in error_message
-                )
-                assert "still be in progress in the background" in error_message
-
-                mock_notify.assert_called_once()
-
-    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_polling_errors_continue(self, mock_notify):
-        """Test that polling continues despite transient errors."""
-        schema_result = GetSchemaResult(
-            schema_id="schema-id",
-            schema=AnonCredsSchema(
-                issuer_id="issuer-id",
-                name="schema-name",
-                version="1.0",
-                attr_names=["attr1", "attr2"],
-            ),
-            schema_metadata={},
-            resolution_metadata={},
-        )
-
-        cred_def_result = CredDefResult(
-            job_id="job-id",
-            credential_definition_state=CredDefState(
-                state="finished",
-                credential_definition=CredDef(
-                    issuer_id="issuer-id",
-                    schema_id="schema-id",
-                    tag="tag",
-                    type="CL",
-                    value=CredDefValue(
-                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
-                    ),
-                ),
-                credential_definition_id="cred-def-id",
-            ),
-            credential_definition_metadata={},
-            registration_metadata={},
-        )
-
-        self.profile.transaction = mock.Mock(
-            return_value=mock.MagicMock(
-                insert=mock.CoroutineMock(),
-                commit=mock.CoroutineMock(),
-            )
-        )
-
-        with mock.patch("asyncio.sleep") as mock_sleep:
-            mock_sleep.return_value = None  # Make sleep instant
-
-            # Mock the database query to simulate: error -> error -> success
-            with mock.patch.object(
-                self.issuer.profile, "session"
-            ) as mock_session_context:
-                mock_session = mock.MagicMock()
-                mock_session.handle.fetch_all = mock.CoroutineMock(
-                    side_effect=[
-                        Exception("Transient error 1"),
-                        Exception("Transient error 2"),
-                        [
-                            mock.MagicMock(),
-                            mock.MagicMock(),
-                        ],  # Success on 3rd try - 2 registries
-                    ]
-                )
-                mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
-                    return_value=mock_session
-                )
-                mock_session_context.return_value.__aexit__ = mock.CoroutineMock(
-                    return_value=None
-                )
-
-                # Should complete successfully despite initial errors
-                await self.issuer.store_credential_definition(
-                    schema_result=schema_result,
-                    cred_def_result=cred_def_result,
-                    cred_def_private=mock.MagicMock(),
-                    key_proof=mock.MagicMock(),
-                    support_revocation=True,
-                    max_cred_num=1000,
-                    options={"wait_for_revocation_setup": True},
-                )
-
-                mock_notify.assert_called_once()
-                # Should have tried 3 times
-                assert mock_session.handle.fetch_all.call_count == 3
-
-    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_wait_for_revocation_setup_immediate_completion(self, mock_notify):
-        """Test immediate completion (registries already exist)."""
-        schema_result = GetSchemaResult(
-            schema_id="schema-id",
-            schema=AnonCredsSchema(
-                issuer_id="issuer-id",
-                name="schema-name",
-                version="1.0",
-                attr_names=["attr1", "attr2"],
-            ),
-            schema_metadata={},
-            resolution_metadata={},
-        )
-
-        cred_def_result = CredDefResult(
-            job_id="job-id",
-            credential_definition_state=CredDefState(
-                state="finished",
-                credential_definition=CredDef(
-                    issuer_id="issuer-id",
-                    schema_id="schema-id",
-                    tag="tag",
-                    type="CL",
-                    value=CredDefValue(
-                        primary=CredDefValuePrimary("n", "s", {}, "rctxt", "z")
-                    ),
-                ),
-                credential_definition_id="cred-def-id",
-            ),
-            credential_definition_metadata={},
-            registration_metadata={},
-        )
-
-        self.profile.transaction = mock.Mock(
-            return_value=mock.MagicMock(
-                insert=mock.CoroutineMock(),
-                commit=mock.CoroutineMock(),
-            )
-        )
-
-        with mock.patch("asyncio.sleep") as mock_sleep:
-            mock_sleep.return_value = None  # Make sleep instant
-
-            # Mock the database query to return 3 registries immediately (more than needed)
-            with mock.patch.object(
-                self.issuer.profile, "session"
-            ) as mock_session_context:
-                mock_session = mock.MagicMock()
-                mock_session.handle.fetch_all = mock.CoroutineMock(
-                    return_value=[
-                        mock.MagicMock(),
-                        mock.MagicMock(),
-                    ]  # 2 registries > 1
-                )
-                mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
-                    return_value=mock_session
-                )
-                mock_session_context.return_value.__aexit__ = mock.CoroutineMock(
-                    return_value=None
-                )
-
-                start_time = asyncio.get_event_loop().time()
-                await self.issuer.store_credential_definition(
-                    schema_result=schema_result,
-                    cred_def_result=cred_def_result,
-                    cred_def_private=mock.MagicMock(),
-                    key_proof=mock.MagicMock(),
-                    support_revocation=True,
-                    max_cred_num=1000,
-                    options={"wait_for_revocation_setup": True},
-                )
-                end_time = asyncio.get_event_loop().time()
-
-                # Should complete very quickly (no polling needed)
-                assert end_time - start_time < 0.1  # Less than 100ms
-                mock_notify.assert_called_once()
-                # Should only check once
-                mock_session.handle.fetch_all.assert_called_once()
-                # Should not need to sleep since registries are immediately available
-                mock_sleep.assert_not_called()
-
-    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
-    async def test_finish_cred_def_with_wait_for_revocation_setup(self, mock_notify):
-        """Test finish_cred_def method also respects wait_for_revocation_setup."""
+    async def test_finish_cred_def_passes_options(self, mock_notify):
+        """Test finish_cred_def method passes options correctly to the event."""
         # Mock transaction and entry data
         mock_entry = mock.MagicMock()
         mock_entry.value = json.dumps(
@@ -480,42 +230,102 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             )
         )
 
-        with mock.patch("asyncio.sleep") as mock_sleep:
-            mock_sleep.return_value = None  # Make sleep instant
+        with mock.patch.object(
+            self.issuer, "_finish_registration", return_value=mock_entry
+        ):
+            with mock.patch.object(test_module.CredDef, "from_json") as mock_from_json:
+                mock_cred_def = mock.MagicMock()
+                mock_cred_def.schema_id = "schema-id"
+                mock_cred_def.issuer_id = "issuer-id"
+                mock_from_json.return_value = mock_cred_def
 
-            with mock.patch.object(
-                self.issuer, "_finish_registration", return_value=mock_entry
-            ):
-                with mock.patch.object(
-                    test_module.CredDef, "from_json"
-                ) as mock_from_json:
-                    mock_cred_def = mock.MagicMock()
-                    mock_cred_def.schema_id = "schema-id"
-                    mock_cred_def.issuer_id = "issuer-id"
-                    mock_from_json.return_value = mock_cred_def
+                await self.issuer.finish_cred_def(
+                    job_id="job-id",
+                    cred_def_id="cred-def-id",
+                    options={"wait_for_revocation_setup": True},
+                )
 
-                    # Mock the database query to return 2 finished registries
-                    with mock.patch.object(
-                        self.issuer.profile, "session"
-                    ) as mock_session_context:
-                        mock_session = mock.MagicMock()
-                        mock_session.handle.fetch_all = mock.CoroutineMock(
-                            return_value=[mock.MagicMock()]  # 1 registry
-                        )
-                        mock_session_context.return_value.__aenter__ = mock.CoroutineMock(
-                            return_value=mock_session
-                        )
-                        mock_session_context.return_value.__aexit__ = mock.CoroutineMock(
-                            return_value=None
-                        )
+                # Should notify with correct parameters including options
+                mock_notify.assert_called_once()
+                call_args = mock_notify.call_args[0][0]  # Get the event passed to notify
+                assert call_args.payload.cred_def_id == "cred-def-id"
+                assert call_args.payload.support_revocation is True
+                assert call_args.payload.options["wait_for_revocation_setup"] is True
 
-                        await self.issuer.finish_cred_def(
-                            job_id="job-id",
-                            cred_def_id="cred-def-id",
-                            options={"wait_for_revocation_setup": True},
-                        )
+    async def test_event_handler_respects_wait_option(self):
+        """Test that the event handler respects the wait_for_revocation_setup option.
 
-                        mock_notify.assert_called_once()
-                        mock_session.handle.fetch_all.assert_called_once()
-                        # Should not need to sleep since registries are immediately available
-                        mock_sleep.assert_not_called()
+        This is a basic integration test to verify the event handler behavior.
+        More comprehensive tests should be added to the revocation setup module.
+        """
+        # Create event handler
+        setup_manager = DefaultRevocationSetup()
+
+        # Create mock event with wait_for_revocation_setup=False
+        mock_payload = mock.MagicMock()
+        mock_payload.support_revocation = True
+        mock_payload.cred_def_id = "test-cred-def-id"
+        mock_payload.issuer_id = "test-issuer-id"
+        mock_payload.max_cred_num = 1000
+        mock_payload.options = {"wait_for_revocation_setup": False}
+
+        event = mock.MagicMock()
+        event.payload = mock_payload
+
+        # Mock the AnonCredsRevocation class
+        with mock.patch(
+            "acapy_agent.anoncreds.revocation.revocation_setup.AnonCredsRevocation"
+        ) as mock_revocation_class:
+            mock_revocation = mock_revocation_class.return_value
+            mock_revocation.create_and_register_revocation_registry_definition = (
+                mock.CoroutineMock()
+            )
+            mock_revocation.wait_for_active_revocation_registry = mock.CoroutineMock()
+
+            # Call the event handler
+            await setup_manager.on_cred_def(self.profile, event)
+
+            # Should create registries but not wait
+            assert (
+                mock_revocation.create_and_register_revocation_registry_definition.call_count
+                == 2
+            )
+            mock_revocation.wait_for_active_revocation_registry.assert_not_called()
+
+    async def test_event_handler_waits_when_configured(self):
+        """Test that the event handler waits when wait_for_revocation_setup=True."""
+        # Create event handler
+        setup_manager = DefaultRevocationSetup()
+
+        # Create mock event with wait_for_revocation_setup=True
+        mock_payload = mock.MagicMock()
+        mock_payload.support_revocation = True
+        mock_payload.cred_def_id = "test-cred-def-id"
+        mock_payload.issuer_id = "test-issuer-id"
+        mock_payload.max_cred_num = 1000
+        mock_payload.options = {"wait_for_revocation_setup": True}
+
+        event = mock.MagicMock()
+        event.payload = mock_payload
+
+        # Mock the AnonCredsRevocation class
+        with mock.patch(
+            "acapy_agent.anoncreds.revocation.revocation_setup.AnonCredsRevocation"
+        ) as mock_revocation_class:
+            mock_revocation = mock_revocation_class.return_value
+            mock_revocation.create_and_register_revocation_registry_definition = (
+                mock.CoroutineMock()
+            )
+            mock_revocation.wait_for_active_revocation_registry = mock.CoroutineMock()
+
+            # Call the event handler
+            await setup_manager.on_cred_def(self.profile, event)
+
+            # Should create registries AND wait
+            assert (
+                mock_revocation.create_and_register_revocation_registry_definition.call_count
+                == 2
+            )
+            mock_revocation.wait_for_active_revocation_registry.assert_called_once_with(
+                "test-cred-def-id"
+            )
