@@ -30,7 +30,7 @@ from ..database_manager.dbstore import DBStoreError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
+from ...askar.profile_anon import AskarAnonCredsProfileSession
 from ...core.error import BaseError
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile, ProfileSession
@@ -1513,7 +1513,10 @@ class AnonCredsRevocation:
         # Accept both Askar and Kanon anoncreds sessions
         try:
             from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
-            accepted = isinstance(txn, (AskarAnonCredsProfileSession, KanonAnonCredsProfileSession))
+
+            accepted = isinstance(
+                txn, (AskarAnonCredsProfileSession, KanonAnonCredsProfileSession)
+            )
         except Exception:
             accepted = isinstance(txn, AskarAnonCredsProfileSession)
 
