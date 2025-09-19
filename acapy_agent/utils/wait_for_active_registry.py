@@ -4,7 +4,6 @@ import asyncio
 import logging
 
 from ..core.profile import Profile
-from ..indy.issuer import IndyIssuerError
 from ..indy.util import REVOCATION_REGISTRY_CREATION_TIMEOUT
 from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 
@@ -22,7 +21,7 @@ async def wait_for_active_revocation_registry(profile: Profile, cred_def_id: str
         cred_def_id: The credential definition ID
 
     Raises:
-        IndyIssuerError: If timeout occurs before completion
+        TimeoutError: If timeout occurs before completion
     """
     LOGGER.debug(
         "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
@@ -68,7 +67,7 @@ async def wait_for_active_revocation_registry(profile: Profile, cred_def_id: str
     # Timeout occurred
     current_count = len(registries)
 
-    raise IndyIssuerError(
+    raise TimeoutError(
         "Timeout waiting for revocation setup completion for credential definition "
         f"{cred_def_id}. Expected 1 active revocation registries, but none "
         f"were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} seconds. "
