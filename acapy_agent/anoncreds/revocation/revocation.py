@@ -1510,8 +1510,18 @@ class AnonCredsRevocation:
         crid_mask: Optional[Sequence[int]] = None,
     ) -> None:
         """Clear pending revocations."""
-        if not isinstance(txn, AskarAnonCredsProfileSession):
-            raise ValueError("Askar wallet required")
+        # Accept both Askar and Kanon anoncreds sessions
+        try:
+            from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
+
+            accepted = isinstance(
+                txn, (AskarAnonCredsProfileSession, KanonAnonCredsProfileSession)
+            )
+        except Exception:
+            accepted = isinstance(txn, AskarAnonCredsProfileSession)
+
+        if not accepted:
+            raise ValueError("AnonCreds wallet session required")
 
         entry = await txn.handle.fetch(
             CATEGORY_REV_LIST,
