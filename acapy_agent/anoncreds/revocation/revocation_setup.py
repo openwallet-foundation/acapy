@@ -79,6 +79,10 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     options=payload.options,
                 )
 
+            if event.payload.options.get("wait_for_revocation_setup"):
+                # Wait for registry activation, if configured to do so
+                await revoc.wait_for_active_revocation_registry(payload.cred_def_id)
+
     async def on_rev_reg_def(
         self, profile: Profile, event: RevRegDefFinishedEvent
     ) -> None:
