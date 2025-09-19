@@ -41,6 +41,7 @@ class RouteRecord(BaseRecord):
             wallet_id: The id of the wallet for the route. Used for multitenant relay
             recipient_key (str): recipient_key associated with record
             kwargs: additional args for BaseRecord
+
         """
         super().__init__(record_id, None, **kwargs)
         self.role = role or self.ROLE_SERVER
@@ -137,7 +138,6 @@ class RouteRecordSchema(BaseRecordSchema):
             ValidationError: If any of the fields do not validate
 
         """
-
         if not (data.get("connection_id") or data.get("wallet_id")):
             raise ValidationError(
                 "Either connection_id or wallet_id must be set for route"

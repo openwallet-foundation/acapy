@@ -59,7 +59,6 @@ class VCRecord(BaseModel):
             A dict representation of this model, or a JSON string if as_string is True
 
         """
-
         list_coercion = VCRecord(**dict(vars(self).items()))
         for k, v in vars(self).items():
             if isinstance(v, set):

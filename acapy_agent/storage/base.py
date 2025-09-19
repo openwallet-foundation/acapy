@@ -82,6 +82,7 @@ class BaseStorage(ABC):
             type_filter: Filter string
             tag_query: Tags to query
             options: Dictionary of backend-specific options
+
         """
         scan = self.search_records(type_filter, tag_query, options)
         results = await scan.fetch(2)
@@ -114,6 +115,7 @@ class BaseStorage(ABC):
 
         Returns:
             A sequence of StorageRecord matching the filter and query parameters.
+
         """
 
     @abstractmethod
@@ -133,6 +135,7 @@ class BaseStorage(ABC):
             order_by: An optional field by which to order the records.
             descending: Whether to order the records in descending order.
             options: Additional options for the query.
+
         """
 
     @abstractmethod
@@ -146,6 +149,7 @@ class BaseStorage(ABC):
         Args:
             type_filter: The type of records to filter by.
             tag_query: An optional dictionary of tag filter clauses.
+
         """
 
 

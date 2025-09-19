@@ -41,6 +41,7 @@ class DIDXResponse(AgentMessage):
             did_doc_attach: signed DID doc attachment
             did_rotate_attach: signed DID rotation attachment
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
         self.did = did

@@ -102,7 +102,6 @@ class ConnRecord(BaseRecord):
 
         def rfc23strict(self, their_role: "ConnRecord.Role"):
             """Return RFC 23 (DID exchange protocol) nomenclature to role as per RFC."""
-
             if not their_role or self in (
                 ConnRecord.State.INIT,
                 ConnRecord.State.COMPLETED,
@@ -268,6 +267,7 @@ class ConnRecord(BaseRecord):
             my_did: One of our DIDs to filter by
             my_role: Filter connections by their role
             their_role: Filter connections by their role
+
         """
         tag_filter = {}
         if their_did:
@@ -299,6 +299,7 @@ class ConnRecord(BaseRecord):
             my_did: One of our DIDs to filter by
             my_role: Filter connections by their role
             their_role: Filter connections by their role
+
         """
         tag_filter = {}
         if their_did_long and their_did_short:
@@ -332,6 +333,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
             invitation_key: The key on the originating invitation
             their_role: Filter by their role
+
         """
         tag_filter = {
             "invitation_key": invitation_key,
@@ -358,6 +360,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
             invitation_msg_id: Invitation message identifier
             their_role: Filter by their role
+
         """
         tag_filter = {"invitation_msg_id": invitation_msg_id}
         post_filter = {
@@ -379,6 +382,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             their_public_did: Inviter public DID (or did:peer)
+
         """
         tag_filter = {"their_public_did": their_public_did}
         conn_records = await cls.query(
@@ -400,6 +404,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
             request_id: The ID of the originating connection request
             their_role: Filter by their role
+
         """
         tag_filter = {"request_id": request_id}
         if their_role:
@@ -413,6 +418,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             alias: The alias of the connection
+
         """
         post_filter = {"alias": alias}
         return await cls.query(session, post_filter_positive=post_filter)
@@ -427,6 +433,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             invitation: The invitation to relate to this connection record
+
         """
         assert self.connection_id
         record = StorageRecord(
@@ -442,6 +449,7 @@ class ConnRecord(BaseRecord):
 
         Args:
             session: The active profile session
+
         """
         assert self.connection_id
         storage = session.inject(BaseStorage)
@@ -462,6 +470,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             request: The request to relate to this connection record
+
         """
         assert self.connection_id
         record = StorageRecord(
@@ -480,6 +489,7 @@ class ConnRecord(BaseRecord):
 
         Args:
             session: The active profile session
+
         """
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
@@ -509,6 +519,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
             args: Additional positional arguments
             kwargs: Additional keyword arguments
+
         """
         await super().post_save(session, *args, **kwargs)
 
@@ -583,6 +594,7 @@ class ConnRecord(BaseRecord):
             session (ProfileSession): session used for storage
             key (str): key identifying metadata
             value (Any): value to set
+
         """
         assert self.connection_id
         value = json.dumps(value)
@@ -607,6 +619,7 @@ class ConnRecord(BaseRecord):
         Args:
             session (ProfileSession): session used for storage
             key (str): key of metadata to delete
+
         """
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)

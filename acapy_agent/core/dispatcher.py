@@ -115,7 +115,6 @@ class Dispatcher:
             A pending task instance resolving to the handler task
 
         """
-
         if (
             self.profile.settings.get("experiment.didcomm_v2")
             and inbound_message.receipt.didcomm_version == DIDCommVersion.v2
@@ -136,7 +135,6 @@ class Dispatcher:
         send_outbound: Coroutine,
     ):
         """Handle a DIDComm V2 message."""
-
         # send a DCV2 Problem Report here for testing, and to punt procotol handling down
         # the road a bit
         context = RequestContext(profile)
@@ -367,6 +365,7 @@ class DispatcherResponder(BaseResponder):
 
         Returns:
             OutboundMessage: The created outbound message.
+
         """
         context = self._context()
         if not context:
@@ -391,6 +390,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
             kwargs: Additional keyword arguments
+
         """
         context = self._context()
         if not context:
@@ -421,6 +421,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+
         """
         warnings.warn(
             "responder.send_webhook is deprecated; please use the event bus instead.",

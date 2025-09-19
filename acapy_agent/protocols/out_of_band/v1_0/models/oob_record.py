@@ -190,6 +190,7 @@ class OobRecord(BaseExchangeRecord):
             session (ProfileSession): session used for storage
             key (str): key identifying metadata
             value (Any): value to set
+
         """
         assert self.connection_id
         value = json.dumps(value)
@@ -214,6 +215,7 @@ class OobRecord(BaseExchangeRecord):
         Args:
             session (ProfileSession): session used for storage
             key (str): key of metadata to delete
+
         """
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)

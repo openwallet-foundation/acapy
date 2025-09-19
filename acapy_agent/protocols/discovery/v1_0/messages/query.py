@@ -32,6 +32,7 @@ class Query(AgentMessage):
             query: The query string to match against supported message types
             comment: An optional comment
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
         self.query = query

@@ -67,6 +67,7 @@ class Queries(AgentMessage):
         Args:
             queries: The query string to match against supported message types
             kwargs: Additional key word arguments for the message
+
         """
         super().__init__(**kwargs)
         self.queries = queries

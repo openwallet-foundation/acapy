@@ -57,7 +57,6 @@ class Predicate(Enum):
     @staticmethod
     def get(relation: str) -> "Predicate":
         """Return enum instance corresponding to input relation string."""
-
         for pred in Predicate:
             if relation.upper() in (
                 pred.value.fortran,
@@ -75,8 +74,8 @@ class Predicate(Enum):
 
         Args:
             value: value to coerce
-        """
 
+        """
         if isinstance(value, (bool, int)):
             return int(value)
         return int(str(value))  # kick out floats

@@ -37,6 +37,7 @@ class TransactionAcknowledgement(V10Ack):
             thread_id: Thread id of transaction record
             ledger_response: Response from the ledger
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
         self.thread_id = thread_id

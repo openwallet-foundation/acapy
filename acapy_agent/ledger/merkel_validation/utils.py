@@ -40,7 +40,6 @@ def unpack_to_nibbles(bindata):
         bindata: binary packed from nibbles
 
     """
-
     o = bin_to_nibbles(bindata)
     flags = o[0]
     if flags & 2:

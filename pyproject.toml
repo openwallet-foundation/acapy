@@ -68,6 +68,11 @@ ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 # didcommv2
 didcomm-messaging = { version = "^0.1.1a0", optional = true }
 
+# database_manager
+psycopg = {version = "^3.2.1", extras = ["pool", "binary"]}  
+sqlcipher3-binary = { version = ">=0.5.4", optional = true }  
+
+
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
 ruff = ">=0.12.10,<0.14.0"
@@ -89,6 +94,7 @@ debugpy = "^1.8.11"
 [tool.poetry.extras]
 bbs = ["ursa-bbs-signatures"]
 didcommv2 = ["didcomm-messaging"]
+sqlcipher = ["sqlcipher3-binary"]  # SQLCipher support
 
 [tool.poetry.scripts]
 aca-py = "acapy_agent.__main__:script_main"
@@ -120,6 +126,17 @@ include = ["acapy_agent/**/*.py"]
 
 line-length = 90
 
+# Exclude MongoDB and SQLite test files that require specific database setup
+extend-exclude = [
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_encoder_basic.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_tagquery_conversion.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_TagsqlEncoder_ALL_tests.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_wql_integration.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_compare_conj.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_or_conj.py",
+    "acapy_agent/database_manager/wql_nosql/tests/test_tags_after_removed_plaintext.py",
+]
+
 [tool.ruff.lint.per-file-ignores]
 "**/{tests}/*" = ["B006", "D", "E501", "F841"]
 
@@ -142,6 +159,7 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "module"
 
 [tool.coverage.run]
 

@@ -132,7 +132,6 @@ class LinkedDataProof(ABC):
         self, *, proof: dict, document_loader: DocumentLoaderMethod
     ) -> dict:
         """Get verification method for proof."""
-
         verification_method = proof.get("verificationMethod")
 
         if isinstance(verification_method, dict):

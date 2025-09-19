@@ -74,6 +74,7 @@ class PendingTask:
             ident: A string identifier for the task
             task_future: A future to be resolved to the asyncio Task
             queued_time: When the pending task was added to the queue
+
         """
         if not asyncio.iscoroutine(coro):
             raise ValueError(f"Expected coroutine, got {coro}")
@@ -135,6 +136,7 @@ class TaskQueue:
             max_active: The maximum number of tasks to automatically run
             timed: A flag indicating that timing should be collected for tasks
             trace_fn: A callback for all completed tasks
+
         """
         self.loop = asyncio.get_event_loop()
         self.active_tasks = []
@@ -188,6 +190,7 @@ class TaskQueue:
 
         Return:
             True - the task queue exists even if there are no tasks
+
         """
         return True
 
@@ -247,6 +250,7 @@ class TaskQueue:
 
         Args:
             pending: The `PendingTask` to add to the task queue
+
         """
         if self.timed and not pending.queued_time:
             pending.queued_time = time.perf_counter()
@@ -267,6 +271,7 @@ class TaskQueue:
             task_complete: An optional callback to run on completion
             ident: A string identifier for the task
             timing: An optional dictionary of timing information
+
         """
         self.active_tasks.append(task)
         task.add_done_callback(

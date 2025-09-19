@@ -15,6 +15,7 @@ class AnonCredsSchemaInfo:
         issuer_id (str): The identifier of the issuer.
         name (Optional[str], optional): The name of the schema. Defaults to None.
         version (Optional[str], optional): The version of the schema. Defaults to None.
+
     """
 
     def __init__(

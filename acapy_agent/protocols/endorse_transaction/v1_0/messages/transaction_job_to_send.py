@@ -36,7 +36,6 @@ class TransactionJobToSend(AgentMessage):
             kwargs: Additional keyword arguments for the message
 
         """
-
         super().__init__(**kwargs)
         self.job = job
 

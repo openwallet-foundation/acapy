@@ -40,6 +40,7 @@ class ConnectionTarget(BaseModel):
             recipient_keys: A list of recipient keys
             routing_keys: A list of routing keys
             sender_key: A sender key
+
         """
         self.did = did
         self.endpoint = endpoint

@@ -16,6 +16,7 @@ class HandshakeReuseMessageHandler(BaseHandler):
         Args:
             context: Request context
             responder: Responder callback
+
         """
         self._logger.debug("HandshakeReuseMessageHandler called with context %s", context)
         assert isinstance(context.message, HandshakeReuse)

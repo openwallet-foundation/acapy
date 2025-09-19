@@ -60,7 +60,6 @@ class ProtocolRegistry:
 
     def __init__(self):
         """Initialize a `ProtocolRegistry` instance."""
-
         self._definitions: Dict[str, ProtocolDefinition] = {}
         self._type_to_message_cls: Dict[str, Union[DeferLoad, type]] = {}
 

@@ -18,6 +18,7 @@ class CMProblemReportHandler(BaseHandler):
         Args:
             context: Request context
             responder: Responder callback
+
         """
         self._logger.debug("CMProblemReportHandler called with context %s", context)
         assert isinstance(context.message, CMProblemReport)

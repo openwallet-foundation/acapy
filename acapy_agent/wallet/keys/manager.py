@@ -34,7 +34,7 @@ ALG_MAPPINGS = {
     },
     "bls12381g2": {
         "key_type": BLS12381G2,
-        "multikey_prefix": "zUC7",
+        "multikey_prefix": ("zUC7", "zUC6"),
         "prefix_hex": "eb01",
         "prefix_length": 2,
     },
@@ -43,7 +43,6 @@ ALG_MAPPINGS = {
 
 def multikey_to_verkey(multikey: str):
     """Transform multikey to verkey."""
-
     alg = key_type_from_multikey(multikey).key_type
     prefix_length = ALG_MAPPINGS[alg]["prefix_length"]
     public_bytes = bytes(bytearray(multibase.decode(multikey))[prefix_length:])
@@ -53,7 +52,6 @@ def multikey_to_verkey(multikey: str):
 
 def verkey_to_multikey(verkey: str, alg: str):
     """Transform verkey to multikey."""
-
     prefix_hex = ALG_MAPPINGS[alg]["prefix_hex"]
     prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
 
@@ -63,7 +61,11 @@ def verkey_to_multikey(verkey: str, alg: str):
 def key_type_from_multikey(multikey: str) -> KeyType:
     """Derive key_type class from multikey prefix."""
     for mapping in ALG_MAPPINGS:
-        if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+        prefixes = ALG_MAPPINGS[mapping]["multikey_prefix"]
+        if isinstance(prefixes, (list, tuple)):
+            if any(multikey.startswith(p) for p in prefixes):
+                return ALG_MAPPINGS[mapping]["key_type"]
+        elif multikey.startswith(prefixes):
             return ALG_MAPPINGS[mapping]["key_type"]
 
     raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
@@ -103,7 +105,6 @@ class MultikeyManager:
 
     def __init__(self, session: ProfileSession):
         """Initialize the MultikeyManager."""
-
         self.session: ProfileSession = session
         self.wallet: BaseWallet = session.inject(BaseWallet)
 
@@ -135,14 +136,17 @@ class MultikeyManager:
     def key_type_from_multikey(self, multikey: str) -> KeyType:
         """Derive key_type class from multikey prefix."""
         for mapping in ALG_MAPPINGS:
-            if multikey.startswith(ALG_MAPPINGS[mapping]["multikey_prefix"]):
+            prefixes = ALG_MAPPINGS[mapping]["multikey_prefix"]
+            if isinstance(prefixes, (list, tuple)):
+                if any(multikey.startswith(p) for p in prefixes):
+                    return ALG_MAPPINGS[mapping]["key_type"]
+            elif multikey.startswith(prefixes):
                 return ALG_MAPPINGS[mapping]["key_type"]
 
         raise MultikeyManagerError(f"Unsupported key algorithm for multikey {multikey}.")
 
     async def kid_exists(self, kid: str):
         """Check if kid exists."""
-
         try:
             key = await self.wallet.get_key_by_kid(kid=kid)
 
@@ -155,7 +159,6 @@ class MultikeyManager:
 
     async def multikey_exists(self, multikey: str):
         """Check if a multikey exists in the wallet."""
-
         try:
             key_info = await self.wallet.get_signing_key(
                 verkey=multikey_to_verkey(multikey)
@@ -170,7 +173,6 @@ class MultikeyManager:
 
     async def from_kid(self, kid: str):
         """Fetch a single key."""
-
         try:
             key_info = await self.wallet.get_key_by_kid(kid=kid)
 
@@ -186,7 +188,6 @@ class MultikeyManager:
 
     async def from_multikey(self, multikey: str):
         """Fetch a single key."""
-
         key_info = await self.wallet.get_signing_key(verkey=multikey_to_verkey(multikey))
 
         return {
@@ -198,7 +199,6 @@ class MultikeyManager:
 
     async def create(self, seed: str = None, kid: str = None, alg: str = DEFAULT_ALG):
         """Create a new key pair."""
-
         if alg not in ALG_MAPPINGS:
             raise MultikeyManagerError(
                 f"Unknown key algorithm, use one of {list(ALG_MAPPINGS.keys())}."

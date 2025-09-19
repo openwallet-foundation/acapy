@@ -17,6 +17,7 @@ class V20PresProblemReportHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug(
             "Present-proof v2.0 problem report handler called with context %s",

@@ -184,6 +184,7 @@ class IndyRevocation:
 
         Args:
             cred_def_id: ID of the base credential definition
+
         """
         async with self._profile.session() as session:
             current = sorted(
@@ -202,6 +203,7 @@ class IndyRevocation:
 
         Args:
             revoc_reg_id: ID of the revocation registry
+
         """
         async with self._profile.session() as session:
             return await IssuerRevRegRecord.retrieve_by_revoc_reg_id(

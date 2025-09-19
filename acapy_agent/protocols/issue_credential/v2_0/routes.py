@@ -351,7 +351,6 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     @validates_schema
     def validate(self, data, **kwargs):
         """Make sure preview is present when indy/vc_di format is present."""
-
         if (
             data.get("filter", {}).get("indy") or data.get("filter", {}).get("vc_di")
         ) and not data.get("credential_preview"):
@@ -554,7 +553,6 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
 
 def _formats_filters(filt_spec: Mapping) -> Mapping:
     """Break out formats and filters for v2.0 cred proposal messages."""
-
     return (
         {
             "formats": [
@@ -991,7 +989,6 @@ async def _create_free_offer(
     trace_msg: Optional[bool] = None,
 ):
     """Create a credential offer and related exchange record."""
-
     cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
     cred_proposal = V20CredProposal(
         comment=comment,
@@ -1794,7 +1791,6 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get(
@@ -1853,7 +1849,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

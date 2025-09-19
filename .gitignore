@@ -194,3 +194,6 @@ open-api/.build
 
 # devcontainer
 .pytest.ini
+
+# test lock files
+acatest.lock

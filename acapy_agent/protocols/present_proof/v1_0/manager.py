@@ -39,8 +39,8 @@ class PresentationManager:
 
         Args:
             profile: The profile instance for this presentation manager
-        """
 
+        """
         self._profile = profile
 
     async def create_exchange_for_proposal(

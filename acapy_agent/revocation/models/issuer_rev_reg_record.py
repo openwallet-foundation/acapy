@@ -498,6 +498,7 @@ class IssuerRevRegRecord(BaseRecord):
         Args:
             session: The profile session to use
             cred_rev_id: The credential revocation identifier for credential to revoke
+
         """
         if cred_rev_id not in self.pending_pub:
             self.pending_pub.append(cred_rev_id)
@@ -513,6 +514,7 @@ class IssuerRevRegRecord(BaseRecord):
         Args:
             session: The profile session to use
             cred_rev_ids: Credential revocation identifiers to clear; default all
+
         """
         if self.pending_pub:
             if cred_rev_ids:
@@ -552,6 +554,7 @@ class IssuerRevRegRecord(BaseRecord):
             state: A state value to filter by
             negative_state: A state value to exclude
             limit: The maximum number of records to return
+
         """
         tag_filter = dict(
             filter(
@@ -575,6 +578,7 @@ class IssuerRevRegRecord(BaseRecord):
 
         Args:
             session: The profile session to use
+
         """
         return await cls.query(
             session=session,
@@ -593,6 +597,7 @@ class IssuerRevRegRecord(BaseRecord):
             session: The profile session to use
             revoc_reg_id: The revocation registry ID
             for_update: Retrieve for update
+
         """
         tag_filter = {"revoc_reg_id": revoc_reg_id}
         return await cls.retrieve_by_tag_filter(

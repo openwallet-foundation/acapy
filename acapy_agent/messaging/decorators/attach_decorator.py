@@ -54,7 +54,6 @@ class AttachDecoratorDataJWSHeader(BaseModel):
 
     def __eq__(self, other: Any):
         """Compare equality with another."""
-
         return isinstance(self, other.__class__) and self.kid == other.kid
 
 
@@ -99,7 +98,6 @@ class AttachDecoratorData1JWS(BaseModel):
 
     def __eq__(self, other: Any):
         """Compare equality with another."""
-
         return (
             isinstance(self, other.__class__)
             and self.header == other.header
@@ -173,7 +171,6 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
     @pre_load
     def validate_single_xor_multi_sig(self, data: Mapping, **kwargs):
         """Ensure model is for either 1 or many signatures, not mishmash of both."""
-
         if "signatures" in data:
             if any(k in data for k in ("header", "protected", "signature")):
                 raise BaseModelError(
@@ -211,7 +208,6 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
 
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
-
     if verkey.startswith("did:key:"):
         return verkey
 
@@ -220,7 +216,6 @@ def did_key(verkey: str) -> str:
 
 def raw_key(verkey: str) -> str:
     """Strip qualified key to raw key if need be."""
-
     if verkey.startswith("did:key:"):
         return DIDKey.from_did(verkey).public_key_b58
 
@@ -278,19 +273,16 @@ class AttachDecoratorData(BaseModel):
     @property
     def base64(self):
         """Accessor for base64 decorator data, or None."""
-
         return getattr(self, "base64_", None)
 
     @property
     def jws(self):
         """Accessor for JWS, or None."""
-
         return getattr(self, "jws_", None)
 
     @property
     def signatures(self) -> int:
         """Accessor for number of signatures."""
-
         if self.jws:
             return 1 if self.jws.signature else len(self.jws.signatures)
         return 0
@@ -298,7 +290,6 @@ class AttachDecoratorData(BaseModel):
     @property
     def signed(self) -> bytes:
         """Accessor for signed content (payload), None for unsigned."""
-
         return (
             b64_to_bytes(unpad(set_urlsafe_b64(self.base64, urlsafe=True)))
             if self.signatures
@@ -335,13 +326,11 @@ class AttachDecoratorData(BaseModel):
     @property
     def links(self):
         """Accessor for links decorator data, or None."""
-
         return getattr(self, "links_", None)
 
     @property
     def sha256(self):
         """Accessor for sha256 decorator data, or None."""
-
         return getattr(self, "sha256_", None)
 
     async def sign(
@@ -359,7 +348,6 @@ class AttachDecoratorData(BaseModel):
 
         def build_protected(verkey: str):
             """Build protected header."""
-
             return str_to_b64(
                 json.dumps(
                     {
@@ -468,7 +456,6 @@ class AttachDecoratorData(BaseModel):
 
     def __eq__(self, other):
         """Compare equality with another."""
-
         for attr in ["jws_", "sha256_", "base64_"]:
             if getattr(self, attr, None) != getattr(other, attr, None):
                 return False
@@ -489,7 +476,6 @@ class AttachDecoratorDataSchema(BaseModelSchema):
     @pre_load
     def validate_data_spec(self, data: Mapping, **kwargs):
         """Ensure model chooses exactly one of base64, json, or links."""
-
         if len(set(data.keys()) & {"base64", "json", "links"}) != 1:
             raise BaseModelError(
                 "AttachDecoratorSchema: choose exactly one of base64, json, or links"
@@ -623,6 +609,7 @@ class AttachDecorator(BaseModel):
             filename: optional attachment filename
             lastmod_time: optional attachment last modification time
             byte_count: optional attachment byte count
+
         """
         return AttachDecorator(
             ident=ident or str(uuid4()),
