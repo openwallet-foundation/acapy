@@ -237,8 +237,6 @@ class EventBus:
             if tasks_to_cancel:
                 # Wait for all the tasks we just cancelled to actually complete
                 await asyncio.wait(tasks_to_cancel, timeout=2.0)
-        except asyncio.TimeoutError:
-            LOGGER.warning("Some EventBus tasks did not cancel within timeout")
         except Exception as e:
             LOGGER.debug("Exception while waiting for task cancellation: %s", e)
 
