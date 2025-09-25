@@ -51,6 +51,7 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_PRESERVE_EXCHANGE_RECORDS": "preserve_exchange_records",
     "ACAPY_PUBLIC_INVITES": "public_invites",
     "ACAPY_REQUESTS_THROUGH_PUBLIC_DID": "requests_through_public_did",
+    "ACAPY_ENABLE_AUTO_REVOCATION_RECOVERY": "anoncreds.revocation.auto_recovery_enabled",
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
