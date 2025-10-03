@@ -3,6 +3,8 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
+from acapy_agent.resolver.default.key import KeyDIDResolver
+
 from ...resolver.did_resolver import DIDResolver
 from ...resolver.tests.test_did_resolver import MockResolver
 from ...utils.testing import create_test_profile
@@ -13,7 +15,7 @@ from ..default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
 )
-from ..jwt import jwt_sign, jwt_verify, resolve_public_key_by_kid_for_verify
+from ..jwt import jwt_sign, jwt_verify
 
 
 class TestJWT(IsolatedAsyncioTestCase):
@@ -92,6 +94,9 @@ class TestJWT(IsolatedAsyncioTestCase):
             BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
         self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
+        self.profile.context.injector.bind_instance(
+            DIDResolver, DIDResolver([KeyDIDResolver()])
+        )
 
     async def setUpTestingDid(self, key_type: KeyType) -> Tuple[str, str]:
         async with self.profile.session() as session:
@@ -164,7 +169,7 @@ class TestJWT(IsolatedAsyncioTestCase):
         verification_method = "did:key:zzzzgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         with pytest.raises(Exception) as e_info:
             await jwt_sign(self.profile, headers, payload, did, verification_method)
-        assert "Unknown DID" in str(e_info)
+        assert "DIDNotFound" in str(e_info)
 
     async def test_verify_x_invalid_signed(self):
         for key_type in [ED25519, P256]:
@@ -182,21 +187,3 @@ class TestJWT(IsolatedAsyncioTestCase):
 
             with pytest.raises(Exception):
                 await jwt_verify(self.profile, signed)
-
-    async def test_resolve_public_key_by_kid_for_verify_ed25519(self):
-        (_, kid) = await self.setUpTestingDid(ED25519)
-        (key_bs58, key_type) = await resolve_public_key_by_kid_for_verify(
-            self.profile, kid
-        )
-
-        assert key_bs58 == "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-        assert key_type == ED25519
-
-    async def test_resolve_public_key_by_kid_for_verify_p256(self):
-        (_, kid) = await self.setUpTestingDid(P256)
-        (key_bs58, key_type) = await resolve_public_key_by_kid_for_verify(
-            self.profile, kid
-        )
-
-        assert key_bs58 == "tYbR5egjfja9D5ix1jjYGqfh5QPu73RcZ7UjQUXtargj"
-        assert key_type == P256
