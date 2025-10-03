@@ -6,7 +6,11 @@ from typing import Any, Mapping, Optional
 
 from marshmallow import fields
 
-from acapy_agent.wallet.keys.manager import MultikeyManager, key_type_from_multikey, multikey_to_verkey
+from acapy_agent.wallet.keys.manager import (
+    MultikeyManager,
+    key_type_from_multikey,
+    multikey_to_verkey
+)
 
 from ..core.profile import Profile
 from ..messaging.jsonld.error import BadJWSHeaderError
@@ -152,7 +156,9 @@ async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
 
     async with profile.session() as session:
         key_manager = MultikeyManager(session)
-        multikey = await key_manager.resolve_multikey_from_verification_method_id(verification_method)
+        multikey = await key_manager.resolve_multikey_from_verification_method_id(
+            verification_method
+        )
         key_type = key_type_from_multikey(multikey)
         public_key_base58 = multikey_to_verkey(multikey)
         
