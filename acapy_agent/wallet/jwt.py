@@ -9,7 +9,7 @@ from marshmallow import fields
 from acapy_agent.wallet.keys.manager import (
     MultikeyManager,
     key_type_from_multikey,
-    multikey_to_verkey
+    multikey_to_verkey,
 )
 
 from ..core.profile import Profile
@@ -136,6 +136,7 @@ class JWTVerifyResultSchema(BaseModelSchema):
     kid = fields.Str(required=True, metadata={"description": "kid of signer"})
     error = fields.Str(required=False, metadata={"description": "Error text"})
 
+
 async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
     """Verify a JWT and return the headers and payload."""
     encoded_headers, encoded_payload, encoded_signature = jwt.split(".", 3)
@@ -161,7 +162,7 @@ async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
         )
         key_type = key_type_from_multikey(multikey)
         public_key_base58 = multikey_to_verkey(multikey)
-        
+
         wallet = session.inject(BaseWallet)
         valid = await wallet.verify_message(
             f"{encoded_headers}.{encoded_payload}".encode(),
