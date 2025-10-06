@@ -610,9 +610,6 @@ class Conductor:
 
         LOGGER.info("Listening...")
 
-    # The increased timeout (e.g., 6.0 seconds) provides a larger window for
-    # Kanon Profile.close to finish, especially if it involves database
-    # persistence or other slow operations.
     async def stop(self, timeout=30.0):
         """Stop the agent."""
         LOGGER.info("Stopping the Conductor agent.")
@@ -948,7 +945,9 @@ class Conductor:
                     await self.setup()
                 else:
                     raise StartupError(
-                        f"The proviced Wallet type config [{storage_type_from_config}] doesn't match with the wallet type in storage [{storage_type_record.value}]"  # noqa: E501
+                        "The provided wallet type config "
+                        f"[{storage_type_from_config}] doesn't match the wallet type "
+                        f"in storage [{storage_type_record.value}]"
                     )
 
     async def check_for_wallet_upgrades_in_progress(self):

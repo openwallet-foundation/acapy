@@ -16,10 +16,6 @@ from anoncreds import (
     W3cCredential,
 )
 
-# ideally both AskarError and DBStoreError should inherit from a shared base class,
-# so the business layer doesn't need to care about the storage choice.
-from aries_askar import AskarError
-from ..database_manager.dbstore import DBStoreError
 from ..database_manager.db_errors import DBError
 
 from ..core.error import BaseError
@@ -694,7 +690,7 @@ class AnonCredsIssuer:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
-        except (AskarError, DBStoreError) as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:

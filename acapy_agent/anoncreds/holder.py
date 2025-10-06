@@ -17,8 +17,6 @@ from anoncreds import (
     create_link_secret,
 )
 
-# ideally both AskarError and DBStoreError should inherit from a shared base class,
-# so the business layer doesn't need to care about the storage choice.
 from ..database_manager.db_errors import DBError, DBCode
 from marshmallow import INCLUDE
 from pyld import jsonld

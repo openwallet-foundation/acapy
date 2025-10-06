@@ -8,8 +8,7 @@ import re
 from typing import Dict, Optional, Sequence, Tuple
 
 from ...core.profile import Profile
-from ...database_manager.dbstore import DBStoreError, DBStoreErrorCode
-from aries_askar import AskarError, AskarErrorCode
+from ...database_manager.db_errors import DBError, DBCode
 
 from indy_credx import (
     Credential,
@@ -115,7 +114,7 @@ class IndyCredxHolder(IndyHolder):
                     CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
                 )
             return fetch_method(CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID)
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             LOGGER.error("%s", ERR_FETCH_LINK_SECRET)
             raise IndyHolderError(ERR_FETCH_LINK_SECRET) from err
 
@@ -162,7 +161,7 @@ class IndyCredxHolder(IndyHolder):
                 )
             LOGGER.debug("Saved new link secret.")
             return secret
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             if self._is_duplicate_error(err):
                 return None  # Retry needed
             LOGGER.error("%s", ERR_SAVE_LINK_SECRET)
@@ -180,9 +179,10 @@ class IndyCredxHolder(IndyHolder):
 
     def _is_duplicate_error(self, err) -> bool:
         """Check if error is a duplicate record error."""
-        return (
-            isinstance(err, DBStoreError) and err.code == DBStoreErrorCode.DUPLICATE
-        ) or (isinstance(err, AskarError) and err.code == AskarErrorCode.DUPLICATE)
+        try:
+            return err.code in DBCode.DUPLICATE
+        except Exception:
+            return False
 
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: dict, holder_did: str
@@ -399,7 +399,7 @@ class IndyCredxHolder(IndyHolder):
                 await self._insert_credential_record(txn, credential_id, cred_recvd, tags)
                 await self._insert_mime_types_record(txn, credential_id, mime_types)
                 await self._commit_transaction(txn)
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyHolderError(ERR_STORING_CREDENTIAL) from err
 
         return credential_id
@@ -426,7 +426,7 @@ class IndyCredxHolder(IndyHolder):
             async for row in rows:
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyHolderError(ERR_RETRIEVING_CREDENTIALS) from err
         except CredxError as err:
             raise IndyHolderError(ERR_LOADING_STORED_CREDENTIAL) from err
@@ -582,7 +582,7 @@ class IndyCredxHolder(IndyHolder):
                     cred = await fetch_method(CATEGORY_CREDENTIAL, credential_id)
                 else:
                     cred = fetch_method(CATEGORY_CREDENTIAL, credential_id)
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyHolderError(ERR_RETRIEVING_CREDENTIAL) from err
 
         if not cred:
@@ -658,13 +658,15 @@ class IndyCredxHolder(IndyHolder):
                 else:
                     remove_method(CATEGORY_CREDENTIAL, credential_id)
                     remove_method(IndyHolder.RECORD_TYPE_MIME_TYPES, credential_id)
-        except (DBStoreError, AskarError) as err:
-            if (
-                isinstance(err, DBStoreError) and err.code == DBStoreErrorCode.NOT_FOUND
-            ) or (isinstance(err, AskarError) and err.code == AskarErrorCode.NOT_FOUND):
-                # Credential not found — ignore
-                pass
-            else:
+        except DBError as err:
+            # Ignore not-found deletes; re-raise others
+            try:
+                if err.code in DBCode.NOT_FOUND:
+                    pass
+                else:
+                    raise IndyHolderError("Error deleting credential") from err
+            except Exception:
+                # If err lacks a code, treat as unexpected
                 raise IndyHolderError("Error deleting credential") from err
 
     async def get_mime_type(
@@ -693,7 +695,7 @@ class IndyCredxHolder(IndyHolder):
                         IndyHolder.RECORD_TYPE_MIME_TYPES,
                         credential_id,
                     )
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyHolderError(ERR_RETRIEVING_CRED_MIME_TYPES) from err
         values = mime_types_record and mime_types_record.value_json
         if values:

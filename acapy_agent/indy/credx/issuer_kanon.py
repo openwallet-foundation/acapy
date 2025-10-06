@@ -4,8 +4,7 @@ import asyncio
 import logging
 from typing import Optional, Sequence, Tuple
 
-from aries_askar import AskarError
-from ...database_manager.dbstore import DBStoreError
+from ...database_manager.db_errors import DBError
 from ...core.profile import Profile
 
 from indy_credx import (
@@ -196,7 +195,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
         except CredxError as err:
             raise IndyIssuerError(ERR_CREATE_SCHEMA) from err
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_STORE_SCHEMA) from err
         return (schema_id, schema_json)
 
@@ -216,7 +215,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                         CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                     )
                 ) is not None
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_CHECK_CRED_DEF) from err
 
     async def create_and_store_credential_definition(
@@ -287,7 +286,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                     CATEGORY_CRED_DEF_KEY_PROOF, cred_def_id, key_proof.to_json_buffer()
                 )
                 await txn.commit()
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_STORE_CRED_DEF) from err
         return (cred_def_id, cred_def_json)
 
@@ -309,7 +308,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 key_proof = await session.handle.fetch(
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def or not key_proof:
             raise IndyIssuerError(ERR_CRED_DEF_NOT_FOUND_OFFER)
@@ -361,7 +360,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                 )
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def or not cred_def_private:
             raise IndyIssuerError(ERR_CRED_DEF_NOT_FOUND_ISSUE)
@@ -397,7 +396,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                         value_json=rev_info,
                     )
                     await txn.commit()
-            except (DBStoreError, AskarError) as err:
+            except DBError as err:
                 raise IndyIssuerError(ERR_UPDATE_REV_REG_INDEX) from err
 
             revoc = CredentialRevocationConfig(
@@ -520,7 +519,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 components_raw = await self._fetch_raw_components(
                     session, cred_def_id, revoc_reg_id
                 )
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError("Error retrieving revocation registry") from err
 
         return self._parse_revocation_components(components_raw)
@@ -631,7 +630,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                     CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=current_rev_info
                 )
                 await txn.commit()
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_SAVE_REV_REG) from err
 
 
@@ -691,7 +690,7 @@ class IndyIssuerRetryableError(IndyIssuerError):
         try:
             async with self._profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_RETRIEVE_CRED_DEF) from err
         if not cred_def:
             raise IndyIssuerError(
@@ -744,7 +743,7 @@ class IndyIssuerRetryableError(IndyIssuerError):
                     rev_reg_def_private.to_json_buffer(),
                 )
                 await txn.commit()
-        except (DBStoreError, AskarError) as err:
+        except DBError as err:
             raise IndyIssuerError(ERR_SAVE_NEW_REV_REG) from err
 
         return (
