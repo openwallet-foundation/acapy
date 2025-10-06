@@ -28,6 +28,7 @@ from ..core.profile import Profile
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
 from ..vc.ld_proofs import DocumentLoader
+from .models.predicate import Predicate
 from ..vc.vc_ld import VerifiableCredential
 from ..wallet.error import WalletNotFoundError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
@@ -421,42 +422,122 @@ class AnonCredsHolder:
             extra_query: wql query dict
 
         """
+        LOGGER.debug(
+            "get_credentials_for_presentation_request_by_referent called with "
+            "referents=%s, offset=%d, limit=%d, extra_query=%s",
+            referents,
+            offset,
+            limit,
+            extra_query,
+        )
+        LOGGER.debug("presentation_request: %s", presentation_request)
+
         if not referents:
             referents = (
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
+            LOGGER.debug("No referents provided, using all from request: %s", referents)
+
         extra_query = extra_query or {}
         creds = {}
+
         for reft in referents:
+            LOGGER.debug("Processing referent: %s", reft)
             names = set()
+
             if reft in presentation_request["requested_attributes"]:
                 attr = presentation_request["requested_attributes"][reft]
+                LOGGER.debug("Found referent %s in requested_attributes: %s", reft, attr)
+
                 if "name" in attr:
-                    names.add(_normalize_attr_name(attr["name"]))
+                    normalized_name = _normalize_attr_name(attr["name"])
+                    names.add(normalized_name)
+                    LOGGER.debug(
+                        "Added single attribute name: %s -> %s",
+                        attr["name"],
+                        normalized_name,
+                    )
                 elif "names" in attr:
-                    names.update(_normalize_attr_name(name) for name in attr["names"])
-                # for name in names:
-                #     tag_filter[f"attr::{_normalize_attr_name(name)}::marker"] = "1"
+                    for name in attr["names"]:
+                        normalized_name = _normalize_attr_name(name)
+                        names.add(normalized_name)
+                        LOGGER.debug(
+                            "Added attribute name from names: %s -> %s",
+                            name,
+                            normalized_name,
+                        )
+
                 restr = attr.get("restrictions")
+                LOGGER.debug("Extracted restrictions for attribute %s: %s", reft, restr)
+
             elif reft in presentation_request["requested_predicates"]:
                 pred = presentation_request["requested_predicates"][reft]
+                LOGGER.debug("Found referent %s in requested_predicates: %s", reft, pred)
+
                 if "name" in pred:
-                    names.add(_normalize_attr_name(pred["name"]))
-                # tag_filter[f"attr::{_normalize_attr_name(name)}::marker"] = "1"
+                    normalized_name = _normalize_attr_name(pred["name"])
+                    names.add(normalized_name)
+                    LOGGER.debug(
+                        "Added predicate name: %s -> %s", pred["name"], normalized_name
+                    )
+
                 restr = pred.get("restrictions")
+                LOGGER.debug("Extracted restrictions for predicate %s: %s", reft, restr)
+
+                # Handle predicate conditions
+                if "p_type" in pred and "p_value" in pred:
+                    p_type = pred["p_type"]
+                    p_value = pred["p_value"]
+                    predicate_obj = Predicate.get(p_type)
+                    if predicate_obj:
+                        LOGGER.debug(
+                            "Building predicate filter for %s %s %s",
+                            normalized_name,
+                            p_type,
+                            p_value,
+                        )
+                        predicate_filter = {
+                            f"attr::{normalized_name}::value": {
+                                predicate_obj.wql: str(p_value)
+                            }
+                        }
+                        LOGGER.debug("Predicate filter: %s", predicate_filter)
+                        # Store for later use in tag_filter construction
+                        pred["_predicate_filter"] = predicate_filter
+                    else:
+                        LOGGER.error("Unknown predicate type: %s", p_type)
+                        raise AnonCredsHolderError(f"Unknown predicate type: {p_type}")
+
             else:
+                LOGGER.error("Unknown presentation request referent: %s", reft)
                 raise AnonCredsHolderError(
                     f"Unknown presentation request referent: {reft}"
                 )
 
+            LOGGER.debug("Final normalized names for referent %s: %s", reft, names)
+
             tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
+            LOGGER.debug("Base tag_filter for referent %s: %s", reft, tag_filter)
+
+            # Apply predicate filter if this is a predicate referent
+            if reft in presentation_request["requested_predicates"]:
+                pred = presentation_request["requested_predicates"][reft]
+                if "_predicate_filter" in pred:
+                    predicate_filter = pred["_predicate_filter"]
+                    tag_filter = {"$and": [tag_filter, predicate_filter]}
+                    LOGGER.debug("Tag_filter after adding predicate: %s", tag_filter)
+
             if restr:
                 # FIXME check if restr is a list or dict? validate WQL format
                 tag_filter = {"$and": [tag_filter] + restr}
+                LOGGER.debug("Tag_filter after adding restrictions: %s", tag_filter)
+
             if extra_query:
                 tag_filter = {"$and": [tag_filter, extra_query]}
+                LOGGER.debug("Tag_filter after adding extra_query: %s", tag_filter)
 
+            LOGGER.debug("Scanning store with tag_filter: %s", tag_filter)
             rows = self.profile.store.scan(
                 category=CATEGORY_CREDENTIAL,
                 tag_filter=tag_filter,
@@ -464,21 +545,37 @@ class AnonCredsHolder:
                 limit=limit,
                 profile=self.profile.settings.get("wallet.askar_profile"),
             )
+
             async for row in rows:
                 if row.name in creds:
+                    LOGGER.debug(
+                        "Credential %s already exists, adding referent %s", row.name, reft
+                    )
                     creds[row.name]["presentation_referents"].add(reft)
                 else:
+                    LOGGER.debug("New credential %s found, creating cred_info", row.name)
                     cred_info = _make_cred_info(row.name, Credential.load(row.raw_value))
+                    LOGGER.debug("Created cred_info for %s: %s", row.name, cred_info)
+
                     creds[row.name] = {
                         "cred_info": cred_info,
                         "interval": presentation_request.get("non_revoked"),
                         "presentation_referents": {reft},
                     }
+                    LOGGER.debug("Added new credential %s to creds dict", row.name)
 
+            LOGGER.debug("Processed %d rows for referent %s", len(rows), reft)
+
+        LOGGER.debug(
+            "Converting presentation_referents sets to lists for %d credentials",
+            len(creds),
+        )
         for cred in creds.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
 
-        return list(creds.values())
+        result = list(creds.values())
+        LOGGER.debug("Returning %d credentials total: %s", len(result), result)
+        return result
 
     async def get_credential(self, credential_id: str) -> str:
         """Get a credential stored in the wallet.
