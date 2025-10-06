@@ -148,7 +148,7 @@ testpaths = "acapy_agent"
 addopts = """
     -n auto
     --quiet --junitxml=./test-reports/junit.xml
-    --cov-config .coveragerc --cov-report term --cov-report xml
+    --cov-report term --cov-report xml
     --ruff
 """
 markers = [
