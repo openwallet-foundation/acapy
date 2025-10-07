@@ -13,6 +13,7 @@ from marshmallow import RAISE
 
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import AnonCredsIssuer
+from ......anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.revocation.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
@@ -27,7 +28,6 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
 from ......vc.vc_ld import VerifiableCredential
 from ......wallet.base import BaseWallet
