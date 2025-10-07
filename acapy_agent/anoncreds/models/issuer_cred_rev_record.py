@@ -23,60 +23,6 @@ class IssuerCredRevRecord(IndyIssuerCredRevRecord):
 
         schema_class = "IssuerCredRevRecordSchemaAnonCreds"
 
-    RECORD_TYPE = "issuer_cred_rev"
-    RECORD_ID_NAME = "record_id"
-    RECORD_TOPIC = "issuer_cred_rev"
-    TAG_NAMES = {
-        "cred_ex_id",
-        "cred_ex_version",
-        "cred_def_id",
-        "rev_reg_id",
-        "cred_rev_id",
-        "state",
-    }
-
-    STATE_ISSUED = "issued"
-    STATE_REVOKED = "revoked"
-
-    VERSION_1 = "1"
-    VERSION_2 = "2"
-
-    def __init__(
-        self,
-        *,
-        record_id: Optional[str] = None,
-        state: Optional[str] = None,
-        cred_ex_id: Optional[str] = None,
-        rev_reg_id: Optional[str] = None,
-        cred_rev_id: Optional[str] = None,
-        cred_def_id: Optional[str] = None,  # Marshmallow formalism: leave None
-        cred_ex_version: Optional[str] = None,
-        **kwargs,
-    ):
-        """Initialize a new IssuerCredRevRecord."""
-        super().__init__(
-            record_id=record_id,
-            state=state or IssuerCredRevRecord.STATE_ISSUED,
-            cred_ex_id=cred_ex_id,
-            rev_reg_id=rev_reg_id,
-            cred_rev_id=cred_rev_id,
-            cred_def_id=cred_def_id,
-            cred_ex_version=cred_ex_version,
-            **kwargs,
-        )
-        self.cred_ex_id = cred_ex_id
-        self.rev_reg_id = rev_reg_id
-        self.cred_rev_id = cred_rev_id
-        self.cred_def_id = (
-            ":".join(rev_reg_id.split(":")[-7:-2]) if rev_reg_id else cred_def_id
-        )
-        self.cred_ex_version = cred_ex_version
-
-    @property
-    def record_id(self) -> str:
-        """Accessor for the ID associated with this exchange."""
-        return self._id
-
     @classmethod
     async def retrieve_by_ids(
         cls,
