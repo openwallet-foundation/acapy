@@ -1,7 +1,7 @@
 import pytest
 
 from acapy_agent.database_manager.dbstore import DBStore, register_backend
-from acapy_agent.database_manager.interfaces import DatabaseBackend, AbstractDatabaseStore
+from acapy_agent.database_manager.interfaces import AbstractDatabaseStore, DatabaseBackend
 
 
 class _OkDB(AbstractDatabaseStore):

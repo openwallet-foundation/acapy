@@ -1,26 +1,39 @@
 """Module docstring."""
 
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
-    normalized_handler as sn_handler,
-    generic_handler as sg_handler,
-)
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom import (
-    cred_ex_v20_custom_handler as scred_handler,
-    pres_ex_v20_custom_handler as spres_handler,
-    connection_metadata_custom_handler as sconn_handler,
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers import (
+    generic_handler as pg_handler,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.handlers import (
     normalized_handler as pn_handler,
-    generic_handler as pg_handler,
+)
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom import (
+    connection_metadata_custom_handler as pconn_handler,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom import (
     cred_ex_v20_custom_handler as pcred_handler,
+)
+from acapy_agent.database_manager.databases.postgresql_normalized.handlers.custom import (
     pres_ex_v20_custom_handler as ppres_handler,
-    connection_metadata_custom_handler as pconn_handler,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
     SchemaContext,
 )
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
+    generic_handler as sg_handler,
+)
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
+    normalized_handler as sn_handler,
+)
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom import (
+    connection_metadata_custom_handler as sconn_handler,
+)
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom import (
+    cred_ex_v20_custom_handler as scred_handler,
+)
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers.custom import (
+    pres_ex_v20_custom_handler as spres_handler,
+)
+
 from ..category_registry import load_schema
 
 RELEASE = {

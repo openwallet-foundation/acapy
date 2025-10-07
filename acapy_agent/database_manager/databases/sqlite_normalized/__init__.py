@@ -1,8 +1,8 @@
 # acapy_agent/database_manager/databases/sqlite/__init__.py
 
 
-from .connection_pool import ConnectionPool
+from ..errors import DatabaseError, DatabaseErrorCode
 from .config import SqliteConfig
-from ..errors import DatabaseErrorCode, DatabaseError
+from .connection_pool import ConnectionPool
 
 __all__ = ["ConnectionPool", "SqliteConfig", "DatabaseErrorCode", "DatabaseError"]

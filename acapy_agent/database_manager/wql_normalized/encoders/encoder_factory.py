@@ -1,7 +1,7 @@
 """Module docstring."""
 
-from .sqlite_encoder import SqliteTagEncoder
 from .postgres_encoder import PostgresTagEncoder
+from .sqlite_encoder import SqliteTagEncoder
 
 
 def get_encoder(

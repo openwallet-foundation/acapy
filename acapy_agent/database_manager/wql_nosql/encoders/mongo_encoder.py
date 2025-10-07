@@ -1,7 +1,8 @@
 """Module docstring."""
 
-from typing import List, Dict, Any
-from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp
+from typing import Any, Dict, List
+
+from ..tags import CompareOp, ConjunctionOp, TagName, TagQueryEncoder
 
 
 class MongoTagEncoder(TagQueryEncoder):

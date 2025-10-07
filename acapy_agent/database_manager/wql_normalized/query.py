@@ -1,7 +1,7 @@
 """Askar WQL (Wallet Query Language) parsing and optimization."""
 
 import json
-from typing import List, Optional, Callable, Tuple, Set
+from typing import Callable, List, Optional, Set, Tuple
 
 # JSONValue represents a parsed JSON value, which can be a dict, list, str, or None
 JSONValue = dict | list | str | None

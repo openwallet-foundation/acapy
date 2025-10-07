@@ -1,6 +1,7 @@
 """Handling of Key instances."""
 
 from typing import Any
+
 from .db_types import KeyAlg, SeedMethod
 
 

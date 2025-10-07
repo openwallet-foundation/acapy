@@ -6,6 +6,7 @@
 
 import asyncio
 import logging
+
 from acapy_agent.database_manager.databases.sqlite_normalized.config import SqliteConfig
 from acapy_agent.database_manager.databases.sqlite_normalized.database import (
     SqliteDatabase,

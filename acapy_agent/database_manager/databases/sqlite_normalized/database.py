@@ -1,24 +1,24 @@
 """SQLite normalized database implementation."""
 
-import threading
-import logging
 import asyncio
-import time
+import logging
 import sqlite3
-from typing import Optional, Generator
+import threading
+import time
+from typing import Generator, Optional
 
 try:
     # Try new sqlcipher3 first (SQLite 3.46+)
     import sqlcipher3 as sqlcipher
 except ImportError:
     sqlcipher = None
-from ..errors import DatabaseError, DatabaseErrorCode
+from ...category_registry import get_release
+from ...db_types import Entry
+from ...interfaces import AbstractDatabaseStore
 from ...wql_normalized.query import query_from_str
 from ...wql_normalized.tags import query_to_tagquery
-from ...interfaces import AbstractDatabaseStore
-from ...db_types import Entry
+from ..errors import DatabaseError, DatabaseErrorCode
 from .connection_pool import ConnectionPool
-from ...category_registry import get_release
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def enc_name(name: str) -> str:
 
     Returns:
         Encoded name
+
     """
     return name
 
@@ -43,6 +44,7 @@ def enc_value(value: str) -> str:
 
     Returns:
         Encoded value
+
     """
     return value
 
@@ -140,6 +142,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Returns:
             str: The created profile name
+
         """
         name = name or "new_profile"
 
@@ -181,6 +184,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Returns:
             str: Default profile name
+
         """
         return self.default_profile
 
@@ -192,6 +196,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Returns:
             bool: True if removed successfully
+
         """
 
         def _remove():
@@ -224,6 +229,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         Args:
             key_method: Key method to use
             pass_key: Password key for encryption
+
         """
 
         def _rekey():
@@ -279,6 +285,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Yields:
             Entry: Database entries matching criteria
+
         """
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
@@ -338,6 +345,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Yields:
             Entry: Database entries
+
         """
         handlers, _, _ = get_release(self.release_number, "sqlite")
         handler = handlers.get(category, handlers["default"])
@@ -383,6 +391,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Returns:
             SqliteSession: Database session context manager
+
         """
         from .session import SqliteSession
 
@@ -417,6 +426,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Returns:
             SqliteSession: Database transaction context manager
+
         """
         from .session import SqliteSession
 
@@ -447,6 +457,7 @@ class SqliteDatabase(AbstractDatabaseStore):
 
         Args:
             remove: Whether to remove the database file
+
         """
         try:
             # Cancel background monitoring task if running

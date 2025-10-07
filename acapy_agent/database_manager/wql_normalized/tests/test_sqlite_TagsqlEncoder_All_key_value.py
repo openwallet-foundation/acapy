@@ -1,15 +1,16 @@
 # pytest --maxfail=1 --disable-warnings --no-cov -s -vv acapy_agent/database_manager/wql_normalized/tests/test_sqlite_TagsqlEncoder_All_key_value.py
 # python -m unittest acapy_agent/database_manager/wql_normalized/tests/test_sqlite_TagsqlEncoder_All_key_value.py -v
-import unittest
-import sqlite3
 import logging
-from acapy_agent.database_manager.wql_normalized.tags import (
-    TagQuery,
-    TagName,
-    query_to_tagquery,
-)
+import sqlite3
+import unittest
+
 from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
 from acapy_agent.database_manager.wql_normalized.query import query_from_str
+from acapy_agent.database_manager.wql_normalized.tags import (
+    TagName,
+    TagQuery,
+    query_to_tagquery,
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

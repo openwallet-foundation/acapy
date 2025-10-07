@@ -5,9 +5,10 @@ environment coupling. Set ENABLE_DBSTORE_TESTS=1 to run them locally.
 """
 
 import os
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
 
 # Skip entire directory unless explicitly enabled
 if not os.getenv("ENABLE_DBSTORE_TESTS"):

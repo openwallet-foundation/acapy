@@ -1,4 +1,5 @@
 import types
+
 import pytest
 
 from acapy_agent.database_manager.dbstore import DBStore, DBStoreError

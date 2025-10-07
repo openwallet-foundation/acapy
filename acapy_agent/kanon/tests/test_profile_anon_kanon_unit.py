@@ -89,8 +89,8 @@ class _FakeOpened:
 
 @pytest.mark.asyncio
 async def test_profile_remove_success_and_error(monkeypatch):
-    from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile
     from acapy_agent.core.error import ProfileError
+    from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile
 
     opened = _FakeOpened("p1")
     prof = KanonAnonCredsProfile(opened)
@@ -134,11 +134,11 @@ async def test_session_setup_teardown_and_is_transaction(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_session_teardown_commit_errors(monkeypatch):
+    from acapy_agent.core.error import ProfileError
     from acapy_agent.kanon.profile_anon_kanon import (
         KanonAnonCredsProfile,
         KanonAnonCredsProfileSession,
     )
-    from acapy_agent.core.error import ProfileError
 
     class _BadDB(_FakeDBStore):
         def transaction(self, *_a, **_k):

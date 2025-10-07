@@ -24,6 +24,7 @@ class DBCode:
         except DBError as err:
             if err.code not in DBCode.DUPLICATE:
                 raise
+
     """
 
     DUPLICATE: FrozenSet[DBCodeUnion] = frozenset(

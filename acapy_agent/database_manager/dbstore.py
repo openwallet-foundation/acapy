@@ -1,20 +1,20 @@
 """Database store module for managing different database backends."""
 
-import json
 import asyncio
-import inspect
 import importlib
-import threading
-from typing import Optional, Sequence
-from concurrent.futures import ThreadPoolExecutor
-from collections.abc import AsyncIterator
+import inspect
+import json
+
 # anext is a builtin in Python 3.10+
-
 import logging
+import threading
+from collections.abc import AsyncIterator
+from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, Sequence
 
-from .error import DBStoreError, DBStoreErrorCode
 from .db_types import Entry, EntryList
-from .interfaces import AbstractDatabaseStore, AbstractDatabaseSession, DatabaseBackend
+from .error import DBStoreError, DBStoreErrorCode
+from .interfaces import AbstractDatabaseSession, AbstractDatabaseStore, DatabaseBackend
 
 # Logging setup
 LOGGER = logging.getLogger(__name__)

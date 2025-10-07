@@ -1,22 +1,23 @@
 """Module docstring."""
 
 import json
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List
-from abc import ABC, abstractmethod
+
 from .query import (
     AndQuery,
-    OrQuery,
-    NotQuery,
     EqQuery,
-    NeqQuery,
-    GtQuery,
-    GteQuery,
-    LtQuery,
-    LteQuery,
-    LikeQuery,
-    InQuery,
     ExistQuery,
+    GteQuery,
+    GtQuery,
+    InQuery,
+    LikeQuery,
+    LteQuery,
+    LtQuery,
+    NeqQuery,
+    NotQuery,
+    OrQuery,
 )
 
 

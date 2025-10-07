@@ -1,4 +1,5 @@
 import json
+
 import pytest
 
 
@@ -13,7 +14,7 @@ def _base_config(sqlite=True):
 
 @pytest.mark.asyncio
 async def test_sqlite_uris_and_open_remove(monkeypatch, tmp_path):
-    from acapy_agent.kanon.store_kanon import KanonStoreConfig, KanonOpenStore
+    from acapy_agent.kanon.store_kanon import KanonOpenStore, KanonStoreConfig
 
     cfg = KanonStoreConfig(_base_config(sqlite=True))
 
@@ -87,9 +88,10 @@ async def test_postgres_missing_config_errors(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_open_error_translation_and_rekey(monkeypatch):
-    from acapy_agent.kanon.store_kanon import KanonStoreConfig, ProfileError
-    from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
     from aries_askar import AskarError, AskarErrorCode
+
+    from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
+    from acapy_agent.kanon.store_kanon import KanonStoreConfig, ProfileError
 
     cfg = KanonStoreConfig({"name": "t", "rekey": "rk", "dbstore_key": "dk"})
 
@@ -152,9 +154,10 @@ async def test_open_error_translation_and_rekey(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_remove_store_mappings(monkeypatch):
-    from acapy_agent.kanon.store_kanon import KanonStoreConfig, ProfileNotFoundError
-    from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
     from aries_askar import AskarError, AskarErrorCode
+
+    from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
+    from acapy_agent.kanon.store_kanon import KanonStoreConfig, ProfileNotFoundError
 
     cfg = KanonStoreConfig({"name": "t"})
 

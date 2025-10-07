@@ -38,8 +38,8 @@ class _Opened:
 
 @pytest.mark.asyncio
 async def test_profile_manager_provision_and_open_success(monkeypatch):
-    from acapy_agent.kanon import profile_anon_kanon as module
     from acapy_agent.config.injection_context import InjectionContext
+    from acapy_agent.kanon import profile_anon_kanon as module
 
     class _KCfg:
         def __init__(self, cfg):
@@ -61,9 +61,9 @@ async def test_profile_manager_provision_and_open_success(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_profile_manager_db_kms_failures(monkeypatch):
-    from acapy_agent.kanon import profile_anon_kanon as module
     from acapy_agent.config.injection_context import InjectionContext
     from acapy_agent.core.error import ProfileError
+    from acapy_agent.kanon import profile_anon_kanon as module
 
     class _KCfgDBFail:
         def __init__(self, cfg):

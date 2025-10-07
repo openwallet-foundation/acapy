@@ -7,14 +7,15 @@ import logging
 from typing import List, Optional, Sequence, Tuple, cast
 
 from aries_askar import AskarError, AskarErrorCode, Entry, Key, KeyAlg, SeedMethod
+
 from ..database_manager.dbstore import DBStoreError
 from ..kanon.didcomm.v1 import pack_message, unpack_message
 from ..kanon.profile_anon_kanon import KanonAnonCredsProfileSession
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
-from ..storage.kanon_storage import KanonStorage
 from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
+from ..storage.kanon_storage import KanonStorage
 from .base import BaseWallet, DIDInfo, KeyInfo
 from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_info import INVITATION_REUSE_KEY

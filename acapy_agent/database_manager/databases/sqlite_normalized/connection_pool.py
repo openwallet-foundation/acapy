@@ -1,11 +1,11 @@
 """Module docstring."""
 
-import queue
-import threading
-import sqlite3
 import logging
-from typing import Optional
+import queue
+import sqlite3
+import threading
 import time
+from typing import Optional
 
 try:
     # Use sqlcipher3 binary (SQLite 3.46+)

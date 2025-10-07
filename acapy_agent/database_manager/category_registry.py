@@ -1,8 +1,7 @@
 """Category registry for database managers."""
 
-from typing import Tuple
-
 import logging
+from typing import Tuple
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.WARNING)

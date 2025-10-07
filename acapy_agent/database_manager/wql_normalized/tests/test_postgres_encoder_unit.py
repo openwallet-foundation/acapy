@@ -1,7 +1,7 @@
-from acapy_agent.database_manager.wql_normalized.tags import TagName, TagQuery
 from acapy_agent.database_manager.wql_normalized.encoders.postgres_encoder import (
     PostgresTagEncoder,
 )
+from acapy_agent.database_manager.wql_normalized.tags import TagName, TagQuery
 
 
 def passthrough(x: str) -> str:

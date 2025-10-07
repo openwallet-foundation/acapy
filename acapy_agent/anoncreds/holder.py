@@ -16,8 +16,6 @@ from anoncreds import (
     W3cPresentation,
     create_link_secret,
 )
-
-from ..database_manager.db_errors import DBError, DBCode
 from marshmallow import INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
@@ -25,6 +23,7 @@ from uuid_utils import uuid4
 
 from ..core.error import BaseError
 from ..core.profile import Profile
+from ..database_manager.db_errors import DBCode, DBError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
 from ..vc.ld_proofs import DocumentLoader

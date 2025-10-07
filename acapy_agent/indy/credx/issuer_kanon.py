@@ -4,9 +4,6 @@ import asyncio
 import logging
 from typing import Optional, Sequence, Tuple
 
-from ...database_manager.db_errors import DBError
-from ...core.profile import Profile
-
 from indy_credx import (
     Credential,
     CredentialDefinition,
@@ -20,6 +17,8 @@ from indy_credx import (
     Schema,
 )
 
+from ...core.profile import Profile
+from ...database_manager.db_errors import DBError
 from ...utils.general import strip_did_prefix
 from ..issuer import (
     DEFAULT_CRED_DEF_TAG,

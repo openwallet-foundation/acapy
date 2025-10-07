@@ -7,9 +7,6 @@ import logging
 import re
 from typing import Dict, Optional, Sequence, Tuple
 
-from ...core.profile import Profile
-from ...database_manager.db_errors import DBError, DBCode
-
 from indy_credx import (
     Credential,
     CredentialRequest,
@@ -21,6 +18,8 @@ from indy_credx import (
 )
 from uuid_utils import uuid4
 
+from ...core.profile import Profile
+from ...database_manager.db_errors import DBCode, DBError
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
 from ..holder import IndyHolder, IndyHolderError
@@ -233,6 +232,7 @@ class IndyCredxHolder(IndyHolder):
 
         Returns:
             Tuple of (schema_id_parts, cdef_id_parts)
+
         """
         schema_id = cred_recvd.schema_id
         # Handle both qualified (did:sov:V4SG:2:schema:1.0)
@@ -268,6 +268,7 @@ class IndyCredxHolder(IndyHolder):
 
         Returns:
             Tuple of (tags, mime_types)
+
         """
         schema_issuer_did = self._normalize_did(schema_id_parts[1])
         issuer_did = self._normalize_did(cdef_id_parts[1])

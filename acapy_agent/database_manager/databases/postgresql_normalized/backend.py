@@ -1,14 +1,16 @@
 """Module docstring."""
 
 import logging
-from typing import Optional
 import urllib.parse
+from typing import Optional
+
+from psycopg import errors as psycopg_errors
+
 from ...dbstore import register_backend
 from ...error import DBStoreError, DBStoreErrorCode
 from ..errors import DatabaseError, DatabaseErrorCode
-from .database import PostgresDatabase
 from .config import PostgresConfig
-from psycopg import errors as psycopg_errors
+from .database import PostgresDatabase
 
 LOGGER = logging.getLogger(__name__)
 

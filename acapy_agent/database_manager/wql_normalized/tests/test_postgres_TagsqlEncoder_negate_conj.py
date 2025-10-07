@@ -2,13 +2,15 @@
 # python -m unittest acapy_agent/database_manager/wql_normalized/tests/test_postgres_TagsqlEncoder_negate_conj.py
 
 
+import logging
 import os
 import unittest
+
 import psycopg
-import logging
 import pytest
-from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName
+
 from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
+from acapy_agent.database_manager.wql_normalized.tags import TagName, TagQuery
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

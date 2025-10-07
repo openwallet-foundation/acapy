@@ -4,10 +4,10 @@ import logging
 from typing import Iterable, Optional
 
 from ..askar.profile_anon import AskarAnonCredsProfile
-from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
+from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
 from ..multitenant.base import BaseMultitenantManager
 from ..wallet.models.wallet_record import WalletRecord
 from .cache import ProfileCache

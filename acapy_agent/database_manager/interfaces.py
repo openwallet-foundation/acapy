@@ -1,7 +1,7 @@
 """Module docstring."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Generator
+from typing import Generator, Optional, Sequence
 
 from .db_types import Entry
 

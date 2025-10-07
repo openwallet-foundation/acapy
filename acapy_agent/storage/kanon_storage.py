@@ -1,9 +1,12 @@
 """Kanon storage implementation for non-secrets storage."""
 
+import asyncio
+import inspect
+import logging
 from typing import Mapping, Optional, Sequence
 
-from ..database_manager.dbstore import DBStoreError, DBStoreErrorCode, DBStoreSession
 from ..core.profile import Profile
+from ..database_manager.dbstore import DBStoreError, DBStoreErrorCode, DBStoreSession
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
@@ -18,9 +21,6 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
-import asyncio
-import inspect
-import logging
 
 LOGGER = logging.getLogger(__name__)
 

@@ -2,11 +2,12 @@
 
 from typing import Iterable, Optional, cast
 
-# only supports KanonAnoncred Profile
-from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
+
+# only supports KanonAnoncred Profile
+from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
 from ..wallet.models.wallet_record import WalletRecord
 from .base import BaseMultitenantManager
 

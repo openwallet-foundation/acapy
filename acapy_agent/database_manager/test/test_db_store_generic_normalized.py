@@ -10,7 +10,6 @@ import pytest_asyncio
 
 from acapy_agent.database_manager.dbstore import DBStore
 
-
 # Sample connection test data
 CONNECTION_JSON_1 = {
     "state": "active",

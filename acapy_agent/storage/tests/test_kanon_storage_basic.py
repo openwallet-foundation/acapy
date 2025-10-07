@@ -1,8 +1,9 @@
 import types
 from typing import Any, Dict, Optional
-from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
 
 import pytest
+
+from acapy_agent.database_manager.dbstore import DBStoreError, DBStoreErrorCode
 
 
 class FakeDBStoreHandle:
@@ -263,9 +264,9 @@ async def test_find_paginated_records_and_keyset():
 
 @pytest.mark.asyncio
 async def test_find_all_and_delete_all_and_search_session():
+    from acapy_agent.storage.error import StorageSearchError
     from acapy_agent.storage.kanon_storage import KanonStorage, KanonStorageSearch
     from acapy_agent.storage.record import StorageRecord
-    from acapy_agent.storage.error import StorageSearchError
 
     profile = FakeProfile()
     storage = KanonStorage(profile)
@@ -303,9 +304,9 @@ async def test_find_all_and_delete_all_and_search_session():
 
 @pytest.mark.asyncio
 async def test_storage_error_paths():
+    from acapy_agent.storage.error import StorageDuplicateError, StorageNotFoundError
     from acapy_agent.storage.kanon_storage import KanonStorage
     from acapy_agent.storage.record import StorageRecord
-    from acapy_agent.storage.error import StorageDuplicateError, StorageNotFoundError
 
     profile = FakeProfile()
     storage = KanonStorage(profile)
@@ -341,9 +342,9 @@ async def test_storage_error_paths():
 
 @pytest.mark.asyncio
 async def test_session_property_and_validations_and_error_mapping(monkeypatch):
+    from acapy_agent.storage.error import StorageError
     from acapy_agent.storage.kanon_storage import KanonStorage
     from acapy_agent.storage.record import StorageRecord
-    from acapy_agent.storage.error import StorageError
 
     profile = FakeProfile()
     storage = KanonStorage(profile)
@@ -398,8 +399,8 @@ async def test_session_property_and_validations_and_error_mapping(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_search_session_db_error(monkeypatch):
-    from acapy_agent.storage.kanon_storage import KanonStorageSearch
     from acapy_agent.storage.error import StorageSearchError
+    from acapy_agent.storage.kanon_storage import KanonStorageSearch
 
     profile = FakeProfile()
 

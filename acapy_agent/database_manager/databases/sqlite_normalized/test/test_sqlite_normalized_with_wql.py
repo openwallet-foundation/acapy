@@ -15,14 +15,15 @@ This script tests the functionality of the SQLite database for the
 """
 
 import asyncio
-import os
 import json
+import os
+
+from acapy_agent.database_manager.databases.backends.backend_registration import (
+    register_backends,
+)
 from acapy_agent.database_manager.databases.sqlite_normalized.backend import SqliteConfig
 from acapy_agent.database_manager.databases.sqlite_normalized.database import (
     SqliteDatabase,
-)
-from acapy_agent.database_manager.databases.backends.backend_registration import (
-    register_backends,
 )
 
 try:
@@ -108,6 +109,7 @@ async def run_tests(store, db_path, config_new, is_encrypted=True):
         db_path: Path to database file
         config_new: Database configuration
         is_encrypted: Whether database is encrypted
+
     """
     try:
         # Debug: Log current data state

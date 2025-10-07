@@ -1,8 +1,9 @@
 """Test cases for TagSqlEncoder with In and Exist conjunctions."""
 
 import unittest
-from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName
+
 from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
+from acapy_agent.database_manager.wql_nosql.tags import TagName, TagQuery
 
 
 def replace_placeholders(query, args):

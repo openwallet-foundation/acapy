@@ -1,5 +1,6 @@
-import types
 import logging
+import types
+
 import pytest
 
 
@@ -8,8 +9,8 @@ import pytest
 )
 @pytest.mark.asyncio
 async def test_init_ledger_pool_disabled_and_read_only_logs(monkeypatch, caplog):
-    from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile
     from acapy_agent.config.injection_context import InjectionContext
+    from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile
 
     class _Opened:
         def __init__(self):
@@ -47,8 +48,8 @@ async def test_init_ledger_pool_disabled_and_read_only_logs(monkeypatch, caplog)
 
 @pytest.mark.asyncio
 async def test_bind_providers_with_write_ledger_and_endorser(monkeypatch):
-    from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile
     from acapy_agent.config.injection_context import InjectionContext
+    from acapy_agent.kanon.profile_anon_kanon import KanonAnonCredsProfile
 
     class _Opened:
         def __init__(self):

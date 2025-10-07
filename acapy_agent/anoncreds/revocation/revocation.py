@@ -21,10 +21,7 @@ from anoncreds import (
     RevocationStatusList,
     W3cCredential,
 )
-
 from aries_askar import Entry
-from ...database_manager.db_errors import DBError
-from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
@@ -32,6 +29,8 @@ from ...askar.profile_anon import AskarAnonCredsProfileSession
 from ...core.error import BaseError
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile, ProfileSession
+from ...database_manager.db_errors import DBError
+from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
 from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from ..events import RevListFinishedEvent, RevRegDefFinishedEvent

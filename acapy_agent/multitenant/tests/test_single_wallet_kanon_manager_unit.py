@@ -1,4 +1,5 @@
 import types
+
 import pytest
 
 
@@ -66,10 +67,10 @@ class _WalletRecord:
 
 @pytest.mark.asyncio
 async def test_single_wallet_manager_flow(monkeypatch):
+    from acapy_agent.multitenant import single_wallet_kanon_manager as module
     from acapy_agent.multitenant.single_wallet_kanon_manager import (
         SingleWalletKanonMultitenantManager,
     )
-    from acapy_agent.multitenant import single_wallet_kanon_manager as module
 
     async def _wallet_config(ctx, provision=False):
         return _KanonProfile(), {}

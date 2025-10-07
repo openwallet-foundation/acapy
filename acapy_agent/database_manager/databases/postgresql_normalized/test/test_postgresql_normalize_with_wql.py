@@ -16,18 +16,19 @@ import asyncio
 import json
 import logging
 import os
+
 import pytest
 
+from acapy_agent.database_manager.databases.backends.backend_registration import (
+    register_backends,
+)
+from acapy_agent.database_manager.databases.errors import DatabaseError
 from acapy_agent.database_manager.databases.postgresql_normalized.backend import (
     PostgresqlBackend,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.database import (
     PostgresDatabase,
 )
-from acapy_agent.database_manager.databases.backends.backend_registration import (
-    register_backends,
-)
-from acapy_agent.database_manager.databases.errors import DatabaseError
 
 # Skip all tests in this file if POSTGRES_URL env var is not set
 if not os.getenv("POSTGRES_URL"):

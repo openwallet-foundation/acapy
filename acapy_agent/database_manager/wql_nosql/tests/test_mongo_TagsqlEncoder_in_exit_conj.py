@@ -1,9 +1,10 @@
 # """Test cases for MongoTagEncoder with In and Exist conjunctions."""
 
-import unittest
 import json
-from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName
+import unittest
+
 from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
+from acapy_agent.database_manager.wql_nosql.tags import TagName, TagQuery
 
 
 class TestMongoTagEncoder(unittest.TestCase):

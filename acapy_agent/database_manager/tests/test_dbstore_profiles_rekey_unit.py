@@ -1,8 +1,8 @@
 import pytest
 
 from acapy_agent.database_manager.dbstore import DBStore
-from acapy_agent.database_manager.interfaces import AbstractDatabaseStore
 from acapy_agent.database_manager.error import DBStoreError, DBStoreErrorCode
+from acapy_agent.database_manager.interfaces import AbstractDatabaseStore
 
 
 class _ProfileDB(AbstractDatabaseStore):

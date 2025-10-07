@@ -6,15 +6,16 @@ import time
 from typing import Any, Mapping, Optional
 from weakref import ref
 
-from aries_askar import AskarError, Session, Store as AskarStore
-from ..database_manager.dbstore import DBStoreError, DBStoreSession, DBStore
-from ..database_manager.db_errors import DBError
+from aries_askar import AskarError, Session
+from aries_askar import Store as AskarStore
 
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
+from ..database_manager.db_errors import DBError
+from ..database_manager.dbstore import DBStore, DBStoreError, DBStoreSession
 from ..indy.holder import IndyHolder
 from ..indy.issuer import IndyIssuer
 from ..ledger.base import BaseLedger
@@ -25,7 +26,6 @@ from ..utils.multi_ledger import get_write_ledger_config_for_profile
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import validate_seed
 from .store_kanon import KanonOpenStore, KanonStoreConfig
-
 
 LOGGER = logging.getLogger(__name__)
 

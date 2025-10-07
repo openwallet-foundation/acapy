@@ -1,14 +1,14 @@
 """Module docstring."""
 
-import os
 import importlib
 import logging
+import os
+import sqlite3
 from typing import Optional, Tuple
 
-from .connection_pool import ConnectionPool
+from ...category_registry import RELEASE_ORDER, get_release
 from ..errors import DatabaseError, DatabaseErrorCode
-from ...category_registry import get_release, RELEASE_ORDER
-import sqlite3
+from .connection_pool import ConnectionPool
 
 try:
     # Use sqlcipher3 if available (same as connection_pool.py)
@@ -270,6 +270,7 @@ class SqliteConfig:
             current_release: Current schema release
             target_release: Target schema release
             db_type: Database type (sqlite)
+
         """
         LOGGER.debug(
             f"Applying migrations from release {current_release} to "
@@ -347,6 +348,7 @@ class SqliteConfig:
 
         Returns:
             Tuple of (connection pool, profile name, db path, release number)
+
         """
         if not self.in_memory and not os.path.exists(self.path):
             LOGGER.error("Database file not found at %s", self.path)
@@ -464,6 +466,7 @@ class SqliteConfig:
 
         Returns:
             True if successful or in-memory database
+
         """
         if self.in_memory:
             return True

@@ -1,21 +1,22 @@
 """Tests for string to TagQuery conversion."""
 
-import unittest
 import random
 import string
+import unittest
+
 from .query import (
     AndQuery,
-    OrQuery,
-    NotQuery,
     EqQuery,
-    NeqQuery,
-    GtQuery,
-    GteQuery,
-    LtQuery,
-    LteQuery,
-    LikeQuery,
-    InQuery,
     ExistQuery,
+    GteQuery,
+    GtQuery,
+    InQuery,
+    LikeQuery,
+    LteQuery,
+    LtQuery,
+    NeqQuery,
+    NotQuery,
+    OrQuery,
     query_from_str,
     query_to_str,
 )

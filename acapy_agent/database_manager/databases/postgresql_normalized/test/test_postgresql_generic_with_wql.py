@@ -3,18 +3,20 @@
 Skipped by default unless `POSTGRES_URL` is set in the environment.
 """
 
-import json
 import asyncio
+import json
 import logging
 import os
+
 import pytest
+
+from acapy_agent.database_manager.databases.errors import DatabaseError
 from acapy_agent.database_manager.databases.postgresql_normalized.backend import (
     PostgresqlBackend,
 )
 from acapy_agent.database_manager.databases.postgresql_normalized.config import (
     PostgresConfig,
 )
-from acapy_agent.database_manager.databases.errors import DatabaseError
 
 # Skip all tests in this file if POSTGRES_URL env var is not set
 if not os.getenv("POSTGRES_URL"):

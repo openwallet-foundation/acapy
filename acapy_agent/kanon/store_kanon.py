@@ -2,22 +2,23 @@
 
 import json
 import logging
-import urllib
 import os
+import urllib
 from typing import Optional
-import base58
 
+import base58
 from aries_askar import AskarError, AskarErrorCode, Store
+
+from ..askar.store import ERR_NO_STORAGE_CONFIG, ERR_NO_STORAGE_CREDS
+from ..core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ..core.profile import Profile
+from ..database_manager.db_errors import DBCode, DBError
 from ..database_manager.dbstore import (
+    DBStore,
     DBStoreError,
     DBStoreErrorCode,
-    DBStore,
 )
-from ..database_manager.db_errors import DBError, DBCode
-from ..core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ..utils.env import storage_path
-from ..askar.store import ERR_NO_STORAGE_CONFIG, ERR_NO_STORAGE_CREDS
 
 LOGGER = logging.getLogger(__name__)
 

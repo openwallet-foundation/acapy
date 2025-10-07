@@ -1,15 +1,13 @@
 """Module docstring."""
 
-from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
-    generic_handler,
-)
 from acapy_agent.database_manager.databases.postgresql_normalized.handlers import (
     generic_handler as postgres_generic_handler,
 )
-
-
 from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
     SchemaContext,
+)
+from acapy_agent.database_manager.databases.sqlite_normalized.handlers import (
+    generic_handler,
 )
 
 RELEASE = {

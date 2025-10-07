@@ -1,13 +1,15 @@
 # pytest --maxfail=1 --disable-warnings --no-cov -s -vv acapy_agent/database_manager/wql_normalized/tests/test_postgres_TagsqlEncoder_compare_conj.py
 # python -m unittest acapy_agent/database_manager/wql_normalized/tests/test_postgres_TagsqlEncoder_compare_conj.py
 
+import logging
 import os
 import unittest
+
 import psycopg
-import logging
 import pytest
-from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName
+
 from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
+from acapy_agent.database_manager.wql_normalized.tags import TagName, TagQuery
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

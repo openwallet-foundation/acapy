@@ -1,8 +1,8 @@
 import pytest
 
+from acapy_agent.database_manager.databases.errors import DatabaseError
 from acapy_agent.database_manager.databases.sqlite_normalized.session import SqliteSession
 from acapy_agent.database_manager.error import DBStoreErrorCode
-from acapy_agent.database_manager.databases.errors import DatabaseError
 
 
 class _FakePool:

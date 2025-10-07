@@ -1,11 +1,12 @@
 """Module docstring."""
 
 # encoders/factory.py
-from .sqlite_encoder import SqliteTagEncoder
-from .mongo_encoder import MongoTagEncoder
 from acapy_agent.database_manager.wql_normalized.encoders.postgres_encoder import (
     PostgresTagEncoder,
 )
+
+from .mongo_encoder import MongoTagEncoder
+from .sqlite_encoder import SqliteTagEncoder
 
 
 def get_encoder(db_type: str, enc_name, enc_value):

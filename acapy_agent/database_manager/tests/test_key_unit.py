@@ -1,7 +1,7 @@
 import pytest
 
-from acapy_agent.database_manager.key import Key
 from acapy_agent.database_manager.db_types import KeyAlg, SeedMethod
+from acapy_agent.database_manager.key import Key
 
 
 def test_key_not_implemented_classmethods_and_ops():

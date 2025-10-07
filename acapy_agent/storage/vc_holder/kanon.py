@@ -3,9 +3,7 @@
 import json
 from typing import Mapping, Optional, Sequence
 
-
 from ...core.profile import Profile
-
 from ..kanon_storage import KanonStorage, KanonStorageSearch, KanonStorageSearchSession
 from ..record import StorageRecord
 from .base import VCHolder, VCRecordSearch

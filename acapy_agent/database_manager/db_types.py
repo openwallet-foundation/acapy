@@ -1,8 +1,8 @@
 """Database types and data structures for database manager."""
 
+import json
 from enum import Enum
 from typing import Optional, Sequence
-import json
 
 
 class KeyAlg(Enum):

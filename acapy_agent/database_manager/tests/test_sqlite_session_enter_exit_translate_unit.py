@@ -1,7 +1,7 @@
 import pytest
 
-from acapy_agent.database_manager.databases.sqlite_normalized.session import SqliteSession
 from acapy_agent.database_manager.databases.errors import DatabaseError, DatabaseErrorCode
+from acapy_agent.database_manager.databases.sqlite_normalized.session import SqliteSession
 from acapy_agent.database_manager.error import DBStoreError, DBStoreErrorCode
 
 

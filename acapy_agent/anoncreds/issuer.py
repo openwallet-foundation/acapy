@@ -16,11 +16,10 @@ from anoncreds import (
     W3cCredential,
 )
 
-from ..database_manager.db_errors import DBError
-
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
+from ..database_manager.db_errors import DBError
 from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG

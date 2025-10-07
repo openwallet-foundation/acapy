@@ -1,7 +1,8 @@
 """Module docstring."""
 
 from typing import List
-from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp
+
+from ..tags import CompareOp, ConjunctionOp, TagName, TagQueryEncoder
 
 
 class SqliteTagEncoder(TagQueryEncoder):

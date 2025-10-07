@@ -7,7 +7,9 @@ import asyncio
 import json
 import logging
 import os
+
 import pytest
+
 from acapy_agent.database_manager.dbstore import DBStore
 
 # Skip all tests in this file if POSTGRES_URL env var is not set

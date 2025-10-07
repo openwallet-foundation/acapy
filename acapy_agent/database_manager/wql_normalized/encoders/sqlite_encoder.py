@@ -1,8 +1,9 @@
 """Module docstring."""
 
-from typing import List, Tuple, cast
-from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp, TagQuery
 import logging
+from typing import List, Tuple, cast
+
+from ..tags import CompareOp, ConjunctionOp, TagName, TagQuery, TagQueryEncoder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +64,6 @@ class SqliteTagEncoder(TagQueryEncoder):
         self, query: TagQuery, negate: bool = False, top_level: bool = True
     ) -> str:
         """Encode the query and reset arguments list only at top level."""
-
         if top_level:
             self.arguments = []  # Reset arguments only for top-level query
 
@@ -133,7 +133,6 @@ class SqliteTagEncoder(TagQueryEncoder):
         In non-normalized mode, generates subqueries using the configured tags table
         (e.g., "i.id IN (SELECT item_id FROM tags_table ...)").
         """
-
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             sql_op = op.as_sql_str()
@@ -163,7 +162,6 @@ class SqliteTagEncoder(TagQueryEncoder):
 
     def encode_in_clause(self, enc_name: str, enc_values: List[str], negate: bool) -> str:
         """Encode an 'IN' clause for multiple values in SQLite."""
-
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             placeholders = ", ".join(["?" for _ in enc_values])
@@ -183,7 +181,6 @@ class SqliteTagEncoder(TagQueryEncoder):
 
     def encode_exist_clause(self, enc_name: str, negate: bool) -> str:
         """Encode an 'EXISTS' clause for tag or column existence in SQLite."""
-
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             sql_clause = f"{column} {'IS NULL' if negate else 'IS NOT NULL'}"
@@ -202,7 +199,6 @@ class SqliteTagEncoder(TagQueryEncoder):
 
     def encode_conj_clause(self, op: ConjunctionOp, clauses: List[str]) -> str:
         """Encode a conjunction clause (AND/OR) for SQLite."""
-
         if not clauses:
             if op == ConjunctionOp.Or:
                 return "1=0"  # False for empty OR

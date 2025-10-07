@@ -15,14 +15,15 @@ This script tests the functionality of the SQLite database for the
 """
 
 import asyncio
-import os
 import json
+import os
+
+from acapy_agent.database_manager.databases.backends.backend_registration import (
+    register_backends,
+)
 from acapy_agent.database_manager.databases.sqlite_normalized.backend import SqliteConfig
 from acapy_agent.database_manager.databases.sqlite_normalized.database import (
     SqliteDatabase,
-)
-from acapy_agent.database_manager.databases.backends.backend_registration import (
-    register_backends,
 )
 
 try:

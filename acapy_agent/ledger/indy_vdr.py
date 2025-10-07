@@ -321,6 +321,7 @@ class IndyVdrLedger(BaseLedger):
             taa_accept: whether to apply TAA acceptance to the (signed, write) request
             sign_did: override the signing DID
             write_ledger: whether to write the request to the ledger
+
         """
         if not self.pool_handle:
             raise ClosedPoolError(

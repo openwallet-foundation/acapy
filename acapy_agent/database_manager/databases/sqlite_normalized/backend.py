@@ -1,14 +1,14 @@
 """Module docstring."""
 
 import logging
+import sqlite3
 from typing import Optional
 
 from ...dbstore import DatabaseBackend
 from ...error import DBStoreError, DBStoreErrorCode
+from ..errors import DatabaseError, DatabaseErrorCode
 from .config import SqliteConfig
 from .database import SqliteDatabase
-from ..errors import DatabaseError, DatabaseErrorCode
-import sqlite3
 
 LOGGER = logging.getLogger(__name__)
 

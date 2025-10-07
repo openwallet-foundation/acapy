@@ -9,7 +9,6 @@ import pytest_asyncio
 
 from acapy_agent.database_manager.dbstore import DBStore
 
-
 # Sample pres_ex_v20 JSON data
 PRES_REQUEST_JSON = {
     "request_presentations~attach": [

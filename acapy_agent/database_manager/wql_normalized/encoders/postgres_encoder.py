@@ -1,8 +1,9 @@
 """Module docstring."""
 
-from typing import List, Tuple, cast
-from ..tags import TagQueryEncoder, TagName, CompareOp, ConjunctionOp, TagQuery
 import logging
+from typing import List, Tuple, cast
+
+from ..tags import CompareOp, ConjunctionOp, TagName, TagQuery, TagQueryEncoder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,8 +73,8 @@ class PostgresTagEncoder(TagQueryEncoder):
         Returns:
             Tuple[str, List[str]] | str: SQL clause and list of parameters for
                 top-level queries, or SQL clause string for subqueries.
-        """
 
+        """
         if top_level:
             self.arguments = []  # Reset arguments only for top-level query
 
@@ -156,7 +157,6 @@ class PostgresTagEncoder(TagQueryEncoder):
         table (e.g., "i.id IN (SELECT item_id FROM tags_table ...)").
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
-
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             sql_op = op.as_sql_str()
@@ -189,7 +189,6 @@ class PostgresTagEncoder(TagQueryEncoder):
 
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
-
         if not enc_values:  # Handle empty value list
             sql_clause = "FALSE" if not negate else "TRUE"
             return sql_clause
@@ -216,7 +215,6 @@ class PostgresTagEncoder(TagQueryEncoder):
 
         Uses %s placeholders for psycopg 3.2.9 compatibility.
         """
-
         if self.normalized:
             column = f"{self.table_alias}.{enc_name}" if self.table_alias else enc_name
             sql_clause = f"{column} {'IS NULL' if negate else 'IS NOT NULL'}"
@@ -232,7 +230,6 @@ class PostgresTagEncoder(TagQueryEncoder):
 
     def encode_conj_clause(self, op: ConjunctionOp, clauses: List[str]) -> str:
         """Encode a conjunction clause (AND/OR) for PostgreSQL."""
-
         if not clauses:
             if op == ConjunctionOp.Or:
                 return "FALSE"  # False for empty OR -- need to build a test for this

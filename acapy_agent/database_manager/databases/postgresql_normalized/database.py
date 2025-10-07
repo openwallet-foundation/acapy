@@ -1,20 +1,21 @@
 """PostgreSQL normalized database implementation."""
 
-import threading
-import logging
 import asyncio
+import logging
+import threading
 import time
-from typing import Optional, AsyncGenerator, TYPE_CHECKING
 import urllib.parse
+from typing import TYPE_CHECKING, AsyncGenerator, Optional
 
-from psycopg_pool import AsyncConnectionPool
 from psycopg import pq
-from ..errors import DatabaseError, DatabaseErrorCode
+from psycopg_pool import AsyncConnectionPool
+
+from ...category_registry import get_release
+from ...db_types import Entry
+from ...interfaces import AbstractDatabaseStore
 from ...wql_normalized.query import query_from_str
 from ...wql_normalized.tags import query_to_tagquery
-from ...interfaces import AbstractDatabaseStore
-from ...db_types import Entry
-from ...category_registry import get_release
+from ..errors import DatabaseError, DatabaseErrorCode
 from .connection_pool import PostgresConnectionPool
 from .schema_context import SchemaContext
 

@@ -24,8 +24,8 @@ async def test_register_backends_success(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_register_backends_importerror_paths(monkeypatch):
-    import acapy_agent.database_manager.databases.sqlite_normalized.backend as sqlite_backend
     import acapy_agent.database_manager.databases.postgresql_normalized.backend as pg_backend
+    import acapy_agent.database_manager.databases.sqlite_normalized.backend as sqlite_backend
 
     had_sqlite = hasattr(sqlite_backend, "SqliteBackend")
     had_pg = hasattr(pg_backend, "PostgresqlBackend")

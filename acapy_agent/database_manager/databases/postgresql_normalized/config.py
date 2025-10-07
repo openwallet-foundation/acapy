@@ -1,18 +1,19 @@
 """Module docstring."""
 
+import asyncio
+import importlib
 import logging
 import urllib.parse
-import importlib
 from typing import Optional, Tuple
-import asyncio
-from psycopg_pool import AsyncConnectionPool
+
 import psycopg.pq as pq
+from psycopg.sql import SQL, Identifier
+from psycopg_pool import AsyncConnectionPool
+
+from ...category_registry import RELEASE_ORDER, get_release
 from ..errors import DatabaseError, DatabaseErrorCode
-from ...category_registry import get_release, RELEASE_ORDER
 from .connection_pool import PostgresConnectionPool
 from .schema_context import SchemaContext
-
-from psycopg.sql import SQL, Identifier
 
 LOGGER = logging.getLogger(__name__)
 

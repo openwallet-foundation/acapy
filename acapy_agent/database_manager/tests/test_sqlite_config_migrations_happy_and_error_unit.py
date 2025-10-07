@@ -1,8 +1,9 @@
 import types
+
 import pytest
 
-from acapy_agent.database_manager.databases.sqlite_normalized.config import SqliteConfig
 from acapy_agent.database_manager.databases.errors import DatabaseError, DatabaseErrorCode
+from acapy_agent.database_manager.databases.sqlite_normalized.config import SqliteConfig
 
 
 class _FakeConn:

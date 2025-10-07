@@ -1,17 +1,19 @@
 """Module docstring."""
 
-import threading
 import asyncio
-from typing import Optional, Sequence
 import binascii
+import logging
+import threading
+from typing import Optional, Sequence
 
-from psycopg import pq, errors as psycopg_errors
+from psycopg import errors as psycopg_errors
+from psycopg import pq
+
+from ...category_registry import get_release
 from ...dbstore import AbstractDatabaseSession, Entry
 from ...error import DBStoreError, DBStoreErrorCode
-from .database import PostgresDatabase
 from ..errors import DatabaseError, DatabaseErrorCode
-from ...category_registry import get_release
-import logging
+from .database import PostgresDatabase
 
 LOGGER = logging.getLogger(__name__ + ".DBStore")
 

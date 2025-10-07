@@ -1,8 +1,10 @@
 """Module docstring."""
 
-import logging
-from psycopg_pool import AsyncConnectionPool
 import asyncio
+import logging
+
+from psycopg_pool import AsyncConnectionPool
+
 from ..errors import DatabaseError, DatabaseErrorCode
 
 LOGGER = logging.getLogger(__name__)

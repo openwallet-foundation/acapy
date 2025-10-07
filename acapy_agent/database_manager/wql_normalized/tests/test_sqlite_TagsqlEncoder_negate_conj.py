@@ -5,8 +5,9 @@
 """Test cases for the TagSqlEncoder class handling negated conjunctions in SQL queries."""
 
 import unittest
-from acapy_agent.database_manager.wql_normalized.tags import TagQuery, TagName
+
 from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
+from acapy_agent.database_manager.wql_normalized.tags import TagName, TagQuery
 
 
 def replace_placeholders(query, args):

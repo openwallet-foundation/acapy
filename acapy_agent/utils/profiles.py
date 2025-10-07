@@ -6,14 +6,11 @@ from aiohttp import web
 
 from ..anoncreds.error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from ..askar.profile_anon import AskarAnonCredsProfile
-from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
-
 from ..core.profile import Profile
+from ..kanon.profile_anon_kanon import KanonAnonCredsProfile
 from ..multitenant.manager import MultitenantManager
-
 from ..multitenant.single_wallet_askar_manager import SingleWalletAskarMultitenantManager
 from ..multitenant.single_wallet_kanon_manager import SingleWalletKanonMultitenantManager
-
 from ..storage.base import BaseStorageSearch
 from ..wallet.models.wallet_record import WalletRecord
 

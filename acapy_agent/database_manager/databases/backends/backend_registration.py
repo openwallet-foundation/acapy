@@ -1,6 +1,7 @@
 """Database backend registration module."""
 
 import logging
+
 from ...dbstore import register_backend
 
 LOGGER = logging.getLogger(__name__)
