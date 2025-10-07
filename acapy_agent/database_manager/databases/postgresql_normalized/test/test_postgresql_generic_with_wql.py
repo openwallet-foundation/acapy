@@ -1,4 +1,7 @@
-"""Tests for PostgreSQL generic database with WQL support."""
+"""Tests for PostgreSQL generic database with WQL support.
+
+Skipped by default unless `POSTGRES_URL` is set in the environment.
+"""
 
 import json
 import asyncio
@@ -14,6 +17,11 @@ from acapy_agent.database_manager.databases.postgresql_normalized.config import 
 from acapy_agent.database_manager.databases.errors import DatabaseError
 
 # Skip all tests in this file if POSTGRES_URL env var is not set
+if not os.getenv("POSTGRES_URL"):
+    pytest.skip(
+        "PostgreSQL tests disabled: set POSTGRES_URL to enable",
+        allow_module_level=True,
+    )
 pytestmark = pytest.mark.postgres
 
 logging.basicConfig(level=logging.DEBUG)

@@ -1,5 +1,16 @@
+import os
 import unittest
 import logging
+import pytest
+
+# Only run these tests when explicitly enabled and pymongo is available
+pytest.importorskip("pymongo")
+if not os.getenv("ENABLE_MONGO_TESTS"):
+    pytest.skip(
+        "Mongo-dependent tests disabled by default; set ENABLE_MONGO_TESTS=1 to run",
+        allow_module_level=True,
+    )
+
 from pymongo import MongoClient
 from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName, query_to_tagquery
 from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory

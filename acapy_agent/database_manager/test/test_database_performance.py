@@ -1,9 +1,15 @@
-"""Database performance and optimization tests."""
+"""Database performance and optimization tests.
 
-import pytest
+These tests are intentionally skipped by default to avoid slowing down
+standard CI runs. Enable locally by removing the module-level skip below.
+"""
+
 import asyncio
 import json
 from typing import Optional
+
+import pytest
+
 from acapy_agent.database_manager.dbstore import DBStore
 
 

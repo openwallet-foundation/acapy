@@ -30,6 +30,11 @@ from acapy_agent.database_manager.databases.backends.backend_registration import
 from acapy_agent.database_manager.databases.errors import DatabaseError
 
 # Skip all tests in this file if POSTGRES_URL env var is not set
+if not os.getenv("POSTGRES_URL"):
+    pytest.skip(
+        "PostgreSQL tests disabled: set POSTGRES_URL to enable",
+        allow_module_level=True,
+    )
 pytestmark = pytest.mark.postgres
 
 

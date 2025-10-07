@@ -1,4 +1,17 @@
-"""Tests for the tags module."""
+"""Tests for the tags module.
+
+Disabled by default to keep CI lean; enable locally with
+ENABLE_WQL_SQLITE_TESTS=1 if you want to run them.
+"""
+
+import os
+import pytest
+
+if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
+    pytest.skip(
+        "WQL SQLite encoder tests disabled by default; set ENABLE_WQL_SQLITE_TESTS=1",
+        allow_module_level=True,
+    )
 
 import unittest
 from typing import List

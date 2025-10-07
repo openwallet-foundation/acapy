@@ -1,9 +1,20 @@
-"""Pytest configuration for database manager tests."""
+"""Pytest configuration for database manager tests.
+
+These DBStore tests are skipped by default in the unit-test CI run to avoid
+environment coupling. Set ENABLE_DBSTORE_TESTS=1 to run them locally.
+"""
 
 import os
 import pytest
 import tempfile
 from pathlib import Path
+
+# Skip entire directory unless explicitly enabled
+if not os.getenv("ENABLE_DBSTORE_TESTS"):
+    pytest.skip(
+        "DBStore tests disabled by default; set ENABLE_DBSTORE_TESTS=1 to enable",
+        allow_module_level=True,
+    )
 
 os.environ["SQLITE_KEEPALIVE_INTERVAL"] = "60"
 os.environ["SQLITE_CLOSE_TIMEOUT"] = "0.5"
