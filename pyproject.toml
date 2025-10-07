@@ -98,12 +98,12 @@ lint.select = ["B006", "C", "D", "E", "F"]
 
 lint.ignore = [
     # Comments describe the rule being ignored
+    "C901", # Method is too complex
+    "D104", # Require docstring in public package
     "D203", # Use a blank line to separate the docstring from the class definition
     "D213", # Multi-line docstring should start at the second line
     "D400", # First line of docstring should end with a period
     "D401", # First line of docstring should be in imperative mood
-    "D104", # Require docstring in public package
-    "C901", # Method is too complex
 ]
 
 include = ["acapy_agent/**/*.py"]
