@@ -105,7 +105,6 @@ class ServiceSchema(BaseModelSchema):
     @post_dump
     def post_dump(self, data, **kwargs):
         """Post dump hook."""
-
         if "routingKeys" in data and not data["routingKeys"]:
             del data["routingKeys"]
 

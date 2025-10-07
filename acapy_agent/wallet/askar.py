@@ -238,7 +238,6 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
-
         if not verkey:
             raise WalletNotFoundError("No key identifier provided")
         key_entry = await self._session.handle.fetch_key(verkey)
@@ -266,7 +265,6 @@ class AskarWallet(BaseWallet):
             WalletNotFoundError: if no keypair is associated with the verification key
 
         """
-
         # FIXME caller should always create a transaction first
 
         if not verkey:
@@ -582,7 +580,6 @@ class AskarWallet(BaseWallet):
             The updated `DIDInfo`
 
         """
-
         if isinstance(did, str):
             try:
                 item = await self._session.handle.fetch(

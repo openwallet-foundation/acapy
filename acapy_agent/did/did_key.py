@@ -31,7 +31,6 @@ class DIDKey:
     @classmethod
     def from_public_key(cls, public_key: bytes, key_type: KeyType) -> "DIDKey":
         """Initialize new DIDKey instance from public key and key type."""
-
         return cls(public_key, key_type)
 
     @classmethod
@@ -131,7 +130,6 @@ def construct_did_key_bls12381g2(did_key: "DIDKey") -> dict:
         dict: The bls12381g2 did:key did document
 
     """
-
     return construct_did_signature_key_base(
         id=did_key.did,
         key_id=did_key.key_id,
@@ -154,7 +152,6 @@ def construct_did_key_bls12381g1(did_key: "DIDKey") -> dict:
         dict: The bls12381g1 did:key did document
 
     """
-
     return construct_did_signature_key_base(
         id=did_key.did,
         key_id=did_key.key_id,
@@ -177,7 +174,6 @@ def construct_did_key_bls12381g1g2(did_key: "DIDKey") -> dict:
         dict: The bls12381g1g2 did:key did document
 
     """
-
     g1_public_key = did_key.public_key[:48]
     g2_public_key = did_key.public_key[48:]
 
@@ -222,7 +218,6 @@ def construct_did_key_x25519(did_key: "DIDKey") -> dict:
         dict: The x25519 did:key did document
 
     """
-
     return {
         "@context": DID_V1_CONTEXT_URL,
         "id": did_key.did,
@@ -289,7 +284,6 @@ def construct_did_key_p256(did_key: "DIDKey") -> dict:
         dict: The p256 did:key did document
 
     """
-
     did_doc = construct_did_signature_key_base(
         id=did_key.did,
         key_id=did_key.key_id,
@@ -317,7 +311,6 @@ def construct_did_signature_key_base(
     May not be suitable for all did key types
 
     """
-
     return {
         "@context": [DID_V1_CONTEXT_URL] + (extra_context or []),
         "id": id,

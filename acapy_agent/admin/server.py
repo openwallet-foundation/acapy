@@ -136,7 +136,6 @@ class AdminResponder(BaseResponder):
 @web.middleware
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
-
     is_status_check = str(request.rel_url).rstrip("/") in status_paths
     is_app_ready = request.app._state.get("ready")
 
@@ -241,7 +240,6 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
 @web.middleware
 async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     """Show request detail in debug log."""
-
     if LOGGER.isEnabledFor(logging.DEBUG):  # Skipped if DEBUG is not enabled
         LOGGER.debug("Incoming request: %s %s", request.method, request.path_qs)
         is_status_check = str(request.rel_url).startswith("/status/")
@@ -302,7 +300,6 @@ class AdminServer(BaseAdminServer):
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
-
         middlewares = [ready_middleware, debug_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
@@ -566,7 +563,6 @@ class AdminServer(BaseAdminServer):
 
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""
-
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         socket_id = str(uuid4())

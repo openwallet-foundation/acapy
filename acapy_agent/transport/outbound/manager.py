@@ -263,7 +263,6 @@ class OutboundTransportManager:
             outbound: The outbound message to deliver
             target: The outbound message target
         """
-
         outbound_message = QueuedOutboundMessage(profile, outbound, target, None)
 
         if outbound_message.message.enc_payload:
@@ -423,7 +422,6 @@ class OutboundTransportManager:
 
     def encode_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
         """Kick off encoding of a queued message."""
-
         transport = self.get_transport_instance(queued.transport_id)
 
         queued.task = self.task_queue.run(

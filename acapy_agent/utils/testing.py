@@ -69,7 +69,6 @@ def skip_on_jsonld_url_error(test_func):
 
     def _handle_jsonld_error(e):
         """Check if exception is a JSON-LD URL resolution error and skip if so."""
-
         if isinstance(e, JsonLdError):
             error_str = str(e)
             # Check for specific JSON-LD URL resolution error patterns

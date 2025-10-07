@@ -57,7 +57,6 @@ async def create_signed_anoncreds_presentation(
         dict: A verifiable presentation object
 
     """
-
     if not challenge:
         raise LinkedDataProofException(
             'A "challenge" param is required when not providing a'
@@ -185,7 +184,6 @@ async def prepare_data_for_presentation(
         tuple[dict[str, Any], list, list]: A tuple of the anoncreds proof
             request, the W3C credentials metadata, and the W3C credentials
     """
-
     if not challenge:
         raise LinkedDataProofException("A challenge is required")
 
@@ -350,7 +348,6 @@ def _get_predicate_type_and_value(pred_filter: dict) -> Tuple[str, str]:
     Returns:
         Tuple[str, str]: predicate type and value
     """
-
     supported_properties = {
         "exclusiveMinimum": ">",
         "exclusiveMaximum": "<",

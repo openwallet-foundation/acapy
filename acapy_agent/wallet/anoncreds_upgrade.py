@@ -149,7 +149,6 @@ async def get_schema_upgrade_object(
     profile: Profile, schema_id: str, askar_schema
 ) -> SchemaUpgradeObj:
     """Get schema upgrade object."""
-
     async with profile.session() as session:
         schema_id = askar_schema.tags.get("schema_id")
         issuer_did = askar_schema.tags.get("schema_issuer_did")
@@ -459,7 +458,6 @@ async def get_rev_reg_def_upgrade_objs(
     rev_list_upgrade_objs: list[RevListUpgradeObj],
 ) -> list[RevRegDefUpgradeObj]:
     """Get rev reg def upgrade objects."""
-
     rev_reg_def_upgrade_objs = []
     async with profile.session() as session:
         storage = session.inject(BaseStorage)

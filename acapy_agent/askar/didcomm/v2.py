@@ -70,7 +70,6 @@ def ecdh_es_decrypt(
     recip_key: Key,
 ) -> bytes:
     """Decode a message with DIDComm v2 anonymous encryption."""
-
     alg_id = wrapper.protected.get("alg")
     if alg_id in ("ECDH-ES+A128KW", "ECDH-ES+A256KW"):
         wrap_alg = alg_id[8:]
@@ -190,7 +189,6 @@ def ecdh_1pu_decrypt(
     sender_key: Key,
 ) -> Tuple[str, str, str]:
     """Decode a message with DIDComm v2 authenticated encryption."""
-
     alg_id = wrapper.protected.get("alg")
     if alg_id in ("ECDH-1PU+A128KW", "ECDH-1PU+A256KW"):
         wrap_alg = alg_id[9:]

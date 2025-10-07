@@ -101,7 +101,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordIndy:
         """Retrieve credential exchange detail record by cred_ex_id."""
-
         async with self.profile.session() as session:
             records = await VCDICredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
@@ -162,7 +161,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
-
         async with self.profile.session() as session:
             storage = session.inject(BaseStorage)
             found = await storage.find_all_records(
@@ -197,7 +195,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create vcdi credential offer."""
-
         issuer = AnonCredsIssuer(self.profile)
         # TODO use the ledger registry in the anoncreds module,
         # or move the functionality into the ledger class.

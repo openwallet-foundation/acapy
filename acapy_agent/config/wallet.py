@@ -156,7 +156,6 @@ async def wallet_config(
     context: InjectionContext, provision: bool = False
 ) -> Tuple[Profile, DIDInfo]:
     """Initialize the root profile."""
-
     profile_manager = context.inject(ProfileManager)
 
     settings = context.settings

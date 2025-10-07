@@ -267,7 +267,6 @@ class IndyCredxHolder(IndyHolder):
             wql: wql query dict
 
         """
-
         result = []
 
         try:
@@ -490,7 +489,6 @@ class IndyCredxHolder(IndyHolder):
             rev_states: Indy format revocation states JSON
 
         """
-
         creds: Dict[str, Credential] = {}
 
         def get_rev_state(cred_id: str, detail: dict):

@@ -1421,7 +1421,6 @@ def register_events(event_bus: EventBus):
 
 async def on_register_nym_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-
     # after the nym record is written, promote to wallet public DID
     if is_author_role(profile) and profile.context.settings.get_value(
         "endorser.auto_promote_author_did"
@@ -1489,7 +1488,6 @@ async def on_register_nym_event(profile: Profile, event: Event):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get("/wallet/did", wallet_did_list, allow_head=False),
@@ -1512,7 +1510,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

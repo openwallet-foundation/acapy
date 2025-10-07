@@ -68,5 +68,4 @@ class InMemoryCache(BaseCache):
 
     async def flush(self):
         """Remove all items from the cache."""
-
         self._cache = {}

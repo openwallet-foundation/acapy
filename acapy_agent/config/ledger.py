@@ -59,7 +59,6 @@ async def fetch_genesis_from_url_or_file(
 
 async def get_genesis_transactions(settings: Settings) -> str:
     """Fetch genesis transactions if necessary."""
-
     LOGGER.debug("Getting genesis transactions from settings")
     txns = settings.get("ledger.genesis_transactions")
     LOGGER.debug("Genesis transactions from settings: %s", "found" if txns else "absent")
@@ -78,7 +77,6 @@ async def get_genesis_transactions(settings: Settings) -> str:
 
 async def load_multiple_genesis_transactions_from_config(settings: Settings) -> None:
     """Fetch genesis transactions for multiple ledger configuration."""
-
     ledger_config_list = settings.get("ledger.ledger_config_list")
     ledger_txns_list = []
     write_ledger_set = False
@@ -138,7 +136,6 @@ async def ledger_config(
     profile: Profile, public_did: str, provision: bool = False
 ) -> bool:
     """Perform Indy ledger configuration."""
-
     LOGGER.debug(
         "Configuring ledger for profile %s and public_did %s", profile.name, public_did
     )
@@ -278,7 +275,6 @@ async def accept_taa(
     provision: bool = False,
 ) -> bool:
     """Perform TAA acceptance."""
-
     mechanisms = taa_info["aml_record"]["aml"]
     mechanism = None
 

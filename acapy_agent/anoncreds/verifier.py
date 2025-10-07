@@ -450,7 +450,6 @@ class AnonCredsVerifier:
             rev_reg_entries: revocation registry entries
             rev_lists: revocation lists
         """
-
         msgs = []
         try:
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)

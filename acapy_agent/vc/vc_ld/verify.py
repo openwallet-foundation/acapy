@@ -27,7 +27,6 @@ async def _verify_credential(
     purpose: Optional[ProofPurpose] = None,
 ) -> DocumentVerificationResult:
     """Verify credential structure, proof purpose and signature."""
-
     # Validate credential structure
     errors = VerifiableCredentialSchema().validate(credential)
     if len(errors) > 0:
@@ -90,7 +89,6 @@ async def _verify_presentation(
     purpose: Optional[ProofPurpose] = None,
 ):
     """Verify presentation structure, credentials, proof purpose and signature."""
-
     if not purpose and not challenge:
         raise LinkedDataProofException(
             'A "challenge" param is required for AuthenticationProofPurpose.'
@@ -165,7 +163,6 @@ async def verify_presentation(
             indicates whether the verification was successful
 
     """
-
     # TODO: I think we should add some sort of options to authenticate the subject id
     # to the presentation verification method controller
 

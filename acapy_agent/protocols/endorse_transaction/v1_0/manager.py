@@ -84,7 +84,6 @@ class TransactionManager:
             The transaction Record
 
         """
-
         messages_attach_dict = {
             "@id": str(uuid4()),
             "mime-type": "application/json",
@@ -153,7 +152,6 @@ class TransactionManager:
                 'STATE_TRANSACTION_CREATED' state.
 
         """
-
         if transaction.state != TransactionRecord.STATE_TRANSACTION_CREATED:
             raise TransactionManagerError(
                 f"Cannot create a request for transaction record"
@@ -205,7 +203,6 @@ class TransactionManager:
             request: A Transaction Request
             connection_id: The connection id related to this transaction record
         """
-
         transaction = TransactionRecord()
 
         transaction._type = TransactionRecord.SIGNATURE_REQUEST
@@ -249,7 +246,6 @@ class TransactionManager:
             The updated transaction and an endorsed response
 
         """
-
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_RECEIVED,
             TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
@@ -376,7 +372,6 @@ class TransactionManager:
         Args:
             response: The Endorsed Transaction Response
         """
-
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, response.transaction_id
@@ -424,7 +419,6 @@ class TransactionManager:
             The updated transaction
 
         """
-
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
         # check our goal code!
@@ -522,7 +516,6 @@ class TransactionManager:
             response: The transaction acknowledgement
             connection_id: The connection_id related to this Transaction Record
         """
-
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
@@ -587,7 +580,6 @@ class TransactionManager:
             The updated transaction and the refused response
 
         """
-
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_RECEIVED,
             TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
@@ -629,7 +621,6 @@ class TransactionManager:
         Args:
             response: The refused transaction response
         """
-
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, response.transaction_id
@@ -658,7 +649,6 @@ class TransactionManager:
             The updated transaction and the cancelled transaction response
 
         """
-
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_SENT,
             TransactionRecord.STATE_TRANSACTION_RESENT,
@@ -687,7 +677,6 @@ class TransactionManager:
             response: The cancel transaction response
             connection_id: The connection_id related to this Transaction Record
         """
-
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
@@ -710,7 +699,6 @@ class TransactionManager:
             The updated transaction and the resend response
 
         """
-
         if transaction.state not in (
             TransactionRecord.STATE_TRANSACTION_REFUSED,
             TransactionRecord.STATE_TRANSACTION_CANCELLED,
@@ -740,7 +728,6 @@ class TransactionManager:
             response: The Resend transaction response
             connection_id: The connection_id related to this Transaction Record
         """
-
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
@@ -763,7 +750,6 @@ class TransactionManager:
             The transaction job that is send to other agent
 
         """
-
         async with self._profile.session() as session:
             value = await record.metadata_get(session, "transaction_jobs")
             if value:
@@ -785,7 +771,6 @@ class TransactionManager:
             tx_job_received: The transaction job that is received from the other agent
             connection: connection to set metadata on
         """
-
         try:
             async with self._profile.session() as session:
                 value = await connection.metadata_get(session, "transaction_jobs")
@@ -813,7 +798,6 @@ class TransactionManager:
             ledger_response: The ledger response
             connection_record: The connection record
         """
-
         if isinstance(ledger_response, str):
             ledger_response = json.loads(ledger_response)
 

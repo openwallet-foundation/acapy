@@ -379,7 +379,6 @@ class IndyCredxIssuer(IndyIssuer):
             Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
-
         delta = None
         failed_crids = set()
         max_attempt = 5

@@ -92,13 +92,11 @@ class BaseConnectionManager:
 
     def long_did_peer_to_short(self, long_did: str) -> str:
         """Convert did:peer:4 long format to short format and return."""
-
         short_did_peer = long_to_short(long_did)
         return short_did_peer
 
     async def long_did_peer_4_to_short(self, long_dp4: str) -> str:
         """Convert did:peer:4 long format to short format and store in wallet."""
-
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             long_dp4_info = await wallet.get_local_did(long_dp4)
@@ -731,7 +729,6 @@ class BaseConnectionManager:
             connection: The connection record (with associated `DIDDoc`)
                 used to generate the connection target
         """
-
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
             return []
@@ -950,7 +947,6 @@ class BaseConnectionManager:
             The `ConnRecord` associated with the expanded message, if any
 
         """
-
         cache_key = None
         connection = None
         resolved = False
@@ -1000,7 +996,6 @@ class BaseConnectionManager:
             The `ConnRecord` associated with the expanded message, if any
 
         """
-
         receipt.sender_did = None
         if receipt.sender_verkey:
             try:

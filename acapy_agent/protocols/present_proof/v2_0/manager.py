@@ -32,7 +32,6 @@ class V20PresManager:
         Args:
             profile: The profile instance for this presentation manager
         """
-
         self._profile = profile
 
     async def create_exchange_for_proposal(
@@ -256,7 +255,6 @@ class V20PresManager:
             V20PresManagerError: If unable to create the presentation or no supported
                 formats are available.
         """
-
         proof_request = pres_ex_record.pres_request
         input_formats = proof_request.formats
         request_data = request_data or {}
@@ -317,7 +315,6 @@ class V20PresManager:
             presentation exchange record, retrieved and updated
 
         """
-
         thread_id = message._thread_id
         # Normally we only set the connection_id to None if an oob record is present
         # But present proof supports the old-style AIP-1 connectionless exchange that

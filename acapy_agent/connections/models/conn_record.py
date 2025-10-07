@@ -102,7 +102,6 @@ class ConnRecord(BaseRecord):
 
         def rfc23strict(self, their_role: "ConnRecord.Role"):
             """Return RFC 23 (DID exchange protocol) nomenclature to role as per RFC."""
-
             if not their_role or self in (
                 ConnRecord.State.INIT,
                 ConnRecord.State.COMPLETED,

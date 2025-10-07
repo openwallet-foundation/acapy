@@ -132,7 +132,6 @@ class LoggingConfigurator:
         :param multitenant: bool: (Default value = False) Optional flag if multitenant is
             enabled
         """
-
         write_to_log_file = log_file is not None or log_file == ""
 
         if multitenant:

@@ -103,7 +103,6 @@ lint.ignore = [
     "D400", # First line of docstring should end with a period
     "D401", # First line of docstring should be in imperative mood
     "D413", # Require blank line at the end of multiline docstring
-    "D202", # Remove blank line after docstring
     "D104", # Require docstring in public package
     "C901", # Method is too complex
 ]

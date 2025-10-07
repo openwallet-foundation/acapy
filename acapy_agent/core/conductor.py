@@ -652,7 +652,6 @@ class Conductor:
             can_respond: If the session supports return routing
 
         """
-
         if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",

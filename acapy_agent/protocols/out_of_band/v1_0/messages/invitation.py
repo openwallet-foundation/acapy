@@ -60,7 +60,6 @@ class HSProto(Enum):
     @classmethod
     def get(cls, label: Union[str, "HSProto"]) -> Optional["HSProto"]:
         """Get handshake protocol enum for label."""
-
         if isinstance(label, str):
             for hsp in HSProto:
                 if DIDCommPrefix.unqualify(label) == hsp.name or label.lower() in hsp.aka:

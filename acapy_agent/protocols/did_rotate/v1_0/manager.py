@@ -73,7 +73,6 @@ class DIDRotateManager:
         Args:
             conn (ConnRecord): The connection to hangup.
         """
-
         hangup = Hangup()
 
         responder = self.profile.inject(BaseResponder)
@@ -91,7 +90,6 @@ class DIDRotateManager:
             conn (ConnRecord): The connection to rotate the DID for.
             new_did (str): The new DID to use for the connection.
         """
-
         record = RotateRecord(
             role=RotateRecord.ROLE_ROTATING,
             state=RotateRecord.STATE_ROTATE_SENT,

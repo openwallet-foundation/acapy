@@ -100,7 +100,6 @@ class RevRegId(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields - must have either rr-id or cr-id."""
-
         rev_reg_id = data.get("rev_reg_id")
         cred_def_id = data.get("cred_def_id")
 

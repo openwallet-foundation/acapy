@@ -46,7 +46,6 @@ class DeliveryQueue:
 
         This uses an in memory structure to queue messages.
         """
-
         self.queue_by_key = {}
         self.ttl_seconds = 604800  # one week
 
@@ -56,7 +55,6 @@ class DeliveryQueue:
         Args:
             ttl: Optional. Allows override of configured ttl
         """
-
         ttl_seconds = ttl or self.ttl_seconds
         horizon = time.time() - ttl_seconds
         for key in self.queue_by_key.keys():

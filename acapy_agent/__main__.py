@@ -9,7 +9,6 @@ LOGGER = logging.getLogger(__name__)
 
 def init_debug(args):
     """Initialize debugging environment."""
-
     ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", "").lower()
     ENABLE_PTVSD = ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0")
 

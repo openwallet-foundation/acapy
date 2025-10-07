@@ -70,7 +70,6 @@ class CredentialManager:
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
-
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             found = await storage.find_all_records(
@@ -584,7 +583,6 @@ class CredentialManager:
             Tuple: (Updated credential exchange record, credential message)
 
         """
-
         credential_ser = None
 
         if cred_ex_record.credential:

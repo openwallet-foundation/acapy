@@ -20,7 +20,6 @@ class TransactionCancelHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-
         self._logger.debug("TransactionCancelHandler called with context %s", context)
         assert isinstance(context.message, CancelTransaction)
 

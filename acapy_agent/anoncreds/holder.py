@@ -87,7 +87,6 @@ class AnonCredsHolder:
 
     async def get_master_secret(self) -> str:
         """Get or create the default master secret."""
-
         while True:
             async with self.profile.session() as session:
                 try:
@@ -381,7 +380,6 @@ class AnonCredsHolder:
             wql: wql query dict
 
         """
-
         result = []
 
         try:
@@ -604,7 +602,6 @@ class AnonCredsHolder:
             rev_states: AnonCreds format revocation states JSON
 
         """
-
         creds: Dict[str, Credential] = {}
 
         def get_rev_state(cred_id: str, detail: dict):
@@ -750,7 +747,6 @@ class AnonCredsHolder:
             the revocation state
 
         """
-
         try:
             rev_state = await asyncio.get_event_loop().run_in_executor(
                 None,

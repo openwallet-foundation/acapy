@@ -137,7 +137,6 @@ class RouteRecordSchema(BaseRecordSchema):
             ValidationError: If any of the fields do not validate
 
         """
-
         if not (data.get("connection_id") or data.get("wallet_id")):
             raise ValidationError(
                 "Either connection_id or wallet_id must be set for route"

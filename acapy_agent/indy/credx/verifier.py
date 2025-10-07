@@ -43,7 +43,6 @@ class IndyCredxVerifier(IndyVerifier):
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
         """
-
         accept_legacy_revocation = (
             self.profile.settings.get("revocation.anoncreds_legacy_support", "accept")
             == "accept"

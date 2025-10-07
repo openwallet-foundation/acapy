@@ -79,7 +79,6 @@ class EcdsaSecp256r1Signature2019(LinkedDataSignature):
             bool: Whether the signature is valid for the data
 
         """
-
         if not (isinstance(proof.get("proofValue"), str)):
             raise LinkedDataProofException(
                 'The proof does not contain a valid "proofValue" property.'

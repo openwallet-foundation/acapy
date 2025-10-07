@@ -87,7 +87,6 @@ class WsTransport(BaseInboundTransport):
             The web response
 
         """
-
         ws = web.WebSocketResponse(
             autoping=True,
             heartbeat=self.heartbeat_interval,

@@ -45,7 +45,6 @@ class MessagesAttach(AgentMessage):
             time: The time when the latest TAA was set/enabled
             kwargs: Additional keyword arguments for the message
         """
-
         super().__init__(**kwargs)
 
         transaction_message = transaction_message or {}

@@ -52,7 +52,6 @@ async def fetch_txns(
     set[int],
 ]:
     """Fetch tails file and revocation registry information."""
-
     LOGGER.debug(f"Fetch revocation registry def {registry_id} from ledger")
     revoc_reg_delta_request = indy_vdr.ledger.build_get_revoc_reg_def_request(
         None, registry_id
@@ -92,7 +91,6 @@ async def fetch_txns(
 
 async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList) -> dict:
     """Generate a new ledger accum entry, using the wallet value if revocations ahead of ledger."""  # noqa: E501
-
     registry_from_ledger, prev_revoked = await fetch_txns(
         genesis_txns, rev_list.rev_reg_def_id, rev_list.issuer_id
     )
