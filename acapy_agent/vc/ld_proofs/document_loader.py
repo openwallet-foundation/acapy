@@ -62,7 +62,6 @@ class DocumentLoader:
     # Async document loader can use await for cache and did resolver
     async def _load_async(self, url: str, options: dict):
         """Retrieve http(s) or did document."""
-
         # Resolve DIDs using did resolver
         if url.startswith("did:"):
             document = await self._load_did_document(url, options)
@@ -101,7 +100,6 @@ class DocumentLoader:
 
     def __call__(self, url: str, options: dict):
         """Load JSON-LD Document."""
-
         loop = self._event_loop
         coroutine = self.load_document(url, options)
         document = loop.run_until_complete(coroutine)

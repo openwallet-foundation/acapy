@@ -14,6 +14,7 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
 
         Args:
             values: An optional dictionary of settings
+
         """
         self._values = {}
         if values:
@@ -25,6 +26,7 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
         Args:
             var_names: A list of variable name alternatives
             default: The default value to return if none are defined
+
         """
         for k in var_names:
             if k in self._values:
@@ -37,6 +39,7 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
         Args:
             var_name: The name of the setting
             value: The value to assign
+
         """
         if not isinstance(var_name, str):
             raise TypeError("Setting name must be a string")
@@ -50,6 +53,7 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
         Args:
             var_name: The name of the setting
             value: The value to assign
+
         """
         if var_name not in self:
             self.set_value(var_name, value)
@@ -59,6 +63,7 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
 
         Args:
             var_name: The name of the setting
+
         """
         if var_name in self._values:
             del self._values[var_name]

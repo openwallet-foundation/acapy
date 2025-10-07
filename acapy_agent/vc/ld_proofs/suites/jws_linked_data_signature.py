@@ -40,8 +40,8 @@ class JwsLinkedDataSignature(LinkedDataSignature):
                 using a context different from security-v2).
             verification_method (str, optional): A key id URL to the paired public key.
             date (datetime, optional): Signing date to use. Defaults to now
-        """
 
+        """
         super().__init__(
             verification_method=verification_method,
             proof=proof,
@@ -66,7 +66,6 @@ class JwsLinkedDataSignature(LinkedDataSignature):
             dict: The proof object with the added signature
 
         """
-
         header = {"alg": self.algorithm, "b64": False, "crit": ["b64"]}
         encoded_header = self._encode_header(header)
 

@@ -22,7 +22,6 @@ from .schemas.routes import register as register_schema_routes
 
 async def register(app: web.Application) -> None:
     """Register all AnonCreds routes."""
-
     # Register schema routes
     await register_schema_routes(app)
 
@@ -38,7 +37,6 @@ async def register(app: web.Application) -> None:
 
 def post_process_routes(app: web.Application) -> None:
     """Post-process all routes for swagger documentation."""
-
     # Post-process schema routes
     post_process_schema_routes(app)
 

@@ -51,7 +51,6 @@ async def rev_list_post(request: web.BaseRequest):
 
 async def register(app: web.Application) -> None:
     """Register routes."""
-
     app.add_routes(
         [
             web.post("/anoncreds/revocation-list", rev_list_post),

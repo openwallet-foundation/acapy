@@ -60,6 +60,7 @@ class HttpTransport(BaseOutboundTransport):
             endpoint: URI endpoint for delivery
             metadata: Additional metadata associated with the payload
             api_key: API key for the endpoint
+
         """
         if not endpoint:
             raise OutboundTransportError("No endpoint provided")

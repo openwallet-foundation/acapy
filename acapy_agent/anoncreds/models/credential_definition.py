@@ -44,6 +44,7 @@ class CredDefValuePrimary(BaseModel):
                 and p'q'-1. This makes up part of the CL-RSA public key, independent of
                 the message blocks being signed.
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.n = n
@@ -108,6 +109,7 @@ class CredDefValueRevocation(BaseModel):
                 r_key above.
             y: is the an elliptic curve point in G2. computed as h_cap^x
                 (in multiplicative notation), where x is from r_key above
+
         """
         self.g = g
         self.g_dash = g_dash
@@ -174,6 +176,7 @@ class CredDefValue(BaseModel):
             primary: Cred Def value primary
             revocation: Cred Def value revocation
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.primary = primary
@@ -226,6 +229,7 @@ class CredDef(BaseModel):
             tag: Tag
             value: Cred Def value
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -305,6 +309,7 @@ class CredDefState(BaseModel):
             state: State
             credential_definition_id: Cred Def ID
             credential_definition: Cred Def
+
         """
         self.state = state
         self.credential_definition_id = credential_definition_id
@@ -366,6 +371,7 @@ class CredDefResult(BaseModel):
             registration_metadata: Registration metadata
             credential_definition_metadata: Cred Def metadata
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -414,6 +420,7 @@ class GetCredDefResult(BaseModel):
             resolution_metadata: Resolution metadata
             credential_definition_metadata: Cred Def metadata
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.credential_definition_id = credential_definition_id

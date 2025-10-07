@@ -143,7 +143,6 @@ async def verify_di_secured_document(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.post("/vc/di/add-proof", add_di_proof),

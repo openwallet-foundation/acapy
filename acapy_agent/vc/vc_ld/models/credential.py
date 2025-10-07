@@ -254,7 +254,6 @@ class VerifiableCredential(BaseModel):
     @credential_subject.setter
     def credential_subject(self, credential_subject: Union[dict, List[dict]]):
         """Setter for credential subject."""
-
         uri_validator = Uri()
 
         subjects = (
@@ -438,7 +437,6 @@ class CredentialSchema(BaseModelSchema):
     @post_dump(pass_original=True)
     def add_unknown_properties(self, data: dict, original, **kwargs):
         """Add back unknown properties before outputting."""
-
         data.update(original.extra)
 
         return data

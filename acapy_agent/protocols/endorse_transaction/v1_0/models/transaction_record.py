@@ -78,7 +78,6 @@ class TransactionRecord(BaseExchangeRecord):
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
-
         super().__init__(transaction_id, state or self.STATE_INIT, **kwargs)
         self._type = _type
         self.comment = comment

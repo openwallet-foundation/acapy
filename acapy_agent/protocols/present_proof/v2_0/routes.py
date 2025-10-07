@@ -428,7 +428,6 @@ class V20PresExIdMatchInfoSchema(OpenAPISchema):
 
 async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
     """Add nonce to indy proof request if need be."""
-
     if not indy_proof_request.get("nonce"):
         indy_proof_request["nonce"] = await generate_pr_nonce()
     return indy_proof_request
@@ -1465,7 +1464,6 @@ async def present_proof_remove(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get(
@@ -1521,7 +1519,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

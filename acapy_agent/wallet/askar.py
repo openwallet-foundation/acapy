@@ -39,6 +39,7 @@ class AskarWallet(BaseWallet):
 
         Args:
             session: The Askar profile session instance to use
+
         """
         self._session = session
 
@@ -91,6 +92,7 @@ class AskarWallet(BaseWallet):
         Raises:
             WalletDuplicateError: If the resulting verkey already exists in the wallet
             WalletError: If there is another backend error
+
         """
         if metadata is None:
             metadata = {}
@@ -238,7 +240,6 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
-
         if not verkey:
             raise WalletNotFoundError("No key identifier provided")
         key_entry = await self._session.handle.fetch_key(verkey)
@@ -266,7 +267,6 @@ class AskarWallet(BaseWallet):
             WalletNotFoundError: if no keypair is associated with the verification key
 
         """
-
         # FIXME caller should always create a transaction first
 
         if not verkey:
@@ -387,6 +387,7 @@ class AskarWallet(BaseWallet):
 
         Returns:
             The stored `DIDInfo`
+
         """
         LOGGER.debug("Storing DID %s", did_info.did)
         try:
@@ -582,7 +583,6 @@ class AskarWallet(BaseWallet):
             The updated `DIDInfo`
 
         """
-
         if isinstance(did, str):
             try:
                 item = await self._session.handle.fetch(

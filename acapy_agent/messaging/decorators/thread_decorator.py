@@ -77,6 +77,7 @@ class ThreadDecorator(BaseModel):
 
         Args:
             val: The new pthid
+
         """
         self._pthid = val
 

@@ -73,6 +73,7 @@ class IssuerCredRevRecord(IndyIssuerCredRevRecord):
             cred_def_id: the cred def id by which to filter
             rev_reg_id: the rev reg id by which to filter
             state: a state value by which to filter
+
         """
         # Call parent method but cast return type
         return await super().query_by_ids(

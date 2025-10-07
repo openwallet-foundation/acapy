@@ -574,6 +574,7 @@ async def find_affected_issue_rev_reg_records(
 
     Args:
         session: The profile session to use
+
     """
     storage = session.inject(BaseStorage)
     rows = await storage.find_all_records(

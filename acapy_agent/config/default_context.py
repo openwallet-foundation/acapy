@@ -109,7 +109,6 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
-
         LOGGER.debug("Initializing plugin registry")
         plugin_registry = PluginRegistry(
             blocklist=self.settings.get("blocked_plugins", [])

@@ -123,7 +123,6 @@ async def derive_credential(
         dict: The derived credential.
 
     """
-
     # Validate credential structure
     errors = VerifiableCredentialSchema().validate(credential)
     if len(errors) > 0:

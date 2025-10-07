@@ -41,6 +41,7 @@ class TimingDecorator(BaseModel):
             expires_time: When the message should be considered expired
             delay_milli: The number of milliseconds to delay processing
             wait_until_time: The earliest time at which to perform processing
+
         """
         super().__init__()
         self.in_time = datetime_to_str(in_time)

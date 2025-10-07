@@ -45,6 +45,7 @@ class SignatureDecorator(BaseModel):
             signature: The signature
             sig_data: Signature data
             signer: The verkey of the signer
+
         """
         self.signature_type = signature_type
         self.signature = signature

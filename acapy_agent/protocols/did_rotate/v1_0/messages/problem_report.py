@@ -40,6 +40,7 @@ class RotateProblemReport(ProblemReport):
                 constructor
         Returns:
             An instance of RotateProblemReport
+
         """
         description = {
             ProblemReportReason.UNRESOLVABLE: "Unable to resolve DID",
@@ -68,6 +69,7 @@ class RotateProblemReport(ProblemReport):
                 constructor
         Returns:
             An instance of RotateProblemReport
+
         """
         return cls.for_code(ProblemReportReason.UNRESOLVABLE, did, **kwargs)
 
@@ -81,6 +83,7 @@ class RotateProblemReport(ProblemReport):
                 constructor
         Returns:
             An instance of RotateProblemReport
+
         """
         return cls.for_code(ProblemReportReason.UNSUPPORTED_METHOD, did, **kwargs)
 
@@ -94,6 +97,7 @@ class RotateProblemReport(ProblemReport):
                 constructor
         Returns:
             An instance of RotateProblemReport
+
         """
         return cls.for_code(ProblemReportReason.UNRESOLVABLE_SERVICES, did, **kwargs)
 
@@ -107,6 +111,7 @@ class RotateProblemReport(ProblemReport):
                 constructor
         Returns:
             An instance of RotateProblemReport
+
         """  # noqa: E501
         return cls.for_code(ProblemReportReason.UNRECORDABLE_KEYS, did, **kwargs)
 

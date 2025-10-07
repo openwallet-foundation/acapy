@@ -80,6 +80,7 @@ class RevNotificationRecord(BaseRecord):
             session: the profile session to use
             cred_rev_id: the cred rev id by which to filter
             rev_reg_id: the rev reg id by which to filter
+
         """
         tag_filter = {
             **{"version": "v1_0"},
@@ -107,6 +108,7 @@ class RevNotificationRecord(BaseRecord):
         Args:
             session: the profile session to use
             rev_reg_id: the rev reg id by which to filter
+
         """
         tag_filter = {
             **{"version": "v1_0"},

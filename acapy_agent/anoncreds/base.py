@@ -59,6 +59,7 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
             obj (T, optional): The generic object associated with the instance.
             *args: Variable length argument list.
             **kwargs: Arbitrary keyword arguments.
+
         """
         super().__init__(message, obj_id, obj, *args, **kwargs)
         self._message = message

@@ -97,7 +97,6 @@ async def upload_tails_file_deprecated(request: web.BaseRequest):
 
 async def register(app: web.Application) -> None:
     """Register routes."""
-
     app.add_routes(
         [
             web.put(

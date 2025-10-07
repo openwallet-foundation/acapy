@@ -286,8 +286,8 @@ class ProfileSession(ABC):
             payload (Any): The payload of the event.
             force_emit (bool, optional): If True, force the event to be emitted even
                 if there is an active transaction. Defaults to False.
-        """
 
+        """
         if force_emit or (not self.is_transaction):
             # just emit directly
             await self.profile.notify(topic, payload)

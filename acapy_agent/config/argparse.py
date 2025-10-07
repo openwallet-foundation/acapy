@@ -2105,7 +2105,6 @@ class UpgradeGroup(ArgumentGroup):
 
     def add_arguments(self, parser: ArgumentParser):
         """Add ACA-Py upgrade process specific arguments to the parser."""
-
         parser.add_argument(
             "--upgrade-config-path",
             type=str,
