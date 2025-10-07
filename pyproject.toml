@@ -96,7 +96,7 @@ aca-py = "acapy_agent.__main__:script_main"
 [tool.ruff]
 lint.select = [
     "B006", # Check for uses of mutable objects as function arguments
-    "C",
+    "C90",  # mccabe (code complexity)
     "D",    # pydocstyle
     "E",    # pycodestyle
     "F",    # pyflakes
@@ -104,12 +104,13 @@ lint.select = [
 
 lint.ignore = [
     # Comments describe the rule being ignored
-    "C901", # Method is too complex
     "D104", # Require docstring in public package
     "D203", # Use a blank line to separate the docstring from the class definition
     "D213", # Multi-line docstring should start at the second line
     "D400", # First line of docstring should end with a period
     "D401", # First line of docstring should be in imperative mood
+    # Should be fixed later:
+    "C901", # Method is too complex
 ]
 
 include = ["acapy_agent/**/*.py"]
