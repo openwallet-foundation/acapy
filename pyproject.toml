@@ -97,10 +97,19 @@ aca-py = "acapy_agent.__main__:script_main"
 lint.select = [
     "B006", # Check for uses of mutable objects as function arguments
     "C90",  # mccabe (code complexity)
-    "D",    # pydocstyle
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "I",    # isort
+    "D",    # pydocstyle (docstring style)
+    "E",    # pycodestyle (style errors)
+    "F",    # pyflakes (detect invalid Python code)
+    "I",    # isort (import sorting)
+    # To be added later:
+    # "ANN",   # flake8-annotations (type annotation checks)
+    # "ASYNC", # flake8-async (detect async code errors)
+    # "B",     # flake8-bugbear (detect likely bugs)
+    # "N",     # pep8-naming (naming conventions)
+    # "PL",    # pylint (rich code analysis)
+    # "RUF",   # ruff-specific rules
+    # "UP",    # pyupgrade (upgrade syntax)
+    # "W",     # pycodestyle warnings (style warnings)
 ]
 
 lint.ignore = [
