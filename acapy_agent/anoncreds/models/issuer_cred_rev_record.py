@@ -77,7 +77,6 @@ class IssuerCredRevRecord(IndyIssuerCredRevRecord):
         """Accessor for the ID associated with this exchange."""
         return self._id
 
-
     @classmethod
     async def retrieve_by_ids(
         cls,
