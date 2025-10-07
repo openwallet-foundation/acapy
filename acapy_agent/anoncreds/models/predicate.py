@@ -74,6 +74,7 @@ class Predicate(Enum):
 
         Args:
             value: value to coerce
+
         """
         if isinstance(value, (bool, int)):
             return int(value)

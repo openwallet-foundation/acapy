@@ -315,6 +315,7 @@ class InvitationMessageSchema(AgentMessageSchema):
             kwargs: Additional keyword arguments
         Raises:
             ValidationError: If any of the fields do not validate
+
         """
         handshake_protocols = data.get("handshake_protocols")
         requests_attach = data.get("requests_attach")

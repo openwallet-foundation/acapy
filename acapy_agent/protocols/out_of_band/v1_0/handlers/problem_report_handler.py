@@ -19,6 +19,7 @@ class OOBProblemReportMessageHandler(BaseHandler):
         Args:
             context: Request context
             responder: Responder callback
+
         """
         self._logger.debug(
             "OOBProblemReportMessageHandler called with context %s", context

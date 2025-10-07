@@ -16,6 +16,7 @@ def datetime_to_str(dt: Union[str, datetime, None]) -> Union[str, None]:
 
     Args:
         dt: May be a string or datetime to allow automatic conversion
+
     """
     if isinstance(dt, datetime):
         dt = dt.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")

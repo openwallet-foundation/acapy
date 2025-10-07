@@ -224,6 +224,7 @@ class OutboundTransportManager:
         Args:
             profile: The active profile for the request
             outbound: The outbound message to deliver
+
         """
         targets = [outbound.target] if outbound.target else (outbound.target_list or [])
         transport_id = None
@@ -262,6 +263,7 @@ class OutboundTransportManager:
             profile: The active profile for the request
             outbound: The outbound message to deliver
             target: The outbound message target
+
         """
         outbound_message = QueuedOutboundMessage(profile, outbound, target, None)
 

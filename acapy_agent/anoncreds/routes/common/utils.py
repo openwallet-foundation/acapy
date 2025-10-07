@@ -23,6 +23,7 @@ async def get_revocation_registry_definition_or_404(
     Raises:
         web.HTTPNotFound: If the revocation registry definition is not found
         web.HTTPInternalServerError: If there's an error retrieving the definition
+
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
@@ -53,6 +54,7 @@ async def get_request_body_with_profile_check(
 
     Returns:
         Tuple of (context, profile, body, options)
+
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile

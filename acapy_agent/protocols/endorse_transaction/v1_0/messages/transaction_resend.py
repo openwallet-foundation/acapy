@@ -36,6 +36,7 @@ class TransactionResend(AgentMessage):
             state: State of the transaction record
             thread_id: Thread id of transaction record
             kwargs: Additional keyword arguments for the message
+
         """
         super().__init__(**kwargs)
 

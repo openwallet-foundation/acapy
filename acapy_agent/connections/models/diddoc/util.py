@@ -32,6 +32,7 @@ def resource(ref: str, delimiter: Optional[str] = None) -> str:
         ref: reference
         delimiter: delimiter character
             (default None maps to '#', or ';' introduces identifiers)
+
     """
     return ref.split(delimiter if delimiter else "#")[0]
 
@@ -67,6 +68,7 @@ def canon_ref(did: str, ref: str, delimiter: Optional[str] = None):
             location in the DID doc
         delimiter: delimiter character marking fragment (default '#') or
             introducing identifier (';') against DID resource
+
     """
     if not ok_did(did):
         raise ValueError("Bad DID {} cannot act as DID document identifier".format(did))

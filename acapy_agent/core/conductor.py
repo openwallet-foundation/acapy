@@ -731,6 +731,7 @@ class Conductor:
             profile: The active profile for the request
             outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         status: OutboundSendStatus = await self._outbound_message_router(
             profile=profile, outbound=outbound, inbound=inbound
@@ -750,6 +751,7 @@ class Conductor:
             profile: The active profile for the request
             outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
@@ -783,6 +785,7 @@ class Conductor:
             profile: The active profile
             outbound: The outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         has_target = outbound.target or outbound.target_list
 
@@ -850,6 +853,7 @@ class Conductor:
             endpoint: The endpoint of the webhook target
             max_attempts: The maximum number of attempts
             metadata: Additional metadata associated with the payload
+
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(

@@ -31,6 +31,7 @@ class QueuedMessage:
 
         Args:
             compare_timestamp: The timestamp to compare
+
         """
         return self.timestamp < compare_timestamp
 
@@ -54,6 +55,7 @@ class DeliveryQueue:
 
         Args:
             ttl: Optional. Allows override of configured ttl
+
         """
         ttl_seconds = ttl or self.ttl_seconds
         horizon = time.time() - ttl_seconds
@@ -69,6 +71,7 @@ class DeliveryQueue:
 
         Args:
             msg: The OutboundMessage to add
+
         """
         keys = set()
         if msg.target:
@@ -86,6 +89,7 @@ class DeliveryQueue:
 
         Args:
             key: The key to use for lookup
+
         """
         if key in self.queue_by_key and len(self.queue_by_key[key]):
             return True
@@ -96,6 +100,7 @@ class DeliveryQueue:
 
         Args:
             key: The key to use for lookup
+
         """
         if key in self.queue_by_key:
             return len(self.queue_by_key[key])
@@ -107,6 +112,7 @@ class DeliveryQueue:
 
         Args:
             key: The key to use for lookup
+
         """
         if key in self.queue_by_key:
             return self.queue_by_key[key].pop(0).msg
@@ -116,6 +122,7 @@ class DeliveryQueue:
 
         Args:
             key: The key to use for lookup
+
         """
         if key in self.queue_by_key:
             for wrapped_msg in self.queue_by_key[key]:
@@ -127,6 +134,7 @@ class DeliveryQueue:
         Args:
             key: The key to use for lookup
             msg: The message to remove from the queue
+
         """
         if key in self.queue_by_key:
             for wrapped_msg in self.queue_by_key[key]:

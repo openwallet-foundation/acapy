@@ -46,6 +46,7 @@ class TraceReport(BaseModel):
             handler: ...
             elapsed_milli: ...
             outcome: ...
+
         """
         super().__init__()
         self._msg_id = msg_id
@@ -166,6 +167,7 @@ class TraceDecorator(BaseModel):
                     Trace reports can be used to identify steps in the processing
                     of a message or thread, and support troubleshooting and
                     performance issues.
+
         """
         super(TraceDecorator, self).__init__()
         self._target = target

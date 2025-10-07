@@ -29,6 +29,7 @@ class Ed25519Signature2018(JwsLinkedDataSignature):
                 using a context different from security-v2).
             verification_method (str, optional): A key id URL to the paired public key.
             date (datetime, optional): Signing date to use.
+
         """
         super().__init__(
             algorithm="EdDSA",

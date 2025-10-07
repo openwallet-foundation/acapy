@@ -92,6 +92,7 @@ async def update_profile_settings(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     root_profile = context.root_profile or context.profile
@@ -133,6 +134,7 @@ async def get_profile_settings(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     root_profile = context.root_profile or context.profile

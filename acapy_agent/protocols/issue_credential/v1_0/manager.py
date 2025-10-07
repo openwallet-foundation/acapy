@@ -55,6 +55,7 @@ class CredentialManager:
 
         Args:
             profile: The profile instance for this credential manager
+
         """
         self._profile = profile
 

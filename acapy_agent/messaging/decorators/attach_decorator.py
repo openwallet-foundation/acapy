@@ -609,6 +609,7 @@ class AttachDecorator(BaseModel):
             filename: optional attachment filename
             lastmod_time: optional attachment last modification time
             byte_count: optional attachment byte count
+
         """
         return AttachDecorator(
             ident=ident or str(uuid4()),

@@ -437,6 +437,7 @@ async def connections_remove(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]

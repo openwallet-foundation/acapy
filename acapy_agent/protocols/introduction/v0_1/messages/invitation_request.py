@@ -31,6 +31,7 @@ class InvitationRequest(AgentMessage):
             responder: The name of the agent initiating the introduction
             message: Comments on the introduction
             kwargs: Additional key word arguments for the message
+
         """
         super().__init__(**kwargs)
         self.responder = responder

@@ -365,6 +365,7 @@ class DispatcherResponder(BaseResponder):
 
         Returns:
             OutboundMessage: The created outbound message.
+
         """
         context = self._context()
         if not context:
@@ -389,6 +390,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
             kwargs: Additional keyword arguments
+
         """
         context = self._context()
         if not context:
@@ -419,6 +421,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+
         """
         warnings.warn(
             "responder.send_webhook is deprecated; please use the event bus instead.",

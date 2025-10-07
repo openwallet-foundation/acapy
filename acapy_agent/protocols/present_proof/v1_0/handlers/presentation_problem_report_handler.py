@@ -17,6 +17,7 @@ class PresentationProblemReportHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug(
             "Present-proof v1.0 problem report handler called with context %s",

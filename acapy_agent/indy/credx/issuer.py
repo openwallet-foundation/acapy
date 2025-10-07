@@ -101,6 +101,7 @@ class IndyCredxIssuer(IndyIssuer):
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
         try:
             async with self._profile.session() as session:

@@ -116,6 +116,7 @@ class DIDDoc:
             service: service dict
 
         Returns: service dict with routing keys normalized
+
         """
         routing_keys = service.get("routingKeys")
         if routing_keys:

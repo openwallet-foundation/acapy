@@ -57,6 +57,7 @@ class RevocationManager:
 
         Args:
             profile: The profile instance for this revocation manager
+
         """
         self._profile = profile
         self._logger = logging.getLogger(__name__)
@@ -211,6 +212,7 @@ class RevocationManager:
         Returns:
             Optional[dict]: The revocation entry response if publish is True and
                 write_ledger is True, otherwise None.
+
         """
         issuer = self._profile.inject(IndyIssuer)
         revoc = IndyRevocation(self._profile)
@@ -332,6 +334,7 @@ class RevocationManager:
             connection_id: connection identifier for endorser connection to use
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
+
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)

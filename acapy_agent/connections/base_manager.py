@@ -131,6 +131,7 @@ class BaseConnectionManager:
 
         Returns:
             DIDInfo: The new `DIDInfo` instance representing the created DID.
+
         """
         routing_keys: List[str] = []
         if mediation_records:
@@ -199,6 +200,7 @@ class BaseConnectionManager:
 
         Returns:
             DIDInfo: The new `DIDInfo` instance representing the created DID.
+
         """
         routing_keys: List[str] = []
         if mediation_records:
@@ -276,6 +278,7 @@ class BaseConnectionManager:
 
         Returns:
             The `DIDInfo` instance, or "None" if no DID is found
+
         """
         did_info = None
         async with self._profile.session() as session:
@@ -355,6 +358,7 @@ class BaseConnectionManager:
 
         Args:
             value: The `DIDDoc` instance to persist
+
         """
         if isinstance(value, DIDDoc):
             did = value.did
@@ -391,6 +395,7 @@ class BaseConnectionManager:
         Args:
             did: The DID to associate with this key
             key: The verkey to be added
+
         """
         record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
         async with self._profile.session() as session:
@@ -411,6 +416,7 @@ class BaseConnectionManager:
 
         Args:
             key: The verkey to look up
+
         """
         async with self._profile.session() as session:
             storage: BaseStorage = session.inject(BaseStorage)
@@ -423,6 +429,7 @@ class BaseConnectionManager:
 
         Args:
             did: The DID for which to remove keys
+
         """
         async with self._profile.session() as session:
             storage: BaseStorage = session.inject(BaseStorage)
@@ -498,6 +505,7 @@ class BaseConnectionManager:
         Raises:
             BaseConnectionManagerError: If the public DID has no associated
                 DIDComm services.
+
         """
         self._logger.debug("Resolving invitation for DID %s", did)
         doc, didcomm_services = await self.resolve_didcomm_services(did, service_accept)
@@ -641,6 +649,7 @@ class BaseConnectionManager:
         Returns:
             Sequence[ConnectionTarget]: A list of `ConnectionTarget` objects
                 representing the connection targets for the invitation.
+
         """
         assert invitation.services, "Schema requires services in invitation"
         oob_service_item = invitation.services[0]
@@ -686,6 +695,7 @@ class BaseConnectionManager:
             sender_verkey: The verkey we are using
         Returns:
             A list of `ConnectionTarget` objects
+
         """
         if (
             connection.invitation_msg_id
@@ -728,6 +738,7 @@ class BaseConnectionManager:
         Args:
             connection: The connection record (with associated `DIDDoc`)
                 used to generate the connection target
+
         """
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
@@ -765,6 +776,7 @@ class BaseConnectionManager:
         Args:
             connection_id: The connection ID to search for
             connection: The connection record itself, if already available
+
         """
         if connection_id is None and connection is None:
             raise ValueError("Must supply either connection_id or connection")
@@ -835,6 +847,7 @@ class BaseConnectionManager:
             doc: The DID Document to create the target from
             sender_verkey: The verkey we are using
             their_label: The connection label they are using
+
         """
         if isinstance(doc, dict):
             doc = DIDDoc.deserialize(doc)
@@ -865,6 +878,7 @@ class BaseConnectionManager:
 
         Args:
             did: The DID to search for
+
         """
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)

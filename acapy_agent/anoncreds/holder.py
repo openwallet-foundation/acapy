@@ -524,6 +524,7 @@ class AnonCredsHolder:
 
         Returns:
             bool: True if the credential is revoked, False otherwise.
+
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id

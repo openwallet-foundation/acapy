@@ -31,6 +31,7 @@ class V20PresManager:
 
         Args:
             profile: The profile instance for this presentation manager
+
         """
         self._profile = profile
 
@@ -115,6 +116,7 @@ class V20PresManager:
 
         Returns:
             A tuple (updated presentation exchange record, presentation request message)
+
         """
         proof_proposal = pres_ex_record.pres_proposal
         input_formats = proof_proposal.formats
@@ -254,6 +256,7 @@ class V20PresManager:
         Raises:
             V20PresManagerError: If unable to create the presentation or no supported
                 formats are available.
+
         """
         proof_request = pres_ex_record.pres_request
         input_formats = proof_request.formats

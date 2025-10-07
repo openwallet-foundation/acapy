@@ -987,6 +987,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
 
@@ -1252,6 +1253,7 @@ async def wallet_sd_jwt_verify(request: web.BaseRequest):
         web.HTTPBadRequest: If there is an error with the JWS header or verification
             method.
         web.HTTPNotFound: If there is an error resolving the verification method.
+
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()

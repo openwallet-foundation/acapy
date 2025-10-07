@@ -55,6 +55,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
 
         Returns:
             bool: True if the credential is revoked, False otherwise.
+
         """
 
     @abstractmethod
@@ -98,6 +99,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
             schemas: Indy formatted schemas JSON
             credential_definitions: Indy formatted credential definitions JSON
             rev_states: Indy format revocation states JSON
+
         """
 
     @abstractmethod

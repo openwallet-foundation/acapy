@@ -31,6 +31,7 @@ class MenuForm(BaseModel):
             description: Additional descriptive text for the menu form
             params: A list of form parameters
             submit_label: An alternative label for the form submit button
+
         """
         self.title = title
         self.description = description

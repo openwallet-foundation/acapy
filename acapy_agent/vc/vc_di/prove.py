@@ -103,6 +103,7 @@ async def _load_w3c_credentials(credentials: list) -> list:
 
     Returns:
         list: A list of W3C credentials
+
     """
     w3c_creds = []
     for credential in credentials:
@@ -132,6 +133,7 @@ async def create_rev_states(
 
     Returns:
         dict: A dictionary of revocation states
+
     """
     if not bool(rev_reg_defs and rev_reg_entries):
         return None
@@ -183,6 +185,7 @@ async def prepare_data_for_presentation(
     Returns:
         tuple[dict[str, Any], list, list]: A tuple of the anoncreds proof
             request, the W3C credentials metadata, and the W3C credentials
+
     """
     if not challenge:
         raise LinkedDataProofException("A challenge is required")
@@ -328,6 +331,7 @@ def _extract_cred_idx(item_path: str) -> int:
 
     Returns:
         int: extracted index
+
     """
     match = re.search(r"\[(\d+)\]", item_path)
     if match:
@@ -347,6 +351,7 @@ def _get_predicate_type_and_value(pred_filter: dict) -> Tuple[str, str]:
 
     Returns:
         Tuple[str, str]: predicate type and value
+
     """
     supported_properties = {
         "exclusiveMinimum": ">",

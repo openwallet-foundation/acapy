@@ -41,6 +41,7 @@ class RouteRecord(BaseRecord):
             wallet_id: The id of the wallet for the route. Used for multitenant relay
             recipient_key (str): recipient_key associated with record
             kwargs: additional args for BaseRecord
+
         """
         super().__init__(record_id, None, **kwargs)
         self.role = role or self.ROLE_SERVER

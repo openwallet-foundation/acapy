@@ -370,6 +370,7 @@ async def wallets_list(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
@@ -437,6 +438,7 @@ async def wallet_create(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
@@ -503,6 +505,7 @@ async def wallet_update(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
@@ -567,6 +570,7 @@ async def wallet_create_token(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]

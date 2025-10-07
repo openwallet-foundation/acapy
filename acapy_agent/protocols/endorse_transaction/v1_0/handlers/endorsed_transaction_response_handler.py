@@ -21,6 +21,7 @@ class EndorsedTransactionResponseHandler(BaseHandler):
         Args:
             context: Request context
             responder: Responder callback
+
         """
         self._logger.debug(
             "EndorsedTransactionResponseHandler called with context %s", context

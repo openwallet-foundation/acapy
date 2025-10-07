@@ -88,6 +88,7 @@ class IndyVdrLedgerPool:
             genesis_transactions: The ledger genesis transaction as a string
             read_only: Prevent any ledger write operations
             socks_proxy: Specifies socks proxy for ZMQ to connect to ledger pool
+
         """
         self.ref_count = 0
         self.ref_lock = asyncio.Lock()
@@ -256,6 +257,7 @@ class IndyVdrLedger(BaseLedger):
         Args:
             pool: The pool instance handling the raw ledger connection
             profile: The active profile instance
+
         """
         self.pool = pool
         self.profile = profile
@@ -615,6 +617,7 @@ class IndyVdrLedger(BaseLedger):
         Args:
             credential_definition_id: The identifier of the credential definition
                 from which to identify a schema
+
         """
         # scrape schema id or sequence number from cred def id
         tokens = credential_definition_id.split(":")
@@ -630,6 +633,7 @@ class IndyVdrLedger(BaseLedger):
 
         Args:
             did: The DID to look up on the ledger or in the cache
+
         """
         nym = strip_did_prefix(did)
         public_info = await self.get_wallet_public_did()
@@ -653,6 +657,7 @@ class IndyVdrLedger(BaseLedger):
 
         Args:
             did: The DID to look up on the ledger or in the cache
+
         """
         nym = strip_did_prefix(did)
         public_info = await self.get_wallet_public_did()
@@ -682,6 +687,7 @@ class IndyVdrLedger(BaseLedger):
         Args:
             did: The DID to look up on the ledger or in the cache
             endpoint_type: The type of the endpoint. If none given, returns all
+
         """
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
@@ -723,6 +729,7 @@ class IndyVdrLedger(BaseLedger):
             write_ledger: Whether to write the endpoint to the ledger
             endorser_did: DID of the endorser to use for the transaction
             routing_keys: List of routing keys
+
         """
         routing_keys = routing_keys or []  # Ensure list type if None was passed
         public_info = await self.get_wallet_public_did()
@@ -800,6 +807,7 @@ class IndyVdrLedger(BaseLedger):
             role: For permissioned ledgers, what role should the new DID have.
             write_ledger: Whether to write the nym to the ledger.
             endorser_did: DID of the endorser to use for the transaction.
+
         """
         if self.read_only:
             raise LedgerError(
@@ -839,6 +847,7 @@ class IndyVdrLedger(BaseLedger):
 
         Args:
             did: DID to query for role on the ledger.
+
         """
         public_info = await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
@@ -882,6 +891,7 @@ class IndyVdrLedger(BaseLedger):
 
         Args:
             next_seed: seed for incoming ed25519 keypair (default random)
+
         """
         # generate new key
         async with self.profile.transaction() as txn:

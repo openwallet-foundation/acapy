@@ -84,6 +84,7 @@ async def _replace_public_did_if_seed_mismatch(
 
     Returns:
         DIDInfo: Either the original DID info or a new one if replaced
+
     """
     if not wallet_seed:
         return public_did_info

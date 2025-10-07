@@ -76,6 +76,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
 
     @abstractmethod

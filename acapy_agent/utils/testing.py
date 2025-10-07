@@ -65,6 +65,7 @@ def skip_on_jsonld_url_error(test_func):
 
     Returns:
         Wrapped test function that skips on JSON-LD URL resolution errors
+
     """
 
     def _handle_jsonld_error(e):

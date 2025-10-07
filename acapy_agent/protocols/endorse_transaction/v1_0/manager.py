@@ -56,6 +56,7 @@ class TransactionManager:
 
         Args:
             profile: The profile instance for this transaction manager
+
         """
         self._profile = profile
         self._logger = logging.getLogger(__name__)
@@ -202,6 +203,7 @@ class TransactionManager:
         Args:
             request: A Transaction Request
             connection_id: The connection id related to this transaction record
+
         """
         transaction = TransactionRecord()
 
@@ -371,6 +373,7 @@ class TransactionManager:
 
         Args:
             response: The Endorsed Transaction Response
+
         """
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
@@ -515,6 +518,7 @@ class TransactionManager:
         Args:
             response: The transaction acknowledgement
             connection_id: The connection_id related to this Transaction Record
+
         """
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
@@ -620,6 +624,7 @@ class TransactionManager:
 
         Args:
             response: The refused transaction response
+
         """
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
@@ -676,6 +681,7 @@ class TransactionManager:
         Args:
             response: The cancel transaction response
             connection_id: The connection_id related to this Transaction Record
+
         """
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
@@ -727,6 +733,7 @@ class TransactionManager:
         Args:
             response: The Resend transaction response
             connection_id: The connection_id related to this Transaction Record
+
         """
         async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
@@ -770,6 +777,7 @@ class TransactionManager:
         Args:
             tx_job_received: The transaction job that is received from the other agent
             connection: connection to set metadata on
+
         """
         try:
             async with self._profile.session() as session:
@@ -797,6 +805,7 @@ class TransactionManager:
                          would be stored in wallet.
             ledger_response: The ledger response
             connection_record: The connection record
+
         """
         if isinstance(ledger_response, str):
             ledger_response = json.loads(ledger_response)

@@ -85,6 +85,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 The attachment data to valide
         Raises:
             Exception: When the data is not valid.
+
         """
         mapping = {
             CRED_20_PROPOSAL: CredDefQueryStringSchema,
@@ -134,6 +135,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             message_type (str): Message type for which to return the format identifier
         Returns:
             str: Issue credential attachment format identifier
+
         """
         return ATTACHMENT_FORMAT[message_type][VCDICredFormatHandler.format.api]
 
@@ -150,6 +152,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             data (dict): The data to include in the attach decorator
         Returns:
             CredFormatAttachment: Credential format and attachment data objects
+
         """
         return (
             V20CredFormat(

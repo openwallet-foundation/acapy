@@ -105,6 +105,7 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
             **kwargs: Additional keyword arguments
+
         """
         profile = self._profile()
         if not profile:
@@ -117,6 +118,7 @@ class AdminResponder(BaseResponder):
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+
         """
         warnings.warn(
             "responder.send_webhook is deprecated; please use the event bus instead.",
@@ -280,6 +282,7 @@ class AdminServer(BaseAdminServer):
             conductor_stop (Coroutine): Conductor (graceful) stop for shutdown API call.
             task_queue (TaskQueue, optional): An optional task queue for handlers.
             conductor_stats (Coroutine, optional): Conductor statistics API call.
+
         """
         self.app = None
         self.admin_api_key = context.settings.get("admin.admin_api_key")

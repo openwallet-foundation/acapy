@@ -569,6 +569,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         Args:
             profile: The profile for this out of band manager
+
         """
         self._profile = profile
         super().__init__(self._profile)

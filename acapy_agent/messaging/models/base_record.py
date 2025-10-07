@@ -43,6 +43,7 @@ def match_post_filter(
         positive: whether matching all filter criteria positively or negatively
         alt: set to match any (positive=True) value or miss all (positive=False)
             values in post_filter
+
     """
     if not post_filter:
         return True
@@ -113,6 +114,7 @@ class BaseRecord(BaseModel):
         Args:
             record_id: The unique record identifier
             record: The stored representation
+
         """
         record_id_name = cls.RECORD_ID_NAME
         if record_id_name in record:
@@ -168,6 +170,7 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             cache_key: The unique cache identifier
+
         """
         if not cache_key:
             return
@@ -186,6 +189,7 @@ class BaseRecord(BaseModel):
             cache_key: The unique cache identifier
             value: The value to cache
             ttl: The cache ttl
+
         """
         if not cache_key:
             return
@@ -200,6 +204,7 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             cache_key: The unique cache identifier
+
         """
         if not cache_key:
             return
@@ -221,6 +226,7 @@ class BaseRecord(BaseModel):
             session: The profile session to use
             record_id: The ID of the record to find
             for_update: Whether to lock the record for update
+
         """
         storage = session.inject(BaseStorage)
         result = await storage.get_record(
@@ -247,6 +253,7 @@ class BaseRecord(BaseModel):
             post_filter: Additional value filters to apply matching positively,
                 with sequence values specifying alternatives to match (hit any)
             for_update: Whether to lock the record for update
+
         """
         storage = session.inject(BaseStorage)
         rows = await storage.find_all_records(
@@ -302,6 +309,7 @@ class BaseRecord(BaseModel):
             post_filter_negative: Additional value filters to apply matching negatively
             alt: set to match any (positive=True) value or miss all (positive=False)
                 values in post_filter
+
         """
         storage = session.inject(BaseStorage)
 
@@ -381,6 +389,7 @@ class BaseRecord(BaseModel):
             log_params: Additional parameters to log
             log_override: Override configured logging regimen, print to stderr instead
             event: Flag to override whether the event is sent
+
         """
         new_record = None
         log_reason = reason or ("Updated record" if self._id else "Created record")
@@ -427,6 +436,7 @@ class BaseRecord(BaseModel):
             new_record: Flag indicating if the record was just created
             last_state: The previous state value
             event: Flag to override whether the event is sent
+
         """
         if event is None:
             event = new_record or (last_state != self.state)
@@ -438,6 +448,7 @@ class BaseRecord(BaseModel):
 
         Args:
             session: The profile session to use
+
         """
         if self._id:
             storage = session.inject(BaseStorage)
@@ -453,6 +464,7 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             payload: The event payload
+
         """
         if not self.RECORD_TOPIC:
             return
@@ -519,6 +531,7 @@ class BaseRecord(BaseModel):
         Args:
             prefix: Common prefix to look for
             walk_mro: Walk MRO to find attributes inherited from superclasses
+
         """
         bases = cls.__mro__ if walk_mro else [cls]
         return [

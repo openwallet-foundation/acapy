@@ -39,6 +39,7 @@ class AskarWallet(BaseWallet):
 
         Args:
             session: The Askar profile session instance to use
+
         """
         self._session = session
 
@@ -91,6 +92,7 @@ class AskarWallet(BaseWallet):
         Raises:
             WalletDuplicateError: If the resulting verkey already exists in the wallet
             WalletError: If there is another backend error
+
         """
         if metadata is None:
             metadata = {}
@@ -385,6 +387,7 @@ class AskarWallet(BaseWallet):
 
         Returns:
             The stored `DIDInfo`
+
         """
         LOGGER.debug("Storing DID %s", did_info.did)
         try:

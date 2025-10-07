@@ -39,6 +39,7 @@ class PresentationManager:
 
         Args:
             profile: The profile instance for this presentation manager
+
         """
         self._profile = profile
 

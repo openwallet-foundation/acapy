@@ -160,6 +160,7 @@ class PublicKey:
 
         Args:
             value: authentication marker
+
         """
         self._authn = value
 
