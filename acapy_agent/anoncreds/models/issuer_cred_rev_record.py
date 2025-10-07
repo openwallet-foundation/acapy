@@ -66,31 +66,6 @@ class IssuerCredRevRecord(IndyIssuerCredRevRecord):
         """Accessor for the ID associated with this exchange."""
         return self._id
 
-    @classmethod
-    async def query_by_ids(
-        cls,
-        session: ProfileSession,
-        *,
-        cred_def_id: Optional[str] = None,
-        rev_reg_id: Optional[str] = None,
-        state: Optional[str] = None,
-    ) -> Sequence["IssuerCredRevRecord"]:
-        """Retrieve issuer cred rev records by cred def id and/or rev reg id.
-
-        Args:
-            session: the profile session to use
-            cred_def_id: the cred def id by which to filter
-            rev_reg_id: the rev reg id by which to filter
-            state: a state value by which to filter
-
-        """
-        tag_filter = {
-            **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},
-            **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
-            **{"state": state for _ in [""] if state},
-        }
-
-        return await cls.query(session, tag_filter)
 
     @classmethod
     async def retrieve_by_ids(
