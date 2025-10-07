@@ -99,16 +99,10 @@ lint.select = ["B006", "C", "D", "E", "F"]
 lint.ignore = [
     # Google Python Doc Style
     "D203",
-    "D204",
     "D213",
-    "D215",
     "D400",
     "D401",
     "D404",
-    "D406",
-    "D407",
-    "D408",
-    "D409",
     "D413",
     "D202", # Allow blank line after docstring
     "D104", # Don't require docstring in public package
