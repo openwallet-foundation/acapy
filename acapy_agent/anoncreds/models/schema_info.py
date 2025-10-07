@@ -1,4 +1,4 @@
-"""This class represents schema information for anoncreds."""
+"""Schema information for AnonCreds."""
 
 from typing import Optional
 
