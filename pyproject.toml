@@ -94,7 +94,13 @@ didcommv2 = ["didcomm-messaging"]
 aca-py = "acapy_agent.__main__:script_main"
 
 [tool.ruff]
-lint.select = ["B006", "C", "D", "E", "F"]
+lint.select = [
+    "B006", # Check for uses of mutable objects as function arguments
+    "C",
+    "D",    # pydocstyle
+    "E",    # pycodestyle
+    "F",    # pyflakes
+]
 
 lint.ignore = [
     # Comments describe the rule being ignored
