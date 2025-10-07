@@ -64,7 +64,9 @@ class IssuerCredRevRecord(BaseRecord):
         self.cred_ex_id = cred_ex_id
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
-        self.cred_def_id = ":".join(rev_reg_id.split(":")[-7:-2])
+        self.cred_def_id = (
+            ":".join(rev_reg_id.split(":")[-7:-2]) if rev_reg_id else cred_def_id
+        )
         self.cred_ex_version = cred_ex_version
 
     @property

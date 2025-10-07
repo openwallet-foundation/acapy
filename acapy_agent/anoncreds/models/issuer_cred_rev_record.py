@@ -57,12 +57,19 @@ class IssuerCredRevRecord(IndyIssuerCredRevRecord):
         super().__init__(
             record_id=record_id,
             state=state or IssuerCredRevRecord.STATE_ISSUED,
+            cred_ex_id=cred_ex_id,
+            rev_reg_id=rev_reg_id,
+            cred_rev_id=cred_rev_id,
+            cred_def_id=cred_def_id,
+            cred_ex_version=cred_ex_version,
             **kwargs,
         )
         self.cred_ex_id = cred_ex_id
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
-        self.cred_def_id = ":".join(rev_reg_id.split(":")[-7:-2])
+        self.cred_def_id = (
+            ":".join(rev_reg_id.split(":")[-7:-2]) if rev_reg_id else cred_def_id
+        )
         self.cred_ex_version = cred_ex_version
 
     @property
