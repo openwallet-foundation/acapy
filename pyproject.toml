@@ -100,6 +100,7 @@ lint.select = [
     "D",    # pydocstyle
     "E",    # pycodestyle
     "F",    # pyflakes
+    "I",    # isort
 ]
 
 lint.ignore = [
