@@ -78,14 +78,14 @@ ruff = "~=0.13.3"
 
 pre-commit = ">=4.1,<4.4"
 
-pydevd = "~3.3.0"
+pydevd = ">=3.3,<3.5"
 
 pydevd-pycharm = ">=251.17181.23,<254.0.0"
 
 # testing
 pytest = "^8.3.4"
-pytest-asyncio = ">=0.25.3,<0.27.0"
-pytest-cov = "^6.0.0"
+pytest-asyncio = "^1.0.0"
+pytest-cov = ">=6,<8"
 pytest-ruff = ">=0.4.1,<0.6.0"
 pytest-xdist = "^3.6.1"
 debugpy = "^1.8.11"
@@ -155,7 +155,7 @@ testpaths = "acapy_agent"
 addopts = """
     -n auto
     --quiet --junitxml=./test-reports/junit.xml
-    --cov-report term --cov-report xml
+    --cov-config .coveragerc --cov-report term --cov-report xml
     --ruff
 """
 markers = [
@@ -169,11 +169,9 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "module"
 
 [tool.coverage.run]
-
-omit = ["*/tests/*", "*/test/*", "demo/*", "docker/*", "docs/*", "scripts/*"]
+omit = ["*/tests/*", "demo/*", "docker/*", "docs/*", "scripts/*"]
 data_file = "test-reports/.coverage"
 
 [tool.coverage.report]
