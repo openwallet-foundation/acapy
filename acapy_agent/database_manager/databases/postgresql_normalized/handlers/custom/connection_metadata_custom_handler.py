@@ -7,8 +7,11 @@ from typing import List, Optional, Union
 
 from psycopg import AsyncCursor
 
-from ....errors import DatabaseError, DatabaseErrorCode
-from ...schema_context import SchemaContext
+from acapy_agent.database_manager.databases.errors import DatabaseError, DatabaseErrorCode
+from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
+    SchemaContext,
+)
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
