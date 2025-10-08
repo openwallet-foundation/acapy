@@ -152,7 +152,6 @@ async def cred_defs_get(request: web.BaseRequest):
 
 async def register(app: web.Application) -> None:
     """Register routes."""
-
     app.add_routes(
         [
             web.post("/anoncreds/credential-definition", cred_def_post),
@@ -172,7 +171,6 @@ async def register(app: web.Application) -> None:
 
 def post_process_routes(app: web.Application) -> None:
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

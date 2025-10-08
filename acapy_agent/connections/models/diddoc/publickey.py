@@ -52,7 +52,6 @@ class PublicKeyType(Enum):
         Returns: the public key type
 
         """
-
         for pktype in PublicKeyType:
             if val in (pktype.ver_type, pktype.authn_type):
                 return pktype
@@ -61,19 +60,16 @@ class PublicKeyType(Enum):
     @property
     def ver_type(self) -> str:
         """Accessor for the verification type identifier."""
-
         return self.value.ver_type
 
     @property
     def authn_type(self) -> str:
         """Accessor for the authentication type identifier."""
-
         return self.value.authn_type
 
     @property
     def specifier(self) -> str:
         """Accessor for the value specifier."""
-
         return self.value.specifier
 
     def specification(self, val: str) -> str:
@@ -85,7 +81,6 @@ class PublicKeyType(Enum):
         Returns: dict mapping applicable specifier to input value
 
         """
-
         return {self.specifier: val}
 
 
@@ -119,7 +114,6 @@ class PublicKey:
             ValueError: on any bad input DID.
 
         """
-
         self._did = canon_did(did)
         self._id = canon_ref(self._did, ident)
         self._value = value
@@ -130,31 +124,26 @@ class PublicKey:
     @property
     def did(self) -> str:
         """Accessor for the DID."""
-
         return self._did
 
     @property
     def id(self) -> str:
         """Accessor for the public key identifier."""
-
         return self._id
 
     @property
     def type(self) -> PublicKeyType:
         """Accessor for the public key type."""
-
         return self._type
 
     @property
     def value(self) -> str:
         """Accessor for the public key value."""
-
         return self._value
 
     @property
     def controller(self) -> str:
         """Accessor for the controller DID."""
-
         return self._controller
 
     @property
@@ -163,7 +152,6 @@ class PublicKey:
 
         Returns: whether public key is marked as having DID authentication privilege
         """
-
         return self._authn
 
     @authn.setter
@@ -172,13 +160,12 @@ class PublicKey:
 
         Args:
             value: authentication marker
-        """
 
+        """
         self._authn = value
 
     def to_dict(self) -> dict:
         """Return dict representation of public key to embed in DID document."""
-
         return {
             "id": self.id,
             "type": str(self.type.ver_type),
@@ -188,7 +175,6 @@ class PublicKey:
 
     def __repr__(self) -> str:
         """Return string representation of the public key instance."""
-
         return "PublicKey({}, {}, {}, {}, {}, {})".format(
             self.did, self.id, self.value, self.type, self.controller, self.authn
         )

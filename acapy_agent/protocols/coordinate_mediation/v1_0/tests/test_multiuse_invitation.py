@@ -1,15 +1,17 @@
+import json
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
+
+from acapy_agent.cache.base import BaseCache
 from acapy_agent.connections.models.conn_record import ConnRecord
+from acapy_agent.core.profile import Profile
 from acapy_agent.protocols.coordinate_mediation.v1_0.route_manager import (
     CoordinateMediationV1RouteManager,
 )
-from contextlib import asynccontextmanager
-from acapy_agent.core.profile import Profile
 from acapy_agent.storage.base import BaseStorage
-from acapy_agent.cache.base import BaseCache
 from acapy_agent.storage.record import StorageRecord
-import json
 
 
 @asynccontextmanager

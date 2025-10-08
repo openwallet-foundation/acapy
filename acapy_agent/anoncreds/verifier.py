@@ -52,6 +52,7 @@ class AnonCredsVerifier:
             pres_req: presentation request
             pres: corresponding presentation
             cred_defs: credential definitions by cred def id
+
         """
         msgs = []
         for req_proof_key, pres_key in {
@@ -119,6 +120,7 @@ class AnonCredsVerifier:
             pres_req: anoncreds proof request
             pres: anoncreds proof request
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
+
         """
         msgs = []
         now = int(time())
@@ -449,8 +451,8 @@ class AnonCredsVerifier:
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
             rev_lists: revocation lists
-        """
 
+        """
         msgs = []
         try:
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)

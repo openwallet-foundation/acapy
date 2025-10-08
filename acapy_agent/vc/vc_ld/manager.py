@@ -3,13 +3,13 @@
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Type, Union, cast
 
-from acapy_agent.wallet.keys.manager import MultikeyManager, multikey_to_verkey
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
 from acapy_agent.vc.ld_proofs.suites.ecdsa_secp256r1_signature_2019 import (
     EcdsaSecp256r1Signature2019,
 )
+from acapy_agent.wallet.keys.manager import MultikeyManager, multikey_to_verkey
 
 from ...core.profile import Profile
 from ...storage.vc_holder.base import VCHolder
@@ -389,7 +389,6 @@ class VcLdpManager:
         cred_id: Optional[str] = None,
     ) -> VCRecord:
         """Store a verifiable credential."""
-
         # Saving expanded type as a cred_tag
         document_loader = self.profile.inject(DocumentLoader)
         expanded = jsonld.expand(
@@ -456,7 +455,6 @@ class VcLdpManager:
         self, vp: VerifiablePresentation, options: LDProofVCOptions
     ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
-
         if not options.challenge:
             raise VcLdpManagerError("Challenge is required for verifying a VP")
 

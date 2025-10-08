@@ -38,6 +38,7 @@ class PresentationProposal(AgentMessage):
             comment: optional human-readable comment
             presentation_proposal: proposed presentation preview
             kwargs: additional keyword arguments for message
+
         """
         super().__init__(_id, **kwargs)
         self.comment = comment

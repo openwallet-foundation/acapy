@@ -99,7 +99,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordIndy:
         """Retrieve credential exchange detail record by cred_ex_id."""
-
         async with self.profile.session() as session:
             records = await IndyCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
@@ -136,7 +135,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-
         return ATTACHMENT_FORMAT[message_type][IndyCredFormatHandler.format.api]
 
     def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
@@ -155,7 +153,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             CredFormatAttachment: Credential format and attachment data objects
 
         """
-
         return (
             V20CredFormat(
                 attach_id=IndyCredFormatHandler.format.api,
@@ -166,7 +163,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
         """Return most recent matching id of cred def that agent sent to ledger."""
-
         async with self.profile.session() as session:
             storage = session.inject(BaseStorage)
             found = await storage.find_all_records(
@@ -206,7 +202,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
-
         if isinstance(self.profile, AskarAnonCredsProfile):
             raise V20CredFormatError(
                 "This issuer is anoncreds capable. Please use the anoncreds format."
@@ -295,7 +290,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, request_data: Optional[Mapping] = None
     ) -> CredFormatAttachment:
         """Create indy credential request."""
-
         # Create the request with the anoncreds handler if agent is anoncreds capable
         if self.anoncreds_handler:
             return await self.anoncreds_handler.create_request(

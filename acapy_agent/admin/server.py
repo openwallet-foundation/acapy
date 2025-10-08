@@ -105,6 +105,7 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
             **kwargs: Additional keyword arguments
+
         """
         profile = self._profile()
         if not profile:
@@ -117,6 +118,7 @@ class AdminResponder(BaseResponder):
         Args:
             topic: the webhook topic identifier
             payload: the webhook payload value
+
         """
         warnings.warn(
             "responder.send_webhook is deprecated; please use the event bus instead.",
@@ -136,7 +138,6 @@ class AdminResponder(BaseResponder):
 @web.middleware
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
-
     is_status_check = str(request.rel_url).rstrip("/") in status_paths
     is_app_ready = request.app._state.get("ready")
 
@@ -241,7 +242,6 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
 @web.middleware
 async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     """Show request detail in debug log."""
-
     if LOGGER.isEnabledFor(logging.DEBUG):  # Skipped if DEBUG is not enabled
         LOGGER.debug("Incoming request: %s %s", request.method, request.path_qs)
         is_status_check = str(request.rel_url).startswith("/status/")
@@ -282,6 +282,7 @@ class AdminServer(BaseAdminServer):
             conductor_stop (Coroutine): Conductor (graceful) stop for shutdown API call.
             task_queue (TaskQueue, optional): An optional task queue for handlers.
             conductor_stats (Coroutine, optional): Conductor statistics API call.
+
         """
         self.app = None
         self.admin_api_key = context.settings.get("admin.admin_api_key")
@@ -302,7 +303,6 @@ class AdminServer(BaseAdminServer):
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
-
         middlewares = [ready_middleware, debug_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
@@ -566,7 +566,6 @@ class AdminServer(BaseAdminServer):
 
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""
-
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         socket_id = str(uuid4())

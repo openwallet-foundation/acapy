@@ -272,6 +272,7 @@ class AnonCredsIssuer:
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
         try:
             async with self.profile.session() as session:

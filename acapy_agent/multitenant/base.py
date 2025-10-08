@@ -38,6 +38,7 @@ class BaseMultitenantManager(ABC):
 
         Args:
             profile: The profile for this manager
+
         """
         if not profile:
             raise MissingProfileError()
@@ -96,6 +97,7 @@ class BaseMultitenantManager(ABC):
 
         Returns:
             webhook urls according to dispatch_type
+
         """
         wallet_id = wallet_record.wallet_id
         dispatch_type = wallet_record.wallet_dispatch_type
@@ -391,6 +393,7 @@ class BaseMultitenantManager(ABC):
             recipient_key: The recipient key
         Returns:
             Wallet record associated with the recipient key
+
         """
         routing_mgr = RoutingManager(self._profile)
 

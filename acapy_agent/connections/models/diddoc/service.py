@@ -57,7 +57,6 @@ class Service:
             ValueError: on bad input controller DID
 
         """
-
         self._did = canon_did(did)
         self._id = canon_ref(self._did, ident, ";")
         self._type = typ
@@ -75,48 +74,40 @@ class Service:
     @property
     def did(self) -> str:
         """Accessor for the DID value."""
-
         return self._did
 
     @property
     def id(self) -> str:
         """Accessor for the service identifier."""
-
         return self._id
 
     @property
     def type(self) -> str:
         """Accessor for the service type."""
-
         return self._type
 
     @property
     def recip_keys(self) -> List[PublicKey]:
         """Accessor for the recipient keys."""
-
         return self._recip_keys
 
     @property
     def routing_keys(self) -> List[str]:
         """Accessor for the routing keys."""
-
         return self._routing_keys
 
     @property
     def endpoint(self) -> str:
         """Accessor for the endpoint value."""
-
         return self._endpoint
 
     @property
     def priority(self) -> int:
         """Accessor for the priority value."""
-
         return self._priority
 
     def to_dict(self) -> dict:
         """Return dict representation of service to embed in DID document."""
-
         rv = {"id": self.id, "type": self.type, "priority": self.priority}
         if self.recip_keys:
             rv["recipientKeys"] = [k.value for k in self.recip_keys]

@@ -221,7 +221,6 @@ async def update_key(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get("/wallet/keys/{multikey}", fetch_key, allow_head=False),

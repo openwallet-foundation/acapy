@@ -1,8 +1,11 @@
+import json
 import os
 import shutil
 import unittest
+
 import pytest
 from aiohttp.web import HTTPBadRequest, HTTPNotFound
+from multidict import MultiDict
 
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
@@ -23,8 +26,6 @@ from ...utils.testing import create_test_profile
 from .. import routes as test_module
 from ..manager import RevocationManager
 from ..models.issuer_rev_reg_record import IssuerRevRegRecord
-from multidict import MultiDict
-import json
 
 
 class TestRevocationRoutes(unittest.IsolatedAsyncioTestCase):

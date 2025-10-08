@@ -27,7 +27,6 @@ class W3cDID(validate.Regexp):
 
     def __init__(self):
         """Initialize the instance."""
-
         super().__init__(
             W3cDID.PATTERN,
             error="Value {input} is not a w3c decentralized identifier (DID)",
@@ -70,7 +69,6 @@ async def resolve_did(request: web.Request):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get(
@@ -84,7 +82,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

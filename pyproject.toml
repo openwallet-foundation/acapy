@@ -70,7 +70,7 @@ didcomm-messaging = { version = "^0.1.1a0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
-ruff = ">=0.12.10,<0.14.0"
+ruff = "~=0.13.3"
 
 pre-commit = ">=4.1,<4.4"
 
@@ -94,26 +94,33 @@ didcommv2 = ["didcomm-messaging"]
 aca-py = "acapy_agent.__main__:script_main"
 
 [tool.ruff]
-lint.select = ["B006", "C", "D", "E", "F"]
+lint.select = [
+    "B006", # Check for uses of mutable objects as function arguments
+    "C90",  # mccabe (code complexity)
+    "D",    # pydocstyle (docstring style)
+    "E",    # pycodestyle (style errors)
+    "F",    # pyflakes (detect invalid Python code)
+    "I",    # isort (import sorting)
+    # To be added later:
+    # "ANN",   # flake8-annotations (type annotation checks)
+    # "ASYNC", # flake8-async (detect async code errors)
+    # "B",     # flake8-bugbear (detect likely bugs)
+    # "N",     # pep8-naming (naming conventions)
+    # "PL",    # pylint (rich code analysis)
+    # "RUF",   # ruff-specific rules
+    # "UP",    # pyupgrade (upgrade syntax)
+    # "W",     # pycodestyle warnings (style warnings)
+]
 
 lint.ignore = [
-    # Google Python Doc Style
-    "D203",
-    "D204",
-    "D213",
-    "D215",
-    "D400",
-    "D401",
-    "D404",
-    "D406",
-    "D407",
-    "D408",
-    "D409",
-    "D413",
-    "D202", # Allow blank line after docstring
-    "D104", # Don't require docstring in public package
-    # Things that we should fix, but are too much work right now
-    "C901",
+    # Comments describe the rule being ignored
+    "D104", # Require docstring in public package
+    "D203", # Use a blank line to separate the docstring from the class definition
+    "D213", # Multi-line docstring should start at the second line
+    "D400", # First line of docstring should end with a period
+    "D401", # First line of docstring should be in imperative mood
+    # Should be fixed later:
+    "C901", # Method is too complex
 ]
 
 include = ["acapy_agent/**/*.py"]

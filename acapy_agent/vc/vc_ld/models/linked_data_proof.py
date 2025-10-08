@@ -35,7 +35,6 @@ class LDProof(BaseModel):
         **kwargs,
     ) -> None:
         """Initialize the LDProof instance."""
-
         self.type = type
         self.proof_purpose = proof_purpose
         self.verification_method = verification_method
@@ -160,7 +159,6 @@ class LinkedDataProofSchema(BaseModelSchema):
     @post_dump(pass_original=True)
     def add_unknown_properties(self, data: dict, original, **kwargs):
         """Add back unknown properties before outputting."""
-
         data.update(original.extra)
 
         return data

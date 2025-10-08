@@ -59,6 +59,7 @@ class DIDXManager(BaseConnectionManager):
 
         Args:
             profile: The profile for this did exchange manager
+
         """
         self._profile = profile
         self._logger = logging.getLogger(__name__)
@@ -233,7 +234,6 @@ class DIDXManager(BaseConnectionManager):
                 `their_public_did` and `my_did`.
 
         """
-
         if use_did and use_did_method:
             raise DIDXManagerError("Cannot specify both use_did and use_did_method")
 
@@ -919,7 +919,6 @@ class DIDXManager(BaseConnectionManager):
                 in the request-sent state
 
         """
-
         conn_rec = None
         if response._thread:
             # identify the request by the thread ID

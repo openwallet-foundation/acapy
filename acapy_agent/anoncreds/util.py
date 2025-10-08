@@ -23,8 +23,8 @@ def indy_client_dir(subpath: Optional[str] = None, create: bool = False) -> str:
     Args:
         subpath: subpath within indy-client structure
         create: whether to create subdirectory if absent
-    """
 
+    """
     home = Path.home()
     target_dir = join(
         home,

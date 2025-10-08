@@ -1,6 +1,6 @@
 """KeyInfo, DIDInfo."""
 
-from typing import NamedTuple, Union, List, Optional
+from typing import List, NamedTuple, Optional, Union
 
 from .did_method import DIDMethod
 from .key_type import KeyType

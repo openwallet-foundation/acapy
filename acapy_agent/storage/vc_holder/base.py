@@ -53,6 +53,7 @@ class VCHolder(ABC):
 
         Args:
             uri_list: List of schema uri from input_descriptor
+
         """
 
     @abstractmethod

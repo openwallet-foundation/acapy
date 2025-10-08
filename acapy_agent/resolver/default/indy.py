@@ -35,7 +35,6 @@ def _routing_keys_as_did_key_urls(routing_keys: Sequence[str]) -> Sequence[str]:
 
     If a did:key is passed in, convert to a did:key URL.
     """
-
     did_key_urls = []
     for routing_key in routing_keys:
         if not routing_key.startswith("did:key:"):

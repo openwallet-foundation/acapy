@@ -32,7 +32,6 @@ class V2PackWireFormat(BaseWireFormat):
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """Parse message."""
-
         messaging = session.inject(DIDCommMessaging)
 
         receipt = MessageReceipt()
