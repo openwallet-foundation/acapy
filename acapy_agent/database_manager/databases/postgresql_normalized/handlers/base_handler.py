@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Sequence, List, Tuple, Any, AsyncGenerator
 from psycopg import AsyncCursor
-from ....db_types import Entry
-from ....wql_normalized.tags import TagQuery
+from acapy_agent.database_manager.db_types import Entry
+from acapy_agent.database_manager.wql_normalized.tags import TagQuery
 
 
 class BaseHandler(ABC):

@@ -1,17 +1,19 @@
 """Module docstring."""
 
 from .base_handler import BaseHandler
-from ....db_types import Entry
-from ....wql_normalized.tags import TagQuery, query_to_tagquery
-from ....wql_normalized.query import query_from_json
-from ....wql_normalized.encoders import encoder_factory
-from ...errors import DatabaseError, DatabaseErrorCode
+from acapy_agent.database_manager.db_types import Entry
+from acapy_agent.database_manager.wql_normalized.tags import TagQuery, query_to_tagquery
+from acapy_agent.database_manager.wql_normalized.query import query_from_json
+from acapy_agent.database_manager.wql_normalized.encoders import encoder_factory
+from acapy_agent.database_manager.databases.errors import DatabaseError, DatabaseErrorCode
 from psycopg import AsyncCursor, pq
 from typing import Optional, Sequence, List, Tuple, Any, AsyncGenerator
 import json
 import logging
 from datetime import datetime, timedelta, timezone
-from ..schema_context import SchemaContext
+from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
+    SchemaContext,
+)
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)  # Enable debug logging for troubleshooting
@@ -46,6 +48,7 @@ def serialize_json_with_bool_strings(data: Any) -> str:
 
     Returns:
         JSON string representation.
+
     """
 
     def convert_bools_and_keys(obj: Any) -> Any:
