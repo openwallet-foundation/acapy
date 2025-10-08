@@ -5,6 +5,13 @@ from unittest import mock
 import pytest
 
 STUBS = {}
+# These modules have relative imports that are not importable as standalone tests
+collect_ignore_glob = [
+    "acapy_agent/database_manager/databases/postgresql_normalized/handlers/*.py",
+    "acapy_agent/database_manager/databases/sqlite_normalized/handlers/*.py",
+    "acapy_agent/database_manager/databases/postgresql_normalized/handlers/custom/*.py",
+    "acapy_agent/database_manager/databases/sqlite_normalized/handlers/custom/*.py",
+]
 
 POSTGRES_URL = None
 ENABLE_PTVSD = None

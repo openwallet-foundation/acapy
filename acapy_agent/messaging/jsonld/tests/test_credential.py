@@ -62,6 +62,7 @@ class TestOps(IsolatedAsyncioTestCase):
                     input_.get("verkey"),
                 )
 
+    @skip_on_jsonld_url_error
     async def test_sign_credential(self):
         async with self.profile.session() as session:
             for input_ in TEST_SIGN_OBJS:

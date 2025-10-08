@@ -15,6 +15,10 @@ from ..utils.env import storage_path
 
 LOGGER = logging.getLogger(__name__)
 
+# Error message constants
+ERR_NO_STORAGE_CONFIG = "No 'storage_config' provided for postgres store"
+ERR_NO_STORAGE_CREDS = "No 'storage_creds' provided for postgres store"
+
 
 class AskarStoreConfig:
     """Helper for handling Askar store configuration."""
@@ -94,9 +98,9 @@ class AskarStoreConfig:
 
     def _validate_postgres_config(self):
         if not self.storage_config:
-            raise ProfileError("No 'storage_config' provided for postgres store")
+            raise ProfileError(ERR_NO_STORAGE_CONFIG)
         if not self.storage_creds:
-            raise ProfileError("No 'storage_creds' provided for postgres store")
+            raise ProfileError(ERR_NO_STORAGE_CREDS)
 
         try:
             config = json.loads(self.storage_config)

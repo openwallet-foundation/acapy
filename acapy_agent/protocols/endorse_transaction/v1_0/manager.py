@@ -438,9 +438,9 @@ class TransactionManager:
             ledger = self.profile.inject(BaseLedger)
             if not ledger:
                 raise TransactionManagerError("No ledger available")
-            if (
-                self._profile.context.settings.get_value("wallet.type")
-                == "askar-anoncreds"
+            if self._profile.context.settings.get_value("wallet.type") in (
+                "askar-anoncreds",
+                "kanon-anoncreds",
             ):
                 from acapy_agent.anoncreds.default.legacy_indy.registry import (
                     LegacyIndyRegistry,
@@ -822,8 +822,10 @@ class TransactionManager:
         meta_data["endorser"] = {
             "connection_id": transaction.connection_id,
         }
-
-        is_anoncreds = self._profile.settings.get("wallet.type") == "askar-anoncreds"
+        is_anoncreds = self._profile.settings.get("wallet.type") in (
+            "askar-anoncreds",
+            "kanon-anoncreds",
+        )
 
         # write the wallet non-secrets record
         txn = ledger_response["result"]["txn"]
