@@ -23,7 +23,6 @@ from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.cred_def import CredentialDefinitionSchema
-from ...utils.wait_for_active_registry import wait_for_active_revocation_registry
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -46,6 +45,7 @@ from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageNotFoundError
 from ...utils.profiles import is_anoncreds_profile_raise_web_exception
+from ...utils.wait_for_active_registry import wait_for_active_revocation_registry
 from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
 from ..valid import (

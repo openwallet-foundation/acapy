@@ -1,9 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
 
-from marshmallow import ValidationError
 import pytest
 from aiohttp import web
-from aiohttp.web import HTTPNotFound, HTTPForbidden
+from aiohttp.web import HTTPForbidden, HTTPNotFound
+from marshmallow import ValidationError
 
 from ......admin.request_context import AdminRequestContext
 from ......storage.error import StorageNotFoundError

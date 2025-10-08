@@ -22,6 +22,7 @@ async def wait_for_active_revocation_registry(profile: Profile, cred_def_id: str
 
     Raises:
         TimeoutError: If timeout occurs before completion
+
     """
     LOGGER.debug(
         "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id

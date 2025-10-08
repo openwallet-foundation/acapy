@@ -400,6 +400,7 @@ class AnonCredsRevocation:
 
         Raises:
             TimeoutError: If timeout occurs before completion
+
         """
         LOGGER.debug(
             "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
