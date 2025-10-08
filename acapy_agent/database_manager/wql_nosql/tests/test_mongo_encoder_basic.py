@@ -1,15 +1,17 @@
-import unittest
 import logging
+import unittest
+
 import pytest
 
 try:
     from pymongo import MongoClient
+
     PYMONGO_AVAILABLE = True
 except ImportError:
     PYMONGO_AVAILABLE = False
 
-from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName
 from acapy_agent.database_manager.wql_nosql.encoders import encoder_factory
+from acapy_agent.database_manager.wql_nosql.tags import TagName, TagQuery
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

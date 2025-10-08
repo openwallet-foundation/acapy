@@ -1,16 +1,17 @@
 """Module docstring."""
 
-from .base_handler import BaseHandler
-from ....db_types import Entry
-from ....wql_normalized.tags import TagQuery, query_to_tagquery
-from ....wql_normalized.query import query_from_json
-from ....wql_normalized.encoders import encoder_factory
-from ...errors import DatabaseError, DatabaseErrorCode
-import sqlite3
-from typing import Optional, Sequence, List, Tuple, Any, Generator
 import json
 import logging
+import sqlite3
 from datetime import datetime, timedelta, timezone
+from typing import Any, Generator, List, Optional, Sequence, Tuple
+
+from ....db_types import Entry
+from ....wql_normalized.encoders import encoder_factory
+from ....wql_normalized.query import query_from_json
+from ....wql_normalized.tags import TagQuery, query_to_tagquery
+from ...errors import DatabaseError, DatabaseErrorCode
+from .base_handler import BaseHandler
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.CRITICAL + 1)

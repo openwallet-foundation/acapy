@@ -5,6 +5,7 @@ ENABLE_WQL_SQLITE_TESTS=1 if you want to run them.
 """
 
 import os
+
 import pytest
 
 if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
@@ -14,7 +15,8 @@ if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
     )
 
 import unittest
-from .tags import TagQuery, TagName
+
+from ..tags import TagName, TagQuery
 from .sql import TagSqlEncoder
 
 
