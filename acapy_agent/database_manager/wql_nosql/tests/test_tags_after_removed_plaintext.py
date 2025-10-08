@@ -17,8 +17,8 @@ if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
 import unittest
 from typing import List
 
-from .query import AndQuery, EqQuery
-from .tags import CompareOp, ConjunctionOp, TagName, TagQuery, query_to_tagquery
+from ..query import AndQuery, EqQuery
+from ..tags import CompareOp, ConjunctionOp, TagName, TagQuery, query_to_tagquery
 
 
 class TestEncoder:

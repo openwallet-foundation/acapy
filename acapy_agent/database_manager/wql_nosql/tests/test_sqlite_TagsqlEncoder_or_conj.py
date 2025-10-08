@@ -16,7 +16,7 @@ if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
 
 import unittest
 
-from .tags import TagName, TagQuery
+from ..tags import TagName, TagQuery
 from .sql import TagSqlEncoder
 
 
