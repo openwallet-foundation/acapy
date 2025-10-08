@@ -1,8 +1,10 @@
 """Module docstring."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, List, Tuple, Any, AsyncGenerator
+from typing import Any, AsyncGenerator, List, Optional, Sequence, Tuple
+
 from psycopg import AsyncCursor
+
 from acapy_agent.database_manager.db_types import Entry
 from acapy_agent.database_manager.wql_normalized.tags import TagQuery
 

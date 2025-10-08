@@ -5,6 +5,7 @@ ENABLE_WQL_SQLITE_TESTS=1 if you want to run them.
 """
 
 import os
+
 import pytest
 
 if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
@@ -14,8 +15,9 @@ if not os.getenv("ENABLE_WQL_SQLITE_TESTS"):
     )
 
 import unittest
-from acapy_agent.database_manager.wql_nosql.tags import TagQuery, TagName
+
 from acapy_agent.database_manager.wql_nosql.encoders import TagSqlEncoder
+from acapy_agent.database_manager.wql_nosql.tags import TagName, TagQuery
 
 
 def replace_placeholders(query, args):

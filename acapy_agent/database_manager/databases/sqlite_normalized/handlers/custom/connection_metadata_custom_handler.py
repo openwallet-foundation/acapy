@@ -1,16 +1,17 @@
 """Module docstring."""
 
+import json
+import logging
+import sqlite3
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
+
+from ....errors import DatabaseError, DatabaseErrorCode
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
     serialize_json_with_bool_strings,
 )
-from ....errors import DatabaseError, DatabaseErrorCode
-import sqlite3
-from typing import List, Optional
-import json
-import logging
-from datetime import datetime, timedelta, timezone
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             category: Category name
             columns: List of column names
             table_name: Optional table name override
+
         """
         super().__init__(category, columns, table_name)
         LOGGER.debug(
@@ -81,6 +83,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             value: Record value data
             tags: Associated tags
             expiry_ms: Expiry time in milliseconds
+
         """
         # insert a new entry with custom metadata extraction.
         LOGGER.debug(
@@ -216,6 +219,7 @@ class ConnectionMetadataCustomHandler(NormalizedHandler):
             value: Record value data
             tags: Associated tags
             expiry_ms: Expiry time in milliseconds
+
         """
         # replace an existing entry with custom metadata extraction."""
         LOGGER.debug(

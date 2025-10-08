@@ -1,17 +1,18 @@
 """Module docstring."""
 
+import base64
+import json
+import logging
+import sqlite3
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
+
+from ....errors import DatabaseError, DatabaseErrorCode
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
     serialize_json_with_bool_strings,
 )
-from ....errors import DatabaseError, DatabaseErrorCode
-import sqlite3
-from typing import List, Optional
-import json
-import base64
-import logging
-from datetime import datetime, timedelta, timezone
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             table_name: Optional table name override
             release_number: Schema release number
             db_type: Database type
+
         """
         super().__init__(category, columns, table_name)
         self.version = self._get_version()
@@ -71,6 +73,7 @@ class CredExV20CustomHandler(NormalizedHandler):
 
         Returns:
             Credential definition ID if found, None otherwise
+
         """
         try:
             if "cred_offer" not in json_data or not json_data["cred_offer"]:
@@ -246,6 +249,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             value: Record value data
             tags: Associated tags
             expiry_ms: Expiry time in milliseconds
+
         """
         import traceback
 
@@ -450,6 +454,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             value: Record value data
             tags: Associated tags
             expiry_ms: Expiry time in milliseconds
+
         """
         import traceback
 

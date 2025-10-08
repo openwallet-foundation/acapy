@@ -1,18 +1,24 @@
 """Module docstring."""
 
+import base64
+import json
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
+
+from psycopg import AsyncCursor
+from psycopg import errors as psycopg_errors
+
+from acapy_agent.database_manager.databases.errors import DatabaseError, DatabaseErrorCode
+from acapy_agent.database_manager.databases.postgresql_normalized.schema_context import (
+    SchemaContext,
+)
+
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
     serialize_json_with_bool_strings,
 )
-from ....errors import DatabaseError, DatabaseErrorCode
-from psycopg import AsyncCursor, errors as psycopg_errors
-from typing import List, Optional
-import json
-import base64
-import logging
-from datetime import datetime, timedelta, timezone
-from ...schema_context import SchemaContext
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +40,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             columns: List of columns for the credential exchange table
             table_name: Optional table name override
             schema_context: Optional schema context for table naming
+
         """
         super().__init__(category, columns, table_name, schema_context)
         self.version = self._get_version()
@@ -344,6 +351,7 @@ class CredExV20CustomHandler(NormalizedHandler):
             value: JSON data containing credential exchange details
             tags: Additional tags for the credential exchange
             expiry_ms: Expiration time in milliseconds
+
         """
         LOGGER.debug(
             (

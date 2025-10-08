@@ -1,17 +1,19 @@
 """Module docstring."""
 
+import json
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional, Union
+
+from psycopg import AsyncCursor
+
+from ....errors import DatabaseError, DatabaseErrorCode
+from ...schema_context import SchemaContext
 from ..normalized_handler import (
     NormalizedHandler,
     is_valid_json,
     serialize_json_with_bool_strings,
 )
-from ....errors import DatabaseError, DatabaseErrorCode
-from psycopg import AsyncCursor
-from typing import Union, List, Optional
-import json
-import logging
-from datetime import datetime, timedelta, timezone
-from ...schema_context import SchemaContext
 
 LOGGER = logging.getLogger(__name__)
 

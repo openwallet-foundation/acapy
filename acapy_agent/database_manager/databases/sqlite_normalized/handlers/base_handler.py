@@ -1,8 +1,9 @@
 """Module docstring."""
 
-from abc import ABC, abstractmethod
-from typing import Optional, Sequence, List, Tuple, Any, Generator
 import sqlite3
+from abc import ABC, abstractmethod
+from typing import Any, Generator, List, Optional, Sequence, Tuple
+
 from ....db_types import Entry  # Assuming Entry is defined in a types module
 from ....wql_normalized.tags import (
     TagQuery,

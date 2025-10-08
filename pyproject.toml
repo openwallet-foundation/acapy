@@ -132,21 +132,6 @@ include = ["acapy_agent/**/*.py"]
 
 line-length = 90
 
-# Exclude MongoDB and SQLite test files that require specific database setup
-extend-exclude = [
-    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_encoder_basic.py",
-    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_tagquery_conversion.py",
-    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_TagsqlEncoder_ALL_tests.py",
-    "acapy_agent/database_manager/wql_nosql/tests/test_mongo_wql_integration.py",
-    "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_compare_conj.py",
-    "acapy_agent/database_manager/wql_nosql/tests/test_sqlite_TagsqlEncoder_or_conj.py",
-    "acapy_agent/database_manager/wql_nosql/tests/test_tags_after_removed_plaintext.py",
-    "acapy_agent/database_manager/databases/postgresql_normalized/handlers/*",
-    "acapy_agent/database_manager/databases/sqlite_normalized/handlers/*",
-    "acapy_agent/database_manager/databases/postgresql_normalized/handlers/custom/*",
-    "acapy_agent/database_manager/databases/sqlite_normalized/handlers/custom/*",
-]
-
 [tool.ruff.lint.per-file-ignores]
 "**/{tests}/*" = ["B006", "D", "E501", "F841"]
 
