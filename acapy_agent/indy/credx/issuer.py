@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from aries_askar import AskarError
 from indy_credx import (
@@ -18,8 +18,17 @@ from indy_credx import (
     Schema,
 )
 
-from ...askar.profile import AskarProfile
 from ...utils.general import strip_did_prefix
+from ..constants import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_CRED_DEF_KEY_PROOF,
+    CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_REG,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+    CATEGORY_REV_REG_INFO,
+    CATEGORY_SCHEMA,
+)
 from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
@@ -28,23 +37,16 @@ from ..issuer import (
     IndyIssuerRevocationRegistryFullError,
 )
 
-LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from ...askar.profile import AskarProfile
 
-CATEGORY_CRED_DEF = "credential_def"
-CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
-CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
-CATEGORY_SCHEMA = "schema"
-CATEGORY_REV_REG = "revocation_reg"
-CATEGORY_REV_REG_INFO = "revocation_reg_info"
-CATEGORY_REV_REG_DEF = "revocation_reg_def"
-CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
-CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
+LOGGER = logging.getLogger(__name__)
 
 
 class IndyCredxIssuer(IndyIssuer):
     """Indy-Credx issuer class."""
 
-    def __init__(self, profile: AskarProfile):
+    def __init__(self, profile: "AskarProfile"):
         """Initialize an IndyCredxIssuer instance.
 
         Args:
@@ -54,7 +56,7 @@ class IndyCredxIssuer(IndyIssuer):
         self._profile = profile
 
     @property
-    def profile(self) -> AskarProfile:
+    def profile(self) -> "AskarProfile":
         """Accessor for the profile instance."""
         return self._profile
 

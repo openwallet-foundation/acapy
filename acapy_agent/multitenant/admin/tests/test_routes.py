@@ -309,6 +309,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             "image_url": "https://image.com",
         }
         self.request.json = mock.CoroutineMock(return_value=body)
+        test_module.attempt_auto_author_with_endorser_setup = mock.CoroutineMock()
 
         with mock.patch.object(test_module.web, "json_response"):
             mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
@@ -340,6 +341,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
                 WalletRecord.MODE_MANAGED,
             )
             assert mock_multitenant_mgr.get_wallet_profile.called
+            assert test_module.attempt_auto_author_with_endorser_setup.called
 
     async def test_wallet_create_raw_key_derivation(self):
         body = {
@@ -348,6 +350,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             "wallet_key_derivation": "RAW",
         }
         self.request.json = mock.CoroutineMock(return_value=body)
+        test_module.attempt_auto_author_with_endorser_setup = mock.CoroutineMock()
 
         with mock.patch.object(test_module.web, "json_response"):
             mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
@@ -377,6 +380,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
                 WalletRecord.MODE_MANAGED,
             )
             assert mock_multitenant_mgr.get_wallet_profile.called
+            assert test_module.attempt_auto_author_with_endorser_setup.called
 
     async def test_wallet_update_tenant_settings(self):
         self.request.match_info = {"wallet_id": "test-wallet-id"}
