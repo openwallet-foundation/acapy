@@ -195,9 +195,10 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
 
             mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.name": body["wallet_name"],
                     "wallet.type": body["wallet_type"],
+                    "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
                     "log.level": "INFO",
@@ -257,9 +258,10 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
 
             mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.name": body["wallet_name"],
                     "wallet.type": body["wallet_type"],
+                    "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
                 },
@@ -325,9 +327,10 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             await test_module.wallet_create(self.request)
             mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.name": body["wallet_name"],
                     "wallet.type": "askar",
+                    "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "default_label": body["label"],
                     "image_url": body["image_url"],
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
@@ -366,6 +369,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
                     "wallet.type": "askar",
                     "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "wallet.key_derivation_method": body["wallet_key_derivation"],
                     "wallet.webhook_urls": [],
                     "wallet.dispatch_type": "base",

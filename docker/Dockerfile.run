@@ -3,7 +3,10 @@ FROM python:3.12-slim-bookworm
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    libsodium23 git curl && \
+    libsodium23 git curl \
+    build-essential \
+    libsqlcipher-dev && \
+    apt-get install -y libpq-dev postgresql-client && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

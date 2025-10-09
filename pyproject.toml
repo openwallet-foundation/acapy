@@ -67,6 +67,10 @@ ursa-bbs-signatures = { version = "~1.0.1", optional = true }
 
 # didcommv2
 didcomm-messaging = { version = "^0.1.1a0", optional = true }
+# database_manager
+psycopg = { version = "^3.2.1", extras = ["pool", "binary"] }
+sqlcipher3-binary = { version = ">=0.5.4", optional = true }
+
 
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
@@ -89,6 +93,7 @@ debugpy = "^1.8.11"
 [tool.poetry.extras]
 bbs = ["ursa-bbs-signatures"]
 didcommv2 = ["didcomm-messaging"]
+sqlcipher = ["sqlcipher3-binary"] # SQLCipher support
 
 [tool.poetry.scripts]
 aca-py = "acapy_agent.__main__:script_main"
@@ -151,7 +156,6 @@ junit_family = "xunit1"
 asyncio_mode = "auto"
 
 [tool.coverage.run]
-
 omit = ["*/tests/*", "demo/*", "docker/*", "docs/*", "scripts/*"]
 data_file = "test-reports/.coverage"
 

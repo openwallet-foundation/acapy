@@ -1728,6 +1728,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         assert dif_pres_exch_handler.is_len_applicable(tmp_req_b, 2) is False
         assert dif_pres_exch_handler.is_len_applicable(tmp_req_c, 6) is False
 
+    @skip_on_jsonld_url_error
     async def test_create_vcrecord(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_cred_dict = {
@@ -2751,6 +2752,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_derive_nested_cred_missing_credsubjectid_a(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
@@ -2806,6 +2808,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_derive_nested_cred_missing_credsubjectid_b(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_pd = """
@@ -2858,6 +2861,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         )
 
     @pytest.mark.ursa_bbs_signatures
+    @skip_on_jsonld_url_error
     async def test_derive_nested_cred_credsubjectid(self):
         await self.setup_tuple(self.profile)
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)

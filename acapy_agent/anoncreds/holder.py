@@ -16,15 +16,14 @@ from anoncreds import (
     W3cPresentation,
     create_link_secret,
 )
-from aries_askar import AskarError, AskarErrorCode
 from marshmallow import INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnonCredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
+from ..database_manager.db_errors import DBCode, DBError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
 from ..vc.ld_proofs import DocumentLoader
@@ -78,10 +77,27 @@ class AnonCredsHolder:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
+        # Check if profile is AskarAnonCredsProfile or KanonAnonCredsProfile
+        # by checking the backend attribute
+        if not isinstance(self._profile, Profile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+
+        # Check if it's a supported anoncreds profile type
+        if hasattr(self._profile, "backend"):
+            backend = (
+                self._profile.backend.lower()
+                if isinstance(self._profile.backend, str)
+                else ""
+            )
+            if "anoncreds" not in backend and "kanon" not in backend:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        else:
+            # For AskarAnonCredsProfile, check the class name
+            class_name = self._profile.__class__.__name__
+            if "AnonCreds" not in class_name and "Kanon" not in class_name:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
 
@@ -93,7 +109,7 @@ class AnonCredsHolder:
                     record = await session.handle.fetch(
                         CATEGORY_MASTER_SECRET, AnonCredsHolder.MASTER_SECRET_ID
                     )
-                except AskarError as err:
+                except DBError as err:
                     raise AnonCredsHolderError("Error fetching master secret") from err
                 if record:
                     try:
@@ -116,8 +132,8 @@ class AnonCredsHolder:
                             AnonCredsHolder.MASTER_SECRET_ID,
                             secret,
                         )
-                    except AskarError as err:
-                        if err.code != AskarErrorCode.DUPLICATE:
+                    except DBError as err:
+                        if err.code not in DBCode.DUPLICATE:
                             raise AnonCredsHolderError(
                                 "Error saving master secret"
                             ) from err
@@ -270,7 +286,7 @@ class AnonCredsHolder:
                         value_json=mime_types,
                     )
                 await txn.commit()
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error storing credential") from err
 
         return credential_id
@@ -393,7 +409,7 @@ class AnonCredsHolder:
             async for row in rows:
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credentials") from err
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error loading stored credential") from err
@@ -493,7 +509,7 @@ class AnonCredsHolder:
         try:
             async with self.profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credential") from err
 
         if not cred:
@@ -555,7 +571,7 @@ class AnonCredsHolder:
                 await session.handle.remove(
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError(
                 "Error deleting credential", error_code=err.code
             ) from err
@@ -579,7 +595,7 @@ class AnonCredsHolder:
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                     credential_id,
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credential mime types") from err
         values = mime_types_record and mime_types_record.value_json
         if values:
