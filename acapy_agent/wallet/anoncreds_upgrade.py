@@ -15,10 +15,13 @@ from anoncreds import (
 from aries_askar import AskarError
 from indy_credx import LinkSecret
 
-from ..anoncreds.issuer import (
+from ..anoncreds.constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_KEY_PROOF,
     CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
     CATEGORY_SCHEMA,
 )
 from ..anoncreds.models.credential_definition import CredDef, CredDefState
@@ -30,11 +33,6 @@ from ..anoncreds.models.revocation import (
     RevRegDefValue,
 )
 from ..anoncreds.models.schema import SchemaState
-from ..anoncreds.revocation import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
 from ..cache.base import BaseCache
 from ..core.profile import Profile
 from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
@@ -55,6 +53,7 @@ from ..storage.type import (
     RECORD_TYPE_ACAPY_STORAGE_TYPE,
     RECORD_TYPE_ACAPY_UPGRADING,
     STORAGE_TYPE_VALUE_ANONCREDS,
+    STORAGE_TYPE_VALUE_KANON_ANONCREDS,
 )
 from .singletons import IsAnonCredsSingleton, UpgradeInProgressSingleton
 
@@ -625,17 +624,34 @@ async def finish_upgrade(profile: Profile):
             storage_type_record = await storage.find_record(
                 type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
             )
-            await storage.update_record(
-                storage_type_record, STORAGE_TYPE_VALUE_ANONCREDS, {}
-            )
+
+            if storage_type_record.value == STORAGE_TYPE_VALUE_KANON_ANONCREDS:
+                await storage.update_record(
+                    storage_type_record, STORAGE_TYPE_VALUE_KANON_ANONCREDS, {}
+                )
+            else:
+                await storage.update_record(
+                    storage_type_record, STORAGE_TYPE_VALUE_ANONCREDS, {}
+                )
+
         # This should only happen for subwallets
         except StorageNotFoundError:
-            await storage.add_record(
-                StorageRecord(
-                    RECORD_TYPE_ACAPY_STORAGE_TYPE,
-                    STORAGE_TYPE_VALUE_ANONCREDS,
+            # Check if this is a Kanon-based profile to determine storage type
+            if hasattr(profile, "backend") and "kanon" in profile.backend.lower():
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                        STORAGE_TYPE_VALUE_KANON_ANONCREDS,
+                    )
                 )
-            )
+            else:
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                        STORAGE_TYPE_VALUE_ANONCREDS,
+                    )
+                )
+
     await finish_upgrading_record(profile)
     IsAnonCredsSingleton().set_wallet(profile.name)
     UpgradeInProgressSingleton().remove_wallet(profile.name)

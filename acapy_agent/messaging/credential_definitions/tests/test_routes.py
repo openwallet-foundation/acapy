@@ -87,6 +87,119 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
                 }
             )
 
+    async def test_send_credential_definition_with_revocation_wait_success(self):
+        """Test credential definition creation with revocation and waiting enabled."""
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+                "wait_for_revocation_setup": True,
+            }
+        )
+        self.request.query = {"create_transaction_for_endorser": "false"}
+
+        # Mock tails server setting to allow revocable cred def
+        self.profile.settings["tails_server_base_url"] = (
+            "https://tails-server.example.com"
+        )
+
+        with mock.patch.object(test_module.web, "json_response") as mock_response:
+            with mock.patch.object(
+                test_module, "wait_for_active_revocation_registry"
+            ) as mock_wait:
+                mock_wait.return_value = None  # Successful completion
+
+                result = (
+                    await test_module.credential_definitions_send_credential_definition(
+                        self.request
+                    )
+                )
+
+                # Should have called the wait utility
+                mock_wait.assert_called_once_with(self.profile, CRED_DEF_ID)
+
+                # Should return success response
+                assert result == mock_response.return_value
+                mock_response.assert_called_once_with(
+                    {
+                        "sent": {"credential_definition_id": CRED_DEF_ID},
+                        "credential_definition_id": CRED_DEF_ID,
+                    }
+                )
+
+    async def test_send_credential_definition_with_revocation_wait_timeout(self):
+        """Test credential definition creation with revocation wait timeout."""
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+                "wait_for_revocation_setup": True,
+            }
+        )
+        self.request.query = {"create_transaction_for_endorser": "false"}
+
+        # Mock tails server setting to allow revocable cred def
+        self.profile.settings["tails_server_base_url"] = (
+            "https://tails-server.example.com"
+        )
+
+        with mock.patch.object(
+            test_module, "wait_for_active_revocation_registry"
+        ) as mock_wait:
+            mock_wait.side_effect = TimeoutError("Timeout waiting for revocation setup")
+
+            with self.assertRaises(test_module.web.HTTPGatewayTimeout) as exc_context:
+                await test_module.credential_definitions_send_credential_definition(
+                    self.request
+                )
+
+            # Should have called the wait utility
+            mock_wait.assert_called_once_with(self.profile, CRED_DEF_ID)
+
+            # Should raise HTTPGatewayTimeout with timeout message
+            assert "Timeout waiting for revocation setup" in str(exc_context.exception)
+
+    async def test_send_credential_definition_with_revocation_wait_false(self):
+        """Test credential definition creation with revocation but waiting disabled."""
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                "support_revocation": True,
+                "tag": "tag",
+                "wait_for_revocation_setup": False,
+            }
+        )
+        self.request.query = {"create_transaction_for_endorser": "false"}
+
+        # Mock tails server setting to allow revocable cred def
+        self.profile.settings["tails_server_base_url"] = (
+            "https://tails-server.example.com"
+        )
+
+        with mock.patch.object(test_module.web, "json_response") as mock_response:
+            with mock.patch.object(
+                test_module, "wait_for_active_revocation_registry"
+            ) as mock_wait:
+                result = (
+                    await test_module.credential_definitions_send_credential_definition(
+                        self.request
+                    )
+                )
+
+                # Should NOT have called the wait utility
+                mock_wait.assert_not_called()
+
+                # Should return success response immediately
+                assert result == mock_response.return_value
+                mock_response.assert_called_once_with(
+                    {
+                        "sent": {"credential_definition_id": CRED_DEF_ID},
+                        "credential_definition_id": CRED_DEF_ID,
+                    }
+                )
+
     async def test_send_credential_definition_create_transaction_for_endorser(self):
         self.request.json = mock.CoroutineMock(
             return_value={

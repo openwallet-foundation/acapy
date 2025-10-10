@@ -22,23 +22,27 @@ from anoncreds import (
     W3cCredential,
 )
 from aries_askar import Entry
-from aries_askar.error import AskarError
 from requests import RequestException, Session
 from uuid_utils import uuid4
 
-from ...askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
+from ...askar.profile_anon import AskarAnonCredsProfileSession
 from ...core.error import BaseError
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile, ProfileSession
+from ...database_manager.db_errors import DBError
+from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
-from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
-from ..issuer import (
+from ..constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
     STATE_FINISHED,
-    AnonCredsIssuer,
 )
+from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
+from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
+from ..issuer import AnonCredsIssuer
 from ..models.credential_definition import CredDef
 from ..models.revocation import (
     RevList,
@@ -53,12 +57,9 @@ from ..util import indy_client_dir
 
 LOGGER = logging.getLogger(__name__)
 
-CATEGORY_REV_LIST = "revocation_list"
-CATEGORY_REV_REG_DEF = "revocation_reg_def"
-CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
-STATE_REVOCATION_POSTED = "posted"
-STATE_REVOCATION_PENDING = "pending"
-REV_REG_DEF_STATE_ACTIVE = "active"
+REVOCATION_REGISTRY_CREATION_TIMEOUT = float(
+    os.getenv("REVOCATION_REGISTRY_CREATION_TIMEOUT", "60.0")
+)
 
 
 class AnonCredsRevocationError(BaseError):
@@ -91,9 +92,9 @@ class AnonCredsRevocation:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
+        if not isinstance(self._profile, Profile):
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
@@ -105,7 +106,7 @@ class AnonCredsRevocation:
 
     async def _finish_registration(
         self,
-        txn: AskarAnonCredsProfileSession,
+        txn: ProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -164,7 +165,7 @@ class AnonCredsRevocation:
         try:
             async with self.profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error retrieving credential definition"
             ) from err
@@ -251,7 +252,7 @@ class AnonCredsRevocation:
                 await self.notify(
                     RevRegDefFinishedEvent.with_payload(identifier, rev_reg_def, options)
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error storing revocation registry definition"
             ) from err
@@ -388,6 +389,73 @@ class AnonCredsRevocation:
             )
             await txn.commit()
 
+    async def wait_for_active_revocation_registry(self, cred_def_id: str) -> None:
+        """Wait for revocation registry setup to complete.
+
+        Polls for the creation of revocation registry definitions until we have
+        the 1 active registry or timeout occurs.
+
+        Args:
+            cred_def_id: The credential definition ID
+
+        Raises:
+            TimeoutError: If timeout occurs before completion
+
+        """
+        LOGGER.debug(
+            "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
+        )
+
+        expected_count = 1  # Active registry
+        poll_interval = 0.5  # Poll every 500ms
+        max_iterations = int(REVOCATION_REGISTRY_CREATION_TIMEOUT / poll_interval)
+        registries = []
+
+        for _iteration in range(max_iterations):
+            try:
+                # Check for finished revocation registry definitions
+                async with self.profile.session() as session:
+                    registries = await session.handle.fetch_all(
+                        CATEGORY_REV_REG_DEF,
+                        {"cred_def_id": cred_def_id, "active": "true"},
+                    )
+
+                current_count = len(registries)
+                LOGGER.debug(
+                    "Revocation setup progress for %s: %d/%d registries active",
+                    cred_def_id,
+                    current_count,
+                    expected_count,
+                )
+
+                if current_count >= expected_count:
+                    LOGGER.info(
+                        "Revocation setup completed for cred_def_id: %s "
+                        "(%d registries active)",
+                        cred_def_id,
+                        current_count,
+                    )
+                    return
+
+            except Exception as e:
+                LOGGER.warning(
+                    "Error checking revocation setup progress for %s: %s", cred_def_id, e
+                )
+                # Continue polling despite errors - they might be transient
+
+            await asyncio.sleep(poll_interval)  # Wait before next poll
+
+        # Timeout occurred
+        current_count = len(registries)
+
+        raise TimeoutError(
+            "Timeout waiting for revocation setup completion for credential definition "
+            f"{cred_def_id}. Expected {expected_count} revocation registries, but "
+            f"{current_count} were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} "
+            "seconds. Note: Revocation registry creation may still be in progress in the "
+            "background. You can check status using the revocation registry endpoints."
+        )
+
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
     ) -> RevListResult:
@@ -401,7 +469,7 @@ class AnonCredsRevocation:
                 rev_reg_def_private_entry = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error retrieving required revocation registry definition data"
             ) from err
@@ -422,7 +490,7 @@ class AnonCredsRevocation:
                 cred_def_entry = await session.handle.fetch(
                     CATEGORY_CRED_DEF, rev_reg_def_entry.value_json["credDefId"]
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 f"Error retrieving cred def {rev_reg_def_entry.value_json['credDefId']}"
             ) from err
@@ -489,7 +557,7 @@ class AnonCredsRevocation:
                     )
                 )
 
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error storing revocation registry list"
             ) from err
@@ -531,7 +599,7 @@ class AnonCredsRevocation:
                 rev_reg_def_entry = await session.handle.fetch(
                     CATEGORY_REV_REG_DEF, rev_reg_def_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error retrieving revocation registry definition"
             ) from err
@@ -546,7 +614,7 @@ class AnonCredsRevocation:
                 rev_list_entry = await session.handle.fetch(
                     CATEGORY_REV_LIST, rev_reg_def_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if not rev_list_entry:
@@ -581,7 +649,7 @@ class AnonCredsRevocation:
                     value=rev_list_entry_upd.value,
                     tags=tags,
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error saving updated revocation list"
             ) from err
@@ -595,7 +663,7 @@ class AnonCredsRevocation:
                 rev_list_entry = await session.handle.fetch(
                     CATEGORY_REV_LIST, rev_reg_def_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if rev_list_entry:
@@ -611,7 +679,7 @@ class AnonCredsRevocation:
                     CATEGORY_REV_LIST,
                     {"pending": "true"},
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if rev_list_entries:
@@ -923,7 +991,7 @@ class AnonCredsRevocation:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsRevocationError(
                 "Error retrieving credential definition"
             ) from err
@@ -1150,7 +1218,14 @@ class AnonCredsRevocation:
 
             rev_reg_def_result = None
             if revocable:
-                rev_reg_def_result = await self.get_or_create_active_registry(cred_def_id)
+                try:
+                    rev_reg_def_result = await self.get_or_create_active_registry(
+                        cred_def_id
+                    )
+                except AnonCredsRevocationError:
+                    # No active registry, try again
+                    continue
+
                 if (
                     rev_reg_def_result.revocation_registry_definition_state.state
                     != STATE_FINISHED
@@ -1253,7 +1328,7 @@ class AnonCredsRevocation:
                     rev_reg_def_private_entry = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
-            except AskarError as err:
+            except DBError as err:
                 LOGGER.error(
                     "Failed to retrieve revocation registry data for %s: %s",
                     revoc_reg_id,
@@ -1291,7 +1366,7 @@ class AnonCredsRevocation:
                     cred_def_entry = await session.handle.fetch(
                         CATEGORY_CRED_DEF, cred_def_id
                     )
-            except AskarError as err:
+            except DBError as err:
                 LOGGER.error(
                     "Failed to retrieve credential definition %s: %s",
                     cred_def_id,
@@ -1437,7 +1512,7 @@ class AnonCredsRevocation:
                         "Successfully updated revocation list for registry %s",
                         revoc_reg_id,
                     )
-            except AskarError as err:
+            except DBError as err:
                 LOGGER.error("Failed to save revocation registry: %s", str(err))
                 raise AnonCredsRevocationError(
                     "Error saving revocation registry"
@@ -1509,8 +1584,13 @@ class AnonCredsRevocation:
         crid_mask: Optional[Sequence[int]] = None,
     ) -> None:
         """Clear pending revocations."""
-        if not isinstance(txn, AskarAnonCredsProfileSession):
-            raise ValueError("Askar wallet required")
+        # Accept both Askar and Kanon anoncreds sessions
+        accepted = isinstance(
+            txn, (AskarAnonCredsProfileSession, KanonAnonCredsProfileSession)
+        )
+
+        if not accepted:
+            raise ValueError("AnonCreds wallet session required")
 
         entry = await txn.handle.fetch(
             CATEGORY_REV_LIST,

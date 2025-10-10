@@ -195,9 +195,10 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
 
             mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.name": body["wallet_name"],
                     "wallet.type": body["wallet_type"],
+                    "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
                     "log.level": "INFO",
@@ -257,9 +258,10 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
 
             mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.name": body["wallet_name"],
                     "wallet.type": body["wallet_type"],
+                    "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
                 },
@@ -307,6 +309,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             "image_url": "https://image.com",
         }
         self.request.json = mock.CoroutineMock(return_value=body)
+        test_module.attempt_auto_author_with_endorser_setup = mock.CoroutineMock()
 
         with mock.patch.object(test_module.web, "json_response"):
             mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
@@ -325,9 +328,10 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             await test_module.wallet_create(self.request)
             mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.name": body["wallet_name"],
                     "wallet.type": "askar",
+                    "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "default_label": body["label"],
                     "image_url": body["image_url"],
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
@@ -337,6 +341,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
                 WalletRecord.MODE_MANAGED,
             )
             assert mock_multitenant_mgr.get_wallet_profile.called
+            assert test_module.attempt_auto_author_with_endorser_setup.called
 
     async def test_wallet_create_raw_key_derivation(self):
         body = {
@@ -345,6 +350,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             "wallet_key_derivation": "RAW",
         }
         self.request.json = mock.CoroutineMock(return_value=body)
+        test_module.attempt_auto_author_with_endorser_setup = mock.CoroutineMock()
 
         with mock.patch.object(test_module.web, "json_response"):
             mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
@@ -366,6 +372,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
                     "wallet.type": "askar",
                     "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
+                    "dbstore.key": body.get("dbstore_key"),
                     "wallet.key_derivation_method": body["wallet_key_derivation"],
                     "wallet.webhook_urls": [],
                     "wallet.dispatch_type": "base",
@@ -373,6 +380,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
                 WalletRecord.MODE_MANAGED,
             )
             assert mock_multitenant_mgr.get_wallet_profile.called
+            assert test_module.attempt_auto_author_with_endorser_setup.called
 
     async def test_wallet_update_tenant_settings(self):
         self.request.match_info = {"wallet_id": "test-wallet-id"}

@@ -88,7 +88,7 @@ class TestAnonCredsTailsRoutes(
         )
 
         self.request.match_info = {"rev_reg_id": "rev_reg_id"}
-        with self.assertRaises(Exception):  # Should raise HTTPForbidden
+        with self.assertRaises(HTTPForbidden):
             await get_tails_file(self.request)
 
     @mock.patch.object(

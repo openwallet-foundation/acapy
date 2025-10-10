@@ -9,7 +9,7 @@ from .......resolver.did_resolver import DIDResolver
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
 from .......tests import mock
-from .......utils.testing import create_test_profile
+from .......utils.testing import create_test_profile, skip_on_jsonld_url_error
 from .......vc.ld_proofs import DocumentLoader, DocumentVerificationResult
 from .......vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
@@ -739,6 +739,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
                 context.exception
             )
 
+    @skip_on_jsonld_url_error
     async def test_store_credential(self):
         cred_issue = V20CredIssue(
             formats=[

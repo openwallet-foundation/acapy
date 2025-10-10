@@ -1,0 +1,49 @@
+1. Setup docker-compose.yml to startup mongo database.
+
+
+version: '3'
+services:
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: securepassword
+    volumes:
+      - mongo-data:/data/db
+    command: mongod --auth
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: "27017"
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: securepassword
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: securepassword
+    depends_on:
+      - mongo  # changed from conditional to simple dependency
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongo-data:
+
+
+
+2. run the test:  (NOTE: -s will show print statements)
+
+ pytest --maxfail=1 --disable-warnings --no-cov -vv -s acapy_agent/database_manager/wql/tests/test_mongo_TagsqlEncoder_ALL_tests.py
