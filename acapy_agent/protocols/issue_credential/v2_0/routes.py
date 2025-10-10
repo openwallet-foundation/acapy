@@ -18,6 +18,7 @@ from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolderError
 from ....anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.revocation.revocation import AnonCredsRevocationError
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
@@ -1585,6 +1586,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     except (
         BaseModelError,
         AnonCredsIssuerError,
+        AnonCredsRevocationError,
         IndyIssuerError,
         LedgerError,
         StorageError,

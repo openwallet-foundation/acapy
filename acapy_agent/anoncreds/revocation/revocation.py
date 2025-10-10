@@ -32,14 +32,17 @@ from ...core.profile import Profile, ProfileSession
 from ...database_manager.db_errors import DBError
 from ...kanon.profile_anon_kanon import KanonAnonCredsProfileSession  # type: ignore
 from ...tails.anoncreds_tails_server import AnonCredsTailsServer
-from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
-from ..issuer import (
+from ..constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
     STATE_FINISHED,
-    AnonCredsIssuer,
 )
+from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
+from ..events import RevListFinishedEvent, RevRegDefFinishedEvent
+from ..issuer import AnonCredsIssuer
 from ..models.credential_definition import CredDef
 from ..models.revocation import (
     RevList,
@@ -54,12 +57,9 @@ from ..util import indy_client_dir
 
 LOGGER = logging.getLogger(__name__)
 
-CATEGORY_REV_LIST = "revocation_list"
-CATEGORY_REV_REG_DEF = "revocation_reg_def"
-CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
-STATE_REVOCATION_POSTED = "posted"
-STATE_REVOCATION_PENDING = "pending"
-REV_REG_DEF_STATE_ACTIVE = "active"
+REVOCATION_REGISTRY_CREATION_TIMEOUT = float(
+    os.getenv("REVOCATION_REGISTRY_CREATION_TIMEOUT", "60.0")
+)
 
 
 class AnonCredsRevocationError(BaseError):
@@ -388,6 +388,73 @@ class AnonCredsRevocation:
                 tags=tags,
             )
             await txn.commit()
+
+    async def wait_for_active_revocation_registry(self, cred_def_id: str) -> None:
+        """Wait for revocation registry setup to complete.
+
+        Polls for the creation of revocation registry definitions until we have
+        the 1 active registry or timeout occurs.
+
+        Args:
+            cred_def_id: The credential definition ID
+
+        Raises:
+            TimeoutError: If timeout occurs before completion
+
+        """
+        LOGGER.debug(
+            "Waiting for revocation setup completion for cred_def_id: %s", cred_def_id
+        )
+
+        expected_count = 1  # Active registry
+        poll_interval = 0.5  # Poll every 500ms
+        max_iterations = int(REVOCATION_REGISTRY_CREATION_TIMEOUT / poll_interval)
+        registries = []
+
+        for _iteration in range(max_iterations):
+            try:
+                # Check for finished revocation registry definitions
+                async with self.profile.session() as session:
+                    registries = await session.handle.fetch_all(
+                        CATEGORY_REV_REG_DEF,
+                        {"cred_def_id": cred_def_id, "active": "true"},
+                    )
+
+                current_count = len(registries)
+                LOGGER.debug(
+                    "Revocation setup progress for %s: %d/%d registries active",
+                    cred_def_id,
+                    current_count,
+                    expected_count,
+                )
+
+                if current_count >= expected_count:
+                    LOGGER.info(
+                        "Revocation setup completed for cred_def_id: %s "
+                        "(%d registries active)",
+                        cred_def_id,
+                        current_count,
+                    )
+                    return
+
+            except Exception as e:
+                LOGGER.warning(
+                    "Error checking revocation setup progress for %s: %s", cred_def_id, e
+                )
+                # Continue polling despite errors - they might be transient
+
+            await asyncio.sleep(poll_interval)  # Wait before next poll
+
+        # Timeout occurred
+        current_count = len(registries)
+
+        raise TimeoutError(
+            "Timeout waiting for revocation setup completion for credential definition "
+            f"{cred_def_id}. Expected {expected_count} revocation registries, but "
+            f"{current_count} were active within {REVOCATION_REGISTRY_CREATION_TIMEOUT} "
+            "seconds. Note: Revocation registry creation may still be in progress in the "
+            "background. You can check status using the revocation registry endpoints."
+        )
 
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
@@ -1151,7 +1218,14 @@ class AnonCredsRevocation:
 
             rev_reg_def_result = None
             if revocable:
-                rev_reg_def_result = await self.get_or_create_active_registry(cred_def_id)
+                try:
+                    rev_reg_def_result = await self.get_or_create_active_registry(
+                        cred_def_id
+                    )
+                except AnonCredsRevocationError:
+                    # No active registry, try again
+                    continue
+
                 if (
                     rev_reg_def_result.revocation_registry_definition_state.state
                     != STATE_FINISHED

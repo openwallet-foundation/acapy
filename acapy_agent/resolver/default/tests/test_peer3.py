@@ -5,7 +5,7 @@ import pytest_asyncio
 from did_peer_2 import peer2to3
 
 from ....connections.models.conn_record import ConnRecord
-from ....core.event_bus import EventBus
+from ....core.event_bus import EventBus, MockEventBus
 from ....core.profile import Profile
 from ....utils.testing import create_test_profile
 from .. import peer3 as test_module
@@ -18,12 +18,12 @@ TEST_DP3 = peer2to3(TEST_DP2)
 
 
 @pytest.fixture
-def event_bus():
-    yield EventBus()
+def event_bus() -> MockEventBus:
+    return MockEventBus()
 
 
 @pytest_asyncio.fixture
-async def profile(event_bus: EventBus):
+async def profile(event_bus: MockEventBus):
     """Profile fixture."""
     profile = await create_test_profile()
     profile.context.injector.bind_instance(EventBus, event_bus)
@@ -31,7 +31,7 @@ async def profile(event_bus: EventBus):
 
 
 @pytest_asyncio.fixture
-async def resolver(profile):
+async def resolver(profile: Profile):
     """Resolver fixture."""
     instance = PeerDID3Resolver()
     await instance.setup(profile.context)
@@ -71,11 +71,12 @@ async def test_resolve_x_no_2(profile: Profile, resolver: PeerDID3Resolver):
 
 @pytest.mark.asyncio
 async def test_record_removal(
+    event_bus: MockEventBus,
     profile: Profile,
     resolver: PeerDID3Resolver,
     peer2_resolver: PeerDID2Resolver,
 ):
-    """Test resolver setup."""
+    """Test that record removal works correctly."""
     await peer2_resolver.resolve(profile, TEST_DP2)
     assert await resolver.resolve(profile, TEST_DP3)
     record = ConnRecord(
@@ -86,6 +87,8 @@ async def test_record_removal(
     record.state = ConnRecord.STATE_DELETED
     async with profile.session() as session:
         await record.emit_event(session, record.serialize())
+
+    await event_bus.task_queue.wait_for_completion()
 
     with pytest.raises(test_module.DIDNotFound):
         await resolver.resolve(profile, TEST_DP3)
