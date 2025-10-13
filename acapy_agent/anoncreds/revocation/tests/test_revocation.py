@@ -21,6 +21,11 @@ from ....core.event_bus import Event, EventBus, MockEventBus
 from ....tails.anoncreds_tails_server import AnonCredsTailsServer
 from ....tests import mock
 from ....utils.testing import create_test_profile
+from ...events import (
+    RevListCreateResponseEvent,
+    RevRegDefCreateResponseEvent,
+    RevRegFullHandlingResponseEvent,
+)
 from ...issuer import AnonCredsIssuer
 from ...models.credential_definition import CredDef
 from ...models.revocation import (
@@ -134,24 +139,31 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     async def test_create_and_register_revocation_registry_definition_fails_to_get_cred_def(
         self,
     ):
-        # AnonCreds error
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.create_and_register_revocation_registry_definition(
-                issuer_id="test-issuer-id",
-                cred_def_id="test-cred-def-id",
-                registry_type="test-registry-type",
-                tag="test-tag",
-                max_cred_num=100,
-            )
-        # fetch returns None
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.create_and_register_revocation_registry_definition(
-                issuer_id="test-issuer-id",
-                cred_def_id="test-cred-def-id",
-                registry_type="test-registry-type",
-                tag="test-tag",
-                max_cred_num=100,
-            )
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        # AnonCreds error - should emit failure event instead of raising exception
+        mock_event_bus.events.clear()
+        result = await self.revocation.create_and_register_revocation_registry_definition(
+            issuer_id="test-issuer-id",
+            cred_def_id="test-cred-def-id",
+            registry_type="test-registry-type",
+            tag="test-tag",
+            max_cred_num=100,
+        )
+
+        # Verify method returns None on failure
+        self.assertIsNone(result)
+
+        # Verify failure event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegDefCreateResponseEvent)
+        self.assertIsNotNone(event.payload.failure)
+        self.assertIn(
+            "Error retrieving credential definition",
+            event.payload.failure.error_info.error_msg,
+        )
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(
@@ -220,6 +232,11 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         mock_handle.fetch = mock.CoroutineMock(
             return_value=MockEntry(raw_value=cred_def.to_json_buffer())
         )
+        mock_handle.insert = mock.CoroutineMock()
+
+        self.revocation.upload_tails_file = mock.CoroutineMock(
+            return_value=(True, "https://tails-server.com")
+        )
 
         result = await self.revocation.create_and_register_revocation_registry_definition(
             issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
@@ -231,6 +248,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
         assert result is not None
         assert mock_handle.fetch.call_count == 1
+        assert mock_handle.insert.call_count == 1
         assert mock_tails_uri.call_count == 1
         assert mock_notify.call_count == 1
 
@@ -242,108 +260,6 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             tag="tag",
             max_cred_num=100,
         )
-
-        # register registry response missing rev_reg_def_id and job_id
-        self.profile.inject = mock.Mock(
-            return_value=mock.MagicMock(
-                register_revocation_registry_definition=mock.CoroutineMock(
-                    side_effect=[
-                        RevRegDefResult(
-                            job_id=None,
-                            revocation_registry_definition_state=RevRegDefState(
-                                state=RevRegDefState.STATE_FINISHED,
-                                revocation_registry_definition_id="active-reg-reg",
-                                revocation_registry_definition=RevRegDef(
-                                    tag="tag",
-                                    cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                                    value=RevRegDefValue(
-                                        max_cred_num=100,
-                                        public_keys={
-                                            "accum_key": {"z": "1 0BB...386"},
-                                        },
-                                        tails_hash="58NNWYnVxVFzAfUztwGSNBL4551XNq6nXk56pCiKJxxt",
-                                        tails_location="http://tails-server.com",
-                                    ),
-                                    issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
-                                    type="CL_ACCUM",
-                                ),
-                            ),
-                            registration_metadata={},
-                            revocation_registry_definition_metadata={},
-                        ),
-                        RevRegDefResult(
-                            job_id="test-job-id",
-                            revocation_registry_definition_state=RevRegDefState(
-                                state=RevRegDefState.STATE_FINISHED,
-                                revocation_registry_definition_id=None,
-                                revocation_registry_definition=RevRegDef(
-                                    tag="tag",
-                                    cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                                    value=RevRegDefValue(
-                                        max_cred_num=100,
-                                        public_keys={
-                                            "accum_key": {"z": "1 0BB...386"},
-                                        },
-                                        tails_hash="58NNWYnVxVFzAfUztwGSNBL4551XNq6nXk56pCiKJxxt",
-                                        tails_location="http://tails-server.com",
-                                    ),
-                                    issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
-                                    type="CL_ACCUM",
-                                ),
-                            ),
-                            registration_metadata={},
-                            revocation_registry_definition_metadata={},
-                        ),
-                        RevRegDefResult(
-                            job_id=None,
-                            revocation_registry_definition_state=RevRegDefState(
-                                state=RevRegDefState.STATE_FINISHED,
-                                revocation_registry_definition_id=None,
-                                revocation_registry_definition=RevRegDef(
-                                    tag="tag",
-                                    cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                                    value=RevRegDefValue(
-                                        max_cred_num=100,
-                                        public_keys={
-                                            "accum_key": {"z": "1 0BB...386"},
-                                        },
-                                        tails_hash="58NNWYnVxVFzAfUztwGSNBL4551XNq6nXk56pCiKJxxt",
-                                        tails_location="http://tails-server.com",
-                                    ),
-                                    issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
-                                    type="CL_ACCUM",
-                                ),
-                            ),
-                            registration_metadata={},
-                            revocation_registry_definition_metadata={},
-                        ),
-                    ]
-                )
-            )
-        )
-
-        await self.revocation.create_and_register_revocation_registry_definition(
-            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
-            cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-            registry_type="CL_ACCUM",
-            tag="tag",
-            max_cred_num=100,
-        )
-        await self.revocation.create_and_register_revocation_registry_definition(
-            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
-            cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-            registry_type="CL_ACCUM",
-            tag="tag",
-            max_cred_num=100,
-        )
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.create_and_register_revocation_registry_definition(
-                issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
-                cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                registry_type="CL_ACCUM",
-                tag="tag",
-                max_cred_num=100,
-            )
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(RevRegDef, "from_json", return_value="rev-reg-def")
@@ -464,6 +380,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_revocation_list_errors(self, mock_handle):
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
         class MockEntry:
             value_json = {
                 "credDefId": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
@@ -483,12 +402,32 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 AskarError(code=AskarErrorCode.UNEXPECTED, message="test"),
             ]
         )
-        # askar error
-        for _ in range(3):
-            with self.assertRaises(test_module.AnonCredsRevocationError):
-                await self.revocation.create_and_register_revocation_list(
-                    rev_reg_def_id="test-rev-reg-def-id",
-                )
+
+        # Test each error scenario
+        test_cases = [
+            "failed to get cred def",
+            "failed to get rev reg def",
+            "failed to get cred def again",
+        ]
+
+        for _test_case in test_cases:
+            # Clear previous events
+            mock_event_bus.events.clear()
+
+            # Call the method - should not raise exception, but emit failure event
+            await self.revocation.create_and_register_revocation_list(
+                rev_reg_def_id="test-rev-reg-def-id",
+            )
+
+            # Verify failure event was emitted
+            self.assertEqual(len(mock_event_bus.events), 1)
+            _, event = mock_event_bus.events[0]
+            self.assertIsInstance(event, RevListCreateResponseEvent)
+            self.assertEqual(event.payload.rev_reg_def_id, "test-rev-reg-def-id")
+            self.assertIsNotNone(event.payload.failure)
+            self.assertIn(
+                "Error retrieving records", event.payload.failure.error_info.error_msg
+            )
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(RevRegDef, "deserialize")
@@ -555,7 +494,6 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
 
         assert mock_handle.fetch.called
-        assert mock_handle.insert.called
         assert mock_list_create.called
         assert mock_deserialize_cred_def.called
         assert mock_deserialize_rev_reg.called
@@ -879,16 +817,14 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(
-        test_module.AnonCredsRevocation, "set_active_registry", return_value=None
-    )
-    @mock.patch.object(
         test_module.AnonCredsRevocation,
-        "create_and_register_revocation_registry_definition",
-        return_value=MockRevRegDefEntry(),
+        "emit_set_active_registry_event",
+        return_value=None,
     )
-    async def test_handle_full_registry(
-        self, mock_create_and_register, mock_set_active_registry, mock_handle
-    ):
+    async def test_handle_full_registry(self, mock_set_active_registry, mock_handle):
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
         mock_handle.fetch = mock.CoroutineMock(return_value=MockRevRegDefEntry())
         mock_handle.fetch_all = mock.CoroutineMock(
             return_value=[
@@ -898,17 +834,35 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
         mock_handle.replace = mock.CoroutineMock(return_value=None)
 
-        await self.revocation.handle_full_registry("test-rev-reg-def-id")
-        assert mock_create_and_register.called
+        await self.revocation.handle_full_registry_event(
+            "test-rev-reg-def-id", "test-cred-def-id"
+        )
         assert mock_set_active_registry.called
         assert mock_handle.fetch.call_count == 2
         assert mock_handle.fetch_all.called
         assert mock_handle.replace.called
 
-        # no backup registry available
+        # no backup registry available - should emit failure event instead of raising exception
         mock_handle.fetch_all = mock.CoroutineMock(return_value=[])
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.handle_full_registry("test-rev-reg-def-id")
+
+        # Clear previous events
+        mock_event_bus.events.clear()
+
+        # Call the method - should not raise exception, but emit failure event
+        await self.revocation.handle_full_registry_event(
+            "test-rev-reg-def-id", "test-cred-def-id"
+        )
+
+        # Verify failure event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegFullHandlingResponseEvent)
+        self.assertEqual(event.payload.old_rev_reg_def_id, "test-rev-reg-def-id")
+        self.assertEqual(event.payload.cred_def_id, "test-cred-def-id")
+        self.assertIsNotNone(event.payload.failure)
+        self.assertIn(
+            "No backup registry available", event.payload.failure.error_info.error_msg
+        )
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_decommission_registry(self, mock_handle):
@@ -931,7 +885,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             ]
         )
         # active registry
-        self.revocation.get_active_registry = mock.CoroutineMock(
+        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
             return_value=RevRegDefResult(
                 job_id="test-job-id",
                 revocation_registry_definition_state=RevRegDefState(
@@ -976,7 +930,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
-    async def test_get_active_registry(self, mock_handle):
+    async def test_get_or_create_active_registry(self, mock_handle):
         mock_handle.fetch_all = mock.CoroutineMock(
             side_effect=[
                 [MockRevRegDefEntry("reg-1"), MockRevRegDefEntry("reg-0")],
@@ -985,7 +939,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         )
 
         # valid
-        result = await self.revocation.get_active_registry("test-rev-reg-def-id")
+        result = await self.revocation.get_or_create_active_registry(
+            "test-rev-reg-def-id"
+        )
         assert isinstance(result, RevRegDefResult)
         assert result.revocation_registry_definition_state.state == (
             RevRegDefState.STATE_FINISHED
@@ -997,7 +953,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
         # no active registry
         with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.get_active_registry("test-rev-reg-def-id")
+            await self.revocation.get_or_create_active_registry("test-rev-reg-def-id")
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=mock.MagicMock())
@@ -1164,7 +1120,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 )
             )
         )
-        self.revocation.get_active_registry = mock.CoroutineMock(
+        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
             return_value=RevRegDefResult(
                 job_id="test-job-id",
                 revocation_registry_definition_state=RevRegDefState(
@@ -1511,7 +1467,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 )
             )
         )
-        self.revocation.get_active_registry = mock.CoroutineMock(
+        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
             return_value=RevRegDefResult(
                 job_id="test-job-id",
                 revocation_registry_definition_state=RevRegDefState(
