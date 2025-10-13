@@ -210,7 +210,7 @@ class AnonCredsRevocation:
         tag: str,
         max_cred_num: int,
         options: Optional[dict] = None,
-    ) -> RevRegDefResult:
+    ) -> RevRegDefResult | None:
         """Create a new revocation registry and register on network.
 
         This method picks up the RevRegDefCreateRequestedEvent, performing the registry
@@ -223,6 +223,9 @@ class AnonCredsRevocation:
             tag (str): revocation registry tag
             max_cred_num (int): maximum number of credentials supported
             options (dict): revocation registry options
+
+        Returns:
+            RevRegDefResult: revocation registry definition result, or None if failed
 
         """
         options = options or {}
@@ -1471,7 +1474,7 @@ class AnonCredsRevocation:
 
     async def decommission_registry(self, cred_def_id: str) -> list:
         """Decommission post-init registries and start the next registry generation."""
-        active_reg = await self.get_active_registry(cred_def_id)
+        active_reg = await self.get_or_create_active_registry(cred_def_id)
 
         # create new one and set active
         LOGGER.debug("Creating new registry to replace active one")
@@ -1535,7 +1538,7 @@ class AnonCredsRevocation:
         )
         return recs
 
-    async def get_active_registry(self, cred_def_id: str) -> RevRegDefResult:
+    async def get_or_create_active_registry(self, cred_def_id: str) -> RevRegDefResult:
         """Get the active revocation registry for a given cred def id."""
         async with self.profile.session() as session:
             rev_reg_defs = await session.handle.fetch_all(
