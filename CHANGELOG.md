@@ -1,4 +1,56 @@
-# Aries Cloud Agent Python Changelog
+# ACA-Py Changelog
+
+## 1.4.0rc0
+
+### October 14, 2025
+
+ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of **Kanon Storage**, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer. Askar now functions purely as a **Key Management Service (KMS)**, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.
+
+Kanon Storage is **optional and fully backward compatible**. Developed by the team at **VeriDID** (https://verid.id), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably [dave-promulgare](https://github.com/dave-promulgare) and [vinaysingh8866](https://github.com/vinaysingh8866)) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility.
+
+Documentation for Kanon Storage for this 1.4.0rc0 release is limited to the [Kanon Storage PR 3850](https://github.com/openwallet-foundation/acapy/pull/3850). Additional documentation will be available before we finalize the 1.4.0 release.
+
+Alongside Kanon, this release includes significant refactoring in the **AnonCreds revocation** subsystem, modernization of **event handling** via an updated EventBus, and improvements to **credential signing** for SD-JWT to ensure correct verification-method key usage. Developers will also notice lint rule revisions, post-Kanon cleanup, and smaller enhancements to demos and test infrastructure such as the `--debug-webhooks` flag and interop test fixes. Together, these updates improve maintainability, observability, and readiness for large-scale production use.
+
+### 1.4.0 Deprecation Notices
+
+In an upcoming ACA-Py release, we will be dropping from the core ACA-Py repository the [AIP 1.0] [RFC 0036 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
+
+[ACA-Py Plugins]: https://plugins.aca-py.org
+[RFC 0036 Issue Credentials v1.0]: https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/
+[RFC 0037 Present Proof v1.0]: https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/
+[AIP 1.0]: https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10
+[AIP 2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/
+[RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
+[RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
+
+### ⚠️ Breaking Changes
+
+This release introduces **no breaking changes** for existing ACA-Py deployments. Existing instances can continue to use Askar for both key and data storage by default.
+
+Implementers are encouraged to evaluate Kanon as the preferred approach for new deployments or planned upgrades. Kanon provides better scalability, performance, and integration with database-native capabilities such as indexing, analytics, and external management tools — while maintaining secure handling of cryptographic keys within Askar.
+
+### Categorized PR List
+
+- **Storage and Architecture**
+  - :art: Post-Kanon cleanup [#3901](https://github.com/openwallet-foundation/acapy/pull/3901) [ff137](https://github.com/ff137)
+  - Kanon Storage [#3850](https://github.com/openwallet-foundation/acapy/pull/3850) [dave-promulgare](https://github.com/dave-promulgare)
+- **Code Quality and Maintenance**
+  - :recycle: :boom: Refactor EventBus notify method [#3690](https://github.com/openwallet-foundation/acapy/pull/3690) [ff137](https://github.com/ff137)
+  - :wrench: :art: Revise lint rules [#3900](https://github.com/openwallet-foundation/acapy/pull/3900) [ff137](https://github.com/ff137)
+- **AnonCreds and Credential Handling**
+  - (fix) Properly use VM key when signing [SD-]JWT [#3892](https://github.com/openwallet-foundation/acapy/pull/3892) [gmulhearn](https://github.com/gmulhearn)
+  - :recycle: Refactor and modularize anoncreds revocation package [#3861](https://github.com/openwallet-foundation/acapy/pull/3861) [ff137](https://github.com/ff137)
+- **Testing and Interoperability**
+  - fix: Repair Interop tests url [#3881](https://github.com/openwallet-foundation/acapy/pull/3881) [jamshale](https://github.com/jamshale)
+- **Developer Tools and Demos**
+  - Add --debug-webhooks config to demo agents [#3865](https://github.com/openwallet-foundation/acapy/pull/3865) [jamshale](https://github.com/jamshale)
+- **Deployment and Documentation**
+  - Chore(chart): delete chart files and add chart relocation notice [#3883](https://github.com/openwallet-foundation/acapy/pull/3883) [i5okie](https://github.com/i5okie)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-10-14+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.4.0rc0 [\#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [swcurran](https://github.com/swcurran)
 
 ## 1.3.2
 

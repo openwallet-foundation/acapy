@@ -72,3 +72,11 @@ acapy\_agent.multitenant.single\_wallet\_askar\_manager module
    :members:
    :undoc-members:
    :show-inheritance:
+
+acapy\_agent.multitenant.single\_wallet\_kanon\_manager module
+--------------------------------------------------------------
+
+.. automodule:: acapy_agent.multitenant.single_wallet_kanon_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:

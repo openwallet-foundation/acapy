@@ -14,6 +14,8 @@ Subpackages
 
    acapy_agent.anoncreds.default
    acapy_agent.anoncreds.models
+   acapy_agent.anoncreds.revocation
+   acapy_agent.anoncreds.routes
 
 Submodules
 ----------
@@ -22,6 +24,14 @@ acapy\_agent.anoncreds.base module
 ----------------------------------
 
 .. automodule:: acapy_agent.anoncreds.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+acapy\_agent.anoncreds.constants module
+---------------------------------------
+
+.. automodule:: acapy_agent.anoncreds.constants
    :members:
    :undoc-members:
    :show-inheritance:
@@ -62,30 +72,6 @@ acapy\_agent.anoncreds.registry module
 --------------------------------------
 
 .. automodule:: acapy_agent.anoncreds.registry
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-acapy\_agent.anoncreds.revocation module
-----------------------------------------
-
-.. automodule:: acapy_agent.anoncreds.revocation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-acapy\_agent.anoncreds.revocation\_setup module
------------------------------------------------
-
-.. automodule:: acapy_agent.anoncreds.revocation_setup
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-acapy\_agent.anoncreds.routes module
-------------------------------------
-
-.. automodule:: acapy_agent.anoncreds.routes
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.3.2",
+    "version" : "v1.4.0",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -10,6 +10,13 @@
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://hyperledger.github.io/anoncreds-spec"
+    }
+  }, {
+    "name" : "AnonCreds - Revocation",
+    "description" : "AnonCreds revocation registry management",
+    "externalDocs" : {
+      "description" : "Overview",
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
     }
   }, {
     "name" : "AnonCreds - Revocation",
@@ -454,6 +461,7 @@
           "type" : "string",
           "pattern" : "^(.+$)"
         } ],
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "",
@@ -818,6 +826,27 @@
             }
           }
         }
+      },
+      "put" : {
+        "tags" : [ "AnonCreds - Revocation" ],
+        "summary" : "Upload local tails file to server",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "rev_reg_id",
+          "in" : "path",
+          "description" : "Revocation Registry identifier",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "^(.+$)"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/AnonCredsRevocationModuleResponse"
+            }
+          }
+        }
       }
     },
     "/anoncreds/revocation/revoke" : {
@@ -925,7 +954,7 @@
     "/anoncreds/wallet/upgrade" : {
       "post" : {
         "tags" : [ "AnonCreds - Wallet Upgrade" ],
-        "summary" : "Upgrade the wallet from askar to askar-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
+        "summary" : "Upgrade the wallet from askar to askar-anoncreds OR kanon to kanon-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "wallet_name",
@@ -6486,7 +6515,8 @@
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "AnonCredsPresentationReqPredSpec" : {
       "type" : "object",
@@ -6540,7 +6570,8 @@
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "AnonCredsPresentationRequest" : {
       "type" : "object",
@@ -6599,7 +6630,8 @@
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "AnonCredsRequestedCredsRequestedAttr" : {
       "type" : "object",
@@ -7004,7 +7036,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "ConnectionList" : {
       "type" : "object",
@@ -7284,7 +7317,7 @@
           "type" : "string",
           "example" : "askar",
           "description" : "Type of the wallet to create. Must be same as base wallet.",
-          "enum" : [ "askar", "askar-anoncreds", "kanon-anoncreds"]
+          "enum" : [ "askar", "askar-anoncreds", "kanon-anoncreds" ]
         },
         "wallet_webhook_urls" : {
           "type" : "array",
@@ -7441,6 +7474,11 @@
         },
         "options" : {
           "$ref" : "#/definitions/CredDefPostOptions"
+        },
+        "wait_for_revocation_setup" : {
+          "type" : "boolean",
+          "description" : "Wait for revocation registry setup to complete before returning",
+          "default" : true
         }
       }
     },
@@ -7866,6 +7904,11 @@
           "type" : "string",
           "example" : "default",
           "description" : "Credential definition identifier tag"
+        },
+        "wait_for_revocation_setup" : {
+          "type" : "boolean",
+          "description" : "Wait for revocation registry setup to complete before returning",
+          "default" : true
         }
       }
     },
@@ -8504,7 +8547,8 @@
         "verified" : {
           "type" : "boolean"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "EndorserInfo" : {
       "type" : "object",
@@ -8631,7 +8675,8 @@
           "example" : "0",
           "pattern" : "^[0-9]*$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "GetCredDefResult" : {
       "type" : "object",
@@ -9390,7 +9435,8 @@
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "IndyProofReqPredSpec" : {
       "type" : "object",
@@ -9444,7 +9490,8 @@
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "IndyProofRequest" : {
       "type" : "object",
@@ -9503,7 +9550,8 @@
           "minimum" : 0,
           "maximum" : 18446744073709551615
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "IndyProofRequestedProof" : {
       "type" : "object",
@@ -10025,7 +10073,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "InvitationRecordResponse" : {
       "type" : "object"
@@ -10104,7 +10153,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "IssuerCredRevRecordSchemaAnonCreds" : {
       "type" : "object",
@@ -10152,7 +10202,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "IssuerRevRegRecord" : {
       "type" : "object",
@@ -10245,7 +10296,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "JWSCreate" : {
       "type" : "object",
@@ -10346,7 +10398,8 @@
         "paginate" : {
           "$ref" : "#/definitions/KeylistQuery_paginate"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "KeylistQueryFilterRequest" : {
       "type" : "object",
@@ -10371,7 +10424,8 @@
           "example" : 0,
           "description" : "Offset value for query"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "KeylistUpdate" : {
       "type" : "object",
@@ -10393,7 +10447,8 @@
             "$ref" : "#/definitions/KeylistUpdateRule"
           }
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "KeylistUpdateRequest" : {
       "type" : "object",
@@ -10422,7 +10477,8 @@
           "description" : "Key to remove or add",
           "pattern" : "^did:key:z[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "LDProofVCDetail" : {
       "type" : "object",
@@ -10625,7 +10681,8 @@
           "example" : "https://didcomm.org/my-family/1.0/my-message-type",
           "description" : "Message type"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "MediationGrant" : {
       "type" : "object",
@@ -10652,7 +10709,8 @@
             "description" : "Keys to use for forward message packaging"
           }
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "MediationIdMatchInfo" : {
       "type" : "object",
@@ -10962,7 +11020,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "PerformRequest" : {
       "type" : "object",
@@ -11149,7 +11208,8 @@
         "verified" : {
           "type" : "boolean"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "ProfileSettings" : {
       "type" : "object",
@@ -11182,7 +11242,8 @@
         "verified" : {
           "type" : "boolean"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "ProtocolDescriptor" : {
       "type" : "object",
@@ -11201,7 +11262,8 @@
           },
           "x-nullable" : true
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "ProvePresentationRequest" : {
       "type" : "object",
@@ -11307,7 +11369,8 @@
         "valid" : {
           "type" : "boolean"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "Queries" : {
       "type" : "object",
@@ -12099,7 +12162,8 @@
         "schema_state" : {
           "$ref" : "#/definitions/SchemaState"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "SchemaSendRequest" : {
       "type" : "object",
@@ -12157,7 +12221,8 @@
           "type" : "string",
           "enum" : [ "finished", "failed", "action", "wait" ]
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "SchemasCreatedResult" : {
       "type" : "object",
@@ -12287,7 +12352,8 @@
         "verificationMethod" : {
           "type" : "string"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "SignedDoc" : {
       "type" : "object",
@@ -12584,7 +12650,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "TxnOrCredentialDefinitionSendResult" : {
       "type" : "object",
@@ -12965,7 +13032,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V10CredentialExchangeAutoRemoveRequest" : {
       "type" : "object",
@@ -13236,7 +13304,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V10PresentProofModuleResponse" : {
       "type" : "object"
@@ -13363,7 +13432,8 @@
             "description" : "Proof verification warning or error information"
           }
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V10PresentationExchangeList" : {
       "type" : "object",
@@ -13676,7 +13746,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V20CredExRecordAnonCreds" : {
       "type" : "object",
@@ -13749,7 +13820,8 @@
           "type" : "object",
           "additionalProperties" : { }
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V20CredExRecordDetail" : {
       "type" : "object",
@@ -14423,7 +14495,8 @@
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V20IssueCredSchemaCore" : {
       "type" : "object",
@@ -14615,7 +14688,8 @@
             "description" : "Proof verification warning or error information"
           }
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V20PresExRecordByFormat" : {
       "type" : "object",
@@ -14632,7 +14706,8 @@
           "type" : "object",
           "additionalProperties" : { }
         }
-      }
+      },
+      "additionalProperties" : false
     },
     "V20PresExRecordList" : {
       "type" : "object",
