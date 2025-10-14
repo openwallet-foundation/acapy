@@ -22,8 +22,22 @@ from ....tails.anoncreds_tails_server import AnonCredsTailsServer
 from ....tests import mock
 from ....utils.testing import create_test_profile
 from ...events import (
+    REV_LIST_STORE_REQUESTED_EVENT,
+    REV_REG_ACTIVATION_REQUESTED_EVENT,
+    REV_REG_DEF_CREATE_REQUESTED_EVENT,
+    REV_REG_DEF_STORE_REQUESTED_EVENT,
+    REV_REG_FULL_DETECTED_EVENT,
     RevListCreateResponseEvent,
+    RevListFinishedEvent,
+    RevListStoreRequestedEvent,
+    RevRegActivationRequestedEvent,
+    RevRegActivationResponseEvent,
+    RevRegDefCreateRequestedEvent,
     RevRegDefCreateResponseEvent,
+    RevRegDefFinishedEvent,
+    RevRegDefStoreRequestedEvent,
+    RevRegDefStoreResponseEvent,
+    RevRegFullDetectedEvent,
     RevRegFullHandlingResponseEvent,
 )
 from ...issuer import AnonCredsIssuer
@@ -1524,3 +1538,404 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             "Provided credential values are missing a value "
             "for the schema attribute 'attr1'"
         )
+
+    async def test_emit_create_revocation_registry_definition_event(self):
+        """Test emit_create_revocation_registry_definition_event calls notify with correct event."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        await self.revocation.emit_create_revocation_registry_definition_event(
+            issuer_id="test_issuer_id",
+            cred_def_id="test_cred_def_id",
+            registry_type="CL_ACCUM",
+            tag="test_tag",
+            max_cred_num=100,
+            options={"request_id": "test_request_id"},
+        )
+
+        # Verify event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+
+        # Verify event type and topic
+        self.assertIsInstance(event, RevRegDefCreateRequestedEvent)
+        self.assertEqual(event.event_topic, REV_REG_DEF_CREATE_REQUESTED_EVENT)
+
+        # Verify payload contents
+        payload = event.payload
+        self.assertEqual(payload.issuer_id, "test_issuer_id")
+        self.assertEqual(payload.cred_def_id, "test_cred_def_id")
+        self.assertEqual(payload.registry_type, "CL_ACCUM")
+        self.assertEqual(payload.tag, "test_tag")
+        self.assertEqual(payload.max_cred_num, 100)
+        self.assertEqual(payload.options["request_id"], "test_request_id")
+
+    async def test_emit_store_revocation_registry_definition_event(self):
+        """Test emit_store_revocation_registry_definition_event calls notify with correct event."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        mock_rev_reg_def = mock.MagicMock()
+        mock_rev_reg_def.tag = "test_tag"
+        mock_result = mock.MagicMock()
+        mock_result.rev_reg_def_id = "test_rev_reg_def_id"
+
+        await self.revocation.emit_store_revocation_registry_definition_event(
+            rev_reg_def=mock_rev_reg_def,
+            rev_reg_def_result=mock_result,
+            options={"request_id": "test_request_id"},
+        )
+
+        # Verify event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+
+        # Verify event type and topic
+        self.assertIsInstance(event, RevRegDefStoreRequestedEvent)
+        self.assertEqual(event.event_topic, REV_REG_DEF_STORE_REQUESTED_EVENT)
+
+        # Verify payload contents
+        payload = event.payload
+        self.assertEqual(payload.rev_reg_def, mock_rev_reg_def)
+        self.assertEqual(payload.rev_reg_def_result, mock_result)
+        self.assertEqual(payload.options["request_id"], "test_request_id")
+
+    async def test_emit_store_revocation_list_event(self):
+        """Test emit_store_revocation_list_event calls notify with correct event."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        mock_result = mock.MagicMock()
+
+        await self.revocation.emit_store_revocation_list_event(
+            rev_reg_def_id="test_rev_reg_def_id",
+            result=mock_result,
+            options={"request_id": "test_request_id"},
+        )
+
+        # Verify event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+
+        # Verify event type and topic
+        self.assertIsInstance(event, RevListStoreRequestedEvent)
+        self.assertEqual(event.event_topic, REV_LIST_STORE_REQUESTED_EVENT)
+
+        # Verify payload contents
+        payload = event.payload
+        self.assertEqual(payload.rev_reg_def_id, "test_rev_reg_def_id")
+        self.assertEqual(payload.result, mock_result)
+        self.assertEqual(payload.options["request_id"], "test_request_id")
+
+    async def test_emit_full_registry_event(self):
+        """Test emit_full_registry_event calls notify with correct event."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        await self.revocation.emit_full_registry_event(
+            rev_reg_def_id="test_rev_reg_def_id", cred_def_id="test_cred_def_id"
+        )
+
+        # Verify event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+
+        # Verify event type and topic
+        self.assertIsInstance(event, RevRegFullDetectedEvent)
+        self.assertEqual(event.event_topic, REV_REG_FULL_DETECTED_EVENT)
+
+        # Verify payload contents
+        payload = event.payload
+        self.assertEqual(payload.rev_reg_def_id, "test_rev_reg_def_id")
+        self.assertEqual(payload.cred_def_id, "test_cred_def_id")
+        self.assertIn("request_id", payload.options)
+
+    async def test_emit_set_active_registry_event(self):
+        """Test emit_set_active_registry_event calls notify with correct event."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        await self.revocation.emit_set_active_registry_event(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={"request_id": "test_request_id"},
+        )
+
+        # Verify event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+
+        # Verify event type and topic
+        self.assertIsInstance(event, RevRegActivationRequestedEvent)
+        self.assertEqual(event.event_topic, REV_REG_ACTIVATION_REQUESTED_EVENT)
+
+        # Verify payload contents
+        payload = event.payload
+        self.assertEqual(payload.rev_reg_def_id, "test_rev_reg_def_id")
+        self.assertEqual(payload.options["request_id"], "test_request_id")
+
+    async def test_create_registry_resource_already_exists_no_retry(self):
+        """Test that 'Resource already exists' error sets should_retry=False."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        with mock.patch.object(AskarAnonCredsProfileSession, "handle") as mock_handle:
+            # Mock credential definition fetch to succeed
+            mock_handle.fetch = mock.CoroutineMock(
+                return_value=MockEntry(raw_value=b'{"test": "cred_def"}')
+            )
+
+            # Mock registry creation to raise "Resource already exists" error
+            with mock.patch(
+                "acapy_agent.anoncreds.revocation.revocation.RevocationRegistryDefinition.create"
+            ) as mock_create:
+                mock_create.side_effect = Exception("Resource already exists")
+
+                result = await self.revocation.create_and_register_revocation_registry_definition(
+                    issuer_id="test_issuer_id",
+                    cred_def_id="test_cred_def_id",
+                    registry_type="CL_ACCUM",
+                    tag="test_tag",
+                    max_cred_num=100,
+                    options={},
+                )
+
+                # Should return None on failure
+                self.assertIsNone(result)
+
+                # Verify failure event was emitted
+                self.assertEqual(len(mock_event_bus.events), 1)
+                _, event = mock_event_bus.events[0]
+                self.assertIsInstance(event, RevRegDefCreateResponseEvent)
+                self.assertIsNotNone(event.payload.failure)
+
+                # Verify should_retry is False for "Resource already exists"
+                self.assertFalse(event.payload.failure.error_info.should_retry)
+                self.assertIn(
+                    "Resource already exists", event.payload.failure.error_info.error_msg
+                )
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_handle_store_revocation_registry_definition_request_success(
+        self, mock_handle
+    ):
+        """Test successful handle_store_revocation_registry_definition_request."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        # Mock the store_revocation_registry_definition method
+        self.revocation.store_revocation_registry_definition = mock.AsyncMock()
+
+        # Create mock result
+        mock_result = mock.MagicMock()
+        mock_result.rev_reg_def_id = "test_rev_reg_def_id"
+        mock_result.revocation_registry_definition_state.revocation_registry_definition.tag = "test_tag"
+
+        await self.revocation.handle_store_revocation_registry_definition_request(
+            rev_reg_def_result=mock_result,
+            options={
+                "request_id": "test_request_id",
+                "correlation_id": "test_correlation_id",
+            },
+        )
+
+        # Verify store method was called
+        self.revocation.store_revocation_registry_definition.assert_called_once_with(
+            mock_result,
+            {"request_id": "test_request_id", "correlation_id": "test_correlation_id"},
+        )
+
+        # Verify success event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegDefStoreResponseEvent)
+        self.assertIsNone(event.payload.failure)
+
+    async def test_handle_store_revocation_registry_definition_request_failure(self):
+        """Test failed handle_store_revocation_registry_definition_request."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        # Mock the store_revocation_registry_definition method to raise exception
+        self.revocation.store_revocation_registry_definition = mock.AsyncMock(
+            side_effect=Exception("Storage failed")
+        )
+
+        # Create mock result and rev_reg_def
+        mock_result = mock.MagicMock()
+        mock_result.rev_reg_def_id = "test_rev_reg_def_id"
+        mock_result.revocation_registry_definition_state.revocation_registry_definition.tag = "test_tag"
+        mock_rev_reg_def = mock_result.revocation_registry_definition_state.revocation_registry_definition
+
+        await self.revocation.handle_store_revocation_registry_definition_request(
+            rev_reg_def_result=mock_result, options={"request_id": "test_request_id"}
+        )
+
+        # Verify failure event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegDefStoreResponseEvent)
+        self.assertIsNotNone(event.payload.failure)
+        self.assertIn("Storage failed", event.payload.failure.error_info.error_msg)
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_store_revocation_registry_definition_success(self, mock_handle):
+        """Test successful store_revocation_registry_definition."""
+        # Mock event bus to capture events
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        # Mock successful fetch and transaction operations
+        mock_handle.fetch = mock.CoroutineMock(
+            return_value=MockEntry(value=b'{"private": "key"}')
+        )
+
+        mock_transaction = mock.MagicMock()
+        mock_transaction.handle.insert = mock.CoroutineMock()
+        mock_transaction.handle.remove = mock.CoroutineMock()
+        mock_transaction.commit = mock.CoroutineMock()
+        self.profile.transaction = mock.Mock(
+            return_value=mock.MagicMock(
+                __aenter__=mock.CoroutineMock(return_value=mock_transaction)
+            )
+        )
+
+        # Create mock result
+        mock_result = mock.MagicMock()
+        mock_result.rev_reg_def_id = "test_rev_reg_def_id"
+        mock_result.job_id = "test_job_id"
+        mock_result.revocation_registry_definition_state.state = "finished"
+        mock_result.revocation_registry_definition_state.revocation_registry_definition = rev_reg_def
+
+        await self.revocation.store_revocation_registry_definition(
+            mock_result, options={"request_id": "test_request_id"}
+        )
+
+        # Verify database operations were called
+        mock_transaction.handle.insert.assert_called()
+        mock_transaction.handle.remove.assert_called_once()
+        mock_transaction.commit.assert_called_once()
+
+        # Verify RevRegDefFinishedEvent was emitted for finished state
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegDefFinishedEvent)
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_store_revocation_registry_definition_no_private_key(self, mock_handle):
+        """Test store_revocation_registry_definition when private key not found."""
+        # Mock fetch to return None (no private key found)
+        mock_handle.fetch = mock.CoroutineMock(return_value=None)
+
+        # Create mock result
+        mock_result = mock.MagicMock()
+        mock_result.rev_reg_def_id = "test_rev_reg_def_id"
+        mock_result.job_id = "test_job_id"
+        mock_result.revocation_registry_definition_state.revocation_registry_definition = rev_reg_def
+
+        with self.assertRaises(test_module.AnonCredsRevocationError) as cm:
+            await self.revocation.store_revocation_registry_definition(
+                mock_result, options={"request_id": "test_request_id"}
+            )
+
+        self.assertIn(
+            "Private revocation registry definition not found", str(cm.exception)
+        )
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_store_revocation_registry_list_success(self, mock_handle):
+        """Test successful store_revocation_registry_list."""
+        mock_handle.insert = mock.CoroutineMock()
+
+        # Create mock result with finished state
+        mock_result = mock.MagicMock()
+        mock_result.job_id = "test_job_id"
+        mock_result.rev_reg_def_id = "test_rev_reg_def_id"
+        mock_result.revocation_list_state.state = "finished"
+        mock_result.revocation_list_state.revocation_list = rev_list
+
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        await self.revocation.store_revocation_registry_list(
+            mock_result, options={"request_id": "test_request_id"}
+        )
+
+        # Verify database insert was called
+        mock_handle.insert.assert_called_once()
+
+        # Verify finished event was emitted for finished state
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevListFinishedEvent)
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_store_revocation_registry_list_failure(self, mock_handle):
+        """Test store_revocation_registry_list with database error."""
+
+        # Mock database insert to fail
+        mock_handle.insert = mock.CoroutineMock(
+            side_effect=AskarError(
+                code=AskarErrorCode.UNEXPECTED, message="Database error"
+            )
+        )
+
+        # Create mock result
+        mock_result = mock.MagicMock()
+        mock_result.job_id = "test_job_id"
+        mock_result.revocation_list_state.revocation_list = rev_list
+
+        with self.assertRaises(test_module.AnonCredsRevocationError) as cm:
+            await self.revocation.store_revocation_registry_list(
+                mock_result, options={"request_id": "test_request_id"}
+            )
+
+        self.assertIn("Error storing revocation registry list", str(cm.exception))
+
+    async def test_handle_activate_registry_request_success(self):
+        """Test successful handle_activate_registry_request."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        # Mock successful set_active_registry
+        self.revocation.set_active_registry = mock.AsyncMock()
+
+        await self.revocation.handle_activate_registry_request(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={
+                "request_id": "test_request_id",
+                "correlation_id": "test_correlation_id",
+            },
+        )
+
+        # Verify set_active_registry was called
+        self.revocation.set_active_registry.assert_called_once_with("test_rev_reg_def_id")
+
+        # Verify success event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegActivationResponseEvent)
+        self.assertIsNone(event.payload.failure)
+        self.assertEqual(event.payload.rev_reg_def_id, "test_rev_reg_def_id")
+
+    async def test_handle_activate_registry_request_failure(self):
+        """Test failed handle_activate_registry_request."""
+        mock_event_bus = MockEventBus()
+        self.profile.inject = mock.Mock(return_value=mock_event_bus)
+
+        # Mock set_active_registry to fail
+        self.revocation.set_active_registry = mock.AsyncMock(
+            side_effect=test_module.AnonCredsRevocationError("Activation failed")
+        )
+
+        await self.revocation.handle_activate_registry_request(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={"request_id": "test_request_id", "retry_count": 1},
+        )
+
+        # Verify failure event was emitted
+        self.assertEqual(len(mock_event_bus.events), 1)
+        _, event = mock_event_bus.events[0]
+        self.assertIsInstance(event, RevRegActivationResponseEvent)
+        self.assertIsNotNone(event.payload.failure)
+        self.assertIn("Activation failed", event.payload.failure.error_info.error_msg)
+        self.assertEqual(event.payload.failure.error_info.retry_count, 1)

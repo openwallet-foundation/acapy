@@ -3,15 +3,33 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from ....core.event_bus import MockEventBus
 from ....storage.type import (
+    RECORD_TYPE_REV_LIST_CREATE_EVENT,
+    RECORD_TYPE_REV_LIST_STORE_EVENT,
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
+    RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
 )
 from ....tests import mock
 from ....utils.testing import create_test_profile
 from ...event_storage import EventStorageManager
 from ...events import (
+    INTERVENTION_REQUIRED_EVENT,
     ErrorInfoPayload,
+    InterventionRequiredPayload,
+    RevListCreateRequestedEvent,
+    RevListCreateRequestedPayload,
+    RevListCreateResponseEvent,
+    RevListCreateResponsePayload,
+    RevListFinishedEvent,
+    RevListFinishedPayload,
+    RevListStoreRequestedEvent,
+    RevListStoreRequestedPayload,
+    RevListStoreResponseEvent,
+    RevListStoreResponsePayload,
+    RevRegActivationResponseEvent,
+    RevRegActivationResponsePayload,
     RevRegDefCreateFailurePayload,
     RevRegDefCreateRequestedEvent,
     RevRegDefCreateRequestedPayload,
@@ -19,8 +37,12 @@ from ...events import (
     RevRegDefCreateResponsePayload,
     RevRegDefStoreRequestedEvent,
     RevRegDefStoreRequestedPayload,
+    RevRegDefStoreResponseEvent,
+    RevRegDefStoreResponsePayload,
     RevRegFullDetectedEvent,
     RevRegFullDetectedPayload,
+    RevRegFullHandlingResponseEvent,
+    RevRegFullHandlingResponsePayload,
 )
 from .. import revocation_setup as test_module
 from ..revocation import AnonCredsRevocation
@@ -35,6 +57,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
                 "tails_server_base_url": "http://tails-server.com",
             }
         )
+        self.profile.inject = mock.Mock(return_value=MockEventBus())
         self.revocation_setup = test_module.DefaultRevocationSetup()
 
     # Tests for new helper methods
@@ -356,3 +379,440 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
         assert "correlation_id" not in cleaned_options
         assert cleaned_options["request_id"] == "test_request_id"
         assert cleaned_options["other_option"] == "value"
+
+    # Tests for on_registry_store_response
+    async def test_on_registry_store_response_success(self):
+        """Test on_registry_store_response handles success correctly."""
+        rev_reg_def = MagicMock()
+        rev_reg_def.cred_def_id = "test_cred_def_id"
+        rev_reg_def.issuer_id = "test_issuer_id"
+        rev_reg_def.type = "CL_ACCUM"
+        rev_reg_def.value.max_cred_num = 100
+
+        rev_reg_def_result = MagicMock()
+        rev_reg_def_result.revocation_registry_definition_state.state = "finished"
+
+        payload = RevRegDefStoreResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            rev_reg_def=rev_reg_def,
+            rev_reg_def_result=rev_reg_def_result,
+            tag="0",  # First registry tag
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=None,
+        )
+        event = RevRegDefStoreResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_success"
+        ) as mock_success:
+            with patch.object(
+                AnonCredsRevocation, "emit_create_and_register_revocation_list_event"
+            ) as mock_emit_rev_list:
+                with patch.object(
+                    AnonCredsRevocation,
+                    "emit_create_revocation_registry_definition_event",
+                ) as mock_emit_backup:
+                    with patch.object(
+                        AnonCredsRevocation, "_generate_backup_registry_tag"
+                    ) as mock_gen_tag:
+                        mock_gen_tag.return_value = "1"
+
+                        await self.revocation_setup.on_registry_store_response(
+                            self.profile, event
+                        )
+
+                        mock_success.assert_called_once()
+                        mock_emit_rev_list.assert_called_once()
+                        mock_emit_backup.assert_called_once()  # First registry triggers backup
+
+    async def test_on_registry_store_response_failure(self):
+        """Test on_registry_store_response handles failure correctly."""
+        failure = MagicMock()
+        failure.error_info = ErrorInfoPayload(
+            error_msg="Storage failed", should_retry=True, retry_count=1
+        )
+
+        payload = RevRegDefStoreResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            rev_reg_def=MagicMock(),
+            rev_reg_def_result=MagicMock(),
+            tag="0",
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=failure,
+        )
+        event = RevRegDefStoreResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_failure"
+        ) as mock_failure:
+            mock_failure.return_value = True  # Retry was attempted
+
+            await self.revocation_setup.on_registry_store_response(self.profile, event)
+
+            mock_failure.assert_called_once()
+            args, kwargs = mock_failure.call_args
+            assert kwargs["failure_type"] == "registry_store"
+
+    # Tests for rev list methods
+    @patch.object(AnonCredsRevocation, "create_and_register_revocation_list")
+    async def test_on_rev_list_create_requested(self, mock_create_list):
+        """Test on_rev_list_create_requested uses correlation helper."""
+        payload = RevListCreateRequestedPayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={"request_id": "test_request_id"},
+        )
+        event = RevListCreateRequestedEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_setup_request_correlation"
+        ) as mock_setup:
+            mock_setup.return_value = (
+                "test_correlation_id",
+                {"correlation_id": "test_correlation_id"},
+            )
+
+            await self.revocation_setup.on_rev_list_create_requested(self.profile, event)
+
+            mock_setup.assert_called_once_with(
+                self.profile, payload, RECORD_TYPE_REV_LIST_CREATE_EVENT
+            )
+            mock_create_list.assert_called_once()
+
+    async def test_on_rev_list_create_response_success(self):
+        """Test on_rev_list_create_response handles success correctly."""
+        payload = RevListCreateResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            rev_list_result=MagicMock(),
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=None,
+        )
+        event = RevListCreateResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_success"
+        ) as mock_success:
+            with patch.object(
+                AnonCredsRevocation, "emit_store_revocation_list_event"
+            ) as mock_emit:
+                await self.revocation_setup.on_rev_list_create_response(
+                    self.profile, event
+                )
+
+                mock_success.assert_called_once()
+                mock_emit.assert_called_once()
+
+    async def test_on_rev_list_create_response_failure(self):
+        """Test on_rev_list_create_response handles failure correctly."""
+        failure = MagicMock()
+        failure.error_info = ErrorInfoPayload(
+            error_msg="List creation failed", should_retry=True, retry_count=1
+        )
+
+        payload = RevListCreateResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            rev_list_result=None,
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=failure,
+        )
+        event = RevListCreateResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_failure"
+        ) as mock_failure:
+            mock_failure.return_value = True  # Retry was attempted
+
+            await self.revocation_setup.on_rev_list_create_response(self.profile, event)
+
+            mock_failure.assert_called_once()
+            args, kwargs = mock_failure.call_args
+            assert kwargs["failure_type"] == "rev_list_create"
+
+    async def test_on_rev_list_finished(self):
+        """Test on_rev_list_finished notifies revocation published event."""
+        payload = RevListFinishedPayload(
+            rev_reg_id="test_rev_reg_id",
+            revoked=[1, 2, 3],
+            options={"request_id": "test_request_id"},
+        )
+        event = RevListFinishedEvent(payload)
+
+        with patch(
+            "acapy_agent.anoncreds.revocation.revocation_setup.notify_revocation_published_event"
+        ) as mock_notify:
+            await self.revocation_setup.on_rev_list_finished(self.profile, event)
+
+            mock_notify.assert_called_once_with(
+                self.profile, "test_rev_reg_id", [1, 2, 3]
+            )
+
+    @patch.object(AnonCredsRevocation, "handle_store_revocation_list_request")
+    async def test_on_rev_list_store_requested(self, mock_store_list):
+        """Test on_rev_list_store_requested uses correlation helper."""
+        payload = RevListStoreRequestedPayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            result=MagicMock(),
+            options={"request_id": "test_request_id"},
+        )
+        event = RevListStoreRequestedEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_setup_request_correlation"
+        ) as mock_setup:
+            mock_setup.return_value = (
+                "test_correlation_id",
+                {"correlation_id": "test_correlation_id"},
+            )
+
+            await self.revocation_setup.on_rev_list_store_requested(self.profile, event)
+
+            mock_setup.assert_called_once_with(
+                self.profile, payload, RECORD_TYPE_REV_LIST_STORE_EVENT
+            )
+            mock_store_list.assert_called_once()
+
+    async def test_on_rev_list_store_response_success(self):
+        """Test on_rev_list_store_response handles success correctly."""
+        payload = RevListStoreResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            result=MagicMock(),
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+                "first_registry": True,  # Should trigger activation
+            },
+            failure=None,
+        )
+        event = RevListStoreResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_success"
+        ) as mock_success:
+            with patch.object(
+                AnonCredsRevocation, "emit_set_active_registry_event"
+            ) as mock_emit_activation:
+                await self.revocation_setup.on_rev_list_store_response(
+                    self.profile, event
+                )
+
+                mock_success.assert_called_once()
+                mock_emit_activation.assert_called_once()
+
+    async def test_on_rev_list_store_response_failure(self):
+        """Test on_rev_list_store_response handles failure using helper method."""
+        failure = MagicMock()
+        failure.error_info = ErrorInfoPayload(
+            error_msg="Store failed", should_retry=True, retry_count=1
+        )
+        failure.result = MagicMock()
+
+        payload = RevListStoreResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            result=MagicMock(),
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=failure,
+        )
+        event = RevListStoreResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_failure"
+        ) as mock_failure:
+            mock_failure.return_value = True  # Retry was attempted
+
+            await self.revocation_setup.on_rev_list_store_response(self.profile, event)
+
+            mock_failure.assert_called_once()
+            args, kwargs = mock_failure.call_args
+            assert kwargs["failure_type"] == "rev_list_store"
+
+    # Tests for registry activation response
+    async def test_on_registry_activation_response_success(self):
+        """Test on_registry_activation_response handles success correctly."""
+        payload = RevRegActivationResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+                "cred_def_id": "test_cred_def_id",
+                "old_rev_reg_def_id": "old_rev_reg_def_id",  # Triggers backup creation
+            },
+            failure=None,
+        )
+        event = RevRegActivationResponseEvent(payload)
+
+        with patch.object(EventStorageManager, "update_event_response") as mock_update:
+            with patch.object(
+                AnonCredsRevocation, "get_created_revocation_registry_definition"
+            ) as mock_get_def:
+                mock_rev_reg_def = MagicMock()
+                mock_rev_reg_def.issuer_id = "test_issuer_id"
+                mock_rev_reg_def.type = "CL_ACCUM"
+                mock_rev_reg_def.value.max_cred_num = 100
+                mock_get_def.return_value = mock_rev_reg_def
+
+                with patch.object(
+                    AnonCredsRevocation,
+                    "emit_create_revocation_registry_definition_event",
+                ) as mock_emit_backup:
+                    with patch.object(
+                        AnonCredsRevocation, "_generate_backup_registry_tag"
+                    ) as mock_gen_tag:
+                        mock_gen_tag.return_value = "backup_tag"
+
+                        await self.revocation_setup.on_registry_activation_response(
+                            self.profile, event
+                        )
+
+                        mock_update.assert_called_once()
+                        mock_get_def.assert_called_once()
+                        mock_emit_backup.assert_called_once()
+
+    async def test_on_registry_activation_response_failure(self):
+        """Test on_registry_activation_response handles failure correctly."""
+        failure = MagicMock()
+        failure.error_info = ErrorInfoPayload(
+            error_msg="Activation failed", should_retry=True, retry_count=1
+        )
+
+        payload = RevRegActivationResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=failure,
+        )
+        event = RevRegActivationResponseEvent(payload)
+
+        with patch("asyncio.sleep") as mock_sleep:
+            with patch.object(
+                EventStorageManager, "update_event_for_retry"
+            ) as mock_update:
+                with patch.object(
+                    AnonCredsRevocation, "emit_set_active_registry_event"
+                ) as mock_retry:
+                    await self.revocation_setup.on_registry_activation_response(
+                        self.profile, event
+                    )
+
+                    mock_sleep.assert_called_once()
+                    mock_update.assert_called_once()
+                    mock_retry.assert_called_once()
+
+    # Tests for full registry handling response
+    async def test_on_registry_full_handling_response_success(self):
+        """Test on_registry_full_handling_response handles success correctly."""
+        payload = RevRegFullHandlingResponsePayload(
+            old_rev_reg_def_id="old_rev_reg_def_id",
+            new_active_rev_reg_def_id="new_active_rev_reg_def_id",
+            cred_def_id="test_cred_def_id",
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=None,
+        )
+        event = RevRegFullHandlingResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_success"
+        ) as mock_success:
+            await self.revocation_setup.on_registry_full_handling_response(
+                self.profile, event
+            )
+
+            mock_success.assert_called_once()
+            args, kwargs = mock_success.call_args
+            assert kwargs["event_type"] == RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT
+            assert kwargs["correlation_id"] == "test_correlation_id"
+
+    async def test_on_registry_full_handling_response_failure(self):
+        """Test on_registry_full_handling_response handles failure using helper method."""
+        failure = MagicMock()
+        failure.error_info = ErrorInfoPayload(
+            error_msg="Full handling failed", should_retry=True, retry_count=1
+        )
+
+        payload = RevRegFullHandlingResponsePayload(
+            old_rev_reg_def_id="old_rev_reg_def_id",
+            new_active_rev_reg_def_id=None,
+            cred_def_id="test_cred_def_id",
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+            },
+            failure=failure,
+        )
+        event = RevRegFullHandlingResponseEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_handle_response_failure"
+        ) as mock_failure:
+            mock_failure.return_value = True  # Retry was attempted
+
+            await self.revocation_setup.on_registry_full_handling_response(
+                self.profile, event
+            )
+
+            mock_failure.assert_called_once()
+            args, kwargs = mock_failure.call_args
+            assert kwargs["failure_type"] == "full_registry_handling"
+
+    # Tests for _notify_issuer_about_failure
+    async def test_notify_issuer_about_failure_with_event_bus(self):
+        """Test _notify_issuer_about_failure with event bus available."""
+        from ....core.event_bus import Event
+
+        mock_event_bus = MagicMock()
+        mock_event_bus.notify = AsyncMock()
+        self.profile.inject_or = MagicMock(return_value=mock_event_bus)
+
+        await self.revocation_setup._notify_issuer_about_failure(
+            profile=self.profile,
+            failure_type="registry_creation",
+            identifier="test_identifier",
+            error_msg="Test error message",
+            options={"request_id": "test_request_id"},
+        )
+
+        mock_event_bus.notify.assert_called_once()
+        call_args = mock_event_bus.notify.call_args
+        assert call_args[1]["profile"] == self.profile
+
+        event = call_args[1]["event"]
+        assert isinstance(event, Event)
+        assert event.topic == INTERVENTION_REQUIRED_EVENT
+
+        payload = event.payload
+        assert isinstance(payload, InterventionRequiredPayload)
+        assert payload.point_of_failure == "registry_creation"
+        assert payload.error_msg == "Test error message"
+        assert payload.identifier == "test_identifier"
+        assert payload.options == {"request_id": "test_request_id"}
+
+    async def test_notify_issuer_about_failure_without_event_bus(self):
+        """Test _notify_issuer_about_failure without event bus available."""
+        self.profile.inject_or = MagicMock(return_value=None)
+
+        # Should not raise exception, just log error
+        await self.revocation_setup._notify_issuer_about_failure(
+            profile=self.profile,
+            failure_type="registry_creation",
+            identifier="test_identifier",
+            error_msg="Test error message",
+            options={"request_id": "test_request_id"},
+        )
