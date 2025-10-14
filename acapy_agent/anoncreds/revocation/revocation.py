@@ -348,9 +348,9 @@ class AnonCredsRevocation:
                 error_msg = f"Error retrieving credential definition: {str(err)}"
                 if err.code == AskarErrorCode.NOT_FOUND:
                     should_retry = False
-            elif isinstance(err, AnoncredsError):
+            elif isinstance(err, AnoncredsError):  # pragma: no cover
                 error_msg = f"Error creating revocation registry: {str(err)}"
-            else:
+            else:  # pragma: no cover
                 error_msg = f"Registry creation failed: {str(err)}"
 
             if "Resource already exists" in error_msg:
@@ -564,7 +564,11 @@ class AnonCredsRevocation:
 
             if result.revocation_registry_definition_state.state == STATE_FINISHED:
                 await self.notify(
-                    RevRegDefFinishedEvent.with_payload(identifier, rev_reg_def, options)
+                    RevRegDefFinishedEvent.with_payload(
+                        rev_reg_def_id=identifier,
+                        rev_reg_def=rev_reg_def,
+                        options=options,
+                    )
                 )
         except DBError as err:
             raise AnonCredsRevocationError(
@@ -941,9 +945,9 @@ class AnonCredsRevocation:
                 error_msg = f"Error retrieving records: {str(err)}"
                 if err.code == AskarErrorCode.NOT_FOUND:
                     should_retry = False
-            elif isinstance(err, AnoncredsError):
+            elif isinstance(err, AnoncredsError):  # pragma: no cover
                 error_msg = f"Error creating revocation list: {str(err)}"
-            else:
+            else:  # pragma: no cover
                 error_msg = f"Revocation list creation failed: {str(err)}"
 
             if "Resource already exists" in error_msg:

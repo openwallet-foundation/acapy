@@ -537,7 +537,10 @@ class RevListCreateRequestedEvent(Event):
         options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevListCreateRequestedPayload(rev_reg_def_id, options or {})
+        payload = RevListCreateRequestedPayload(
+            rev_reg_def_id=rev_reg_def_id,
+            options=options or {},
+        )
         return cls(payload)
 
     @property
@@ -591,10 +594,10 @@ class RevListCreateResponseEvent(Event):
         For failure: pass failure=RevListCreateFailurePayload(...)
         """
         payload = RevListCreateResponsePayload(
-            rev_reg_def_id,
-            rev_list_result,
-            failure,
-            options or {},
+            rev_reg_def_id=rev_reg_def_id,
+            rev_list_result=rev_list_result,
+            failure=failure,
+            options=options or {},
         )
         return cls(payload)
 
@@ -654,7 +657,11 @@ class RevListStoreRequestedEvent(Event):
         options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevListStoreRequestedPayload(rev_reg_def_id, result, options or {})
+        payload = RevListStoreRequestedPayload(
+            rev_reg_def_id=rev_reg_def_id,
+            result=result,
+            options=options or {},
+        )
         return cls(payload)
 
     @property
@@ -707,10 +714,10 @@ class RevListStoreResponseEvent(Event):
         For failure: pass failure=RevListStoreFailurePayload(...)
         """
         payload = RevListStoreResponsePayload(
-            rev_reg_def_id,
-            result,
-            failure,
-            options or {},
+            rev_reg_def_id=rev_reg_def_id,
+            result=result,
+            failure=failure,
+            options=options or {},
         )
         return cls(payload)
 
@@ -767,7 +774,10 @@ class RevRegActivationRequestedEvent(Event):
         options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevRegActivationRequestedPayload(rev_reg_def_id, options or {})
+        payload = RevRegActivationRequestedPayload(
+            rev_reg_def_id=rev_reg_def_id,
+            options=options or {},
+        )
         return cls(payload)
 
     @property
@@ -818,7 +828,11 @@ class RevRegActivationResponseEvent(Event):
         For success: just pass rev_reg_def_id
         For failure: pass failure=RevRegActivationFailurePayload(...)
         """
-        payload = RevRegActivationResponsePayload(rev_reg_def_id, failure, options or {})
+        payload = RevRegActivationResponsePayload(
+            rev_reg_def_id=rev_reg_def_id,
+            failure=failure,
+            options=options or {},
+        )
         return cls(payload)
 
     @classmethod
@@ -883,7 +897,11 @@ class RevRegFullDetectedEvent(Event):
         options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevRegFullDetectedPayload(rev_reg_def_id, cred_def_id, options or {})
+        payload = RevRegFullDetectedPayload(
+            rev_reg_def_id=rev_reg_def_id,
+            cred_def_id=cred_def_id,
+            options=options or {},
+        )
         return cls(payload)
 
     @property
