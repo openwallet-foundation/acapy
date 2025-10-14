@@ -10,7 +10,7 @@ from uuid_utils import uuid4
 
 from ..core.profile import ProfileSession
 from ..messaging.models.base import BaseModel
-from ..messaging.util import datetime_to_str
+from ..messaging.util import datetime_to_str, epoch_to_str
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
@@ -228,8 +228,6 @@ class EventStorageManager:
 
         # If no expiry timestamp provided, calculate default based on recovery delay
         if not expiry_timestamp:
-            from .retry_utils import calculate_event_expiry_timestamp
-
             expiry_timestamp = calculate_event_expiry_timestamp(0)  # First attempt
 
         record_data = {
@@ -568,10 +566,71 @@ class EventStorageManager:
                 )
 
                 for record in success_records + failure_records:
-                    # TODO: Add timestamp-based cleanup logic
-                    # For now, we'll clean up all completed events
-                    await self.storage.delete_record(record)
-                    cleaned_up += 1
+                    # Parse record data to get timestamps
+                    try:
+                        record_data = json.loads(record.value)
+                        created_at_str = record_data.get("created_at")
+                        expiry_timestamp = record_data.get("expiry_timestamp")
+
+                        if not created_at_str:
+                            # If no created_at timestamp, skip this record
+                            LOGGER.warning(
+                                "Event record %s missing created_at timestamp, "
+                                "skipping cleanup.",
+                                record.id,
+                            )
+                            continue
+
+                        # Parse created_at timestamp
+                        created_at = datetime.fromisoformat(
+                            created_at_str.replace("Z", "+00:00")
+                        )
+                        current_time = datetime.now(timezone.utc)
+
+                        # Calculate cleanup threshold: created_at + max_age_hours
+                        cleanup_threshold = created_at.timestamp() + (
+                            max_age_hours * 3600
+                        )
+                        current_timestamp = current_time.timestamp()
+
+                        # Determine the earliest time we can clean up this record
+                        # Use the maximum of cleanup_threshold and expiry_timestamp
+                        earliest_cleanup_time = cleanup_threshold
+                        if expiry_timestamp:
+                            earliest_cleanup_time = max(
+                                cleanup_threshold, expiry_timestamp
+                            )
+
+                        # Only clean up if current time is past the earliest cleanup time
+                        if current_timestamp >= earliest_cleanup_time:
+                            await self.storage.delete_record(record)
+                            cleaned_up += 1
+                            LOGGER.debug(
+                                "Cleaned up event record %s (created: %s, "
+                                "cleanup_threshold: %s, expiry: %s, current: %s)",
+                                record.id,
+                                created_at_str,
+                                epoch_to_str(cleanup_threshold),
+                                epoch_to_str(expiry_timestamp)
+                                if expiry_timestamp
+                                else "None",
+                                epoch_to_str(current_timestamp),
+                            )
+                        else:
+                            LOGGER.debug(
+                                "Event record %s not ready for cleanup "
+                                "(earliest: %s, current: %s)",
+                                record.id,
+                                epoch_to_str(earliest_cleanup_time),
+                                epoch_to_str(current_timestamp),
+                            )
+
+                    except (json.JSONDecodeError, ValueError, KeyError) as e:
+                        LOGGER.warning(
+                            "Error parsing event record %s for cleanup: %s",
+                            record.id,
+                            str(e),
+                        )
 
             except Exception as e:
                 LOGGER.warning(
@@ -581,7 +640,7 @@ class EventStorageManager:
                 )
 
         if cleaned_up > 0:
-            LOGGER.info(
+            LOGGER.debug(
                 "Cleaned up %d completed events%s",
                 cleaned_up,
                 f" of type {event_type}" if event_type else "",
