@@ -1,4 +1,4 @@
-ARG python_version=3.12
+ARG python_version=3.13
 FROM python:${python_version}-slim-bookworm AS build
 
 # Install Poetry
