@@ -276,7 +276,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
 
             mock_failure.assert_called_once()
             # Verify the retry callback would emit the retry event
-            args, kwargs = mock_failure.call_args
+            _, kwargs = mock_failure.call_args
             assert kwargs["failure_type"] == "registry_create"
 
     async def test_on_registry_create_response_failure_not_retryable(self):
@@ -366,7 +366,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
                     mock_gen_cor.assert_called_once()
                     mock_handle.assert_called_once()
 
-    async def test_clean_options_for_new_request(self):
+    def test_clean_options_for_new_request(self):
         """Test _clean_options_for_new_request removes correlation_id."""
         options = {
             "correlation_id": "old_correlation_id",
@@ -456,7 +456,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
             await self.revocation_setup.on_registry_store_response(self.profile, event)
 
             mock_failure.assert_called_once()
-            args, kwargs = mock_failure.call_args
+            _, kwargs = mock_failure.call_args
             assert kwargs["failure_type"] == "registry_store"
 
     # Tests for rev list methods
@@ -536,7 +536,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
             await self.revocation_setup.on_rev_list_create_response(self.profile, event)
 
             mock_failure.assert_called_once()
-            args, kwargs = mock_failure.call_args
+            _, kwargs = mock_failure.call_args
             assert kwargs["failure_type"] == "rev_list_create"
 
     async def test_on_rev_list_finished(self):
@@ -636,7 +636,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
             await self.revocation_setup.on_rev_list_store_response(self.profile, event)
 
             mock_failure.assert_called_once()
-            args, kwargs = mock_failure.call_args
+            _, kwargs = mock_failure.call_args
             assert kwargs["failure_type"] == "rev_list_store"
 
     # Tests for registry activation response
@@ -769,7 +769,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
             )
 
             mock_failure.assert_called_once()
-            args, kwargs = mock_failure.call_args
+            _, kwargs = mock_failure.call_args
             assert kwargs["failure_type"] == "full_registry_handling"
 
     # Tests for _notify_issuer_about_failure

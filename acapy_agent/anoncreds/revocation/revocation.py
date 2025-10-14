@@ -79,6 +79,8 @@ REVOCATION_REGISTRY_CREATION_TIMEOUT = float(
     os.getenv("REVOCATION_REGISTRY_CREATION_TIMEOUT", "60.0")
 )
 
+REV_REG_DEF_ID_NOT_FOUND_MSG = "Revocation registry definition id or job id not found"
+
 
 class AnonCredsRevocationError(BaseError):
     """Generic revocation error."""
@@ -467,7 +469,7 @@ class AnonCredsRevocation:
             should_retry = True
             if isinstance(err, AnonCredsRevocationError):
                 error_msg = str(err)
-                if "Revocation registry definition id or job id not found" in error_msg:
+                if REV_REG_DEF_ID_NOT_FOUND_MSG in error_msg:
                     should_retry = False
             else:
                 error_msg = f"Store operation failed: {str(err)}"
@@ -504,9 +506,7 @@ class AnonCredsRevocation:
         options = options or {}
         identifier = result.job_id or result.rev_reg_def_id
         if not identifier:
-            raise AnonCredsRevocationError(
-                "Revocation registry definition id or job id not found"
-            )
+            raise AnonCredsRevocationError(REV_REG_DEF_ID_NOT_FOUND_MSG)
         LOGGER.debug(
             "Storing revocation registry definition for rev_reg_def_id: %s, tag: %s. "
             "request_id: %s, correlation_id: %s",
@@ -983,9 +983,7 @@ class AnonCredsRevocation:
 
         identifier = result.job_id or result.rev_reg_def_id
         if not identifier:
-            raise AnonCredsRevocationError(
-                "Revocation registry definition id or job id not found"
-            )
+            raise AnonCredsRevocationError(REV_REG_DEF_ID_NOT_FOUND_MSG)
 
         rev_list = result.revocation_list_state.revocation_list
         try:
