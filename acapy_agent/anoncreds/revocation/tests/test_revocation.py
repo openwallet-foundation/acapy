@@ -1764,7 +1764,6 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         mock_result = mock.MagicMock()
         mock_result.rev_reg_def_id = "test_rev_reg_def_id"
         mock_result.revocation_registry_definition_state.revocation_registry_definition.tag = "test_tag"
-        mock_rev_reg_def = mock_result.revocation_registry_definition_state.revocation_registry_definition
 
         await self.revocation.handle_store_revocation_registry_definition_request(
             rev_reg_def_result=mock_result, options={"request_id": "test_request_id"}
