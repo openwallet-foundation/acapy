@@ -6,7 +6,7 @@
         "dockerfile": "Dockerfile",
         "context": "..",
         "args": {
-          "VARIANT": "3.12-bookworm",
+          "VARIANT": "3.13-bookworm",
           "POETRY_VERSION": "2.1.1"
         }
     },
