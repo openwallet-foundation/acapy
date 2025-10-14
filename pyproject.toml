@@ -15,7 +15,7 @@ repository = "https://github.com/openwallet-foundation/acapy"
 
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
 
 aiohttp = ">=3.11.16,<3.14.0"
 aiohttp-apispec-acapy = "~3.0.3"
@@ -70,6 +70,7 @@ didcomm-messaging = { version = "^0.1.1a0", optional = true }
 # database_manager
 psycopg = { version = "^3.2.1", extras = ["pool", "binary"] }
 sqlcipher3-binary = { version = ">=0.5.4", optional = true }
+propcache = "^0.4.1"
 
 
 [tool.poetry.group.dev.dependencies]
