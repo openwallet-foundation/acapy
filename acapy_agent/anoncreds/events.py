@@ -1,6 +1,6 @@
 """Events fired by AnonCreds interface."""
 
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Protocol
 
 from ..core.event_bus import Event
 from .models.revocation import RevListResult, RevRegDef, RevRegDefResult
@@ -65,6 +65,25 @@ REV_REG_FULL_HANDLING_COMPLETED_EVENT = (
 
 # If retries continue to fail, this will notify the issuer that intervention is required
 INTERVENTION_REQUIRED_EVENT = "anoncreds::revocation-registry::intervention-required"
+
+
+class BaseEventPayload(Protocol):
+    """Base event payload."""
+
+    options: dict
+
+
+class BasePayloadWithFailure(Protocol):
+    """Base payload with failure."""
+
+    failure: Optional["BaseFailurePayload"]
+    options: dict
+
+
+class BaseFailurePayload(Protocol):
+    """Base failure payload."""
+
+    error_info: "ErrorInfoPayload"
 
 
 class ErrorInfoPayload(NamedTuple):
