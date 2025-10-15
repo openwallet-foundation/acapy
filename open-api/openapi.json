@@ -481,6 +481,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/active" : {
       "put" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Revocation Registry identifier",
           "in" : "path",
@@ -782,6 +783,34 @@
           }
         },
         "summary" : "Get revocation registry by revocation registry id",
+        "tags" : [ "AnonCreds - Revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/active" : {
+      "put" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnonCredsRevocationModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Update the active registry",
         "tags" : [ "AnonCreds - Revocation" ]
       }
     },

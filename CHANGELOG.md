@@ -24,7 +24,7 @@ In an upcoming ACA-Py release, we will be dropping from the core ACA-Py reposito
 [RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
 [RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
 
-The acapy_agent.revocation_anoncreds package has been deprecated and relocated to acapy_agent.anoncreds.revocation for improved consistency across the codebase. Likewise, the OpenAPI endpoint for uploading a tails file (PUT /anoncreds/registry/{rev_reg_id}/tails-file) has been deprecated and replaced by /anoncreds/revocation/registry/{rev_reg_id}/tails-file. These changes primarily affect [ACA-Py Plugins] using the capabilities, but other developers should also take note.
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change should only affect [ACA-Py Plugins] that implement AnonCreds, but other developers should also take note.
 
 ### ⚠️ Breaking Changes
 
@@ -41,6 +41,7 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
   - :recycle: :boom: Refactor EventBus notify method [#3690](https://github.com/openwallet-foundation/acapy/pull/3690) [ff137](https://github.com/ff137)
   - :wrench: :art: Revise lint rules [#3900](https://github.com/openwallet-foundation/acapy/pull/3900) [ff137](https://github.com/ff137)
 - **AnonCreds and Credential Handling**
+  - 🎨 Move AnonCreds set_active_registry route [#3915](https://github.com/openwallet-foundation/acapy/pull/3915) [ff137](https://github.com/ff137)
   - (fix) Properly use VM key when signing [SD-]JWT [#3892](https://github.com/openwallet-foundation/acapy/pull/3892) [gmulhearn](https://github.com/gmulhearn)
   - :recycle: Refactor and modularize anoncreds revocation package [#3861](https://github.com/openwallet-foundation/acapy/pull/3861) [ff137](https://github.com/ff137)
 - **Testing and Interoperability**

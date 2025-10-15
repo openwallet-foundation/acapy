@@ -438,6 +438,7 @@
           "type" : "string",
           "pattern" : "^(.+$)"
         } ],
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "",
@@ -672,6 +673,29 @@
             "description" : "",
             "schema" : {
               "$ref" : "#/definitions/RevRegResultSchemaAnonCreds"
+            }
+          }
+        }
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/active" : {
+      "put" : {
+        "tags" : [ "AnonCreds - Revocation" ],
+        "summary" : "Update the active registry",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "rev_reg_id",
+          "in" : "path",
+          "description" : "Revocation Registry identifier",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "^(.+$)"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/AnonCredsRevocationModuleResponse"
             }
           }
         }
