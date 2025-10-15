@@ -76,7 +76,7 @@ class BaseEventPayload(Protocol):
 class BasePayloadWithFailure(Protocol):
     """Base payload with failure."""
 
-    failure: Optional["BaseFailurePayload"]
+    failure: "BaseFailurePayload"
     options: dict
 
 
@@ -432,10 +432,10 @@ class RevRegDefStoreFailurePayload(NamedTuple):
 class RevRegDefStoreResponsePayload(NamedTuple):
     """Payload for rev reg def store response event."""
 
-    # Success fields - populated when operation succeeds
-    rev_reg_def_id: Optional[str]
+    # Success fields - always populated with values that were requested to be stored
+    rev_reg_def_id: str
     rev_reg_def: RevRegDef
-    rev_reg_def_result: Optional[RevRegDefResult]
+    rev_reg_def_result: RevRegDefResult
     tag: str
 
     # Failure field - populated when operation fails
@@ -459,9 +459,9 @@ class RevRegDefStoreResponseEvent(Event):
     def with_payload(
         cls,
         *,
-        rev_reg_def_id: Optional[str] = None,
+        rev_reg_def_id: str,
         rev_reg_def: RevRegDef,
-        rev_reg_def_result: Optional[RevRegDefResult] = None,
+        rev_reg_def_result: RevRegDefResult,
         tag: str,
         failure: Optional[RevRegDefStoreFailurePayload] = None,
         options: Optional[dict] = None,
@@ -485,7 +485,9 @@ class RevRegDefStoreResponseEvent(Event):
     def with_failure(
         cls,
         *,
+        rev_reg_def_id: str,
         rev_reg_def: RevRegDef,
+        rev_reg_def_result: RevRegDefResult,
         tag: str,
         error_msg: str,
         should_retry: bool,
@@ -501,7 +503,9 @@ class RevRegDefStoreResponseEvent(Event):
             ),
         )
         return cls.with_payload(
+            rev_reg_def_id=rev_reg_def_id,
             rev_reg_def=rev_reg_def,
+            rev_reg_def_result=rev_reg_def_result,
             tag=tag,
             failure=failure,
             options=options,
@@ -679,9 +683,9 @@ class RevListStoreFailurePayload(NamedTuple):
 class RevListStoreResponsePayload(NamedTuple):
     """Payload for rev list store response event."""
 
-    # Success fields - always has rev_reg_def_id
+    # Success fields - always has rev_reg_def_id and the requested RevListResult to store
     rev_reg_def_id: str
-    result: Optional[RevListResult]
+    result: RevListResult
 
     # Failure field - populated when operation fails
     failure: Optional[RevListStoreFailurePayload]
@@ -704,7 +708,7 @@ class RevListStoreResponseEvent(Event):
     def with_payload(
         cls,
         rev_reg_def_id: str,
-        result: Optional[RevListResult] = None,
+        result: RevListResult,
         failure: Optional[RevListStoreFailurePayload] = None,
         options: Optional[dict] = None,
     ):
@@ -725,6 +729,7 @@ class RevListStoreResponseEvent(Event):
     def with_failure(
         cls,
         rev_reg_def_id: str,
+        result: RevListResult,
         error_msg: str,
         should_retry: bool,
         retry_count: int,
@@ -740,6 +745,7 @@ class RevListStoreResponseEvent(Event):
         )
         return cls.with_payload(
             rev_reg_def_id=rev_reg_def_id,
+            result=result,
             failure=failure,
             options=options,
         )
