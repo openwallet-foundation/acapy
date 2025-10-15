@@ -94,7 +94,7 @@ class AnonCredsRevocation:
     @property
     def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, Profile):
+        if not isinstance(self._profile, Profile) or not self._profile.is_anoncreds:
             raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
