@@ -144,8 +144,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         correlation_id: str,
         failure_type: str,
         retry_callback: Callable[..., Awaitable[Any]],
-        *retry_args,
-        **retry_kwargs,
     ) -> bool:
         """Handle failure response with retry logic.
 
@@ -156,8 +154,6 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             correlation_id: The correlation ID for tracking
             failure_type: Description of the failure type for logging
             retry_callback: Function to call for retry
-            *retry_args: Arguments to pass to retry_callback
-            **retry_kwargs: Keyword arguments to pass to retry_callback
 
         Returns:
             bool: True if retry was attempted, False if not retryable
@@ -216,7 +212,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     )
 
             # Execute retry callback
-            await retry_callback(*retry_args, **retry_kwargs, options=new_options)
+            await retry_callback(options=new_options)
             return True
         else:
             # Not retryable, update event as failed and notify issuer
