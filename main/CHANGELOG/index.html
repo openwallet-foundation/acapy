@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aries-cloud-agent-python-changelog" class="md-skip">
+        <a href="#aca-py-changelog" class="md-skip">
           Skip to content
         </a>
       
@@ -526,6 +526,57 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#140rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4.0rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.4.0rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#october-15-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      October 15, 2025
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#140-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4.0 Deprecation Notices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚠️ Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      Categorized PR List
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#132" class="md-nav__link">
@@ -3339,6 +3390,57 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#140rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4.0rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.4.0rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#october-15-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      October 15, 2025
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#140-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4.0 Deprecation Notices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚠️ Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      Categorized PR List
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#132" class="md-nav__link">
     <span class="md-ellipsis">
       1.3.2
@@ -4254,7 +4356,58 @@
   
 
 
-<h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
+<h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="140rc0">1.4.0rc0<a class="headerlink" href="#140rc0" title="Permanent link">&para;</a></h2>
+<h3 id="october-15-2025">October 15, 2025<a class="headerlink" href="#october-15-2025" title="Permanent link">&para;</a></h3>
+<p>ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of <strong>Kanon Storage</strong>, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer. Askar now functions purely as a <strong>Key Management Service (KMS)</strong>, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.</p>
+<p>Kanon Storage is <strong>optional and fully backward compatible</strong>. Developed by the team at <strong>VeriDID</strong> (<a href="https://verid.id">https://verid.id</a>), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably <a href="https://github.com/dave-promulgare">dave-promulgare</a> and <a href="https://github.com/vinaysingh8866">vinaysingh8866</a>) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility.</p>
+<p>Documentation for Kanon Storage for this 1.4.0rc0 release is limited to the <a href="https://github.com/openwallet-foundation/acapy/pull/3850">Kanon Storage PR 3850</a>. Additional documentation will be available before we finalize the 1.4.0 release.</p>
+<p>Alongside Kanon, this release includes significant refactoring in the <strong>AnonCreds revocation</strong> subsystem, modernization of <strong>event handling</strong> via an updated EventBus, and improvements to <strong>credential signing</strong> for SD-JWT to ensure correct verification-method key usage. Developers will also notice lint rule revisions, post-Kanon cleanup, and smaller enhancements to demos and test infrastructure such as the <code>--debug-webhooks</code> flag and interop test fixes. Together, these updates improve maintainability, observability, and readiness for large-scale production use.</p>
+<h3 id="140-deprecation-notices">1.4.0 Deprecation Notices<a class="headerlink" href="#140-deprecation-notices" title="Permanent link">&para;</a></h3>
+<p>In an upcoming ACA-Py release, we will be dropping from the core ACA-Py repository the <a href="https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/">AIP 1.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/">RFC 0037 Present Proof v1.0</a> DIDComm protocols. Each of the protocols will be moved to the <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> repo. All ACA-Py implementers that use those protocols <strong>SHOULD</strong> update as soon as possible to the <a href="https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/">AIP 2.0</a> versions of those protocols (<a href="https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/">RFC 0453 Issue Credential v2.0</a> and <a href="https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/">RFC 0454 Present Proof v2.0</a>, respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins.</p>
+<p>The <code>acapy_agent.revocation_anoncreds</code> package has been deprecated and relocated to <code>acapy_agent.anoncreds.revocation</code> for improved consistency across the codebase. The change should only affect <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> that implement AnonCreds, but other developers should also take note.</p>
+<h3 id="breaking-changes">⚠️ Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
+<p>This release introduces <strong>no breaking changes</strong> for existing ACA-Py deployments. Existing instances can continue to use Askar for both key and data storage by default.</p>
+<p>Implementers are encouraged to evaluate Kanon as the preferred approach for new deployments or planned upgrades. Kanon provides better scalability, performance, and integration with database-native capabilities such as indexing, analytics, and external management tools — while maintaining secure handling of cryptographic keys within Askar.</p>
+<h3 id="categorized-pr-list">Categorized PR List<a class="headerlink" href="#categorized-pr-list" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Storage and Architecture</strong><ul>
+<li><img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Post-Kanon cleanup <a href="https://github.com/openwallet-foundation/acapy/pull/3901">#3901</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>Kanon Storage <a href="https://github.com/openwallet-foundation/acapy/pull/3850">#3850</a> <a href="https://github.com/dave-promulgare">dave-promulgare</a></li>
+</ul>
+</li>
+<li><strong>Code Quality and Maintenance</strong><ul>
+<li><img alt="♻" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/267b.svg" title=":recycle:" /> <img alt="💥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f4a5.svg" title=":boom:" /> Refactor EventBus notify method <a href="https://github.com/openwallet-foundation/acapy/pull/3690">#3690</a> <a href="https://github.com/ff137">ff137</a></li>
+<li><img alt="🔧" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f527.svg" title=":wrench:" /> <img alt="🎨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3a8.svg" title=":art:" /> Revise lint rules <a href="https://github.com/openwallet-foundation/acapy/pull/3900">#3900</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
+<li><strong>AnonCreds and Credential Handling</strong><ul>
+<li>🎨 Move AnonCreds set_active_registry route <a href="https://github.com/openwallet-foundation/acapy/pull/3915">#3915</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>(fix) Properly use VM key when signing [SD-]JWT <a href="https://github.com/openwallet-foundation/acapy/pull/3892">#3892</a> <a href="https://github.com/gmulhearn">gmulhearn</a></li>
+<li><img alt="♻" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/267b.svg" title=":recycle:" /> Refactor and modularize anoncreds revocation package <a href="https://github.com/openwallet-foundation/acapy/pull/3861">#3861</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
+<li><strong>Testing and Interoperability</strong><ul>
+<li>fix: Repair Interop tests url <a href="https://github.com/openwallet-foundation/acapy/pull/3881">#3881</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li><strong>Developer Tools and Demos</strong><ul>
+<li>Add --debug-webhooks config to demo agents <a href="https://github.com/openwallet-foundation/acapy/pull/3865">#3865</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li><strong>Deployment and Documentation</strong><ul>
+<li>Chore(chart): delete chart files and add chart relocation notice <a href="https://github.com/openwallet-foundation/acapy/pull/3883">#3883</a> <a href="https://github.com/i5okie">i5okie</a></li>
+</ul>
+</li>
+<li><strong>Dependabot PRs</strong><ul>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-10-14+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+<li><strong>Release management pull requests</strong>:<ul>
+<li>1.4.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/3911">#3911</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="132">1.3.2<a class="headerlink" href="#132" title="Permanent link">&para;</a></h2>
 <h3 id="august-26-2025">August 26, 2025<a class="headerlink" href="#august-26-2025" title="Permanent link">&para;</a></h3>
 <p>ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the <a href="">Categorized List of Changes</a> below for more details about the changes in this release.</p>
@@ -6049,7 +6202,7 @@ If you are pulling ACA-Py into your own image, or a non-containerized
 environment, this is a breaking change that you will need to address.</p>
 <p>Please see the next section for all breaking changes, and the subsequent section
 for a categorized list of all pull requests in this release.</p>
-<h3 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
+<h3 id="breaking-changes_1">Breaking Changes<a class="headerlink" href="#breaking-changes_1" title="Permanent link">&para;</a></h3>
 <p>In addition to the breaking Python 3.6 to 3.9 upgrade, there are two other
 breaking changes that may impact some deployments.</p>
 <p>[#2034] allows for additional flexibility in using public DIDs in invitations,

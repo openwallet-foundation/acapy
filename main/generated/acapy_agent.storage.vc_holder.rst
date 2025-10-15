@@ -25,6 +25,14 @@ acapy\_agent.storage.vc\_holder.base module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.storage.vc\_holder.kanon module
+--------------------------------------------
+
+.. automodule:: acapy_agent.storage.vc_holder.kanon
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.storage.vc\_holder.vc\_record module
 -------------------------------------------------
 

@@ -152,3 +152,11 @@ acapy\_agent.utils.tracing module
    :members:
    :undoc-members:
    :show-inheritance:
+
+acapy\_agent.utils.wait\_for\_active\_registry module
+-----------------------------------------------------
+
+.. automodule:: acapy_agent.utils.wait_for_active_registry
+   :members:
+   :undoc-members:
+   :show-inheritance:
