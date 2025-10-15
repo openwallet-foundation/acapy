@@ -625,7 +625,7 @@ class EventStorageManager:
                                 epoch_to_str(current_timestamp),
                             )
 
-                    except (json.JSONDecodeError, ValueError, KeyError) as e:
+                    except (ValueError, KeyError) as e:
                         LOGGER.warning(
                             "Error parsing event record %s for cleanup: %s",
                             record.id,

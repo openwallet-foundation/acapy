@@ -383,7 +383,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         mock_get_counts.return_value = (0, 0)  # pending, recoverable
 
         with patch.object(self.profile.settings, "get_bool", return_value=True):
-            response = await revocation_recovery_middleware(self.request, self.handler)
+            await revocation_recovery_middleware(self.request, self.handler)
 
         # Profile should be marked as recovered
         assert recovery_tracker.is_recovered(profile_name)
@@ -401,7 +401,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         mock_get_counts.return_value = (5, 0)  # pending, recoverable
 
         with patch.object(self.profile.settings, "get_bool", return_value=True):
-            response = await revocation_recovery_middleware(self.request, self.handler)
+            await revocation_recovery_middleware(self.request, self.handler)
 
         # Profile should NOT be marked as recovered yet
         assert not recovery_tracker.is_recovered(profile_name)
@@ -418,7 +418,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         mock_get_counts.side_effect = Exception("Database error")
 
         with patch.object(self.profile.settings, "get_bool", return_value=True):
-            response = await revocation_recovery_middleware(self.request, self.handler)
+            await revocation_recovery_middleware(self.request, self.handler)
 
         # Should continue with request despite error
         self.handler.assert_called_once_with(self.request)
@@ -442,9 +442,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         mock_event_bus = MagicMock(spec=EventBus)
         with patch.object(self.profile, "inject", return_value=mock_event_bus):
             with patch.object(self.profile.settings, "get_bool", return_value=True):
-                response = await revocation_recovery_middleware(
-                    self.request, self.handler
-                )
+                await revocation_recovery_middleware(self.request, self.handler)
 
         # Recovery should be performed
         mock_recover.assert_called_once_with(self.profile, mock_event_bus)
@@ -473,9 +471,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         mock_event_bus = MagicMock(spec=EventBus)
         with patch.object(self.profile, "inject", return_value=mock_event_bus):
             with patch.object(self.profile.settings, "get_bool", return_value=True):
-                response = await revocation_recovery_middleware(
-                    self.request, self.handler
-                )
+                await revocation_recovery_middleware(self.request, self.handler)
 
         # Profile should be marked as failed (not recovered)
         assert not recovery_tracker.is_recovered(profile_name)
@@ -502,9 +498,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         mock_event_bus = MagicMock(spec=EventBus)
         with patch.object(self.profile, "inject", return_value=mock_event_bus):
             with patch.object(self.profile.settings, "get_bool", return_value=True):
-                response = await revocation_recovery_middleware(
-                    self.request, self.handler
-                )
+                await revocation_recovery_middleware(self.request, self.handler)
 
         # Profile should be marked as failed (not recovered)
         assert not recovery_tracker.is_recovered(profile_name)

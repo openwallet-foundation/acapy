@@ -820,7 +820,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
             )
 
             mock_success.assert_called_once()
-            args, kwargs = mock_success.call_args
+            _, kwargs = mock_success.call_args
             assert kwargs["event_type"] == RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT
             assert kwargs["correlation_id"] == "test_correlation_id"
 
