@@ -7,6 +7,7 @@ from ....core.event_bus import MockEventBus
 from ....storage.type import (
     RECORD_TYPE_REV_LIST_CREATE_EVENT,
     RECORD_TYPE_REV_LIST_STORE_EVENT,
+    RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
@@ -28,6 +29,8 @@ from ...events import (
     RevListStoreRequestedPayload,
     RevListStoreResponseEvent,
     RevListStoreResponsePayload,
+    RevRegActivationRequestedEvent,
+    RevRegActivationRequestedPayload,
     RevRegActivationResponseEvent,
     RevRegActivationResponsePayload,
     RevRegDefCreateFailurePayload,
@@ -639,6 +642,42 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
             _, kwargs = mock_failure.call_args
             assert kwargs["failure_type"] == "rev_list_store"
 
+    # Tests for registry activation request
+    @patch.object(AnonCredsRevocation, "handle_activate_registry_request")
+    async def test_on_registry_activation_requested(self, mock_handle_activate):
+        """Test on_registry_activation_requested uses correlation helper."""
+        payload = RevRegActivationRequestedPayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={"request_id": "test_request_id", "cred_def_id": "test_cred_def_id"},
+        )
+        event = RevRegActivationRequestedEvent(payload)
+
+        with patch.object(
+            self.revocation_setup, "_setup_request_correlation"
+        ) as mock_setup:
+            mock_setup.return_value = (
+                "test_correlation_id",
+                {
+                    "correlation_id": "test_correlation_id",
+                    "request_id": "test_request_id",
+                },
+            )
+
+            await self.revocation_setup.on_registry_activation_requested(
+                self.profile, event
+            )
+
+            mock_setup.assert_called_once_with(
+                self.profile, payload, RECORD_TYPE_REV_REG_ACTIVATION_EVENT
+            )
+            mock_handle_activate.assert_called_once_with(
+                rev_reg_def_id="test_rev_reg_def_id",
+                options={
+                    "correlation_id": "test_correlation_id",
+                    "request_id": "test_request_id",
+                },
+            )
+
     # Tests for registry activation response
     async def test_on_registry_activation_response_success(self):
         """Test on_registry_activation_response handles success correctly."""
@@ -712,6 +751,51 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
                     mock_sleep.assert_called_once()
                     mock_update.assert_called_once()
                     mock_retry.assert_called_once()
+
+    async def test_on_registry_activation_response_success_no_rev_reg_def(self):
+        """Test on_registry_activation_response when rev_reg_def retrieval fails."""
+        payload = RevRegActivationResponsePayload(
+            rev_reg_def_id="test_rev_reg_def_id",
+            options={
+                "correlation_id": "test_correlation_id",
+                "request_id": "test_request_id",
+                "cred_def_id": "test_cred_def_id",
+                "old_rev_reg_def_id": "old_rev_reg_def_id",  # Triggers backup creation
+            },
+            failure=None,
+        )
+        event = RevRegActivationResponseEvent(payload)
+
+        with patch.object(EventStorageManager, "update_event_response") as mock_update:
+            with patch.object(
+                AnonCredsRevocation, "get_created_revocation_registry_definition"
+            ) as mock_get_def:
+                # Mock get_created_revocation_registry_definition to return None
+                mock_get_def.return_value = None
+
+                with patch.object(
+                    self.revocation_setup,
+                    "_notify_issuer_about_failure",
+                    new_callable=AsyncMock,
+                ) as mock_notify_failure:
+                    await self.revocation_setup.on_registry_activation_response(
+                        self.profile, event
+                    )
+
+                    # Verify event was updated as successful
+                    mock_update.assert_called_once()
+
+                    # Verify get_created_revocation_registry_definition was called
+                    mock_get_def.assert_called_once_with("test_rev_reg_def_id")
+
+                    # Verify _notify_issuer_about_failure was called with expected args
+                    mock_notify_failure.assert_called_once_with(
+                        profile=self.profile,
+                        failure_type="registry_activation",
+                        identifier="test_rev_reg_def_id",
+                        error_msg="Could not retrieve registry definition for creating backup",
+                        options=payload.options,
+                    )
 
     # Tests for full registry handling response
     async def test_on_registry_full_handling_response_success(self):
