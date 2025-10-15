@@ -75,29 +75,15 @@ class AnonCredsHolder:
 
         """
         self._profile = profile
+        self._profile_validated = False  # Lazy validation of profile backend
 
     @property
     def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        # Check if profile is AskarAnonCredsProfile or KanonAnonCredsProfile
-        # by checking the backend attribute
-        if not isinstance(self._profile, Profile):
-            raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
-
-        # Check if it's a supported anoncreds profile type
-        if hasattr(self._profile, "backend"):
-            backend = (
-                self._profile.backend.lower()
-                if isinstance(self._profile.backend, str)
-                else ""
-            )
-            if "anoncreds" not in backend and "kanon" not in backend:
+        if not self._profile_validated:
+            if not isinstance(self._profile, Profile) or not self._profile.is_anoncreds:
                 raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
-        else:
-            # For AskarAnonCredsProfile, check the class name
-            class_name = self._profile.__class__.__name__
-            if "AnonCreds" not in class_name and "Kanon" not in class_name:
-                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+            self._profile_validated = True
 
         return self._profile
 

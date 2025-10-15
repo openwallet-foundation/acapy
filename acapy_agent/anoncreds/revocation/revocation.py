@@ -90,12 +90,15 @@ class AnonCredsRevocation:
 
         """
         self._profile = profile
+        self._profile_validated = False  # Lazy validation of profile backend
 
     @property
     def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, Profile):
-            raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        if not self._profile_validated:
+            if not isinstance(self._profile, Profile) or not self._profile.is_anoncreds:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+            self._profile_validated = True
 
         return self._profile
 

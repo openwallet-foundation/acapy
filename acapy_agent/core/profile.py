@@ -42,7 +42,12 @@ class Profile(ABC):
     @property
     def backend(self) -> str:
         """Accessor for the backend implementation name."""
-        return self.__class__.BACKEND_NAME
+        return self.__class__.BACKEND_NAME or ""
+
+    @property
+    def is_anoncreds(self) -> bool:
+        """Check if this profile uses an AnonCreds-compatible backend."""
+        return "anoncreds" in self.backend.lower()
 
     @property
     def context(self) -> InjectionContext:

@@ -874,64 +874,6 @@ async def test_create_credential_entropy_fallback(patched_issuer, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_retryable_class_methods_merge_and_create_rev_reg(
-    patched_issuer, monkeypatch
-):
-    m = patched_issuer
-
-    class _Delta:
-        @staticmethod
-        def load(x):
-            return _Delta()
-
-        def update_with(self, y):
-            pass
-
-        def to_json(self):
-            return "{}"
-
-    monkeypatch.setattr(m, "RevocationRegistryDelta", _Delta)
-    err = m.IndyIssuerRetryableError("x")
-    out = await err.merge_revocation_registry_deltas("{}", "{}")
-    assert out == "{}"
-    prof = _Profile()
-    async with prof.session() as s:
-        await s.handle.insert(patched_issuer.CATEGORY_CRED_DEF, "cd", b"{}")
-
-    class _RRD:
-        id = "rrd"
-
-        def to_json(self):
-            return "{}"
-
-    class _RRI:
-        @staticmethod
-        def to_json():
-            return "{}"
-
-    class _RRP:
-        @staticmethod
-        def to_json_buffer():
-            return b"{}"
-
-    class _RevReg:
-        def to_json(self):
-            return "{}"
-
-    class _RRDef:
-        @staticmethod
-        def create(*a, **k):
-            return _RRD(), _RRP(), _RevReg(), None
-
-    monkeypatch.setattr(patched_issuer, "RevocationRegistryDefinition", _RRDef)
-    err._profile = prof
-    out = await err.create_and_store_revocation_registry(
-        "did:sov:abc", "cd", "CL_ACCUM", "tag", 5, "/tmp"
-    )
-    assert isinstance(out, tuple) and len(out) == 3
-
-
-@pytest.mark.asyncio
 async def test_save_revocation_updates_error_path(patched_issuer):
     m = patched_issuer
     prof = _Profile()

@@ -49,6 +49,14 @@ acapy\_agent.anoncreds.models.credential\_request module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.anoncreds.models.issuer\_cred\_rev\_record module
+--------------------------------------------------------------
+
+.. automodule:: acapy_agent.anoncreds.models.issuer_cred_rev_record
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.anoncreds.models.non\_rev\_interval module
 -------------------------------------------------------
 
