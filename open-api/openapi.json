@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.2"
+    "version" : "v1.4.0rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -17,6 +17,13 @@
       "url" : "https://hyperledger.github.io/anoncreds-spec"
     },
     "name" : "AnonCreds - Credential Definitions"
+  }, {
+    "description" : "AnonCreds revocation registry management",
+    "externalDocs" : {
+      "description" : "Overview",
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
+    },
+    "name" : "AnonCreds - Revocation"
   }, {
     "description" : "Revocation registry management",
     "externalDocs" : {
@@ -474,6 +481,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/active" : {
       "put" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Revocation Registry identifier",
           "in" : "path",
@@ -502,6 +510,7 @@
     },
     "/anoncreds/registry/{rev_reg_id}/tails-file" : {
       "put" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Revocation Registry identifier",
           "in" : "path",
@@ -777,6 +786,34 @@
         "tags" : [ "AnonCreds - Revocation" ]
       }
     },
+    "/anoncreds/revocation/registry/{rev_reg_id}/active" : {
+      "put" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnonCredsRevocationModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Update the active registry",
+        "tags" : [ "AnonCreds - Revocation" ]
+      }
+    },
     "/anoncreds/revocation/registry/{rev_reg_id}/fix-revocation-entry-state" : {
       "put" : {
         "parameters" : [ {
@@ -960,6 +997,32 @@
         },
         "summary" : "Download tails file",
         "tags" : [ "AnonCreds - Revocation" ]
+      },
+      "put" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnonCredsRevocationModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Upload local tails file to server",
+        "tags" : [ "AnonCreds - Revocation" ]
       }
     },
     "/anoncreds/revocation/revoke" : {
@@ -1110,7 +1173,7 @@
             "description" : ""
           }
         },
-        "summary" : "Upgrade the wallet from askar to askar-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
+        "summary" : "Upgrade the wallet from askar to askar-anoncreds OR kanon to kanon-anoncreds. Be very careful with this! You cannot go back! See migration guide for more information.",
         "tags" : [ "AnonCreds - Wallet Upgrade" ]
       }
     },
@@ -7846,6 +7909,7 @@
         "type" : "object"
       },
       "AnonCredsPresentationReqAttrSpecNonRevoked" : {
+        "additionalProperties" : false,
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -7900,6 +7964,7 @@
         "type" : "object"
       },
       "AnonCredsPresentationReqPredSpecNonRevoked" : {
+        "additionalProperties" : false,
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -7959,6 +8024,7 @@
         "type" : "object"
       },
       "AnonCredsPresentationRequestNonRevoked" : {
+        "additionalProperties" : false,
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -8291,6 +8357,7 @@
         "type" : "object"
       },
       "ConnRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "accept" : {
             "description" : "Connection acceptance: manual or auto",
@@ -8686,7 +8753,7 @@
           },
           "wallet_type" : {
             "description" : "Type of the wallet to create. Must be same as base wallet.",
-            "enum" : [ "askar", "askar-anoncreds" ],
+            "enum" : [ "askar", "askar-anoncreds", "kanon-anoncreds" ],
             "example" : "askar",
             "type" : "string"
           },
@@ -8847,6 +8914,11 @@
           },
           "options" : {
             "$ref" : "#/components/schemas/CredDefPostOptions"
+          },
+          "wait_for_revocation_setup" : {
+            "default" : true,
+            "description" : "Wait for revocation registry setup to complete before returning",
+            "type" : "boolean"
           }
         },
         "type" : "object"
@@ -9323,6 +9395,11 @@
             "description" : "Credential definition identifier tag",
             "example" : "default",
             "type" : "string"
+          },
+          "wait_for_revocation_setup" : {
+            "default" : true,
+            "description" : "Wait for revocation registry setup to complete before returning",
+            "type" : "boolean"
           }
         },
         "type" : "object"
@@ -9962,6 +10039,7 @@
         "type" : "object"
       },
       "DocumentVerificationResult" : {
+        "additionalProperties" : false,
         "properties" : {
           "document" : {
             "additionalProperties" : {
@@ -10102,6 +10180,7 @@
         "type" : "object"
       },
       "Generated" : {
+        "additionalProperties" : false,
         "properties" : {
           "master_secret" : {
             "example" : "0",
@@ -10924,6 +11003,7 @@
         "type" : "object"
       },
       "IndyProofReqAttrSpecNonRevoked" : {
+        "additionalProperties" : false,
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -10978,6 +11058,7 @@
         "type" : "object"
       },
       "IndyProofReqPredSpecNonRevoked" : {
+        "additionalProperties" : false,
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -11037,6 +11118,7 @@
         "type" : "object"
       },
       "IndyProofRequestNonRevoked" : {
+        "additionalProperties" : false,
         "properties" : {
           "from" : {
             "description" : "Earliest time of interest in non-revocation interval",
@@ -11567,6 +11649,7 @@
         "type" : "object"
       },
       "InvitationRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "created_at" : {
             "description" : "Time of record creation",
@@ -11645,6 +11728,7 @@
         "type" : "object"
       },
       "IssuerCredRevRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "created_at" : {
             "description" : "Time of record creation",
@@ -11699,6 +11783,7 @@
         "type" : "object"
       },
       "IssuerCredRevRecordSchemaAnonCreds" : {
+        "additionalProperties" : false,
         "properties" : {
           "created_at" : {
             "description" : "Time of record creation",
@@ -11747,6 +11832,7 @@
         "type" : "object"
       },
       "IssuerRevRegRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "created_at" : {
             "description" : "Time of record creation",
@@ -11931,6 +12017,7 @@
         "type" : "object"
       },
       "KeylistQuery" : {
+        "additionalProperties" : false,
         "properties" : {
           "@id" : {
             "description" : "Message identifier",
@@ -11975,6 +12062,7 @@
         "type" : "object"
       },
       "KeylistQueryPaginate" : {
+        "additionalProperties" : false,
         "properties" : {
           "limit" : {
             "description" : "Limit for keylist query",
@@ -11990,6 +12078,7 @@
         "type" : "object"
       },
       "KeylistUpdate" : {
+        "additionalProperties" : false,
         "properties" : {
           "@id" : {
             "description" : "Message identifier",
@@ -12023,6 +12112,7 @@
         "type" : "object"
       },
       "KeylistUpdateRule" : {
+        "additionalProperties" : false,
         "properties" : {
           "action" : {
             "description" : "Action for specific key",
@@ -12259,6 +12349,7 @@
         "type" : "object"
       },
       "MediationDeny" : {
+        "additionalProperties" : false,
         "properties" : {
           "@id" : {
             "description" : "Message identifier",
@@ -12274,6 +12365,7 @@
         "type" : "object"
       },
       "MediationGrant" : {
+        "additionalProperties" : false,
         "properties" : {
           "@id" : {
             "description" : "Message identifier",
@@ -12541,6 +12633,7 @@
         "type" : "object"
       },
       "OobRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "attach_thread_id" : {
             "description" : "Connection record identifier",
@@ -12794,6 +12887,7 @@
         "type" : "object"
       },
       "PresentationVerificationResult" : {
+        "additionalProperties" : false,
         "properties" : {
           "credential_results" : {
             "items" : {
@@ -12835,6 +12929,7 @@
         "type" : "object"
       },
       "ProofResult" : {
+        "additionalProperties" : false,
         "properties" : {
           "error" : {
             "type" : "string"
@@ -12855,6 +12950,7 @@
         "type" : "object"
       },
       "ProtocolDescriptor" : {
+        "additionalProperties" : false,
         "properties" : {
           "pid" : {
             "type" : "string"
@@ -12965,6 +13061,7 @@
         "type" : "object"
       },
       "PurposeResult" : {
+        "additionalProperties" : false,
         "properties" : {
           "controller" : {
             "additionalProperties" : {
@@ -13798,6 +13895,7 @@
         "type" : "object"
       },
       "SchemaResult" : {
+        "additionalProperties" : false,
         "properties" : {
           "job_id" : {
             "type" : "string"
@@ -13866,6 +13964,7 @@
         "type" : "object"
       },
       "SchemaState" : {
+        "additionalProperties" : false,
         "properties" : {
           "schema" : {
             "$ref" : "#/components/schemas/AnonCredsSchema"
@@ -13998,6 +14097,7 @@
         "type" : "object"
       },
       "SignatureOptions" : {
+        "additionalProperties" : false,
         "properties" : {
           "challenge" : {
             "type" : "string"
@@ -14194,6 +14294,7 @@
         "type" : "object"
       },
       "TransactionRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "_type" : {
             "description" : "Transaction type",
@@ -14613,6 +14714,7 @@
         "type" : "object"
       },
       "V10CredentialExchange" : {
+        "additionalProperties" : false,
         "properties" : {
           "auto_issue" : {
             "description" : "Issuer choice to issue to request in this credential exchange",
@@ -14989,6 +15091,7 @@
         "type" : "object"
       },
       "V10DiscoveryRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "connection_id" : {
             "description" : "Connection identifier",
@@ -15074,6 +15177,7 @@
         "type" : "object"
       },
       "V10PresentationExchange" : {
+        "additionalProperties" : false,
         "properties" : {
           "auto_present" : {
             "description" : "Prover choice to auto-present proof as verifier requests",
@@ -15415,6 +15519,7 @@
         "type" : "object"
       },
       "V20CredExRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "auto_issue" : {
             "description" : "Issuer choice to issue to request in this credential exchange",
@@ -15590,6 +15695,7 @@
         "type" : "object"
       },
       "V20CredExRecordByFormat" : {
+        "additionalProperties" : false,
         "properties" : {
           "cred_issue" : {
             "additionalProperties" : {
@@ -16292,6 +16398,7 @@
         "type" : "object"
       },
       "V20DiscoveryRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "connection_id" : {
             "description" : "Connection identifier",
@@ -16446,6 +16553,7 @@
         "type" : "object"
       },
       "V20PresExRecord" : {
+        "additionalProperties" : false,
         "properties" : {
           "auto_present" : {
             "description" : "Prover choice to auto-present proof as verifier requests",
@@ -16559,6 +16667,7 @@
         "type" : "object"
       },
       "V20PresExRecordByFormat" : {
+        "additionalProperties" : false,
         "properties" : {
           "pres" : {
             "additionalProperties" : {

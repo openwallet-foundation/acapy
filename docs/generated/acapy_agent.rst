@@ -20,10 +20,12 @@ Subpackages
    acapy_agent.config
    acapy_agent.connections
    acapy_agent.core
+   acapy_agent.database_manager
    acapy_agent.did
    acapy_agent.didcomm_v2
    acapy_agent.holder
    acapy_agent.indy
+   acapy_agent.kanon
    acapy_agent.ledger
    acapy_agent.messaging
    acapy_agent.multitenant

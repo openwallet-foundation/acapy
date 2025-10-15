@@ -41,6 +41,14 @@ acapy\_agent.storage.error module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.storage.kanon\_storage module
+------------------------------------------
+
+.. automodule:: acapy_agent.storage.kanon_storage
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.storage.record module
 ----------------------------------
 
