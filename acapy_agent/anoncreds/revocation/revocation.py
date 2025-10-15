@@ -6,7 +6,7 @@ import http
 import logging
 import os
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
 from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urlparse
@@ -95,8 +95,8 @@ class RevokeResult(NamedTuple):
 
     prev: RevList
     curr: Optional[RevList] = None
-    revoked: Optional[Sequence[int]] = None
-    failed: Optional[Sequence[str]] = None
+    revoked: Optional[list[int]] = None
+    failed: Optional[list[str]] = None
 
 
 class AnonCredsRevocation:
@@ -378,6 +378,7 @@ class AnonCredsRevocation:
                 options=options,
             )
             await self.notify(event)
+            return None
 
     async def emit_store_revocation_registry_definition_event(
         self,
@@ -482,7 +483,9 @@ class AnonCredsRevocation:
             LOGGER.warning(f"{error_msg}. Emitting failure event.")
 
             event = RevRegDefStoreResponseEvent.with_failure(
+                rev_reg_def_id=rev_reg_def_id,
                 rev_reg_def=rev_reg_def,
+                rev_reg_def_result=rev_reg_def_result,
                 tag=tag,
                 error_msg=error_msg,
                 should_retry=should_retry,
@@ -611,7 +614,7 @@ class AnonCredsRevocation:
         self,
         cred_def_id: Optional[str] = None,
         state: Optional[str] = None,
-    ) -> Sequence[str]:
+    ) -> list[str]:
         """Retrieve IDs of rev reg defs previously created."""
         async with self.profile.session() as session:
             # TODO limit? scan?
@@ -1094,6 +1097,7 @@ class AnonCredsRevocation:
 
             event = RevListStoreResponseEvent.with_failure(
                 rev_reg_def_id=rev_reg_def_id,
+                result=result,
                 error_msg=error_msg,
                 should_retry=should_retry,
                 retry_count=retry_count,
@@ -1142,7 +1146,7 @@ class AnonCredsRevocation:
         rev_reg_def_id: str,
         prev: RevList,
         curr: RevList,
-        revoked: Sequence[int],
+        revoked: list[int],
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Publish and update to a revocation list."""
@@ -1232,7 +1236,7 @@ class AnonCredsRevocation:
 
     async def get_revocation_lists_with_pending_revocations(
         self,
-    ) -> Sequence[str]:
+    ) -> list[str]:
         """Return a list of rev reg def ids with pending revocations."""
         try:
             async with self.profile.session() as session:
@@ -1490,7 +1494,12 @@ class AnonCredsRevocation:
             )
         )
         # set new as active...
-        await self.set_active_registry(new_reg.rev_reg_def_id)
+        if new_reg:
+            new_rev_reg_def_id = new_reg.rev_reg_def_id
+            await self.set_active_registry(new_rev_reg_def_id)
+        else:
+            new_rev_reg_def_id = None
+            LOGGER.warning("No new registry created while decommissioning registry")
 
         # decommission everything except init/wait
         async with self.profile.transaction() as txn:
@@ -1502,14 +1511,13 @@ class AnonCredsRevocation:
                 for_update=True,
             )
 
-            recs = list(
-                filter(
-                    lambda r: r.tags.get("state") != RevRegDefState.STATE_WAIT,
-                    registries,
-                )
-            )
+            def filter_registries(registry: Entry) -> bool:
+                return registry.tags.get("state") != RevRegDefState.STATE_WAIT
+
+            recs = list(filter(filter_registries, registries))
+
             for rec in recs:
-                if rec.name != new_reg.rev_reg_def_id:
+                if rec.name != new_rev_reg_def_id:
                     tags = rec.tags
                     tags["active"] = "false"
                     tags["state"] = RevRegDefState.STATE_DECOMMISSIONED
@@ -1683,7 +1691,7 @@ class AnonCredsRevocation:
         w3c_credential_values: dict,
         *,
         retries: int = 5,
-    ) -> Tuple[str, str, str]:
+    ) -> Tuple[str, str | None, str | None]:
         """Create a w3c_credential.
 
         Args:
@@ -1693,7 +1701,7 @@ class AnonCredsRevocation:
             retries: number of times to retry w3c_credential creation
 
         Returns:
-            A tuple of created w3c_credential and revocation id
+            A tuple of created w3c_credential, revocation id, and the rev reg def id
 
         """
         return await self._create_credential_helper(
@@ -1753,7 +1761,7 @@ class AnonCredsRevocation:
         credential_type: Credential | W3cCredential,
         rev_reg_def_id: Optional[str] = None,
         tails_file_path: Optional[str] = None,
-    ) -> Tuple[str, str]:
+    ) -> Tuple[str, str | None]:
         """Create a credential.
 
         Args:
@@ -1772,7 +1780,7 @@ class AnonCredsRevocation:
         """
 
         def _handle_missing_entries(
-            rev_list: Entry, rev_reg_def: Entry, rev_key: Entry
+            rev_list: Entry | None, rev_reg_def: Entry | None, rev_key: Entry | None
         ) -> None:
             if not rev_reg_def:
                 raise AnonCredsRevocationError("Revocation registry definition not found")
@@ -1784,14 +1792,11 @@ class AnonCredsRevocation:
                 LOGGER.error("Revocation registry list not found for %s", rev_reg_def_id)
                 raise AnonCredsRevocationError("Revocation registry list not found")
 
-        def _has_required_id_and_tails_path() -> bool:
-            return rev_reg_def_id and tails_file_path
-
         revoc = None
         credential_revocation_id = None
         rev_list = None
 
-        if _has_required_id_and_tails_path():
+        if rev_reg_def_id and tails_file_path:
             # We need to make sure the read, index increment, and write
             # operations are done in a transaction.
             # TODO: This isn't fully atomic in a clustered environment as the
@@ -1881,7 +1886,7 @@ class AnonCredsRevocation:
         credential_values: dict,
         *,
         retries: int = 5,
-    ) -> Tuple[str, str, str]:
+    ) -> Tuple[str, str | None, str | None]:
         """Create a credential.
 
         Args:
@@ -1892,7 +1897,7 @@ class AnonCredsRevocation:
             retries: number of times to retry credential creation
 
         Returns:
-            A tuple of created credential and revocation id
+            A tuple of created credential, revocation id, and the rev reg def id
 
         """
         return await self._create_credential_helper(
@@ -1911,7 +1916,7 @@ class AnonCredsRevocation:
         credential_type: Credential | W3cCredential,
         *,
         retries: int = 5,
-    ) -> Tuple[str, str, str]:
+    ) -> Tuple[str, str | None, str | None]:
         """Create a credential.
 
         Args:
@@ -1988,7 +1993,7 @@ class AnonCredsRevocation:
                     <= int(cred_rev_id) + 1
                 )
 
-            if rev_reg_def_id and rev_reg_def_result:
+            if cred_rev_id and rev_reg_def_id and rev_reg_def_result:
                 if _is_full_registry(rev_reg_def_result, cred_rev_id):
                     await self.emit_full_registry_event(rev_reg_def_id, cred_def_id)
 
@@ -2002,15 +2007,15 @@ class AnonCredsRevocation:
         self,
         revoc_reg_id: str,
         *,
-        additional_crids: Optional[Sequence[int]] = None,
-        limit_crids: Optional[Sequence[int]] = None,
+        additional_crids: Optional[list[int]] = None,
+        limit_crids: Optional[list[int]] = None,
     ) -> RevokeResult:
         """Revoke a set of credentials in a revocation registry.
 
         Args:
             revoc_reg_id: ID of the revocation registry
-            additional_crids: sequences of additional credential indexes to revoke
-            limit_crids: a sequence of credential indexes to limit revocation to
+            additional_crids: list of additional credential indexes to revoke
+            limit_crids: a list of credential indexes to limit revocation to
                 If None, all pending revocations will be published.
                 If given, the intersection of pending and limit crids will be published.
 
@@ -2026,7 +2031,6 @@ class AnonCredsRevocation:
             limit_crids,
         )
         updated_list = None
-        failed_crids = set()
         max_attempt = 5
         attempt = 0
 
@@ -2120,11 +2124,13 @@ class AnonCredsRevocation:
                     "Error loading revocation registry definition"
                 ) from err
 
-            rev_crids = set()
-            failed_crids = set()
+            rev_crids: set[int] = set()
+            failed_crids: set[int] = set()
             max_cred_num = rev_reg_def.value.max_cred_num
             rev_info = rev_list_entry.value_json
-            cred_revoc_ids = (rev_info["pending"] or []) + (additional_crids or [])
+            cred_revoc_ids: list[int] = (rev_info["pending"] or []) + (
+                additional_crids or []
+            )
             rev_list = RevList.deserialize(rev_info["rev_list"])
 
             LOGGER.info(
@@ -2222,7 +2228,7 @@ class AnonCredsRevocation:
                             revoc_reg_id,
                         )
                         continue
-                    rev_info_upd["rev_list"] = updated_list.to_dict()
+                    rev_info_upd["rev_list"] = updated_list.to_dict()  # type: ignore[union-attr]
                     rev_info_upd["pending"] = (
                         list(skipped_crids) if skipped_crids else None
                     )
@@ -2307,7 +2313,7 @@ class AnonCredsRevocation:
         self,
         txn: ProfileSession,
         rev_reg_def_id: str,
-        crid_mask: Optional[Sequence[int]] = None,
+        crid_mask: Optional[list[int]] = None,
     ) -> None:
         """Clear pending revocations."""
         # Accept both Askar and Kanon anoncreds sessions

@@ -163,8 +163,8 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         error_info = failure.error_info
 
         # Log error details based on available failure attributes
-        identifier = (
-            getattr(failure, "cred_def_id", None)
+        identifier: str = (
+            getattr(failure, "cred_def_id", None)  # type: ignore[assignment]
             or getattr(failure, "rev_reg_def_id", None)
             or getattr(payload, "rev_reg_def_id", "unknown")
         )
@@ -402,7 +402,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         revoc = AnonCredsRevocation(profile)
 
         correlation_id, options_with_correlation = await self._setup_request_correlation(
-            profile, payload, RECORD_TYPE_REV_REG_DEF_CREATE_EVENT
+            profile,
+            payload,  # type: ignore[arg-type]
+            RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
         )
 
         LOGGER.debug(
@@ -430,16 +432,15 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     ) -> None:
         """Handle registry creation response."""
         payload = event.payload
-        correlation_id = payload.options.get("correlation_id")
+        correlation_id: str = payload.options.get("correlation_id", "")
 
         if not correlation_id:  # pragma: no cover
             LOGGER.warning("No correlation_id found for rev reg def create response")
 
-        if payload.failure:
+        if failure := payload.failure:
             # Define retry callback for registry creation
             async def retry_registry_creation(options):  # pragma: no cover
                 revoc = AnonCredsRevocation(profile)
-                failure = payload.failure
                 await revoc.emit_create_revocation_registry_definition_event(
                     issuer_id=failure.issuer_id,
                     cred_def_id=failure.cred_def_id,
@@ -451,24 +452,29 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_failure(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                 correlation_id=correlation_id,
                 failure_type="registry_create",
                 retry_callback=retry_registry_creation,
             )
         else:
+            if not payload.rev_reg_def_result or not payload.rev_reg_def:
+                #  For type checks; should never happen
+                LOGGER.error("Expected rev_reg_def to be present in successful response")
+                return
+
             # Handle success
             success_message = (
                 f"Registry creation succeeded for "
-                f"rev_reg_def_id: {payload.rev_reg_def.id}, "
+                f"rev_reg_def_id: {payload.rev_reg_def_result.rev_reg_def_id}, "
                 f"request_id: {payload.options.get('request_id')}, "
                 f"correlation_id: {correlation_id}"
             )
 
             await self._handle_response_success(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
                 correlation_id=correlation_id,
                 success_message=success_message,
@@ -490,7 +496,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         revoc = AnonCredsRevocation(profile)
 
         _, options_with_correlation = await self._setup_request_correlation(
-            profile, payload, RECORD_TYPE_REV_REG_DEF_STORE_EVENT
+            profile,
+            payload,  # type: ignore[arg-type]
+            RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
         )
 
         await revoc.handle_store_revocation_registry_definition_request(
@@ -505,7 +513,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         payload = event.payload
 
         # Update the persisted event with response information
-        correlation_id = payload.options.get("correlation_id")
+        correlation_id: str = payload.options.get("correlation_id", "")
         if not correlation_id:  # pragma: no cover
             LOGGER.warning("No correlation_id found for rev reg def store response")
 
@@ -520,7 +528,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_failure(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                 correlation_id=correlation_id,
                 failure_type="registry_store",
@@ -536,7 +544,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_success(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
                 correlation_id=correlation_id,
                 success_message=success_message,
@@ -593,7 +601,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         revoc = AnonCredsRevocation(profile)
 
         correlation_id, options_with_correlation = await self._setup_request_correlation(
-            profile, payload, RECORD_TYPE_REV_LIST_CREATE_EVENT
+            profile,
+            payload,  # type: ignore[arg-type]
+            RECORD_TYPE_REV_LIST_CREATE_EVENT,
         )
 
         LOGGER.debug(
@@ -618,7 +628,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         payload = event.payload
 
         # Update the persisted event with response information
-        correlation_id = payload.options.get("correlation_id")
+        correlation_id: str = payload.options.get("correlation_id", "")
         if not correlation_id:  # pragma: no cover
             LOGGER.warning("No correlation_id found for rev list create response")
 
@@ -632,13 +642,20 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_failure(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                 correlation_id=correlation_id,
                 failure_type="rev_list_create",
                 retry_callback=retry_rev_list_creation,
             )
         else:
+            if not payload.rev_list_result:
+                #  For type checks; should never happen
+                LOGGER.error(
+                    "Expected rev_list_result to exist in successful create response"
+                )
+                return
+
             # Handle success
             success_message = (
                 f"Revocation list creation succeeded for "
@@ -649,7 +666,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_success(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_LIST_CREATE_EVENT,
                 correlation_id=correlation_id,
                 success_message=success_message,
@@ -679,7 +696,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         revoc = AnonCredsRevocation(profile)
 
         correlation_id, options_with_correlation = await self._setup_request_correlation(
-            profile, payload, RECORD_TYPE_REV_LIST_STORE_EVENT
+            profile,
+            payload,  # type: ignore[arg-type]
+            RECORD_TYPE_REV_LIST_STORE_EVENT,
         )
 
         LOGGER.debug(
@@ -703,7 +722,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         payload = event.payload
 
         # Update the persisted event with response information
-        correlation_id = payload.options.get("correlation_id")
+        correlation_id: str = payload.options.get("correlation_id", "")
         if not correlation_id:  # pragma: no cover
             LOGGER.warning("No correlation_id found for rev list store response")
 
@@ -713,13 +732,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                 revoc = AnonCredsRevocation(profile)
                 await revoc.handle_store_revocation_list_request(
                     rev_reg_def_id=payload.rev_reg_def_id,
-                    result=payload.failure.result,
+                    result=payload.result,
                     options=options,
                 )
 
             await self._handle_response_failure(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                 correlation_id=correlation_id,
                 failure_type="rev_list_store",
@@ -736,7 +755,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_success(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_LIST_STORE_EVENT,
                 correlation_id=correlation_id,
                 success_message=success_message,
@@ -760,7 +779,9 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         revoc = AnonCredsRevocation(profile)
 
         correlation_id, options_with_correlation = await self._setup_request_correlation(
-            profile, payload, RECORD_TYPE_REV_REG_ACTIVATION_EVENT
+            profile,
+            payload,  # type: ignore[arg-type]
+            RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
         )
 
         LOGGER.debug(
@@ -784,7 +805,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         payload = event.payload
 
         # Update the persisted event with response information
-        correlation_id = payload.options.get("correlation_id")
+        correlation_id: str = payload.options.get("correlation_id", "")
         if not correlation_id:  # pragma: no cover
             LOGGER.warning("No correlation_id found for rev reg def activation response")
 
@@ -798,7 +819,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_failure(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
                 correlation_id=correlation_id,
                 failure_type="registry_activation",
@@ -939,7 +960,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
         payload = event.payload
 
         # Update the persisted event with response information
-        correlation_id = payload.options.get("correlation_id")
+        correlation_id: str = payload.options.get("correlation_id", "")
         if not correlation_id:  # pragma: no cover
             LOGGER.warning("No correlation_id found for full registry handling response")
 
@@ -955,7 +976,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_failure(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                 correlation_id=correlation_id,
                 failure_type="full_registry_handling",
@@ -975,7 +996,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
             await self._handle_response_success(
                 profile=profile,
-                payload=payload,
+                payload=payload,  # type: ignore[arg-type]
                 event_type=RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
                 correlation_id=correlation_id,
                 success_message=success_message,
