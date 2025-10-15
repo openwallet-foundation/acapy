@@ -8,13 +8,13 @@ from typing import Any, Dict, List, NamedTuple, Optional, Type
 from anoncreds import RevocationRegistryDefinitionPrivate
 from uuid_utils import uuid4
 
-from ..core.profile import ProfileSession
-from ..messaging.models.base import BaseModel
-from ..messaging.util import datetime_to_str, epoch_to_str
-from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
-from ..storage.record import StorageRecord
-from ..storage.type import (
+from ....core.profile import ProfileSession
+from ....messaging.models.base import BaseModel
+from ....messaging.util import datetime_to_str, epoch_to_str
+from ....storage.base import BaseStorage
+from ....storage.error import StorageNotFoundError
+from ....storage.record import StorageRecord
+from ....storage.type import (
     EVENT_STATE_REQUESTED,
     EVENT_STATE_RESPONSE_FAILURE,
     EVENT_STATE_RESPONSE_SUCCESS,
@@ -25,7 +25,7 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
 )
-from ..utils.classloader import ClassLoader
+from ....utils.classloader import ClassLoader
 from .retry_utils import (
     calculate_event_expiry_timestamp,
     get_retry_metadata_for_storage,

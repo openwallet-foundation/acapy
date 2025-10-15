@@ -13,7 +13,7 @@ from aiohttp import web
 from aiohttp_apispec import setup_aiohttp_apispec, validation_middleware
 from uuid_utils import uuid4
 
-from ..anoncreds.revocation_recovery_middleware import revocation_recovery_middleware
+from ..anoncreds.revocation.auto_recovery import revocation_recovery_middleware
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus

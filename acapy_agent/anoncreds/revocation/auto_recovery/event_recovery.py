@@ -3,9 +3,9 @@
 import logging
 from typing import Dict
 
-from ..core.event_bus import EventBus
-from ..core.profile import Profile
-from ..storage.type import (
+from ....core.event_bus import EventBus
+from ....core.profile import Profile
+from ....storage.type import (
     RECORD_TYPE_REV_LIST_CREATE_EVENT,
     RECORD_TYPE_REV_LIST_STORE_EVENT,
     RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
@@ -13,8 +13,7 @@ from ..storage.type import (
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
 )
-from .event_storage import EventStorageManager, deserialize_event_payload
-from .events import (
+from ...events import (
     RevListCreateRequestedEvent,
     RevListCreateRequestedPayload,
     RevListStoreRequestedEvent,
@@ -28,6 +27,7 @@ from .events import (
     RevRegFullDetectedEvent,
     RevRegFullDetectedPayload,
 )
+from .event_storage import EventStorageManager, deserialize_event_payload
 
 LOGGER = logging.getLogger(__name__)
 
