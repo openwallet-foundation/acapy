@@ -42,7 +42,6 @@ from ..constants import (
     STATE_FINISHED,
 )
 from ..error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from ..event_storage import generate_request_id
 from ..events import (
     FIRST_REGISTRY_TAG,
     RevListCreateRequestedEvent,
@@ -72,6 +71,7 @@ from ..models.revocation import (
 )
 from ..registry import AnonCredsRegistry
 from ..util import indy_client_dir
+from .auto_recovery import generate_request_id
 
 LOGGER = logging.getLogger(__name__)
 

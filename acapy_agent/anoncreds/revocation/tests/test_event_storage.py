@@ -7,15 +7,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from ...storage.base import BaseStorage
-from ...storage.record import StorageRecord
-from ...storage.type import (
+from ....storage.base import BaseStorage
+from ....storage.record import StorageRecord
+from ....storage.type import (
     EVENT_STATE_RESPONSE_FAILURE,
     EVENT_STATE_RESPONSE_SUCCESS,
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
 )
-from ...utils.testing import create_test_profile
-from ..event_storage import EventStorageManager
+from ....utils.testing import create_test_profile
+from ..auto_recovery.event_storage import EventStorageManager
 
 
 @pytest.mark.anoncreds

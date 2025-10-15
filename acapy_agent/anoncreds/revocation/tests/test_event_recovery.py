@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ...core.event_bus import EventBus
-from ...storage.type import (
+from ....core.event_bus import EventBus
+from ....storage.type import (
     RECORD_TYPE_REV_LIST_CREATE_EVENT,
     RECORD_TYPE_REV_LIST_STORE_EVENT,
     RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
@@ -15,8 +15,8 @@ from ...storage.type import (
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
 )
-from ...utils.testing import create_test_profile
-from ..event_recovery import EventRecoveryManager, recover_revocation_events
+from ....utils.testing import create_test_profile
+from ..auto_recovery.event_recovery import EventRecoveryManager, recover_revocation_events
 
 
 @pytest.mark.anoncreds
@@ -59,7 +59,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_recover_in_progress_events_no_events(self, mock_storage_class):
         """Test recover_in_progress_events when no events exist."""
         mock_storage = AsyncMock()
@@ -75,7 +77,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
             assert result == 0
             mock_storage.get_in_progress_events.assert_called_once_with(only_expired=True)
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_recover_in_progress_events_with_events(self, mock_storage_class):
         """Test recover_in_progress_events with events to recover."""
         # Create test events
@@ -104,7 +108,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                 mock_recover_single.assert_any_call(test_events[0])
                 mock_recover_single.assert_any_call(test_events[1])
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_recover_in_progress_events_with_errors(self, mock_storage_class):
         """Test recover_in_progress_events with some recovery errors."""
         test_events = [
@@ -232,7 +238,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         # Should not raise exception, just log warning
         await self.manager._recover_single_event(event_record)
 
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_recover_rev_reg_def_create_event(self, mock_deserialize):
         """Test _recover_rev_reg_def_create_event."""
         # Mock the deserialized payload
@@ -249,13 +257,13 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         options = {"recovery": True, "correlation_id": "test_corr_id"}
 
         with patch(
-            "acapy_agent.anoncreds.event_recovery.RevRegDefCreateRequestedPayload"
+            "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefCreateRequestedPayload"
         ) as mock_payload_class:
             mock_new_payload = MagicMock()
             mock_payload_class.return_value = mock_new_payload
 
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevRegDefCreateRequestedEvent"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefCreateRequestedEvent"
             ) as mock_event_class:
                 mock_event = MagicMock()
                 mock_event_class.return_value = mock_event
@@ -283,7 +291,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                 mock_event_class.assert_called_once_with(mock_new_payload)
                 self.event_bus.notify.assert_called_once_with(self.profile, mock_event)
 
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_recover_rev_reg_def_store_event(self, mock_deserialize):
         """Test _recover_rev_reg_def_store_event."""
         mock_payload = MagicMock()
@@ -296,10 +306,10 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         options = {"recovery": True}
 
         with patch(
-            "acapy_agent.anoncreds.event_recovery.RevRegDefStoreRequestedPayload"
+            "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefStoreRequestedPayload"
         ) as mock_payload_class:
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevRegDefStoreRequestedEvent"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefStoreRequestedEvent"
             ) as mock_event_class:
                 self.event_bus.notify = AsyncMock()
 
@@ -312,7 +322,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                     options=expected_options,
                 )
 
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_recover_rev_list_create_event(self, mock_deserialize):
         """Test _recover_rev_list_create_event."""
         mock_payload = MagicMock()
@@ -324,10 +336,10 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         options = {"recovery": True}
 
         with patch(
-            "acapy_agent.anoncreds.event_recovery.RevListCreateRequestedPayload"
+            "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevListCreateRequestedPayload"
         ) as mock_payload_class:
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevListCreateRequestedEvent"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevListCreateRequestedEvent"
             ) as mock_event_class:
                 self.event_bus.notify = AsyncMock()
 
@@ -339,7 +351,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                     options=expected_options,
                 )
 
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_recover_rev_list_store_event(self, mock_deserialize):
         """Test _recover_rev_list_store_event."""
         mock_payload = MagicMock()
@@ -352,10 +366,10 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         options = {"recovery": True}
 
         with patch(
-            "acapy_agent.anoncreds.event_recovery.RevListStoreRequestedPayload"
+            "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevListStoreRequestedPayload"
         ) as mock_payload_class:
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevListStoreRequestedEvent"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevListStoreRequestedEvent"
             ) as mock_event_class:
                 self.event_bus.notify = AsyncMock()
 
@@ -368,7 +382,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                     options=expected_options,
                 )
 
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_recover_rev_reg_activation_event(self, mock_deserialize):
         """Test _recover_rev_reg_activation_event."""
         mock_payload = MagicMock()
@@ -380,10 +396,10 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         options = {"recovery": True}
 
         with patch(
-            "acapy_agent.anoncreds.event_recovery.RevRegActivationRequestedPayload"
+            "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegActivationRequestedPayload"
         ) as mock_payload_class:
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevRegActivationRequestedEvent"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegActivationRequestedEvent"
             ) as mock_event_class:
                 self.event_bus.notify = AsyncMock()
 
@@ -395,7 +411,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                     options=expected_options,
                 )
 
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_recover_rev_reg_full_handling_event(self, mock_deserialize):
         """Test _recover_rev_reg_full_handling_event."""
         mock_payload = MagicMock()
@@ -408,10 +426,10 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         options = {"recovery": True}
 
         with patch(
-            "acapy_agent.anoncreds.event_recovery.RevRegFullDetectedPayload"
+            "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegFullDetectedPayload"
         ) as mock_payload_class:
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevRegFullDetectedEvent"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegFullDetectedEvent"
             ) as mock_event_class:
                 self.event_bus.notify = AsyncMock()
 
@@ -426,7 +444,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                     options=expected_options,
                 )
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_cleanup_old_events(self, mock_storage_class):
         """Test cleanup_old_events method."""
         mock_storage = AsyncMock()
@@ -444,7 +464,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                 max_age_hours=48
             )
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_cleanup_old_events_default_age(self, mock_storage_class):
         """Test cleanup_old_events with default max_age_hours."""
         mock_storage = AsyncMock()
@@ -462,7 +484,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
                 max_age_hours=24
             )
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_get_recovery_status(self, mock_storage_class):
         """Test get_recovery_status method."""
         # Mock in-progress events
@@ -504,7 +528,9 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
 
             assert result == expected
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
     async def test_get_recovery_status_no_events(self, mock_storage_class):
         """Test get_recovery_status when no events exist."""
         mock_storage = AsyncMock()
@@ -541,7 +567,9 @@ class TestRecoverRevocationEventsFunction(IsolatedAsyncioTestCase):
         """Clean up test fixtures."""
         await self.profile.close()
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventRecoveryManager")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventRecoveryManager"
+    )
     async def test_recover_revocation_events(self, mock_manager_class):
         """Test recover_revocation_events convenience function."""
         mock_manager = AsyncMock()
@@ -569,8 +597,12 @@ class TestEventRecoveryIntegration(IsolatedAsyncioTestCase):
         """Clean up test fixtures."""
         await self.profile.close()
 
-    @patch("acapy_agent.anoncreds.event_recovery.EventStorageManager")
-    @patch("acapy_agent.anoncreds.event_recovery.deserialize_event_payload")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.EventStorageManager"
+    )
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.deserialize_event_payload"
+    )
     async def test_end_to_end_recovery_flow(self, mock_deserialize, mock_storage_class):
         """Test complete recovery flow from storage to event emission."""
         # Setup test event
@@ -613,10 +645,10 @@ class TestEventRecoveryIntegration(IsolatedAsyncioTestCase):
             mock_session_cm.return_value.__aenter__.return_value = mock_session
 
             with patch(
-                "acapy_agent.anoncreds.event_recovery.RevRegDefCreateRequestedPayload"
+                "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefCreateRequestedPayload"
             ) as mock_payload_class:
                 with patch(
-                    "acapy_agent.anoncreds.event_recovery.RevRegDefCreateRequestedEvent"
+                    "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefCreateRequestedEvent"
                 ) as mock_event_class:
                     mock_new_payload = MagicMock()
                     mock_payload_class.return_value = mock_new_payload

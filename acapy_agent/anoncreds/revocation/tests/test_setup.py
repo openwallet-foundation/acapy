@@ -14,7 +14,6 @@ from ....storage.type import (
 )
 from ....tests import mock
 from ....utils.testing import create_test_profile
-from ...event_storage import EventStorageManager
 from ...events import (
     INTERVENTION_REQUIRED_EVENT,
     ErrorInfoPayload,
@@ -48,6 +47,7 @@ from ...events import (
     RevRegFullHandlingResponsePayload,
 )
 from .. import revocation_setup as test_module
+from ..auto_recovery.event_storage import EventStorageManager
 from ..revocation import AnonCredsRevocation
 
 

@@ -8,11 +8,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 
-from ...admin.request_context import AdminRequestContext
-from ...core.event_bus import EventBus
-from ...storage.type import RECORD_TYPE_REV_REG_DEF_CREATE_EVENT
-from ...utils.testing import create_test_profile
-from ..revocation_recovery_middleware import (
+from ....admin.request_context import AdminRequestContext
+from ....core.event_bus import EventBus
+from ....storage.type import RECORD_TYPE_REV_REG_DEF_CREATE_EVENT
+from ....utils.testing import create_test_profile
+from ..auto_recovery.revocation_recovery_middleware import (
     RevocationRecoveryTracker,
     get_revocation_event_counts,
     recover_profile_events,
@@ -103,7 +103,9 @@ class TestGetRevocationEventCounts(IsolatedAsyncioTestCase):
             "expiry_timestamp": expiry_timestamp,
         }
 
-    @patch("acapy_agent.anoncreds.revocation_recovery_middleware.is_event_expired")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.is_event_expired"
+    )
     async def test_no_events(self, mock_is_expired):
         """Test when no events are found."""
         with patch.object(self.profile, "session") as mock_session_cm:
@@ -112,7 +114,7 @@ class TestGetRevocationEventCounts(IsolatedAsyncioTestCase):
 
             # Mock EventStorageManager
             with patch(
-                "acapy_agent.anoncreds.revocation_recovery_middleware.EventStorageManager"
+                "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventStorageManager"
             ) as mock_storage_class:
                 mock_storage = AsyncMock()
                 mock_storage.get_in_progress_events.return_value = []
@@ -125,7 +127,9 @@ class TestGetRevocationEventCounts(IsolatedAsyncioTestCase):
                 assert pending_count == 0
                 assert recoverable_count == 0
 
-    @patch("acapy_agent.anoncreds.revocation_recovery_middleware.is_event_expired")
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.is_event_expired"
+    )
     async def test_events_with_expiry(self, mock_is_expired):
         """Test events with expiry timestamps."""
         # Mock expired and non-expired events
@@ -147,7 +151,7 @@ class TestGetRevocationEventCounts(IsolatedAsyncioTestCase):
             mock_session_cm.return_value.__aenter__.return_value = mock_session
 
             with patch(
-                "acapy_agent.anoncreds.revocation_recovery_middleware.EventStorageManager"
+                "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventStorageManager"
             ) as mock_storage_class:
                 mock_storage = AsyncMock()
                 mock_storage.get_in_progress_events.return_value = events
@@ -172,7 +176,7 @@ class TestGetRevocationEventCounts(IsolatedAsyncioTestCase):
             mock_session_cm.return_value.__aenter__.return_value = mock_session
 
             with patch(
-                "acapy_agent.anoncreds.revocation_recovery_middleware.EventStorageManager"
+                "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventStorageManager"
             ) as mock_storage_class:
                 mock_storage = AsyncMock()
                 mock_storage.get_in_progress_events.return_value = events
@@ -199,7 +203,7 @@ class TestGetRevocationEventCounts(IsolatedAsyncioTestCase):
             mock_session_cm.return_value.__aenter__.return_value = mock_session
 
             with patch(
-                "acapy_agent.anoncreds.revocation_recovery_middleware.EventStorageManager"
+                "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventStorageManager"
             ) as mock_storage_class:
                 mock_storage = AsyncMock()
                 mock_storage.get_in_progress_events.return_value = events
@@ -241,7 +245,7 @@ class TestRecoverProfileEvents(IsolatedAsyncioTestCase):
     async def test_successful_recovery(self):
         """Test successful event recovery."""
         with patch(
-            "acapy_agent.anoncreds.revocation_recovery_middleware.EventRecoveryManager"
+            "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventRecoveryManager"
         ) as mock_recovery_class:
             mock_recovery = AsyncMock()
             mock_recovery.recover_in_progress_events.return_value = 3
@@ -256,7 +260,7 @@ class TestRecoverProfileEvents(IsolatedAsyncioTestCase):
     async def test_no_events_to_recover(self):
         """Test when no events need recovery."""
         with patch(
-            "acapy_agent.anoncreds.revocation_recovery_middleware.EventRecoveryManager"
+            "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventRecoveryManager"
         ) as mock_recovery_class:
             mock_recovery = AsyncMock()
             mock_recovery.recover_in_progress_events.return_value = 0
@@ -269,7 +273,7 @@ class TestRecoverProfileEvents(IsolatedAsyncioTestCase):
     async def test_recovery_error(self):
         """Test error handling during recovery."""
         with patch(
-            "acapy_agent.anoncreds.revocation_recovery_middleware.EventRecoveryManager"
+            "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventRecoveryManager"
         ) as mock_recovery_class:
             mock_recovery = AsyncMock()
             mock_recovery.recover_in_progress_events.side_effect = Exception(
@@ -368,7 +372,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         assert response.text == "OK"
 
     @patch(
-        "acapy_agent.anoncreds.revocation_recovery_middleware.get_revocation_event_counts"
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.get_revocation_event_counts"
     )
     async def test_no_recoverable_events_no_pending(self, mock_get_counts):
         """Test when no recoverable events and no pending events exist."""
@@ -386,7 +390,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         self.handler.assert_called_once_with(self.request)
 
     @patch(
-        "acapy_agent.anoncreds.revocation_recovery_middleware.get_revocation_event_counts"
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.get_revocation_event_counts"
     )
     async def test_no_recoverable_events_with_pending(self, mock_get_counts):
         """Test when no recoverable events but pending events exist."""
@@ -404,7 +408,7 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         self.handler.assert_called_once_with(self.request)
 
     @patch(
-        "acapy_agent.anoncreds.revocation_recovery_middleware.get_revocation_event_counts"
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.get_revocation_event_counts"
     )
     async def test_error_checking_events(self, mock_get_counts):
         """Test error handling when checking for events."""
@@ -419,9 +423,11 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
         # Should continue with request despite error
         self.handler.assert_called_once_with(self.request)
 
-    @patch("acapy_agent.anoncreds.revocation_recovery_middleware.recover_profile_events")
     @patch(
-        "acapy_agent.anoncreds.revocation_recovery_middleware.get_revocation_event_counts"
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.recover_profile_events"
+    )
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.get_revocation_event_counts"
     )
     async def test_successful_recovery(self, mock_get_counts, mock_recover):
         """Test successful recovery process."""
@@ -448,9 +454,11 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
 
         self.handler.assert_called_once_with(self.request)
 
-    @patch("acapy_agent.anoncreds.revocation_recovery_middleware.recover_profile_events")
     @patch(
-        "acapy_agent.anoncreds.revocation_recovery_middleware.get_revocation_event_counts"
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.recover_profile_events"
+    )
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.get_revocation_event_counts"
     )
     async def test_recovery_timeout(self, mock_get_counts, mock_recover):
         """Test recovery timeout handling."""
@@ -475,9 +483,11 @@ class TestRevocationRecoveryMiddleware(IsolatedAsyncioTestCase):
 
         self.handler.assert_called_once_with(self.request)
 
-    @patch("acapy_agent.anoncreds.revocation_recovery_middleware.recover_profile_events")
     @patch(
-        "acapy_agent.anoncreds.revocation_recovery_middleware.get_revocation_event_counts"
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.recover_profile_events"
+    )
+    @patch(
+        "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.get_revocation_event_counts"
     )
     async def test_recovery_general_error(self, mock_get_counts, mock_recover):
         """Test recovery general error handling."""
@@ -539,7 +549,7 @@ class TestMiddlewareIntegration(IsolatedAsyncioTestCase):
             mock_session_cm.return_value.__aenter__.return_value = mock_session
 
             with patch(
-                "acapy_agent.anoncreds.revocation_recovery_middleware.EventStorageManager"
+                "acapy_agent.anoncreds.revocation.auto_recovery.revocation_recovery_middleware.EventStorageManager"
             ) as mock_storage_class:
                 mock_storage = AsyncMock()
                 mock_storage.get_in_progress_events.return_value = []

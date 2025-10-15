@@ -17,12 +17,6 @@ from ...storage.type import (
     RECORD_TYPE_REV_REG_DEF_STORE_EVENT,
     RECORD_TYPE_REV_REG_FULL_HANDLING_EVENT,
 )
-from ..event_storage import (
-    EventStorageManager,
-    generate_correlation_id,
-    generate_request_id,
-    serialize_event_payload,
-)
 from ..events import (
     FIRST_REGISTRY_TAG,
     INTERVENTION_REQUIRED_EVENT,
@@ -45,11 +39,15 @@ from ..events import (
     RevRegFullHandlingResponseEvent,
 )
 from ..issuer import STATE_FINISHED
-from ..retry_utils import (
+from ..revocation import AnonCredsRevocation
+from .auto_recovery import (
+    EventStorageManager,
     calculate_event_expiry_timestamp,
     calculate_exponential_backoff_delay,
+    generate_correlation_id,
+    generate_request_id,
+    serialize_event_payload,
 )
-from ..revocation import AnonCredsRevocation
 
 LOGGER = logging.getLogger(__name__)
 

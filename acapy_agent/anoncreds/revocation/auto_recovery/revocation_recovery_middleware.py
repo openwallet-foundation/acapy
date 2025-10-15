@@ -6,10 +6,9 @@ from typing import Coroutine, Set, Tuple
 
 from aiohttp import web
 
-from acapy_agent.core.profile import Profile
-
-from ..admin.request_context import AdminRequestContext
-from ..core.event_bus import EventBus
+from ....admin.request_context import AdminRequestContext
+from ....core.event_bus import EventBus
+from ....core.profile import Profile
 from .event_recovery import EventRecoveryManager
 from .event_storage import EventStorageManager
 from .retry_utils import is_event_expired

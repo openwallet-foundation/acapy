@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict
 
-from ..messaging.util import str_to_datetime
+from ....messaging.util import str_to_datetime
 
 retry_config: Dict[str, int] = {
     "min_retry_duration_seconds": int(
