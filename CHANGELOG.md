@@ -24,6 +24,8 @@ In an upcoming ACA-Py release, we will be dropping from the core ACA-Py reposito
 [RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
 [RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
 
+The acapy_agent.revocation_anoncreds package has been deprecated and relocated to acapy_agent.anoncreds.revocation for improved consistency across the codebase. Likewise, the OpenAPI endpoint for uploading a tails file (PUT /anoncreds/registry/{rev_reg_id}/tails-file) has been deprecated and replaced by /anoncreds/revocation/registry/{rev_reg_id}/tails-file. These changes primarily affect [ACA-Py Plugins] using the capabilities, but other developers should also take note.
+
 ### ⚠️ Breaking Changes
 
 This release introduces **no breaking changes** for existing ACA-Py deployments. Existing instances can continue to use Askar for both key and data storage by default.
