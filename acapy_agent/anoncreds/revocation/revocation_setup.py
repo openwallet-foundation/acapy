@@ -793,54 +793,20 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
             LOGGER.warning("No correlation_id found for rev reg def activation response")
 
         if payload.failure:
-            # Handle failure
-            failure = payload.failure
-            error_info = failure.error_info
 
-            LOGGER.error(
-                "Registry activation failed for rev_reg_def_id: %s, "
-                "request_id: %s, correlation_id: %s, error: %s",
-                payload.rev_reg_def_id,
-                payload.options.get("request_id"),
-                payload.options.get("correlation_id"),
-                error_info.error_msg,
-            )
+            async def retry_activation(options):  # pragma: no cover
+                revoc = AnonCredsRevocation(profile)
+                await revoc.emit_set_active_registry_event(
+                    payload.rev_reg_def_id, options
+                )
 
-            # Implement exponential backoff retry logic
-            retry_delay = calculate_exponential_backoff_delay(error_info.retry_count)
-
-            LOGGER.info(
-                "Retrying registry activation for rev_reg_def_id: %s, cred_def_id: %s, "
-                "request_id: %s, correlation_id: %s. Attempt %d, delay %d seconds",
-                payload.rev_reg_def_id,
-                payload.options.get("cred_def_id"),
-                payload.options.get("request_id"),
-                payload.options.get("correlation_id"),
-                error_info.retry_count + 1,
-                retry_delay,
-            )
-
-            await asyncio.sleep(retry_delay)
-
-            # Update options with new retry count and update event for retry
-            new_options = payload.options.copy()
-            new_options["retry_count"] = error_info.retry_count + 1
-
-            if correlation_id:
-                async with profile.session() as session:
-                    event_storage = EventStorageManager(session)
-                    # Update the event for retry (sets state to REQUESTED)
-                    await event_storage.update_event_for_retry(
-                        event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
-                        correlation_id=correlation_id,
-                        error_msg=error_info.error_msg,
-                        retry_count=error_info.retry_count + 1,
-                        updated_options=new_options,
-                    )
-
-            revoc = AnonCredsRevocation(profile)
-            await revoc.emit_set_active_registry_event(
-                payload.rev_reg_def_id, new_options
+            await self._handle_response_failure(
+                profile=profile,
+                payload=payload,
+                event_type=RECORD_TYPE_REV_REG_ACTIVATION_EVENT,
+                correlation_id=correlation_id,
+                failure_type="registry_activation",
+                retry_callback=retry_activation,
             )
         else:
             # Handle success
