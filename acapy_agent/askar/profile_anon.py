@@ -24,9 +24,6 @@ from ..wallet.base import BaseWallet
 from ..wallet.crypto import validate_seed
 from .store import AskarOpenStore, AskarStoreConfig
 
-# import traceback
-
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -198,9 +195,9 @@ class AskarAnonCredsProfileSession(ProfileSession):
         """Create a new AskarAnonCredsProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
         if is_txn:
-            self._opener = self.profile.store.transaction(profile.profile_id)
+            self._opener = profile.store.transaction(profile.profile_id)
         else:
-            self._opener = self.profile.store.session(profile.profile_id)
+            self._opener = profile.store.session(profile.profile_id)
         self._profile = profile
         self._handle: Optional[Session] = None
         self._acquire_start: Optional[float] = None
