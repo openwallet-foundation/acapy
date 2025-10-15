@@ -310,7 +310,7 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         ) as mock_payload_class:
             with patch(
                 "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegDefStoreRequestedEvent"
-            ) as mock_event_class:
+            ):
                 self.event_bus.notify = AsyncMock()
 
                 await self.manager._recover_rev_reg_def_store_event(event_data, options)
@@ -340,7 +340,7 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         ) as mock_payload_class:
             with patch(
                 "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevListCreateRequestedEvent"
-            ) as mock_event_class:
+            ):
                 self.event_bus.notify = AsyncMock()
 
                 await self.manager._recover_rev_list_create_event(event_data, options)
@@ -370,7 +370,7 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         ) as mock_payload_class:
             with patch(
                 "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevListStoreRequestedEvent"
-            ) as mock_event_class:
+            ):
                 self.event_bus.notify = AsyncMock()
 
                 await self.manager._recover_rev_list_store_event(event_data, options)
@@ -400,7 +400,7 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         ) as mock_payload_class:
             with patch(
                 "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegActivationRequestedEvent"
-            ) as mock_event_class:
+            ):
                 self.event_bus.notify = AsyncMock()
 
                 await self.manager._recover_rev_reg_activation_event(event_data, options)
@@ -430,7 +430,7 @@ class TestEventRecoveryManager(IsolatedAsyncioTestCase):
         ) as mock_payload_class:
             with patch(
                 "acapy_agent.anoncreds.revocation.auto_recovery.event_recovery.RevRegFullDetectedEvent"
-            ) as mock_event_class:
+            ):
                 self.event_bus.notify = AsyncMock()
 
                 await self.manager._recover_rev_reg_full_handling_event(
