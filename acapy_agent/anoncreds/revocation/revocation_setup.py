@@ -554,7 +554,7 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     rev_reg_def_id=payload.rev_reg_def_id,
                     options=self._clean_options_for_new_request(payload.options),
                 )
-            else:
+            else:  # pragma: no cover
                 LOGGER.warning(
                     "Revocation registry definition %s not finished; has state %s, "
                     "request_id: %s, correlation_id: %s",
@@ -898,6 +898,13 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     LOGGER.error(
                         "Could not retrieve registry definition %s for creating backup",
                         payload.rev_reg_def_id,
+                    )
+                    await self._notify_issuer_about_failure(
+                        profile=profile,
+                        failure_type="registry_activation",
+                        identifier=payload.rev_reg_def_id,
+                        error_msg="Could not retrieve registry definition for creating backup",  # noqa: E501
+                        options=payload.options,
                     )
 
     async def on_registry_full_detected(
