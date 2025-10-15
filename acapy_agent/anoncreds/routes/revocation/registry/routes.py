@@ -564,12 +564,30 @@ async def set_rev_reg_state(request: web.BaseRequest):
     return web.json_response({"result": rev_reg.serialize()})
 
 
+@docs(
+    tags=[REVOCATION_TAG_TITLE],
+    summary="Update the active registry",
+    deprecated=True,
+)
+@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
+@response_schema(AnonCredsRevocationModuleResponseSchema(), description="")
+@tenant_authentication
+async def set_active_registry_deprecated(request: web.BaseRequest):
+    """Deprecated alias for set_active_registry."""
+    return await set_active_registry(request)
+
+
 async def register(app: web.Application) -> None:
     """Register routes."""
     app.add_routes(
         [
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
-            web.put("/anoncreds/registry/{rev_reg_id}/active", set_active_registry),
+            web.put(
+                "/anoncreds/registry/{rev_reg_id}/active", set_active_registry_deprecated
+            ),
+            web.put(
+                "/anoncreds/revocation/registry/{rev_reg_id}/active", set_active_registry
+            ),
             web.get(
                 "/anoncreds/revocation/registries",
                 get_rev_regs,
