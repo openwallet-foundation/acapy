@@ -632,10 +632,6 @@ class KanonIndyCredxIssuer(IndyIssuer):
         except DBError as err:
             raise IndyIssuerError(ERR_SAVE_REV_REG) from err
 
-
-class IndyIssuerRetryableError(IndyIssuerError):
-    """Error that indicates the operation should be retried."""
-
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
     ) -> str:
@@ -750,3 +746,7 @@ class IndyIssuerRetryableError(IndyIssuerError):
             rev_reg_def_json,
             rev_reg_json,
         )
+
+
+class IndyIssuerRetryableError(IndyIssuerError):
+    """Error that indicates the operation should be retried."""
