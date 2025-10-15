@@ -2,7 +2,7 @@
 
 ## 1.4.0rc0
 
-### October 14, 2025
+### October 15, 2025
 
 ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of **Kanon Storage**, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer. Askar now functions purely as a **Key Management Service (KMS)**, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.
 
