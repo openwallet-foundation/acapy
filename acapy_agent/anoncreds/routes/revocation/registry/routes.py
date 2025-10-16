@@ -22,7 +22,7 @@ from .....indy.models.revocation import IndyRevRegDef
 from .....ledger.base import BaseLedger
 from .....ledger.error import LedgerError
 from .....ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-from .....revocation.error import RevocationError, RevocationNotSupportedError
+from .....revocation.error import RevocationError
 from .....revocation.models.issuer_rev_reg_record import (
     IssuerRevRegRecord,
 )
@@ -93,20 +93,20 @@ async def rev_reg_def_post(request: web.BaseRequest):
             reason=f"Not issuer of credential definition id {cred_def_id}"
         )
 
-    try:
-        result = await shield(
-            revocation.create_and_register_revocation_registry_definition(
-                issuer_id,
-                cred_def_id,
-                registry_type="CL_ACCUM",
-                max_cred_num=max_cred_num,
-                tag=tag,
-                options=options,
-            )
+    result = await shield(
+        revocation.create_and_register_revocation_registry_definition(
+            issuer_id,
+            cred_def_id,
+            registry_type="CL_ACCUM",
+            max_cred_num=max_cred_num,
+            tag=tag,
+            options=options,
         )
-        return web.json_response(result.serialize())
-    except (RevocationNotSupportedError, AnonCredsRevocationError) as e:
-        raise web.HTTPBadRequest(reason=e.roll_up) from e
+    )
+    if isinstance(result, str):  # if it's a string, it's an error message
+        raise web.HTTPBadRequest(reason=result)
+
+    return web.json_response(result.serialize())
 
 
 @docs(

@@ -212,7 +212,7 @@ class AnonCredsRevocation:
         tag: str,
         max_cred_num: int,
         options: Optional[dict] = None,
-    ) -> RevRegDefResult | None:
+    ) -> RevRegDefResult | str:
         """Create a new revocation registry and register on network.
 
         This method picks up the RevRegDefCreateRequestedEvent, performing the registry
@@ -227,7 +227,8 @@ class AnonCredsRevocation:
             options (dict): revocation registry options
 
         Returns:
-            RevRegDefResult: revocation registry definition result, or None if failed
+            RevRegDefResult: revocation registry definition result,
+                or error message if failed.
 
         """
         options = options or {}
@@ -378,7 +379,10 @@ class AnonCredsRevocation:
                 options=options,
             )
             await self.notify(event)
-            return None
+
+            # Return error message for web response.
+            # Don't raise, in order to avoid exception handling in auto revocation setup
+            return error_msg
 
     async def emit_store_revocation_registry_definition_event(
         self,
@@ -849,12 +853,15 @@ class AnonCredsRevocation:
 
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
-    ) -> None:
+    ) -> RevListResult | str:
         """Handle revocation list creation request event.
 
         Args:
             rev_reg_def_id (str): revocation registry definition ID
             options (dict): creation options
+
+        Returns:
+            RevListResult: revocation list result, or error message if failed
 
         """
         options = options or {}
@@ -940,7 +947,7 @@ class AnonCredsRevocation:
                 options=options,
             )
             await self.notify(event)
-
+            return result
         except Exception as err:
             # Emit failure event with appropriate error message based on exception type
             should_retry = True
@@ -970,6 +977,10 @@ class AnonCredsRevocation:
                 options=options,
             )
             await self.notify(event)
+
+            # Return error message for web response.
+            # Don't raise, in order to avoid exception handling in auto revocation setup
+            return error_msg
 
     async def store_revocation_registry_list(
         self, result: RevListResult, options: Optional[dict] = None
