@@ -1,22 +1,19 @@
-[tool.poetry]
+[project]
 name = "scenarios"
 version = "0.1.0"
-description = ""
-authors = []
+description = "ACA-Py scenario integration tests"
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.10"
+dependencies = [
+    "docker>=7.1.0,<8.0.0",
+    "pytest>=8.4.0,<9.0.0",
+    "pytest-asyncio>=0.26.0,<1.0.0",
+    "pydantic>=2.12.2,<3.0.0",
+    "acapy-controller @ git+https://github.com/openwallet-foundation/acapy-minimal-example.git@main",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-acapy-controller = {git = "https://github.com/openwallet-foundation/acapy-minimal-example.git", rev = "main"}
-docker = "7.1.0"
-pytest = "^8.4.0"
-pytest-asyncio = "^0.26.0"
-pydantic = "^2.12.2"
+[project.optional-dependencies]
+dev = []
 
 [tool.pytest.ini_options]
 markers = "examples: test the examples"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
