@@ -27,7 +27,7 @@ async def rev_list_post(request: web.BaseRequest):
     """Request handler for creating registering a revocation list."""
     _, profile, body, options = await get_request_body_with_profile_check(request)
 
-    rev_reg_def_id = body.get("rev_reg_def_id")
+    rev_reg_def_id = body["rev_reg_def_id"]  # required in request schema
 
     revocation = AnonCredsRevocation(profile)
     result = await shield(
