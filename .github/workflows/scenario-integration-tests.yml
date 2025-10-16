@@ -56,7 +56,7 @@ jobs:
         if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         with:
           python-version: "3.12"
-          cache: "uv"
+          # Note: uv caching not yet supported by setup-python action
       - name: Run Scenario Tests
         if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         run: |

@@ -20,12 +20,12 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
-        cache: 'uv'
-        cache-dependency-path: 'pyproject.toml'
+        # Note: uv caching not yet supported by setup-python action
     - name: Install the project dependencies
       shell: bash
       run: |
         pip install uv
+        # Use uv's built-in caching (faster than pip caching)
         uv sync --all-extras
     - name: Tests
       shell: bash
