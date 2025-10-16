@@ -686,7 +686,7 @@ class AnonCredsRevocation:
             raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
         if rev_list_entries:
-            return [entry.name for entry in rev_list_entries]
+            return [entry.name for entry in list(rev_list_entries)]
 
         return []
 
