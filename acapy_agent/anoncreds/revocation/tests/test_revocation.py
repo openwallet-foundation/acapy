@@ -166,8 +166,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             max_cred_num=100,
         )
 
-        # Verify method returns None on failure
-        self.assertIsNone(result)
+        # Verify method returns error message on failure
+        assert isinstance(result, str)
+        assert "Error retrieving credential definition" in result
 
         # Verify failure event was emitted
         self.assertEqual(len(mock_event_bus.events), 1)
@@ -1699,8 +1700,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                     options={},
                 )
 
-                # Should return None on failure
-                self.assertIsNone(result)
+                # Should return error message on failure
+                assert isinstance(result, str)
+                assert "Registry creation failed: Resource already exists." in result
 
                 # Verify failure event was emitted
                 self.assertEqual(len(mock_event_bus.events), 1)

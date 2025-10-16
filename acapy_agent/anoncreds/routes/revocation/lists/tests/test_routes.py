@@ -27,7 +27,7 @@ class TestAnonCredsRevocationListRoutes(
     )
     async def test_rev_list_post(self, mock_create):
         self.request.json = mock.CoroutineMock(
-            return_value={"revRegDefId": "rev_reg_def_id", "options": {}}
+            return_value={"rev_reg_def_id": "rev_reg_def_id", "options": {}}
         )
         result = await rev_list_post(self.request)
         assert json.loads(result.body)["revocation_registry_definition_id"] == "revRegId"
@@ -41,7 +41,7 @@ class TestAnonCredsRevocationListRoutes(
         wrong_context = AdminRequestContext.test_context({}, wrong_profile)
         wrong_request = create_mock_request(wrong_context)
         wrong_request.json = mock.CoroutineMock(
-            return_value={"revRegDefId": "rev_reg_def_id", "options": {}}
+            return_value={"rev_reg_def_id": "rev_reg_def_id", "options": {}}
         )
 
         with self.assertRaises(web.HTTPForbidden):
