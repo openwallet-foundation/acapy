@@ -18,6 +18,14 @@ Subpackages
 Submodules
 ----------
 
+acapy\_agent.indy.constants module
+----------------------------------
+
+.. automodule:: acapy_agent.indy.constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.indy.holder module
 -------------------------------
 

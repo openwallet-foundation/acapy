@@ -114,6 +114,14 @@ acapy\_agent.wallet.jwt module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.wallet.kanon\_wallet module
+----------------------------------------
+
+.. automodule:: acapy_agent.wallet.kanon_wallet
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.wallet.key\_type module
 ------------------------------------
 
