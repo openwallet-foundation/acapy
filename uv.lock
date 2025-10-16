@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation != 'PyPy'",
@@ -104,7 +104,7 @@ requires-dist = [
     { name = "did-peer-2", specifier = ">=0.1.2" },
     { name = "did-peer-4", specifier = ">=0.1.4" },
     { name = "did-webvh", specifier = ">=1.0.0" },
-    { name = "didcomm-messaging", marker = "extra == 'didcommv2'", specifier = ">=0.1.1a0" },
+    { name = "didcomm-messaging", marker = "extra == 'didcommv2'", specifier = "==0.1.1a0" },
     { name = "indy-credx", specifier = ">=1.1.1,<1.2.0" },
     { name = "indy-vdr", specifier = ">=0.4.0,<0.5.0" },
     { name = "jsonpath-ng", specifier = ">=1.7.0" },
@@ -774,15 +774,15 @@ wheels = [
 
 [[package]]
 name = "didcomm-messaging"
-version = "0.1.2a3"
+version = "0.1.1a0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "base58" },
     { name = "pydid" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/d4/ddc2e36cb20be25eb45c71c960a69ccc21c83f3249328df9e3eec2c0de7d/didcomm_messaging-0.1.2a3.tar.gz", hash = "sha256:4c8fad89a146837daef8013ccb94df4d5ff9ce497463a0e5ed857ba770d4aabd", size = 45764, upload-time = "2024-09-18T16:12:57.283Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/90/3e12fbe547620e6981c85024437cb4ec95d6f687db547c345de0c9ed6efc/didcomm_messaging-0.1.1a0.tar.gz", hash = "sha256:79e4fcbe3d96ad3c8e052bfef2fc2953d01e72ff88824ec7e7f104993c13d812", size = 31391, upload-time = "2024-04-23T18:55:20Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/7a/9e613bec3bf232d7f91a7b999132557055815256ef410e6a66c88c607454/didcomm_messaging-0.1.2a3-py3-none-any.whl", hash = "sha256:f3d380d908b05bb88f270cfa71eeeaec637233120438bfc82833f56d03772c14", size = 50882, upload-time = "2024-09-18T16:12:55.862Z" },
+    { url = "https://files.pythonhosted.org/packages/93/c3/20bb6e33ee828bbc0788c6def4f1ad0e56ea2547b0c35807ac116e39c3a6/didcomm_messaging-0.1.1a0-py3-none-any.whl", hash = "sha256:ea254b5540ae34c046eec5f030dec8fff153ea94c4f5eade7bfe08325f9734b9", size = 32415, upload-time = "2024-04-23T18:55:18.213Z" },
 ]
 
 [[package]]

@@ -58,7 +58,7 @@ dependencies = [
 
 [project.optional-dependencies]
 bbs = ["ursa-bbs-signatures>=1.0.1,<1.1.0"]
-didcommv2 = ["didcomm-messaging>=0.1.1a0"]
+didcommv2 = ["didcomm-messaging==0.1.1a0"]
 sqlcipher = ["sqlcipher3-binary>=0.5.4"]
 dev = [
     "ruff>=0.13.3,<0.15.0",
