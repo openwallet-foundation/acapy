@@ -302,7 +302,7 @@ class AnonCredsRevocation:
                 },
             )
         # entry.name was stored as the credential_definition's ID
-        return [entry.name for entry in rev_reg_defs]
+        return [entry.name for entry in list(rev_reg_defs)]
 
     async def get_created_revocation_registry_definition_state(
         self,
