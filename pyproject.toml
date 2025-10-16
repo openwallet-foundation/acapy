@@ -1,102 +1,98 @@
-[tool.poetry]
+[project]
 name = "acapy_agent"
 version = "1.4.0rc0"
-description = "(ACA-Py) A Cloud Agent Python is a foundation for building decentralized identity applications and services running in non-mobile environments. "
+description = "(ACA-Py) A Cloud Agent Python is a foundation for building decentralized identity applications and services running in non-mobile environments."
 authors = []
-license = "Apache-2.0"
+license = {text = "Apache-2.0"}
 readme = "README.md"
-packages = [{ include = "acapy_agent" }]
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-repository = "https://github.com/openwallet-foundation/acapy"
+dependencies = [
+    "aiohttp>=3.11.16,<3.14.0",
+    "aiohttp-apispec-acapy>=3.0.3,<3.1.0",
+    "aiohttp-cors>=0.7,<0.9",
+    "apispec>=6.6.0",
+    "base58>=2.1.0,<2.2.0",
+    "canonicaljson>=2.0.0",
+    "ConfigArgParse>=1.7,<1.8",
+    "deepmerge>=2.0",
+    "jsonpath-ng>=1.7.0",
+    "Markdown>=3.7,<3.10",
+    "markupsafe>=3.0.2",
+    "marshmallow>=3.26.1,<3.27.0",
+    "nest_asyncio>=1.6.0,<1.7.0",
+    "packaging>=24.2,<26.0",
+    "portalocker>=3.1.1",
+    "prompt_toolkit>=3.0,<3.1",
+    "pydid>=0.5.1",
+    "pyjwt>=2.10.1,<2.11.0",
+    "pyld>=2.0.4",
+    "pynacl>=1.5,<1.7",
+    "python-dateutil>=2.9.0",
+    "python-json-logger>=3.2.1",
+    "pyyaml>=6.0.2,<6.1.0",
+    "qrcode[pil]>=8.1",
+    "requests>=2.32.3,<2.33.0",
+    "rlp>=4.1.0",
+    "sd-jwt>=0.10.3",
+    "unflatten>=0.2,<0.3",
+    "uuid_utils>=0.10,<0.12",
+    # did libraries
+    "did-peer-2>=0.1.2",
+    "did-peer-4>=0.1.4",
+    "did-webvh>=1.0.0",
+    # Verifiable Credentials
+    "anoncreds>=0.2.0,<0.3.0",
+    "indy-credx>=1.1.1,<1.2.0",
+    # askar
+    "aries-askar>=0.4.3",
+    # indy 
+    "indy-vdr>=0.4.0,<0.5.0",
+    # database_manager
+    "psycopg[pool,binary]>=3.2.1",
+]
 
+[project.optional-dependencies]
+bbs = ["ursa-bbs-signatures>=1.0.1,<1.1.0"]
+didcommv2 = ["didcomm-messaging>=0.1.1a0"]
+sqlcipher = ["sqlcipher3-binary>=0.5.4"]
+dev = [
+    "ruff>=0.13.3,<0.15.0",
+    "pre-commit>=4.1,<4.4",
+    "pydevd>=3.3,<3.5",
+    "pydevd-pycharm>=251.17181.23,<254.0.0",
+    "pytest>=8.3.4",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6,<8",
+    "pytest-ruff>=0.4.1,<0.6.0",
+    "pytest-xdist>=3.6.1",
+    "debugpy>=1.8.11",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-
-aiohttp = ">=3.11.16,<3.14.0"
-aiohttp-apispec-acapy = "~3.0.3"
-aiohttp-cors = ">=0.7,<0.9"
-apispec = "^6.6.0"
-base58 = "~2.1.0"
-canonicaljson = "^2.0.0"
-ConfigArgParse = "~1.7"
-deepmerge = "^2.0"
-jsonpath-ng = "^1.7.0"
-Markdown = ">=3.7,<3.10"
-markupsafe = "^3.0.2"
-marshmallow = "~3.26.1"
-nest_asyncio = "~1.6.0"
-packaging = ">=24.2,<26.0"
-portalocker = "^3.1.1"
-prompt_toolkit = ">=3.0,<3.1"
-pydid = "^0.5.1"
-pyjwt = "~2.10.1"
-pyld = "^2.0.4"
-pynacl = ">=1.5,<1.7"
-python-dateutil = "^2.9.0"
-python-json-logger = "^3.2.1"
-pyyaml = "~6.0.2"
-qrcode = { version = "^8.1", extras = ["pil"] }
-requests = "~2.32.3"
-rlp = "^4.1.0"
-sd-jwt = "^0.10.3"
-unflatten = "~0.2"
-uuid_utils = ">=0.10,<0.12"
-
-# did libraries
-did-peer-2 = "^0.1.2"
-did-peer-4 = "^0.1.4"
-did-webvh = ">=1.0.0"
-
-# Verifiable Credentials
-anoncreds = "~0.2.0"
-indy-credx = "~1.1.1"
-
-# askar
-aries-askar = ">=0.4.3"
-
-# indy 
-indy-vdr = "~0.4.0"
-
-# bbs
-ursa-bbs-signatures = { version = "~1.0.1", optional = true }
-
-# didcommv2
-didcomm-messaging = { version = "^0.1.1a0", optional = true }
-# database_manager
-psycopg = { version = "^3.2.1", extras = ["pool", "binary"] }
-sqlcipher3-binary = { version = ">=0.5.4", optional = true }
-
-
-[tool.poetry.group.dev.dependencies]
-# Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
-ruff = ">=0.13.3,<0.15.0"
-
-pre-commit = ">=4.1,<4.4"
-
-pydevd = ">=3.3,<3.5"
-
-pydevd-pycharm = ">=251.17181.23,<254.0.0"
-
-# testing
-pytest = "^8.3.4"
-pytest-asyncio = "^1.0.0"
-pytest-cov = ">=6,<8"
-pytest-ruff = ">=0.4.1,<0.6.0"
-pytest-xdist = "^3.6.1"
-debugpy = "^1.8.11"
-
-[tool.poetry.extras]
-bbs = ["ursa-bbs-signatures"]
-didcommv2 = ["didcomm-messaging"]
-sqlcipher = ["sqlcipher3-binary"] # SQLCipher support
-
-[tool.poetry.scripts]
+[project.scripts]
 aca-py = "acapy_agent.__main__:script_main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.3,<0.15.0",
+    "pre-commit>=4.1,<4.4",
+    "pydevd>=3.3,<3.5",
+    "pydevd-pycharm>=251.17181.23,<254.0.0",
+    "pytest>=8.3.4",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6,<8",
+    "pytest-ruff>=0.4.1,<0.6.0",
+    "pytest-xdist>=3.6.1",
+    "debugpy>=1.8.11",
+]
 
 [tool.ruff]
 lint.select = [
@@ -167,7 +163,3 @@ show_missing = true
 
 [tool.coverage.xml]
 output = "test-reports/coverage.xml"
-
-[build-system]
-requires = ["poetry-core>=2.1"]
-build-backend = "poetry.core.masonry.api"

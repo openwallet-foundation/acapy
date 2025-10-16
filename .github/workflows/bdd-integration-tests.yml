@@ -41,7 +41,6 @@ jobs:
           files_yaml: |
             src: 
               - acapy_agent/**/*
-              - poetry.lock
               - pyproject.toml
               - docker/*
             demo: "demo/**/*"

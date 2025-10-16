@@ -15,15 +15,15 @@ WORKDIR /usr/src/app
 # For consistency with base images, include curl for health checks
 RUN apt-get update && apt-get install -y curl && apt-get clean
 
-RUN pip install --no-cache-dir poetry==2.1.1
+RUN pip install --no-cache-dir uv
 
 RUN mkdir -p acapy_agent && touch acapy_agent/__init__.py
-COPY pyproject.toml poetry.lock README.md ./
+COPY pyproject.toml README.md ./
 RUN mkdir -p log && chmod -R ug+rw log
 
 ARG all_extras=0
-RUN if ! [ -z ${all_extras} ]; then poetry install --all-extras; else poetry install -E "didcommv2"; fi
+RUN if ! [ -z ${all_extras} ]; then uv sync --all-extras; else uv sync --extra didcommv2; fi
 
 COPY ./acapy_agent ./acapy_agent
 
-ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "uv run aca-py \"$@\"", "--"]

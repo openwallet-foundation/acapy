@@ -40,7 +40,6 @@ jobs:
             scenarios: "scenarios/**/*"
             src: 
               - acapy_agent/**/*
-              - poetry.lock 
               - pyproject.toml
       - name: Check if scenarios or src files changed
         id: check-if-scenarios-or-src-changed
@@ -49,20 +48,20 @@ jobs:
             echo "No scenarios or src files changed..."
             echo run_tests=false >> $GITHUB_OUTPUT
           fi
-      - name: Install poetry
+      - name: Install uv
         if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
-        run: pipx install poetry
-        id: setup-poetry
+        run: pipx install uv
+        id: setup-uv
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         with:
           python-version: "3.12"
-          cache: "poetry"
+          cache: "uv"
       - name: Run Scenario Tests
         if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         run: |
           # Build the docker image for testing
           docker build -t acapy-test -f docker/Dockerfile.run .
           cd scenarios
-          poetry install --no-root
-          poetry run pytest -m examples
+          uv sync
+          uv run pytest -m examples

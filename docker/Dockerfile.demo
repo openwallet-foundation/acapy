@@ -13,12 +13,12 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 RUN mkdir -p .local/bin && ln -s ../../bin/jq .local/bin/jq
 
 # Copy and install Aries Agent code
-RUN pip install --no-cache-dir poetry==2.1.1
+RUN pip install --no-cache-dir uv
 
-COPY README.md pyproject.toml poetry.lock ./
+COPY README.md pyproject.toml ./
 
 ARG all_extras=0
-RUN if ! [ -z ${all_extras} ]; then poetry install --no-root --no-directory --all-extras; else poetry install --no-root --no-directory -E "didcommv2"; fi
+RUN if ! [ -z ${all_extras} ]; then uv sync --all-extras; else uv sync --extra didcommv2; fi
 
 COPY acapy_agent ./acapy_agent
 COPY scripts ./scripts
