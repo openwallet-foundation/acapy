@@ -16,10 +16,6 @@ RUN mkdir -p .local/bin && ln -s ../../bin/jq .local/bin/jq
 RUN pip install --no-cache-dir uv
 
 COPY README.md pyproject.toml ./
-
-ARG all_extras=0
-RUN if [ "${all_extras}" != "0" ]; then uv sync --all-extras; else uv sync --extra didcommv2 && uv pip install didcomm-messaging==0.1.1a0; fi
-
 COPY acapy_agent ./acapy_agent
 COPY scripts ./scripts
 

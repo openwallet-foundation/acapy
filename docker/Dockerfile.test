@@ -18,7 +18,7 @@ COPY ./README.md pyproject.toml ./
 RUN mkdir acapy_agent && touch acapy_agent/__init__.py
 
 ARG all_extras=0
-RUN if ! [ -z ${all_extras} ]; then uv sync --all-extras --group dev; else uv sync --extra didcommv2 --group dev; fi
+RUN if [ "${all_extras}" != "0" ]; then uv sync --all-extras --group dev; else uv sync --extra didcommv2 --group dev; fi
 
 COPY ./acapy_agent ./acapy_agent
 COPY ./conftest.py ./
