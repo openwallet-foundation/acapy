@@ -232,7 +232,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
     # THIS IS ONLY USED BY acapy_agent.wallet.anoncreds_upgrade.
     # It needs a handle for dbstore only.
     @property
-    def handle(self) -> Session:
+    def handle(self) -> DBStoreSession:
         """Accessor for the Session instance."""
         return self._dbstore_handle
 

@@ -18,7 +18,7 @@ from indy_credx import (
 )
 from uuid_utils import uuid4
 
-from ...core.profile import Profile
+from ...core.profile import Profile, ProfileSession
 from ...database_manager.db_errors import DBCode, DBError
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
@@ -104,7 +104,7 @@ class IndyCredxHolder(IndyHolder):
         LOGGER.debug("Returning link secret.")
         return secret
 
-    async def _fetch_link_secret_record(self, session):
+    async def _fetch_link_secret_record(self, session: ProfileSession):
         """Fetch link secret record from storage."""
         try:
             fetch_method = session.handle.fetch
@@ -140,7 +140,7 @@ class IndyCredxHolder(IndyHolder):
             LOGGER.error("%s", ERR_LOAD_LINK_SECRET)
             raise IndyHolderError(ERR_LOAD_LINK_SECRET) from original_err
 
-    async def _create_and_save_link_secret(self, session) -> LinkSecret:
+    async def _create_and_save_link_secret(self, session: ProfileSession) -> LinkSecret:
         """Create and save a new link secret."""
         secret = self._create_new_link_secret()
 
@@ -293,7 +293,7 @@ class IndyCredxHolder(IndyHolder):
         return tags, mime_types
 
     async def _insert_credential_record(
-        self, txn, credential_id: str, cred_recvd, tags: dict
+        self, txn: ProfileSession, credential_id: str, cred_recvd, tags: dict
     ) -> None:
         """Insert credential record into storage."""
         insert_method = txn.handle.insert
@@ -313,7 +313,7 @@ class IndyCredxHolder(IndyHolder):
             )
 
     async def _insert_mime_types_record(
-        self, txn, credential_id: str, mime_types: dict
+        self, txn: ProfileSession, credential_id: str, mime_types: dict
     ) -> None:
         """Insert MIME types record if needed."""
         if not mime_types:
