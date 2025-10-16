@@ -1,0 +1,32 @@
+---
+admin: [0.0.0.0, 8020]
+inbound-transport:
+   - [ws, 0:0:0:0:0:0:0:0, 8021]
+   - [http, 0:0:0:0:0:0:0:0, 8022]
+outbound-transport: [ws, http]
+
+no-ledger: true
+
+auto-provision: true
+recreate-wallet: false
+
+wallet-type: askar-anoncreds
+
+multitenant: true
+multitenant-admin: true
+
+auto-ping-connection: true
+auto-accept-invites: true
+auto-accept-requests: true
+auto-respond-messages: true
+
+auto-store-credential: true
+
+auto-respond-credential-offer: true
+auto-respond-credential-request: true
+auto-respond-credential-proposal: true
+
+auto-verify-presentation: true
+auto-respond-presentation-request: true
+
+preserve-exchange-records: true
