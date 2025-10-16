@@ -204,7 +204,7 @@ async def get_rev_reg(request: web.BaseRequest):
 
 
 async def _get_issuer_rev_reg_record(
-    profile: AskarAnonCredsProfile, rev_reg_id: str | None
+    profile: AskarAnonCredsProfile, rev_reg_id: str
 ) -> IssuerRevRegRecord:
     # fetch rev reg def from anoncreds
     try:
@@ -548,8 +548,8 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     is_not_anoncreds_profile_raise_web_exception(profile)
 
-    rev_reg_id = request.match_info["rev_reg_id"]
-    state = request.query.get("state")
+    rev_reg_id: str = request.match_info["rev_reg_id"]
+    state: str = request.query["state"]  # required in query string schema
 
     try:
         revocation = AnonCredsRevocation(profile)
