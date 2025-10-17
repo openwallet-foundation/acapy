@@ -30,7 +30,7 @@ The new extended encoders is able to support the following query types:
 
 ## Scan Function:
 
-To ensure backward compatibility , we have also implemented the OFFSET based with cursor scan function.
+To ensure backward compatibility, we have implemented an OFFSET-based cursor scan function.
 
 - Uses sqlite3.Cursor
 - Uses OFFSET-based pagination
