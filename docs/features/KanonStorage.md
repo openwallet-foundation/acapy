@@ -10,7 +10,7 @@ By relying on proven, built-in encryption mechanisms provided by various databas
 
 This enhancement also prepares the ACA-Py system for quantum-proof encryption by allowing different vendors to implement solutions aligned with their specific quantum-resistant technologies. This design strengthens ACA-Py’s resilience while maintaining flexibility, scalability, and compliance with enterprise-grade standards.
 
-The new Database store module supports the existing DBStore interface to ensure compatibility with all the existing Acapy modules.  It provides core functionality for provisioning, opening, and removing stores; managing profiles; executing scans; and handling sessions or transactions. It also includes method such as provision, open, create profile, scan, and close. 
+The new Database store module supports the existing DBStore interface to ensure compatibility with all the existing Acapy modules.  It provides core functionality for provisioning, opening, and removing stores; managing profiles; executing scans; and handling sessions or transactions. It also includes methods such as provision, open, create profile, scan, and close. 
 
 Furthermore, the DB Store also introduces new functions such as 
 - A new keyset pagination method for scans
