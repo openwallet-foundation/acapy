@@ -46,7 +46,7 @@ To ensure backward compatibility, we have implemented an OFFSET-based cursor sca
 - Not suitable for real-time or large-scale production loads.
 
 To address this, we have introduced keyset pagination - scan_keyset()
-- Users sqlite3.Cursor
+- Uses sqlite3.Cursor
 - Leverages indexed column (id) for fast and consistent page retrieval.
 - Much more scalable and efficient on large datasets.
 - Works well for infinite scrolling, continuous fetching, and API data streaming.
