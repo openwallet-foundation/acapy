@@ -17,11 +17,11 @@ Furthermore, the DB Store also introduces new functions such as
 - Provisioning the store includes configurable parameters such as the schema configuration type (Normalized or Generic) and the schema release version.
 - Opening the store allows the ACA-Py profile to control and enforce which schema release version is required for operation.
 
-The existing Wallet Query Language (WQL) module is a custom-built tool that provides a unified approach to querying data across various database systems. It accepts JSON input and translates it into database specific query statements.
+The existing Wallet Query Language (WQL) module is a custom-built tool that provides a unified approach to querying data across various database systems. It accepts JSON input and translates it into database-specific query statements.
 
 It’s important for the new database module to support the existing WQL because it plays a central role in the Aries ecosystem, as it is the language/protocol currently used to communicate with the storage layer.
 
-In order for ACA-Py and other tools in the Aries ecosystem to use the new storage module without code changes, our proposal is to leverage and enhance the current WQL design and rebuild it. The enhancement will be able to easily extend WQL’s functionality to support multiple database specific query encoders. 
+In order for ACA-Py and other tools in the Aries ecosystem to use the new storage module without code changes, our proposal is to leverage and enhance the current WQL design and rebuild it. The enhancement will be able to easily extend WQL’s functionality to support multiple database-specific query encoders. 
 
 The new extended encoders is able to support the following query types:
 - Key-value pair table structure (Generic)
