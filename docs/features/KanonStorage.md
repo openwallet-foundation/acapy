@@ -56,7 +56,7 @@ To address this, we have introduced  keyset pagination - scan_keyset()
 - Only supports forward sequential navigation.
 - Caller must track the last item’s ID (or composite key) to fetch the next page.
 
-## Provisioning a Kanon Storage at startup
+## Provisioning Kanon Storage at startup
 
 Provisioning the ACA-Py data store involves setting configurable parameters, such as choosing between a Normalized or Generic schema configuration and specifying the schema release version. NOTE that the Generic Schema configuration (key-value pair structure) does not support version control. 
 
