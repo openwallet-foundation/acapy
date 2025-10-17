@@ -23,7 +23,7 @@ It’s important for the new database module to support the existing WQL because
 
 In order for ACA-Py and other tools in the Aries ecosystem to use the new storage module without code changes, our proposal is to leverage and enhance the current WQL design and rebuild it. The enhancement will be able to easily extend WQL’s functionality to support multiple database-specific query encoders. 
 
-The new extended encoders is able to support the following query types:
+The new extended encoders are able to support the following query types:
 - Key-value pair table structure (Generic)
 - Document / sub-document structure (e.g., MongoDB)
 - Normalized table structure
