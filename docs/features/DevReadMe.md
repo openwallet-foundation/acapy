@@ -159,7 +159,7 @@ ACA-Py can issue W3C Verifiable Credentials using Linked Data Proofs. See the [d
 
 ### Kanon Storage
 
-Askar encrypts data at rest using an application-managed encryption scheme instead of database-controlled encryption. Kanon Storage provides the option to use database-managed encryption at rest. It stores all data in the database as plaintext and uses a normalized schema, allowing connections and credential data to be queried with standard SQL. See the [docs on Kanon Storage](./KanonStorage.md) for more info.
+Askar encrypts data at rest using an application-managed encryption scheme instead of database-controlled encryption. Kanon Storage provides the option to use database-managed encryption at rest. Records are stored as plaintext at the database layer, with encryption-at-rest managed by the database; ACA-Py does not apply application-layer encryption to these records. Kanon Storage uses a normalized schema, allowing connections and credential data to be queried with standard SQL. See the [docs on Kanon Storage](./KanonStorage.md) for more info.
 
 ## Developing
 
