@@ -120,7 +120,7 @@ aca-py start \
   --wallet-allow-insecure-seed 
 ```
 
-## Example startup with Kanon Storage (postgresql normalize)
+## Example startup with Kanon Storage (PostgreSQL (normalized))
 
 ```bash
  aca-py start \
