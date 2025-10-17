@@ -16,6 +16,7 @@ See the [README](../../README.md) for details about this repository and informat
   - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
   - [JSON-LD Credentials](#json-ld-credentials)
+  - [Kanon Storage](#kanon-storage)
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
   - [Running In A Dev Container](#running-in-a-dev-container)
@@ -155,6 +156,10 @@ ACA-Py can also be started in multi-tenant mode. This allows the agent to serve 
 ### JSON-LD Credentials
 
 ACA-Py can issue W3C Verifiable Credentials using Linked Data Proofs. See the [docs on JSON-LD Credentials](./JsonLdCredentials.md) for more info.
+
+### Kanon Storage
+
+ACA-Py defaults to using the Askar storage method.  Askar encrypts the data at rest in the database using an application encryption scheme instead of database controlled encryption.  Kanon Storage provides the option to use the database encryption at rest.  It stores in the database all of the data in plain text and it uses a normalized database form.  This allows the connections and credential data to be queried using plain SQL queries.  See the [docs on Kanon Storage](./KanonStorage.md) for more info.
 
 ## Developing
 
