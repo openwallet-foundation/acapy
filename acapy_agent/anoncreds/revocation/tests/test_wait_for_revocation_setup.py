@@ -87,7 +87,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             "acapy_agent.anoncreds.revocation.revocation_setup.AnonCredsRevocation"
         ) as mock_revocation_class:
             mock_revocation = mock_revocation_class.return_value
-            mock_revocation.create_and_register_revocation_registry_definition = (
+            mock_revocation.emit_create_revocation_registry_definition_event = (
                 mock.CoroutineMock()
             )
             mock_revocation.wait_for_active_revocation_registry = mock.CoroutineMock()
@@ -96,10 +96,8 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             await setup_manager.on_cred_def(self.profile, event)
 
             # Should create registries but not wait
-            assert (
-                mock_revocation.create_and_register_revocation_registry_definition.call_count
-                == 2
-            )
+            mock_revocation.emit_create_revocation_registry_definition_event.assert_called_once()
+
             mock_revocation.wait_for_active_revocation_registry.assert_not_called()
 
     async def test_event_handler_waits_when_configured(self):
@@ -123,7 +121,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             "acapy_agent.anoncreds.revocation.revocation_setup.AnonCredsRevocation"
         ) as mock_revocation_class:
             mock_revocation = mock_revocation_class.return_value
-            mock_revocation.create_and_register_revocation_registry_definition = (
+            mock_revocation.emit_create_revocation_registry_definition_event = (
                 mock.CoroutineMock()
             )
             mock_revocation.wait_for_active_revocation_registry = mock.CoroutineMock()
@@ -132,10 +130,7 @@ class TestAnonCredsIssuerWaitForRevocation(IsolatedAsyncioTestCase):
             await setup_manager.on_cred_def(self.profile, event)
 
             # Should create registries AND wait
-            assert (
-                mock_revocation.create_and_register_revocation_registry_definition.call_count
-                == 2
-            )
+            mock_revocation.emit_create_revocation_registry_definition_event.assert_called_once()
             mock_revocation.wait_for_active_revocation_registry.assert_called_once_with(
                 "test-cred-def-id"
             )
