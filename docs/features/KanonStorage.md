@@ -66,7 +66,7 @@ Schema release management is handled through release notes, which allow a mix of
 
 When opening the data store, the ACA-Py Kanon Anoncreds Profile enforces the required schema release version, checking for compatibility and prompting the user to perform an upgrade if the versions don’t match.
 
-### New startup parameters for KanonAnoncreds profile
+### New startup parameters for Kanon Anoncreds profile
 
 NOTE: Kanon Anoncreds Profile will use Askar for Key Management only. 
 
