@@ -72,7 +72,7 @@ NOTE: Kanon Anoncreds Profile will use Askar for Key Management only.
 
 | Startup Parameter                                            | Description                                                  |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| --wallet-type kanon-anoncreds                                 | New wallet type: kanon-anocreds                              |
+| --wallet-type kanon-anoncreds                                 | New wallet type: kanon-anoncreds                              |
 | --wallet-name your_wallet_name                               | Both Askar and DB stores will use the same wallet name as the profile name. |
 | --wallet-key askar_secret_key                                | Askar storage only - no changes                              |
 | --wallet-key-derivation-method RAW                           | Askar storage only - no changes                              |
