@@ -141,7 +141,7 @@ aca-py start \
   --dbstore-schema-config normalize \
   --multitenant \
   --multitenant-admin \
-  --admin-api-key 76d3xW38jc9cd2VBZy8FVaxEHHD \
+  --admin-api-key <YOUR_ADMIN_API_KEY> \
   --preserve-exchange-records \
   --genesis-url http://test.bcovrin.vonx.io/genesis \
   --tails-server-base-url http://tails-server.digicred.services:6543 \
