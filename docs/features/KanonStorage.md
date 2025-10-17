@@ -2,7 +2,7 @@
 
 ## Concepts
 
-Kanon Stroage is a normalized approach to secure data storage for ACA-Py that introducing an additional component that complements the existing Askar Aries solution. While Askar provides robust field-level encryption and secure storage for ACA-Py, it currently has limitations when it comes to the choice of database providers for large-scale, server-side deployments and lacks an interface to support report generation.
+Kanon Storage is a normalized approach to secure data storage for ACA-Py that introducing an additional component that complements the existing Askar Aries solution. While Askar provides robust field-level encryption and secure storage for ACA-Py, it currently has limitations when it comes to the choice of database providers for large-scale, server-side deployments and lacks an interface to support report generation.
 
 Kanon Storage addresses these gaps by introducing a component designed to work alongside Askar. This new component offers support for multiple enterprise-grade database providers, including cloud-based solutions. It also leverages cloud-native encryption capabilities, providing flexibility with options for encryption at rest and field-level encryption that can be turned on or off based on specific security requirements.
 
