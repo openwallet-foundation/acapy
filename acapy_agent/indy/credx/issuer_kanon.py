@@ -17,7 +17,7 @@ from indy_credx import (
     Schema,
 )
 
-from ...core.profile import Profile
+from ...core.profile import Profile, ProfileSession
 from ...database_manager.db_errors import DBError
 from ...utils.general import strip_did_prefix
 from ..issuer import (
@@ -103,7 +103,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
             raw_values[attribute] = str(credential_value)
         return raw_values
 
-    async def _fetch_revocation_records(self, txn, revoc_reg_id: str):
+    async def _fetch_revocation_records(self, txn: ProfileSession, revoc_reg_id: str):
         """Fetch revocation records required for updates; validate presence."""
         rev_reg = await txn.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
         rev_reg_info = await txn.handle.fetch(
@@ -524,7 +524,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
         return self._parse_revocation_components(components_raw)
 
     async def _fetch_raw_components(
-        self, session, cred_def_id: str, revoc_reg_id: str
+        self, session: ProfileSession, cred_def_id: str, revoc_reg_id: str
     ) -> dict:
         """Fetch raw components from storage."""
         components = {

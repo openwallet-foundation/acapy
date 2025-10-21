@@ -34,7 +34,7 @@ from ..anoncreds.models.revocation import (
 )
 from ..anoncreds.models.schema import SchemaState
 from ..cache.base import BaseCache
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
 from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -97,7 +97,7 @@ class CredDefUpgradeObj:
         cred_def_private: CredentialDefinitionPrivate,
         key_proof: KeyCorrectnessProof,
         revocation: Optional[bool] = None,
-        askar_cred_def: Optional[any] = None,
+        askar_cred_def: Optional[StorageRecord] = None,
         max_cred_num: Optional[int] = None,
     ):
         """Initialize cred def upgrade object."""
@@ -135,7 +135,7 @@ class RevListUpgradeObj:
         rev_list: RevList,
         pending: list,
         rev_reg_def_id: str,
-        cred_rev_records: list,
+        cred_rev_records: list[StorageRecord],
     ):
         """Initialize rev entry upgrade object."""
         self.rev_list = rev_list
@@ -145,7 +145,7 @@ class RevListUpgradeObj:
 
 
 async def get_schema_upgrade_object(
-    profile: Profile, schema_id: str, askar_schema
+    profile: Profile, schema_id: str, askar_schema: StorageRecord
 ) -> SchemaUpgradeObj:
     """Get schema upgrade object."""
     async with profile.session() as session:
@@ -182,7 +182,7 @@ async def get_schema_upgrade_object(
 
 
 async def get_cred_def_upgrade_object(
-    profile: Profile, askar_cred_def
+    profile: Profile, askar_cred_def: StorageRecord
 ) -> CredDefUpgradeObj:
     """Get cred def upgrade object."""
     cred_def_id = askar_cred_def.tags.get("cred_def_id")
@@ -231,7 +231,7 @@ async def get_cred_def_upgrade_object(
 async def get_rev_reg_def_upgrade_object(
     profile: Profile,
     cred_def_upgrade_obj: CredDefUpgradeObj,
-    askar_issuer_rev_reg_def,
+    askar_issuer_rev_reg_def: StorageRecord,
     is_active: bool,
 ) -> RevRegDefUpgradeObj:
     """Get rev reg def upgrade object."""
@@ -300,7 +300,7 @@ async def get_rev_list_upgrade_object(
 
 
 async def upgrade_and_delete_schema_records(
-    txn, schema_upgrade_obj: SchemaUpgradeObj
+    txn: ProfileSession, schema_upgrade_obj: SchemaUpgradeObj
 ) -> None:
     """Upgrade and delete schema records."""
     schema_anoncreds = schema_upgrade_obj.schema
@@ -319,7 +319,7 @@ async def upgrade_and_delete_schema_records(
 
 
 async def upgrade_and_delete_cred_def_records(
-    txn, anoncreds_schema, cred_def_upgrade_obj: CredDefUpgradeObj
+    txn: ProfileSession, anoncreds_schema: Schema, cred_def_upgrade_obj: CredDefUpgradeObj
 ) -> None:
     """Upgrade and delete cred def records."""
     cred_def_id = cred_def_upgrade_obj.cred_def_id
@@ -370,7 +370,7 @@ rev_reg_states_mapping = {
 
 
 async def upgrade_and_delete_rev_reg_def_records(
-    txn, rev_reg_def_upgrade_obj: RevRegDefUpgradeObj
+    txn: ProfileSession, rev_reg_def_upgrade_obj: RevRegDefUpgradeObj
 ) -> None:
     """Upgrade and delete rev reg def records."""
     rev_reg_def_id = rev_reg_def_upgrade_obj.rev_reg_def_id
@@ -397,7 +397,7 @@ async def upgrade_and_delete_rev_reg_def_records(
 
 
 async def upgrade_and_delete_rev_entry_records(
-    txn, rev_list_upgrade_obj: RevListUpgradeObj
+    txn: ProfileSession, rev_list_upgrade_obj: RevListUpgradeObj
 ) -> None:
     """Upgrade and delete revocation entry records."""
     next_index = 0
@@ -422,7 +422,7 @@ async def upgrade_and_delete_rev_entry_records(
 
 
 async def upgrade_all_records_with_transaction(
-    txn: any,
+    txn: ProfileSession,
     schema_upgrade_objs: list[SchemaUpgradeObj],
     cred_def_upgrade_objs: list[CredDefUpgradeObj],
     rev_reg_def_upgrade_objs: list[RevRegDefUpgradeObj],
@@ -498,7 +498,7 @@ async def get_rev_reg_def_upgrade_objs(
     return rev_reg_def_upgrade_objs
 
 
-async def convert_records_to_anoncreds(profile) -> None:
+async def convert_records_to_anoncreds(profile: Profile) -> None:
     """Convert and delete old askar records."""
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
@@ -585,8 +585,8 @@ async def retry_converting_records(
             )
         else:
             LOGGER.error(
-                f"""Failed to upgrade wallet: {profile.name} after 5 retries. 
-                Try fixing any connection issues and re-running the update"""
+                f"Failed to upgrade wallet: {profile.name} after 5 retries. "
+                "Try fixing any connection issues and re-running the update"
             )
             await fail_upgrade()
 

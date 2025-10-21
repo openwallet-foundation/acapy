@@ -1,4 +1,4 @@
-ARG from_image=ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.3.0
+ARG from_image=ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.3.2
 FROM ${from_image}
 
 ENV ENABLE_PTVSD 0

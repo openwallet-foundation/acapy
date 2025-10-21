@@ -8,7 +8,7 @@ import json
 # anext is a builtin in Python 3.10+
 import logging
 import threading
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Sequence
 
@@ -20,7 +20,7 @@ from .interfaces import AbstractDatabaseSession, AbstractDatabaseStore, Database
 LOGGER = logging.getLogger(__name__)
 
 # Registry for backends with thread safety
-_backend_registry = {}
+_backend_registry: dict[str, DatabaseBackend] = {}
 _registry_lock = threading.Lock()
 _BACKEND_REGISTRATION_IMPORT = ".databases.backends.backend_registration"
 
@@ -35,7 +35,15 @@ class Scan(AsyncIterator):
     """Async iterator for database scanning."""
 
     def __init__(
-        self, store, profile, category, tag_filter, offset, limit, order_by, descending
+        self,
+        store: "DBStore",
+        profile: Optional[str],
+        category: str | bytes,
+        tag_filter: str | dict = None,
+        offset: int = None,
+        limit: int = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
     ):
         """Initialize DBStoreScan with scan parameters."""
         self._store = store
@@ -54,7 +62,7 @@ class Scan(AsyncIterator):
             self._store._db.scan
         ) or inspect.isasyncgenfunction(self._store._db.scan)
 
-    async def __anext__(self):
+    async def __anext__(self) -> Entry:
         """Get next item from async scan."""
         if self._generator is None:
             if self._is_async:
@@ -70,7 +78,7 @@ class Scan(AsyncIterator):
                 )
             else:
                 # For sync backends (e.g., SQLite), run in executor
-                def create_generator():
+                def create_generator() -> AsyncIterator[Entry]:
                     return self._store._db.scan(
                         self._profile,
                         self._category,
@@ -95,7 +103,7 @@ class Scan(AsyncIterator):
                 raise
         else:
             # Handle sync generators using the executor
-            def get_next():
+            def get_next() -> Entry | None:
                 try:
                     return next(self._generator)
                 except StopIteration:
@@ -107,7 +115,7 @@ class Scan(AsyncIterator):
                 raise StopAsyncIteration
             return result
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Clean up resources."""
         # Shut down the executor to clean up resources
         self._executor.shutdown(wait=False)
@@ -150,7 +158,7 @@ class ScanKeyset(AsyncIterator):
             self._store._db.scan_keyset
         ) or inspect.isasyncgenfunction(self._store._db.scan_keyset)
 
-    async def __anext__(self):
+    async def __anext__(self) -> Entry:
         """Get next item from async keyset scan."""
         if self._generator is None:
             if self._is_async:
@@ -166,7 +174,7 @@ class ScanKeyset(AsyncIterator):
                 )
             else:
                 # For sync backends (e.g., SQLite), run scan_keyset in executor
-                def create_generator():
+                def create_generator() -> AsyncGenerator[Entry, None]:
                     return self._store._db.scan_keyset(
                         self._profile,
                         self._category,
@@ -191,7 +199,7 @@ class ScanKeyset(AsyncIterator):
                 raise
         else:
             # Handle sync generators using the executor
-            def get_next():
+            def get_next() -> Entry | None:
                 try:
                     return next(self._generator)
                 except StopIteration:
@@ -203,7 +211,7 @@ class ScanKeyset(AsyncIterator):
                 raise StopAsyncIteration
             return result
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Clean up resources."""
         self._executor.shutdown(wait=False)
 
@@ -404,7 +412,7 @@ class DBStore:
             LOGGER.error("remove error: %s", type(e).__name__)
             raise backend.translate_error(e)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the database store."""
         LOGGER.debug("initialize called")
         try:
@@ -451,7 +459,7 @@ class DBStore:
             LOGGER.error("remove_profile error: %s", str(e))
             raise self._db.translate_error(e)
 
-    async def rekey(self, key_method: str = None, pass_key: str = None):
+    async def rekey(self, key_method: str = None, pass_key: str = None) -> None:
         """Perform the action."""
         LOGGER.debug(f"rekey called with key_method={key_method}, pass_key=***")
         try:
@@ -561,12 +569,12 @@ class DBStoreSession:
 
     @property
     def is_transaction(self) -> bool:
-        """Perform the action."""
+        """Check if the session is a transaction."""
         return self._is_txn
 
     @property
     def handle(self):
-        """Perform the action."""
+        """Get a unique identifier for the session."""
         return id(self)
 
     async def count(self, category: str, tag_filter: str | dict = None) -> int:
@@ -632,7 +640,7 @@ class DBStoreSession:
         tags: dict = None,
         expiry_ms: int = None,
         value_json=None,
-    ):
+    ) -> None:
         """Perform the action."""
         LOGGER.debug(
             f"insert called with category={category}, name={name}, "
@@ -657,7 +665,7 @@ class DBStoreSession:
         tags: dict = None,
         expiry_ms: int = None,
         value_json=None,
-    ):
+    ) -> None:
         """Perform the action."""
         LOGGER.debug(
             f"replace called with category={category}, name={name}, "
@@ -674,7 +682,7 @@ class DBStoreSession:
             LOGGER.error("replace error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def remove(self, category: str, name: str):
+    async def remove(self, category: str, name: str) -> None:
         """Perform the action."""
         LOGGER.debug(f"remove called with category={category}, name={name}")
         try:
@@ -698,7 +706,7 @@ class DBStoreSession:
             LOGGER.error("remove_all error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def commit(self):
+    async def commit(self) -> None:
         """Perform the action."""
         LOGGER.debug("commit called")
         if not self._is_txn:
@@ -711,7 +719,7 @@ class DBStoreSession:
             LOGGER.error("commit error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def rollback(self):
+    async def rollback(self) -> None:
         """Perform the action."""
         LOGGER.debug("rollback called")
         if not self._is_txn:
@@ -724,7 +732,7 @@ class DBStoreSession:
             LOGGER.error("rollback error: %s", str(e))
             raise self._db_session.translate_error(e)
 
-    async def close(self):
+    async def close(self) -> None:
         """Perform the action."""
         LOGGER.debug("close called")
         try:
