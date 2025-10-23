@@ -8,10 +8,6 @@ inputs:
   os:
     description: "Operating system"
     required: true
-  postgres-url:
-    description: "PostgreSQL connection URL"
-    required: false
-    default: "postgres://acapy_test:acapy_test_pass@localhost:5432/acapy_test_db"
 
 runs:
   using: "composite"
@@ -87,13 +83,20 @@ runs:
     - name: Run Kanon PostgreSQL Tests
       shell: bash
       env:
-        POSTGRES_URL: ${{ inputs.postgres-url }}
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: acapy_test
+        POSTGRES_PASSWORD: acapy_test_pass
+        POSTGRES_DB: acapy_test_db
         ENABLE_DBSTORE_TESTS: "1"
         LOG_LEVEL: WARNING
       run: |
+        # Construct PostgreSQL URL from components to avoid GitHub secret masking
+        export POSTGRES_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
         echo "========================================="
         echo "Running Kanon Integration Tests"
-        echo "PostgreSQL URL: $POSTGRES_URL"
+        echo "Database: ${POSTGRES_DB} on ${POSTGRES_HOST}:${POSTGRES_PORT}"
         echo "========================================="
 
         poetry run pytest \
@@ -126,13 +129,20 @@ runs:
     - name: Run DBStore PostgreSQL Integration Tests
       shell: bash
       env:
-        POSTGRES_URL: ${{ inputs.postgres-url }}
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: acapy_test
+        POSTGRES_PASSWORD: acapy_test_pass
+        POSTGRES_DB: acapy_test_db
         ENABLE_DBSTORE_TESTS: "1"
         LOG_LEVEL: WARNING
       run: |
+        # Construct PostgreSQL URL from components to avoid GitHub secret masking
+        export POSTGRES_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
         echo "========================================="
         echo "Running DBStore PostgreSQL Integration Tests"
-        echo "PostgreSQL URL: $POSTGRES_URL"
+        echo "Database: ${POSTGRES_DB} on ${POSTGRES_HOST}:${POSTGRES_PORT}"
         echo "========================================="
 
         poetry run pytest \

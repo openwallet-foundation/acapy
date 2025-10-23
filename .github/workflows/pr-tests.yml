@@ -50,4 +50,3 @@ jobs:
       with:
         python-version: "3.12"
         os: "ubuntu-latest"
-        postgres-url: "postgres://acapy_test:acapy_test_pass@localhost:5432/acapy_test_db"
