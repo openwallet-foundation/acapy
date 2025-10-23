@@ -548,9 +548,9 @@ class PostgresConfig:
                     # Database exists and recreate=True: drop tables using the
                     # existing schema_release_number
                     # Initialize with defaults in case config table doesn't exist
-                    schema_config = None
+                    schema_config = self.schema_config  # Use the provided schema_config
                     schema_release_number = release_number
-                    schema_release_type = None
+                    schema_release_type = "postgresql"  # Default to postgresql for drop_tables
                     default_profile_db = None
 
                     target_pool = PostgresConnectionPool(
