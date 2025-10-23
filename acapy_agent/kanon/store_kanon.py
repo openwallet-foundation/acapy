@@ -244,15 +244,20 @@ class KanonStoreConfig:
         LOGGER.debug("Parsed dbstore_storage_creds (keys): %s", list(creds.keys()))
 
         config_url = self._validate_postgres_dbstore_url(config)
-        account, _ = self._validate_postgres_dbstore_creds(creds)
+        account, password = self._validate_postgres_dbstore_creds(creds)
 
         db_name = urllib.parse.quote(self.name + "_dbstore")
-        uri = base_uri + f"{account}:***@{config_url}/{db_name}"
+        uri = base_uri + f"{account}:{password}@{config_url}/{db_name}"
 
         params = self._build_postgres_dbstore_params(config, creds)
         if params:
             uri += "?" + urllib.parse.urlencode(params)
-        LOGGER.debug("Generated PostgreSQL URI (redacted)")
+
+        # Log redacted version for security
+        redacted_uri = base_uri + f"{account}:***@{config_url}/{db_name}"
+        if params:
+            redacted_uri += "?" + urllib.parse.urlencode(params)
+        LOGGER.debug("Generated PostgreSQL URI: %s", redacted_uri)
         return uri
 
     def _validate_postgres_dbstore_config(self):
