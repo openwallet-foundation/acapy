@@ -332,7 +332,6 @@ class KanonAnonProfileManager(ProfileManager):
             provision=True, in_memory=config.get("test")
         )
 
-        
         return KanonAnonCredsProfile(opened, context)
 
     async def open(
