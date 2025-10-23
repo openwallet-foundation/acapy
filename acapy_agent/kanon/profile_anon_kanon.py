@@ -29,8 +29,6 @@ from .store_kanon import KanonOpenStore, KanonStoreConfig
 
 LOGGER = logging.getLogger(__name__)
 
-TEST_CATEGORY = "test_category"
-
 
 class KanonAnonCredsProfile(Profile):
     """Kanon AnonCreds profile implementation."""
@@ -334,27 +332,6 @@ class KanonAnonProfileManager(ProfileManager):
             provision=True, in_memory=config.get("test")
         )
 
-        # Verify DBStore is operational
-        try:
-            async with opened.db_store.session() as session:
-                # Lightweight operation to check if DBStore is functional
-                await session.count(TEST_CATEGORY)
-        except (DBStoreError, Exception) as e:
-            # Close the single store if DBStore fails
-            await opened.close()
-            raise ProfileError("DBStore is not operational after provisioning") from e
-
-        # Verify Askar store is operational
-        try:
-            async with opened.askar_store.session() as session:
-                # Lightweight operation to check if Askar store is functional
-                await session.count(TEST_CATEGORY)
-        except (AskarError, Exception) as e:
-            # Close the single store if Askar fails
-            await opened.close()
-            raise ProfileError("Askar store is not operational after provisioning") from e
-
-        # If both checks pass, return the profile
         return KanonAnonCredsProfile(opened, context)
 
     async def open(
@@ -366,23 +343,8 @@ class KanonAnonProfileManager(ProfileManager):
             provision=False, in_memory=config.get("test")
         )
 
-        # Verify DBStore is operational
-        try:
-            async with opened.db_store.session() as session:
-                # Use a lightweight operation, e.g., count items in a dummy category
-                await session.count(TEST_CATEGORY)
-        except (DBStoreError, Exception) as e:
-            await opened.close()
-            raise ProfileError("DBStore is not operational") from e
-
-        # Verify Askar store is operational
-        try:
-            async with opened.askar_store.session() as session:
-                # Similar lightweight check for Askar
-                await session.count(TEST_CATEGORY)
-        except (AskarError, Exception) as e:
-            await opened.close()
-            raise ProfileError("Askar store is not operational") from e
+        # Note: Health checks removed - if opening fails, exceptions are raised
+        # by the open_store method. The stores will be validated when first used.
 
         return KanonAnonCredsProfile(opened, context)
 

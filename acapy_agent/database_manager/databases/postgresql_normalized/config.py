@@ -545,8 +545,11 @@ class PostgresConfig:
                         await target_pool.close()
 
                 elif db_exists and recreate:
-                    # Database exists and recreate=True: drop tables using the
-                    # existing schema_release_number
+                    schema_config = self.schema_config
+                    schema_release_number = release_number
+                    schema_release_type = "postgresql"
+                    default_profile_db = None
+
                     target_pool = PostgresConnectionPool(
                         conn_str=self.conn_str,
                         min_size=1,
