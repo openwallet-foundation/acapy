@@ -2,14 +2,10 @@
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from ...core.error import BaseError
 from ...core.profile import Profile
-from ...protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
-from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
@@ -369,61 +365,3 @@ class RevocationManager:
 
             await txn.commit()
 
-        # Check if any requested cred rev ids were not found
-        missing_cred_rev_ids = [
-            _id for _id in cred_rev_ids if _id not in updated_cred_rev_ids
-        ]
-        if missing_cred_rev_ids:
-            self._logger.warning(
-                "IssuerCredRevRecord not found for cred_rev_id=%s. Could not revoke.",
-                missing_cred_rev_ids,
-            )
-
-        # Map cred_ex_version to the record type
-        _cred_ex_version_map: dict[str, Type[V10CredentialExchange | V20CredExRecord]] = {
-            IssuerCredRevRecord.VERSION_1: V10CredentialExchange,
-            IssuerCredRevRecord.VERSION_2: V20CredExRecord,
-        }
-
-        # Update CredEx records for each credential revocation record
-        for cred_rev_record in cred_rev_records:
-            async with self._profile.transaction() as txn:
-                cred_ex_id = cred_rev_record.cred_ex_id
-                cred_ex_version = cred_rev_record.cred_ex_version
-                known_record_type = _cred_ex_version_map.get(cred_ex_version)
-
-                # If we know the record type, use it, otherwise try both V1 and V2
-                record_type_to_use = (
-                    [known_record_type]
-                    if known_record_type
-                    else [V10CredentialExchange, V20CredExRecord]
-                )
-
-                for record_type in record_type_to_use:
-                    try:
-                        cred_ex_record = await record_type.retrieve_by_id(
-                            txn, cred_ex_id, for_update=True
-                        )
-
-                        # Update cred ex record state to indicate revoked
-                        cred_ex_record.state = record_type.STATE_CREDENTIAL_REVOKED
-                        await cred_ex_record.save(txn, reason="revoke credential")
-
-                        self._logger.debug(
-                            "Updated %s state to REVOKED for cred_ex_id=%s",
-                            record_type.__name__,
-                            cred_ex_id,
-                        )
-                        await txn.commit()
-                        break  # Record found, no need to check other record type
-                    except StorageNotFoundError:
-                        # Credential Exchange records may have been deleted, which is fine
-                        self._logger.debug(
-                            "%s not found for cred_ex_id=%s / cred_rev_id=%s.%s",
-                            record_type.__name__,
-                            cred_ex_id,
-                            cred_rev_record.cred_rev_id,
-                            " Checking next record type."
-                            if not known_record_type
-                            else "",
-                        )
