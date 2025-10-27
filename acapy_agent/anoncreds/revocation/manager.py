@@ -364,4 +364,3 @@ class RevocationManager:
                 updated_cred_rev_ids.append(cred_rev_id)
 
             await txn.commit()
-
