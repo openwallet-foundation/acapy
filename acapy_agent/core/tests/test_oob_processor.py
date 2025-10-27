@@ -680,7 +680,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             self.profile,
             [
                 {
-                    "@type": "issue-credential/1.0/offer-credential",
+                    "@type": "issue-credential/2.0/offer-credential",
                     "@id": "4a580490-a9d8-44f5-a3f6-14e0b8a219b0",
                 }
             ],
@@ -706,7 +706,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
             self.profile,
             [
                 {
-                    "@type": "issue-credential/1.0/offer-credential",
+                    "@type": "issue-credential/2.0/offer-credential",
                     "@id": "4a580490-a9d8-44f5-a3f6-14e0b8a219b0",
                 }
             ],
@@ -735,7 +735,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
                 self.profile, [{"@type": "unsupported"}], mock.MagicMock()
             )
         assert (
-            "None of the oob attached messages supported. Supported message types are issue-credential/1.0/offer-credential, issue-credential/2.0/offer-credential, present-proof/1.0/request-presentation, present-proof/2.0/request-presentation"
+            "None of the oob attached messages supported. Supported message types are issue-credential/2.0/offer-credential, present-proof/1.0/request-presentation, present-proof/2.0/request-presentation"
             in err.exception.message
         )
 
