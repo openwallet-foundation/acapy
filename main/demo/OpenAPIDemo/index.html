@@ -2468,10 +2468,10 @@
 </ul>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <p>We will get started by opening three browser tabs that will be used throughout the lab. Two will be Swagger UIs for the Faber and Alice agent and one for the public ledger (showing the Hyperledger Indy ledger). As well, we'll keep the terminal sessions where we started the demos handy, as we'll be grabbing information from them as well.</p>
-<p>Let's start with the ledger browser. For this demo, we're going to use an open public ledger operated by the BC Government's VON Team. In your first browser tab, go to: <a href="http://test.bcovrin.vonx.io">http://test.bcovrin.vonx.io</a>. This will be called the "ledger tab" in the instructions below.</p>
+<p>Let's start with the ledger browser. For this demo, we're going to use an open public ledger operated by the BC Government's VON Team. In your first browser tab, go to: <a href="https://test.bcovrin.vonx.io">https://test.bcovrin.vonx.io</a>. This will be called the "ledger tab" in the instructions below.</p>
 <p>For the rest of the set up, you can choose to run the terminal sessions in your browser (no local resources needed), or you can run it in Docker on your local system. Your choice, each is covered in the next two sections.</p>
 <blockquote>
-<p>Note: In the following, when we start the agents we use several special demo settings. The command we use is this: <code>LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --no-auto --bg</code>. In that:</p>
+<p>Note: In the following, when we start the agents we use several special demo settings. The command we use is this: <code>LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --events --no-auto --bg</code>. In that:</p>
 <ul>
 <li>The <code>LEDGER_URL</code> environment variable informs the agent what ledger to use.</li>
 <li>The <code>--events</code> option indicates that we want the controller to display the webhook events from ACA-Py in the log displayed on the terminal.</li>
@@ -2485,7 +2485,7 @@
 <p>In a browser, go to the <a href="https://labs.play-with-docker.com/">Play with Docker</a> home page, Login (if necessary) and click "Start." On the next screen, click (in the left menu) "+Add a new instance."  That will start up a terminal in your browser. Run the following commands to start the Faber agent.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
 </code></pre></div>
 <p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>faber
@@ -2504,7 +2504,7 @@
 <p>Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
 </code></pre></div>
 <p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>alice
@@ -2528,7 +2528,7 @@
 <p>In the first terminal window, clone the ACA-Py repo, change into the demo folder and start the Faber agent:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/acapy
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
 </code></pre></div>
 <p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>faber
@@ -2545,7 +2545,7 @@
 
 <h3 id="start-the-alice-agent_1">Start the Alice Agent<a class="headerlink" href="#start-the-alice-agent_1" title="Permanent link">&para;</a></h3>
 <p>To start Alice's agent, open up a second terminal window and in it, change to the same <code>demo</code> directory as where Faber's agent was started above. Once there, start Alice's agent:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
 </code></pre></div>
 <p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>alice
@@ -2729,7 +2729,7 @@
     <img src="../collateral/C-1-Faber-DID-Public.png" alt="Faber Public DID">
 </details>
 
-<p>On the ledger browser of the <a href="http://test.bcovrin.vonx.io">BCovrin ledger</a>, click the <code>Domain</code> page, refresh, and paste the Faber public DID into the <code>Filter:</code> field:</p>
+<p>On the ledger browser of the <a href="https://test.bcovrin.vonx.io">BCovrin ledger</a>, click the <code>Domain</code> page, refresh, and paste the Faber public DID into the <code>Filter:</code> field:</p>
 <details>
     <summary>Show me a screenshot</summary>
     <img src="../collateral/C-2-Faber-Ledger-Search-0.png" alt="Search Ledger by DID">

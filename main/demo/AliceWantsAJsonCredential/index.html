@@ -2619,10 +2619,10 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
 </code></pre></div>
 <p>Open up a second shell (so you have 2 shells open in the <code>demo</code> directory) and in one shell:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--did-exchange<span class="w"> </span>--aip<span class="w"> </span><span class="m">20</span><span class="w"> </span>--cred-type<span class="w"> </span>json-ld
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--did-exchange<span class="w"> </span>--aip<span class="w"> </span><span class="m">20</span><span class="w"> </span>--cred-type<span class="w"> </span>json-ld
 </code></pre></div>
 <p>... and in the other:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice
 </code></pre></div>
 <p>Note that you start the <code>faber</code> agent with AIP2.0 options.  (When you specify <code>--cred-type json-ld</code> faber will set aip to <code>20</code> automatically,
 so the <code>--aip</code> option is not strictly required). Note as well the use of the <code>LEDGER_URL</code>. Technically, that should not be needed if we aren't

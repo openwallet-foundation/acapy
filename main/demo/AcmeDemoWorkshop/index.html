@@ -2525,15 +2525,15 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
 </code></pre></div>
 <p>In one shell run Faber:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber
 </code></pre></div>
 <p>... and in the second shell run Alice:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice
 </code></pre></div>
 <p>When Faber has produced an invitation, copy it over to Alice.</p>
 <p>Then, in the Faber shell, select option <code>1</code> to issue a credential to Alice.  (You can select option <code>2</code> if you like, to confirm via proof.)</p>
 <p>Then, in the Faber shell, enter <code>X</code> to exit the controller, and then run the Acme controller:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>acme
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>https://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>acme
 </code></pre></div>
 <p>In the Alice shell, select option <code>4</code> (to enter a new invitation) and then copy over Acme's invitation once it's available.</p>
 <p>Then, in the Acme shell, you can select option <code>2</code> and then option <code>1</code>, which don't do anything ... yet!!!</p>
