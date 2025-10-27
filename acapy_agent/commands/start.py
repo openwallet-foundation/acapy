@@ -51,7 +51,7 @@ async def run_app(argv: Sequence[str] = None):
     """Main async runner for the app."""
     # Preprocess argv to handle --arg-file-url
     if argv:
-        argv = await arg.preprocess_args_for_remote_config(list(argv))
+        argv = arg.preprocess_args_for_remote_config(list(argv))
 
     parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " start"

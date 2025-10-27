@@ -1,7 +1,6 @@
 """Command line option parsing."""
 
 import abc
-import asyncio
 import json
 import logging
 import os
@@ -12,8 +11,8 @@ from os import environ
 from typing import Optional, Type
 from urllib.parse import urlparse
 
-import aiohttp
 import deepmerge
+import requests
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
@@ -33,7 +32,7 @@ ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
 
 
-async def fetch_remote_config(url: str, timeout: int = 30) -> str:
+def fetch_remote_config(url: str, timeout: int = 30) -> str:
     """Fetch a remote configuration file from a URL.
 
     Args:
@@ -58,12 +57,10 @@ async def fetch_remote_config(url: str, timeout: int = 30) -> str:
     try:
         # Fetch the remote config
         LOGGER.info(f"Fetching remote configuration from: {url}")
-        timeout_obj = aiohttp.ClientTimeout(total=timeout)
-        async with aiohttp.ClientSession(timeout=timeout_obj) as session:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                text = await response.text()
-    except aiohttp.ClientError as e:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        text = response.text
+    except requests.RequestException as e:
         raise ArgsParseError(
             f"Failed to fetch remote configuration from {url}: {e}"
         ) from e
@@ -78,15 +75,9 @@ async def fetch_remote_config(url: str, timeout: int = 30) -> str:
 
     # Save to temporary file
     try:
-        # Create temp file
         fd, temp_path = tempfile.mkstemp(suffix=".yml", prefix="acapy_remote_config_")
-        # Write to file using async-friendly approach
         try:
-            # os.write is actually synchronous but low-level and fast
-            # For config files (typically small), this is acceptable
-            # Running in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, lambda: os.write(fd, text.encode("utf-8")))
+            os.write(fd, text.encode("utf-8"))
         finally:
             os.close(fd)
 
@@ -98,7 +89,7 @@ async def fetch_remote_config(url: str, timeout: int = 30) -> str:
         ) from e
 
 
-async def preprocess_args_for_remote_config(argv: list) -> list:
+def preprocess_args_for_remote_config(argv: list) -> list:
     """Preprocess argv to handle --arg-file-url.
 
     Downloads remote config and converts to --arg-file.
@@ -147,7 +138,7 @@ async def preprocess_args_for_remote_config(argv: list) -> list:
                 raise ArgsParseError("--arg-file-url requires a URL argument")
 
             url = processed_argv[i + 1]
-            temp_file = await fetch_remote_config(url)
+            temp_file = fetch_remote_config(url)
 
             # Replace --arg-file-url with --arg-file
             processed_argv[i] = "--arg-file"
@@ -157,7 +148,7 @@ async def preprocess_args_for_remote_config(argv: list) -> list:
         # Handle --arg-file-url=<url> format
         elif arg.startswith("--arg-file-url="):
             url = arg.split("=", 1)[1]
-            temp_file = await fetch_remote_config(url)
+            temp_file = fetch_remote_config(url)
             processed_argv[i] = f"--arg-file={temp_file}"
             i += 1
         else:
