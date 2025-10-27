@@ -191,7 +191,7 @@ fi
 if ! [ -z "$POSTGRES" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e POSTGRES=1 -e RUST_BACKTRACE=1"
 fi
-# e.g. LEDGER_URL=http://test.bcovrin.vonx.io
+# e.g. LEDGER_URL=https://test.bcovrin.vonx.io
 if ! [ -z "$LEDGER_URL" ]; then
   GENESIS_URL="${LEDGER_URL}/genesis"
   DOCKER_ENV="${DOCKER_ENV} -e LEDGER_URL=${LEDGER_URL}"

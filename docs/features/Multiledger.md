@@ -35,7 +35,7 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 - id: bcovrinTest
   is_production: true
   is_write: true
-  genesis_url: "http://test.bcovrin.vonx.io/genesis"
+  genesis_url: "https://test.bcovrin.vonx.io/genesis"
 ```
 
 ```yaml
@@ -45,13 +45,13 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 - id: bcovrinTest
   is_production: true
   is_write: true
-  genesis_url: "http://test.bcovrin.vonx.io/genesis"
+  genesis_url: "https://test.bcovrin.vonx.io/genesis"
   endorser_did: "9QPa6tHvBHttLg6U4xvviv"
   endorser_alias: "endorser_test"
 - id: greenlightDev
   is_production: true
   is_write: true
-  genesis_url: "http://test.bcovrin.vonx.io/genesis"
+  genesis_url: "https://test.bcovrin.vonx.io/genesis"
 ```
 
 Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcovrinTest` and (the no longer available -- in the above its pointing to BCovrin Test as well) `greenlightDev` ledgers are write configurable. By default, on startup `bcovrinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcovrinTest` can be set as the write ledger.
@@ -66,10 +66,10 @@ Note: `is_write` property means that the ledger is write configurable. With refe
   genesis_url: "http://host.docker.internal:9000/genesis"
 - id: bcovrinTest
   is_production: true
-  genesis_url: "http://test.bcovrin.vonx.io/genesis"
+  genesis_url: "https://test.bcovrin.vonx.io/genesis"
 - id: greenlightDev
   is_production: true
-  genesis_url: "http://test.bcovrin.vonx.io/genesis"
+  genesis_url: "https://test.bcovrin.vonx.io/genesis"
 ```
 
 Note: For instance with regards to example config above, `localVON` will be the write ledger, as there are no production ledgers which are configurable it will choose the topmost write configurable non production ledger.

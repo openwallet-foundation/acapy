@@ -38,7 +38,7 @@ for developers, such as experimenting with the Traction/ACA-Py
 [Traction]: https://digital.gov.bc.ca/digital-trust/technical-resources/traction/
 [ACA-Py]: https://aca-py.org
 [Traction Sandbox]: https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/
-[BCovrin Test Ledger]: http://test.bcovrin.vonx.io/
+[BCovrin Test Ledger]: https://test.bcovrin.vonx.io/
 [Traction Sandbox Workshop FAQ and Questions]: https://github.com/bcgov/traction/issues/927
 
 Jump in!
@@ -106,7 +106,7 @@ BCovrin (pronounced “Be Sovereign”) Test network. For those new to AnonCreds
     2. Click “Add Schema From Ledger” and fill in the `Schema Id` with the value `H7W22uhD4ueQdGaGeiCgaM:2:student id:1.0.0`.
         1. By doing this, you (as the issuer) will be using a previously
         published schema. [Click
-        here](http://test.bcovrin.vonx.io/browse/domain?page=1&query=H7W22uhD4ueQdGaGeiCgaM&txn_type=101)
+        here](https://test.bcovrin.vonx.io/browse/domain?page=1&query=H7W22uhD4ueQdGaGeiCgaM&txn_type=101)
         to see the schema on the ledger.
     3. To see the details about your schema, hit the Expand (`>`) link, and then
        the subsequent `>` to “View Raw Content."

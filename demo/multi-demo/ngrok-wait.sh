@@ -30,7 +30,7 @@ exec aca-py start \
     --auto-provision \
     --inbound-transport http '0.0.0.0' 8001 \
     --outbound-transport http \
-    --genesis-url "http://test.bcovrin.vonx.io/genesis" \
+    --genesis-url "https://test.bcovrin.vonx.io/genesis" \
     --endpoint "${ACAPY_ENDPOINT}" \
     --auto-ping-connection \
     --monitor-ping \
