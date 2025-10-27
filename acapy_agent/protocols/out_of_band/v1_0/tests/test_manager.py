@@ -34,18 +34,6 @@ from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecor
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....didcomm_prefix import DIDCommPrefix
 from ....didexchange.v1_0.manager import DIDXManager
-from ....issue_credential.v1_0.message_types import CREDENTIAL_OFFER
-from ....issue_credential.v1_0.messages.credential_offer import (
-    CredentialOffer as V10CredOffer,
-)
-from ....issue_credential.v1_0.messages.inner.credential_preview import (
-    CredAttrSpec as V10CredAttrSpec,
-)
-from ....issue_credential.v1_0.messages.inner.credential_preview import (
-    CredentialPreview as V10CredentialPreview,
-)
-from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from ....issue_credential.v1_0.tests import INDY_OFFER
 from ....issue_credential.v2_0.message_types import (
     ATTACHMENT_FORMAT as V20_CRED_ATTACH_FORMAT,
 )
@@ -56,6 +44,7 @@ from ....issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredAttrSpec,
     V20CredPreview,
 )
+from ....issue_credential.v2_0.tests import INDY_OFFER
 from ....present_proof.v1_0.message_types import ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT
 from ....present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ....present_proof.v1_0.messages.presentation_request import PresentationRequest
@@ -237,17 +226,6 @@ class TestConfig:
         request_presentations_attach=[
             AttachDecorator.data_json(mapping=DIF_PROOF_REQ, ident="dif")
         ],
-    )
-
-    CRED_OFFER_V1 = V10CredOffer(
-        credential_preview=V10CredentialPreview(
-            attributes=(
-                V10CredAttrSpec(name="legalName", value="value"),
-                V10CredAttrSpec(name="jurisdictionId", value="value"),
-                V10CredAttrSpec(name="incorporationDate", value="value"),
-            )
-        ),
-        offers_attach=[V10CredOffer.wrap_indy_offer(INDY_OFFER)],
     )
 
     CRED_OFFER_V2 = V20CredOffer(
@@ -491,91 +469,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
         assert "Invitation must include" in str(context.exception)
 
-    async def test_create_invitation_attachment_v1_0_cred_offer(self):
-        self.profile.context.update_settings({"public_invites": True})
-        with (
-            mock.patch.object(
-                AskarWallet, "get_public_did", autospec=True
-            ) as mock_wallet_get_public_did,
-            mock.patch.object(
-                V10CredentialExchange,
-                "retrieve_by_id",
-                mock.CoroutineMock(),
-            ) as mock_retrieve_cxid,
-        ):
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did,
-                TestConfig.test_verkey,
-                None,
-                method=SOV,
-                key_type=ED25519,
-            )
-            mock_retrieve_cxid.return_value = mock.MagicMock(
-                credential_offer_dict=self.CRED_OFFER_V1
-            )
-            invi_rec = await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                public=True,
-                hs_protos=[HSProto.RFC23],
-                multi_use=False,
-                attachments=[{"type": "credential-offer", "id": "dummy-id"}],
-            )
-
-            mock_retrieve_cxid.assert_called_once_with(ANY, "dummy-id")
-            assert isinstance(invi_rec, InvitationRecord)
-            assert invi_rec.invitation.handshake_protocols
-            assert invi_rec.invitation.requests_attach[0].content[
-                "@type"
-            ] == DIDCommPrefix.qualify_current(CREDENTIAL_OFFER)
-
-    async def test_create_invitation_attachment_v1_0_cred_offer_no_handshake(self):
-        self.profile.context.update_settings({"public_invites": True})
-        with (
-            mock.patch.object(
-                AskarWallet, "get_public_did", autospec=True
-            ) as mock_wallet_get_public_did,
-            mock.patch.object(
-                V10CredentialExchange,
-                "retrieve_by_id",
-                mock.CoroutineMock(),
-            ) as mock_retrieve_cxid,
-        ):
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did,
-                TestConfig.test_verkey,
-                None,
-                method=SOV,
-                key_type=ED25519,
-            )
-            mock_retrieve_cxid.return_value = mock.MagicMock(
-                credential_offer_dict=self.CRED_OFFER_V1
-            )
-            invi_rec = await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                public=True,
-                hs_protos=None,
-                multi_use=False,
-                attachments=[{"type": "credential-offer", "id": "dummy-id"}],
-            )
-
-            mock_retrieve_cxid.assert_called_once_with(ANY, "dummy-id")
-            assert isinstance(invi_rec, InvitationRecord)
-            assert not invi_rec.invitation.handshake_protocols
-            assert invi_rec.invitation.requests_attach[0].content == {
-                **self.CRED_OFFER_V1.serialize(),
-                "~thread": {"pthid": invi_rec.invi_msg_id},
-            }
-
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
         with (
             mock.patch.object(
                 AskarWallet, "get_public_did", autospec=True
             ) as mock_wallet_get_public_did,
-            mock.patch.object(
-                test_module.V10CredentialExchange,
-                "retrieve_by_id",
-                mock.CoroutineMock(),
-            ) as mock_retrieve_cxid_v1,
             mock.patch.object(
                 test_module.V20CredExRecord,
                 "retrieve_by_id",
@@ -589,7 +487,6 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 method=SOV,
                 key_type=ED25519,
             )
-            mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             mock_retrieve_cxid_v2.return_value = mock.MagicMock(cred_offer=V20CredOffer())
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
