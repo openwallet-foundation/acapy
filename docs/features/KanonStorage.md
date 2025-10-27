@@ -101,7 +101,7 @@ aca-py start \
   --wallet-name veridid.agent.kanon.issuer.normalized \
   --wallet-key kms.storage.secret \
   --preserve-exchange-records \
-  --genesis-url http://test.bcovrin.vonx.io/genesis \
+  --genesis-url https://test.bcovrin.vonx.io/genesis \
   --tails-server-base-url http://tails-server.digicred.services:6543 \
   --trace-target log \
   --trace-tag acapy.events \
@@ -143,7 +143,7 @@ aca-py start \
   --multitenant-admin \
   --admin-api-key <YOUR_ADMIN_API_KEY> \
   --preserve-exchange-records \
-  --genesis-url http://test.bcovrin.vonx.io/genesis \
+  --genesis-url https://test.bcovrin.vonx.io/genesis \
   --tails-server-base-url http://tails-server.digicred.services:6543 \
   --trace-target log \
   --trace-tag acapy.events \
