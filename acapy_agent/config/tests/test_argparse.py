@@ -1,5 +1,8 @@
+import asyncio
+import os
 from unittest import IsolatedAsyncioTestCase, mock
 
+import requests
 from configargparse import ArgumentTypeError
 
 from .. import argparse
@@ -635,12 +638,16 @@ class TestArgParse(IsolatedAsyncioTestCase):
         with mock.patch("requests.get", return_value=mock_response):
             temp_file = argparse.fetch_remote_config("https://example.com/config.yml")
             assert temp_file
-            with open(temp_file, "r") as f:
-                content = f.read()
-                assert "admin:" in content
-            # Clean up
-            import os
 
+            # Read file async-ly to satisfy linter
+            content = await asyncio.to_thread(open, temp_file, "r")
+            try:
+                file_content = await asyncio.to_thread(content.read)
+                assert "admin:" in file_content
+            finally:
+                await asyncio.to_thread(content.close)
+
+            # Clean up
             os.remove(temp_file)
 
     async def test_fetch_remote_config_invalid_url(self):
@@ -662,8 +669,6 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
     async def test_fetch_remote_config_request_error(self):
         """Test remote config with request failure."""
-        import requests
-
         with mock.patch(
             "requests.get", side_effect=requests.RequestException("Network error")
         ):
@@ -691,8 +696,6 @@ class TestArgParse(IsolatedAsyncioTestCase):
             assert result[2].endswith(".yml")
             assert result[3] == "--admin-insecure-mode"
             # Clean up
-            import os
-
             os.remove(result[2])
 
     async def test_preprocess_args_for_remote_config_equals_format(self):
@@ -709,8 +712,6 @@ class TestArgParse(IsolatedAsyncioTestCase):
             assert result[1].startswith("--arg-file=")
             assert result[1].endswith(".yml")
             # Clean up
-            import os
-
             temp_file = result[1].split("=", 1)[1]
             os.remove(temp_file)
 
