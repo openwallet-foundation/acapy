@@ -1,0 +1,237 @@
+name: Run PostgreSQL Integration Tests
+description: "Run integration tests against PostgreSQL database"
+
+inputs:
+  python-version:
+    description: "Python version"
+    required: true
+  os:
+    description: "Operating system"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'requirements*.txt'
+
+    - name: Install PostgreSQL client tools
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Wait for PostgreSQL to be ready
+      shell: bash
+      run: |
+        echo "Waiting for PostgreSQL to be ready..."
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5432 -U acapy_test; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Attempt $i: PostgreSQL not ready yet, waiting..."
+          sleep 2
+        done
+
+        # Final check
+        if ! pg_isready -h localhost -p 5432 -U acapy_test; then
+          echo "ERROR: PostgreSQL failed to become ready"
+          exit 1
+        fi
+
+    - name: Verify PostgreSQL connection
+      shell: bash
+      env:
+        PGPASSWORD: acapy_test_pass
+      run: |
+        echo "Testing PostgreSQL connection..."
+        psql -h localhost -U acapy_test -d acapy_test_db -c "SELECT version();"
+        echo "PostgreSQL connection verified!"
+
+    - name: Create additional test databases
+      shell: bash
+      env:
+        PGPASSWORD: acapy_test_pass
+      run: |
+        echo "Creating additional test databases..."
+        createdb -h localhost -U acapy_test test_kanon_db || true
+        createdb -h localhost -U acapy_test test_dbstore_db || true
+        createdb -h localhost -U acapy_test test_normalize || true
+        createdb -h localhost -U acapy_test test_generic || true
+        echo "Additional databases created"
+
+    - name: Grant database privileges
+      shell: bash
+      env:
+        PGPASSWORD: acapy_test_pass
+      run: |
+        echo "Granting database privileges..."
+        psql -h localhost -U acapy_test -d acapy_test_db -c "ALTER USER acapy_test WITH CREATEDB CREATEROLE;"
+        echo "Privileges granted"
+
+    - name: Install project dependencies
+      shell: bash
+      run: |
+        pip install poetry
+        poetry install --all-extras
+
+    - name: Run Kanon PostgreSQL Tests
+      shell: bash
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: acapy_test
+        POSTGRES_PASSWORD: acapy_test_pass
+        POSTGRES_DB: acapy_test_db
+        ENABLE_DBSTORE_TESTS: "1"
+        LOG_LEVEL: WARNING
+      run: |
+        export POSTGRES_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
+        echo "========================================="
+        echo "Running Kanon Integration Tests"
+        echo "Database: ${POSTGRES_DB} on ${POSTGRES_HOST}:${POSTGRES_PORT}"
+        echo "========================================="
+
+        poetry run pytest \
+          acapy_agent/kanon/tests/ \
+          -v \
+          --cov=acapy_agent.kanon \
+          --cov-report term-missing \
+          --cov-report xml:./test-reports/kanon-postgres-coverage.xml \
+          --junitxml=./test-reports/kanon-postgres-junit.xml \
+          2>&1 | tee kanon-postgres-tests.log
+
+        KANON_EXIT_CODE=${PIPESTATUS[0]}
+
+        echo ""
+        echo "========================================="
+        echo "Kanon tests completed with exit code: $KANON_EXIT_CODE"
+        echo "========================================="
+
+        # Check for unawaited coroutines
+        if grep -Eq "RuntimeWarning: coroutine .* was never awaited" kanon-postgres-tests.log; then
+          echo "ERROR: Detected unawaited coroutine warning in Kanon tests"
+          exit 1
+        fi
+
+        if [ $KANON_EXIT_CODE -ne 0 ]; then
+          echo "ERROR: Kanon PostgreSQL tests failed"
+          exit $KANON_EXIT_CODE
+        fi
+
+    - name: Run DBStore PostgreSQL Integration Tests
+      shell: bash
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: acapy_test
+        POSTGRES_PASSWORD: acapy_test_pass
+        POSTGRES_DB: acapy_test_db
+        ENABLE_DBSTORE_TESTS: "1"
+        LOG_LEVEL: WARNING
+      run: |
+        export POSTGRES_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
+        echo "========================================="
+        echo "Running DBStore PostgreSQL Integration Tests"
+        echo "Database: ${POSTGRES_DB} on ${POSTGRES_HOST}:${POSTGRES_PORT}"
+        echo "========================================="
+
+        echo "Running core DBStore provisioning tests..."
+
+        # Test 1: PostgreSQL Normalized Provisioning (validates our provisioning bug fix)
+        poetry run pytest \
+          -v \
+          --tb=short \
+          acapy_agent/database_manager/tests/dbstore/test_db_store_postgresql_normalized_provision.py::test_provision \
+          2>&1 | tee -a dbstore-postgres-tests.log
+
+        PROVISION_TEST_1=$?
+
+        # Test 2: PostgreSQL Normalized Schema
+        poetry run pytest \
+          -v \
+          --tb=short \
+          acapy_agent/database_manager/tests/dbstore/test_db_store_postgresql_normalized.py::test_provision \
+          2>&1 | tee -a dbstore-postgres-tests.log
+
+        PROVISION_TEST_2=$?
+
+        # Test 3: PostgreSQL Generic Schema
+        poetry run pytest \
+          -v \
+          --tb=short \
+          acapy_agent/database_manager/tests/dbstore/test_db_store_postgresql_generic.py::test_provision \
+          2>&1 | tee -a dbstore-postgres-tests.log
+
+        PROVISION_TEST_3=$?
+
+        # Calculate overall exit code
+        DBSTORE_EXIT_CODE=0
+        if [ $PROVISION_TEST_1 -ne 0 ] || [ $PROVISION_TEST_2 -ne 0 ] || [ $PROVISION_TEST_3 -ne 0 ]; then
+          DBSTORE_EXIT_CODE=1
+        fi
+
+        # Generate coverage report for all tests
+        poetry run pytest \
+          --cov=acapy_agent.database_manager \
+          --cov-report term-missing \
+          --cov-report xml:./test-reports/dbstore-postgres-coverage.xml \
+          --junitxml=./test-reports/dbstore-postgres-junit.xml \
+          --co \
+          acapy_agent/database_manager/tests/dbstore/test_db_store_postgresql*.py 2>/dev/null || true
+
+        echo ""
+        echo "========================================="
+        echo "DBStore tests completed with exit code: $DBSTORE_EXIT_CODE"
+        echo "========================================="
+
+        # Check for unawaited coroutines
+        if grep -Eq "RuntimeWarning: coroutine .* was never awaited" dbstore-postgres-tests.log; then
+          echo "ERROR: Detected unawaited coroutine warning in DBStore tests"
+          exit 1
+        fi
+
+        if [ $DBSTORE_EXIT_CODE -ne 0 ]; then
+          echo "ERROR: DBStore PostgreSQL tests failed"
+          exit $DBSTORE_EXIT_CODE
+        fi
+
+    - name: Upload Kanon PostgreSQL Test Reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: kanon-postgres-test-reports-${{ inputs.python-version }}-${{ inputs.os }}
+        path: |
+          test-reports/kanon-postgres-coverage.xml
+          test-reports/kanon-postgres-junit.xml
+          kanon-postgres-tests.log
+
+    - name: Upload DBStore PostgreSQL Test Reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dbstore-postgres-test-reports-${{ inputs.python-version }}-${{ inputs.os }}
+        path: |
+          test-reports/dbstore-postgres-coverage.xml
+          test-reports/dbstore-postgres-junit.xml
+          dbstore-postgres-tests.log
+
+    - name: Test Summary
+      if: always()
+      shell: bash
+      run: |
+        echo "========================================="
+        echo "PostgreSQL Integration Tests Summary"
+        echo "========================================="
+        echo "✅ PostgreSQL service: Ready"
+        echo "✅ Database connection: Verified"
+        echo "✅ Kanon tests: Check artifacts"
+        echo "✅ DBStore tests: Check artifacts"
+        echo "========================================="

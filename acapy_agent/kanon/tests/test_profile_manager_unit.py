@@ -60,9 +60,14 @@ async def test_profile_manager_provision_and_open_success(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_profile_manager_db_kms_failures(monkeypatch):
+async def test_profile_manager_db_kms_no_health_checks(monkeypatch):
+    """Test that provision/open succeed without health checks.
+
+    Health checks were removed because they were problematic on PostgreSQL
+    where tables don't exist immediately after provisioning. Store failures
+    during open_store will still raise appropriate exceptions.
+    """
     from acapy_agent.config.injection_context import InjectionContext
-    from acapy_agent.core.error import ProfileError
     from acapy_agent.kanon import profile_anon_kanon as module
 
     class _KCfgDBFail:
@@ -82,13 +87,14 @@ async def test_profile_manager_db_kms_failures(monkeypatch):
     mgr = module.KanonAnonProfileManager()
     ctx = InjectionContext()
 
+    # These should succeed now - health checks removed
     monkeypatch.setattr(module, "KanonStoreConfig", _KCfgDBFail)
-    with pytest.raises(ProfileError):
-        await mgr.provision(ctx, config={"test": True})
+    prof = await mgr.provision(ctx, config={"test": True})
+    assert isinstance(prof, module.KanonAnonCredsProfile)
 
     monkeypatch.setattr(module, "KanonStoreConfig", _KCfgKMSFail)
-    with pytest.raises(ProfileError):
-        await mgr.open(ctx, config={"test": True})
+    prof2 = await mgr.open(ctx, config={"test": True})
+    assert isinstance(prof2, module.KanonAnonCredsProfile)
 
 
 @pytest.mark.asyncio

@@ -60,8 +60,17 @@ async def test_postgres_missing_config_errors(monkeypatch):
     }
 
     sc = KanonStoreConfig(cfg)
-    assert "postgres" in sc.get_dbstore_uri(create=False)
-    assert "postgres" in sc.get_askar_uri(create=False)
+    dbstore_uri = sc.get_dbstore_uri(create=False)
+    askar_uri = sc.get_askar_uri(create=False)
+
+    assert "postgres" in dbstore_uri
+    assert "postgres" in askar_uri
+
+    # Verify password is included in URIs (not replaced with ***)
+    assert "a:p@" in dbstore_uri, "DBStore URI should contain actual password"
+    assert "a:p@" in askar_uri, "Askar URI should contain actual password"
+    assert "***" not in dbstore_uri, "DBStore URI should not contain *** placeholder"
+    assert "***" not in askar_uri, "Askar URI should not contain *** placeholder"
 
     bad_cfg = {**cfg}
     bad_cfg["dbstore_storage_config"] = json.dumps({})
