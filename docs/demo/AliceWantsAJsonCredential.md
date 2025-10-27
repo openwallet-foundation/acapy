@@ -16,13 +16,13 @@ cd acapy/demo
 Open up a second shell (so you have 2 shells open in the `demo` directory) and in one shell:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --did-exchange --aip 20 --cred-type json-ld
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --did-exchange --aip 20 --cred-type json-ld
 ```
 
 ... and in the other:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo alice
 ```
 
 Note that you start the `faber` agent with AIP2.0 options.  (When you specify `--cred-type json-ld` faber will set aip to `20` automatically,

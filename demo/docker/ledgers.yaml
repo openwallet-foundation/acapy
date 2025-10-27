@@ -15,7 +15,7 @@
   genesis_url: 'https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_builder_genesis'
 - id: BCovrinTest
   is_production: true
-  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  genesis_url: 'https://test.bcovrin.vonx.io/genesis'
 - id: CANdyDev
   is_production: true
   genesis_url: 'https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis'

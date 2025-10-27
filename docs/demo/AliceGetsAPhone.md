@@ -206,7 +206,7 @@ If you are running in a _local bash shell_, navigate to the `demo` directory in
 your fork/clone of the ACA-Py repository and run:
 
 ```bash
-TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+TAILS_NETWORK=docker_tails-server LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
@@ -217,7 +217,7 @@ If you are running in _Play with Docker_, navigate to the `demo` folder in the
 clone of ACA-Py and run the following:
 
 ```bash
-PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
@@ -284,7 +284,7 @@ Note that this will use the ngrok endpoint if you are running locally, or your P
 
 When running locally, use the `AGENT_ENDPOINT` environment variable to run the demo so that it puts the public hostname in the QR code:
 ```bash
-AGENT_ENDPOINT=https://abc123.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber
+AGENT_ENDPOINT=https://abc123.ngrok.io LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber
 ```
 See the Connectionless Proof Request section below for a more complete ngrok configuration that also supports the revocation option.
 

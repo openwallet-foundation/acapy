@@ -47,7 +47,7 @@ For this example, we will connect to [this endorser service](https://github.com/
 
 Make sure you start the endorser service on the same ledger as your author, and make sure the endorser has a public DID with ENDORSER role.
 
-For example start the endorser service as `LEDGER_URL=http://test.bcovrin.vonx.io TAILS_SERVER_URL=https://tails-test.vonx.io ./manage start --logs` and then make sure the Author agent is started with `--genesis_url http://test.bcovrin.vonx.io/genesis`.
+For example start the endorser service as `LEDGER_URL=https://test.bcovrin.vonx.io TAILS_SERVER_URL=https://tails-test.vonx.io ./manage start --logs` and then make sure the Author agent is started with `--genesis_url https://test.bcovrin.vonx.io/genesis`.
 
 ### Connecting the Author to the Endorser
 
