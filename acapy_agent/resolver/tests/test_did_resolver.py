@@ -178,6 +178,7 @@ async def test_resolve_with_metadata(resolver, profile, did):
     result = await resolver.resolve_with_metadata(profile, did)
     assert isinstance(result.did_document, dict)
     assert isinstance(result.metadata, ResolutionMetadata)
+    assert isinstance(result.document_metadata, dict)
 
 
 @pytest.mark.asyncio

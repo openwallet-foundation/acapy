@@ -35,7 +35,7 @@ def resolution_result(did_doc):
         retrieved_time="some time",
         duration=10,
     )
-    yield ResolutionResult(did_doc, metadata)
+    yield ResolutionResult(did_doc, metadata, {})
 
 
 @pytest.fixture
