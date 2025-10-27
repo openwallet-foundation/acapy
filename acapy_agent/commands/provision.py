@@ -72,6 +72,10 @@ async def provision(settings: dict):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
+    # Preprocess argv to handle --arg-file-url
+    if argv:
+        argv = arg.preprocess_args_for_remote_config(list(argv))
+    
     parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " provision"
     get_settings = init_argument_parser(parser)
