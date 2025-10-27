@@ -1,8 +1,10 @@
 """Command line option parsing."""
 
 import abc
+import asyncio
 import json
 import logging
+import os
 import tempfile
 from functools import reduce
 from itertools import chain
@@ -10,8 +12,8 @@ from os import environ
 from typing import Optional, Type
 from urllib.parse import urlparse
 
+import aiohttp
 import deepmerge
-import requests
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
@@ -31,7 +33,7 @@ ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
 
 
-def fetch_remote_config(url: str, timeout: int = 30) -> str:
+async def fetch_remote_config(url: str, timeout: int = 30) -> str:
     """Fetch a remote configuration file from a URL.
 
     Args:
@@ -45,46 +47,58 @@ def fetch_remote_config(url: str, timeout: int = 30) -> str:
         ArgsParseError: If the URL is invalid or fetch fails
 
     """
-    try:
-        # Validate URL
-        parsed = urlparse(url)
-        if not parsed.scheme or not parsed.netloc:
-            raise ArgsParseError(
-                f"Invalid URL for --arg-file-url: {url}. "
-                "URL must include scheme (http/https) and hostname."
-            )
+    # Validate URL
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ArgsParseError(
+            f"Invalid URL for --arg-file-url: {url}. "
+            "URL must include scheme (http/https) and hostname."
+        )
 
+    try:
         # Fetch the remote config
         LOGGER.info(f"Fetching remote configuration from: {url}")
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
+        timeout_obj = aiohttp.ClientTimeout(total=timeout)
+        async with aiohttp.ClientSession(timeout=timeout_obj) as session:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                text = await response.text()
+    except aiohttp.ClientError as e:
+        raise ArgsParseError(
+            f"Failed to fetch remote configuration from {url}: {e}"
+        ) from e
 
-        # Validate it's valid YAML
+    # Validate it's valid YAML
+    try:
+        yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        raise ArgsParseError(
+            f"Remote configuration from {url} is not valid YAML: {e}"
+        ) from e
+
+    # Save to temporary file
+    try:
+        # Create temp file
+        fd, temp_path = tempfile.mkstemp(suffix=".yml", prefix="acapy_remote_config_")
+        # Write to file using async-friendly approach
         try:
-            yaml.safe_load(response.text)
-        except yaml.YAMLError as e:
-            raise ArgsParseError(
-                f"Remote configuration from {url} is not valid YAML: {e}"
-            )
+            # os.write is actually synchronous but low-level and fast
+            # For config files (typically small), this is acceptable
+            # Running in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, lambda: os.write(fd, text.encode("utf-8")))
+        finally:
+            os.close(fd)
 
-        # Save to temporary file
-        temp_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yml", delete=False, prefix="acapy_remote_config_"
-        )
-        temp_file.write(response.text)
-        temp_file.flush()
-        temp_file.close()
-
-        LOGGER.info(f"Remote configuration saved to temporary file: {temp_file.name}")
-        return temp_file.name
-
-    except requests.RequestException as e:
-        raise ArgsParseError(f"Failed to fetch remote configuration from {url}: {e}")
-    except Exception as e:
-        raise ArgsParseError(f"Error processing remote configuration from {url}: {e}")
+        LOGGER.info(f"Remote configuration saved to temporary file: {temp_path}")
+        return temp_path
+    except (OSError, IOError) as e:
+        raise ArgsParseError(
+            f"Failed to save remote configuration to temporary file: {e}"
+        ) from e
 
 
-def preprocess_args_for_remote_config(argv: list) -> list:
+async def preprocess_args_for_remote_config(argv: list) -> list:
     """Preprocess argv to handle --arg-file-url.
 
     Downloads remote config and converts to --arg-file.
@@ -116,6 +130,10 @@ def preprocess_args_for_remote_config(argv: list) -> list:
             "Please use only one configuration source."
         )
 
+    # If no --arg-file-url, return as-is
+    if not has_arg_file_url:
+        return argv
+
     # Create a mutable copy
     processed_argv = list(argv)
     i = 0
@@ -129,7 +147,7 @@ def preprocess_args_for_remote_config(argv: list) -> list:
                 raise ArgsParseError("--arg-file-url requires a URL argument")
 
             url = processed_argv[i + 1]
-            temp_file = fetch_remote_config(url)
+            temp_file = await fetch_remote_config(url)
 
             # Replace --arg-file-url with --arg-file
             processed_argv[i] = "--arg-file"
@@ -139,7 +157,7 @@ def preprocess_args_for_remote_config(argv: list) -> list:
         # Handle --arg-file-url=<url> format
         elif arg.startswith("--arg-file-url="):
             url = arg.split("=", 1)[1]
-            temp_file = fetch_remote_config(url)
+            temp_file = await fetch_remote_config(url)
             processed_argv[i] = f"--arg-file={temp_file}"
             i += 1
         else:
