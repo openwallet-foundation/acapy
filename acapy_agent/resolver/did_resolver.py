@@ -101,12 +101,12 @@ class DIDResolver:
         resolver_metadata = ResolutionMetadata(
             resolver.type, type(resolver).__qualname__, retrieved_time, duration
         )
-        
+
         # Extract document_metadata if present in the response
         document_metadata = {}
         if isinstance(doc, dict) and "document_metadata" in doc:
             document_metadata = doc.pop("document_metadata")
-        
+
         return ResolutionResult(doc, resolver_metadata, document_metadata)
 
     async def _match_did_to_resolver(

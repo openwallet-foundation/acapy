@@ -41,5 +41,5 @@ class WebvhDIDResolver(BaseDIDResolver):
         result = response.document
         if response.document_metadata:
             result["document_metadata"] = response.document_metadata
-        
+
         return result
