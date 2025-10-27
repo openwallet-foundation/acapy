@@ -176,6 +176,7 @@ async def test_resolver_with_document_metadata(profile, did_doc):
 
     await test_module.resolve_did(request)
 
-    # Verify the response was called (document_metadata should be included)
-    # The actual response verification would be in the return value
-    assert True  # If we get here without exception, it worked
+    # Verify the resolver was called with the correct DID
+    mock_resolver.resolve_with_metadata.assert_called_once()
+    call_args = mock_resolver.resolve_with_metadata.call_args
+    assert call_args[0][1] == "did:test:123"  # Verify the DID parameter
