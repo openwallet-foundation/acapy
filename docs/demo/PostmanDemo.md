@@ -57,7 +57,7 @@ Each collection consists of a series of requests which can be configured indepen
 Make sure you have a demo agent available. You can use the following command to deploy one:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --bg
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --bg
 ```
 
 When running for the first time, please allow some time for the images to build.

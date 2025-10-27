@@ -19,7 +19,7 @@ services:
         --inbound-transport http '0.0.0.0' 8001 \
         --endpoint 'http://host.docker.internal:8001' \
         --outbound-transport http \
-        --genesis-url 'http://test.bcovrin.vonx.io/genesis' \
+        --genesis-url 'https://test.bcovrin.vonx.io/genesis' \
         --auto-accept-invites \
         --auto-accept-requests \
         --auto-ping-connection \

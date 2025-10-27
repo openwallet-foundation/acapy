@@ -22,13 +22,13 @@ cd acapy/demo
 In one shell run Faber:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber
 ```
 
 ... and in the second shell run Alice:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo alice
 ```
 
 When Faber has produced an invitation, copy it over to Alice.
@@ -38,7 +38,7 @@ Then, in the Faber shell, select option ```1``` to issue a credential to Alice. 
 Then, in the Faber shell, enter ```X``` to exit the controller, and then run the Acme controller:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo acme
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo acme
 ```
 
 In the Alice shell, select option ```4``` (to enter a new invitation) and then copy over Acme's invitation once it's available.
