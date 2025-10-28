@@ -156,12 +156,15 @@ async def store_credential_route(request: web.BaseRequest):
     try:
         vc = body["verifiableCredential"]
         cred_id = vc["id"] if "id" in vc else f"urn:uuid:{str(uuid4())}"
-        options = {} if "options" not in body else body["options"]
+        options = body.get("options", {})
+        skip_verification = options.get("skipVerification", False)
 
         vc = VerifiableCredential.deserialize(vc)
-        options = LDProofVCOptions.deserialize(options)
 
-        await manager.verify_credential(vc)
+        # Only verify if skip_verification is False (default behavior)
+        if not skip_verification:
+            await manager.verify_credential(vc)
+
         await manager.store_credential(vc, cred_id)
 
         return web.json_response({"credentialId": cred_id}, status=200)
