@@ -676,8 +676,20 @@ class TestArgParse(IsolatedAsyncioTestCase):
                 argparse.fetch_remote_config("https://example.com/config.yml")
             assert "Failed to fetch" in str(context.exception)
 
+    async def test_fetch_remote_config_file_write_error(self):
+        """Test remote config with file write failure."""
+        mock_response = mock.Mock()
+        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
+        mock_response.raise_for_status = mock.Mock()
+
+        with mock.patch("requests.get", return_value=mock_response):
+            with mock.patch("tempfile.mkstemp", side_effect=OSError("Disk full")):
+                with self.assertRaises(argparse.ArgsParseError) as context:
+                    argparse.fetch_remote_config("https://example.com/config.yml")
+                assert "Failed to save" in str(context.exception)
+
     async def test_preprocess_args_for_remote_config_space_separated(self):
-        """Test preprocessing with space-separated --arg-file-url."""
+        """Test preprocessing with space-separated --arg-file with URL."""
         mock_response = mock.Mock()
         mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
         mock_response.raise_for_status = mock.Mock()
@@ -685,7 +697,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         with mock.patch("requests.get", return_value=mock_response):
             argv = [
                 "start",
-                "--arg-file-url",
+                "--arg-file",
                 "https://example.com/config.yml",
                 "--admin-insecure-mode",
             ]
@@ -699,13 +711,13 @@ class TestArgParse(IsolatedAsyncioTestCase):
             os.remove(result[2])
 
     async def test_preprocess_args_for_remote_config_equals_format(self):
-        """Test preprocessing with --arg-file-url=<url> format."""
+        """Test preprocessing with --arg-file=<url> format."""
         mock_response = mock.Mock()
         mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
         mock_response.raise_for_status = mock.Mock()
 
         with mock.patch("requests.get", return_value=mock_response):
-            argv = ["start", "--arg-file-url=https://example.com/config.yml"]
+            argv = ["start", "--arg-file=https://example.com/config.yml"]
             result = argparse.preprocess_args_for_remote_config(argv)
 
             assert result[0] == "start"
@@ -715,41 +727,26 @@ class TestArgParse(IsolatedAsyncioTestCase):
             temp_file = result[1].split("=", 1)[1]
             os.remove(temp_file)
 
-    async def test_preprocess_args_no_url(self):
-        """Test preprocessing with no --arg-file-url."""
+    async def test_preprocess_args_with_local_file(self):
+        """Test preprocessing with local file path (should not change)."""
+        argv = ["start", "--arg-file", "/path/to/local.yml", "--admin-insecure-mode"]
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv
+
+    async def test_preprocess_args_no_arg_file(self):
+        """Test preprocessing with no --arg-file."""
         argv = ["start", "--admin", "0.0.0.0", "8000"]
         result = argparse.preprocess_args_for_remote_config(argv)
         assert result == argv
 
-    async def test_preprocess_args_missing_url_value(self):
-        """Test preprocessing with missing URL value."""
-        argv = ["start", "--arg-file-url"]
-        with self.assertRaises(argparse.ArgsParseError) as context:
-            argparse.preprocess_args_for_remote_config(argv)
-        assert "requires a URL argument" in str(context.exception)
+    async def test_preprocess_args_empty_argv(self):
+        """Test preprocessing with empty argv list."""
+        argv = []
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv
 
-    async def test_preprocess_args_both_arg_file_and_url(self):
-        """Test that specifying both --arg-file and --arg-file-url raises an error."""
-        argv = [
-            "start",
-            "--arg-file",
-            "local.yml",
-            "--arg-file-url",
-            "https://example.com/config.yml",
-        ]
-        with self.assertRaises(argparse.ArgsParseError) as context:
-            argparse.preprocess_args_for_remote_config(argv)
-        assert "Cannot specify both" in str(context.exception)
-        assert "--arg-file" in str(context.exception)
-        assert "--arg-file-url" in str(context.exception)
-
-    async def test_preprocess_args_both_with_equals_format(self):
-        """Test that specifying both with equals format raises an error."""
-        argv = [
-            "start",
-            "--arg-file=local.yml",
-            "--arg-file-url=https://example.com/config.yml",
-        ]
-        with self.assertRaises(argparse.ArgsParseError) as context:
-            argparse.preprocess_args_for_remote_config(argv)
-        assert "Cannot specify both" in str(context.exception)
+    async def test_preprocess_args_local_file_equals_format(self):
+        """Test preprocessing with local file in --arg-file=<path> format."""
+        argv = ["start", "--arg-file=/path/to/local.yml"]
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv

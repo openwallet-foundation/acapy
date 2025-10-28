@@ -50,7 +50,7 @@ def fetch_remote_config(url: str, timeout: int = 30) -> str:
     parsed = urlparse(url)
     if not parsed.scheme or not parsed.netloc:
         raise ArgsParseError(
-            f"Invalid URL for --arg-file-url: {url}. "
+            f"Invalid URL for --arg-file: {url}. "
             "URL must include scheme (http/https) and hostname."
         )
 
@@ -90,66 +90,54 @@ def fetch_remote_config(url: str, timeout: int = 30) -> str:
 
 
 def preprocess_args_for_remote_config(argv: list) -> list:
-    """Preprocess argv to handle --arg-file-url.
+    """Preprocess argv to handle --arg-file with URL support.
 
-    Downloads remote config and converts to --arg-file.
+    Downloads remote config from URLs and converts to local temp file.
 
     Args:
         argv: List of command line arguments
 
     Returns:
-        Modified argv with --arg-file-url replaced by --arg-file with temp file
-
-    Raises:
-        ArgsParseError: If both --arg-file and --arg-file-url are specified
+        Modified argv with URLs in --arg-file replaced by local temp file paths
 
     """
     if not argv:
         return argv
 
-    # Check if both --arg-file and --arg-file-url are present
-    has_arg_file = any(
-        arg == "--arg-file" or arg.startswith("--arg-file=") for arg in argv
-    )
-    has_arg_file_url = any(
-        arg == "--arg-file-url" or arg.startswith("--arg-file-url=") for arg in argv
-    )
-
-    if has_arg_file and has_arg_file_url:
-        raise ArgsParseError(
-            "Cannot specify both --arg-file and --arg-file-url. "
-            "Please use only one configuration source."
-        )
-
-    # If no --arg-file-url, return as-is
-    if not has_arg_file_url:
-        return argv
-
-    # Create a mutable copy
+    # Check if any --arg-file values are URLs
     processed_argv = list(argv)
     i = 0
 
     while i < len(processed_argv):
         arg = processed_argv[i]
 
-        # Check for --arg-file-url
-        if arg == "--arg-file-url":
+        # Check for --arg-file <path> format
+        if arg == "--arg-file":
             if i + 1 >= len(processed_argv):
-                raise ArgsParseError("--arg-file-url requires a URL argument")
+                # Missing value, skip (let argument parser handle it)
+                i += 1
+                continue
 
-            url = processed_argv[i + 1]
-            temp_file = fetch_remote_config(url)
+            file_path = processed_argv[i + 1]
+            # Check if it's a URL
+            parsed = urlparse(file_path)
+            if parsed.scheme and parsed.netloc:
+                # It's a URL, download it
+                temp_file = fetch_remote_config(file_path)
+                processed_argv[i + 1] = temp_file
 
-            # Replace --arg-file-url with --arg-file
-            processed_argv[i] = "--arg-file"
-            processed_argv[i + 1] = temp_file
             i += 2
 
-        # Handle --arg-file-url=<url> format
-        elif arg.startswith("--arg-file-url="):
-            url = arg.split("=", 1)[1]
-            temp_file = fetch_remote_config(url)
-            processed_argv[i] = f"--arg-file={temp_file}"
+        # Handle --arg-file=<path> format
+        elif arg.startswith("--arg-file="):
+            file_path = arg.split("=", 1)[1]
+            # Check if it's a URL
+            parsed = urlparse(file_path)
+            if parsed.scheme and parsed.netloc:
+                # It's a URL, download it
+                temp_file = fetch_remote_config(file_path)
+                processed_argv[i] = f"--arg-file={temp_file}"
+
             i += 1
         else:
             i += 1
@@ -651,19 +639,9 @@ class GeneralGroup(ArgumentGroup):
             "--arg-file",
             is_config_file=True,
             help=(
-                "Load aca-py arguments from the specified file.  Note that "
-                "this file *must* be in YAML format."
-            ),
-        )
-        parser.add_argument(
-            "--arg-file-url",
-            type=str,
-            metavar="<url>",
-            env_var="ACAPY_ARG_FILE_URL",
-            help=(
-                "Load aca-py arguments from a remote URL. The file at the URL "
-                "*must* be in YAML format. The file will be downloaded and cached "
-                "locally. Example: --arg-file-url https://example.com/config.yml"
+                "Load aca-py arguments from the specified file or URL.  Note that "
+                "this file *must* be in YAML format. Local file paths and "
+                "HTTP/HTTPS URLs are supported."
             ),
         )
         parser.add_argument(
