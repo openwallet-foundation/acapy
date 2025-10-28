@@ -1,6 +1,7 @@
 """Credential exchange admin routes."""
 
 import logging
+import re
 from json.decoder import JSONDecodeError
 from typing import Mapping, Optional
 
@@ -20,6 +21,7 @@ from ....anoncreds.holder import AnonCredsHolderError
 from ....anoncreds.issuer import AnonCredsIssuerError
 from ....anoncreds.revocation.revocation import AnonCredsRevocationError
 from ....connections.models.conn_record import ConnRecord
+from ....core.event_bus import EventBus, EventWithMetadata
 from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
 from ....indy.issuer import IndyIssuerError
@@ -46,6 +48,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....vc.ld_proofs.error import LinkedDataProofException
@@ -1861,3 +1864,34 @@ def post_process_routes(app: web.Application):
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
+
+
+def register_events(bus: EventBus):
+    """Register event listeners."""
+    bus.subscribe(re.compile(r"^acapy::cred-revoked$"), cred_revoked)
+
+
+async def cred_revoked(profile: Profile, event: EventWithMetadata):
+    """Handle cred revoked event."""
+    assert isinstance(event.payload, IssuerCredRevRecord)
+    rev_rec: IssuerCredRevRecord = event.payload
+
+    if rev_rec.cred_ex_id is None:
+        return
+
+    if (
+        rev_rec.cred_ex_version
+        and rev_rec.cred_ex_version != IssuerCredRevRecord.VERSION_2
+    ):
+        return
+
+    async with profile.transaction() as txn:
+        try:
+            cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                txn, rev_rec.cred_ex_id, for_update=True
+            )
+            cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
+            await cred_ex_record.save(txn, reason="revoke credential")
+            await txn.commit()
+        except StorageNotFoundError:
+            pass
