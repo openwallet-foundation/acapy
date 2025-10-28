@@ -89,6 +89,20 @@ def fetch_remote_config(url: str, timeout: int = 30) -> str:
         ) from e
 
 
+def _is_url(file_path: str) -> bool:
+    """Check if a file path is actually a URL.
+
+    Args:
+        file_path: Path to check
+
+    Returns:
+        True if the path is a URL, False otherwise
+
+    """
+    parsed = urlparse(file_path)
+    return bool(parsed.scheme and parsed.netloc)
+
+
 def preprocess_args_for_remote_config(argv: list) -> list:
     """Preprocess argv to handle --arg-file with URL support.
 
@@ -119,10 +133,7 @@ def preprocess_args_for_remote_config(argv: list) -> list:
                 continue
 
             file_path = processed_argv[i + 1]
-            # Check if it's a URL
-            parsed = urlparse(file_path)
-            if parsed.scheme and parsed.netloc:
-                # It's a URL, download it
+            if _is_url(file_path):
                 temp_file = fetch_remote_config(file_path)
                 processed_argv[i + 1] = temp_file
 
@@ -131,10 +142,7 @@ def preprocess_args_for_remote_config(argv: list) -> list:
         # Handle --arg-file=<path> format
         elif arg.startswith("--arg-file="):
             file_path = arg.split("=", 1)[1]
-            # Check if it's a URL
-            parsed = urlparse(file_path)
-            if parsed.scheme and parsed.netloc:
-                # It's a URL, download it
+            if _is_url(file_path):
                 temp_file = fetch_remote_config(file_path)
                 processed_argv[i] = f"--arg-file={temp_file}"
 
