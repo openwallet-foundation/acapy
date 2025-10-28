@@ -24,9 +24,9 @@ jobs:
       - name: Install build and publish dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel twine poetry
+          pip install setuptools wheel twine uv
       - name: Build and publish
         run: |
-          poetry build
+          uv build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1

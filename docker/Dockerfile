@@ -1,8 +1,8 @@
 ARG python_version=3.12
 FROM python:${python_version}-slim-bookworm AS build
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry==2.1.1
+# Install uv
+RUN pip install --no-cache-dir uv
 
 # Install build dependencies for compiling extensions like pysqlcipher3 to Support DB Manager
 RUN apt-get update && \
@@ -17,14 +17,12 @@ RUN apt-get update && \
 
 WORKDIR /src
 
-COPY ./pyproject.toml ./poetry.lock ./
+COPY ./pyproject.toml ./README.md ./
+COPY ./acapy_agent ./acapy_agent
 # need to install pysqlcipher3 first to ensure build dependencies are available
 RUN pip install --no-cache-dir pysqlcipher3==1.2.0 && \
-    poetry install --no-root
-
-COPY ./acapy_agent ./acapy_agent
-COPY ./README.md /src
-RUN poetry build
+    uv sync
+RUN uv build
 
 FROM python:${python_version}-slim-bookworm AS main
 
