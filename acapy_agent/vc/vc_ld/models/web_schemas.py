@@ -47,10 +47,27 @@ class VerifyCredentialResponse(OpenAPISchema):
     results = fields.Nested(PresentationVerificationResultSchema)
 
 
+class StoreOptionsSchema(OpenAPISchema):
+    """Options schema for storing a credential."""
+
+    skip_verification = fields.Bool(
+        data_key="skipVerification",
+        required=False,
+        load_default=False,
+        metadata={
+            "description": (
+                "Skip proof verification when storing the credential. "
+                "Default is false (proof will be verified)."
+            )
+        },
+    )
+
+
 class StoreCredentialRequest(OpenAPISchema):
-    """Request schema for verifying an LDP VP."""
+    """Request schema for storing a credential."""
 
     verifiableCredential = fields.Nested(VerifiableCredentialSchema)
+    options = fields.Nested(StoreOptionsSchema, required=False)
 
 
 class StoreCredentialResponse(OpenAPISchema):
