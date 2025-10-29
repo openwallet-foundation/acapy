@@ -17,7 +17,7 @@ class DatabaseBackend(ABC):
         pass_key,
         profile,
         recreate,
-        release_number: str = "release_1",
+        release_number: str = "release_0",
     ):
         """Provision a new database with the specified release number.
 
@@ -27,14 +27,14 @@ class DatabaseBackend(ABC):
             pass_key: Optional encryption key.
             profile: Optional profile name.
             recreate: If True, recreate the database.
-            release_number: Release number to use (e.g., 'release_1').
-                Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_0').
+                Defaults to 'release_0'.
 
         """
         pass
 
     @abstractmethod
-    def open(self, uri, key_method, pass_key, profile, release_number: str = "release_1"):
+    def open(self, uri, key_method, pass_key, profile, release_number: str = "release_0"):
         """Open an existing database with the specified release number.
 
         Args:
@@ -42,20 +42,20 @@ class DatabaseBackend(ABC):
             key_method: Optional key method for encryption.
             pass_key: Optional encryption key.
             profile: Optional profile name.
-            release_number: Release number to use (e.g., 'release_1').
-                Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_0').
+                Defaults to 'release_0'.
 
         """
         pass
 
     @abstractmethod
-    def remove(self, uri, release_number: str = "release_1"):
+    def remove(self, uri, release_number: str = "release_0"):
         """Remove the database.
 
         Args:
             uri: The database URI.
-            release_number: Release number to use (e.g., 'release_1').
-                Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_0').
+                Defaults to 'release_0'.
 
         """
         pass
@@ -103,14 +103,14 @@ class AbstractDatabaseStore(ABC):
 
     @abstractmethod
     def session(
-        self, profile: str = None, release_number: str = "release_1"
+        self, profile: str = None, release_number: str = "release_0"
     ) -> "AbstractDatabaseSession":
         """Create a new database session with the specified release number.
 
         Args:
             profile: Optional profile name.
-            release_number: Release number to use (e.g., 'release_1').
-                Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_0').
+                Defaults to 'release_0'.
 
         Returns:
             AbstractDatabaseSession: The session instance.
@@ -120,14 +120,14 @@ class AbstractDatabaseStore(ABC):
 
     @abstractmethod
     def transaction(
-        self, profile: str = None, release_number: str = "release_1"
+        self, profile: str = None, release_number: str = "release_0"
     ) -> "AbstractDatabaseSession":
         """Create a new database transaction with the specified release number.
 
         Args:
             profile: Optional profile name.
-            release_number: Release number to use (e.g., 'release_1').
-                Defaults to 'release_1'.
+            release_number: Release number to use (e.g., 'release_0').
+                Defaults to 'release_0'.
 
         Returns:
             AbstractDatabaseSession: The transaction instance.
