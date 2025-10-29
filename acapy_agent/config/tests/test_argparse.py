@@ -1,13 +1,15 @@
-from unittest import IsolatedAsyncioTestCase, mock
+import os
+from unittest import TestCase, mock
 
+import requests
 from configargparse import ArgumentTypeError
 
 from .. import argparse
 from ..util import BoundedInt, ByteSize
 
 
-class TestArgParse(IsolatedAsyncioTestCase):
-    async def test_groups(self):
+class TestArgParse(TestCase):
+    def test_groups(self):
         """Test optional argument parsing."""
         parser = argparse.create_argument_parser()
 
@@ -18,7 +20,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         parser.parse_args([])
 
-    async def test_transport_settings(self):
+    def test_transport_settings(self):
         """Test required argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -51,7 +53,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
 
-    async def test_get_genesis_transactions_list_with_ledger_selection(self):
+    def test_get_genesis_transactions_list_with_ledger_selection(self):
         """Test multiple ledger support related argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -119,7 +121,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
             }
         ) in settings.get("ledger.ledger_config_list")
 
-    async def test_upgrade_config(self):
+    def test_upgrade_config(self):
         """Test upgrade command related argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -222,7 +224,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
             "test_wallet_id_2",
         ]
 
-    async def test_outbound_is_required(self):
+    def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
         parser = argparse.create_argument_parser()
         group = argparse.TransportGroup()
@@ -240,7 +242,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         with self.assertRaises(argparse.ArgsParseError):
             settings = group.get_settings(result)
 
-    async def test_general_settings_file(self):
+    def test_general_settings_file(self):
         """Test file argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -266,7 +268,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert settings.get("external_plugins") == ["foo"]
         assert settings.get("storage_type") == "bar"
 
-    async def test_plugin_config_file(self):
+    def test_plugin_config_file(self):
         """Test file argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -292,7 +294,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
             "methods": ["sov", "btcr"]
         }
 
-    async def test_transport_settings_file(self):
+    def test_transport_settings_file(self):
         """Test file argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -313,7 +315,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         )
         # no asserts, just testing that the parser doesn't fail
 
-    async def test_multitenancy_settings(self):
+    def test_multitenancy_settings(self):
         """Test required argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -362,7 +364,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert settings.get("multitenant.wallet_name") == "test"
         assert settings.get("multitenant.base_wallet_routes") == ["/my_route"]
 
-    async def test_endorser_settings(self):
+    def test_endorser_settings(self):
         """Test required argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -385,7 +387,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert settings.get("endorser.endorser_public_did") == "did:sov:12345"
         assert settings.get("endorser.auto_endorse") is False
 
-    async def test_logging(self):
+    def test_logging(self):
         """Test logging."""
 
         parser = argparse.create_argument_parser()
@@ -406,7 +408,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert settings.get("log.file") == "test_file.log"
         assert settings.get("log.level") == "INFO"
 
-    async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
+    def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
         """Test that error is raised if no jwt_secret is provided with multitenancy."""
 
         parser = argparse.create_argument_parser()
@@ -480,7 +482,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert repr(bounded) == "integer"
 
-    async def test_mediation_x_clear_and_default(self):
+    def test_mediation_x_clear_and_default(self):
         parser = argparse.create_argument_parser()
         group = argparse.MediationGroup()
         group.add_arguments(parser)
@@ -518,7 +520,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
         assert settings["plugin_config"]["a_dict"] == {"key": "value"}
         assert settings["plugin_config"]["a_list"] == ["one", "two"]
 
-    async def test_wallet_key_derivation_method_value_parsing(self):
+    def test_wallet_key_derivation_method_value_parsing(self):
         key_derivation_method = "key_derivation_method"
         parser = argparse.create_argument_parser()
         group = argparse.WalletGroup()
@@ -532,7 +534,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert settings.get("wallet.key_derivation_method") == key_derivation_method
 
-    async def test_wallet_key_value_parsing(self):
+    def test_wallet_key_value_parsing(self):
         key_value = "some_key_value"
         parser = argparse.create_argument_parser()
         group = argparse.WalletGroup()
@@ -550,7 +552,7 @@ class TestArgParse(IsolatedAsyncioTestCase):
 
         assert settings.get("wallet.key") == key_value
 
-    async def test_discover_features_args(self):
+    def test_discover_features_args(self):
         """Test discover features support related argument parsing."""
 
         parser = argparse.create_argument_parser()
@@ -625,3 +627,122 @@ class TestArgParse(IsolatedAsyncioTestCase):
         result = parser.parse_args(["-e", "test", "--universal-resolver-regex", "regex"])
         with self.assertRaises(argparse.ArgsParseError):
             group.get_settings(result)
+
+    def test_fetch_remote_config_success(self):
+        """Test successful remote config fetching."""
+        mock_response = mock.Mock()
+        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
+        mock_response.raise_for_status = mock.Mock()
+
+        with mock.patch("requests.get", return_value=mock_response):
+            temp_file = argparse.fetch_remote_config("https://example.com/config.yml")
+            assert temp_file
+
+            # Read file to verify content
+            with open(temp_file, "r") as f:
+                content = f.read()
+                assert "admin:" in content
+
+            # Clean up
+            os.remove(temp_file)
+
+    def test_fetch_remote_config_invalid_url(self):
+        """Test remote config with invalid URL."""
+        with self.assertRaises(argparse.ArgsParseError) as context:
+            argparse.fetch_remote_config("not-a-valid-url")
+        assert "Invalid URL" in str(context.exception)
+
+    def test_fetch_remote_config_invalid_yaml(self):
+        """Test remote config with invalid YAML."""
+        mock_response = mock.Mock()
+        mock_response.text = "invalid: yaml: content: ["
+        mock_response.raise_for_status = mock.Mock()
+
+        with mock.patch("requests.get", return_value=mock_response):
+            with self.assertRaises(argparse.ArgsParseError) as context:
+                argparse.fetch_remote_config("https://example.com/config.yml")
+            assert "not valid YAML" in str(context.exception)
+
+    def test_fetch_remote_config_request_error(self):
+        """Test remote config with request failure."""
+        with mock.patch(
+            "requests.get", side_effect=requests.RequestException("Network error")
+        ):
+            with self.assertRaises(argparse.ArgsParseError) as context:
+                argparse.fetch_remote_config("https://example.com/config.yml")
+            assert "Failed to fetch" in str(context.exception)
+
+    def test_fetch_remote_config_file_write_error(self):
+        """Test remote config with file write failure."""
+        mock_response = mock.Mock()
+        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
+        mock_response.raise_for_status = mock.Mock()
+
+        with mock.patch("requests.get", return_value=mock_response):
+            with mock.patch("tempfile.mkstemp", side_effect=OSError("Disk full")):
+                with self.assertRaises(argparse.ArgsParseError) as context:
+                    argparse.fetch_remote_config("https://example.com/config.yml")
+                assert "Failed to save" in str(context.exception)
+
+    def test_preprocess_args_for_remote_config_space_separated(self):
+        """Test preprocessing with space-separated --arg-file with URL."""
+        mock_response = mock.Mock()
+        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
+        mock_response.raise_for_status = mock.Mock()
+
+        with mock.patch("requests.get", return_value=mock_response):
+            argv = [
+                "start",
+                "--arg-file",
+                "https://example.com/config.yml",
+                "--admin-insecure-mode",
+            ]
+            result = argparse.preprocess_args_for_remote_config(argv)
+
+            assert result[0] == "start"
+            assert result[1] == "--arg-file"
+            assert result[2].endswith(".yml")
+            assert result[3] == "--admin-insecure-mode"
+            # Clean up
+            os.remove(result[2])
+
+    def test_preprocess_args_for_remote_config_equals_format(self):
+        """Test preprocessing with --arg-file=<url> format."""
+        mock_response = mock.Mock()
+        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
+        mock_response.raise_for_status = mock.Mock()
+
+        with mock.patch("requests.get", return_value=mock_response):
+            argv = ["start", "--arg-file=https://example.com/config.yml"]
+            result = argparse.preprocess_args_for_remote_config(argv)
+
+            assert result[0] == "start"
+            assert result[1].startswith("--arg-file=")
+            assert result[1].endswith(".yml")
+            # Clean up
+            temp_file = result[1].split("=", 1)[1]
+            os.remove(temp_file)
+
+    def test_preprocess_args_with_local_file(self):
+        """Test preprocessing with local file path (should not change)."""
+        argv = ["start", "--arg-file", "/path/to/local.yml", "--admin-insecure-mode"]
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv
+
+    def test_preprocess_args_no_arg_file(self):
+        """Test preprocessing with no --arg-file."""
+        argv = ["start", "--admin", "0.0.0.0", "8000"]
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv
+
+    def test_preprocess_args_empty_argv(self):
+        """Test preprocessing with empty argv list."""
+        argv = []
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv
+
+    def test_preprocess_args_local_file_equals_format(self):
+        """Test preprocessing with local file in --arg-file=<path> format."""
+        argv = ["start", "--arg-file=/path/to/local.yml"]
+        result = argparse.preprocess_args_for_remote_config(argv)
+        assert result == argv

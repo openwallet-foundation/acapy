@@ -3,12 +3,16 @@
 import abc
 import json
 import logging
+import os
+import tempfile
 from functools import reduce
 from itertools import chain
 from os import environ
 from typing import Optional, Type
+from urllib.parse import urlparse
 
 import deepmerge
+import requests
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
@@ -26,6 +30,127 @@ CAT_UPGRADE = "upgrade"
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
+
+
+def fetch_remote_config(url: str, timeout: int = 30) -> str:
+    """Fetch a remote configuration file from a URL.
+
+    Args:
+        url: The URL to fetch the configuration from
+        timeout: Request timeout in seconds (default: 30)
+
+    Returns:
+        Path to the temporary file containing the downloaded config
+
+    Raises:
+        ArgsParseError: If the URL is invalid or fetch fails
+
+    """
+    # Validate URL
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ArgsParseError(
+            f"Invalid URL for --arg-file: {url}. "
+            "URL must include scheme (http/https) and hostname."
+        )
+
+    try:
+        # Fetch the remote config
+        LOGGER.info(f"Fetching remote configuration from: {url}")
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        text = response.text
+    except requests.RequestException as e:
+        raise ArgsParseError(
+            f"Failed to fetch remote configuration from {url}: {e}"
+        ) from e
+
+    # Validate it's valid YAML
+    try:
+        yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        raise ArgsParseError(
+            f"Remote configuration from {url} is not valid YAML: {e}"
+        ) from e
+
+    # Save to temporary file
+    try:
+        fd, temp_path = tempfile.mkstemp(suffix=".yml", prefix="acapy_remote_config_")
+        try:
+            os.write(fd, text.encode("utf-8"))
+        finally:
+            os.close(fd)
+
+        LOGGER.info(f"Remote configuration saved to temporary file: {temp_path}")
+        return temp_path
+    except (OSError, IOError) as e:
+        raise ArgsParseError(
+            f"Failed to save remote configuration to temporary file: {e}"
+        ) from e
+
+
+def _is_url(file_path: str) -> bool:
+    """Check if a file path is actually a URL.
+
+    Args:
+        file_path: Path to check
+
+    Returns:
+        True if the path is a URL, False otherwise
+
+    """
+    parsed = urlparse(file_path)
+    return bool(parsed.scheme and parsed.netloc)
+
+
+def preprocess_args_for_remote_config(argv: list) -> list:
+    """Preprocess argv to handle --arg-file with URL support.
+
+    Downloads remote config from URLs and converts to local temp file.
+
+    Args:
+        argv: List of command line arguments
+
+    Returns:
+        Modified argv with URLs in --arg-file replaced by local temp file paths
+
+    """
+    if not argv:
+        return argv
+
+    # Check if any --arg-file values are URLs
+    processed_argv = list(argv)
+    i = 0
+
+    while i < len(processed_argv):
+        arg = processed_argv[i]
+
+        # Check for --arg-file <path> format
+        if arg == "--arg-file":
+            if i + 1 >= len(processed_argv):
+                # Missing value, skip (let argument parser handle it)
+                i += 1
+                continue
+
+            file_path = processed_argv[i + 1]
+            if _is_url(file_path):
+                temp_file = fetch_remote_config(file_path)
+                processed_argv[i + 1] = temp_file
+
+            i += 2
+
+        # Handle --arg-file=<path> format
+        elif arg.startswith("--arg-file="):
+            file_path = arg.split("=", 1)[1]
+            if _is_url(file_path):
+                temp_file = fetch_remote_config(file_path)
+                processed_argv[i] = f"--arg-file={temp_file}"
+
+            i += 1
+        else:
+            i += 1
+
+    return processed_argv
 
 
 class ArgumentGroup(abc.ABC):
@@ -522,8 +647,9 @@ class GeneralGroup(ArgumentGroup):
             "--arg-file",
             is_config_file=True,
             help=(
-                "Load aca-py arguments from the specified file.  Note that "
-                "this file *must* be in YAML format."
+                "Load aca-py arguments from the specified file or URL.  Note that "
+                "this file *must* be in YAML format. Local file paths and "
+                "HTTP/HTTPS URLs are supported."
             ),
         )
         parser.add_argument(

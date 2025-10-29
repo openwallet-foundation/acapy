@@ -1443,7 +1443,7 @@ def arg_parser(ident: str = None, port: int = 8020):
         "--arg-file",
         type=str,
         metavar="<arg-file>",
-        help="Specify a file containing additional aca-py parameters",
+        help="Specify a file or URL containing additional aca-py parameters",
     )
     parser.add_argument(
         "--taa-accept",

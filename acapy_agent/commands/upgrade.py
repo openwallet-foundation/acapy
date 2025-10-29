@@ -623,6 +623,10 @@ async def fix_issue_rev_reg_records(profile: Profile):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
+    # Preprocess argv to handle --arg-file-url
+    if argv:
+        argv = arg.preprocess_args_for_remote_config(list(argv))
+
     parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " upgrade"
     get_settings = init_argument_parser(parser)
