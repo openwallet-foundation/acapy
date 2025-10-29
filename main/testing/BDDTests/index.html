@@ -2747,6 +2747,9 @@ using postgres run the following:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">ACAPY_ARG_FILE</span><span class="o">=</span>askar-indy-args.yml<span class="w"> </span>./run_bdd
 </code></pre></div>
 <p>... will run all the tests against an askar wallet (the new shared components, which replace indy-sdk).</p>
+<p>You can also specify a URL to load the configuration from a remote location:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">ACAPY_ARG_FILE</span><span class="o">=</span>https://example.com/configs/test-config.yml<span class="w"> </span>./run_bdd
+</code></pre></div>
 <p>Any ACA-Py argument can be included in the yml file, and order-of-precedence applies (see <a href="https://pypi.org/project/ConfigArgParse/">https://pypi.org/project/ConfigArgParse/</a>).</p>
 <h2 id="specifying-environment-parameters-when-running-integration-tests">Specifying Environment Parameters when Running Integration Tests<a class="headerlink" href="#specifying-environment-parameters-when-running-integration-tests" title="Permanent link">&para;</a></h2>
 <p>ACA-Py integration tests support the following environment-driven configuration:</p>
@@ -2759,7 +2762,7 @@ using postgres run the following:</p>
 <h2 id="running-specific-test-scenarios">Running specific test scenarios<a class="headerlink" href="#running-specific-test-scenarios" title="Permanent link">&para;</a></h2>
 <p>Behave tests are tagged using the same <a href="https://github.com/openwallet-foundation/owl-agent-test-harness#test-tags">standard tags as used in AATH</a>.</p>
 <p>To run a specific set of ACA-Py integration tests (or exclude specific tests):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./run_bdd<span class="w"> </span>-t<span class="w"> </span>tag1<span class="w"> </span>-t<span class="w"> </span>~tag2
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>./run_bdd<span class="w"> </span>-t<span class="w"> </span>tag1<span class="w"> </span>-t<span class="w"> </span>~tag2
 </code></pre></div>
 <p>(All command line parameters are passed to the <code>behave</code> command, so <a href="https://behave.readthedocs.io/en/stable/behave.html">all parameters supported by behave</a> can be used.)</p>
 <h2 id="aries-agent-test-harness-aca-py-tests">Aries Agent Test Harness ACA-Py Tests<a class="headerlink" href="#aries-agent-test-harness-aca-py-tests" title="Permanent link">&para;</a></h2>

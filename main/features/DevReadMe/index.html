@@ -2981,37 +2981,44 @@ settings can be managed using any combination of the three methods (command line
 parameters override environment variables override YAML). Use the <code>--help</code>
 option to discover the available command line parameters. There are a lot of
 them--for good and bad.</p>
+<p>YAML configuration files can be loaded from either local file paths or remote URLs using the <code>--arg-file</code> parameter:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Local file</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--arg-file<span class="w"> </span>/path/to/config.yml
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Remote URL</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--arg-file<span class="w"> </span>https://example.com/config.yml
+</code></pre></div>
 <h3 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h3>
 <p>To run a docker container based on the code in the current repo, use the following commands from the root folder of the repository to check the version, list the available modes of operation, and see all of the command line parameters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>scripts/run_docker<span class="w"> </span>--version
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>scripts/run_docker<span class="w"> </span>--help
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>scripts/run_docker<span class="w"> </span>provision<span class="w"> </span>--help
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>scripts/run_docker<span class="w"> </span>--version
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>scripts/run_docker<span class="w"> </span>--help
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>scripts/run_docker<span class="w"> </span>provision<span class="w"> </span>--help
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--help
 </code></pre></div>
 <h3 id="locally-installed">Locally Installed<a class="headerlink" href="#locally-installed" title="Permanent link">&para;</a></h3>
 <p>If you installed the PyPi package, the executable <code>aca-py</code> should be available on your PATH.</p>
 <p>Use the following commands from the root folder of the repository to check the version, list the available modes of operation, and see all of the command line parameters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aca-py<span class="w"> </span>--version
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aca-py<span class="w"> </span>--help
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>aca-py<span class="w"> </span>provision<span class="w"> </span>--help
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>aca-py<span class="w"> </span>--version
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>aca-py<span class="w"> </span>--help
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>aca-py<span class="w"> </span>provision<span class="w"> </span>--help
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--help
 </code></pre></div>
 <p>If you get an error about a missing module <code>indy</code> (e.g. <code>ModuleNotFoundError: No module named 'indy'</code>) when running <code>aca-py</code>, you will need to install the Indy libraries from the command line:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>python3_indy
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>python3_indy
 </code></pre></div>
 <p>Once that completes successfully, you should be able to run <code>aca-py --version</code> and the other examples above.</p>
 <h3 id="about-aca-py-command-line-parameters">About ACA-Py Command Line Parameters<a class="headerlink" href="#about-aca-py-command-line-parameters" title="Permanent link">&para;</a></h3>
 <p>ACA-Py invocations are separated into two types - initially provisioning an agent (<code>provision</code>) and starting a new agent process (<code>start</code>). This separation enables not having to pass in some encryption-related parameters required for provisioning when starting an agent instance. This improves security in production deployments.</p>
 <p>When starting an agent instance, at least one <em>inbound</em> and one <em>outbound</em> transport MUST be specified.</p>
 <p>For example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>aca-py<span class="w"> </span>start<span class="w">    </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>http
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aca-py<span class="w"> </span>start<span class="w">    </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>http
 </code></pre></div>
 <p>or</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aca-py<span class="w"> </span>start<span class="w">    </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">                </span>--inbound-transport<span class="w"> </span>ws<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8001</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>ws<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>http
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>aca-py<span class="w"> </span>start<span class="w">    </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">                </span>--inbound-transport<span class="w"> </span>ws<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8001</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>ws<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">                </span>--outbound-transport<span class="w"> </span>http
 </code></pre></div>
 <p>ACA-Py ships with both inbound and outbound transport drivers for <code>http</code> and <code>ws</code> (websockets). Additional transport drivers can be added as pluggable implementations. See the existing implementations in the <a href="https://github.com/openwallet-foundation/acapy/tree/main/acapy_agent/transport">transports module</a> for getting started on adding a new transport.</p>
 <p>Most configuration parameters are provided to the agent at startup. Refer to the <code>Running</code> sections above for details on listing the available command line parameters.</p>
@@ -3019,7 +3026,7 @@ them--for good and bad.</p>
 <p>It is possible to provision a secure storage (sometimes called a wallet--but not
 the same as a mobile wallet app) before running an agent to avoid passing in the
 secure storage seed on every invocation of an agent (e.g. on every <code>aca-py start ...</code>).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>aca-py<span class="w"> </span>provision<span class="w"> </span>--wallet-type<span class="w"> </span>askar<span class="w"> </span>--seed<span class="w"> </span><span class="nv">$SEED</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>aca-py<span class="w"> </span>provision<span class="w"> </span>--wallet-type<span class="w"> </span>askar<span class="w"> </span>--seed<span class="w"> </span><span class="nv">$SEED</span>
 </code></pre></div>
 <p>For additional <code>provision</code> options, execute <code>aca-py provision --help</code>.</p>
 <p>Additional information about secure storage options and configuration settings can be found <a href="../../deploying/Databases/">here</a>.</p>
@@ -3039,40 +3046,40 @@ secure storage seed on every invocation of an agent (e.g. on every <code>aca-py 
 <p>One thing to be aware of is, unlike the demo, none of the steps are automated. You will need to create public dids, connections and all the other steps yourself. Using the demo and studying the flow and then copying them with your dev container debug session is a great way to learn how everything works.</p>
 <h3 id="running-locally">Running Locally<a class="headerlink" href="#running-locally" title="Permanent link">&para;</a></h3>
 <p>Another way to develop locally is by using the provided Docker scripts to run the ACA-Py software.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>&lt;args&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>&lt;args&gt;
 </code></pre></div>
 <p>For example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">10000</span><span class="w"> </span>--outbound-transport<span class="w"> </span>http<span class="w"> </span>--debug<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">10000</span><span class="w"> </span>--outbound-transport<span class="w"> </span>http<span class="w"> </span>--debug<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
 </code></pre></div>
 <p>To enable the <a href="https://microsoft.github.io/debug-adapter-protocol/">Debug Adapter Protocol</a> using the <a href="https://github.com/microsoft/debugpy/">debugpy implementation for Python 3</a> Python debugger for Visual Studio/VSCode use the <code>--debug</code> command line parameter.</p>
 <p>When debugging an agent running within a docker container, you will need to set the DAP_HOST environment variable (defaults to <code>localhost</code>)  to <code>0.0.0.0</code> to allow forwarding from within your docker container.</p>
 <p>Note that you may still find references to <a href="https://github.com/microsoft/ptvsd">PTVSD</a>, the deprecated implementation of DAP. PTVSD_HOST and PTVSD_PORT are interchangeable with DAP_HOST and DAP_PORT.</p>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nv">ENV_VARS</span><span class="o">=</span><span class="s2">&quot;DAP_HOST=0.0.0.0&quot;</span><span class="w"> </span>scripts/run_docker<span class="w"> </span>provision<span class="w"> </span>--log-level<span class="w"> </span>debug<span class="w">  </span>--wallet-type<span class="w"> </span>askar<span class="w"> </span>--wallet-name<span class="w"> </span><span class="k">$(</span>whoami<span class="k">)</span><span class="w"> </span>--wallet-key<span class="w"> </span>mysecretkey<span class="w"> </span>--endpoint<span class="w"> </span>http://localhost:8080<span class="w"> </span>--no-ledger<span class="w"> </span>--debug
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">ENV_VARS</span><span class="o">=</span><span class="s2">&quot;DAP_HOST=0.0.0.0&quot;</span><span class="w"> </span>scripts/run_docker<span class="w"> </span>provision<span class="w"> </span>--log-level<span class="w"> </span>debug<span class="w">  </span>--wallet-type<span class="w"> </span>askar<span class="w"> </span>--wallet-name<span class="w"> </span><span class="k">$(</span>whoami<span class="k">)</span><span class="w"> </span>--wallet-key<span class="w"> </span>mysecretkey<span class="w"> </span>--endpoint<span class="w"> </span>http://localhost:8080<span class="w"> </span>--no-ledger<span class="w"> </span>--debug
 </code></pre></div>
 <p>Any ports you will be using from the docker container should be published using the <code>PORTS</code> environment variable. For example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">PORTS</span><span class="o">=</span><span class="s2">&quot;5000:5000 8000:8000 10000:10000&quot;</span><span class="w"> </span>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">10000</span><span class="w"> </span>--outbound-transport<span class="w"> </span>http<span class="w"> </span>--debug<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">PORTS</span><span class="o">=</span><span class="s2">&quot;5000:5000 8000:8000 10000:10000&quot;</span><span class="w"> </span>./scripts/run_docker<span class="w"> </span>start<span class="w"> </span>--inbound-transport<span class="w"> </span>http<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">10000</span><span class="w"> </span>--outbound-transport<span class="w"> </span>http<span class="w"> </span>--debug<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
 </code></pre></div>
 <p>Refer to <a href="#running">the previous section</a> for instructions on how to run ACA-Py.</p>
 <h3 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
 <p>You can find more details about logging and log levels <a href="../../testing/Logging/">here</a>.</p>
 <h3 id="running-tests">Running Tests<a class="headerlink" href="#running-tests" title="Permanent link">&para;</a></h3>
 <p>To run the ACA-Py test suite, use the following script:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>./scripts/run_tests
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./scripts/run_tests
 </code></pre></div>
 <p>To run the ACA-Py test suite with ptvsd debugger enabled:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./scripts/run_tests<span class="w"> </span>--debug
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./scripts/run_tests<span class="w"> </span>--debug
 </code></pre></div>
 <p>To run specific tests pass parameters as defined by <a href="https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests">pytest</a>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./scripts/run_tests<span class="w"> </span>acapy_agent/protocols/connections
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./scripts/run_tests<span class="w"> </span>acapy_agent/protocols/connections
 </code></pre></div>
 <h3 id="running-aries-agent-test-harness-tests">Running Aries Agent Test Harness Tests<a class="headerlink" href="#running-aries-agent-test-harness-tests" title="Permanent link">&para;</a></h3>
 <p>You can run a full suite of integration tests using the <a href="https://github.com/openwallet-foundation/owl-agent-test-harness">Aries Agent Test Harness (AATH)</a>.</p>
 <p>Check out and run AATH tests as follows (this tests the aca-py <code>main</code> branch):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/owl-agent-test-harness.git
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">cd</span><span class="w"> </span>aries-agent-test-harness
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>./manage<span class="w"> </span>build<span class="w"> </span>-a<span class="w"> </span>acapy-main
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>./manage<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>acapy-main<span class="w"> </span>-t<span class="w"> </span>@AcceptanceTest<span class="w"> </span>-t<span class="w"> </span>~@wip
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/openwallet-foundation/owl-agent-test-harness.git
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">cd</span><span class="w"> </span>aries-agent-test-harness
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>./manage<span class="w"> </span>build<span class="w"> </span>-a<span class="w"> </span>acapy-main
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>./manage<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>acapy-main<span class="w"> </span>-t<span class="w"> </span>@AcceptanceTest<span class="w"> </span>-t<span class="w"> </span>~@wip
 </code></pre></div>
 <p>The <code>manage</code> script is described in detail <a href="https://github.com/openwallet-foundation/owl-agent-test-harness#the-manage-bash-script">here</a>, including how to modify the AATH code to run the tests against your aca-py repo/branch.</p>
 <h2 id="development-workflow">Development Workflow<a class="headerlink" href="#development-workflow" title="Permanent link">&para;</a></h2>
