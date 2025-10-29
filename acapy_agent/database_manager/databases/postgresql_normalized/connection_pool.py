@@ -24,7 +24,7 @@ class PostgresConnectionPool:
         max_lifetime: float = 3600.0,
     ):
         """Initialize PostgreSQL connection pool."""
-        # Sanitize connection string by removing admin parameters that psycopg doesn't recognize
+        # Sanitize connection string by removing admin parameters
         self.conn_str = self._sanitize_conn_str(conn_str)
         self.min_size = min_size
         self.max_size = max_size
