@@ -26,10 +26,13 @@ def get_test_config(profile_name: str = None):
     if not profile_name:
         profile_name = f"test_profile_{uuid.uuid4().hex[:8]}"
 
+    key = "test_key_" + uuid.uuid4().hex[:8]
     return {
         "wallet.type": "kanon-anoncreds",
-        "wallet.name": profile_name,
-        "wallet.key": "test_key_" + uuid.uuid4().hex[:8],
+        "name": profile_name, 
+        "wallet.name": profile_name,  
+        "key": key,  
+        "wallet.key": key, 
         "wallet.storage_type": "postgres",
         "wallet.storage_config": {"url": postgres_url},
         "wallet.storage_creds": {
