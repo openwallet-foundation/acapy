@@ -146,7 +146,15 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Inserted item with item_id=%d", operation_name, item_id)
 
             for tag_name, tag_value in tags.items():
-                if isinstance(tag_value, (list, dict)):
+                if isinstance(tag_value, set):
+                    tag_value = json.dumps(list(tag_value))
+                    LOGGER.debug(
+                        "[%s] Serialized tag %s (set) to JSON: %s",
+                        operation_name,
+                        tag_name,
+                        tag_value,
+                    )
+                elif isinstance(tag_value, (list, dict)):
                     tag_value = json.dumps(tag_value)
                     LOGGER.debug(
                         "[%s] Serialized tag %s to JSON: %s",
@@ -250,7 +258,15 @@ class GenericHandler(BaseHandler):
                 )
 
                 for tag_name, tag_value in tags.items():
-                    if isinstance(tag_value, (list, dict)):
+                    if isinstance(tag_value, set):
+                        tag_value = json.dumps(list(tag_value))
+                        LOGGER.debug(
+                            "[%s] Serialized tag %s (set) to JSON: %s",
+                            operation_name,
+                            tag_name,
+                            tag_value,
+                        )
+                    elif isinstance(tag_value, (list, dict)):
                         tag_value = json.dumps(tag_value)
                         LOGGER.debug(
                             "[%s] Serialized tag %s to JSON: %s",
