@@ -43,9 +43,8 @@ def get_test_config(profile_name: str = None):
             "password": "postgres",
         },
         "dbstore.schema_config": "normalize",
-        "auto_remove": False,  
+        "auto_remove": False,
     }
-
 
 
 @pytest.mark.asyncio
@@ -323,6 +322,7 @@ async def test_session_and_transaction():
             pass
         await profile.close()
 
+
 @pytest.mark.asyncio
 async def test_remove_profile():
     config = get_test_config()
@@ -375,6 +375,7 @@ async def test_remove_nonexistent_profile_graceful():
     except (ProfileNotFoundError, ProfileError, DBStoreError):
         # Expected: profile doesn't exist, cannot remove
         pass
+
 
 @pytest.mark.asyncio
 async def test_concurrent_sessions():

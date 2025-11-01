@@ -215,13 +215,13 @@ async def test_tag_query_valid_and_operator(holder: VCHolder, record: VCRecord):
     """Test that AND operator in tag queries works correctly."""
     test_uri_list = [
         "https://www.w3.org/2018/credentials#VerifiableCredential",
-        "https://example.org/examples#UniversityDegreeCredential2", 
+        "https://example.org/examples#UniversityDegreeCredential2",
     ]
     await holder.store_credential(record)
 
     search = holder.search_credentials(pd_uri_list=test_uri_list)
     rows = await search.fetch()
-    assert rows == [] 
+    assert rows == []
 
 
 @pytest.mark.asyncio
@@ -389,7 +389,7 @@ async def test_set_serialization_with_empty_sets(holder: VCHolder):
 
     result = await holder.retrieve_credential_by_given_id("test_empty_sets")
     assert result.given_id == "test_empty_sets"
-    assert result.schema_ids == set()  
+    assert result.schema_ids == set()
 
 
 @pytest.mark.asyncio

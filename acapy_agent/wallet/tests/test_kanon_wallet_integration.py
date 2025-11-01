@@ -53,7 +53,6 @@ async def wallet(profile: Profile):
         yield KanonWallet(session)
 
 
-
 @pytest.mark.asyncio
 async def test_create_local_did(wallet: KanonWallet):
     metadata = {"description": "Test DID", "public": False}
@@ -149,9 +148,7 @@ async def test_sign_message(wallet: KanonWallet):
     assert signature
     assert isinstance(signature, bytes)
 
-    valid = await wallet.verify_message(
-        message, signature, did_info.verkey, ED25519
-    )
+    valid = await wallet.verify_message(message, signature, did_info.verkey, ED25519)
     assert valid
 
     message2 = b"Different message"
@@ -169,15 +166,11 @@ async def test_verify_message(wallet: KanonWallet):
     message = b"Test message for verification"
     signature = await wallet.sign_message(message, did_info.verkey)
 
-    valid = await wallet.verify_message(
-        message, signature, did_info.verkey, ED25519
-    )
+    valid = await wallet.verify_message(message, signature, did_info.verkey, ED25519)
     assert valid is True
 
     invalid_sig = b"invalid signature bytes"
-    valid = await wallet.verify_message(
-        message, invalid_sig, did_info.verkey, ED25519
-    )
+    valid = await wallet.verify_message(message, invalid_sig, did_info.verkey, ED25519)
     assert valid is False
 
     wrong_message = b"Wrong message content"
@@ -199,9 +192,7 @@ async def test_pack_message(wallet: KanonWallet):
     )
 
     message = b"Secret message content"
-    packed = await wallet.pack_message(
-        message, [recipient.verkey], sender.verkey
-    )
+    packed = await wallet.pack_message(message, [recipient.verkey], sender.verkey)
 
     assert packed
     assert isinstance(packed, bytes)
@@ -231,7 +222,6 @@ async def test_unpack_message(wallet: KanonWallet):
     assert message == original_message.decode("utf-8")
     assert from_verkey == sender.verkey
     assert to_verkey == recipient.verkey
-
 
 
 @pytest.mark.asyncio
@@ -328,6 +318,7 @@ async def test_set_did_endpoint(wallet: KanonWallet):
     wallet.replace_local_did_metadata = original_replace
 
     import uuid
+
     web_did_info = await wallet.create_local_did(
         method=WEB,
         key_type=ED25519,
@@ -342,6 +333,7 @@ async def test_set_did_endpoint(wallet: KanonWallet):
             "http://example.com",
             mock_ledger,
         )
+
 
 @pytest.mark.asyncio
 async def test_duplicate_did_error(wallet: KanonWallet):
@@ -358,7 +350,7 @@ async def test_duplicate_did_error(wallet: KanonWallet):
             method=SOV,
             key_type=ED25519,
             seed=seed,
-            metadata={"original": False}, 
+            metadata={"original": False},
         )
         assert did_info2.did == did_info1.did
     except WalletDuplicateError:
