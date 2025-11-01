@@ -29,10 +29,10 @@ def get_test_config(profile_name: str = None):
     key = "test_key_" + uuid.uuid4().hex[:8]
     return {
         "wallet.type": "kanon-anoncreds",
-        "name": profile_name, 
-        "wallet.name": profile_name,  
-        "key": key,  
-        "wallet.key": key, 
+        "name": profile_name,
+        "wallet.name": profile_name,
+        "key": key,
+        "wallet.key": key,
         "wallet.storage_type": "postgres",
         "wallet.storage_config": {"url": postgres_url},
         "wallet.storage_creds": {
