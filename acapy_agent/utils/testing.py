@@ -27,7 +27,38 @@ async def create_test_profile(
         }
     _id = settings.get("wallet.id", str(uuid4()))
     settings["wallet.id"] = _id
-    """Create a profile for testing."""
+
+    wallet_type = settings.get("wallet.type", "askar")
+    if wallet_type == "kanon-anoncreds":
+        from ..kanon.profile_anon_kanon import KanonAnonProfileManager
+        from ..wallet.did_method import DIDMethods
+        from ..wallet.key_type import KeyTypes
+
+        if not context:
+            context = InjectionContext(settings=settings)
+
+        context.injector.bind_instance(DIDMethods, DIDMethods())
+        context.injector.bind_instance(KeyTypes, KeyTypes())
+
+        default_key = "5BngFuBpS4wjFfVFCtPqoix3ZXG2XR8XJ7qosUzMak7R"
+        kanon_config = {
+            "wallet.name": _id,
+            "wallet.key": settings.get("wallet.key", default_key),
+            "wallet.key_derivation_method": settings.get(
+                "wallet.key_derivation_method", "RAW"
+            ),
+            "wallet.storage_type": settings.get("wallet.storage_type", "postgres"),
+            "wallet.storage_config": settings.get("wallet.storage_config", {}),
+            "wallet.storage_creds": settings.get("wallet.storage_creds", {}),
+            "dbstore.storage_type": settings.get("dbstore.storage_type", "postgres"),
+            "dbstore.storage_config": settings.get("dbstore.storage_config", {}),
+            "dbstore.storage_creds": settings.get("dbstore.storage_creds", {}),
+            "dbstore.schema_config": settings.get("dbstore.schema_config", "normalize"),
+        }
+
+        profile_manager = KanonAnonProfileManager()
+        return await profile_manager.provision(context, kanon_config)
+
     store_config = AskarStoreConfig(
         {
             "name": _id,
@@ -42,7 +73,7 @@ async def create_test_profile(
         )
     opened = await store_config.open_store(provision=True, in_memory=True)
 
-    if settings.get("wallet.type") == "askar-anoncreds":
+    if wallet_type == "askar-anoncreds":
         return AskarAnonCredsProfile(
             opened=opened,
             context=context,

@@ -7,7 +7,7 @@ from typing import Optional
 class SchemaContext:
     """Context for managing database schema configurations."""
 
-    DEFAULT_SCHEMA_NAME = "myuser"
+    DEFAULT_SCHEMA_NAME = "postgres"
 
     def __init__(self, schema_name: Optional[str] = None):
         """Initialize schema context."""

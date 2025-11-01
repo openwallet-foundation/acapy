@@ -25,7 +25,7 @@ class CredExV20CustomHandler(NormalizedHandler):
         category: str,
         columns: List[str],
         table_name: Optional[str] = None,
-        release_number: str = "release_1",
+        release_number: str = "release_0",
         db_type: str = "sqlite",
     ):
         """Initialize the CredExV20CustomHandler.

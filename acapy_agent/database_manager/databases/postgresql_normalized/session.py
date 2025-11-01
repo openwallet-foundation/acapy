@@ -26,7 +26,7 @@ class PostgresSession(AbstractDatabaseSession):
         database: PostgresDatabase,
         profile: str,
         is_txn: bool,
-        release_number: str = "release_1",
+        release_number: str = "release_0",
     ):
         """Initialize PostgreSQL session."""
         self.lock = threading.RLock()

@@ -382,7 +382,7 @@ class SqliteDatabase(AbstractDatabaseStore):
             finally:
                 self.pool.return_connection(conn)
 
-    def session(self, profile: str = None, release_number: str = "release_1"):
+    def session(self, profile: str = None, release_number: str = "release_0"):
         """Create a context manager for database session.
 
         Args:
@@ -417,7 +417,7 @@ class SqliteDatabase(AbstractDatabaseStore):
         )
         return sess
 
-    def transaction(self, profile: str = None, release_number: str = "release_1"):
+    def transaction(self, profile: str = None, release_number: str = "release_0"):
         """Create a transaction context manager.
 
         Args:
