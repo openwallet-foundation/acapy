@@ -28,23 +28,27 @@ VC_GIVEN_ID = "http://example.edu/credentials/3732"
 
 @pytest_asyncio.fixture
 async def holder():
+    import json
     postgres_url = os.getenv("POSTGRES_URL")
+    if postgres_url and "://" in postgres_url:
+        postgres_url = postgres_url.split("://")[-1].split("@")[-1]
+
     profile = await create_test_profile(
         settings={
             "wallet.type": "kanon-anoncreds",
             "wallet.storage_type": "postgres",
-            "wallet.storage_config": {"url": postgres_url},
-            "wallet.storage_creds": {
+            "wallet.storage_config": json.dumps({"url": postgres_url}),
+            "wallet.storage_creds": json.dumps({
                 "account": "postgres",
                 "password": "postgres",
-            },
-            "dbstore.storage_type": "postgres",
-            "dbstore.storage_config": {"url": postgres_url},
-            "dbstore.storage_creds": {
+            }),
+            "dbstore_storage_type": "postgres",
+            "dbstore_storage_config": json.dumps({"url": postgres_url}),
+            "dbstore_storage_creds": json.dumps({
                 "account": "postgres",
                 "password": "postgres",
-            },
-            "dbstore.schema_config": "normalize",
+            }),
+            "dbstore_schema_config": "normalize",
         }
     )
     yield profile.inject(VCHolder)

@@ -40,20 +40,37 @@ async def create_test_profile(
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(KeyTypes, KeyTypes())
 
+        import json
         default_key = "5BngFuBpS4wjFfVFCtPqoix3ZXG2XR8XJ7qosUzMak7R"
+
+        def ensure_json_string(value):
+            if isinstance(value, dict):
+                return json.dumps(value)
+            return value
+
         kanon_config = {
+            "name": _id,
+            "key": settings.get("wallet.key", default_key),
             "wallet.name": _id,
             "wallet.key": settings.get("wallet.key", default_key),
             "wallet.key_derivation_method": settings.get(
                 "wallet.key_derivation_method", "RAW"
             ),
             "wallet.storage_type": settings.get("wallet.storage_type", "postgres"),
-            "wallet.storage_config": settings.get("wallet.storage_config", {}),
-            "wallet.storage_creds": settings.get("wallet.storage_creds", {}),
-            "dbstore.storage_type": settings.get("dbstore.storage_type", "postgres"),
-            "dbstore.storage_config": settings.get("dbstore.storage_config", {}),
-            "dbstore.storage_creds": settings.get("dbstore.storage_creds", {}),
-            "dbstore.schema_config": settings.get("dbstore.schema_config", "normalize"),
+            "wallet.storage_config": ensure_json_string(
+                settings.get("wallet.storage_config", {})
+            ),
+            "wallet.storage_creds": ensure_json_string(
+                settings.get("wallet.storage_creds", {})
+            ),
+            "dbstore_storage_type": settings.get("dbstore_storage_type", "postgres"),
+            "dbstore_storage_config": ensure_json_string(
+                settings.get("dbstore_storage_config", {})
+            ),
+            "dbstore_storage_creds": ensure_json_string(
+                settings.get("dbstore_storage_creds", {})
+            ),
+            "dbstore_schema_config": settings.get("dbstore_schema_config", "normalize"),
         }
 
         profile_manager = KanonAnonProfileManager()
