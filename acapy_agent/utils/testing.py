@@ -41,6 +41,7 @@ async def create_test_profile(
         context.injector.bind_instance(KeyTypes, KeyTypes())
 
         import json
+
         default_key = "5BngFuBpS4wjFfVFCtPqoix3ZXG2XR8XJ7qosUzMak7R"
 
         def ensure_json_string(value):
