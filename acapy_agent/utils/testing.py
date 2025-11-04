@@ -27,7 +27,56 @@ async def create_test_profile(
         }
     _id = settings.get("wallet.id", str(uuid4()))
     settings["wallet.id"] = _id
-    """Create a profile for testing."""
+
+    wallet_type = settings.get("wallet.type", "askar")
+    if wallet_type == "kanon-anoncreds":
+        from ..kanon.profile_anon_kanon import KanonAnonProfileManager
+        from ..wallet.did_method import DIDMethods
+        from ..wallet.key_type import KeyTypes
+
+        if not context:
+            context = InjectionContext(settings=settings)
+
+        context.injector.bind_instance(DIDMethods, DIDMethods())
+        context.injector.bind_instance(KeyTypes, KeyTypes())
+
+        import json
+
+        default_key = "5BngFuBpS4wjFfVFCtPqoix3ZXG2XR8XJ7qosUzMak7R"
+
+        def ensure_json_string(value):
+            if isinstance(value, dict):
+                return json.dumps(value)
+            return value
+
+        kanon_config = {
+            "name": _id,
+            "key": settings.get("wallet.key", default_key),
+            "wallet.name": _id,
+            "wallet.key": settings.get("wallet.key", default_key),
+            "wallet.key_derivation_method": settings.get(
+                "wallet.key_derivation_method", "RAW"
+            ),
+            "wallet.storage_type": settings.get("wallet.storage_type", "postgres"),
+            "wallet.storage_config": ensure_json_string(
+                settings.get("wallet.storage_config", {})
+            ),
+            "wallet.storage_creds": ensure_json_string(
+                settings.get("wallet.storage_creds", {})
+            ),
+            "dbstore_storage_type": settings.get("dbstore_storage_type", "postgres"),
+            "dbstore_storage_config": ensure_json_string(
+                settings.get("dbstore_storage_config", {})
+            ),
+            "dbstore_storage_creds": ensure_json_string(
+                settings.get("dbstore_storage_creds", {})
+            ),
+            "dbstore_schema_config": settings.get("dbstore_schema_config", "normalize"),
+        }
+
+        profile_manager = KanonAnonProfileManager()
+        return await profile_manager.provision(context, kanon_config)
+
     store_config = AskarStoreConfig(
         {
             "name": _id,
@@ -42,7 +91,7 @@ async def create_test_profile(
         )
     opened = await store_config.open_store(provision=True, in_memory=True)
 
-    if settings.get("wallet.type") == "askar-anoncreds":
+    if wallet_type == "askar-anoncreds":
         return AskarAnonCredsProfile(
             opened=opened,
             context=context,

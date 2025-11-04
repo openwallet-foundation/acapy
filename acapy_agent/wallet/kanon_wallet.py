@@ -19,7 +19,7 @@ from ..storage.kanon_storage import KanonStorage
 from .base import BaseWallet, DIDInfo, KeyInfo
 from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_info import INVITATION_REUSE_KEY
-from .did_method import SOV, DIDMethod, DIDMethods
+from .did_method import INDY, SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation
 from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, P256, X25519, KeyType, KeyTypes
@@ -640,9 +640,11 @@ class KanonWallet(BaseWallet):
         )
         LOGGER.debug("Fetching DID info for: %s", did)
         did_info = await self.get_local_did(did)
-        if did_info.method != SOV:
+        if did_info.method not in (SOV, INDY):
             LOGGER.error("Invalid DID method: %s", did_info.method)
-            raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
+            raise WalletError(
+                "Setting DID endpoint is only allowed for did:sov or did:indy DIDs"
+            )
         metadata = {**did_info.metadata}
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT

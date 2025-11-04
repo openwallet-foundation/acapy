@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import urllib.parse
 
 from psycopg_pool import AsyncConnectionPool
 
@@ -23,7 +24,8 @@ class PostgresConnectionPool:
         max_lifetime: float = 3600.0,
     ):
         """Initialize PostgreSQL connection pool."""
-        self.conn_str = conn_str
+        # Sanitize connection string by removing admin parameters
+        self.conn_str = self._sanitize_conn_str(conn_str)
         self.min_size = min_size
         self.max_size = max_size
         self.timeout = timeout
@@ -32,6 +34,23 @@ class PostgresConnectionPool:
         self.pool = None
         self.connection_count = 0
         self.connection_ids = {}
+
+    def _sanitize_conn_str(self, conn_str: str) -> str:
+        """Remove admin parameters from connection string that psycopg doesn't accept."""
+        parsed = urllib.parse.urlparse(conn_str)
+        query_params = urllib.parse.parse_qs(parsed.query)
+
+        # Remove admin parameters
+        admin_params = ["admin_account", "admin_password"]
+        for param in admin_params:
+            query_params.pop(param, None)
+
+        # Rebuild query string
+        new_query = urllib.parse.urlencode(query_params, doseq=True)
+
+        # Rebuild URL
+        sanitized = parsed._replace(query=new_query).geturl()
+        return sanitized
 
     async def initialize(self):
         """Initialize the connection pool."""

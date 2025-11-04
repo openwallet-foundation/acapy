@@ -146,7 +146,15 @@ class GenericHandler(BaseHandler):
             LOGGER.debug("[%s] Inserted item with item_id=%d", operation_name, item_id)
 
             for tag_name, tag_value in tags.items():
-                if isinstance(tag_value, (list, dict)):
+                if isinstance(tag_value, set):
+                    tag_value = json.dumps(list(tag_value))
+                    LOGGER.debug(
+                        "[%s] Serialized tag %s (set) to JSON: %s",
+                        operation_name,
+                        tag_name,
+                        tag_value,
+                    )
+                elif isinstance(tag_value, (list, dict)):
                     tag_value = json.dumps(tag_value)
                     LOGGER.debug(
                         "[%s] Serialized tag %s to JSON: %s",
@@ -250,7 +258,15 @@ class GenericHandler(BaseHandler):
                 )
 
                 for tag_name, tag_value in tags.items():
-                    if isinstance(tag_value, (list, dict)):
+                    if isinstance(tag_value, set):
+                        tag_value = json.dumps(list(tag_value))
+                        LOGGER.debug(
+                            "[%s] Serialized tag %s (set) to JSON: %s",
+                            operation_name,
+                            tag_name,
+                            tag_value,
+                        )
+                    elif isinstance(tag_value, (list, dict)):
                         tag_value = json.dumps(tag_value)
                         LOGGER.debug(
                             "[%s] Serialized tag %s to JSON: %s",
@@ -420,7 +436,17 @@ class GenericHandler(BaseHandler):
                 f"SELECT name, value FROM {self.tags_table} WHERE item_id = %s",
                 (item_id,),
             )
-            tags = dict(await cursor.fetchall())
+            tag_rows = await cursor.fetchall()
+            tags = {}
+            for tag_name, tag_value in tag_rows:
+                if isinstance(tag_value, str) and (
+                    tag_value.startswith("[") or tag_value.startswith("{")
+                ):
+                    try:
+                        tag_value = json.loads(tag_value)
+                    except json.JSONDecodeError:
+                        pass
+                tags[tag_name] = tag_value
             LOGGER.debug(
                 "[%s] Fetched %d tags for item_id=%d: %s",
                 operation_name,
@@ -537,6 +563,13 @@ class GenericHandler(BaseHandler):
                         category=category, name=name, value=value, tags={}
                     )
                 if tag_name is not None:
+                    if isinstance(tag_value, str) and (
+                        tag_value.startswith("[") or tag_value.startswith("{")
+                    ):
+                        try:
+                            tag_value = json.loads(tag_value)
+                        except json.JSONDecodeError:
+                            pass
                     current_entry.tags[tag_name] = tag_value
             if current_entry:
                 entries.append(current_entry)
