@@ -73,6 +73,16 @@ parameters override environment variables override YAML). Use the `--help`
 option to discover the available command line parameters. There are a lot of
 them--for good and bad.
 
+YAML configuration files can be loaded from either local file paths or remote URLs using the `--arg-file` parameter:
+
+```bash
+# Local file
+aca-py start --arg-file /path/to/config.yml
+
+# Remote URL
+aca-py start --arg-file https://example.com/config.yml
+```
+
 ### Docker
 
 To run a docker container based on the code in the current repo, use the following commands from the root folder of the repository to check the version, list the available modes of operation, and see all of the command line parameters:

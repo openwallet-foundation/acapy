@@ -173,6 +173,12 @@ ACAPY_ARG_FILE=askar-indy-args.yml ./run_bdd
 
 ... will run all the tests against an askar wallet (the new shared components, which replace indy-sdk).
 
+You can also specify a URL to load the configuration from a remote location:
+
+```bash
+ACAPY_ARG_FILE=https://example.com/configs/test-config.yml ./run_bdd
+```
+
 Any ACA-Py argument can be included in the yml file, and order-of-precedence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
 
 ## Specifying Environment Parameters when Running Integration Tests
