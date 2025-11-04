@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.4.0rc0"
+    "version" : "v1.4.0rc1"
   },
   "servers" : [ {
     "url" : "/"
@@ -13171,6 +13171,13 @@
             "description" : "DID Document",
             "type" : "object"
           },
+          "document_metadata" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "DID Document metadata",
+            "type" : "object"
+          },
           "metadata" : {
             "additionalProperties" : {
               "type" : "object"
@@ -13179,7 +13186,7 @@
             "type" : "object"
           }
         },
-        "required" : [ "did_document", "metadata" ],
+        "required" : [ "did_document", "document_metadata", "metadata" ],
         "type" : "object"
       },
       "RevList" : {
@@ -14134,6 +14141,9 @@
       },
       "StoreCredentialRequest" : {
         "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/StoreOptions"
+          },
           "verifiableCredential" : {
             "$ref" : "#/components/schemas/VerifiableCredential"
           }
@@ -14144,6 +14154,16 @@
         "properties" : {
           "credentialId" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "StoreOptions" : {
+        "properties" : {
+          "skipVerification" : {
+            "default" : false,
+            "description" : "Skip proof verification when storing the credential. Default is false (proof will be verified).",
+            "type" : "boolean"
           }
         },
         "type" : "object"
