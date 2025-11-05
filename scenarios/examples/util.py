@@ -208,13 +208,21 @@ async def anoncreds_issue_credential_v2(
 
     Issuer and holder should already be connected.
     """
+    issuer_wallet_type = (await issuer.get("/settings", response=Settings)).get(
+        "wallet.type"
+    )
+    holder_wallet_type = (await holder.get("/settings", response=Settings)).get(
+        "wallet.type"
+    )
 
-    is_issuer_anoncreds = (await issuer.get("/settings", response=Settings)).get(
-        "wallet.type"
-    ) == "askar-anoncreds"
-    is_holder_anoncreds = (await holder.get("/settings", response=Settings)).get(
-        "wallet.type"
-    ) == "askar-anoncreds"
+    is_issuer_anoncreds = issuer_wallet_type in (
+        "askar-anoncreds",
+        "kanon-anoncreds",
+    )
+    is_holder_anoncreds = holder_wallet_type in (
+        "askar-anoncreds",
+        "kanon-anoncreds",
+    )
 
     if is_issuer_anoncreds:
         _filter = {"anoncreds": {"cred_def_id": cred_def_id}}
@@ -357,10 +365,13 @@ async def anoncreds_present_proof_v2(
     cred_rev_id: Optional[str] = None,
 ):
     """Present an credential using present proof v2."""
-
-    is_verifier_anoncreds = (await verifier.get("/settings", response=Settings)).get(
+    verifier_wallet_type = (await verifier.get("/settings", response=Settings)).get(
         "wallet.type"
-    ) == "askar-anoncreds"
+    )
+    is_verifier_anoncreds = verifier_wallet_type in (
+        "askar-anoncreds",
+        "kanon-anoncreds",
+    )
 
     attrs = {
         "name": name or "proof",
