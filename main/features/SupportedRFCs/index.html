@@ -214,7 +214,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../aca-py.org/" class="md-tabs__link">
+        <a href="../.." class="md-tabs__link">
           
   
   Welcome!
@@ -425,28 +425,6 @@
             Welcome!
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../aca-py.org/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Welcome
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -806,6 +784,28 @@
   
   
     <li class="md-nav__item">
+      <a href="../KanonStorage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kanon Storage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../PlugIns/" class="md-nav__link">
         
   
@@ -986,7 +986,7 @@
         
   
   <span class="md-ellipsis">
-    Automatically Endorsing Indy Transations
+    Automatically Endorsing Indy Transactions
     
   </span>
   
@@ -2678,7 +2678,7 @@ manually updated and as such, may not be up to date with the most recent release
 ACA-Py or the repository <code>main</code> branch. Reminders (and PRs!) to update this page are
 welcome! If you have any questions, please contact us on the #aries channel on
 <a href="https://discord.gg/openwallet-foundation">OpenWallet Foundation Discord</a> or through an issue in this repo.</p>
-<p><strong>Last Update</strong>: 2025-10-15, Release 1.4.0rc0</p>
+<p><strong>Last Update</strong>: 2025-11-05, Release 1.4.0rc1</p>
 <blockquote>
 <p>The checklist version of this document was created as a joint effort
 between <a href="https://northernblock.io/">Northern Block</a>, <a href="https://animo.id/">Animo Solutions</a> and the Ontario government, on behalf of the Ontario government.</p>
@@ -2890,12 +2890,17 @@ ACA-Py and other decentralized trust Frameworks and Agents.</p>
 <tr>
 <td><a href="https://github.com/openwallet-foundation/askar">Askar</a></td>
 <td style="text-align: center;"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /></td>
-<td>Recommended - Askar provides equivalent/evolved secure storage and cryptography support to the "indy-wallet" part of the Indy SDK. When using Askar (via the <code>--wallet-type askar</code> startup parameter), other functionality is handled by <a href="https://github.com/hyperledger/indy-shared-rs">CredX</a> (AnonCreds) and <a href="https://github.com/hyperledger/indy-vdr">Indy VDR</a> (Indy ledger interactions).</td>
+<td><strong>DEPRECATED</strong> - Askar provides equivalent/evolved secure storage and cryptography support to the removed "indy-wallet" part of the Indy SDK. When using Askar (via the <code>--wallet-type askar</code> startup parameter), credential handling functionality is by <a href="https://github.com/hyperledger/indy-shared-rs">CredX</a> (AnonCreds) and <a href="https://github.com/hyperledger/indy-vdr">Indy VDR</a> (Indy ledger interactions).</td>
 </tr>
 <tr>
 <td><a href="https://github.com/openwallet-foundation/askar">Askar</a>-AnonCreds</td>
 <td style="text-align: center;"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /></td>
-<td>Recommended - When using Askar/AnonCreds (via the <code>--wallet-type askar-anoncreds</code> startup parameter), other functionality is handled by <a href="https://github.com/hyperledger/anoncreds-rs">AnonCreds RS</a> (AnonCreds) and <a href="https://github.com/hyperledger/indy-vdr">Indy VDR</a> (for Indy ledger interactions).<br><br>This <code>wallet-type</code> will eventually be the same as <code>askar</code> when we have fully integrated the AnonCreds RS library into ACA-Py.</td>
+<td>Recommended - When using Askar/AnonCreds (via the <code>--wallet-type askar-anoncreds</code> startup parameter), AnonCreds credential handling functionality is by <a href="https://github.com/hyperledger/anoncreds-rs">AnonCreds RS</a>. All key management and ACA-Py storage is managed by Askar.</td>
+</tr>
+<tr>
+<td><a href="https://aca-py.org/latest/features/KanonStorage/">Kanon</a>-AnonCreds</td>
+<td style="text-align: center;"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /></td>
+<td>Recommended - When using Kanon/AnonCreds (via the <code>--wallet-type kanon-anoncreds</code> startup parameter), AnonCreds credential handling functionality is by <a href="https://github.com/hyperledger/anoncreds-rs">AnonCreds RS</a>. All key management is handled by Askar, and all other ACA-Py storage is managed by <a href="https://aca-py.org/latest/features/KanonStorage/">Kanon</a> and the selected database management system. With <a href="https://aca-py.org/latest/features/KanonStorage/">Kanon</a>, data is encrypted at rest using the database management system's handling.</td>
 </tr>
 <tr>
 <td><a href="https://github.com/hyperledger/indy-sdk/tree/main/docs/design/003-wallet-storage">Indy SDK</a></td>
