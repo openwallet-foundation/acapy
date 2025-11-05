@@ -39,7 +39,12 @@ Webhooks received over WebSocket will contain the same data as webhooks posted o
 * `payload`: The payload of the webhook; this is the data usually received in the request body when webhooks are delivered over HTTP
 * `wallet_id`: If using multitenancy, this is the wallet ID of the subwallet that emitted the webhook. This value will be omitted if not using multitenancy.
 
-To open a WebSocket, connect to the `/ws` endpoint of the Admin API.
+To open a WebSocket, connect to the `/ws` endpoint of the Admin API. E.g. If the Admin Swagger can be found at `http://localhost:3001`, the webhook websocket is at `ws://localhost:3001/ws`. 
+
+Websocket connection may will also required two additional headers: 
+* `Authorization`: a JWT token prepended with `Bearer `
+* `X-API-key`: the admin url x-api-key as defined in the configuration.
+
 
 ### Pairwise Connection Record Updated (`/connections`)
 
