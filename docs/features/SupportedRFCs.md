@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
-**Last Update**: 2025-10-15, Release 1.4.0rc0
+**Last Update**: 2025-11-05, Release 1.4.0rc1
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -84,13 +84,15 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 
 | Secure Storage Types | Supported | Notes |
 | --- | :--: | -- |
-| [Askar] | :white_check_mark: | Recommended - Askar provides equivalent/evolved secure storage and cryptography support to the "indy-wallet" part of the Indy SDK. When using Askar (via the `--wallet-type askar` startup parameter), other functionality is handled by [CredX](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
-| [Askar]-AnonCreds | :white_check_mark: | Recommended - When using Askar/AnonCreds (via the `--wallet-type askar-anoncreds` startup parameter), other functionality is handled by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (for Indy ledger interactions).<br><br>This `wallet-type` will eventually be the same as `askar` when we have fully integrated the AnonCreds RS library into ACA-Py. |
+| [Askar] | :white_check_mark: | **DEPRECATED** - Askar provides equivalent/evolved secure storage and cryptography support to the removed "indy-wallet" part of the Indy SDK. When using Askar (via the `--wallet-type askar` startup parameter), credential handling functionality is by [CredX](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
+| [Askar]-AnonCreds | :white_check_mark: | Recommended - When using Askar/AnonCreds (via the `--wallet-type askar-anoncreds` startup parameter), AnonCreds credential handling functionality is by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs). All key management and ACA-Py storage is managed by Askar.|
+| [Kanon]-AnonCreds | :white_check_mark: | Recommended - When using Kanon/AnonCreds (via the `--wallet-type kanon-anoncreds` startup parameter), AnonCreds credential handling functionality is by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs). All key management is handled by Askar, and all other ACA-Py storage is managed by [Kanon] and the selected database management system. With [Kanon], data is encrypted at rest using the database management system's handling.|
 | [Indy SDK](https://github.com/hyperledger/indy-sdk/tree/main/docs/design/003-wallet-storage) | :x: | **Removed in ACA-Py Release 1.0.0rc5** |
 
 > Existing deployments using the [Indy SDK] **MUST** transition to [Askar] and related components as soon as possible. See the [Indy SDK to Askar Migration Guide] for guidance.
 
 [Askar]: https://github.com/openwallet-foundation/askar
+[Kanon]: https://aca-py.org/latest/features/KanonStorage/
 [Indy SDK]: https://github.com/hyperledger/indy-sdk/tree/main/docs/design/003-wallet-storage
 
 ## Miscellaneous Features
