@@ -20,7 +20,7 @@
         --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
         --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
         --auto-provision
-        --log-level info
+        --log-level debug
         --debug-webhooks
         --notify-revocation
     healthcheck:
