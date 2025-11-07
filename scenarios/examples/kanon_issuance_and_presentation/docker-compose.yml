@@ -1,21 +1,24 @@
  services:
-  kanon-sqlite:
+  kanon-postgres:
     image: acapy-test
     ports:
       - "3001:3001"
     command: >
       start
-        --label kanon-sqlite
+        --label kanon-postgres
         --inbound-transport http 0.0.0.0 3000
         --outbound-transport http
-        --endpoint http://kanon-sqlite:3000
+        --endpoint http://kanon-postgres:3000
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
         --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type kanon-anoncreds
-        --wallet-name kanon-sqlite
+        --wallet-name kanon-postgres
         --wallet-key insecure
+        --wallet-storage-type postgres_storage
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
+        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
         --auto-provision
         --log-level info
         --debug-webhooks
@@ -63,13 +66,13 @@
     build:
       context: ../..
     environment:
-      - KANON_SQLITE=http://kanon-sqlite:3001
+      - KANON_POSTGRES=http://kanon-postgres:3001
       - BOB=http://bob:3001
     volumes:
       - ./example.py:/usr/src/app/example.py:ro,z
     command: python -m example
     depends_on:
-      kanon-sqlite:
+      kanon-postgres:
         condition: service_healthy
       bob:
         condition: service_healthy
@@ -87,3 +90,16 @@
       --storage-path /tmp/tails-files
       --log-level INFO
 
+  wallet-db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DB_USER"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s

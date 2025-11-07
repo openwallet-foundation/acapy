@@ -25,7 +25,7 @@ from examples.util import (
     anoncreds_present_proof_v2,
 )
 
-KANON_SQLITE = getenv("KANON_SQLITE", "http://kanon-sqlite:3001")
+KANON_POSTGRES = getenv("KANON_POSTGRES", "http://kanon-postgres:3001")
 BOB = getenv("BOB", "http://bob:3001")
 
 
@@ -46,21 +46,21 @@ def summary(presentation: V20PresExRecord) -> str:
 async def main():
     """Test Controller protocols."""
     async with (
-        Controller(base_url=KANON_SQLITE) as kanon_sqlite,
+        Controller(base_url=KANON_POSTGRES) as kanon_postgres,
         Controller(base_url=BOB) as bob,
     ):
         # Connecting
-        kanon_sqlite_conn, bob_conn = await didexchange(kanon_sqlite, bob)
+        kanon_postgres_conn, bob_conn = await didexchange(kanon_postgres, bob)
 
         # Issuance prep
-        config = (await kanon_sqlite.get("/status/config"))["config"]
+        config = (await kanon_postgres.get("/status/config"))["config"]
         genesis_url = config.get("ledger.genesis_url")
         public_did = (
-            await kanon_sqlite.get("/wallet/did/public", response=DIDResult)
+            await kanon_postgres.get("/wallet/did/public", response=DIDResult)
         ).result
         if not public_did:
             public_did = (
-                await kanon_sqlite.post(
+                await kanon_postgres.post(
                     "/wallet/did/create",
                     json={"method": "sov", "options": {"key_type": "ed25519"}},
                     response=DIDResult,
@@ -81,14 +81,14 @@ async def main():
                 ) as resp:
                     assert resp.ok
 
-            await kanon_sqlite.post(
+            await kanon_postgres.post(
                 "/wallet/did/public", params=params(did=public_did.did)
             )
         # Create a new schema and cred def with different attributes on new
         # anoncreds endpoints
         schema_name = "anoncreds-test-" + token_hex(8)
         schema_version = "1.0"
-        schema = await kanon_sqlite.post(
+        schema = await kanon_postgres.post(
             "/anoncreds/schema",
             json={
                 "schema": {
@@ -100,7 +100,7 @@ async def main():
             },
             response=SchemaResultAnonCreds,
         )
-        cred_def = await kanon_sqlite.post(
+        cred_def = await kanon_postgres.post(
             "/anoncreds/credential-definition",
             json={
                 "credential_definition": {
@@ -115,10 +115,10 @@ async def main():
         )
 
         # Issue a credential
-        kanon_sqlite_cred_ex, _ = await anoncreds_issue_credential_v2(
-            kanon_sqlite,
+        kanon_postgres_cred_ex, _ = await anoncreds_issue_credential_v2(
+            kanon_postgres,
             bob,
-            kanon_sqlite_conn.connection_id,
+            kanon_postgres_conn.connection_id,
             bob_conn.connection_id,
             {"firstname": "Bob", "lastname": "Builder"},
             cred_def_id=cred_def.credential_definition_state["credential_definition_id"],
@@ -131,22 +131,22 @@ async def main():
         # Present the the credential's attributes
         _, verifier_ex = await anoncreds_present_proof_v2(
             bob,
-            kanon_sqlite,
+            kanon_postgres,
             bob_conn.connection_id,
-            kanon_sqlite_conn.connection_id,
+            kanon_postgres_conn.connection_id,
             requested_attributes=[{"name": "firstname"}],
             non_revoked={"to": int(datetime.now().timestamp())},
-            cred_rev_id=kanon_sqlite_cred_ex.details.cred_rev_id,
+            cred_rev_id=kanon_postgres_cred_ex.details.cred_rev_id,
         )
         assert verifier_ex.verified == "true"
 
         # Revoke credential
-        await kanon_sqlite.post(
+        await kanon_postgres.post(
             url="/anoncreds/revocation/revoke",
             json={
-                "connection_id": kanon_sqlite_conn.connection_id,
-                "rev_reg_id": kanon_sqlite_cred_ex.details.rev_reg_id,
-                "cred_rev_id": kanon_sqlite_cred_ex.details.cred_rev_id,
+                "connection_id": kanon_postgres_conn.connection_id,
+                "rev_reg_id": kanon_postgres_cred_ex.details.rev_reg_id,
+                "cred_rev_id": kanon_postgres_cred_ex.details.cred_rev_id,
                 "publish": True,
                 "notify": True,
                 "notify_version": "v1_0",
@@ -156,12 +156,12 @@ async def main():
 
         _, verifier_ex = await anoncreds_present_proof_v2(
             bob,
-            kanon_sqlite,
+            kanon_postgres,
             bob_conn.connection_id,
-            kanon_sqlite_conn.connection_id,
+            kanon_postgres_conn.connection_id,
             requested_attributes=[{"name": "firstname"}],
             non_revoked={"to": int(datetime.now().timestamp())},
-            cred_rev_id=kanon_sqlite_cred_ex.details.cred_rev_id,
+            cred_rev_id=kanon_postgres_cred_ex.details.cred_rev_id,
         )
         assert verifier_ex.verified == "false"
 
