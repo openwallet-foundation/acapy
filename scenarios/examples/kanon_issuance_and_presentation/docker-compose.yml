@@ -32,6 +32,8 @@
     depends_on:
       tails:
         condition: service_started
+      wallet-db:
+        condition: service_healthy
 
   bob:
     image: acapy-test
