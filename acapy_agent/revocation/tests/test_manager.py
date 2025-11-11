@@ -10,11 +10,9 @@ from ...indy.credx.issuer import CATEGORY_REV_REG
 from ...indy.issuer import IndyIssuer
 from ...ledger.base import BaseLedger
 from ...messaging.responder import BaseResponder
-from ...protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
+from ...protocols.issue_credential.v2_0.models.cred_ex_record import (
+    V20CredExRecord,
 )
-from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import manager as test_module
@@ -341,12 +339,9 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
 
     async def test_revoke_credential_no_rev_reg_rec(self):
         CRED_REV_ID = "1"
-        V10CredentialExchange(
-            credential_exchange_id="dummy-cxid",
-            credential_definition_id=CRED_DEF_ID,
-            role=V10CredentialExchange.ROLE_ISSUER,
-            revocation_id=CRED_REV_ID,
-            revoc_reg_id=REV_REG_ID,
+        V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            role=V20CredExRecord.ROLE_ISSUER,
         )
 
         with mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc:
@@ -805,96 +800,21 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
     async def test_retrieve_records(self):
         session = await self.profile.session()
         for index in range(2):
-            exchange_record = V10CredentialExchange(
+            exchange_record = V20CredExRecord(
                 connection_id=str(index),
                 thread_id=str(1000 + index),
-                initiator=V10CredentialExchange.INITIATOR_SELF,
-                role=V10CredentialExchange.ROLE_ISSUER,
+                initiator=V20CredExRecord.INITIATOR_SELF,
+                role=V20CredExRecord.ROLE_ISSUER,
             )
             await exchange_record.save(session)
 
         for _ in range(2):  # second pass gets from cache
             for index in range(2):
-                ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
+                ret_ex = await V20CredExRecord.retrieve_by_conn_and_thread(
                     session, str(index), str(1000 + index)
                 )
                 assert ret_ex.connection_id == str(index)
                 assert ret_ex.thread_id == str(1000 + index)
-
-    async def test_set_revoked_state_v1(self):
-        CRED_REV_ID = "1"
-
-        async with self.profile.session() as session:
-            exchange_record = V10CredentialExchange(
-                connection_id="mark-revoked-cid",
-                thread_id="mark-revoked-tid",
-                initiator=V10CredentialExchange.INITIATOR_SELF,
-                revoc_reg_id=REV_REG_ID,
-                revocation_id=CRED_REV_ID,
-                role=V10CredentialExchange.ROLE_ISSUER,
-                state=V10CredentialExchange.STATE_ISSUED,
-            )
-            await exchange_record.save(session)
-
-            crev_record = IssuerCredRevRecord(
-                cred_ex_id=exchange_record.credential_exchange_id,
-                cred_def_id=CRED_DEF_ID,
-                rev_reg_id=REV_REG_ID,
-                cred_rev_id=CRED_REV_ID,
-                state=IssuerCredRevRecord.STATE_ISSUED,
-            )
-            await crev_record.save(session)
-
-        await self.manager.set_cred_revoked_state(REV_REG_ID, [CRED_REV_ID])
-
-        async with self.profile.session() as session:
-            check_exchange_record = await V10CredentialExchange.retrieve_by_id(
-                session, exchange_record.credential_exchange_id
-            )
-            assert (
-                check_exchange_record.state
-                == V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-            )
-
-            check_crev_record = await IssuerCredRevRecord.retrieve_by_id(
-                session, crev_record.record_id
-            )
-            assert check_crev_record.state == IssuerCredRevRecord.STATE_REVOKED
-
-    async def test_set_revoked_state_v2(self):
-        CRED_REV_ID = "1"
-
-        async with self.profile.session() as session:
-            exchange_record = V20CredExRecord(
-                connection_id="mark-revoked-cid",
-                thread_id="mark-revoked-tid",
-                initiator=V20CredExRecord.INITIATOR_SELF,
-                role=V20CredExRecord.ROLE_ISSUER,
-                state=V20CredExRecord.STATE_ISSUED,
-            )
-            await exchange_record.save(session)
-
-            crev_record = IssuerCredRevRecord(
-                cred_ex_id=exchange_record.cred_ex_id,
-                cred_def_id=CRED_DEF_ID,
-                rev_reg_id=REV_REG_ID,
-                cred_rev_id=CRED_REV_ID,
-                state=IssuerCredRevRecord.STATE_ISSUED,
-            )
-            await crev_record.save(session)
-
-        await self.manager.set_cred_revoked_state(REV_REG_ID, [CRED_REV_ID])
-
-        async with self.profile.session() as session:
-            check_exchange_record = await V20CredExRecord.retrieve_by_id(
-                session, exchange_record.cred_ex_id
-            )
-            assert check_exchange_record.state == V20CredExRecord.STATE_CREDENTIAL_REVOKED
-
-            check_crev_record = await IssuerCredRevRecord.retrieve_by_id(
-                session, crev_record.record_id
-            )
-            assert check_crev_record.state == IssuerCredRevRecord.STATE_REVOKED
 
     @mock.patch.object(
         ConnRecord,
