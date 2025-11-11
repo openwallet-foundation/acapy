@@ -14,8 +14,8 @@ from ...admin.decorators.auth import admin_authentication
 from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
 from ...core.event_bus import Event, EventBus
-from ...core.util import MULTITENANT_WALLET_CREATED_TOPIC
 from ...core.profile import ProfileManagerProvider
+from ...core.util import MULTITENANT_WALLET_CREATED_TOPIC
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.models.paginated_query import (
