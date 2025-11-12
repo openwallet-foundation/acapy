@@ -54,6 +54,7 @@ class V20CredManager:
         cred_proposal: V20CredProposal,
         verification_method: Optional[str] = None,
         auto_remove: Optional[bool] = None,
+        auto_remove_on_failure: Optional[bool] = None,
         replacement_id: Optional[str] = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """Set up a new credential exchange record for an automated send.
@@ -63,6 +64,7 @@ class V20CredManager:
             cred_proposal: credential proposal with preview
             verification_method: an optional verification method to be used when issuing
             auto_remove: flag to remove the record automatically on completion
+            auto_remove_on_failure: flag to remove the record automatically on failure
             replacement_id: identifier to help coordinate credential replacement
 
         Returns:
@@ -71,6 +73,10 @@ class V20CredManager:
         """
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
+        if auto_remove_on_failure is None:
+            auto_remove_on_failure = bool(
+                self._profile.settings.get("no_preserve_failed_exchange_records")
+            )
         cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
             verification_method=verification_method,
@@ -79,6 +85,7 @@ class V20CredManager:
             cred_proposal=cred_proposal,
             auto_issue=True,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
             trace=(cred_proposal._trace is not None),
         )
         return await self.create_offer(
@@ -765,5 +772,8 @@ class V20CredManager:
             )
             cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await cred_ex_record.save(session, reason="received problem report")
+
+        if cred_ex_record.auto_remove_on_failure:
+            await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
         return cred_ex_record
