@@ -41,7 +41,7 @@ Webhooks received over WebSocket will contain the same data as webhooks posted o
 
 To open a WebSocket, connect to the `/ws` endpoint of the Admin API. E.g. If the Admin Swagger can be found at `http://localhost:3001`, the webhook websocket is at `ws://localhost:3001/ws`. 
 
-Websocket connection will also required two additional headers: 
+Websocket connection will also require two additional headers: 
 * `Authorization`: a JWT token prepended with `Bearer `
 * `X-API-key`: the admin url x-api-key as defined in the configuration.
 
