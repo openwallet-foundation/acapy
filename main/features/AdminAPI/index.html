@@ -2662,7 +2662,10 @@
 <li><code>payload</code>: The payload of the webhook; this is the data usually received in the request body when webhooks are delivered over HTTP</li>
 <li><code>wallet_id</code>: If using multitenancy, this is the wallet ID of the subwallet that emitted the webhook. This value will be omitted if not using multitenancy.</li>
 </ul>
-<p>To open a WebSocket, connect to the <code>/ws</code> endpoint of the Admin API.</p>
+<p>To open a WebSocket, connect to the <code>/ws</code> endpoint of the Admin API. E.g. If the Admin Swagger can be found at <code>http://localhost:3001</code>, the webhook websocket is at <code>ws://localhost:3001/ws</code>. </p>
+<p>Websocket connection will also require two additional headers: 
+* <code>Authorization</code>: a JWT token prepended with <code>Bearer</code>
+* <code>X-API-key</code>: the admin API key value set via the --admin-api-key configuration parameter.</p>
 <h3 id="pairwise-connection-record-updated-connections">Pairwise Connection Record Updated (<code>/connections</code>)<a class="headerlink" href="#pairwise-connection-record-updated-connections" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>connection_id</code>: the unique connection identifier</li>
