@@ -43,7 +43,7 @@ To open a WebSocket, connect to the `/ws` endpoint of the Admin API. E.g. If the
 
 Websocket connection will also require two additional headers: 
 * `Authorization`: a JWT token prepended with `Bearer `
-* `X-API-key`: the admin url x-api-key as defined in the configuration.
+* `X-API-key`: the admin API key value set via the --admin-api-key configuration parameter.
 
 
 ### Pairwise Connection Record Updated (`/connections`)
