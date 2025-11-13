@@ -3,6 +3,8 @@ from unittest import IsolatedAsyncioTestCase
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
+from ....core.event_bus import EventBus, MockEventBus
+from ....core.util import MULTITENANT_WALLET_CREATED_TOPIC
 from ....messaging.models.base import BaseModelError
 from ....storage.error import StorageError, StorageNotFoundError
 from ....tests import mock
@@ -278,6 +280,59 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             )
             assert mock_multitenant_mgr.get_wallet_profile.called
             assert test_module.attempt_auto_author_with_endorser_setup.called
+
+    async def test_wallet_create_emits_wallet_created_event(self):
+        body = {
+            "wallet_name": "event-test",
+            "wallet_type": "askar",
+            "wallet_key": "test",
+            "key_management_mode": "managed",
+            "wallet_webhook_urls": [],
+            "wallet_dispatch_type": "default",
+        }
+        self.request.json = mock.CoroutineMock(return_value=body)
+
+        test_module.attempt_auto_author_with_endorser_setup = mock.CoroutineMock()
+
+        mock_event_bus = MockEventBus()
+        self.profile.context.injector.bind_instance(EventBus, mock_event_bus)
+
+        wallet_mock = mock.MagicMock(
+            serialize=mock.MagicMock(
+                return_value={
+                    "wallet_id": "event-wallet-id",
+                    "settings": {},
+                    "key_management_mode": body["key_management_mode"],
+                }
+            )
+        )
+        wallet_mock.wallet_id = "event-wallet-id"
+        wallet_mock.wallet_name = body["wallet_name"]
+        wallet_mock.settings = {"wallet.name": body["wallet_name"]}
+
+        mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
+        mock_multitenant_mgr.create_wallet = mock.CoroutineMock(return_value=wallet_mock)
+        mock_multitenant_mgr.create_auth_token = mock.CoroutineMock(
+            return_value="event-token"
+        )
+        mock_multitenant_mgr.get_wallet_profile = mock.CoroutineMock(
+            return_value=mock.MagicMock()
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager, mock_multitenant_mgr
+        )
+
+        await test_module.wallet_create(self.request)
+
+        await mock_event_bus.task_queue.wait_for_completion()
+
+        assert mock_event_bus.events
+        _, event = mock_event_bus.events[-1]
+        assert event.topic == (
+            f"{MULTITENANT_WALLET_CREATED_TOPIC}::{wallet_mock.wallet_id}"
+        )
+        assert event.payload["wallet_id"] == wallet_mock.wallet_id
+        assert event.payload["wallet_name"] == wallet_mock.wallet_name
 
     async def test_wallet_create_x(self):
         body = {}
