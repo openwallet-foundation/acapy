@@ -63,7 +63,7 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
 - **Deployment and Documentation**
   - Chore(chart): delete chart files and add chart relocation notice [#3883](https://github.com/openwallet-foundation/acapy/pull/3883) [i5okie](https://github.com/i5okie)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-03+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-13+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
   - 1.4.0 [\#3948](https://github.com/openwallet-foundation/acapy/pull/3948) [swcurran](https://github.com/swcurran)
   - 1.4.0rc1 [\#3933](https://github.com/openwallet-foundation/acapy/pull/3933) [swcurran](https://github.com/swcurran)
