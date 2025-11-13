@@ -1,12 +1,12 @@
 # ACA-Py Changelog
 
-## 1.4.0rc1
+## 1.4.0
 
-### November 5, 2025
+### November 13, 2025
 
 ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of **Kanon Storage**, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer that is encrypted at rest. Askar now functions purely as a **Key Management Service (KMS)**, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.
 
-Kanon Storage is **optional and fully backward compatible**. Developed by the team at **VeriDID** ([https://verid.id](https://verid.id)), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably [dave-promulgare](https://github.com/dave-promulgare) and [vinaysingh8866](https://github.com/vinaysingh8866)) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility. See the [Kanon Storage documentation](https://aca-py.org/latest/features/KanonStorage/) for details on configuration, migration, and best practices.
+Kanon Storage is **optional and fully backward compatible**. Developed by the team at **VeriDID** ([https://verid.id](https://verid.id)), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably [dave-promulgare](https://github.com/dave-promulgare) and [vinaysingh8866](https://github.com/vinaysingh8866)) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility. See the [Kanon Storage documentation](https://aca-py.org/latest/features/KanonStorage/) for details on configuration, migration, and best practices. **Deployers should be aware that there is currently a possible issue with Kanon Storage as outlined in [Issue 3944](https://github.com/openwallet-foundation/acapy/issues/3944).** We are investigating the issue.
 
 Alongside Kanon, this release includes significant refactoring in the **AnonCreds revocation** subsystem, modernization of **event handling** via an updated EventBus, and improvements to **credential signing** for SD-JWT to ensure correct verification-method key usage. Developers will also notice lint rule revisions, post-Kanon cleanup, and smaller enhancements to demos and test infrastructure such as the `--debug-webhooks` flag and interop test fixes. Together, these updates improve maintainability, observability, and readiness for large-scale production use.
 
@@ -26,15 +26,18 @@ The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated
 
 The `wallet-type` configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
 
-### ⚠️ Breaking Changes
+### 1.4.0 Breaking Changes
 
 This release introduces **no breaking changes** for existing ACA-Py deployments. Existing instances can continue to use Askar for both key and data storage by default.
 
 Implementers are encouraged to evaluate Kanon as the preferred approach for new deployments or planned upgrades. Kanon provides better scalability, performance, and integration with database-native capabilities such as indexing, analytics, and external management tools — while maintaining secure handling of cryptographic keys within Askar.
 
-### Categorized PR List
+### 1.4.0 Categorized PR List
 
 - **Storage and Architecture**
+  - Add sub wallet created event [\#3946](https://github.com/openwallet-foundation/acapy/pull/3946) [PatStLouis](https://github.com/PatStLouis)
+  - Disable kanon profile scenario tests [\#3943](https://github.com/openwallet-foundation/acapy/pull/3943) [jamshale](https://github.com/jamshale)
+  - feat: Add kanon profile sqlite issuance/presentation/revocation scena… [\#3934](https://github.com/openwallet-foundation/acapy/pull/3934) [jamshale](https://github.com/jamshale)
   - fix(kanon):storage postgres provisioning issues [\#3931](https://github.com/openwallet-foundation/acapy/pull/3931) [vinaysingh8866](https://github.com/vinaysingh8866)
   - fix(kanon):fixed password bug and tests for kanon postgres [\#3922](https://github.com/openwallet-foundation/acapy/pull/3922) [vinaysingh8866](https://github.com/vinaysingh8866)
   - Documentation for Kanon Storage under Features/Kanon Storage [\#3918](https://github.com/openwallet-foundation/acapy/pull/3918) [dave-promulgare](https://github.com/dave-promulgare)
@@ -60,8 +63,9 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
 - **Deployment and Documentation**
   - Chore(chart): delete chart files and add chart relocation notice [#3883](https://github.com/openwallet-foundation/acapy/pull/3883) [i5okie](https://github.com/i5okie)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-05+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-03+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.4.0 [\#3948](https://github.com/openwallet-foundation/acapy/pull/3948) [swcurran](https://github.com/swcurran)
   - 1.4.0rc1 [\#3933](https://github.com/openwallet-foundation/acapy/pull/3933) [swcurran](https://github.com/swcurran)
   - 1.4.0rc0 [\#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [swcurran](https://github.com/swcurran)
 
@@ -69,7 +73,7 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
 
 ### August 26, 2025
 
-ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the [Categorized List of Changes]() below for more details about the changes in this release.
+ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the [Categorized List of Changes](#132-categorized-list-of-pull-requests) below for more details about the changes in this release.
 
 The release includes a fix for a change ([#3081](https://github.com/openwallet-foundation/acapy/pull/3081) added in [Release 1.0.0](https://github.com/openwallet-foundation/acapy/releases/tag/1.0.0)) that introduced a PII leakage possibility. See the [1.3.2 Breaking Changes](#132-breaking-changes) section below for details.
 
