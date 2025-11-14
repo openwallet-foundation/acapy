@@ -22,7 +22,7 @@ from .....indy.models.revocation import IndyRevRegDef
 from .....ledger.base import BaseLedger
 from .....ledger.error import LedgerError
 from .....ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-from .....revocation.error import RevocationError, RevocationNotSupportedError
+from .....revocation.error import RevocationError
 from .....revocation.models.issuer_rev_reg_record import (
     IssuerRevRegRecord,
 )
@@ -64,7 +64,7 @@ LOGGER = logging.getLogger(__name__)
 
 @docs(
     tags=[REVOCATION_TAG_TITLE],
-    summary="Create and publish a registration revocation on the connected datastore",
+    summary="Create and publish a revocation registry definition on the connected datastore",  # noqa: E501
 )
 @request_schema(RevRegCreateRequestSchemaAnonCreds())
 @response_schema(RevRegDefResultSchema(), 200, description="")
@@ -93,20 +93,20 @@ async def rev_reg_def_post(request: web.BaseRequest):
             reason=f"Not issuer of credential definition id {cred_def_id}"
         )
 
-    try:
-        result = await shield(
-            revocation.create_and_register_revocation_registry_definition(
-                issuer_id,
-                cred_def_id,
-                registry_type="CL_ACCUM",
-                max_cred_num=max_cred_num,
-                tag=tag,
-                options=options,
-            )
+    result = await shield(
+        revocation.create_and_register_revocation_registry_definition(
+            issuer_id,
+            cred_def_id,
+            registry_type="CL_ACCUM",
+            max_cred_num=max_cred_num,
+            tag=tag,
+            options=options,
         )
-        return web.json_response(result.serialize())
-    except (RevocationNotSupportedError, AnonCredsRevocationError) as e:
-        raise web.HTTPBadRequest(reason=e.roll_up) from e
+    )
+    if isinstance(result, str):  # if it's a string, it's an error message
+        raise web.HTTPBadRequest(reason=result)
+
+    return web.json_response(result.serialize())
 
 
 @docs(
@@ -204,7 +204,7 @@ async def get_rev_reg(request: web.BaseRequest):
 
 
 async def _get_issuer_rev_reg_record(
-    profile: AskarAnonCredsProfile, rev_reg_id: str | None
+    profile: AskarAnonCredsProfile, rev_reg_id: str
 ) -> IssuerRevRegRecord:
     # fetch rev reg def from anoncreds
     try:
@@ -548,16 +548,16 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     is_not_anoncreds_profile_raise_web_exception(profile)
 
-    rev_reg_id = request.match_info["rev_reg_id"]
-    state = request.query.get("state")
+    rev_reg_id: str = request.match_info["rev_reg_id"]
+    state: str = request.query["state"]  # required in query string schema
 
     try:
         revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.set_rev_reg_state(rev_reg_id, state)
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
+        await revocation.set_rev_reg_state(rev_reg_id, state)
 
-    except AnonCredsIssuerError as e:
+    except AnonCredsRevocationError as e:
+        if "not found" in str(e):
+            raise web.HTTPNotFound(reason=str(e)) from e
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
     rev_reg = await _get_issuer_rev_reg_record(profile, rev_reg_id)

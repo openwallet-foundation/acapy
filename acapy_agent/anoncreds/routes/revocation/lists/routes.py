@@ -7,10 +7,8 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
 from .....admin.decorators.auth import tenant_authentication
-from .....storage.error import StorageNotFoundError
 from ....models.revocation import RevListResultSchema
-from ....revocation.revocation import AnonCredsRevocation, AnonCredsRevocationError
-from ....util import handle_value_error
+from ....revocation.revocation import AnonCredsRevocation
 from ...common.utils import get_request_body_with_profile_check
 from .. import REVOCATION_TAG_TITLE
 from .models import RevListCreateRequestSchema
@@ -29,24 +27,17 @@ async def rev_list_post(request: web.BaseRequest):
     """Request handler for creating registering a revocation list."""
     _, profile, body, options = await get_request_body_with_profile_check(request)
 
-    rev_reg_def_id = body.get("rev_reg_def_id")
+    rev_reg_def_id = body["rev_reg_def_id"]  # required in request schema
 
-    try:
-        revocation = AnonCredsRevocation(profile)
-        result = await shield(
-            revocation.create_and_register_revocation_list(
-                rev_reg_def_id,
-                options,
-            )
-        )
-        LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
-        return web.json_response(result.serialize())
-    except ValueError as e:
-        handle_value_error(e)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except AnonCredsRevocationError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    revocation = AnonCredsRevocation(profile)
+    result = await shield(
+        revocation.create_and_register_revocation_list(rev_reg_def_id, options=options)
+    )
+    if isinstance(result, str):  # if it's a string, it's an error message
+        raise web.HTTPBadRequest(reason=result)
+
+    LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
+    return web.json_response(result.serialize())
 
 
 async def register(app: web.Application) -> None:
