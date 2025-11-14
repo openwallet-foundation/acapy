@@ -13,7 +13,9 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 from ...admin.decorators.auth import admin_authentication
 from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
+from ...core.event_bus import Event, EventBus
 from ...core.profile import ProfileManagerProvider
+from ...core.util import MULTITENANT_WALLET_CREATED_TOPIC
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.models.paginated_query import (
@@ -486,6 +488,20 @@ async def wallet_create(request: web.BaseRequest):
             context, wallet_record, extra_settings=settings
         )
         await attempt_auto_author_with_endorser_setup(wallet_profile)
+
+        event_bus = context.profile.inject_or(EventBus)
+        if event_bus:
+            await event_bus.notify(
+                context.profile,
+                Event(
+                    f"{MULTITENANT_WALLET_CREATED_TOPIC}::{wallet_record.wallet_id}",
+                    {
+                        "wallet_id": wallet_record.wallet_id,
+                        "wallet_name": wallet_record.wallet_name,
+                        "settings": wallet_record.settings,
+                    },
+                ),
+            )
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
