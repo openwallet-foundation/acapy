@@ -28,7 +28,6 @@ LOG_VALUE_NONE = "[%s] value is None for item_id=%d"
 LOG_PARSED_TAG_FILTER = "[%s] Parsed tag_filter JSON: %s"
 LOG_GEN_SQL_PARAMS = "[%s] Generated SQL clause: %s, params: %s"
 LOG_EXEC_SQL_PARAMS = "[%s] Executing query: %s with params: %s"
-SQL_SET_UTF8 = "SET client_encoding = 'UTF8'"
 
 
 class GenericHandler(BaseHandler):
@@ -64,9 +63,6 @@ class GenericHandler(BaseHandler):
             category,
             self.tags_table,
         )
-
-    async def _ensure_utf8(self, cursor: AsyncCursor) -> None:
-        await cursor.execute(SQL_SET_UTF8)
 
     def _validate_order_by(self, order_by: Optional[str]) -> None:
         if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
@@ -116,7 +112,6 @@ class GenericHandler(BaseHandler):
             value = value.decode("utf-8")
             LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
 
-        await self._ensure_utf8(cursor)
         await cursor.execute(
             f"""
             INSERT INTO {self.schema_context.qualify_table("items")}
@@ -212,7 +207,6 @@ class GenericHandler(BaseHandler):
             value = value.decode("utf-8")
             LOGGER.debug(LOG_DECODED_VALUE, operation_name, value)
 
-        await self._ensure_utf8(cursor)
         await cursor.execute(
             f"""
             SELECT id FROM {self.schema_context.qualify_table("items")}
@@ -314,7 +308,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await cursor.execute(SQL_SET_UTF8)
         params = [profile_id, category, name]
         query = f"""
             SELECT id, value FROM {self.schema_context.qualify_table("items")}
@@ -465,7 +458,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await self._ensure_utf8(cursor)
         self._validate_order_by(order_by)
 
         sql_clause = "TRUE"
@@ -564,7 +556,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await cursor.execute(SQL_SET_UTF8)
         sql_clause = "TRUE"
         params = [profile_id, category]
         if tag_filter:
@@ -600,7 +591,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await cursor.execute(SQL_SET_UTF8)
         await cursor.execute(
             f"""
             DELETE FROM {self.schema_context.qualify_table("items")}
@@ -632,7 +622,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await cursor.execute(SQL_SET_UTF8)
         sql_clause = "TRUE"
         params = [profile_id, category]
         if tag_filter:
@@ -685,7 +674,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await self._ensure_utf8(cursor)
         self._validate_order_by(order_by)
 
         sql_clause = "TRUE"
@@ -781,7 +769,6 @@ class GenericHandler(BaseHandler):
             self.tags_table,
         )
 
-        await cursor.execute(SQL_SET_UTF8)
         if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
             raise DatabaseError(
                 code=DatabaseErrorCode.QUERY_ERROR,
