@@ -535,7 +535,8 @@ class GenericHandler(BaseHandler):
                         tag_value = json.loads(tag_value)
                     except json.JSONDecodeError:
                         # If tag_value is not valid JSON, leave it as the original string.
-                        LOGGER.warning("[%s] Failed to decode tag_value as JSON: %r", operation_name, tag_value)
+                        LOGGER.warning("[%s] Failed to decode tag_value as JSON: %r", 
+                                       operation_name, tag_value)
                 current_entry.tags[tag_name] = tag_value
         if current_entry:
             entries.append(current_entry)
