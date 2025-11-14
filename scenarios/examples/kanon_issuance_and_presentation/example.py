@@ -129,7 +129,7 @@ async def main():
             schema_name=schema_name,
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         _, verifier_ex = await anoncreds_present_proof_v2(
             bob,
             kanon_postgres,
