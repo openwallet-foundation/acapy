@@ -53,7 +53,7 @@ did-peer-4 = "^0.1.4"
 did-webvh = ">=1.0.0"
 
 # Verifiable Credentials
-anoncreds = "~0.2.0"
+anoncreds = "~0.2.3"
 indy-credx = "~1.1.1"
 
 # askar
