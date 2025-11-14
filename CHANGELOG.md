@@ -2,11 +2,11 @@
 
 ## 1.4.0
 
-### November 13, 2025
+### November 14, 2025
 
 ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of **Kanon Storage**, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer that is encrypted at rest. Askar now functions purely as a **Key Management Service (KMS)**, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.
 
-Kanon Storage is **optional and fully backward compatible**. Developed by the team at **VeriDID** ([https://verid.id](https://verid.id)), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably [dave-promulgare](https://github.com/dave-promulgare) and [vinaysingh8866](https://github.com/vinaysingh8866)) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility. See the [Kanon Storage documentation](https://aca-py.org/latest/features/KanonStorage/) for details on configuration, migration, and best practices. **Deployers should be aware that there is currently a possible issue with Kanon Storage as outlined in [Issue 3944](https://github.com/openwallet-foundation/acapy/issues/3944).** We are investigating the issue.
+Kanon Storage is **optional and fully backward compatible**. Developed by the team at **VeriDID** ([https://verid.id](https://verid.id)), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably [dave-promulgare](https://github.com/dave-promulgare) and [vinaysingh8866](https://github.com/vinaysingh8866)) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility. See the [Kanon Storage documentation](https://aca-py.org/latest/features/KanonStorage/) for details on configuration, migration, and best practices.
 
 Alongside Kanon, this release includes significant refactoring in the **AnonCreds revocation** subsystem, modernization of **event handling** via an updated EventBus, and improvements to **credential signing** for SD-JWT to ensure correct verification-method key usage. Developers will also notice lint rule revisions, post-Kanon cleanup, and smaller enhancements to demos and test infrastructure such as the `--debug-webhooks` flag and interop test fixes. Together, these updates improve maintainability, observability, and readiness for large-scale production use.
 
@@ -35,6 +35,7 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
 ### 1.4.0 Categorized PR List
 
 - **Storage and Architecture**
+  - Timeout issue fix [\#3950](https://github.com/openwallet-foundation/acapy/pull/3950) [vinaysingh8866](https://github.com/vinaysingh8866)
   - Add sub wallet created event [\#3946](https://github.com/openwallet-foundation/acapy/pull/3946) [PatStLouis](https://github.com/PatStLouis)
   - Disable kanon profile scenario tests [\#3943](https://github.com/openwallet-foundation/acapy/pull/3943) [jamshale](https://github.com/jamshale)
   - feat: Add kanon profile sqlite issuance/presentation/revocation scena… [\#3934](https://github.com/openwallet-foundation/acapy/pull/3934) [jamshale](https://github.com/jamshale)
@@ -48,6 +49,7 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
   - :recycle: :boom: Refactor EventBus notify method [#3690](https://github.com/openwallet-foundation/acapy/pull/3690) [ff137](https://github.com/ff137)
   - :wrench: :art: Revise lint rules [#3900](https://github.com/openwallet-foundation/acapy/pull/3900) [ff137](https://github.com/ff137)
 - **AnonCreds and Credential Handling**
+  - feat: Upgrade anoncreds to version 0.2.3 [\#3949](https://github.com/openwallet-foundation/acapy/pull/3949) [jamshale](https://github.com/jamshale)
   - Add skip verification option for credential storage [\#3928](https://github.com/openwallet-foundation/acapy/pull/3928) [PatStLouis](https://github.com/PatStLouis)
   - 🎨 Move AnonCreds set_active_registry route [#3915](https://github.com/openwallet-foundation/acapy/pull/3915) [ff137](https://github.com/ff137)
   - (fix) Properly use VM key when signing [SD-]JWT [#3892](https://github.com/openwallet-foundation/acapy/pull/3892) [gmulhearn](https://github.com/gmulhearn)
@@ -61,9 +63,10 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
   - Upgrade demo dockerfile acapy images to 1.3.2 [\#3910](https://github.com/openwallet-foundation/acapy/pull/3910) [jamshale](https://github.com/jamshale)
   - Add --debug-webhooks config to demo agents [#3865](https://github.com/openwallet-foundation/acapy/pull/3865) [jamshale](https://github.com/jamshale)
 - **Deployment and Documentation**
+  - Update AdminAPI.md [\#3936](https://github.com/openwallet-foundation/acapy/pull/3936) [Jsyro](https://github.com/Jsyro)
   - Chore(chart): delete chart files and add chart relocation notice [#3883](https://github.com/openwallet-foundation/acapy/pull/3883) [i5okie](https://github.com/i5okie)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-13+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-14+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
   - 1.4.0 [\#3948](https://github.com/openwallet-foundation/acapy/pull/3948) [swcurran](https://github.com/swcurran)
   - 1.4.0rc1 [\#3933](https://github.com/openwallet-foundation/acapy/pull/3933) [swcurran](https://github.com/swcurran)
