@@ -2,7 +2,7 @@
 
 ## 1.4.0
 
-### November 14, 2025
+### November 15, 2025
 
 ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of **Kanon Storage**, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer that is encrypted at rest. Askar now functions purely as a **Key Management Service (KMS)**, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.
 
@@ -35,6 +35,7 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
 ### 1.4.0 Categorized PR List
 
 - **Storage and Architecture**
+  - fix: removed redundant SET client_encoding calls [\#3951](https://github.com/openwallet-foundation/acapy/pull/3951) [vinaysingh8866](https://github.com/vinaysingh8866)
   - Timeout issue fix [\#3950](https://github.com/openwallet-foundation/acapy/pull/3950) [vinaysingh8866](https://github.com/vinaysingh8866)
   - Add sub wallet created event [\#3946](https://github.com/openwallet-foundation/acapy/pull/3946) [PatStLouis](https://github.com/PatStLouis)
   - Disable kanon profile scenario tests [\#3943](https://github.com/openwallet-foundation/acapy/pull/3943) [jamshale](https://github.com/jamshale)
