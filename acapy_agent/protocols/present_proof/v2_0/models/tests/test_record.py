@@ -109,6 +109,7 @@ class TestRecord(IsolatedAsyncioTestCase):
             "error_msg": "error",
             "trace": False,
             "auto_remove": True,
+            "auto_remove_on_failure": False,
         }
 
         bx_record = BasexRecordImpl()

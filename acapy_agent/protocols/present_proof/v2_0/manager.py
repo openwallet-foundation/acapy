@@ -41,6 +41,7 @@ class V20PresManager:
         pres_proposal_message: V20PresProposal,
         auto_present: Optional[bool] = None,
         auto_remove: Optional[bool] = None,
+        auto_remove_on_failure: Optional[bool] = None,
     ):
         """Create a presentation exchange record for input presentation proposal.
 
@@ -51,6 +52,8 @@ class V20PresManager:
             auto_present: whether to present proof upon receiving proof request
                 (default to configuration setting)
             auto_remove: whether to remove this presentation exchange upon completion
+            auto_remove_on_failure: whether to remove this presentation exchange upon
+                failure
 
         Returns:
             Presentation exchange record, created
@@ -58,6 +61,10 @@ class V20PresManager:
         """
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
+        if auto_remove_on_failure is None:
+            auto_remove_on_failure = bool(
+                self._profile.settings.get("no_preserve_failed_exchange_records")
+            )
         pres_ex_record = V20PresExRecord(
             connection_id=connection_id,
             thread_id=pres_proposal_message._thread_id,
@@ -68,6 +75,7 @@ class V20PresManager:
             auto_present=auto_present,
             trace=(pres_proposal_message._trace is not None),
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
         )
 
         async with self._profile.session() as session:
@@ -162,6 +170,7 @@ class V20PresManager:
         pres_request_message: V20PresRequest,
         auto_verify: Optional[bool] = None,
         auto_remove: Optional[bool] = None,
+        auto_remove_on_failure: Optional[bool] = None,
     ):
         """Create a presentation exchange record for input presentation request.
 
@@ -171,6 +180,8 @@ class V20PresManager:
                 exchange record, extracting indy proof request and thread id
             auto_verify: whether to auto-verify presentation exchange
             auto_remove: whether to remove this presentation exchange upon completion
+            auto_remove_on_failure: whether to remove this presentation exchange upon
+                failure
 
         Returns:
             Presentation exchange record, updated
@@ -178,6 +189,10 @@ class V20PresManager:
         """
         if auto_remove is None:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
+        if auto_remove_on_failure is None:
+            auto_remove_on_failure = bool(
+                self._profile.settings.get("no_preserve_failed_exchange_records")
+            )
         pres_ex_record = V20PresExRecord(
             connection_id=connection_id,
             thread_id=pres_request_message._thread_id,
@@ -188,6 +203,7 @@ class V20PresManager:
             auto_verify=auto_verify,
             trace=(pres_request_message._trace is not None),
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
         )
         async with self._profile.session() as session:
             await pres_ex_record.save(
@@ -493,5 +509,9 @@ class V20PresManager:
             code = message.description.get("code", ProblemReportReason.ABANDONED.value)
             pres_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await pres_ex_record.save(session, reason="received problem report")
+
+            # all done: delete
+            if pres_ex_record.auto_remove_on_failure:
+                await pres_ex_record.delete_record(session)
 
         return pres_ex_record
