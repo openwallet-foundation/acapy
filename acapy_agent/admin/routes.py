@@ -8,6 +8,7 @@ from marshmallow import fields
 
 from ..core.plugin_registry import PluginRegistry
 from ..messaging.models.openapi import OpenAPISchema
+from ..utils.plugin_installer import get_plugin_version
 from ..utils.stats import Collector
 from ..version import __version__
 from .decorators.auth import admin_authentication
@@ -71,12 +72,35 @@ async def plugins_handler(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The module list response
+        The module list response with plugin names and versions
 
     """
     registry = request.app["context"].inject_or(PluginRegistry)
     plugins = registry and sorted(registry.plugin_names) or []
-    return web.json_response({"result": plugins})
+    
+    # Get versions for external plugins only (skip built-in acapy_agent plugins)
+    external_plugins = []
+    for plugin_name in plugins:
+        if not plugin_name.startswith("acapy_agent."):
+            # External plugin - try to get version info
+            version_info = get_plugin_version(plugin_name)
+            if version_info:
+                external_plugins.append({
+                    "name": plugin_name,
+                    "package_version": version_info.get("package_version"),
+                    "source_version": version_info.get("source_version"),  # Git tag used for installation
+                })
+            else:
+                external_plugins.append({
+                    "name": plugin_name,
+                    "package_version": None,
+                    "source_version": None,
+                })
+    
+    return web.json_response({
+        "result": plugins,
+        "external": external_plugins
+    })
 
 
 @docs(tags=["server"], summary="Fetch the server configuration")

@@ -706,6 +706,22 @@ class GeneralGroup(ArgumentGroup):
         )
 
         parser.add_argument(
+            "--auto-install-plugins",
+            dest="auto_install_plugins",
+            nargs="?",
+            const=True,
+            default=False,
+            metavar="<version>",
+            env_var="ACAPY_AUTO_INSTALL_PLUGINS",
+            help=(
+                "Automatically install missing plugins from the acapy-plugins repository. "
+                "If specified without a value, uses current ACA-Py version. "
+                "If a version is provided (e.g., 1.3.2), uses that version for plugin installation. "
+                "Default: false (disabled)."
+            ),
+        )
+
+        parser.add_argument(
             "--storage-type",
             type=str,
             metavar="<storage-type>",
@@ -802,6 +818,25 @@ class GeneralGroup(ArgumentGroup):
                     settings[PLUGIN_CONFIG_KEY],
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
+
+        # Auto-install plugins: can be True (use current version), version string (e.g., "1.3.2"), or False
+        if hasattr(args, "auto_install_plugins"):
+            auto_install_value = args.auto_install_plugins
+            if auto_install_value is True:
+                # Flag present without value - use current ACA-Py version
+                settings["auto_install_plugins"] = True
+                settings["plugin_install_version"] = None  # Use current version
+            elif isinstance(auto_install_value, str):
+                # Flag present with version value
+                settings["auto_install_plugins"] = True
+                settings["plugin_install_version"] = auto_install_value
+            else:
+                # False or None - disabled
+                settings["auto_install_plugins"] = False
+                settings["plugin_install_version"] = None
+        else:
+            settings["auto_install_plugins"] = False
+            settings["plugin_install_version"] = None
 
         if args.storage_type:
             settings["storage_type"] = args.storage_type
