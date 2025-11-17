@@ -83,25 +83,14 @@ async def plugins_handler(request: web.BaseRequest):
     for plugin_name in plugins:
         if not plugin_name.startswith("acapy_agent."):
             # External plugin - try to get version info
-            version_info = get_plugin_version(plugin_name)
-            if version_info:
-                external_plugins.append(
-                    {
-                        "name": plugin_name,
-                        "package_version": version_info.get("package_version"),
-                        "source_version": version_info.get(
-                            "source_version"
-                        ),  # Git tag used for installation
-                    }
-                )
-            else:
-                external_plugins.append(
-                    {
-                        "name": plugin_name,
-                        "package_version": None,
-                        "source_version": None,
-                    }
-                )
+            version_info = get_plugin_version(plugin_name) or {}
+            external_plugins.append(
+                {
+                    "name": plugin_name,
+                    "package_version": version_info.get("package_version", None),
+                    "source_version": version_info.get("source_version", None),
+                }
+            )
 
     return web.json_response({"result": plugins, "external": external_plugins})
 
