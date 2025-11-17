@@ -30,7 +30,7 @@ REV_REG_DEF_STORE_RESPONSE_EVENT = (
 )
 
 # The above successful storage of rev reg def event, triggers create rev list event
-# TODO: superfluous event, can be merged with above rev-reg-def-store response
+# Note: superfluous event, can be merged with above rev-reg-def-store response
 # Just exists for backwards compatibility with old code
 REV_REG_DEF_FINISHED_EVENT = "anoncreds::revocation-registry-definition::finished"
 
@@ -43,7 +43,7 @@ REV_LIST_STORE_REQUESTED_EVENT = "anoncreds::revocation-list::store-requested"
 # Store response triggers the activation event, if it's for the first registry
 REV_LIST_STORE_RESPONSE_EVENT = "anoncreds::revocation-list::store-response"
 
-# TODO: Just exists for backwards compatibility with old code. Not used in state machine
+# Note: Just exists for backwards compatibility with old code. Not used in state machine
 REV_LIST_FINISHED_EVENT = "anoncreds::revocation-list::finished"
 
 # Rev reg activation events. Triggered for first registry, and then during full handling
