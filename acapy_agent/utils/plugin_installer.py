@@ -34,296 +34,158 @@ class PluginInstaller:
         self.plugin_version = plugin_version
         self.installed_plugins: Set[str] = set()
 
-    def _get_installed_plugin_version(self, plugin_name: str) -> Optional[dict]:
-        """
-        Get the version information of an installed plugin, including package version and installation source.
+    def _try_get_package_version(self, names: List[str]) -> tuple[Optional[str], Optional[str]]:
+        """Try to get package version from multiple name variations. Returns (version, package_name)."""
+        for name in names:
+            try:
+                return get_package_version(name), name
+            except PackageNotFoundError:
+                continue
+        return None, None
+    
+    def _extract_source_version_from_direct_url(self, direct_url_data: dict) -> Optional[str]:
+        """Extract git tag/version from direct_url.json data."""
+        vcs_info = direct_url_data.get("vcs_info", {})
+        if vcs_info.get("vcs") == "git":
+            revision = vcs_info.get("requested_revision")
+            if revision and ("." in revision or revision in ["main", "master", "develop"]):
+                return revision
         
-        Args:
-            plugin_name: The name of the plugin module
-            
-        Returns:
-            Dictionary with 'package_version' and optionally 'source_version' (git tag), or None if not found
-        """
+        url = direct_url_data.get("url", "")
+        if "@" in url and "github.com" in url:
+            tag = url.split("@")[1].split("#")[0]
+            if "." in tag or tag in ["main", "master", "develop"]:
+                return tag
+        return None
+    
+    def _get_source_version_from_dist_info(self, package_name: str) -> Optional[str]:
+        """Get source version from pip's .dist-info/direct_url.json file."""
+        # Try pip show to find location
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "show", package_name],
+                capture_output=True, text=True, check=False
+            )
+            if result.returncode == 0:
+                location = next(
+                    (line.split(":", 1)[1].strip() for line in result.stdout.split("\n") if line.startswith("Location:")),
+                    None
+                )
+                if location:
+                    for item in Path(location).iterdir():
+                        if item.is_dir() and item.name.endswith(".dist-info"):
+                            direct_url_file = item / "direct_url.json"
+                            if direct_url_file.exists():
+                                try:
+                                    with open(direct_url_file) as f:
+                                        source_version = self._extract_source_version_from_direct_url(json.load(f))
+                                        if source_version:
+                                            return source_version
+                                except (json.JSONDecodeError, IOError):
+                                    pass
+        except Exception:
+            pass
+        
+        # Fallback: search distributions
+        for dist in distributions():
+            if dist.metadata["Name"].lower() == package_name.lower():
+                dist_location = Path(dist.location)
+                pkg_name, pkg_version = dist.metadata["Name"], dist.version
+                for name_variant in [
+                    f"{pkg_name}-{pkg_version}.dist-info",
+                    f"{pkg_name.replace('-', '_')}-{pkg_version}.dist-info",
+                    f"{pkg_name.replace('.', '_')}-{pkg_version}.dist-info",
+                ]:
+                    direct_url_file = dist_location / name_variant / "direct_url.json"
+                    if direct_url_file.exists():
+                        try:
+                            with open(direct_url_file) as f:
+                                source_version = self._extract_source_version_from_direct_url(json.load(f))
+                                if source_version:
+                                    return source_version
+                        except (json.JSONDecodeError, IOError):
+                            pass
+        
+        # Last resort: pip freeze
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "freeze"],
+                capture_output=True, text=True, check=False
+            )
+            if result.returncode == 0:
+                for line in result.stdout.split("\n"):
+                    if package_name.lower() in line.lower() and "@ git+" in line:
+                        git_part = line.split("@ git+")[1]
+                        if "@" in git_part:
+                            tag = git_part.split("@")[1].split("#")[0]
+                            if "." in tag or tag in ["main", "master", "develop"]:
+                                return tag
+        except Exception:
+            pass
+        return None
+    
+    def _get_installed_plugin_version(self, plugin_name: str) -> Optional[dict]:
+        """Get version info of an installed plugin (package version and source version/git tag)."""
         result = {}
         
-        try:
-            # Try to get version from package metadata (pip installed packages)
-            # First try the module name directly
-            package_name_to_check = None
-            try:
-                version = get_package_version(plugin_name)
-                package_name_to_check = plugin_name
-                result["package_version"] = version
-                LOGGER.debug("Found version for plugin '%s' via metadata: %s", plugin_name, version)
-            except PackageNotFoundError:
-                pass
-            
-            # Try common package name variations
-            if "package_version" not in result:
-                package_name = plugin_name.replace("_", "-")
-                try:
-                    version = get_package_version(package_name)
-                    package_name_to_check = package_name
-                    result["package_version"] = version
-                    LOGGER.debug("Found version for plugin '%s' via metadata (as %s): %s", plugin_name, package_name, version)
-                except PackageNotFoundError:
-                    pass
-            
-            # Try acapy-plugin- prefix
-            if "package_version" not in result:
-                try:
-                    prefixed_name = f"acapy-plugin-{plugin_name.replace('_', '-')}"
-                    version = get_package_version(prefixed_name)
-                    package_name_to_check = prefixed_name
-                    result["package_version"] = version
-                    LOGGER.debug("Found version for plugin '%s' via metadata (as %s): %s", plugin_name, prefixed_name, version)
-                except PackageNotFoundError:
-                    pass
-            
-            # Try to get version from module's __version__ attribute
-            if "package_version" not in result:
-                try:
-                    module = importlib.import_module(plugin_name)
-                    if hasattr(module, "__version__"):
-                        version = str(module.__version__)
-                        result["package_version"] = version
-                        LOGGER.debug("Found version for plugin '%s' via __version__ attribute: %s", plugin_name, version)
-                except (ImportError, AttributeError) as e:
-                    LOGGER.debug("Could not get __version__ from plugin '%s': %s", plugin_name, e)
-            
-            # Try to get installation source (git tag) from pip metadata
-            if package_name_to_check:
-                try:
-                    # First, try pip show to get direct URL information
-                    try:
-                        pip_show_result = subprocess.run(
-                            [sys.executable, "-m", "pip", "show", package_name_to_check],
-                            capture_output=True,
-                            text=True,
-                            check=False,
-                        )
-                        if pip_show_result.returncode == 0:
-                            # Check for "Location:" field to find the package directory
-                            location = None
-                            for line in pip_show_result.stdout.split("\n"):
-                                if line.startswith("Location:"):
-                                    location = line.split(":", 1)[1].strip()
-                                    break
-                            
-                            # Try to find direct_url.json in all possible locations
-                            if location:
-                                location_path = Path(location)
-                                # Try to find .dist-info directory for this package
-                                for item in location_path.iterdir():
-                                    if item.is_dir() and item.name.endswith(".dist-info"):
-                                        direct_url_file = item / "direct_url.json"
-                                        if direct_url_file.exists():
-                                            try:
-                                                with open(direct_url_file, "r") as f:
-                                                    direct_url_data = json.load(f)
-                                                    # direct_url.json can have different formats
-                                                    # Format 1: {"url": "git+https://...@tag#subdirectory=..."}
-                                                    # Format 2: {"vcs_info": {...}, "url": "..."}
-                                                    url_info = direct_url_data.get("url", "")
-                                                    
-                                                    # Try to extract from vcs_info if available
-                                                    vcs_info = direct_url_data.get("vcs_info", {})
-                                                    if vcs_info and vcs_info.get("vcs") == "git":
-                                                        requested_revision = vcs_info.get("requested_revision")
-                                                        if requested_revision:
-                                                            result["source_version"] = requested_revision
-                                                            LOGGER.debug("Found source version from vcs_info for plugin '%s': %s", plugin_name, requested_revision)
-                                                            break
-                                                    
-                                                    # Fallback: Extract from URL
-                                                    if url_info and "@" in url_info and "github.com" in url_info:
-                                                        parts = url_info.split("@")
-                                                        if len(parts) > 1:
-                                                            tag_part = parts[1].split("#")[0] if "#" in parts[1] else parts[1]
-                                                            # Check if it looks like a version tag (not a commit hash)
-                                                            if "." in tag_part or tag_part in ["main", "master", "develop"]:
-                                                                result["source_version"] = tag_part
-                                                                LOGGER.debug("Found source version from URL for plugin '%s': %s", plugin_name, tag_part)
-                                                                break
-                                            except (json.JSONDecodeError, IOError) as e:
-                                                LOGGER.debug("Could not read direct_url.json for plugin '%s': %s", plugin_name, e)
-                    except Exception as e:
-                        LOGGER.debug("Could not get installation source from pip show for plugin '%s': %s", plugin_name, e)
-                    
-                    # Fallback: Try to find distribution and check direct_url.json
-                    if "source_version" not in result:
-                        for dist in distributions():
-                            if dist.metadata["Name"].lower() == package_name_to_check.lower():
-                                # Try multiple path formats for direct_url.json
-                                dist_location = Path(dist.location)
-                                package_name = dist.metadata["Name"]
-                                package_version = dist.version
-                                
-                                # Try different naming conventions for .dist-info directory
-                                dist_info_names = [
-                                    f"{package_name}-{package_version}.dist-info",
-                                    f"{package_name.replace('-', '_')}-{package_version}.dist-info",
-                                    f"{package_name.replace('.', '_')}-{package_version}.dist-info",
-                                ]
-                                
-                                for dist_info_name in dist_info_names:
-                                    dist_info_dir = dist_location / dist_info_name
-                                    direct_url_file = dist_info_dir / "direct_url.json"
-                                    
-                                    if direct_url_file.exists():
-                                        try:
-                                            with open(direct_url_file, "r") as f:
-                                                direct_url_data = json.load(f)
-                                                vcs_info = direct_url_data.get("vcs_info", {})
-                                                if vcs_info and vcs_info.get("vcs") == "git":
-                                                    requested_revision = vcs_info.get("requested_revision")
-                                                    if requested_revision:
-                                                        result["source_version"] = requested_revision
-                                                        LOGGER.debug("Found source version from direct_url.json vcs_info for plugin '%s': %s", plugin_name, requested_revision)
-                                                        break
-                                                
-                                                url_info = direct_url_data.get("url", "")
-                                                if url_info and "@" in url_info and "github.com" in url_info:
-                                                    parts = url_info.split("@")
-                                                    if len(parts) > 1:
-                                                        tag_part = parts[1].split("#")[0] if "#" in parts[1] else parts[1]
-                                                        if "." in tag_part or tag_part in ["main", "master", "develop"]:
-                                                            result["source_version"] = tag_part
-                                                            LOGGER.debug("Found source version from direct_url.json URL for plugin '%s': %s", plugin_name, tag_part)
-                                                            break
-                                        except (json.JSONDecodeError, IOError) as e:
-                                            LOGGER.debug("Could not read direct_url.json for plugin '%s': %s", plugin_name, e)
-                                
-                                if "source_version" in result:
-                                    break
-                    
-                    # Last fallback: Try pip freeze to get installation source
-                    if "source_version" not in result:
-                        try:
-                            pip_freeze_result = subprocess.run(
-                                [sys.executable, "-m", "pip", "freeze"],
-                                capture_output=True,
-                                text=True,
-                                check=False,
-                            )
-                            if pip_freeze_result.returncode == 0:
-                                for line in pip_freeze_result.stdout.split("\n"):
-                                    # Look for package installed from git
-                                    # Format: package==version @ git+https://github.com/...@tag#subdirectory=...
-                                    # or: package @ git+https://github.com/...@tag#subdirectory=...
-                                    line_lower = line.lower()
-                                    if (package_name_to_check.lower() in line_lower or 
-                                        package_name_to_check.replace("-", "_").lower() in line_lower) and "@ git+" in line:
-                                        # Extract the git URL part
-                                        if "@ git+" in line:
-                                            git_part = line.split("@ git+")[1]
-                                            if "@" in git_part:
-                                                tag_part = git_part.split("@")[1].split("#")[0] if "#" in git_part.split("@")[1] else git_part.split("@")[1]
-                                                if "." in tag_part or tag_part in ["main", "master", "develop"]:
-                                                    result["source_version"] = tag_part
-                                                    LOGGER.debug("Found source version from pip freeze for plugin '%s': %s", plugin_name, tag_part)
-                                                    break
-                        except Exception as e:
-                            LOGGER.debug("Could not get installation source from pip freeze for plugin '%s': %s", plugin_name, e)
-                            
-                except Exception as e:
-                    LOGGER.debug("Could not get installation source for plugin '%s': %s", plugin_name, e)
-            
-            # Return the result if we found at least package_version
-            if "package_version" in result:
-                return result
-                
-        except Exception as e:
-            LOGGER.debug("Error determining version for plugin '%s': %s", plugin_name, e)
+        # Try to get package version from various name variations
+        name_variants = [
+            plugin_name,
+            plugin_name.replace("_", "-"),
+            f"acapy-plugin-{plugin_name.replace('_', '-')}",
+        ]
+        package_version, package_name = self._try_get_package_version(name_variants)
         
-        LOGGER.debug("Could not determine version for plugin '%s' using any method", plugin_name)
-        return None
+        if not package_version:
+            # Try __version__ attribute
+            try:
+                module = importlib.import_module(plugin_name)
+                if hasattr(module, "__version__"):
+                    package_version = str(module.__version__)
+            except (ImportError, AttributeError):
+                pass
+        
+        if not package_version:
+            return None
+        
+        result["package_version"] = package_version
+        
+        # Try to get source version (git tag) if we found a package name
+        if package_name:
+            source_version = self._get_source_version_from_dist_info(package_name)
+            if source_version:
+                result["source_version"] = source_version
+        
+        return result
 
     def _get_plugin_source(self, plugin_name: str) -> str:
         """Get the installation source for a plugin from acapy-plugins repository."""
-        # Install from acapy-plugins repo
-        # Use provided version or current ACA-Py version
         version_to_use = self.plugin_version if self.plugin_version is not None else __version__
-        plugin_source = (
+        return (
             f"git+https://github.com/openwallet-foundation/acapy-plugins@{version_to_use}"
             f"#subdirectory={plugin_name}"
         )
-        LOGGER.info(
-            "Installing plugin '%s' from acapy-plugins repository (version %s)",
-            plugin_name,
-            version_to_use,
-        )
-        LOGGER.debug("Installation source: %s", plugin_source)
-        return plugin_source
 
     def _install_plugin(self, plugin_source: str, plugin_name: str = None, upgrade: bool = False) -> bool:
-        """
-        Install a plugin using pip.
-
-        Args:
-            plugin_source: The pip installable source (package name, git URL, etc.)
-            plugin_name: Optional plugin name for logging
-            upgrade: Whether to upgrade/reinstall if already installed
-
-        Returns:
-            True if installation succeeded, False otherwise
-        """
+        """Install a plugin using pip."""
         try:
-            # Extract version from source for logging
-            version_info = ""
-            if "@" in plugin_source:
-                # Extract version/tag from git URL or package version
-                parts = plugin_source.split("@")
-                if len(parts) > 1:
-                    version_part = parts[1].split("#")[0] if "#" in parts[1] else parts[1]
-                    version_info = f" (version: {version_part})"
-            
-            log_name = plugin_name if plugin_name else plugin_source
+            cmd = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
             if upgrade:
-                LOGGER.info("Upgrading plugin '%s'%s", log_name, version_info)
-                LOGGER.debug("Upgrade source: %s", plugin_source)
-            else:
-                LOGGER.info("Installing plugin '%s'%s", log_name, version_info)
-                LOGGER.debug("Installation source: %s", plugin_source)
-
-            # Use pip programmatically to install
-            cmd = [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--no-cache-dir",
-            ]
-            
-            if upgrade:
-                # Use --upgrade --force-reinstall to ensure correct version
                 cmd.extend(["--upgrade", "--force-reinstall", "--no-deps"])
-            
             cmd.append(plugin_source)
 
-            # Run pip install
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
             if result.returncode == 0:
-                if upgrade:
-                    LOGGER.info("Successfully upgraded plugin '%s'%s", log_name, version_info)
-                else:
-                    LOGGER.info("Successfully installed plugin '%s'%s", log_name, version_info)
+                action = "Upgraded" if upgrade else "Installed"
+                LOGGER.info("%s plugin: %s", action, plugin_name or plugin_source)
                 return True
             else:
                 action = "upgrade" if upgrade else "install"
-                LOGGER.error(
-                    "Failed to %s plugin '%s'%s: %s", action, log_name, version_info, result.stderr
-                )
+                LOGGER.error("Failed to %s plugin '%s': %s", action, plugin_name or plugin_source, result.stderr)
                 return False
-
         except Exception as e:
-            LOGGER.error("Error installing plugin %s: %s", plugin_source, e)
+            LOGGER.error("Error installing plugin %s: %s", plugin_name or plugin_source, e)
             return False
 
     def ensure_plugin_installed(self, plugin_name: str) -> bool:
@@ -362,91 +224,17 @@ class PluginInstaller:
         
         if plugin_exists and not self.plugin_version:
             # No explicit version specified - using current ACA-Py version
-            # If plugin exists and is importable, assume it's fine (might be from git/main)
             if installed_package_version:
-                # Try to match with ACA-Py version if possible
                 normalized_installed = installed_package_version.split("+")[0].split("-")[0].strip()
                 normalized_target = target_version.split("+")[0].split("-")[0].strip()
                 if normalized_installed == normalized_target:
-                    LOGGER.info(
-                        "Plugin '%s' is already installed with correct version: %s",
-                        plugin_name,
-                        installed_package_version,
-                    )
                     self.installed_plugins.add(plugin_name)
                     return True
-            # Plugin exists but version doesn't match or can't be determined
-            # Since we're using current ACA-Py version, reinstall to be safe
-            LOGGER.info(
-                "Plugin '%s' exists but version check inconclusive. "
-                "Reinstalling to ensure correct version (%s)...",
-                plugin_name,
-                target_version,
-            )
         elif plugin_exists and self.plugin_version:
             # Explicit version specified - check if source version matches
             if installed_source_version and installed_source_version == target_version:
-                # Source version matches - check if we should still reinstall
-                LOGGER.info(
-                    "Plugin '%s' is already installed from source version %s (package version: %s). "
-                    "Skipping reinstallation.",
-                    plugin_name,
-                    installed_source_version,
-                    installed_package_version or "unknown",
-                )
                 self.installed_plugins.add(plugin_name)
                 return True
-            elif installed_package_version:
-                # Try to compare package versions
-                normalized_installed = installed_package_version.split("+")[0].split("-")[0].strip()
-                normalized_target = target_version.split("+")[0].split("-")[0].strip()
-                # Check if it looks like a version number match (not a git ref)
-                try:
-                    if (normalized_installed.count(".") >= 1 and 
-                        normalized_target.count(".") >= 1 and
-                        normalized_installed == normalized_target):
-                        # Package version matches, but source might be different
-                        # Still reinstall to ensure correct git tag
-                        LOGGER.info(
-                            "Plugin '%s' package version matches (%s) but checking source version...",
-                            plugin_name,
-                            installed_package_version,
-                        )
-                except Exception:
-                    pass
-            # Version mismatch or can't determine - upgrade
-            if installed_source_version:
-                LOGGER.info(
-                    "Plugin '%s' source version mismatch: installed=%s, target=%s. "
-                    "Upgrading to version %s...",
-                    plugin_name,
-                    installed_source_version,
-                    target_version,
-                    target_version,
-                )
-            elif installed_package_version:
-                LOGGER.info(
-                    "Plugin '%s' version mismatch: installed=%s, target=%s. "
-                    "Upgrading to version %s...",
-                    plugin_name,
-                    installed_package_version,
-                    target_version,
-                    target_version,
-                )
-            else:
-                LOGGER.info(
-                    "Plugin '%s' is installed but version cannot be determined. "
-                    "Upgrading to ensure correct version (%s)...",
-                    plugin_name,
-                    target_version,
-                )
-        elif not plugin_exists:
-            # Plugin doesn't exist - install it
-            LOGGER.info(
-                "Plugin '%s' not found. Installing version %s...",
-                plugin_name,
-                target_version,
-            )
 
         if not self.auto_install:
             LOGGER.warning(
@@ -473,92 +261,9 @@ class PluginInstaller:
                 )
                 return False
             
-            # Check version after successful import
-            verified_version_info = self._get_installed_plugin_version(plugin_name)
-            if verified_version_info:
-                verified_package_version = verified_version_info.get("package_version")
-                verified_source_version = verified_version_info.get("source_version")
-                
-                # Check if source version matches (for git-installed packages)
-                if verified_source_version and verified_source_version == target_version:
-                    self.installed_plugins.add(plugin_name)
-                    if is_upgrade:
-                        LOGGER.info(
-                            "Plugin '%s' successfully upgraded to source version %s (package version: %s)",
-                            plugin_name,
-                            verified_source_version,
-                            verified_package_version or "unknown",
-                        )
-                    else:
-                        LOGGER.info(
-                            "Plugin '%s' successfully installed (source version: %s, package version: %s)",
-                            plugin_name,
-                            verified_source_version,
-                            verified_package_version or "unknown",
-                        )
-                    return True
-                elif verified_package_version:
-                    # Normalize package versions for comparison
-                    normalized_installed = verified_package_version.split("+")[0].split("-")[0].strip()
-                    normalized_target = target_version.split("+")[0].split("-")[0].strip()
-                    
-                    if normalized_installed == normalized_target:
-                        self.installed_plugins.add(plugin_name)
-                        if is_upgrade:
-                            LOGGER.info(
-                                "Plugin '%s' successfully upgraded (package version: %s)",
-                                plugin_name,
-                                verified_package_version,
-                            )
-                        else:
-                            LOGGER.info(
-                                "Plugin '%s' successfully installed (package version: %s)",
-                                plugin_name,
-                                verified_package_version,
-                            )
-                        return True
-                    else:
-                        LOGGER.warning(
-                            "Plugin '%s' installed package version (%s) doesn't match target (%s), "
-                            "but plugin is importable. Continuing with installed version.",
-                            plugin_name,
-                            verified_package_version,
-                            target_version,
-                        )
-                        self.installed_plugins.add(plugin_name)
-                        return True
-                else:
-                    # Version info available but no package or source version
-                    self.installed_plugins.add(plugin_name)
-                    if is_upgrade:
-                        LOGGER.info(
-                            "Plugin '%s' reinstalled successfully (version cannot be verified, target was %s)",
-                            plugin_name,
-                            target_version,
-                        )
-                    else:
-                        LOGGER.info(
-                            "Plugin '%s' installed successfully (version cannot be verified, target was %s)",
-                            plugin_name,
-                            target_version,
-                        )
-                    return True
-            else:
-                # Can't determine version, but plugin is importable - consider it successful
-                if is_upgrade:
-                    LOGGER.info(
-                        "Plugin '%s' reinstalled successfully (version cannot be verified, target was %s)",
-                        plugin_name,
-                        target_version,
-                    )
-                else:
-                    LOGGER.info(
-                        "Plugin '%s' installed successfully (version cannot be verified, target was %s)",
-                        plugin_name,
-                        target_version,
-                    )
-                self.installed_plugins.add(plugin_name)
-                return True
+            # Plugin installed and importable - success
+            self.installed_plugins.add(plugin_name)
+            return True
         else:
             LOGGER.error(
                 "Failed to install plugin '%s' (version %s)",
