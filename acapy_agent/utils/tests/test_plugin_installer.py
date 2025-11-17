@@ -140,6 +140,50 @@ class TestDetectPackageManager(TestCase):
             result = _detect_package_manager()
             self.assertEqual(result, "poetry")
 
+    @patch("acapy_agent.utils.plugin_installer.which")
+    @patch.dict("os.environ", {"VIRTUAL_ENV": "/path/to/.venv"})
+    @patch("acapy_agent.utils.plugin_installer.Path")
+    def test_poetry_detected_from_venv_parent_path(self, mock_path_class, mock_which):
+        """Test Poetry detection from venv parent path."""
+        mock_which.return_value = "/usr/bin/poetry"
+
+        # Mock venv path with .venv name
+        mock_venv_path = MagicMock()
+        mock_venv_path.name = ".venv"
+        mock_venv_path.parent = MagicMock()
+        mock_pyproject_parent = MagicMock()
+        mock_pyproject_parent.exists.return_value = True
+        mock_venv_path.parent.__truediv__ = MagicMock(
+            return_value=mock_pyproject_parent
+        )
+
+        mock_path_class.return_value = mock_venv_path
+
+        with patch("builtins.open", mock_open(read_data="[tool.poetry]\nname = 'test'")):
+            result = _detect_package_manager()
+            self.assertEqual(result, "poetry")
+
+    @patch("acapy_agent.utils.plugin_installer.which")
+    @patch.dict("os.environ", {}, clear=True)
+    @patch("acapy_agent.utils.plugin_installer.Path")
+    def test_poetry_detection_pyproject_read_exception(
+        self, mock_path_class, mock_which
+    ):
+        """Test Poetry detection when reading pyproject.toml raises exception."""
+        mock_which.return_value = "/usr/bin/poetry"
+
+        mock_cwd = MagicMock()
+        mock_pyproject = MagicMock()
+        mock_pyproject.exists.return_value = True
+        mock_cwd.__truediv__ = MagicMock(return_value=mock_pyproject)
+        mock_path_class.cwd.return_value = mock_cwd
+
+        # Mock open to raise exception
+        with patch("builtins.open", side_effect=IOError("Permission denied")):
+            result = _detect_package_manager()
+            # Should continue searching other paths
+            self.assertIsNone(result)  # No other paths configured in test
+
 
 class TestGetPipCommandBase(TestCase):
     """Test pip command base construction."""
@@ -258,6 +302,18 @@ class TestPluginInstaller(TestCase):
         result = installer._extract_source_version_from_direct_url(direct_url_data)
         self.assertIsNone(result)
 
+    def test_extract_source_version_from_direct_url_exception(self):
+        """Test source version extraction when URL parsing raises exception."""
+        installer = PluginInstaller()
+        # Create a URL that will cause urlparse to work but rsplit to fail
+        direct_url_data = {
+            "vcs_info": {"vcs": "git"},
+            "url": "git+https://github.com/org/repo",  # No @ tag
+        }
+        result = installer._extract_source_version_from_direct_url(direct_url_data)
+        # Should return None when no version tag found
+        self.assertIsNone(result)
+
     def test_extract_source_version_from_direct_url_branch(self):
         """Test source version extraction with branch name."""
         installer = PluginInstaller()
@@ -309,6 +365,80 @@ class TestPluginInstaller(TestCase):
             result = installer._get_source_version_from_dist_info("package")
             self.assertEqual(result, "1.3.2")
 
+    @patch("acapy_agent.utils.plugin_installer.subprocess.run")
+    @patch("acapy_agent.utils.plugin_installer._get_pip_command_base")
+    def test_get_source_version_from_dist_info_pip_show_failure(
+        self, mock_cmd_base, mock_subprocess
+    ):
+        """Test source version extraction when pip show fails."""
+        installer = PluginInstaller()
+        mock_cmd_base.return_value = ["pip"]
+        mock_subprocess.return_value = Mock(returncode=1, stdout="")
+
+        # Test with distributions fallback
+        mock_dist = MagicMock()
+        mock_dist.metadata = {"Name": "package", "version": "1.0.0"}
+        mock_dist.location = "/path/to/dist"
+        mock_dist.version = "1.0.0"
+
+        mock_dist_path = MagicMock()
+        mock_direct_url_file = MagicMock()
+        mock_direct_url_file.exists.return_value = True
+        mock_dist_path.__truediv__ = MagicMock(return_value=mock_direct_url_file)
+
+        with (
+            patch("acapy_agent.utils.plugin_installer.distributions", return_value=[mock_dist]),
+            patch("acapy_agent.utils.plugin_installer.Path") as mock_path_class,
+            patch(
+                "builtins.open",
+                mock_open(
+                    read_data='{"vcs_info": {"vcs": "git", "requested_revision": "1.3.2"}}'
+                ),
+            ),
+        ):
+            mock_path_class.return_value = mock_dist_path
+            mock_dist_path.parent = mock_dist_path
+            result = installer._get_source_version_from_dist_info("package")
+            self.assertEqual(result, "1.3.2")
+
+    @patch("acapy_agent.utils.plugin_installer.subprocess.run")
+    @patch("acapy_agent.utils.plugin_installer._get_pip_command_base")
+    def test_get_source_version_from_dist_info_pip_freeze(
+        self, mock_cmd_base, mock_subprocess
+    ):
+        """Test source version extraction via pip freeze."""
+        installer = PluginInstaller()
+        mock_cmd_base.return_value = ["pip"]
+        # First call fails (pip show), second succeeds (pip freeze)
+        mock_subprocess.side_effect = [
+            Mock(returncode=1, stdout=""),  # pip show fails
+            Mock(
+                returncode=0,
+                stdout="package==1.0.0 @ git+https://github.com@1.3.2/org/repo#subdirectory=plugin\n",
+            ),  # pip freeze succeeds with @ in netloc format
+        ]
+
+        with patch("acapy_agent.utils.plugin_installer.distributions", return_value=[]):
+            result = installer._get_source_version_from_dist_info("package")
+            self.assertEqual(result, "1.3.2")
+
+    @patch("acapy_agent.utils.plugin_installer.subprocess.run")
+    @patch("acapy_agent.utils.plugin_installer._get_pip_command_base")
+    def test_get_source_version_from_dist_info_pip_freeze_exception(
+        self, mock_cmd_base, mock_subprocess
+    ):
+        """Test source version extraction when pip freeze raises exception."""
+        installer = PluginInstaller()
+        mock_cmd_base.return_value = ["pip"]
+        mock_subprocess.side_effect = [
+            Mock(returncode=1, stdout=""),  # pip show fails
+            Exception("Unexpected error"),  # pip freeze raises exception
+        ]
+
+        with patch("acapy_agent.utils.plugin_installer.distributions", return_value=[]):
+            result = installer._get_source_version_from_dist_info("package")
+            self.assertIsNone(result)
+
     def test_get_installed_plugin_version_not_found(self):
         """Test version lookup when plugin not found."""
         installer = PluginInstaller()
@@ -340,6 +470,46 @@ class TestPluginInstaller(TestCase):
             result = installer._get_installed_plugin_version("test_plugin")
             self.assertEqual(result["package_version"], "1.2.3")
             self.assertEqual(result["source_version"], "1.3.2")
+
+    def test_get_installed_plugin_version_from_module(self):
+        """Test version lookup from module __version__ attribute."""
+        installer = PluginInstaller()
+        mock_module = MagicMock()
+        mock_module.__version__ = "1.5.0"
+
+        with (
+            patch.object(
+                installer, "_try_get_package_version", return_value=(None, None)
+            ),
+            patch(
+                "acapy_agent.utils.plugin_installer.importlib.import_module",
+                return_value=mock_module,
+            ),
+        ):
+            result = installer._get_installed_plugin_version("test_plugin")
+            self.assertEqual(result["package_version"], "1.5.0")
+            # No package_name, so no source_version
+            self.assertNotIn("source_version", result)
+
+    def test_get_installed_plugin_version_no_package_name(self):
+        """Test version lookup when package name is None."""
+        installer = PluginInstaller()
+        mock_module = MagicMock()
+        mock_module.__version__ = "1.5.0"
+
+        with (
+            patch.object(
+                installer, "_try_get_package_version", return_value=("1.2.3", None)
+            ),
+            patch(
+                "acapy_agent.utils.plugin_installer.importlib.import_module",
+                return_value=mock_module,
+            ),
+        ):
+            result = installer._get_installed_plugin_version("test_plugin")
+            self.assertEqual(result["package_version"], "1.2.3")
+            # No package_name, so no source_version lookup
+            self.assertNotIn("source_version", result)
 
     @patch("acapy_agent.utils.plugin_installer.subprocess.run")
     @patch("acapy_agent.utils.plugin_installer._get_pip_command")
@@ -389,6 +559,20 @@ class TestPluginInstaller(TestCase):
         self.assertIn("--upgrade", call_args)
         self.assertIn("--force-reinstall", call_args)
         self.assertIn("--no-deps", call_args)
+
+    @patch("acapy_agent.utils.plugin_installer.subprocess.run")
+    @patch("acapy_agent.utils.plugin_installer._get_pip_command")
+    def test_install_plugin_exception(self, mock_cmd, mock_subprocess):
+        """Test plugin installation exception handling."""
+        installer = PluginInstaller()
+        mock_cmd.return_value = ["pip", "install"]
+        mock_subprocess.side_effect = Exception("Unexpected error")
+
+        result = installer._install_plugin(
+            "git+https://github.com/org/repo@1.3.2#subdirectory=plugin",
+            plugin_name="plugin",
+        )
+        self.assertFalse(result)
 
     @patch("acapy_agent.utils.plugin_installer.importlib.import_module")
     @patch.object(PluginInstaller, "_get_installed_plugin_version")
@@ -469,6 +653,84 @@ class TestPluginInstaller(TestCase):
         result = installer.ensure_plugin_installed("test_plugin")
         self.assertFalse(result)
 
+    @patch("acapy_agent.utils.plugin_installer.importlib.import_module")
+    @patch.object(PluginInstaller, "_get_installed_plugin_version")
+    @patch("acapy_agent.utils.plugin_installer.__version__", "1.4.0")
+    def test_ensure_plugin_installed_version_match_no_explicit_version(
+        self, mock_get_version, mock_import
+    ):
+        """Test ensuring plugin when version matches without explicit version."""
+        installer = PluginInstaller(auto_install=True, plugin_version=None)
+        mock_import.return_value = MagicMock()
+        # Using current version (normalized)
+        mock_get_version.return_value = {"package_version": "1.4.0"}
+
+        result = installer.ensure_plugin_installed("test_plugin")
+        self.assertTrue(result)
+        self.assertIn("test_plugin", installer.installed_plugins)
+
+    @patch("acapy_agent.utils.plugin_installer.importlib.import_module")
+    @patch.object(PluginInstaller, "_get_installed_plugin_version")
+    @patch.object(PluginInstaller, "_get_plugin_source")
+    @patch.object(PluginInstaller, "_install_plugin")
+    def test_ensure_plugin_installed_import_fails_after_install(
+        self, mock_install, mock_get_source, mock_get_version, mock_import
+    ):
+        """Test ensuring plugin when import fails after installation."""
+        installer = PluginInstaller(auto_install=True)
+        # First call: not installed, second call: still fails after install
+        mock_import.side_effect = ImportError("No module named 'test_plugin'")
+        mock_get_version.return_value = None
+        mock_get_source.return_value = (
+            "git+https://github.com/org/repo@1.3.2#subdirectory=plugin"
+        )
+        mock_install.return_value = True  # Installation "succeeds"
+
+        result = installer.ensure_plugin_installed("test_plugin")
+        self.assertFalse(result)
+        self.assertNotIn("test_plugin", installer.installed_plugins)
+
+    @patch("acapy_agent.utils.plugin_installer.importlib.import_module")
+    @patch.object(PluginInstaller, "_get_installed_plugin_version")
+    @patch.object(PluginInstaller, "_get_plugin_source")
+    @patch.object(PluginInstaller, "_install_plugin")
+    def test_ensure_plugin_installed_installation_fails(
+        self, mock_install, mock_get_source, mock_get_version, mock_import
+    ):
+        """Test ensuring plugin when installation fails."""
+        installer = PluginInstaller(auto_install=True)
+        mock_import.side_effect = ImportError("No module named 'test_plugin'")
+        mock_get_version.return_value = None
+        mock_get_source.return_value = (
+            "git+https://github.com/org/repo@1.3.2#subdirectory=plugin"
+        )
+        mock_install.return_value = False  # Installation fails
+
+        result = installer.ensure_plugin_installed("test_plugin")
+        self.assertFalse(result)
+
+    @patch("acapy_agent.utils.plugin_installer.importlib.import_module")
+    @patch.object(PluginInstaller, "_get_installed_plugin_version")
+    @patch.object(PluginInstaller, "_get_plugin_source")
+    @patch.object(PluginInstaller, "_install_plugin")
+    @patch("acapy_agent.utils.plugin_installer.__version__", "1.4.0")
+    def test_ensure_plugin_installed_version_inconclusive(
+        self, mock_install, mock_get_source, mock_get_version, mock_import
+    ):
+        """Test ensuring plugin when version check is inconclusive."""
+        installer = PluginInstaller(auto_install=True, plugin_version=None)
+        mock_import.return_value = MagicMock()
+        # Version doesn't match or is None
+        mock_get_version.return_value = {"package_version": "1.3.0"}
+        mock_get_source.return_value = (
+            "git+https://github.com/org/repo@1.4.0#subdirectory=plugin"
+        )
+        mock_install.return_value = True
+
+        result = installer.ensure_plugin_installed("test_plugin")
+        # Should reinstall due to version mismatch
+        mock_install.assert_called_once()
+
     def test_ensure_plugin_installed_invalid_name(self):
         """Test ensuring plugin with invalid name."""
         installer = PluginInstaller()
@@ -529,3 +791,30 @@ class TestTopLevelFunctions(TestCase):
         result = get_plugin_version("test_plugin")
         self.assertEqual(result["package_version"], "1.0.0")
         self.assertEqual(result["source_version"], "1.3.2")
+
+    def test_install_plugins_from_config_empty_list(self):
+        """Test install_plugins_from_config with empty list."""
+        result = install_plugins_from_config([])
+        self.assertEqual(result, [])
+
+    def test_list_plugin_versions(self):
+        """Test list_plugin_versions function."""
+        from ..plugin_installer import list_plugin_versions
+
+        installer = PluginInstaller(auto_install=False)
+        with patch.object(
+            installer, "_get_installed_plugin_version", return_value={"package_version": "1.0.0"}
+        ), patch(
+            "acapy_agent.utils.plugin_installer.PluginInstaller", return_value=installer
+        ):
+            result = list_plugin_versions(["plugin1", "plugin2"])
+            self.assertEqual(len(result), 2)
+            self.assertIn("plugin1", result)
+            self.assertIn("plugin2", result)
+
+    def test_list_plugin_versions_no_names(self):
+        """Test list_plugin_versions with no plugin names."""
+        from ..plugin_installer import list_plugin_versions
+
+        result = list_plugin_versions(None)
+        self.assertEqual(result, {})
