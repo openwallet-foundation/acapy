@@ -714,9 +714,10 @@ class GeneralGroup(ArgumentGroup):
             metavar="<version>",
             env_var="ACAPY_AUTO_INSTALL_PLUGINS",
             help=(
-                "Automatically install missing plugins from the acapy-plugins repository. "
-                "If specified without a value, uses current ACA-Py version. "
-                "If a version is provided (e.g., 1.3.2), uses that version for plugin installation. "
+                "Automatically install missing plugins from the "
+                "acapy-plugins repository. If specified without a value, uses "
+                "current ACA-Py version. If a version is provided (e.g., 1.3.2), "
+                "uses that version for plugin installation. "
                 "Default: false (disabled)."
             ),
         )
@@ -819,7 +820,8 @@ class GeneralGroup(ArgumentGroup):
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
 
-        # Auto-install plugins: can be True (use current version), version string (e.g., "1.3.2"), or False
+        # Auto-install plugins: can be True (use current version),
+        # version string (e.g., "1.3.2"), or False
         if hasattr(args, "auto_install_plugins"):
             auto_install_value = args.auto_install_plugins
             if auto_install_value is True:

@@ -77,7 +77,7 @@ async def plugins_handler(request: web.BaseRequest):
     """
     registry = request.app["context"].inject_or(PluginRegistry)
     plugins = registry and sorted(registry.plugin_names) or []
-    
+
     # Get versions for external plugins only (skip built-in acapy_agent plugins)
     external_plugins = []
     for plugin_name in plugins:
@@ -85,22 +85,25 @@ async def plugins_handler(request: web.BaseRequest):
             # External plugin - try to get version info
             version_info = get_plugin_version(plugin_name)
             if version_info:
-                external_plugins.append({
-                    "name": plugin_name,
-                    "package_version": version_info.get("package_version"),
-                    "source_version": version_info.get("source_version"),  # Git tag used for installation
-                })
+                external_plugins.append(
+                    {
+                        "name": plugin_name,
+                        "package_version": version_info.get("package_version"),
+                        "source_version": version_info.get(
+                            "source_version"
+                        ),  # Git tag used for installation
+                    }
+                )
             else:
-                external_plugins.append({
-                    "name": plugin_name,
-                    "package_version": None,
-                    "source_version": None,
-                })
-    
-    return web.json_response({
-        "result": plugins,
-        "external": external_plugins
-    })
+                external_plugins.append(
+                    {
+                        "name": plugin_name,
+                        "package_version": None,
+                        "source_version": None,
+                    }
+                )
+
+    return web.json_response({"result": plugins, "external": external_plugins})
 
 
 @docs(tags=["server"], summary="Fetch the server configuration")

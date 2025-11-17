@@ -125,8 +125,12 @@ The response includes plugin versions:
 ```json
 {
   "result": ["webvh"],
-  "plugins": [
-    {"name": "webvh", "version": "0.1.0"}
+  "external": [
+    {
+      "name": "webvh",
+      "package_version": "0.1.0",
+      "source_version": "1.3.1"
+    }
   ]
 }
 ```
@@ -135,13 +139,9 @@ The response includes plugin versions:
 ```python
 from acapy_agent.utils.plugin_installer import get_plugin_version
 
-version = get_plugin_version("webvh")
-print(f"webvh version: {version}")
-```
-
-**3. Using the helper script:**
-```bash
-python scripts/check_plugin_versions.py webvh
+version_info = get_plugin_version("webvh")
+print(f"webvh package version: {version_info['package_version']}")
+print(f"webvh source version: {version_info.get('source_version')}")
 ```
 
 ## Loading ACA-Py Plug-Ins at Runtime
