@@ -664,11 +664,18 @@ def get_plugin_version(plugin_name: str) -> Optional[dict]:
 
     Returns:
         Dictionary with 'package_version' and optionally 'source_version'
-        (git tag), or None if not found
+        (git tag), or None if not found. Returns None if any error occurs.
 
     """
-    installer = PluginInstaller(auto_install=False)
-    return installer._get_installed_plugin_version(plugin_name)
+    try:
+        installer = PluginInstaller(auto_install=False)
+        return installer._get_installed_plugin_version(plugin_name)
+    except Exception:
+        # Silently fail version lookup - don't break plugin functionality
+        LOGGER.debug(
+            "Failed to get version info for plugin '%s'", plugin_name, exc_info=True
+        )
+        return None
 
 
 def list_plugin_versions(plugin_names: List[str] = None) -> dict:

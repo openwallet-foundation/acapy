@@ -83,7 +83,12 @@ async def plugins_handler(request: web.BaseRequest):
     for plugin_name in plugins:
         if not plugin_name.startswith("acapy_agent."):
             # External plugin - try to get version info
-            version_info = get_plugin_version(plugin_name) or {}
+            # Wrap in try/except to prevent failures from affecting the endpoint
+            try:
+                version_info = get_plugin_version(plugin_name) or {}
+            except Exception:
+                # If version lookup fails, just include plugin without version info
+                version_info = {}
             external_plugins.append(
                 {
                     "name": plugin_name,
