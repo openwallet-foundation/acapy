@@ -153,9 +153,7 @@ class TestDetectPackageManager(TestCase):
         mock_venv_path.parent = MagicMock()
         mock_pyproject_parent = MagicMock()
         mock_pyproject_parent.exists.return_value = True
-        mock_venv_path.parent.__truediv__ = MagicMock(
-            return_value=mock_pyproject_parent
-        )
+        mock_venv_path.parent.__truediv__ = MagicMock(return_value=mock_pyproject_parent)
 
         mock_path_class.return_value = mock_venv_path
 
@@ -166,9 +164,7 @@ class TestDetectPackageManager(TestCase):
     @patch("acapy_agent.utils.plugin_installer.which")
     @patch.dict("os.environ", {}, clear=True)
     @patch("acapy_agent.utils.plugin_installer.Path")
-    def test_poetry_detection_pyproject_read_exception(
-        self, mock_path_class, mock_which
-    ):
+    def test_poetry_detection_pyproject_read_exception(self, mock_path_class, mock_which):
         """Test Poetry detection when reading pyproject.toml raises exception."""
         mock_which.return_value = "/usr/bin/poetry"
 
@@ -387,7 +383,10 @@ class TestPluginInstaller(TestCase):
         mock_dist_path.__truediv__ = MagicMock(return_value=mock_direct_url_file)
 
         with (
-            patch("acapy_agent.utils.plugin_installer.distributions", return_value=[mock_dist]),
+            patch(
+                "acapy_agent.utils.plugin_installer.distributions",
+                return_value=[mock_dist],
+            ),
             patch("acapy_agent.utils.plugin_installer.Path") as mock_path_class,
             patch(
                 "builtins.open",
@@ -802,10 +801,16 @@ class TestTopLevelFunctions(TestCase):
         from ..plugin_installer import list_plugin_versions
 
         installer = PluginInstaller(auto_install=False)
-        with patch.object(
-            installer, "_get_installed_plugin_version", return_value={"package_version": "1.0.0"}
-        ), patch(
-            "acapy_agent.utils.plugin_installer.PluginInstaller", return_value=installer
+        with (
+            patch.object(
+                installer,
+                "_get_installed_plugin_version",
+                return_value={"package_version": "1.0.0"},
+            ),
+            patch(
+                "acapy_agent.utils.plugin_installer.PluginInstaller",
+                return_value=installer,
+            ),
         ):
             result = list_plugin_versions(["plugin1", "plugin2"])
             self.assertEqual(len(result), 2)
