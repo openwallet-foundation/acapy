@@ -3,6 +3,8 @@
 import importlib
 import json
 import logging
+import os
+import re
 import subprocess
 import sys
 from importlib.metadata import (
@@ -13,11 +15,134 @@ from importlib.metadata import (
     version as get_package_version,
 )
 from pathlib import Path
+from shutil import which
 from typing import List, Optional, Set
+from urllib.parse import urlparse
 
 from ..version import __version__
 
 LOGGER = logging.getLogger(__name__)
+
+# Valid plugin name pattern: alphanumeric, underscore, hyphen, dot
+# Must start with letter or underscore
+VALID_PLUGIN_NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.-]*$")
+PLUGIN_REPO_URL = "https://github.com/openwallet-foundation/acapy-plugins"
+
+
+def _validate_plugin_name(plugin_name: str) -> bool:
+    """Validate that a plugin name is safe for use in URLs and file paths.
+
+    Args:
+        plugin_name: The plugin name to validate
+
+    Returns:
+        True if valid, False otherwise
+
+    """
+    if not plugin_name or len(plugin_name) > 100:
+        return False
+    return bool(VALID_PLUGIN_NAME_PATTERN.match(plugin_name))
+
+
+def _sanitize_url_component(component: str) -> str:
+    """Sanitize a URL component by removing unsafe characters.
+
+    Args:
+        component: The URL component to sanitize
+
+    Returns:
+        Sanitized component
+
+    """
+    # Remove any characters that could be used for URL injection
+    return re.sub(r"[^a-zA-Z0-9_.-]", "", component)
+
+
+def _detect_package_manager() -> Optional[str]:
+    """Detect which package manager is being used (poetry, pip, etc.).
+
+    Returns:
+        "poetry" if Poetry is detected, None otherwise
+
+    """
+    # Check if poetry is available
+    if not which("poetry"):
+        return None
+
+    # Check if we're in a Poetry-managed virtual environment
+    # Poetry typically sets VIRTUAL_ENV to a path containing ".venv" or in Poetry's cache
+    venv_path = os.environ.get("VIRTUAL_ENV")
+    if venv_path:
+        venv_path_obj = Path(venv_path)
+        # Check if this looks like a Poetry-managed venv
+        # Poetry venvs are often named like "project-name-<hash>-py3.13"
+        if venv_path_obj.name.endswith(".venv") or "poetry" in str(venv_path).lower():
+            # Check if pyproject.toml exists nearby (Poetry projects have it at root)
+            parent = venv_path_obj.parent
+            if (parent / "pyproject.toml").exists() or (
+                venv_path_obj / ".." / ".." / ".." / "pyproject.toml"
+            ).exists():
+                return "poetry"
+
+    # Check if we're in a Poetry project by looking for pyproject.toml
+    # Look in current directory or project root
+    search_paths = [Path.cwd()]
+
+    # Also check from the acapy_agent module location (project root)
+    try:
+        from .. import __file__ as module_file
+
+        module_path = Path(module_file).resolve()
+        # Go up from acapy_agent/utils/plugin_installer.py to project root
+        project_root = module_path.parent.parent.parent
+        if project_root not in search_paths:
+            search_paths.append(project_root)
+    except Exception:
+        pass
+
+    # Check each potential project root for pyproject.toml
+    for root_path in search_paths:
+        pyproject_file = root_path / "pyproject.toml"
+        if pyproject_file.exists():
+            # Check if pyproject.toml has [tool.poetry] section
+            try:
+                with open(pyproject_file, "r") as f:
+                    content = f.read()
+                    if "[tool.poetry]" in content or '[tool."poetry.core"]' in content:
+                        return "poetry"
+            except Exception:
+                continue
+
+    return None
+
+
+def _get_pip_command_base() -> List[str]:
+    """Get the appropriate pip command base for the current environment.
+
+    Returns:
+        List of command parts to run pip
+        (e.g., ["poetry", "run", "pip"] or [sys.executable, "-m", "pip"])
+
+    """
+    package_manager = _detect_package_manager()
+    if package_manager == "poetry":
+        # Use poetry run pip in Poetry environments
+        return ["poetry", "run", "pip"]
+    else:
+        # Use sys.executable -m pip for regular Python environments
+        return [sys.executable, "-m", "pip"]
+
+
+def _get_pip_command() -> List[str]:
+    """Get the appropriate pip install command for the current environment.
+
+    Returns:
+        List of command parts to run pip install
+
+    """
+    cmd = _get_pip_command_base()
+    cmd.append("install")
+    return cmd
 
 
 class PluginInstaller:
@@ -68,19 +193,33 @@ class PluginInstaller:
             ):
                 return revision
 
-        url = direct_url_data.get("url", "")
-        if "@" in url and "github.com" in url:
-            tag = url.split("@")[1].split("#")[0]
-            if "." in tag or tag in ["main", "master", "develop"]:
-                return tag
+        if url := direct_url_data.get("url", ""):
+            try:
+                # Parse URL properly instead of using string splits
+                parsed = urlparse(url)
+                if parsed.scheme and "@" in parsed.netloc:
+                    # Extract tag/revision from netloc (e.g., git+https://...@tag)
+                    netloc_parts = parsed.netloc.rsplit("@", 1)
+                    if len(netloc_parts) == 2:
+                        tag = netloc_parts[1]
+                        # Validate tag is safe
+                        if "." in tag or tag in ["main", "master", "develop"]:
+                            # Additional validation: tag should be alphanumeric
+                            # or contain dots/hyphens
+                            if re.match(r"^[a-zA-Z0-9._-]+$", tag):
+                                return tag
+            except Exception:
+                LOGGER.debug("Failed to parse URL: %s", url)
         return None
 
     def _get_source_version_from_dist_info(self, package_name: str) -> Optional[str]:
         """Get source version from pip's .dist-info/direct_url.json file."""
         # Try pip show to find location
         try:
+            cmd = _get_pip_command_base()
+            cmd.extend(["show", package_name])
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "show", package_name],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -139,8 +278,10 @@ class PluginInstaller:
 
         # Last resort: pip freeze
         try:
+            cmd = _get_pip_command_base()
+            cmd.append("freeze")
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "freeze"],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -148,11 +289,28 @@ class PluginInstaller:
             if result.returncode == 0:
                 for line in result.stdout.split("\n"):
                     if package_name.lower() in line.lower() and "@ git+" in line:
-                        git_part = line.split("@ git+")[1]
-                        if "@" in git_part:
-                            tag = git_part.split("@")[1].split("#")[0]
-                            if "." in tag or tag in ["main", "master", "develop"]:
-                                return tag
+                        # Parse git URL properly
+                        try:
+                            # Extract git URL from pip freeze line
+                            # Format: package==version @ git+https://...@tag#subdirectory=...
+                            if "@ git+" in line:
+                                git_url_part = line.split("@ git+", 1)[1]
+                                parsed = urlparse(f"git+{git_url_part}")
+                                if "@" in parsed.netloc:
+                                    netloc_parts = parsed.netloc.rsplit("@", 1)
+                                    if len(netloc_parts) == 2:
+                                        tag = netloc_parts[1]
+                                        # Validate tag is safe
+                                        if (
+                                            "." in tag
+                                            or tag in ["main", "master", "develop"]
+                                        ) and re.match(r"^[a-zA-Z0-9._-]+$", tag):
+                                            return tag
+                        except Exception:
+                            LOGGER.debug(
+                                "Failed to parse git URL from pip freeze line: %s", line
+                            )
+                            continue
         except Exception:
             pass
         return None
@@ -195,21 +353,71 @@ class PluginInstaller:
         return result
 
     def _get_plugin_source(self, plugin_name: str) -> str:
-        """Get the installation source for a plugin from acapy-plugins repository."""
+        """Get the installation source for a plugin from acapy-plugins repository.
+
+        Args:
+            plugin_name: The plugin name (must be validated before calling)
+
+        Returns:
+            Git URL for installing the plugin
+
+        Raises:
+            ValueError: If plugin_name is invalid or unsafe
+
+        """
+        # Validate plugin name to prevent URL injection
+        if not _validate_plugin_name(plugin_name):
+            raise ValueError(
+                f"Invalid plugin name: '{plugin_name}'. "
+                "Plugin names must contain only alphanumeric characters, "
+                "underscores, hyphens, and dots, and must start with a letter "
+                "or underscore."
+            )
+
+        # Sanitize version if provided
         version_to_use = (
             self.plugin_version if self.plugin_version is not None else __version__
         )
+        version_to_use = _sanitize_url_component(str(version_to_use))
+
+        # Sanitize plugin name (though it should already be valid)
+        sanitized_plugin_name = _sanitize_url_component(plugin_name)
+
+        # Construct URL with validated and sanitized components
         return (
-            f"git+https://github.com/openwallet-foundation/acapy-plugins@{version_to_use}"
-            f"#subdirectory={plugin_name}"
+            f"git+{PLUGIN_REPO_URL}@{version_to_use}#subdirectory={sanitized_plugin_name}"
         )
 
     def _install_plugin(
         self, plugin_source: str, plugin_name: str = None, upgrade: bool = False
     ) -> bool:
-        """Install a plugin using pip."""
+        """Install a plugin using pip or poetry run pip."""
         try:
-            cmd = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
+            # Extract version from source for logging
+            version_info = ""
+            if "@" in plugin_source:
+                parts = plugin_source.split("@")
+                if len(parts) > 1:
+                    version_part = parts[1].split("#")[0] if "#" in parts[1] else parts[1]
+                    version_info = f" (version: {version_part})"
+
+            # Log before installation
+            if upgrade:
+                LOGGER.info(
+                    "Upgrading plugin '%s'%s",
+                    plugin_name or plugin_source,
+                    version_info,
+                )
+            else:
+                LOGGER.info(
+                    "Installing plugin '%s'%s",
+                    plugin_name or plugin_source,
+                    version_info,
+                )
+
+            # Detect package manager and use appropriate command
+            cmd = _get_pip_command()
+            cmd.extend(["--no-cache-dir"])
             if upgrade:
                 cmd.extend(["--upgrade", "--force-reinstall", "--no-deps"])
             cmd.append(plugin_source)
@@ -218,14 +426,20 @@ class PluginInstaller:
 
             if result.returncode == 0:
                 action = "Upgraded" if upgrade else "Installed"
-                LOGGER.info("%s plugin: %s", action, plugin_name or plugin_source)
+                LOGGER.info(
+                    "Successfully %s plugin '%s'%s",
+                    action.lower(),
+                    plugin_name or plugin_source,
+                    version_info,
+                )
                 return True
             else:
                 action = "upgrade" if upgrade else "install"
                 LOGGER.error(
-                    "Failed to %s plugin '%s': %s",
+                    "Failed to %s plugin '%s'%s: %s",
                     action,
                     plugin_name or plugin_source,
+                    version_info,
                     result.stderr,
                 )
                 return False
@@ -241,12 +455,24 @@ class PluginInstaller:
         If not installed or version doesn't match, attempt to install it.
 
         Args:
-            plugin_name: The name of the plugin module
+            plugin_name: The name of the plugin module (must be validated)
 
         Returns:
             True if plugin is available (was already installed or successfully installed)
 
+        Raises:
+            ValueError: If plugin_name is invalid or unsafe
+
         """
+        # Validate plugin name before processing
+        if not _validate_plugin_name(plugin_name):
+            raise ValueError(
+                f"Invalid plugin name: '{plugin_name}'. "
+                "Plugin names must contain only alphanumeric characters, "
+                "underscores, hyphens, and dots, and must start with a letter "
+                "or underscore."
+            )
+
         # Get target version
         target_version = (
             self.plugin_version if self.plugin_version is not None else __version__
@@ -282,13 +508,66 @@ class PluginInstaller:
                 )
                 normalized_target = target_version.split("+")[0].split("-")[0].strip()
                 if normalized_installed == normalized_target:
+                    LOGGER.debug(
+                        "Plugin '%s' already installed with matching version: %s",
+                        plugin_name,
+                        installed_package_version,
+                    )
                     self.installed_plugins.add(plugin_name)
                     return True
+            # Version check inconclusive - reinstall to be safe
+            LOGGER.info(
+                "Plugin '%s' exists but version check inconclusive. "
+                "Reinstalling to ensure correct version (%s)...",
+                plugin_name,
+                target_version,
+            )
         elif plugin_exists and self.plugin_version:
             # Explicit version specified - check if source version matches
             if installed_source_version and installed_source_version == target_version:
+                LOGGER.info(
+                    "Plugin '%s' already installed from source version %s "
+                    "(package version: %s)",
+                    plugin_name,
+                    installed_source_version,
+                    installed_package_version or "unknown",
+                )
                 self.installed_plugins.add(plugin_name)
                 return True
+            # Version mismatch detected - log upgrade details
+            if installed_source_version:
+                LOGGER.info(
+                    "Plugin '%s' source version mismatch detected: "
+                    "installed=%s, target=%s. Upgrading plugin...",
+                    plugin_name,
+                    installed_source_version,
+                    target_version,
+                )
+            elif installed_package_version:
+                # Source version not available, but package version exists
+                # Still upgrade since we want specific git tag/version
+                LOGGER.info(
+                    "Plugin '%s' needs upgrade: current package version=%s, "
+                    "target version=%s. Upgrading plugin...",
+                    plugin_name,
+                    installed_package_version,
+                    target_version,
+                )
+            else:
+                # Can't determine version, upgrade to ensure correct version
+                LOGGER.info(
+                    "Plugin '%s' is installed but version cannot be determined. "
+                    "Upgrading to ensure correct version (%s)...",
+                    plugin_name,
+                    target_version,
+                )
+        elif not plugin_exists:
+            # Plugin doesn't exist - install it
+            LOGGER.info(
+                "Plugin '%s' not found. Installing version %s...",
+                plugin_name,
+                target_version,
+            )
 
         if not self.auto_install:
             LOGGER.warning(
