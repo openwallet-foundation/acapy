@@ -2276,6 +2276,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         with (
             mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
             mock.patch.object(
+                V20PresExRecord, "delete_record", autospec=True
+            ) as delete_ex,
+            mock.patch.object(
                 V20PresExRecord,
                 "retrieve_by_tag_filter",
                 mock.CoroutineMock(),
@@ -2295,6 +2298,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 {"connection_id": connection_id},
             )
             save_ex.assert_called_once()
+            delete_ex.assert_not_called()
 
         assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
 
@@ -2316,3 +2320,50 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
 
             with self.assertRaises(StorageNotFoundError):
                 await self.manager.receive_problem_report(problem, connection_id)
+
+    async def test_receive_problem_report_removal(self):
+        connection_id = "connection-id"
+        stored_exchange = V20PresExRecord(
+            pres_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20PresExRecord.INITIATOR_SELF,
+            role=V20PresExRecord.ROLE_VERIFIER,
+            state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
+            thread_id="dummy-thid",
+            auto_remove_on_failure=True,
+        )
+        problem = V20PresProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": test_module.ProblemReportReason.ABANDONED.value,
+            }
+        )
+
+        with (
+            mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20PresExRecord, "delete_record", autospec=True
+            ) as delete_ex,
+            mock.patch.object(
+                V20PresExRecord,
+                "retrieve_by_tag_filter",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+            mock.patch.object(
+                self.profile,
+                "session",
+                mock.MagicMock(return_value=self.profile.session()),
+            ) as session,
+        ):
+            retrieve_ex.return_value = stored_exchange
+
+            await self.manager.receive_problem_report(problem, connection_id)
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": problem._thread_id},
+                {"connection_id": connection_id},
+            )
+            save_ex.assert_called_once()
+            delete_ex.assert_called_once()
+
+        assert stored_exchange.state == V20PresExRecord.STATE_ABANDONED
