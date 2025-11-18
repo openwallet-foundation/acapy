@@ -1212,8 +1212,9 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
     pres_ex_record.auto_remove = body.get("auto_remove")
-    if body.get("auto_remove_on_failure") is None:
-        pres_ex_record.auto_remove_on_failure = profile.settings.get("no_preserve_failed_exchange_records")
+    config_remove_failed = profile.settings.get("no_preserve_failed_exchange_records")
+    if config_remove_failed is None:
+        pres_ex_record.auto_remove_on_failure = config_remove_failed
     else:
         pres_ex_record.auto_remove_on_failure = body.get("auto_remove_on_failure")
     pres_manager = V20PresManager(profile)
@@ -1304,10 +1305,11 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 
     auto_remove = body.get("auto_remove")
     auto_remove_on_failure = body.get("auto_remove_on_failure")
+    config_remove_failed = profile.settings.get("no_preserve_failed_exchange_records")
     if auto_remove is None:
         auto_remove = not profile.settings.get("preserve_exchange_records")
     if auto_remove_on_failure is None:
-        auto_remove_on_failure = profile.settings.get("no_preserve_failed_exchange_records")
+        auto_remove_on_failure = config_remove_failed
 
     pres_ex_record.auto_remove = auto_remove
     pres_ex_record.auto_remove_on_failure = auto_remove_on_failure
