@@ -53,7 +53,7 @@ From the root of the repository folder, run:
 
 Leave off the arguments to get usage information. Date format is `YYYY-MM-DD`, and the branch defaults to `main` if not specified. The date should be the day before the last release, so that you get all of the PRs merged since the last release.
 
-The output should look like this -- and what you see in [CHANGELOG.md](CHANGELOG.md):
+The output should look like this -- which matches what is needed in [CHANGELOG.md](CHANGELOG.md):
 
 ```text
 
