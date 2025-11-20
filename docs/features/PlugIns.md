@@ -72,6 +72,78 @@ The attributes are:
 - `minimum_minor_version` - specifies the minimum supported version (if a lower version is installed in another agent)
 - `path` - specifies the sub-path within the package for this version
 
+## Dynamic Plugin Installation
+
+ACA-Py supports automatic installation of plugins at runtime from the acapy-plugins repository, eliminating the need to pre-install plugins in Docker images. This feature uses the `PluginInstaller` utility to automatically install missing plugins before loading them.
+
+### Auto-Install Configuration
+
+Plugins are automatically installed from the acapy-plugins repository using the `--auto-install-plugins` flag:
+
+- **Enable with current ACA-Py version** (flag without value):
+  ```bash
+  aca-py start --plugin webvh --auto-install-plugins
+  ```
+  Installs from: `git+https://github.com/openwallet-foundation/acapy-plugins@{current-version}#subdirectory=webvh`
+
+- **Enable with specific version** (flag with version):
+  ```bash
+  aca-py start --plugin webvh --auto-install-plugins 1.3.2
+  ```
+  Installs from: `git+https://github.com/openwallet-foundation/acapy-plugins@1.3.2#subdirectory=webvh`
+
+- **Disabled by default** (flag not present):
+  ```bash
+  aca-py start --plugin webvh
+  ```
+  Plugins must be pre-installed.
+
+### Installation Logging
+
+When plugins are installed, ACA-Py logs detailed information including:
+- Plugin name and version being installed
+- Installation source
+- Success or failure status
+
+Example log output:
+```
+INFO: Auto-installing plugins from acapy-plugins repository: webvh, connection_update (current ACA-Py version (1.4.0))
+INFO: Installing plugin: webvh (version: 1.4.0)
+INFO: Successfully installed plugin: webvh (version: 1.4.0)
+```
+
+### Checking Installed Plugin Versions
+
+You can check the installed version of a plugin in several ways:
+
+**1. Via Admin API (after ACA-Py is running):**
+```bash
+curl http://localhost:8020/server/plugins
+```
+
+The response includes plugin versions:
+```json
+{
+  "result": ["webvh"],
+  "external": [
+    {
+      "name": "webvh",
+      "package_version": "0.1.0",
+      "source_version": "1.3.1"
+    }
+  ]
+}
+```
+
+**2. Using Python:**
+```python
+from acapy_agent.utils.plugin_installer import get_plugin_version
+
+version_info = get_plugin_version("webvh")
+print(f"webvh package version: {version_info['package_version']}")
+print(f"webvh source version: {version_info.get('source_version')}")
+```
+
 ## Loading ACA-Py Plug-Ins at Runtime
 
 The load sequence for a plug-in (the "Startup" class depends on how ACA-Py is running - `upgrade`, `provision` or `start`):
