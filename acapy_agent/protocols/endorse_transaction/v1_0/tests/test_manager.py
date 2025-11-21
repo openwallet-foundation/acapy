@@ -17,7 +17,7 @@ from .....utils.testing import create_test_profile
 from .....wallet.base import BaseWallet
 from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.key_type import ED25519, KeyTypes
-from ....issue_credential.v1_0.tests import REV_REG_ID
+from ....issue_credential.v2_0.tests import REV_REG_ID
 from ..manager import TransactionManager, TransactionManagerError
 from ..models.transaction_record import TransactionRecord
 from ..transaction_jobs import TransactionJob
