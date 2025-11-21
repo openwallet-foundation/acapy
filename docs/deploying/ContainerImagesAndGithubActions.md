@@ -40,7 +40,7 @@ above variants it is. Other tags may also be generated for use by developers.
 
 Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged) to see a current list of the tagged images available for ACA-Py in.
 
-The following is the ACA-Py comntainer images tagging format. In each of the following, `pyV.vv` is the base Python image being used (e.g. `py3.12`):
+The following is the ACA-Py comntainer images tagging format. In each of the following, `pyV.vv` is the base Python image being used (e.g. `py3.13`):
 
 - Regular Releases: `pyV.vv-X.Y.Z` where `X.Y.Z` is the ACA-Py release.  The `Z` component may have an `rcN` appended when the tag is for a Release Candidate.
 - Nightlies: `pyV-vv-nightly-YYYY-MM-DD` and `pyV-vv-nightly`
