@@ -128,9 +128,8 @@ class PostgresSession(AbstractDatabaseSession):
         )
 
     async def _get_profile_id(self, profile_name: str) -> int:
-        conn = await self.pool.getconn()
         try:
-            async with conn.cursor() as cursor:
+            async with self.conn.cursor() as cursor:
                 await cursor.execute(
                     f"SELECT id FROM {self.schema_context.qualify_table('profiles')} "
                     f"WHERE name = %s",
@@ -153,9 +152,6 @@ class PostgresSession(AbstractDatabaseSession):
                 message=f"Failed to retrieve profile ID for '{profile_name}'",
                 actual_error=str(e),
             )
-        finally:
-            await conn.rollback()
-            await self.pool.putconn(conn)
 
     async def __aenter__(self):
         """Enter async context manager."""
