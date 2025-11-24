@@ -344,7 +344,8 @@ class PluginInstaller:
                 if hasattr(module, "__version__"):
                     package_version = str(module.__version__)
             except (ImportError, AttributeError, Exception):
-                # Catch all exceptions to prevent any side effects from breaking version lookup
+                # Catch all exceptions to prevent any side effects from breaking
+                # version lookup
                 pass
 
         if not package_version:

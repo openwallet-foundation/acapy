@@ -12,10 +12,12 @@ from ..utils.stats import Collector
 from ..version import __version__
 from .decorators.auth import admin_authentication
 
+
 # Lazy import to avoid import-time issues
 def _get_plugin_version(plugin_name: str):
     """Lazy import wrapper for get_plugin_version."""
     from ..utils.plugin_installer import get_plugin_version
+
     return get_plugin_version(plugin_name)
 
 
@@ -121,7 +123,10 @@ async def config_handler(request: web.BaseRequest):
     config = {
         k: (
             request.app["context"].settings[k]
-            if (isinstance(request.app["context"].settings[k], (str, int)) or request.app["context"].settings[k] is None)
+            if (
+                isinstance(request.app["context"].settings[k], (str, int))
+                or request.app["context"].settings[k] is None
+            )
             else request.app["context"].settings[k].copy()
         )
         for k in request.app["context"].settings
