@@ -19,7 +19,6 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....didcomm_prefix import DIDCommPrefix
-from ....issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...indy import pres_exch_handler as test_indy_util_module
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
@@ -1317,7 +1316,7 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
             )
             save_ex.assert_called_once()
 
-            assert ret_exchange.state == V20CredExRecord.STATE_ABANDONED
+            assert ret_exchange.state == "abandoned"
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
