@@ -273,8 +273,10 @@ class PluginInstaller:
                                 )
                                 if source_version:
                                     return source_version
-                        except (json.JSONDecodeError, IOError):
-                            pass
+                        except (json.JSONDecodeError, IOError) as e:
+                            LOGGER.debug(
+                                "Failed to read or parse direct_url.json for %s: %s", direct_url_file, e
+                            )
 
         # Last resort: pip freeze
         try:
