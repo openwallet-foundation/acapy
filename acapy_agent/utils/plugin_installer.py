@@ -957,6 +957,90 @@ class PluginInstaller:
             )
             return False
 
+    def _check_and_handle_existing_plugin(
+        self,
+        plugin_name: str,
+        installed_package_version: Optional[str],
+        installed_source_version: Optional[str],
+        target_version: str,
+    ) -> bool:
+        """Check if existing plugin version matches and handle accordingly.
+
+        Args:
+            plugin_name: The name of the plugin module
+            installed_package_version: Installed package version
+            installed_source_version: Installed source version
+            target_version: Target version to match
+
+        Returns:
+            True if plugin is already correctly installed, False if needs installation
+
+        """
+        if not self.plugin_version:
+            # No explicit version - check package version match
+            if self._check_version_matches_implicit(
+                plugin_name, installed_package_version, target_version
+            ):
+                self.installed_plugins.add(plugin_name)
+                return True
+            LOGGER.info(
+                "Plugin '%s' exists but version check inconclusive. "
+                "Reinstalling to ensure correct version (%s)...",
+                plugin_name,
+                target_version,
+            )
+        else:
+            # Explicit version - check source version match
+            if self._check_version_matches_explicit(
+                plugin_name,
+                installed_source_version,
+                installed_package_version,
+                target_version,
+            ):
+                self.installed_plugins.add(plugin_name)
+                return True
+            self._log_version_mismatch(
+                plugin_name,
+                installed_source_version,
+                installed_package_version,
+                target_version,
+            )
+        return False
+
+    def _attempt_plugin_installation(
+        self, plugin_name: str, plugin_exists: bool, target_version: str
+    ) -> bool:
+        """Attempt to install or upgrade a plugin.
+
+        Args:
+            plugin_name: The name of the plugin module
+            plugin_exists: Whether plugin already exists
+            target_version: Target version
+
+        Returns:
+            True if installation succeeded, False otherwise
+
+        """
+        if not self.auto_install:
+            LOGGER.warning(
+                "Plugin '%s' is not installed and auto-install is disabled", plugin_name
+            )
+            return False
+
+        plugin_source = self._get_plugin_source(plugin_name)
+        if self._install_plugin(
+            plugin_source, plugin_name=plugin_name, upgrade=plugin_exists
+        ) and self._verify_plugin_import(plugin_name):
+            self.installed_plugins.add(plugin_name)
+            return True
+
+        LOGGER.error(
+            "Failed to install plugin '%s' (version %s)",
+            plugin_name,
+            target_version,
+        )
+        return False
+
     def ensure_plugin_installed(self, plugin_name: str) -> bool:
         """Ensure a plugin is installed with the correct version.
 
@@ -994,35 +1078,13 @@ class PluginInstaller:
 
         # Check if version matches (different logic for explicit vs implicit versions)
         if plugin_exists:
-            if not self.plugin_version:
-                # No explicit version - check package version match
-                if self._check_version_matches_implicit(
-                    plugin_name, installed_package_version, target_version
-                ):
-                    self.installed_plugins.add(plugin_name)
-                    return True
-                LOGGER.info(
-                    "Plugin '%s' exists but version check inconclusive. "
-                    "Reinstalling to ensure correct version (%s)...",
-                    plugin_name,
-                    target_version,
-                )
-            else:
-                # Explicit version - check source version match
-                if self._check_version_matches_explicit(
-                    plugin_name,
-                    installed_source_version,
-                    installed_package_version,
-                    target_version,
-                ):
-                    self.installed_plugins.add(plugin_name)
-                    return True
-                self._log_version_mismatch(
-                    plugin_name,
-                    installed_source_version,
-                    installed_package_version,
-                    target_version,
-                )
+            if self._check_and_handle_existing_plugin(
+                plugin_name,
+                installed_package_version,
+                installed_source_version,
+                target_version,
+            ):
+                return True
         else:
             LOGGER.info(
                 "Plugin '%s' not found. Installing version %s...",
@@ -1030,27 +1092,9 @@ class PluginInstaller:
                 target_version,
             )
 
-        if not self.auto_install:
-            LOGGER.warning(
-                "Plugin '%s' is not installed and auto-install is disabled", plugin_name
-            )
-            return False
-
-        # Attempt installation
-        plugin_source = self._get_plugin_source(plugin_name)
-        if self._install_plugin(
-            plugin_source, plugin_name=plugin_name, upgrade=plugin_exists
-        ):
-            if self._verify_plugin_import(plugin_name):
-                self.installed_plugins.add(plugin_name)
-                return True
-
-        LOGGER.error(
-            "Failed to install plugin '%s' (version %s)",
-            plugin_name,
-            target_version,
+        return self._attempt_plugin_installation(
+            plugin_name, plugin_exists, target_version
         )
-        return False
 
     def ensure_plugins_installed(self, plugin_names: List[str]) -> List[str]:
         """Ensure multiple plugins are installed.
