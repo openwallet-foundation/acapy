@@ -1940,4 +1940,5 @@ async def cred_revoked(profile: Profile, event: EventWithMetadata):
             await cred_ex_record.save(txn, reason="revoke credential")
             await txn.commit()
         except StorageNotFoundError:
+            # ignore if no such record
             pass
