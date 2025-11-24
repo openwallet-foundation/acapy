@@ -311,8 +311,8 @@ class PluginInstaller:
                                 "Failed to parse git URL from pip freeze line: %s", line
                             )
                             continue
-        except Exception:
-            pass
+        except Exception as e:
+            LOGGER.debug("Exception occurred while running pip freeze to get source version for %s: %s", package_name, e, exc_info=True)
         return None
 
     def _get_installed_plugin_version(self, plugin_name: str) -> Optional[dict]:
