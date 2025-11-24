@@ -98,6 +98,8 @@ def _detect_package_manager() -> Optional[str]:
         if project_root not in search_paths:
             search_paths.append(project_root)
     except Exception:
+        # It is safe to ignore errors here; failure to import the module or resolve its path
+        # simply means we cannot add an extra search path for pyproject.toml detection.
         pass
 
     # Check each potential project root for pyproject.toml
