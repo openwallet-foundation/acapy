@@ -80,7 +80,7 @@ def _detect_package_manager() -> Optional[str]:
             # Check if pyproject.toml exists nearby (Poetry projects have it at root)
             parent = venv_path_obj.parent
             if (parent / "pyproject.toml").exists() or (
-                venv_path_obj / ".." / ".." / ".." / "pyproject.toml"
+                (venv_path_obj.parent.parent.parent / "pyproject.toml")
             ).exists():
                 return "poetry"
 
