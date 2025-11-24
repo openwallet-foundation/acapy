@@ -247,8 +247,12 @@ class PluginInstaller:
                                         )
                                         if source_version:
                                             return source_version
-                                except (json.JSONDecodeError, IOError):
-                                    pass
+                                except (json.JSONDecodeError, IOError) as e:
+                                    LOGGER.warning(
+                                        "Failed to read or parse direct_url.json for package '%s': %s",
+                                        package_name,
+                                        e,
+                                    )
         except Exception as e:
             LOGGER.exception(f"Error while trying to locate direct_url.json for package '{package_name}': {e}")
 
