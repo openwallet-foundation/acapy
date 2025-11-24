@@ -249,8 +249,8 @@ class PluginInstaller:
                                             return source_version
                                 except (json.JSONDecodeError, IOError):
                                     pass
-        except Exception:
-            pass
+        except Exception as e:
+            LOGGER.exception(f"Error while trying to locate direct_url.json for package '{package_name}': {e}")
 
         # Fallback: search distributions
         for dist in distributions():
