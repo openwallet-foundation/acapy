@@ -398,7 +398,7 @@ class PluginInstaller:
         )
 
     def _install_plugin(
-        self, plugin_source: str, plugin_name: str = None, upgrade: bool = False
+        self, plugin_source: str, plugin_name: str, upgrade: bool = False
     ) -> bool:
         """Install a plugin using pip or poetry run pip."""
         try:
