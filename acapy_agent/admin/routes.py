@@ -1,5 +1,6 @@
 """Admin server routes."""
 
+import logging
 import re
 
 from aiohttp import web
@@ -11,6 +12,8 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..utils.stats import Collector
 from ..version import __version__
 from .decorators.auth import admin_authentication
+
+LOGGER = logging.getLogger(__name__)
 
 
 # Lazy import to avoid import-time issues
@@ -95,6 +98,9 @@ async def plugins_handler(request: web.BaseRequest):
                 version_info = _get_plugin_version(plugin_name) or {}
             except Exception:
                 # If version lookup fails, just include plugin without version info
+                LOGGER.debug(
+                    "Failed to get version info for plugin %s", plugin_name, exc_info=True
+                )
                 version_info = {}
             external_plugins.append(
                 {

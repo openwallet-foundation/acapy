@@ -74,12 +74,6 @@ async def run_app(argv: Sequence[str] = None):
                 if plugin_version
                 else f"current ACA-Py version ({acapy_version})"
             )
-            # Always print to console for visibility
-            plugins_str = ", ".join(external_plugins)
-            print(
-                f"Auto-installing plugins from acapy-plugins repository: "
-                f"{plugins_str} ({version_info})"
-            )
             LOGGER.info(
                 "Auto-installing plugins from acapy-plugins repository: %s (%s)",
                 ", ".join(external_plugins),
@@ -94,13 +88,11 @@ async def run_app(argv: Sequence[str] = None):
 
             if failed_plugins:
                 LOGGER.error(
-                    "Failed to install the following plugins: %s",
-                    ", ".join(failed_plugins),
-                )
-                LOGGER.error(
+                    "Failed to install the following plugins: %s. "
                     "Please ensure these plugins are available in the "
                     "acapy-plugins repository or install them manually before "
-                    "starting ACA-Py."
+                    "starting ACA-Py.",
+                    ", ".join(failed_plugins),
                 )
                 sys.exit(1)
 
