@@ -92,15 +92,10 @@ def _validate_plugin_source(plugin_source: str) -> bool:
                 if "@" in url_with_version
                 else url_with_version.split("#")[0]
             )
-            # Should start with http:// or https:// (prefer https for security)
+            # Must start with https:// for security
             if url_part.startswith("https://"):
                 parsed = urlparse(url_part)
                 # Must have a valid netloc (domain)
-                if parsed.netloc:
-                    return True
-            # Also allow http:// for compatibility, but prefer https
-            elif url_part.startswith("http://"):
-                parsed = urlparse(url_part)
                 if parsed.netloc:
                     return True
         except Exception:
