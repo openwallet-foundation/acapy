@@ -727,6 +727,7 @@ class TestPluginInstaller(TestCase):
         mock_install.return_value = True
 
         result = installer.ensure_plugin_installed("test_plugin")
+        self.assertTrue(result)
         # Should reinstall due to version mismatch
         mock_install.assert_called_once()
 
