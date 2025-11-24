@@ -332,11 +332,19 @@ class PluginInstaller:
 
         if not package_version:
             # Try __version__ attribute
+            # Note: We avoid importing the module if possible to prevent side effects
+            # Only try this as a last resort
             try:
-                module = importlib.import_module(plugin_name)
+                # Check if module is already loaded before importing
+                if plugin_name in sys.modules:
+                    module = sys.modules[plugin_name]
+                else:
+                    # Only import if not already loaded to avoid side effects
+                    module = importlib.import_module(plugin_name)
                 if hasattr(module, "__version__"):
                     package_version = str(module.__version__)
-            except (ImportError, AttributeError):
+            except (ImportError, AttributeError, Exception):
+                # Catch all exceptions to prevent any side effects from breaking version lookup
                 pass
 
         if not package_version:
