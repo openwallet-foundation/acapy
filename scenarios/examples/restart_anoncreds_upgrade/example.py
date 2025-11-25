@@ -60,7 +60,7 @@ async def connect_agents_and_issue_credentials(
         inviter_cred_def.credential_definition_id,
     )
 
-    # Present the the credential's attributes
+    # Present the credential's attributes
     print(">>> present proof ...")
     await anoncreds_present_proof_v2(
         invitee,
@@ -413,7 +413,7 @@ async def main():
             Controller(base_url=ALICE) as alice,
             Controller(base_url=BOB_ANONCREDS) as bob,
         ):
-            # Present the the credential's attributes
+            # Present the credential's attributes
             print(">>> present proof ... again ...")
             await anoncreds_present_proof_v2(
                 bob,
@@ -438,7 +438,7 @@ async def main():
             Controller(base_url=ALICE) as alice,
             Controller(base_url=BOB_ASKAR_ANON) as bob,
         ):
-            # Present the the credential's attributes
+            # Present the credential's attributes
             print(">>> present proof ... again ...")
             await anoncreds_present_proof_v2(
                 bob,
@@ -463,7 +463,7 @@ async def main():
             Controller(base_url=ALICE) as alice,
             Controller(base_url=BOB_ASKAR) as bob,
         ):
-            # Present the the credential's attributes
+            # Present the credential's attributes
             print(">>> present proof ... again ...")
             await anoncreds_present_proof_v2(
                 bob,

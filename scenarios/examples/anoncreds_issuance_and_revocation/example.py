@@ -133,7 +133,7 @@ async def main():
             schema_name=schema_name,
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         _, verifier_ex = await anoncreds_present_proof_v2(
             holder_anoncreds,
             issuer,
@@ -160,7 +160,7 @@ async def main():
 
         await holder_anoncreds.record(topic="revocation-notification")
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         now = int(datetime.now().timestamp())
         _, verifier_ex = await anoncreds_present_proof_v2(
             holder_anoncreds,
@@ -226,7 +226,7 @@ async def main():
             schema_name=schema_name,
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         _, verifier_ex = await anoncreds_present_proof_v2(
             holder_indy,
             issuer,
