@@ -69,6 +69,7 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
+        auto_remove_on_failure: bool = False,
         error_msg: Optional[str] = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
         cred_id_stored: Optional[
@@ -95,6 +96,7 @@ class V20CredExRecord(BaseExchangeRecord):
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
+        self.auto_remove_on_failure = auto_remove_on_failure
         self.error_msg = error_msg
 
     @property
@@ -225,6 +227,7 @@ class V20CredExRecord(BaseExchangeRecord):
                     "auto_offer",
                     "auto_issue",
                     "auto_remove",
+                    "auto_remove_on_failure",
                     "error_msg",
                     "trace",
                 )
@@ -424,6 +427,16 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         metadata={
             "description": (
                 "Issuer choice to remove this credential exchange record when complete"
+            ),
+            "example": False,
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Issuer choice to remove this credential exchange record when failed"
             ),
             "example": False,
         },

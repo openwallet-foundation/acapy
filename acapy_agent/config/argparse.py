@@ -1293,6 +1293,13 @@ class ProtocolGroup(ArgumentGroup):
             "exchange has completed.",
         )
         parser.add_argument(
+            "--no-preserve-failed-exchange-records",
+            action="store_true",
+            env_var="ACAPY_NO_PRESERVE_FAILED_EXCHANGE_RECORDS",
+            help="Remove failed credential and presentation exchange records "
+            "upon failure.",
+        )
+        parser.add_argument(
             "--emit-new-didcomm-prefix",
             action="store_true",
             env_var="ACAPY_EMIT_NEW_DIDCOMM_PREFIX",

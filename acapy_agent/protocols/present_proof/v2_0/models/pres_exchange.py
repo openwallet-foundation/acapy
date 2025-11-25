@@ -67,6 +67,7 @@ class V20PresExRecord(BaseExchangeRecord):
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
         by_format: Optional[Mapping] = None,  # backward compat: BaseRecord.FromStorage()
         auto_remove: bool = False,
+        auto_remove_on_failure: bool = False,
         **kwargs,
     ):
         """Initialize a new PresExRecord."""
@@ -85,6 +86,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self.auto_verify = auto_verify
         self.error_msg = error_msg
         self.auto_remove = auto_remove
+        self.auto_remove_on_failure = auto_remove_on_failure
 
     @property
     def pres_ex_id(self) -> str:
@@ -225,6 +227,7 @@ class V20PresExRecord(BaseExchangeRecord):
                     "error_msg",
                     "trace",
                     "auto_remove",
+                    "auto_remove_on_failure",
                 )
             },
             **{
@@ -362,6 +365,16 @@ class V20PresExRecordSchema(BaseExchangeSchema):
             "description": (
                 "Verifier choice to remove this presentation exchange record when"
                 " complete"
+            ),
+            "example": False,
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Verifier choice to remove this presentation exchange record when failed"
             ),
             "example": False,
         },

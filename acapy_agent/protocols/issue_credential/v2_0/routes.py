@@ -332,6 +332,15 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
             )
         },
     )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
+            )
+        },
+    )
     comment = fields.Str(
         required=False,
         allow_none=True,
@@ -390,6 +399,15 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
             "description": (
                 "Whether to remove the credential exchange record on completion"
                 " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
             )
         },
     )
@@ -509,6 +527,16 @@ class V20CredRequestRequestSchema(OpenAPISchema):
             "description": (
                 "Whether to remove the credential exchange record on completion"
                 " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
             )
         },
     )
@@ -735,6 +763,10 @@ async def credential_exchange_create(request: web.BaseRequest):
     auto_remove = body.get(
         "auto_remove", not profile.settings.get("preserve_exchange_records")
     )
+    auto_remove_on_failure = body.get(
+        "auto_remove_on_failure",
+        profile.settings.get("no_preserve_failed_exchange_records"),
+    )
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
@@ -763,6 +795,7 @@ async def credential_exchange_create(request: web.BaseRequest):
             connection_id=None,
             cred_proposal=cred_proposal,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
         )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1338,6 +1371,10 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     auto_remove = body.get(
         "auto_remove", not profile.settings.get("preserve_exchange_records")
     )
+    auto_remove_on_failure = body.get(
+        "auto_remove_on_failure",
+        profile.settings.get("no_preserve_failed_exchange_records"),
+    )
     trace_msg = body.get("trace")
     holder_did = body.get("holder_did")
 
@@ -1362,6 +1399,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
             cred_proposal=cred_proposal.serialize(),
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_HOLDER,
@@ -1433,9 +1471,16 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
         auto_remove = body.get(
             "auto_remove", not profile.settings.get("preserve_exchange_records")
         )
+        auto_remove_on_failure = body.get(
+            "auto_remove_on_failure",
+            profile.settings.get("no_preserve_failed_exchange_records"),
+        )
     except JSONDecodeError:
         holder_did = None
         auto_remove = not profile.settings.get("preserve_exchange_records")
+        auto_remove_on_failure = profile.settings.get(
+            "no_preserve_failed_exchange_records"
+        )
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
@@ -1479,6 +1524,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
         # assign the auto_remove flag from above...
         cred_ex_record.auto_remove = auto_remove
+        cred_ex_record.auto_remove_on_failure = auto_remove_on_failure
 
         cred_manager = V20CredManager(profile)
         cred_ex_record, cred_request_message = await cred_manager.create_request(
