@@ -303,6 +303,7 @@ class OobMessageProcessor:
             CRED_20_OFFER,
             PRESENTATION_REQUEST,
             PRES_20_REQUEST,
+            "issue-credential/1.0/offer-credential"
         ]
 
         supported_messages = [
