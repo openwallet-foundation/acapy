@@ -1,5 +1,6 @@
 """Admin server routes."""
 
+import logging
 import re
 
 from aiohttp import web
@@ -11,6 +12,16 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..utils.stats import Collector
 from ..version import __version__
 from .decorators.auth import admin_authentication
+
+LOGGER = logging.getLogger(__name__)
+
+
+# Lazy import to avoid import-time issues
+def _get_plugin_version(plugin_name: str):
+    """Lazy import wrapper for get_plugin_version."""
+    from ..utils.plugin_installer import get_plugin_version
+
+    return get_plugin_version(plugin_name)
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -71,12 +82,35 @@ async def plugins_handler(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The module list response
+        The module list response with plugin names and versions
 
     """
     registry = request.app["context"].inject_or(PluginRegistry)
     plugins = registry and sorted(registry.plugin_names) or []
-    return web.json_response({"result": plugins})
+
+    # Get versions for external plugins only (skip built-in acapy_agent plugins)
+    external_plugins = []
+    for plugin_name in plugins:
+        if not plugin_name.startswith("acapy_agent."):
+            # External plugin - try to get version info
+            # Wrap in try/except to prevent failures from affecting the endpoint
+            try:
+                version_info = _get_plugin_version(plugin_name) or {}
+            except Exception:
+                # If version lookup fails, just include plugin without version info
+                LOGGER.debug(
+                    "Failed to get version info for plugin %s", plugin_name, exc_info=True
+                )
+                version_info = {}
+            external_plugins.append(
+                {
+                    "name": plugin_name,
+                    "package_version": version_info.get("package_version", None),
+                    "source_version": version_info.get("source_version", None),
+                }
+            )
+
+    return web.json_response({"result": plugins, "external": external_plugins})
 
 
 @docs(tags=["server"], summary="Fetch the server configuration")
@@ -95,7 +129,10 @@ async def config_handler(request: web.BaseRequest):
     config = {
         k: (
             request.app["context"].settings[k]
-            if (isinstance(request.app["context"].settings[k], (str, int)))
+            if (
+                isinstance(request.app["context"].settings[k], (str, int))
+                or request.app["context"].settings[k] is None
+            )
             else request.app["context"].settings[k].copy()
         )
         for k in request.app["context"].settings
