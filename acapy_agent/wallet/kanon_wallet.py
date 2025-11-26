@@ -54,6 +54,16 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("Accessing session property")
         return self._session
 
+    def _get_dbstore_session(self) -> Optional[DBStoreSession]:
+        """Get existing DBStore session from ProfileSession if available.
+
+        This avoids creating new DBStore sessions when the ProfileSession
+        already has one open, which prevents connection pool exhaustion.
+        """
+        if hasattr(self._session, "dbstore_handle") and self._session.dbstore_handle:
+            return self._session.dbstore_handle
+        return None
+
     async def create_signing_key(
         self,
         key_type: KeyType,
@@ -318,6 +328,8 @@ class KanonWallet(BaseWallet):
             LOGGER.debug("Key already exists, proceeding")
 
         if session is None:
+            session = self._get_dbstore_session()
+        if session is None:
             async with self._session.store.session() as session:
                 return await self._create_local_did_impl(
                     did, verkey, metadata, method, key_type, session
@@ -408,6 +420,8 @@ class KanonWallet(BaseWallet):
         """
         LOGGER.debug("Entering store_did with did_info: %s", did_info)
         if session is None:
+            session = self._get_dbstore_session()
+        if session is None:
             async with self._session.store.session() as session:
                 return await self._store_did_impl(did_info, session)
         return await self._store_did_impl(did_info, session)
@@ -464,6 +478,8 @@ class KanonWallet(BaseWallet):
         """
         LOGGER.debug("Entering get_local_dids")
         if session is None:
+            session = self._get_dbstore_session()
+        if session is None:
             async with self._session.store.session() as session:
                 return await self._get_local_dids_impl(session)
         return await self._get_local_dids_impl(session)
@@ -502,6 +518,8 @@ class KanonWallet(BaseWallet):
             LOGGER.error("No DID provided")
             raise WalletNotFoundError("No identifier provided")
         if session is None:
+            session = self._get_dbstore_session()
+        if session is None:
             async with self._session.store.session() as session:
                 return await self._get_local_did_impl(did, session)
         return await self._get_local_did_impl(did, session)
@@ -534,6 +552,8 @@ class KanonWallet(BaseWallet):
 
         """
         LOGGER.debug("Entering get_local_did_for_verkey with verkey: %s", verkey)
+        if session is None:
+            session = self._get_dbstore_session()
         if session is None:
             async with self._session.store.session() as session:
                 return await self._get_local_did_for_verkey_impl(verkey, session)
@@ -589,6 +609,8 @@ class KanonWallet(BaseWallet):
             metadata,
         )
         if session is None:
+            session = self._get_dbstore_session()
+        if session is None:
             async with self._session.store.session() as session:
                 return await self._replace_local_did_metadata_impl(did, metadata, session)
         return await self._replace_local_did_metadata_impl(did, metadata, session)
@@ -628,6 +650,8 @@ class KanonWallet(BaseWallet):
 
         """
         LOGGER.debug("Entering get_public_did")
+        if session is None:
+            session = self._get_dbstore_session()
         if session is None:
             async with self._session.store.session() as session:
                 return await self._get_public_did_impl(session)
@@ -696,6 +720,8 @@ class KanonWallet(BaseWallet):
 
         """
         LOGGER.debug("Entering set_public_did with did: %s", did)
+        if session is None:
+            session = self._get_dbstore_session()
         if session is None:
             async with self._session.store.session() as session:
                 return await self._set_public_did_impl(did, session)
@@ -800,6 +826,8 @@ class KanonWallet(BaseWallet):
         )
 
         # Create session if not provided for consistency across all operations
+        if session is None:
+            session = self._get_dbstore_session()
         if session is None:
             async with self._session.store.session() as session:
                 return await self._set_did_endpoint_impl(
@@ -926,6 +954,8 @@ class KanonWallet(BaseWallet):
             LOGGER.debug("Key already exists, proceeding")
 
         if session is None:
+            session = self._get_dbstore_session()
+        if session is None:
             async with self._session.store.session() as session:
                 return await self._rotate_did_keypair_start_impl(did, verkey, session)
         return await self._rotate_did_keypair_start_impl(did, verkey, session)
@@ -974,6 +1004,8 @@ class KanonWallet(BaseWallet):
 
         """
         LOGGER.debug("Entering rotate_did_keypair_apply with did: %s", did)
+        if session is None:
+            session = self._get_dbstore_session()
         if session is None:
             async with self._session.store.session() as session:
                 return await self._rotate_did_keypair_apply_impl(did, session)
