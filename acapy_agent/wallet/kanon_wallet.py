@@ -61,7 +61,13 @@ class KanonWallet(BaseWallet):
         already has one open, which prevents connection pool exhaustion.
         """
         if hasattr(self._session, "dbstore_handle") and self._session.dbstore_handle:
-            return self._session.dbstore_handle
+            handle = self._session.dbstore_handle
+            # Verify it's actually a DBStoreSession, not an Askar Session
+            if isinstance(handle, DBStoreSession):
+                return handle
+            LOGGER.warning(
+                "dbstore_handle is not a DBStoreSession: %s", type(handle).__name__
+            )
         return None
 
     async def create_signing_key(
